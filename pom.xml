@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.redislabs.spring</groupId>
+  <artifactId>spring-integration</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <name>spring-integration</name>
+  <packaging>pom</packaging>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>11</maven.compiler.release>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+    <maven.test.source>11</maven.test.source>
+    <maven.test.target>11</maven.test.target>
+    <java.version>11</java.version>
+  </properties>
+
+  <modules>
+    <module>redisjson</module>
+    <module>redisgraph</module>
+    <module>redistimeseries</module>
+    <module>redisbloom</module>
+    <module>redisearch</module>
+    <module>redisai</module>
+    <module>redis-spring-modules</module>
+  </modules>
+</project>
