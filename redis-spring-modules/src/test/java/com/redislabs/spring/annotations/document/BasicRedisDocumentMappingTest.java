@@ -1,6 +1,9 @@
 package com.redislabs.spring.annotations.document;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.Optional;
 
 import javax.annotation.PreDestroy;
 
@@ -12,28 +15,33 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+//import org.springframework.test.context.TestPropertySource;
 
 import com.redislabs.spring.annotations.EnableRedisDocumentRepositories;
 import com.redislabs.spring.annotations.document.fixtures.Company;
 import com.redislabs.spring.annotations.document.fixtures.CompanyRepository;
-import com.redislabs.spring.ops.RedisModulesOperations;
 
-@SpringBootTest(classes = BasicRedisDocumentMappingTest.Config.class)
+@SpringBootTest(classes = BasicRedisDocumentMappingTest.Config.class, properties = {"spring.main.allow-bean-definition-overriding=true"})
+//@TestPropertySource(properties = "debug=true")
 public class BasicRedisDocumentMappingTest {
 
-  @Autowired
-  RedisModulesOperations<String, String> modulesOperations;
-  
   @Autowired CompanyRepository repository;
 
   @Test
   public void testBasicCrudOperations() {
-    Company redislabs = Company.of("RedisLabs");
-    Company microsoft = Company.of("Microsoft");
-    repository.save(redislabs);
-    repository.save(microsoft);
+    Company redislabs = repository.save(Company.of("RedisLabs"));
+    Company microsoft = repository.save(Company.of("Microsoft"));
     
     assertEquals(2, repository.count());
+    
+    Optional<Company> maybeRedisLabs = repository.findById(redislabs.getId());
+    Optional<Company> maybeMicrosoft = repository.findById(microsoft.getId());
+    
+    assertTrue(maybeRedisLabs.isPresent());
+    assertTrue(maybeMicrosoft.isPresent());
+    
+    assertEquals(redislabs, maybeRedisLabs.get());
+    assertEquals(microsoft, maybeMicrosoft.get());
   }
 
   @SpringBootApplication
@@ -53,7 +61,7 @@ public class BasicRedisDocumentMappingTest {
     
     @PreDestroy
     void cleanUp() {
-      //connectionFactory.getConnection().flushAll();
+      connectionFactory.getConnection().flushAll();
     }
   }
 }

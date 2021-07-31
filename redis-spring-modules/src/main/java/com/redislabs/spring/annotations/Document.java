@@ -1,4 +1,5 @@
 package com.redislabs.spring.annotations;
+
 import static java.lang.annotation.ElementType.TYPE;
 
 import java.lang.annotation.Inherited;
@@ -14,7 +15,7 @@ import org.springframework.data.annotation.Persistent;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ TYPE })
 public @interface Document {
-  
+
   @AliasFor("collection")
   String value() default "";
 

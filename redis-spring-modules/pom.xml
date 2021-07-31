@@ -22,6 +22,7 @@
     <maven.test.target>11</maven.test.target>
     <java.version>11</java.version>
     <spring.version>2.6.0-SNAPSHOT</spring.version>
+    <cdi>1.0</cdi>
   </properties>
 
   <dependencyManagement>
@@ -125,6 +126,13 @@
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <version>1.18.20</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>javax.enterprise</groupId>
+      <artifactId>cdi-api</artifactId>
+      <version>${cdi}</version>
+      <scope>provided</scope>
       <optional>true</optional>
     </dependency>
 

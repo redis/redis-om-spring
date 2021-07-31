@@ -27,6 +27,13 @@ public class BloomValueTest {
   RedisModulesOperations<String, String> modulesOperations;
   
   @Autowired PersonRepository repository;
+  
+  @Test
+  public void testSaveOnePerson() {
+    Person guyr = Person.of("Guy Royse", "guy.royse@redislabs.com");
+    repository.save(guyr);
+    assertEquals(1, repository.count());
+  }
 
   @Test
   public void testBasicCrudOperations() {
