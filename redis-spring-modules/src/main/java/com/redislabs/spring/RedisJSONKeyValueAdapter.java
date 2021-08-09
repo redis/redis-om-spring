@@ -3,11 +3,7 @@ package com.redislabs.spring;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisKeyValueAdapter;
 import org.springframework.data.redis.core.RedisOperations;
-import org.springframework.data.redis.core.convert.MappingRedisConverter;
-import org.springframework.data.redis.core.convert.PathIndexResolver;
-//import org.springframework.data.redis.core.convert.RedisConverter;
 import org.springframework.data.redis.core.convert.RedisCustomConversions;
-import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.lang.Nullable;
 
@@ -15,7 +11,6 @@ import com.redislabs.spring.ops.json.JSONOperations;
 
 public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private JSONOperations<?> redisJSONOperations;
-//  private RedisConverter redisConverter;
   private RedisOperations<?, ?> redisOperations;
   
   /**
@@ -40,13 +35,6 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     super(redisOps, mappingContext, new RedisCustomConversions());
     this.redisJSONOperations = redisJSONOperations;
     this.redisOperations = redisOps;
-    
-    MappingRedisConverter mappingConverter = new MappingRedisConverter(mappingContext,
-        new PathIndexResolver(mappingContext), new ReferenceResolverImpl(redisOps));
-    //  mappingConverter.setCustomConversions(customConversions == null ? new RedisCustomConversions() : customConversions);
-    mappingConverter.afterPropertiesSet();
-
-//    this.redisConverter = mappingConverter;
   }
   
   /*

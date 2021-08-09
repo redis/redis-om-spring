@@ -1,0 +1,99 @@
+- Annotation in Model
+- Interceps the save method of the repo saving said model
+- Does the bloom filter thing
+
+
+
+Monggo docs are org.bson.Document
+
+https://www.programmersought.com/article/3124546009/
+
+Do these work in Spring Data Redis?
+
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+
+======== Spring Day Repository Registar
+
+import org.springframework.data.repository.config.RepositoryBeanDefinitionRegistrarSupport;
+import org.springframework.data.repository.config.RepositoryConfigurationExtension;
+import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
+
+
+
+RedisRepositoryConfigurationExtension
+
+https://programmingsharing.com/most-used-spring-data-mongodb-annotations-589963d2ec34
+
+
+
+========== Spring Composable Repositories
+
+- https://www.baeldung.com/spring-data-composable-repositories
+- org.springframework.data.repository.core.support.RepositoryComposition.RepositoryFragments used in Spring Data Redis
+- Spring 5, we have the option to enrich our repositories with multiple fragment repositories.
+- Requirement remains that we have these fragments as interface-implementation pairs.
+- Intf CustomARepo, CustomBRepo w/ method signatures, then aggregate with `interface MyRepository extends JpaRepository<A, Long>, CustomARepo, CustomBRepo`
+- Spring Data repositories are implemented by using fragments that form a repository composition.
+- Fragments are the base repository, functional aspects (such as QueryDsl), and custom interfaces along with their implementations.
+- Each time you add an interface to your repository interface, you enhance the composition by adding a fragment.
+- The base repository and repository aspect implementations are provided by each Spring Data module.
+
+
+=========== Customizable Things in Spring Data Redis
+- Customizing Type Mapping - @TypeAlias("pers")
+-
+
+
+
+
+=========== Possible Steps
+- Create custom redis serializer org.springframework.data.redis.serializer
+- Spring Data Redis Enable repos return org.springframework.data.repository.config.DefaultRepositoryBaseClass for repositoryBaseClass()
+  - DefaultRepositoryBaseClass: Placeholder class to be used in @Enable annotation's repositoryBaseClass attribute.
+  - The configuration evaluation infrastructure can use this type to find out no special repository base class was configured and apply defaults.
+
+
+
+https://stackoverflow.com/questions/67132894/what-is-springboot-alternative-to-javaee-cdi
+
+
+KAIZEN ==> Change for the better, even if it slows you down
+
+
+org.springframework.beans.factory.BeanDefinitionStoreException: Invalid bean definition with name 'redisKeyValueAdapter': @Bean definition illegally overridden by existing bean definition: Root bean: class [org.springframework.data.redis.core.RedisKeyValueAdapter];
+
+
+spring.main.allow-bean-definition-overriding=true
+
+
+=====
+
+ GsonAutoConfiguration matched:
+      - @ConditionalOnClass found required class 'com.google.gson.Gson' (OnClassCondition)
+
+   GsonAutoConfiguration#gson matched:
+      - @ConditionalOnMissingBean (types: com.google.gson.Gson; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+   GsonAutoConfiguration#gsonBuilder matched:
+      - @ConditionalOnMissingBean (types: com.google.gson.GsonBuilder; SearchStrategy: all) did not find any beans (OnBeanCondition)
+
+
+=======
+
+https://gist.github.com/bsbodden/39243ae89efa554b41f54401c05a4454
+
+https://github.com/OsokinAlexander/infinispan-spring-repository
+
+https://habr.com/ru/post/535218/
+
+======= Recipes Collections
+
+- https://medium.com/capital-one-tech/the-swiss-army-knife-and-the-cookbook-part-2-recipes-for-common-redis-patterns-1125ee2c8c96
+- https://dzone.com/articles/meet-top-k-an-awesome-probabilistic-addition-to-re
+- https://redislabs.com/blog/the-top-3-game-changing-redis-use-cases/
+- RedisGears Write Behind recipe for each module
+  - Time Series
+  -

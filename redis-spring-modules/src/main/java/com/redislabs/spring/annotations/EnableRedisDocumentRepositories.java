@@ -10,6 +10,7 @@ import java.lang.annotation.Target;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.redis.core.RedisKeyValueAdapter.EnableKeyspaceEvents;
 import org.springframework.data.redis.core.RedisKeyValueAdapter.ShadowCopy;
@@ -29,7 +30,6 @@ import com.redislabs.spring.repository.configuration.RedisJSONRepositoriesRegist
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
-//@EnableRedisRepositories
 @Import(RedisJSONRepositoriesRegistrar.class)
 public @interface EnableRedisDocumentRepositories {
   /**
@@ -54,12 +54,14 @@ public @interface EnableRedisDocumentRepositories {
    * {@code @EnableRedisRepositories("org.my.pkg")} instead of
    * {@code @EnableRedisRepositories(basePackages="org.my.pkg")}.
    */
+  @AliasFor("basePackages")
   String[] value() default {};
 
   /**
    * Base packages to scan for annotated components. {@link #value()} is an alias for (and mutually exclusive with) this
    * attribute. Use {@link #basePackageClasses()} for a type-safe alternative to String-based package names.
    */
+  @AliasFor("value")
   String[] basePackages() default {};
 
   /**

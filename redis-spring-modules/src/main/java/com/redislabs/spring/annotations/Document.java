@@ -1,6 +1,6 @@
 package com.redislabs.spring.annotations;
 
-import static java.lang.annotation.ElementType.TYPE;
+import java.lang.annotation.ElementType;
 
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
@@ -13,7 +13,7 @@ import org.springframework.data.annotation.Persistent;
 @Persistent
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ TYPE })
+@Target({ ElementType.TYPE })
 public @interface Document {
 
   @AliasFor("collection")

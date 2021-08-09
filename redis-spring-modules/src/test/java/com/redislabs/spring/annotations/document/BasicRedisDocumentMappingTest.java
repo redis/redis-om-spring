@@ -46,7 +46,7 @@ public class BasicRedisDocumentMappingTest {
 
   @SpringBootApplication
   @Configuration
-  @EnableRedisDocumentRepositories
+  @EnableRedisDocumentRepositories(basePackages="com.redislabs.spring.annotations.document.fixtures")
   static class Config {
     @Autowired
     RedisConnectionFactory connectionFactory;
