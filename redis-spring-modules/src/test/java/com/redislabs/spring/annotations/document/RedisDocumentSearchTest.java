@@ -9,6 +9,7 @@ import java.util.Set;
 
 import javax.annotation.PreDestroy;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -23,30 +24,22 @@ import com.redislabs.spring.annotations.EnableRedisDocumentRepositories;
 import com.redislabs.spring.annotations.document.fixtures.MyDoc;
 import com.redislabs.spring.annotations.document.fixtures.MyDocRepository;
 
-//import io.redisearch.Document;
-//import io.redisearch.Query;
-//import io.redisearch.SearchResult;
-
 @SpringBootTest(classes = RedisDocumentSearchTest.Config.class, properties = {"spring.main.allow-bean-definition-overriding=true"})
 //@TestPropertySource(properties = "debug=true")
 public class RedisDocumentSearchTest {
 
   @Autowired MyDocRepository repository;
-  
-  private MyDoc doc1;
 
   @Test
   public void testBasicCrudOperations() {
-    doc1 = MyDoc.of("hello world");
+    MyDoc doc1 = MyDoc.of("hello world");
     
     Set<String> tags = new HashSet<String>();
     tags.add("news");
     tags.add("article");
     
     doc1.setTag(tags);
-    
     doc1 = repository.save(doc1);
-
     assertEquals(1, repository.count());
     
     Optional<MyDoc> maybeDoc1 = repository.findById(doc1.getId());
@@ -59,8 +52,7 @@ public class RedisDocumentSearchTest {
   public void testCustomFinder() {
     Optional<MyDoc> maybeDoc1 = repository.findByTitle("hello world");
     assertTrue(maybeDoc1.isPresent());
-    
-    assertEquals(doc1, maybeDoc1.get());
+    System.out.println(">>>> maybeDoc1 " + maybeDoc1.get());
   }
   
 

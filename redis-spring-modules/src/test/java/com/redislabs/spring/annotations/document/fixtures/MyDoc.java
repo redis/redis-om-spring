@@ -23,8 +23,8 @@ public class MyDoc {
   @Id
   private String id;
   @NonNull
-  @TextIndexed
+  @TextIndexed(alias = "title")
   private String title;
-  @TagIndexed
+  @TagIndexed(alias = "tag")
   private Set<String> tag = new HashSet<String>();
 }
