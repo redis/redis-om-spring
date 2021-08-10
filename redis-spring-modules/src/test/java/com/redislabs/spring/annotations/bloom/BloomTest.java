@@ -1,6 +1,7 @@
 package com.redislabs.spring.annotations.bloom;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -18,21 +19,16 @@ import org.springframework.data.redis.repository.configuration.EnableRedisReposi
 
 import com.redislabs.spring.annotations.bloom.fixtures.Person;
 import com.redislabs.spring.annotations.bloom.fixtures.PersonRepository;
-import com.redislabs.spring.ops.RedisModulesOperations;
 
-@SpringBootTest(classes = BloomValueTest.Config.class)
-public class BloomValueTest {
+@SpringBootTest(classes = BloomTest.Config.class, properties = {"spring.main.allow-bean-definition-overriding=true"})
+public class BloomTest {
 
-  @Autowired
-  RedisModulesOperations<String, String> modulesOperations;
-  
   @Autowired PersonRepository repository;
   
   @Test
   public void testSaveOnePerson() {
-    Person guyr = Person.of("Guy Royse", "guy.royse@redislabs.com");
-    repository.save(guyr);
-    assertEquals(1, repository.count());
+    Person antirez = Person.of("Salvatore Sanfilippo", "antirez@redislabs.com");
+    repository.save(antirez);
   }
 
   @Test
@@ -54,7 +50,8 @@ public class BloomValueTest {
     
     repository.saveAll(persons);
     
-    assertEquals(persons.size(), repository.count());
+    assertTrue(repository.isEmailTaken("kyle.owen@redislabs.com"));
+    assertFalse(repository.isEmailTaken("bsb@redislabs.com"));
   }
 
   @SpringBootApplication

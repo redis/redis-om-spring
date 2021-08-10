@@ -11,7 +11,9 @@ import org.springframework.cache.annotation.CachingConfigurerSupport;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
@@ -43,6 +45,8 @@ import io.redisearch.client.IndexDefinition;
 
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(RedisProperties.class)
+@EnableAspectJAutoProxy
+@ComponentScan("com.redislabs.spring.bloom")
 public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
   @Bean(name = "redisModulesClient")
@@ -58,6 +62,11 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   @Bean(name = "redisJSONOperations")
   JSONOperations<?> redisJSONOperations(RedisModulesOperations<?, ?> redisModulesOperations) {
     return redisModulesOperations.opsForJSON();
+  }
+  
+  @Bean(name = "redisBloomOperations")
+  BloomOperations<?> redisBloomOperations(RedisModulesOperations<?, ?> redisModulesOperations) {
+    return redisModulesOperations.opsForBloom();
   }
 
   @Bean(name = "redisTemplate")
