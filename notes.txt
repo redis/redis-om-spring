@@ -94,6 +94,10 @@ https://habr.com/ru/post/535218/
 - https://medium.com/capital-one-tech/the-swiss-army-knife-and-the-cookbook-part-2-recipes-for-common-redis-patterns-1125ee2c8c96
 - https://dzone.com/articles/meet-top-k-an-awesome-probabilistic-addition-to-re
 - https://redislabs.com/blog/the-top-3-game-changing-redis-use-cases/
+- Caching Demo - https://github.com/redislabs-training/demo-caching
 - RedisGears Write Behind recipe for each module
   - Time Series
   -
+- Retail
+  - https://redislabs.com/blog/redismart-retail-application-with-redis/
+- Chat

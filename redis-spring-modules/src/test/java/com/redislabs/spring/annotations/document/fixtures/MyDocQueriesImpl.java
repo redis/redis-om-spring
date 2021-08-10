@@ -22,10 +22,8 @@ public class MyDocQueriesImpl implements MyDocQueries {
 
   @Override
   public Optional<MyDoc> findByTitle(String title) {
-    System.out.println(">>>> In findByTitle... " + title);
     SearchOperations<String> ops = modulesOperations.opsForSearch("MyDocIdx");
     SearchResult result = ops.search(new Query("@title:'" + title + "'"));
-    System.out.println(">>>> results ==> " + result.totalResults);
     if (result.totalResults > 0) {
       Document doc = result.docs.get(0);
       return Optional.of(gson.fromJson(doc.toString(), MyDoc.class));

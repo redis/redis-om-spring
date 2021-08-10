@@ -1,9 +1,9 @@
-package com.redislabs.spring.patterns.bloom.value.fixtures;
+package com.redislabs.spring.annotations.bloom.fixtures;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
 
-import com.redislabs.spring.annotations.RedisProbExists;
+import com.redislabs.spring.annotations.Bloom;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -24,6 +24,6 @@ public class Person {
   String name;
   
   @NonNull 
-  @RedisProbExists
+  @Bloom(name = "bf_person_email", capacity = 100000, errorRate = 0.001)
   String email;
 }

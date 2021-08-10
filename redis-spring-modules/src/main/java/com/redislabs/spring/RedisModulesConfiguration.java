@@ -17,17 +17,20 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.RedisKeyValueTemplate;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 
+import com.redislabs.spring.annotations.Bloom;
 import com.redislabs.spring.annotations.Document;
 import com.redislabs.spring.annotations.TagIndexed;
 import com.redislabs.spring.annotations.TextIndexed;
 import com.redislabs.spring.client.RedisModulesClient;
 import com.redislabs.spring.ops.RedisModulesOperations;
 import com.redislabs.spring.ops.json.JSONOperations;
+import com.redislabs.spring.ops.pds.BloomOperations;
 import com.redislabs.spring.ops.search.SearchOperations;
 
 import io.redisearch.FieldName;
@@ -143,5 +146,38 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
       }
     }
 
+  }
+  
+  @EventListener(ContextRefreshedEvent.class)
+  public void processBloom(ContextRefreshedEvent cre) {
+    System.out.println(">>>> On ContextRefreshedEvent ... Processing Bloom annotations......");
+    ApplicationContext ac = cre.getApplicationContext();
+    @SuppressWarnings("unchecked")
+    RedisModulesOperations<String, String> rmo = (RedisModulesOperations<String, String>) ac.getBean("redisModulesOperations");
+
+    ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(false);
+    provider.addIncludeFilter(new AnnotationTypeFilter(Document.class));
+    provider.addIncludeFilter(new AnnotationTypeFilter(RedisHash.class));
+    for (BeanDefinition beanDef : provider
+        .findCandidateComponents("com.redislabs.spring.annotations.bloom.fixtures")) {
+      try {
+        Class<?> cl = Class.forName(beanDef.getBeanClassName());
+        System.out.printf(">>>> Found #RedisHash / @Document annotated class: %s\n", cl.getSimpleName());
+
+        for (java.lang.reflect.Field field : cl.getDeclaredFields()) {
+          System.out.println(">>>> Inspecting field " + field.getName());
+          // Text
+          if (field.isAnnotationPresent(Bloom.class)) {
+            System.out.println(">>>>>> FOUND Bloom on " + field.getName());
+            Bloom bloom = field.getAnnotation(Bloom.class);
+            BloomOperations<String> ops = rmo.opsForBloom();
+            String filterName = !ObjectUtils.isEmpty(bloom.name()) ? bloom.name() : String.format("bf:%s:%s", cl.getSimpleName(), field.getName());
+            ops.createFilter(filterName, bloom.capacity(), bloom.errorRate());
+          }
+        }
+      } catch (Exception e) {
+        System.err.println("Got exception: " + e.getMessage());
+      }
+    }
   }
 }

@@ -1,4 +1,4 @@
-package com.redislabs.spring.patterns.bloom.value;
+package com.redislabs.spring.annotations.bloom;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -16,9 +16,9 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 
+import com.redislabs.spring.annotations.bloom.fixtures.Person;
+import com.redislabs.spring.annotations.bloom.fixtures.PersonRepository;
 import com.redislabs.spring.ops.RedisModulesOperations;
-import com.redislabs.spring.patterns.bloom.value.fixtures.Person;
-import com.redislabs.spring.patterns.bloom.value.fixtures.PersonRepository;
 
 @SpringBootTest(classes = BloomValueTest.Config.class)
 public class BloomValueTest {
@@ -46,9 +46,9 @@ public class BloomValueTest {
     Person kyleb = Person.of("Kyle Banker", "kyle.banker@redislabs.com");
     Person andrew = Person.of("Andrew Brookins", "andrew.brookins@redislabs.com");
     Person alex = Person.of("Oleksandr Korolko", "aleksandr@redislabs.com");
-    Person lance = Person.of("Lance Leonard", "simon@redislabs.com");
-    Person rachel = Person.of("Rachel Elledge", "simon@redislabs.com"); 
-    Person kaitlyn = Person.of("Kaitlyn Michael", "simon@redislabs.com"); 
+    Person lance = Person.of("Lance Leonard", "lancel@redislabs.com");
+    Person rachel = Person.of("Rachel Elledge", "rachel@redislabs.com"); 
+    Person kaitlyn = Person.of("Kaitlyn Michael", "kaitlyn@redislabs.com"); 
     Person josefin = Person.of("Josefin Sjoeberg", "josefin.sjoeberg@redislabs.com"); 
     List<Person> persons = List.of(guyr, guyk, simon, justin, steve, kyleo, kyleb, andrew, alex, lance, rachel, kaitlyn, josefin);
     
