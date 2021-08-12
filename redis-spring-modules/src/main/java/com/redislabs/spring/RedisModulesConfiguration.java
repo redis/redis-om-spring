@@ -2,6 +2,7 @@ package com.redislabs.spring;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -24,9 +25,13 @@ import org.springframework.data.redis.core.RedisKeyValueTemplate;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
+import org.springframework.data.repository.core.RepositoryInformation;
+import org.springframework.data.repository.support.Repositories;
 
 import com.redislabs.spring.annotations.Bloom;
 import com.redislabs.spring.annotations.Document;
+import com.redislabs.spring.annotations.Query;
+import com.redislabs.spring.annotations.Aggregation;
 import com.redislabs.spring.annotations.TagIndexed;
 import com.redislabs.spring.annotations.TextIndexed;
 import com.redislabs.spring.client.RedisModulesClient;
@@ -151,7 +156,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
           opsForSearch.createIndex(schema, Client.IndexOptions.defaultOptions().setDefinition(def));
         }
       } catch (Exception e) {
-        System.err.println("Got exception: " + e.getMessage());
+        System.err.println("In ensureIndexesAreCreated: Exception: " + e.getMessage());
       }
     }
 
@@ -171,7 +176,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
         .findCandidateComponents("com.redislabs.spring.annotations.bloom.fixtures")) {
       try {
         Class<?> cl = Class.forName(beanDef.getBeanClassName());
-        System.out.printf(">>>> Found #RedisHash / @Document annotated class: %s\n", cl.getSimpleName());
+        System.out.printf(">>>> Found @RedisHash / @Document annotated class: %s\n", cl.getSimpleName());
 
         for (java.lang.reflect.Field field : cl.getDeclaredFields()) {
           System.out.println(">>>> Inspecting field " + field.getName());
@@ -185,7 +190,39 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
           }
         }
       } catch (Exception e) {
-        System.err.println("Got exception: " + e.getMessage());
+        System.err.println("In processBloom: Exception: " + e.getMessage());
+      }
+    }
+  }
+  
+  @EventListener(ContextRefreshedEvent.class)
+  public void processQueryAnnotations(ContextRefreshedEvent cre) {
+    System.out.println(">>>> On ContextRefreshedEvent ... Processing Query/Aggregation annotations......");
+    ApplicationContext ac = cre.getApplicationContext();
+    @SuppressWarnings("unchecked")
+    RedisModulesOperations<String, String> rmo = (RedisModulesOperations<String, String>) ac
+        .getBean("redisModulesOperations");
+
+    Repositories repos = new Repositories(ac);
+    for (Class<?> entityClass : repos) {
+      System.out.printf(">>>> Found entity: %s\n", entityClass.getName());
+      Optional<RepositoryInformation> mri = repos.getRepositoryInformationFor(entityClass);
+      if (mri.isPresent()) {
+        RepositoryInformation ri = mri.get();
+        Class<?> repoClass = ri.getRepositoryInterface();
+        System.out.printf(">>>> Found Repository: %s\n", repoClass);
+
+        for (java.lang.reflect.Method method : repoClass.getDeclaredMethods()) {
+          System.out.println(">>>> Inspecting method " + method.getName());
+          // Text
+          if (method.isAnnotationPresent(Query.class)) {
+            Query query = method.getAnnotation(Query.class);
+            System.out.println(">>>>>> FOUND Query on " + method.getName() + " with value [" + query.value() + "]");
+          } else if (method.isAnnotationPresent(Aggregation.class)) {
+            Aggregation aggregation = method.getAnnotation(Aggregation.class);
+            System.out.println(">>>>>> FOUND Aggregation on " + method.getName() + " with value [" + aggregation.value() + "]");
+          }
+        }
       }
     }
   }

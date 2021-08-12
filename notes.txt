@@ -101,3 +101,27 @@ https://habr.com/ru/post/535218/
 - Retail
   - https://redislabs.com/blog/redismart-retail-application-with-redis/
 - Chat
+
+======
+
+- https://www.baeldung.com/spring-show-all-beans
+- https://www.baeldung.com/spring-data-jpa-query
+- https://stackoverflow.com/questions/14266089/how-to-retrieve-spring-data-repository-instance-for-given-domain-class
+
+-
+==============
+
+
+import org.springframework.data.keyvalue.repository.config.QueryCreatorType;
+
+
+@QueryCreatorType(RedisQueryCreator.class)
+public @interface EnableRedisRepositories {
+
+
+package org.springframework.data.redis.repository.query;
+public class RedisQueryCreator extends AbstractQueryCreator<KeyValueQuery<RedisOperationChain>, RedisOperationChain> {
+
+
+package org.springframework.data.repository.query.parser;
+public abstract class AbstractQueryCreator<T, S> {

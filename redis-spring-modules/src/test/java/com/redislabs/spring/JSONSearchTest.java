@@ -88,14 +88,14 @@ public class JSONSearchTest {
   @Test
   public void testSearchOverJSONWithPathProjection() {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
-    SearchResult result = ops.search(new Query("*").returnFields("$.tag[0] AS first_tag"));
+    SearchResult result = ops.search(new Query("*").returnFields("$.tag[0]", "AS", "first_tag"));
     assertEquals(1, result.totalResults);
     Document doc = result.docs.get(0);
     assertEquals(1.0, doc.getScore(), 0);
     assertNull(doc.getPayload());
     assertTrue(StreamSupport //
         .stream(doc.getProperties().spliterator(), false) //
-        .anyMatch(p -> p.getKey().contentEquals("$.tag[0] AS first_tag") && p.getValue().equals("news")));
+        .anyMatch(p -> p.getKey().contentEquals("first_tag") && p.getValue().equals("news")));
   }
 
   /**
@@ -166,7 +166,7 @@ public class JSONSearchTest {
 
     @PreDestroy
     void cleanUp() {
-      //connectionFactory.getConnection().flushAll();
+      connectionFactory.getConnection().flushAll();
     }
   }
 
