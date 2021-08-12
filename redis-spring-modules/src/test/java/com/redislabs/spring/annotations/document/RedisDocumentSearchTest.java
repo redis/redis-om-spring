@@ -1,16 +1,21 @@
 package com.redislabs.spring.annotations.document;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.StreamSupport;
 
 import javax.annotation.PreDestroy;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
@@ -23,28 +28,33 @@ import com.redislabs.spring.annotations.EnableRedisDocumentRepositories;
 import com.redislabs.spring.annotations.document.fixtures.MyDoc;
 import com.redislabs.spring.annotations.document.fixtures.MyDocRepository;
 
+import io.redisearch.AggregationResult;
+import io.redisearch.Document;
+import io.redisearch.SearchResult;
+import io.redisearch.aggregation.Row;
+
 @SpringBootTest(classes = RedisDocumentSearchTest.Config.class, properties = {"spring.main.allow-bean-definition-overriding=true"})
 //@TestPropertySource(properties = "debug=true")
 public class RedisDocumentSearchTest {
 
   @Autowired MyDocRepository repository;
+  
+  @Autowired
+  RedisTemplate<String, String> template;
 
   @Test
   public void testBasicCrudOperations() {
-    MyDoc doc1 = MyDoc.of("hello world");
-    
-    Set<String> tags = new HashSet<String>();
-    tags.add("news");
-    tags.add("article");
-    
-    doc1.setTag(tags);
-    doc1 = repository.save(doc1);
     assertEquals(1, repository.count());
     
-    Optional<MyDoc> maybeDoc1 = repository.findById(doc1.getId());
+    Set<String> keys = template.opsForSet().members("com.redislabs.spring.annotations.document.fixtures.MyDoc");
+    
+    
+    String id = keys.iterator().next();
+    
+    Optional<MyDoc> maybeDoc1 = repository.findById(id);
     assertTrue(maybeDoc1.isPresent());
-   
-    assertEquals(doc1, maybeDoc1.get());
+
+    assertEquals("hello world", maybeDoc1.get().getTitle());
   }
   
   @Test
@@ -54,22 +64,64 @@ public class RedisDocumentSearchTest {
     System.out.println(">>>> maybeDoc1 " + maybeDoc1.get());
   }
   
+  /**
+   * > FT.SEARCH idx * RETURN 3 $.tag[0] AS first_tag
+   * 1) (integer) 1
+   * 2) "doc1"
+   * 3) 1) "first_tag"
+   *    2) "news"
+   *    
+   * @Query(returnFields = {"$.tag[0]", "AS", "first_tag"})
+   * SearchResult getFirstTag();   
+   */
+  @Test
+  public void testQueryAnnotation01() {
+    /*
+     * @Query("* RETURN 3 $.tag[0] AS first_tag")
+     * SearchResult getFirstTag();
+     */
+    SearchResult result = repository.getFirstTag();
+    assertEquals(1, result.totalResults);
+    Document doc = result.docs.get(0);
+    assertEquals(1.0, doc.getScore(), 0);
+    assertNull(doc.getPayload());
+    assertTrue(StreamSupport //
+        .stream(doc.getProperties().spliterator(), false) //
+        .anyMatch(p -> p.getKey().contentEquals("first_tag") && p.getValue().equals("news")));
+  }
 
   /**
+   * @Query("@title:$title @tag:{$tags}")
+   * 
    * > FT.SEARCH idx '@title:hello @tag:{news}' 
    * 1) (integer) 1 2) "doc1" 3) 1) "$"
    * 2) "{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}"
    */
   @Test
-  public void testRediSearchQuery01() {
-/*
-    SearchResult result = ops.search(new Query("@title:hello @tag:{news}"));
+  public void testQueryAnnotation02() {
+    Iterable<MyDoc> results = repository.findByTitleAndTags("hello", Set.of("news"));
+    assertEquals(1, ((Collection<MyDoc>) results).size());
+    MyDoc doc = results.iterator().next();
+    assertEquals("hello world", doc.getTitle());
+    assertTrue(doc.getTag().contains("news"));
+  }
+  
+  /**
+   * @Aggregation(load = {"$.tag[1]", "AS", "tag2"})
+   * 
+   * > FT.AGGREGATE idx * LOAD 3 $.tag[1] AS tag2
+   *   1) (integer) 1
+   *   2) 1) "tag2"
+   *      2) "article"
+   */
+  @Test
+  public void testAggregationAnnotation01() {
+    AggregationResult result = repository.getSecondTagWithAggregation();
     assertEquals(1, result.totalResults);
-    Document doc = result.docs.get(0);
-    assertEquals(1.0, doc.getScore(), 0);
-    assertNull(doc.getPayload());
-    assertEquals("{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}", doc.get("$"));
- */
+    Row row = result.getRow(0);
+    assertNotNull(row);
+    assertTrue(row.containsKey("tag2"));
+    assertEquals(row.getString("tag2"), "article");
   }
 
   @SpringBootApplication
@@ -78,6 +130,23 @@ public class RedisDocumentSearchTest {
   static class Config {
     @Autowired
     RedisConnectionFactory connectionFactory;
+    
+    @Autowired MyDocRepository repository;
+    
+    @Bean
+    CommandLineRunner loadTestData(RedisTemplate<String, String> template) {
+      return args -> {
+        System.out.println(">>> loadTestData...");
+        MyDoc doc1 = MyDoc.of("hello world");
+        
+        Set<String> tags = new HashSet<String>();
+        tags.add("news");
+        tags.add("article");
+        
+        doc1.setTag(tags);
+        doc1 = repository.save(doc1);
+      };
+    }
 
     @Bean
     public RedisTemplate<?, ?> redisTemplate(RedisConnectionFactory connectionFactory) {

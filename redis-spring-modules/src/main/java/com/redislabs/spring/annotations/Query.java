@@ -10,5 +10,23 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 public @interface Query {
-  String value() default "";
+  String value() default "*";
+  String[] returnFields() default {};
+  
+  //returnFields(returnFields);
+  //limit(null, null)
+  //addFilter(null)
+  //highlightFields(null)
+  //limitFields(String...)
+  //limitKeys()
+  //returnFields()
+  //setLanguage()
+  //setNoContent()
+  //setNoStopwords()
+  //setPayload()
+  //setScorer()
+  //setSortBy(, )
+  //setVerbatim()
+  //setWithPayload()
+  //setWithScores()
 }

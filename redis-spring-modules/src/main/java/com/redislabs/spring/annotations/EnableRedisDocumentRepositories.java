@@ -12,42 +12,30 @@ import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
+import org.springframework.data.keyvalue.repository.config.QueryCreatorType;
 import org.springframework.data.redis.core.RedisKeyValueAdapter.EnableKeyspaceEvents;
 import org.springframework.data.redis.core.RedisKeyValueAdapter.ShadowCopy;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.convert.KeyspaceConfiguration;
 import org.springframework.data.redis.core.index.IndexConfiguration;
 import org.springframework.data.redis.listener.KeyExpirationEventMessageListener;
-//import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 import org.springframework.data.redis.repository.support.RedisRepositoryFactoryBean;
 import org.springframework.data.repository.config.DefaultRepositoryBaseClass;
 import org.springframework.data.repository.query.QueryLookupStrategy;
 import org.springframework.data.repository.query.QueryLookupStrategy.Key;
 
 import com.redislabs.spring.repository.configuration.RedisJSONRepositoriesRegistrar;
+import com.redislabs.spring.repository.query.RediSearchQuery;
+import com.redislabs.spring.repository.query.RediSearchQueryCreator;
+import com.redislabs.spring.repository.support.RedisDocumentRepositoryFactoryBean;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
 @Import(RedisJSONRepositoriesRegistrar.class)
+@QueryCreatorType(value = RediSearchQueryCreator.class, repositoryQueryType = RediSearchQuery.class)
 public @interface EnableRedisDocumentRepositories {
-  /**
-   * Returns the {@link FactoryBean} class to be used for each repository instance. Defaults to
-   * {@link MongoRepositoryFactoryBean}.
-   *
-   * @return {@link MongoRepositoryFactoryBean} by default.
-   */
-//  Class<?> repositoryFactoryBeanClass() /*default RedisDocumentRepositoryFactoryBean.class*/;
-
-  /**
-   * Configure the repository base class to be used to create repository proxies for this particular configuration.
-   *
-   * @return {@link DefaultRepositoryBaseClass} by default.
-   * @since 1.8
-   */
-//  Class<?> repositoryBaseClass() default RedisDocumentRepositoryImpl.class;
-  
 
   /**
    * Alias for the {@link #basePackages()} attribute. Allows for more concise annotation declarations e.g.:
@@ -112,7 +100,7 @@ public @interface EnableRedisDocumentRepositories {
    *
    * @return
    */
-  Class<?> repositoryFactoryBeanClass() default RedisRepositoryFactoryBean.class;
+  Class<?> repositoryFactoryBeanClass() default RedisDocumentRepositoryFactoryBean.class;
 
   /**
    * Configure the repository base class to be used to create repository proxies for this particular configuration.

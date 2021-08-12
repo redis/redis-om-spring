@@ -2,6 +2,29 @@
 - Interceps the save method of the repo saving said model
 - Does the bloom filter thing
 
+- The Redis Developer family of libraries also provide robust implementations of
+  - rate limiters,
+  - leaderboards,
+  - streams,
+  - and distributed locks, to name just a few.
+
+
+  The first tier works with any Redis instance, regardless of where it's hosted. Functionality for the first tier includes:
+
+* Caching. This is by far the biggest Redis use case. Developers should reach for these libraries whenever they need to cache anything. This is how we get developers in the door.
+* Rate Limiting. This is an easy win. Provide the high-level rate limiting abstraction so that the developers don't have to think about how to build this.
+* Leaderboards. Another easy win, just like rate limiting. This way, developers don't have to learn anything about sorted sets.
+* Streams. Provide a fluent stream abstraction with object modeling.
+
+The second tier of functionality requires either Redis Enterprise or Redis Cloud. The most urgent of these is document/object modeling. Ideally, we should release this with the GA of RediSearch/RedisJSON.
+
+* Document/Object modeling (using RedisJSON and Redisearch).
+* Advanced Caching. Write-behind, read-through, etc. Requires Gears.
+* Time Series (uses RedisTimeSeries). A high-level time series object. Requires no knowledge of time series commands.
+* Full-text search indexes. Access to full-text search without knowledge of any RediSeach commands.
+Graphs.
+* De-duplicators. High-level abstractions for RedisBloom, for example.
+
 
 
 Monggo docs are org.bson.Document
@@ -112,10 +135,18 @@ https://habr.com/ru/post/535218/
 ==============
 
 
+//Annotation to customize the query creator type to be used for a specific store.
 import org.springframework.data.keyvalue.repository.config.QueryCreatorType;
 
 
 @QueryCreatorType(RedisQueryCreator.class)
+<<== value is `Class<? extends AbstractQueryCreator<?,?>>`
+org.springframework.data.repository.query.parser Class AbstractQueryCreator<T,S>
+
+Has an optional value `repositoryQueryType` which is a `Class<? extends RepositoryQuery>`
+
+
+
 public @interface EnableRedisRepositories {
 
 
@@ -125,3 +156,13 @@ public class RedisQueryCreator extends AbstractQueryCreator<KeyValueQuery<RedisO
 
 package org.springframework.data.repository.query.parser;
 public abstract class AbstractQueryCreator<T, S> {
+
+
+========
+
+org.springframework.data.keyvalue.repository.query.KeyValuePartTreeQuery.createQuery(KeyValuePartTreeQuery.java:207)
+	at org.springframework.data.keyvalue.repository.query.KeyValuePartTreeQuery.prepareQuery(KeyValuePartTreeQuery.java:149)
+
+at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:344)
+
+org.springframework.data.repository.core.support.QueryExecutorMethodInterceptor

@@ -73,6 +73,7 @@ public class JSONSearchTest {
     SearchResult result = ops.search(new Query("@title:hello @tag:{news}"));
     assertEquals(1, result.totalResults);
     Document doc = result.docs.get(0);
+    System.out.println(">>>> doc.getClass() ==> " + doc.getClass());
     assertEquals(1.0, doc.getScore(), 0);
     assertNull(doc.getPayload());
     assertEquals("{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}", doc.get("$"));
@@ -131,9 +132,7 @@ public class JSONSearchTest {
     @Bean
     CommandLineRunner loadTestData(RedisTemplate<String, String> template) {
       return args -> {
-        System.out.println(">>> loadTestData...");
         JSONOperations<String> ops = modulesOperations.opsForJSON();
-        // JSON.SET doc1 . '{"title":"hello world", "tag": ["news", "article"]}'
         ops.set("doc1", new SomeJSON());
       };
     }
@@ -141,9 +140,6 @@ public class JSONSearchTest {
     @Bean
     CommandLineRunner createSearchIndices(RedisModulesOperations<String, String> modulesOperations) {
       return args -> {
-
-        System.out.println(">>> Creating " + searchIndex + " search index...");
-
         SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
         try {
           ops.dropIndex();

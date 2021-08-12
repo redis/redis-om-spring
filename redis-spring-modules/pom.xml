@@ -21,7 +21,8 @@
     <maven.test.source>11</maven.test.source>
     <maven.test.target>11</maven.test.target>
     <java.version>11</java.version>
-    <spring.version>2.6.0-SNAPSHOT</spring.version>
+    <!-- There is an issue with Spring Data Redis and Jedis after 2.6.0-M2  -->
+    <spring.version>2.6.0-M1</spring.version>
     <cdi>1.0</cdi>
   </properties>
 
@@ -81,11 +82,6 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-aop</artifactId>
       <version>${spring.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>redis.clients</groupId>
-      <artifactId>jedis</artifactId>
-      <version>3.6.0</version>
     </dependency>
     <dependency>
       <groupId>com.redislabs</groupId>
