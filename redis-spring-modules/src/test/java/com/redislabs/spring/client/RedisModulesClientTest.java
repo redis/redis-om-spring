@@ -5,20 +5,17 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Configuration;
 
 import com.google.gson.Gson;
 import com.redislabs.modules.rejson.JReJSON;
 import com.redislabs.redisai.RedisAI;
 import com.redislabs.redisgraph.impl.api.RedisGraph;
 import com.redislabs.redistimeseries.RedisTimeSeries;
+import com.redislabs.spring.AbstractBaseTest;
 
 import io.redisearch.Client;
 
-@SpringBootTest(classes = RedisModulesClientTest.Config.class)
-public class RedisModulesClientTest {
+public class RedisModulesClientTest extends AbstractBaseTest {
 
   private final Gson g = new Gson();
 
@@ -46,40 +43,34 @@ public class RedisModulesClientTest {
     Object expected = g.fromJson(g.toJson(obj), Object.class);
     assertEquals(expected, jsonClient.get("obj"));
   }
-  
+
   @Test
   public void testAIClient() {
     RedisAI aiClient = client.clientForAI();
     assertNotNull(aiClient);
   }
-  
+
   @Test
   public void testGraphClient() {
     RedisGraph graphClient = client.clientForGraph();
     assertNotNull(graphClient);
   }
-  
+
   @Test
   public void testSearchClient() {
     Client searchClient = client.clientForSearch("index");
     assertNotNull(searchClient);
   }
-  
+
   @Test
   public void testBloomClient() {
     io.rebloom.client.Client bloomClient = client.clientForBloom();
     assertNotNull(bloomClient);
   }
-  
+
   @Test
   public void testTimeSeriesClient() {
     RedisTimeSeries timeSeriesClient = client.clientForTimeSeries();
     assertNotNull(timeSeriesClient);
-  }
-
-  @SpringBootApplication
-  @Configuration
-  static class Config {
-
   }
 }

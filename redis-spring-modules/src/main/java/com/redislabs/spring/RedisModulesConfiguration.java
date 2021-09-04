@@ -151,7 +151,8 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
           opsForSearch.createIndex(schema, Client.IndexOptions.defaultOptions().setDefinition(def));
         }
       } catch (Exception e) {
-        System.err.println("In ensureIndexesAreCreated: Exception: " + e.getMessage());
+        System.err.println(String.format("In ensureIndexesAreCreated: Exception: %s ==> %s", e.getClass().getName(), e.getMessage()));
+        e.printStackTrace();
       }
     }
 

@@ -11,20 +11,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.StreamSupport;
 
-import javax.annotation.PreDestroy;
-
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-//import org.springframework.test.context.TestPropertySource;
 
-import com.redislabs.spring.annotations.EnableRedisDocumentRepositories;
+import com.redislabs.spring.AbstractBaseTest;
 import com.redislabs.spring.annotations.document.fixtures.MyDoc;
 import com.redislabs.spring.annotations.document.fixtures.MyDocRepository;
 
@@ -33,14 +26,28 @@ import io.redisearch.Document;
 import io.redisearch.SearchResult;
 import io.redisearch.aggregation.Row;
 
-@SpringBootTest(classes = RedisDocumentSearchTest.Config.class, properties = {"spring.main.allow-bean-definition-overriding=true"})
-//@TestPropertySource(properties = "debug=true")
-public class RedisDocumentSearchTest {
-
+public class RedisDocumentSearchTest extends AbstractBaseTest {
   @Autowired MyDocRepository repository;
   
   @Autowired
   RedisTemplate<String, String> template;
+  
+  @BeforeEach
+  public void loadTestData() {
+    MyDoc doc1 = MyDoc.of("hello world");
+    
+    Set<String> tags = new HashSet<String>();
+    tags.add("news");
+    tags.add("article");
+    
+    doc1.setTag(tags);
+    doc1 = repository.save(doc1);
+  }
+  
+  @AfterEach
+  public void cleanUp() {
+    repository.deleteAll();
+  }
 
   @Test
   public void testBasicCrudOperations() {
@@ -122,43 +129,5 @@ public class RedisDocumentSearchTest {
     assertNotNull(row);
     assertTrue(row.containsKey("tag2"));
     assertEquals(row.getString("tag2"), "article");
-  }
-
-  @SpringBootApplication
-  @Configuration
-  @EnableRedisDocumentRepositories(basePackages="com.redislabs.spring.annotations.document.fixtures")
-  static class Config {
-    @Autowired
-    RedisConnectionFactory connectionFactory;
-    
-    @Autowired MyDocRepository repository;
-    
-    @Bean
-    CommandLineRunner loadTestData(RedisTemplate<String, String> template) {
-      return args -> {
-        System.out.println(">>> loadTestData...");
-        MyDoc doc1 = MyDoc.of("hello world");
-        
-        Set<String> tags = new HashSet<String>();
-        tags.add("news");
-        tags.add("article");
-        
-        doc1.setTag(tags);
-        doc1 = repository.save(doc1);
-      };
-    }
-
-    @Bean
-    public RedisTemplate<?, ?> redisTemplate(RedisConnectionFactory connectionFactory) {
-      RedisTemplate<?, ?> template = new RedisTemplate<>();
-      template.setConnectionFactory(connectionFactory);
-
-      return template;
-    }
-    
-    @PreDestroy
-    void cleanUp() {
-      connectionFactory.getConnection().flushAll();
-    }
   }
 }

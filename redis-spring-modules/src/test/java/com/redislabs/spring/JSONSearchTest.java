@@ -9,17 +9,11 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.StreamSupport;
 
-import javax.annotation.PreDestroy;
-
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 import com.redislabs.spring.ops.RedisModulesOperations;
 import com.redislabs.spring.ops.json.JSONOperations;
@@ -30,18 +24,17 @@ import io.redisearch.Document;
 import io.redisearch.FieldName;
 import io.redisearch.Query;
 import io.redisearch.Schema;
-import io.redisearch.SearchResult;
 import io.redisearch.Schema.Field;
 import io.redisearch.Schema.FieldType;
 import io.redisearch.Schema.TextField;
+import io.redisearch.SearchResult;
 import io.redisearch.aggregation.AggregationBuilder;
 import io.redisearch.aggregation.Row;
 import io.redisearch.client.Client;
 import io.redisearch.client.IndexDefinition;
 import redis.clients.jedis.exceptions.JedisDataException;
 
-@SpringBootTest(classes = JSONSearchTest.Config.class)
-public class JSONSearchTest {
+public class JSONSearchTest extends AbstractBaseTest {
   public static String searchIndex = "idx";
 
   /* A simple class that represents an object in real life */
@@ -60,6 +53,38 @@ public class JSONSearchTest {
 
   @Autowired
   RedisModulesOperations<String, String> modulesOperations;
+  
+  @Autowired
+  private StringRedisTemplate template;
+  
+  @BeforeEach
+  public void setup() {
+    SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
+    
+    try {
+      ops.dropIndex();
+    } catch (JedisDataException jdee) {
+      // IGNORE: Unknown Index name
+    }
+
+    // FT.CREATE idx ON JSON SCHEMA $.title AS title TEXT $.tag[*] AS tag TAG
+    Schema sc = new Schema() //
+        .addField(new TextField(FieldName.of("$.title").as("title"))) //
+        .addField(new Field(FieldName.of("$.tag[*]").as("tag"), FieldType.Tag));
+
+    IndexDefinition def = new IndexDefinition(IndexDefinition.Type.JSON);
+    ops.createIndex(sc, Client.IndexOptions.defaultOptions().setDefinition(def));
+    
+    if (!template.hasKey("doc1")) {
+      JSONOperations<String> json = modulesOperations.opsForJSON();
+      json.set("doc1", new SomeJSON());
+    }
+  }
+  
+  @AfterEach
+  public void cleanUp() {
+    template.delete("doc1");
+  }
 
   /**
    * > FT.SEARCH idx '@title:hello @tag:{news}' 
@@ -119,51 +144,4 @@ public class JSONSearchTest {
     assertTrue(row.containsKey("tag2"));
     assertEquals(row.getString("tag2"), "article");
   }
-
-  @SpringBootApplication
-  @Configuration
-  static class Config {
-    @Autowired
-    RedisModulesOperations<String, String> modulesOperations;
-
-    @Autowired
-    RedisTemplate<String, String> template;
-
-    @Bean
-    CommandLineRunner loadTestData(RedisTemplate<String, String> template) {
-      return args -> {
-        JSONOperations<String> ops = modulesOperations.opsForJSON();
-        ops.set("doc1", new SomeJSON());
-      };
-    }
-
-    @Bean
-    CommandLineRunner createSearchIndices(RedisModulesOperations<String, String> modulesOperations) {
-      return args -> {
-        SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
-        try {
-          ops.dropIndex();
-        } catch (JedisDataException jdee) {
-          // IGNORE: Unknown Index name
-        }
-
-        // FT.CREATE idx ON JSON SCHEMA $.title AS title TEXT $.tag[*] AS tag TAG
-        Schema sc = new Schema() //
-            .addField(new TextField(FieldName.of("$.title").as("title"))) //
-            .addField(new Field(FieldName.of("$.tag[*]").as("tag"), FieldType.Tag));
-
-        IndexDefinition def = new IndexDefinition(IndexDefinition.Type.JSON);
-        ops.createIndex(sc, Client.IndexOptions.defaultOptions().setDefinition(def));
-      };
-    }
-
-    @Autowired
-    RedisConnectionFactory connectionFactory;
-
-    @PreDestroy
-    void cleanUp() {
-      connectionFactory.getConnection().flushAll();
-    }
-  }
-
 }

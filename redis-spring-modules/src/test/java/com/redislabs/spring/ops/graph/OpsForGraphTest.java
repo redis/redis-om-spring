@@ -2,26 +2,19 @@ package com.redislabs.spring.ops.graph;
 
 import java.util.List;
 
-import javax.annotation.PreDestroy;
-
 import org.junit.Assert;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 
 import com.redislabs.redisgraph.Header;
 import com.redislabs.redisgraph.ResultSet;
 import com.redislabs.redisgraph.Statistics.Label;
+import com.redislabs.spring.AbstractBaseTest;
 import com.redislabs.spring.ops.RedisModulesOperations;
 
-@SpringBootTest(classes = OpsForGraphTest.Config.class)
-public class OpsForGraphTest {
+public class OpsForGraphTest extends AbstractBaseTest {
   @Autowired
   RedisModulesOperations<String, String> modulesOperations;
-
 
   @Test
   public void testSimpleGraph() {
@@ -62,17 +55,5 @@ public class OpsForGraphTest {
     Assert.assertEquals("a.age", schemaNames.get(2));
 
     ops.deleteGraph("social");
-  }
-
-  @SpringBootApplication
-  @Configuration
-  static class Config {
-    @Autowired
-    RedisConnectionFactory connectionFactory;
-    
-    @PreDestroy
-    void cleanUp() {
-      connectionFactory.getConnection().flushAll();
-    }
   }
 }
