@@ -2,9 +2,12 @@
 
 ## TODO
 
+### Documents / JSON
+- [ ] Embedded / external entities/docs
+
 ### Search
 
-- [ ] Implement findByXXXX methods for RediSearch indexed models
+- [ ] Implement `findByXXXX` methods for RediSearch indexed models
 - [ ] Handle model return values for Query and Aggregations (add more tests)
 
 ### Probabilistic Data Structures
@@ -36,3 +39,8 @@
 ### Leaderboards
 
 - [ ] See https://github.com/agoragames/leaderboard
+
+### Streams
+
+- [ ] Recreate this https://kafka.apache.org/28/documentation/streams/tutorial ?
+- [ ]

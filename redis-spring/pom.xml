@@ -5,13 +5,13 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.redis.spring</groupId>
-  <artifactId>redis-spring-modules</artifactId>
+  <groupId>com.redis</groupId>
+  <artifactId>redis-spring</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>redis-spring-modules</name>
-  <url>http://www.example.com</url>
+  <name>redis-spring</name>
+  <url>https://developer.redis.com</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -179,7 +179,7 @@
     <developer>
       <id>bsbodden</id>
       <name>Brian Sam-Bodden</name>
-      <email>bsb at redislabs.com</email>
+      <email>bsb at redis.com</email>
       <organization>RedisLabs</organization>
       <organizationUrl>https://www.redislabs.com</organizationUrl>
       <roles>
