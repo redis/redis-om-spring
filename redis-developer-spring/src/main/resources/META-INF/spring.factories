@@ -1,0 +1,6 @@
+# Auto Configure
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+com.redis.spring.RedisModulesConfiguration
+org.springframework.boot.autoconfigure.AutoConfigurationImportFilter=\
+com.redis.spring.RedisRepositoriesExcludeFilter
+org.springframework.data.repository.core.support.RepositoryFactorySupport=com.redis.spring.repository.support.RedisEnhancedRepositoryFactory

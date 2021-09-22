@@ -26,6 +26,6 @@
     <module>redisbloom</module>
     <module>redisearch</module>
     <module>redisai</module>
-    <module>redis-spring</module>
+    <module>redis-developer-spring</module>
   </modules>
 </project>
