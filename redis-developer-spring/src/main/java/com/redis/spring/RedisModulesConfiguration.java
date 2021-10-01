@@ -83,12 +83,6 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
       JSONOperations<?> redisJSONOperations) {
     return new RedisJSONKeyValueAdapter(redisOps, redisJSONOperations);
   }
-  
-//  @Bean(name = "redisJSONKeyValueAdapter")
-//  RedisJSONKeyValueAdapter getKeyValueAdapter(RedisOperations<?, ?> redisOps,
-//      JSONOperations<?> redisJSONOperations) {
-//    return new RedisJSONKeyValueAdapter(redisOps, redisJSONOperations);
-//  }
 
   @Bean(name = "redisJSONKeyValueTemplate")
   public RedisKeyValueTemplate getRedisJSONKeyValueTemplate(RedisOperations<?, ?> redisOps,
@@ -118,9 +112,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
         .findCandidateComponents("com.redis.spring.annotations.document.fixtures")) {
       try {
         Class<?> cl = Class.forName(beanDef.getBeanClassName());
-        //Document document = cl.getAnnotation(Document.class);
         System.out.printf(">>>> Found @Document annotated class: %s\n", cl.getSimpleName());
-
 
         List<Field> fields = new ArrayList<Field>();
         for (java.lang.reflect.Field field : cl.getDeclaredFields()) {
