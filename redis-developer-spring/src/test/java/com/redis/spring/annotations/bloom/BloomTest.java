@@ -1,6 +1,7 @@
 package com.redis.spring.annotations.bloom;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -20,7 +21,8 @@ public class BloomTest extends AbstractBaseEnhancedRedisTest {
   @Test
   public void testSaveOnePerson() {
     Person antirez = Person.of("Salvatore Sanfilippo", "antirez@redis.com");
-    repository.save(antirez);
+    Person savedAntirez = repository.save(antirez);
+    assertNotNull(savedAntirez.getId());
   }
 
   @Test

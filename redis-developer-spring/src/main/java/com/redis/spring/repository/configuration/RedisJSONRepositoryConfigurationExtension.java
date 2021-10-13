@@ -6,10 +6,10 @@ import java.util.Collections;
 
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
-import org.springframework.data.redis.core.RedisKeyValueTemplate;
 import org.springframework.data.redis.repository.configuration.RedisRepositoryConfigurationExtension;
 import org.springframework.data.repository.config.RepositoryConfigurationSource;
 
+import com.redis.spring.CustomRedisKeyValueTemplate;
 import com.redis.spring.annotations.Document;
 import com.redis.spring.repository.RedisDocumentRepository;
 
@@ -51,7 +51,7 @@ public class RedisJSONRepositoryConfigurationExtension extends RedisRepositoryCo
   protected AbstractBeanDefinition getDefaultKeyValueTemplateBeanDefinition(
       RepositoryConfigurationSource configurationSource) {
 
-    return BeanDefinitionBuilder.rootBeanDefinition(RedisKeyValueTemplate.class) //
+    return BeanDefinitionBuilder.rootBeanDefinition(CustomRedisKeyValueTemplate.class) //
         .addConstructorArgReference(REDIS_ADAPTER_BEAN_NAME) //
         .addConstructorArgReference(MAPPING_CONTEXT_BEAN_NAME) //
         .getBeanDefinition();

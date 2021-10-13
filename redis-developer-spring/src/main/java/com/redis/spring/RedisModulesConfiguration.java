@@ -20,7 +20,6 @@ import org.springframework.context.event.EventListener;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisHash;
-import org.springframework.data.redis.core.RedisKeyValueTemplate;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
@@ -85,17 +84,17 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   }
 
   @Bean(name = "redisJSONKeyValueTemplate")
-  public RedisKeyValueTemplate getRedisJSONKeyValueTemplate(RedisOperations<?, ?> redisOps,
+  public CustomRedisKeyValueTemplate getRedisJSONKeyValueTemplate(RedisOperations<?, ?> redisOps,
       JSONOperations<?> redisJSONOperations) {
     RedisMappingContext mappingContext = new RedisMappingContext();
-    return new RedisKeyValueTemplate(getRedisJSONKeyValueAdapter(redisOps, redisJSONOperations), mappingContext);
+    return new CustomRedisKeyValueTemplate(getRedisJSONKeyValueAdapter(redisOps, redisJSONOperations), mappingContext);
   }
-  
-  @Bean(name = "redisKeyValueTemplate")
-  public RedisKeyValueTemplate getKeyValueTemplate(RedisOperations<?, ?> redisOps,
+
+  @Bean(name = "redisCustomKeyValueTemplate")
+  public CustomRedisKeyValueTemplate getKeyValueTemplate(RedisOperations<?, ?> redisOps,
       JSONOperations<?> redisJSONOperations) {
     RedisMappingContext mappingContext = new RedisMappingContext();
-    return new RedisKeyValueTemplate(getRedisJSONKeyValueAdapter(redisOps, redisJSONOperations), mappingContext);
+    return new CustomRedisKeyValueTemplate(getRedisJSONKeyValueAdapter(redisOps, redisJSONOperations), mappingContext);
   }
 
   @EventListener(ContextRefreshedEvent.class)
