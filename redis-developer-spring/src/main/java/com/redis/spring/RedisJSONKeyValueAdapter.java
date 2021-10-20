@@ -1,5 +1,12 @@
 package com.redis.spring;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisKeyValueAdapter;
 import org.springframework.data.redis.core.RedisOperations;
@@ -70,8 +77,63 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     return ops.get(getKey(keyspace, id), type);
   }
   
+  /**
+   * Get all elements for given keyspace.
+   *
+   * @param keyspace the keyspace to fetch entities from.
+   * @param type the desired target type.
+   * @param offset index value to start reading.
+   * @param rows maximum number or entities to return.
+   * @param <T>
+   * @return never {@literal null}.
+   * @since 2.5
+   */
+  @Override
+  public <T> List<T> getAllOf(String keyspace, Class<T> type, long offset, int rows) {
+    System.out.println(">>>> In RedisJSONKeyValueAdapter#getAllOf...");
+    @SuppressWarnings("unchecked")
+    JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
+    
+    byte[] binKeyspace = toBytes(keyspace);
+    Set<byte[]> ids = redisOperations.execute((RedisCallback<Set<byte[]>>) connection -> connection.sMembers(binKeyspace));
+    
+    String[] keys = ids.stream().map(b -> getKey(keyspace, new String(b, StandardCharsets.UTF_8))).toArray(String[]::new);
+    
+    if ((keys.length == 0) || (keys.length < offset)) {
+      return Collections.emptyList();
+    }
+
+    offset = Math.max(0, offset);
+    if (rows > 0) {
+      keys = Arrays.copyOfRange(keys, (int)offset, Math.min((int) offset + rows, keys.length));
+    }
+    
+    return ops.mget(type, keys);
+  }
+  
+  public List<String> getAllKeysOf(String keyspace, long offset, int rows) {
+    System.out.println(">>>> In RedisJSONKeyValueAdapter#getAllKeysOf...");
+    
+    byte[] binKeyspace = toBytes(keyspace);
+    Set<byte[]> ids = redisOperations.execute((RedisCallback<Set<byte[]>>) connection -> connection.sMembers(binKeyspace));
+    
+    List<String> keys = ids.stream().map(b -> getKey(keyspace, new String(b, StandardCharsets.UTF_8))).collect(Collectors.toList());
+    
+    if (keys.isEmpty() || keys.size() < offset) {
+      return Collections.emptyList();
+    }
+
+    offset = Math.max(0, offset);
+    if (rows > 0) {
+      keys = keys.subList((int) offset, Math.min((int) offset + rows, keys.size()));
+    }
+    
+    return keys;
+  }
+  
   protected String getKey(String keyspace, Object id) {
-//    String idAsString = redisConverter.getConversionService().convert(id, String.class);
+    // TODO: how to reuse or implement redisConverter
+    // String idAsString = redisConverter.getConversionService().convert(id, String.class);
     return String.format("%s:%s", keyspace, id);
   }
 }

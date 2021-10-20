@@ -20,12 +20,17 @@
   </properties>
 
   <modules>
+    <!-- Submodules w/ mods -->
     <module>redisjson</module>
     <module>redisgraph</module>
     <module>redistimeseries</module>
     <module>redisbloom</module>
     <module>redisearch</module>
     <module>redisai</module>
+    <!-- Main Project -->
     <module>redis-developer-spring</module>
+    <!-- Demos -->
+    <module>demos/rds-documents</module>
+    <module>demos/rds-hashes</module>
   </modules>
 </project>

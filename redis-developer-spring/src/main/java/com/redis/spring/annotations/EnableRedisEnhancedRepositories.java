@@ -114,7 +114,7 @@ public @interface EnableRedisEnhancedRepositories {
    *
    * @return
    */
-  String keyValueTemplateRef() default "redisCustomKeyValueTemplate";
+  String keyValueTemplateRef() default "redisKeyValueTemplate";
 
   /**
    * Configures whether nested repository-interfaces (e.g. defined as inner classes) should be discovered by the

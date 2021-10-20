@@ -2,6 +2,7 @@ package com.redis.spring.client;
 
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 
+import com.google.gson.GsonBuilder;
 import com.redislabs.modules.rejson.JReJSON;
 import com.redislabs.redisai.RedisAI;
 import com.redislabs.redisgraph.impl.api.RedisGraph;
@@ -17,6 +18,12 @@ public class RedisModulesClient {
 
   public JReJSON clientForJSON() {
     return new JReJSON(getJedis());
+  };
+  
+  public JReJSON clientForJSON(GsonBuilder builder) {
+    JReJSON client = new JReJSON(getJedis());
+    client.setGsonBuilder(builder);
+    return client;
   };
 
   public RedisGraph clientForGraph() {

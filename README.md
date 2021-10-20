@@ -11,7 +11,7 @@
 ### Search
 
 - [✅] Implement RediSearch "native" indexing annotations (`@TextIndexed`, `@TagIndexed`, `@GeoIndexed`, `@NumericIndexed`)
-- [ ] Implement `findByXXXX` methods for RediSearch indexed models
+- [✅] Implement `findByXXXX` methods for RediSearch indexed models
 - [ ] Handle model return values for `@Query` and `@Aggregations` "native" annotations (add more tests)
 - [ ] Add `@Indexable` and `@Searchable` high-level annotations
 - [ ] Add Fluent/Stream API-like/Functional Query/Aggreggation Builder

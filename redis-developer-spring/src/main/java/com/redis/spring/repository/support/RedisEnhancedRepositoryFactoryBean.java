@@ -16,24 +16,24 @@ import com.redis.spring.ops.RedisModulesOperations;
 import com.redis.spring.repository.query.RedisEnhancedQuery;
 
 public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, ID>
-extends RepositoryFactoryBeanSupport<T, S, ID> {
-  
+    extends RepositoryFactoryBeanSupport<T, S, ID> {
+
   private @Nullable KeyValueOperations operations;
   private @Nullable RedisModulesOperations<String, String> rmo;
   private @Nullable Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
   private @Nullable Class<? extends RepositoryQuery> repositoryQueryType;
-  
+
   /**
-   * Creates a new {@link RedisRepositoryFactoryBean} for the given repository interface.
+   * Creates a new {@link RedisRepositoryFactoryBean} for the given repository
+   * interface.
    *
    * @param repositoryInterface must not be {@literal null}.
    */
-  public RedisEnhancedRepositoryFactoryBean(Class<? extends T> repositoryInterface, RedisModulesOperations<?,?> rmo) {
+  public RedisEnhancedRepositoryFactoryBean(Class<? extends T> repositoryInterface, RedisModulesOperations<?, ?> rmo) {
     super(repositoryInterface);
     setRedisModulesOperations(rmo);
-    System.out.println(">>>> IN RedisEnhancedRepositoryFactoryBean#new...");
   }
-  
+
   /**
    * Configures the {@link KeyValueOperations} to be used for the repositories.
    *
@@ -45,21 +45,20 @@ extends RepositoryFactoryBeanSupport<T, S, ID> {
 
     this.operations = operations;
   }
-  
+
   /**
-   * Configures the {@link RedisModulesOperations} to be used for the repositories.
+   * Configures the {@link RedisModulesOperations} to be used for the
+   * repositories.
    *
    * @param operations must not be {@literal null}.
    */
   @SuppressWarnings("unchecked")
-  public void setRedisModulesOperations(RedisModulesOperations<?,?> rmo) {
-    System.out.println(">>>> IN RedisEnhancedRepositoryFactoryBean#setRedisModulesOperations...");
-
+  public void setRedisModulesOperations(RedisModulesOperations<?, ?> rmo) {
     Assert.notNull(rmo, "RedisModulesOperations must not be null!");
 
-    this.rmo = (RedisModulesOperations<String, String>)rmo;
+    this.rmo = (RedisModulesOperations<String, String>) rmo;
   }
-  
+
   /* (non-Javadoc)
    * 
    * @see
@@ -101,7 +100,6 @@ extends RepositoryFactoryBeanSupport<T, S, ID> {
    * #createRepositoryFactory() */
   @Override
   protected final RepositoryFactorySupport createRepositoryFactory() {
-    System.out.println(">>>> In RedisEnhancedRepositoryFactoryBean#createRepositoryFactory...");
     return createRepositoryFactory(operations, queryCreator, repositoryQueryType);
   }
 
@@ -118,7 +116,7 @@ extends RepositoryFactoryBeanSupport<T, S, ID> {
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator, Class<? extends RepositoryQuery> repositoryQueryType) {
     return new RedisEnhancedRepositoryFactory(operations, rmo, queryCreator, RedisEnhancedQuery.class);
   }
-  
+
   /* (non-Javadoc)
    * 
    * @see
@@ -133,6 +131,5 @@ extends RepositoryFactoryBeanSupport<T, S, ID> {
 
     super.afterPropertiesSet();
   }
-  
-  
+
 }

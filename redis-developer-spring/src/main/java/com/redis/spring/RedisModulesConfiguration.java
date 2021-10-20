@@ -1,10 +1,14 @@
 package com.redis.spring;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.annotation.CachingConfigurerSupport;
@@ -26,6 +30,9 @@ import org.springframework.data.redis.core.mapping.RedisMappingContext;
 
 import com.redis.spring.annotations.Bloom;
 import com.redis.spring.annotations.Document;
+import com.redis.spring.annotations.EnableRedisDocumentRepositories;
+import com.redis.spring.annotations.GeoIndexed;
+import com.redis.spring.annotations.NumericIndexed;
 import com.redis.spring.annotations.TagIndexed;
 import com.redis.spring.annotations.TextIndexed;
 import com.redis.spring.client.RedisModulesClient;
@@ -40,6 +47,7 @@ import io.redisearch.Schema.Field;
 import io.redisearch.Schema.FieldType;
 import io.redisearch.Schema.TextField;
 import io.redisearch.client.Client;
+import io.redisearch.client.Client.IndexOptions;
 import io.redisearch.client.IndexDefinition;
 
 @Configuration(proxyBeanMethods = false)
@@ -99,31 +107,36 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
   @EventListener(ContextRefreshedEvent.class)
   public void ensureIndexesAreCreated(ContextRefreshedEvent cre) {
-    System.out.println(">>>> On ContextRefreshedEvent ... Creating Indexes......");
+    //System.out.println(">>>> On ContextRefreshedEvent ... Creating Indexes......");
 
     ApplicationContext ac = cre.getApplicationContext();
-    @SuppressWarnings("unchecked")
-    RedisModulesOperations<String, String> rmo = (RedisModulesOperations<String, String>) ac.getBean("redisModulesOperations");
 
-    ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(false);
-    provider.addIncludeFilter(new AnnotationTypeFilter(Document.class));
-    for (BeanDefinition beanDef : provider
-        .findCandidateComponents("com.redis.spring.annotations.document.fixtures")) {
+    @SuppressWarnings("unchecked")
+    RedisModulesOperations<String, String> rmo = (RedisModulesOperations<String, String>) ac
+        .getBean("redisModulesOperations");
+
+    Set<BeanDefinition> beanDefs = new HashSet<BeanDefinition>();
+    beanDefs.addAll(getBeanDefinitionsFor(ac, Document.class));
+    beanDefs.addAll(getBeanDefinitionsFor(ac, RedisHash.class));
+
+    for (BeanDefinition beanDef : beanDefs) {
+      String indexName = "";
       try {
         Class<?> cl = Class.forName(beanDef.getBeanClassName());
-        System.out.printf(">>>> Found @Document annotated class: %s\n", cl.getSimpleName());
+        indexName = cl.getSimpleName() + "Idx";
+        //System.out.printf(">>>> Found @Document annotated class: %s\n", cl.getSimpleName());
 
         List<Field> fields = new ArrayList<Field>();
         for (java.lang.reflect.Field field : cl.getDeclaredFields()) {
-          System.out.println(">>>> Inspecting field " + field.getName());
           // Text
           if (field.isAnnotationPresent(TextIndexed.class)) {
-            System.out.println(">>>>>> FOUND TextIndexed on " + field.getName());
             TextIndexed ti = field.getAnnotation(TextIndexed.class);
 
             FieldName fieldName = FieldName.of("$." + field.getName());
             if (!ObjectUtils.isEmpty(ti.alias())) {
               fieldName = fieldName.as(ti.alias());
+            } else {
+              fieldName = fieldName.as(field.getName());
             }
             String phonetic = ObjectUtils.isEmpty(ti.phonetic()) ? null : ti.phonetic();
             TextField tf = new TextField(fieldName, ti.weight(), ti.sortable(), ti.nostem(), ti.noindex(), phonetic);
@@ -132,31 +145,65 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
           }
           // Tag
           if (field.isAnnotationPresent(TagIndexed.class)) {
-            System.out.println(">>>>>> FOUND TagIndexed on " + field.getName());
             TagIndexed ti = field.getAnnotation(TagIndexed.class);
 
             FieldName fieldName = FieldName.of("$." + field.getName() + "[*]");
             if (!ObjectUtils.isEmpty(ti.alias())) {
               fieldName = fieldName.as(ti.alias());
+            } else {
+              fieldName = fieldName.as(field.getName());
             }
+            
             Field tf = new Field(fieldName, FieldType.Tag, ti.sortable(), ti.noindex());
 
             fields.add(tf);
+          }
+          // Geo
+          if (field.isAnnotationPresent(GeoIndexed.class)) {
+            GeoIndexed gi = field.getAnnotation(GeoIndexed.class);
+
+            FieldName fieldName = FieldName.of("$." + field.getName());
+            if (!ObjectUtils.isEmpty(gi.alias())) {
+              fieldName = fieldName.as(gi.alias());
+            } else {
+              fieldName = fieldName.as(field.getName());
+            }
+            
+            Field gf = new Field(fieldName, FieldType.Geo);
+
+            fields.add(gf);
+          }
+          // Numeric
+          if (field.isAnnotationPresent(NumericIndexed.class)) {
+            NumericIndexed ni = field.getAnnotation(NumericIndexed.class);
+
+            FieldName fieldName = FieldName.of("$." + field.getName());
+            if (!ObjectUtils.isEmpty(ni.alias())) {
+              fieldName = fieldName.as(ni.alias());
+            } else {
+              fieldName = fieldName.as(field.getName());
+            }
+            
+            Field nf = new Field(fieldName, FieldType.Numeric);
+
+            fields.add(nf);
           }
         }
 
         if (!fields.isEmpty()) {
           Schema schema = new Schema();
-          SearchOperations<String> opsForSearch = rmo.opsForSearch(cl.getSimpleName() + "Idx");
+          SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
           for (Field field : fields) {
             schema.addField(field);
           }
           IndexDefinition def = new IndexDefinition(IndexDefinition.Type.JSON);
-          opsForSearch.createIndex(schema, Client.IndexOptions.defaultOptions().setDefinition(def));
+          def.setPrefixes(cl.getName() + ":");
+          IndexOptions ops = Client.IndexOptions.defaultOptions().setDefinition(def);
+          opsForSearch.createIndex(schema, ops);
         }
       } catch (Exception e) {
-        System.err.println(String.format("In ensureIndexesAreCreated: Exception: %s ==> %s", e.getClass().getName(), e.getMessage()));
-        e.printStackTrace();
+        System.err.println(
+            String.format("Skipping index creation for %s because %s", indexName, e.getMessage()));
       }
     }
 
@@ -164,28 +211,23 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
   @EventListener(ContextRefreshedEvent.class)
   public void processBloom(ContextRefreshedEvent cre) {
-    System.out.println(">>>> On ContextRefreshedEvent ... Processing Bloom annotations......");
     ApplicationContext ac = cre.getApplicationContext();
     @SuppressWarnings("unchecked")
-    RedisModulesOperations<String, String> rmo = (RedisModulesOperations<String, String>) ac.getBean("redisModulesOperations");
+    RedisModulesOperations<String, String> rmo = (RedisModulesOperations<String, String>) ac
+        .getBean("redisModulesOperations");
 
-    ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(false);
-    provider.addIncludeFilter(new AnnotationTypeFilter(Document.class));
-    provider.addIncludeFilter(new AnnotationTypeFilter(RedisHash.class));
-    for (BeanDefinition beanDef : provider
-        .findCandidateComponents("com.redis.spring.annotations.bloom.fixtures")) {
+    Set<BeanDefinition> beanDefs = getBeanDefinitionsFor(ac, Document.class, RedisHash.class);
+
+    for (BeanDefinition beanDef : beanDefs) {
       try {
         Class<?> cl = Class.forName(beanDef.getBeanClassName());
-        System.out.printf(">>>> Found @RedisHash / @Document annotated class: %s\n", cl.getSimpleName());
-
         for (java.lang.reflect.Field field : cl.getDeclaredFields()) {
-          System.out.println(">>>> Inspecting field " + field.getName());
           // Text
           if (field.isAnnotationPresent(Bloom.class)) {
-            System.out.println(">>>>>> FOUND Bloom on " + field.getName());
             Bloom bloom = field.getAnnotation(Bloom.class);
             BloomOperations<String> ops = rmo.opsForBloom();
-            String filterName = !ObjectUtils.isEmpty(bloom.name()) ? bloom.name() : String.format("bf:%s:%s", cl.getSimpleName(), field.getName());
+            String filterName = !ObjectUtils.isEmpty(bloom.name()) ? bloom.name()
+                : String.format("bf:%s:%s", cl.getSimpleName(), field.getName());
             ops.createFilter(filterName, bloom.capacity(), bloom.errorRate());
           }
         }
@@ -193,6 +235,27 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
         System.err.println("In processBloom: Exception: " + e.getMessage());
       }
     }
+  }
+
+  @SuppressWarnings({ "unchecked", "rawtypes" })
+  private Set<BeanDefinition> getBeanDefinitionsFor(ApplicationContext ac, Class... classes) {
+    ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(false);
+    for (Class cls : classes) {
+      provider.addIncludeFilter(new AnnotationTypeFilter(cls));
+    }
+
+    Map<String, Object> annotatedBeans = ac.getBeansWithAnnotation(SpringBootApplication.class);
+    Class<?> app = annotatedBeans.isEmpty() ? null : annotatedBeans.values().toArray()[0].getClass();
+    Set<BeanDefinition> beanDefs = new HashSet<BeanDefinition>();
+    if (app.isAnnotationPresent(EnableRedisDocumentRepositories.class)) {
+      EnableRedisDocumentRepositories edr = (EnableRedisDocumentRepositories) app
+          .getAnnotation(EnableRedisDocumentRepositories.class);
+      for (String pkg : edr.basePackages()) {
+        beanDefs.addAll(provider.findCandidateComponents(pkg));
+      }
+    }
+
+    return beanDefs;
   }
 
 }

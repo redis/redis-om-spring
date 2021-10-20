@@ -9,6 +9,10 @@ import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
 
+/**
+ * Building operations for criteria based queries
+ *
+ */
 public class RediSearchQueryCreator extends AbstractQueryCreator<KeyValueQuery<RediSearchQuery>, RediSearchQuery> {
   
   public RediSearchQueryCreator(PartTree tree) {
