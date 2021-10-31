@@ -4,9 +4,9 @@
 
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.redis</groupId>
-  <artifactId>spring-integration</artifactId>
+  <artifactId>redis-om-spring-parent</artifactId>
   <version>1.0-SNAPSHOT</version>
-  <name>spring-integration</name>
+  <name>redis-om-spring-parent</name>
   <packaging>pom</packaging>
 
   <properties>
@@ -28,7 +28,7 @@
     <module>redisearch</module>
     <module>redisai</module>
     <!-- Main Project -->
-    <module>redis-developer-spring</module>
+    <module>redis-om-spring</module>
     <!-- Demos -->
     <module>demos/rds-documents</module>
     <module>demos/rds-hashes</module>
