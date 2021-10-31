@@ -21,6 +21,7 @@
 
   <modules>
     <!-- Submodules w/ mods -->
+    <!-- To Be Removed! -->
     <module>redisjson</module>
     <module>redisgraph</module>
     <module>redistimeseries</module>
