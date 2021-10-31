@@ -50,6 +50,7 @@ public class RedisEnhancedQuery extends KeyValuePartTreeQuery {
       System.out.println(">>>> maybeBloomFilter.isPresent()");
       return executeBloomQuery(parameters, maybeBloomFilter.get());
     } else {
+      //TODO can I build query parts here?
       return super.doExecute(parameters, query);
     }
   }

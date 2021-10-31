@@ -102,7 +102,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   public CustomRedisKeyValueTemplate getKeyValueTemplate(RedisOperations<?, ?> redisOps,
       JSONOperations<?> redisJSONOperations) {
     RedisMappingContext mappingContext = new RedisMappingContext();
-    return new CustomRedisKeyValueTemplate(getRedisJSONKeyValueAdapter(redisOps, redisJSONOperations), mappingContext);
+    return new CustomRedisKeyValueTemplate(new RedisEnhancedKeyValueAdapter(redisOps), mappingContext);
   }
 
   @EventListener(ContextRefreshedEvent.class)
