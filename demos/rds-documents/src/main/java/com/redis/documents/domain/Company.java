@@ -21,32 +21,32 @@ import lombok.RequiredArgsConstructor;
 @Data
 @RequiredArgsConstructor(staticName = "of")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-@Document("company")
+@Document
 public class Company {
   @Id
   private String id;
-  
+
   @NonNull
   @TextIndexed
   private String name;
-  
+
   @TagIndexed
   private Set<String> tags = new HashSet<String>();
-  
+
   @NonNull
   private String url;
-  
+
   @NonNull
   @GeoIndexed
   private Point location;
-  
+
   @NonNull
   @NumericIndexed
   private Integer numberOfEmployees;
-  
+
   @NonNull
   @NumericIndexed
   private Integer yearFounded;
-  
+
   private boolean publiclyListed;
 }
