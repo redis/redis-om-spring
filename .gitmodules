@@ -1,9 +1,3 @@
-[submodule "redisearch"]
-	path = redisearch
-	url = git@github.com:bsbodden/JRediSearch.git
-[submodule "redisjson"]
-	path = redisjson
-	url = git@github.com:bsbodden/JRedisJSON.git
 [submodule "redisgraph"]
 	path = redisgraph
 	url = git@github.com:bsbodden/JRedisGraph.git
