@@ -263,6 +263,7 @@ Redis OM uses the [BSD 3-Clause license][license-url].
 <!-- Links -->
 
 [redis-om-website]: https://developer.redis.com
+[redis-om-python]: https://github.com/redis-om/redis-om-python
 [redis-om-js]: https://github.com/redis-om/redis-om-js
 [redis-om-dotnet]: https://github.com/redis-om/redis-om-dotnet
 [redisearch-url]: https://oss.redis.com/redisearch/
