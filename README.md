@@ -216,6 +216,17 @@ Add the Maven dependency:
 
 The Redis OM documentation is available [here](docs/index.md).
 
+## Demos
+
+### Basic JSON Mapping and Querying
+
+- **rds-documents**:
+  - Simple API example of `@Document` mapping, Spring Repositories and Querying.
+  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/rds-documents`
+- **rds-hashes**:
+  - Simple API example of `@RedisHash`, enhanced secondary indices and querying.
+  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/rds-hashes`
+
 ## ⛏️ Troubleshooting
 
 If you run into trouble or have any questions, we're here to help!
