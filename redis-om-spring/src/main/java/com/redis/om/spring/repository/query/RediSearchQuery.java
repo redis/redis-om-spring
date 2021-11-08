@@ -7,9 +7,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.data.geo.Point;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
+import org.springframework.data.redis.core.index.Indexed;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.QueryMethod;
@@ -25,6 +28,7 @@ import com.google.gson.Gson;
 import com.redis.om.spring.annotations.Aggregation;
 import com.redis.om.spring.annotations.GeoIndexed;
 import com.redis.om.spring.annotations.NumericIndexed;
+import com.redis.om.spring.annotations.Searchable;
 import com.redis.om.spring.annotations.TagIndexed;
 import com.redis.om.spring.annotations.TextIndexed;
 import com.redis.om.spring.ops.RedisModulesOperations;
@@ -106,10 +110,11 @@ public class RediSearchQuery implements RepositoryQuery {
         for (Part part : queryParts) {
           String fieldName = part.getProperty().getSegment();
           
+          //TODO: refactor this code is symmetrical to code executed during annotation processing
           Field field;
           try {
             field = domainType.getDeclaredField(fieldName);
-            if (field.isAnnotationPresent(TextIndexed.class)) {
+            if (field.isAnnotationPresent(TextIndexed.class) || field.isAnnotationPresent(Searchable.class)) {
               queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.FullText, part.getType())));
             } else if (field.isAnnotationPresent(TagIndexed.class)) {
               queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Tag, part.getType())));
@@ -117,6 +122,31 @@ public class RediSearchQuery implements RepositoryQuery {
               queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Geo, part.getType())));
             } else if (field.isAnnotationPresent(NumericIndexed.class)) {
               queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Numeric, part.getType())));
+            } else if (field.isAnnotationPresent(Indexed.class)) {
+              //
+              // Any Character class -> Tag Search Field
+              //
+              if (CharSequence.class.isAssignableFrom(field.getType())) {
+                queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Tag, part.getType())));
+              }  
+              //
+              // Any Numeric class -> Numeric Search Field
+              //
+              if (Number.class.isAssignableFrom(field.getType())) {
+                queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Numeric, part.getType())));
+              }
+              //
+              // Set 
+              //
+              if (Set.class.isAssignableFrom(field.getType())) {
+                queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Tag, part.getType())));
+              }
+              // 
+              // Point
+              //
+              if (field.getType() == Point.class) {
+                queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Geo, part.getType())));
+              }
             }
           } catch (NoSuchFieldException e) {
             System.out.println(">>> NoSuchFieldException for ==> " + fieldName);

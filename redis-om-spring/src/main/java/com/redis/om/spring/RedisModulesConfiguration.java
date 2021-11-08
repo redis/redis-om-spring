@@ -1,5 +1,6 @@
 package com.redis.om.spring;
 
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -22,10 +23,12 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
+import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.index.Indexed;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 
 import com.redis.om.spring.annotations.Bloom;
@@ -33,6 +36,7 @@ import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
 import com.redis.om.spring.annotations.GeoIndexed;
 import com.redis.om.spring.annotations.NumericIndexed;
+import com.redis.om.spring.annotations.Searchable;
 import com.redis.om.spring.annotations.TagIndexed;
 import com.redis.om.spring.annotations.TextIndexed;
 import com.redis.om.spring.client.RedisModulesClient;
@@ -107,7 +111,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
   @EventListener(ContextRefreshedEvent.class)
   public void ensureIndexesAreCreated(ContextRefreshedEvent cre) {
-    //System.out.println(">>>> On ContextRefreshedEvent ... Creating Indexes......");
+    System.out.println(">>>> On ContextRefreshedEvent ... Creating Indexes......");
 
     ApplicationContext ac = cre.getApplicationContext();
 
@@ -124,69 +128,64 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
       try {
         Class<?> cl = Class.forName(beanDef.getBeanClassName());
         indexName = cl.getSimpleName() + "Idx";
-        //System.out.printf(">>>> Found @Document annotated class: %s\n", cl.getSimpleName());
+        System.out.printf(">>>> Found @Document annotated class: %s\n", cl.getSimpleName());
 
         List<Field> fields = new ArrayList<Field>();
         for (java.lang.reflect.Field field : cl.getDeclaredFields()) {
+          // org.springframework.data.redis.core.index.Indexed
+          if (field.isAnnotationPresent(Indexed.class)) {
+            System.out.println(">>> FOUND @Indexed annotation on field of type: " + field.getType());
+            //
+            // Any Character class -> Tag Search Field
+            //
+            if (CharSequence.class.isAssignableFrom(field.getType())) {
+              fields.add(indexAsTagFieldFor(field));
+            }  
+            //
+            // Any Numeric class -> Numeric Search Field
+            //
+            if (Number.class.isAssignableFrom(field.getType())) {
+              fields.add(indexAsNumericFieldFor(field));
+            }
+            //
+            // Set 
+            //
+            if (Set.class.isAssignableFrom(field.getType())) {
+              fields.add(indexAsTagFieldFor(field));
+            }
+            // 
+            // Point
+            //
+            if (field.getType() == Point.class) {
+              fields.add(indexAsGeoFieldFor(field));
+            }
+            
+          }
+          
+          // Searchable - behaves like Text indexed
+          if (field.isAnnotationPresent(Searchable.class)) {
+            Searchable ti = field.getAnnotation(Searchable.class);
+            fields.add(indexAsTextFieldFor(field, ti));
+          }
           // Text
           if (field.isAnnotationPresent(TextIndexed.class)) {
             TextIndexed ti = field.getAnnotation(TextIndexed.class);
-
-            FieldName fieldName = FieldName.of("$." + field.getName());
-            if (!ObjectUtils.isEmpty(ti.alias())) {
-              fieldName = fieldName.as(ti.alias());
-            } else {
-              fieldName = fieldName.as(field.getName());
-            }
-            String phonetic = ObjectUtils.isEmpty(ti.phonetic()) ? null : ti.phonetic();
-            TextField tf = new TextField(fieldName, ti.weight(), ti.sortable(), ti.nostem(), ti.noindex(), phonetic);
-
-            fields.add(tf);
+            fields.add(indexAsTextFieldFor(field, ti));
           }
           // Tag
           if (field.isAnnotationPresent(TagIndexed.class)) {
             TagIndexed ti = field.getAnnotation(TagIndexed.class);
-
-            FieldName fieldName = FieldName.of("$." + field.getName() + "[*]");
-            if (!ObjectUtils.isEmpty(ti.alias())) {
-              fieldName = fieldName.as(ti.alias());
-            } else {
-              fieldName = fieldName.as(field.getName());
-            }
-            
-            Field tf = new Field(fieldName, FieldType.Tag, ti.sortable(), ti.noindex());
-
-            fields.add(tf);
+            fields.add(indexAsTagFieldFor(field, ti));
           }
           // Geo
           if (field.isAnnotationPresent(GeoIndexed.class)) {
             GeoIndexed gi = field.getAnnotation(GeoIndexed.class);
-
-            FieldName fieldName = FieldName.of("$." + field.getName());
-            if (!ObjectUtils.isEmpty(gi.alias())) {
-              fieldName = fieldName.as(gi.alias());
-            } else {
-              fieldName = fieldName.as(field.getName());
-            }
-            
-            Field gf = new Field(fieldName, FieldType.Geo);
-
-            fields.add(gf);
+            fields.add(indexAsGeoFieldFor(field, gi));
           }
           // Numeric
           if (field.isAnnotationPresent(NumericIndexed.class)) {
             NumericIndexed ni = field.getAnnotation(NumericIndexed.class);
-
-            FieldName fieldName = FieldName.of("$." + field.getName());
-            if (!ObjectUtils.isEmpty(ni.alias())) {
-              fieldName = fieldName.as(ni.alias());
-            } else {
-              fieldName = fieldName.as(field.getName());
-            }
-            
-            Field nf = new Field(fieldName, FieldType.Numeric);
-
-            fields.add(nf);
+            fields.add(indexAsNumericFieldFor(field, ni));
           }
         }
 
@@ -257,5 +256,85 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
     return beanDefs;
   }
-
+  
+  private Field indexAsTagFieldFor(java.lang.reflect.Field field, TagIndexed ti) {
+    FieldName fieldName = FieldName.of("$." + field.getName() + "[*]");
+    
+    if (!ObjectUtils.isEmpty(ti.alias())) {
+      fieldName = fieldName.as(ti.alias());
+    } else {
+      fieldName = fieldName.as(field.getName());
+    }
+    
+    return new Field(fieldName, FieldType.Tag, false, ti.noindex());
+  }
+  
+  private Field indexAsTagFieldFor(java.lang.reflect.Field field) {
+    FieldName fieldName = FieldName.of("$." + field.getName() + "[*]");
+    fieldName = fieldName.as(field.getName());
+    
+    return new Field(fieldName, FieldType.Tag, false, false);
+  }
+  
+  private Field indexAsTextFieldFor(java.lang.reflect.Field field, TextIndexed ti) {
+    FieldName fieldName = FieldName.of("$." + field.getName());
+    
+    if (!ObjectUtils.isEmpty(ti.alias())) {
+      fieldName = fieldName.as(ti.alias());
+    } else {
+      fieldName = fieldName.as(field.getName());
+    }
+    String phonetic = ObjectUtils.isEmpty(ti.phonetic()) ? null : ti.phonetic();
+    
+    return new TextField(fieldName, ti.weight(), ti.sortable(), ti.nostem(), ti.noindex(), phonetic);
+  }
+  
+  private Field indexAsTextFieldFor(java.lang.reflect.Field field, Searchable ti) {
+    FieldName fieldName = FieldName.of("$." + field.getName());
+    
+    if (!ObjectUtils.isEmpty(ti.alias())) {
+      fieldName = fieldName.as(ti.alias());
+    } else {
+      fieldName = fieldName.as(field.getName());
+    }
+    String phonetic = ObjectUtils.isEmpty(ti.phonetic()) ? null : ti.phonetic();
+    
+    return new TextField(fieldName, ti.weight(), ti.sortable(), ti.nostem(), ti.noindex(), phonetic);
+  }
+  
+  private Field indexAsGeoFieldFor(java.lang.reflect.Field field, GeoIndexed gi) {
+    FieldName fieldName = FieldName.of("$." + field.getName());
+    if (!ObjectUtils.isEmpty(gi.alias())) {
+      fieldName = fieldName.as(gi.alias());
+    } else {
+      fieldName = fieldName.as(field.getName());
+    }
+    
+    return new Field(fieldName, FieldType.Geo);
+  }
+  
+  private Field indexAsNumericFieldFor(java.lang.reflect.Field field, NumericIndexed ni) {
+    FieldName fieldName = FieldName.of("$." + field.getName());
+    if (!ObjectUtils.isEmpty(ni.alias())) {
+      fieldName = fieldName.as(ni.alias());
+    } else {
+      fieldName = fieldName.as(field.getName());
+    }
+    
+    return new Field(fieldName, FieldType.Numeric);
+  }
+  
+  private Field indexAsNumericFieldFor(java.lang.reflect.Field field) {
+    FieldName fieldName = FieldName.of("$." + field.getName());
+    fieldName = fieldName.as(field.getName());
+    
+    return new Field(fieldName, FieldType.Numeric);
+  }
+  
+  private Field indexAsGeoFieldFor(java.lang.reflect.Field field) {
+    FieldName fieldName = FieldName.of("$." + field.getName());
+    fieldName = fieldName.as(field.getName());
+    
+    return new Field(fieldName, FieldType.Geo);
+  }
 }

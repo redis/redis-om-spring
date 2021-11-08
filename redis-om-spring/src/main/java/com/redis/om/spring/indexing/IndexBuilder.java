@@ -138,7 +138,7 @@ public class IndexBuilder {
         fieldName = fieldName.as(ti.alias());
       }
 
-      TagField tf = new TagField(fieldName, ti.separator(), ti.sortable());
+      TagField tf = new TagField(fieldName, ti.separator(), false);
 
       return Optional.of(tf);
     } else {

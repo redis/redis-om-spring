@@ -12,7 +12,6 @@ import java.lang.annotation.Target;
 public @interface TagIndexed {
   String fieldName() default "";
   String alias() default "";
-  boolean sortable() default false;
   boolean noindex() default false;
   String separator() default ",";
 }
