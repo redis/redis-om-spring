@@ -2,9 +2,9 @@ package com.redis.documents.domain;
 
 import org.springframework.data.annotation.Id;
 
-import com.redis.spring.annotations.Document;
-import com.redis.spring.annotations.TagIndexed;
-import com.redis.spring.annotations.TextIndexed;
+import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.annotations.TagIndexed;
+import com.redis.om.spring.annotations.TextIndexed;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

@@ -6,10 +6,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
 import com.redis.hashes.domain.Role;
 import com.redis.hashes.domain.User;
 import com.redis.hashes.repositories.UserRepository;
-import com.redis.spring.annotations.EnableRedisEnhancedRepositories;
+import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
 
 @SpringBootApplication
 @Configuration

@@ -8,8 +8,8 @@ import org.springframework.data.geo.Point;
 import org.springframework.data.repository.query.Param;
 
 import com.redis.documents.domain.Company;
-import com.redis.spring.annotations.Query;
-import com.redis.spring.repository.RedisDocumentRepository;
+import com.redis.om.spring.annotations.Query;
+import com.redis.om.spring.repository.RedisDocumentRepository;
 
 public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
   // find one by property

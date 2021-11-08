@@ -5,12 +5,10 @@ import java.util.Set;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.geo.Point;
+import org.springframework.data.redis.core.index.Indexed;
 
-import com.redis.spring.annotations.Document;
-import com.redis.spring.annotations.GeoIndexed;
-import com.redis.spring.annotations.NumericIndexed;
-import com.redis.spring.annotations.TagIndexed;
-import com.redis.spring.annotations.TextIndexed;
+import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.annotations.Searchable;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -27,25 +25,25 @@ public class Company {
   private String id;
 
   @NonNull
-  @TextIndexed
+  @Searchable
   private String name;
 
-  @TagIndexed
+  @Indexed
   private Set<String> tags = new HashSet<String>();
 
   @NonNull
   private String url;
 
   @NonNull
-  @GeoIndexed
+  @Indexed
   private Point location;
 
   @NonNull
-  @NumericIndexed
+  @Indexed
   private Integer numberOfEmployees;
 
   @NonNull
-  @NumericIndexed
+  @Indexed
   private Integer yearFounded;
 
   private boolean publiclyListed;

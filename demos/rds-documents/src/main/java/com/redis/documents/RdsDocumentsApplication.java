@@ -14,11 +14,10 @@ import com.redis.documents.domain.Company;
 import com.redis.documents.domain.Person;
 import com.redis.documents.repositories.CompanyRepository;
 import com.redis.documents.repositories.PersonRepository;
-import com.redis.spring.annotations.EnableRedisDocumentRepositories;
 
 @SpringBootApplication
 @Configuration
-@EnableRedisDocumentRepositories(basePackages = "com.redis.documents.*")
+@com.redis.om.spring.annotations.EnableRedisDocumentRepositories(basePackages = "com.redis.documents.*")
 public class RdsDocumentsApplication {
 
   @Autowired
