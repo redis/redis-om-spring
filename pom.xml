@@ -23,7 +23,6 @@
     <!-- Submodules w/ mods -->
     <!-- To Be Removed! -->
     <module>redistimeseries</module>
-    <module>redisbloom</module>
     <module>redisai</module>
     <!-- Main Project -->
     <module>redis-om-spring</module>

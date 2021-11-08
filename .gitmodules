@@ -1,9 +1,6 @@
 [submodule "redisgraph"]
 	path = redisgraph
 	url = git@github.com:bsbodden/JRedisGraph.git
-[submodule "redisbloom"]
-	path = redisbloom
-	url = git@github.com:bsbodden/JRedisBloom.git
 [submodule "redistimeseries"]
 	path = redistimeseries
 	url = git@github.com:bsbodden/JRedisTimeSeries.git
