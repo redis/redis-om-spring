@@ -15,6 +15,7 @@ data
 bin/
 tmp/
 /.apt_generated_tests/
+.settings/
 
 ### Mac ###
 **/.DS_Store
