@@ -57,14 +57,11 @@ public class OpsForAITest extends AbstractBaseDocumentTest {
         ai.runModel("iris-torch", new String[] { "iris:in" }, new String[] { "iris:inferences", "iris:scores" }));
 
     Tensor in = ai.getTensor("iris:in");
-    System.out.println(">>> IN --> " + in);
 
     // AI.TENSORGET iris:inferences VALUES
     Tensor inferences = ai.getTensor("iris:inferences");
-    System.out.println(">>> INFERENCES --> " + inferences);
 
     // AI.TENSORGET iris:scores VALUES
     Tensor scores = ai.getTensor("iris:scores");
-    System.out.println(">>> SCORES --> " + scores);
   }
 }

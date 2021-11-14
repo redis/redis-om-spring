@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
@@ -27,13 +29,15 @@ import io.redisearch.client.Client;
 import io.redisearch.client.IndexDefinition;
 
 public class IndexBuilder {
-  
+
+  private static final Log logger = LogFactory.getLog(IndexBuilder.class);
+
   private IndexBuilder() {}
-  
+
   public static IndexBuilder INSTANCE = new IndexBuilder();
-  
+
   public void scanForIndexDefinitions(String basePackage, RedisModulesOperations<String, String> rmo) {
-    System.out.println(">>>> Creating Indexes......");
+    logger.info("Creating Indexes......");
 
     ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(false);
     provider.addIncludeFilter(new AnnotationTypeFilter(Document.class));
@@ -103,7 +107,7 @@ public class IndexBuilder {
 
   /**
    * Allows full-text search queries against the value in this field.
-   * 
+   *
    * @param field
    * @return
    */
@@ -126,7 +130,7 @@ public class IndexBuilder {
   /**
    * Allows exact-match queries, such as categories or primary keys, against the
    * value in this field
-   * 
+   *
    * @param field
    * @return
    */
@@ -148,7 +152,7 @@ public class IndexBuilder {
 
   /**
    * Allows geographic range queries against the value in this field.
-   * 
+   *
    * @param field
    * @return
    */
@@ -170,7 +174,7 @@ public class IndexBuilder {
 
   /**
    * Allows numeric range queries against the value in this field
-   * 
+   *
    * @param field
    * @return
    */

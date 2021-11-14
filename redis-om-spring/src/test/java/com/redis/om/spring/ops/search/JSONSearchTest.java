@@ -53,14 +53,14 @@ public class JSONSearchTest extends AbstractBaseDocumentTest {
 
   @Autowired
   RedisModulesOperations<String, String> modulesOperations;
-  
+
   @Autowired
   private StringRedisTemplate template;
-  
+
   @BeforeEach
   public void setup() {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
-    
+
     try {
       ops.dropIndex();
     } catch (JedisDataException jdee) {
@@ -74,20 +74,20 @@ public class JSONSearchTest extends AbstractBaseDocumentTest {
 
     IndexDefinition def = new IndexDefinition(IndexDefinition.Type.JSON);
     ops.createIndex(sc, Client.IndexOptions.defaultOptions().setDefinition(def));
-    
+
     if (!template.hasKey("doc1")) {
       JSONOperations<String> json = modulesOperations.opsForJSON();
       json.set("doc1", new SomeJSON());
     }
   }
-  
+
   @AfterEach
   public void cleanUp() {
     template.delete("doc1");
   }
 
   /**
-   * > FT.SEARCH idx '@title:hello @tag:{news}' 
+   * > FT.SEARCH idx '@title:hello @tag:{news}'
    * 1) (integer) 1 2) "doc1" 3) 1) "$"
    * 2) "{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}"
    */
@@ -98,7 +98,6 @@ public class JSONSearchTest extends AbstractBaseDocumentTest {
     SearchResult result = ops.search(new Query("@title:hello @tag:{news}"));
     assertEquals(1, result.totalResults);
     Document doc = result.docs.get(0);
-    System.out.println(">>>> doc.getClass() ==> " + doc.getClass());
     assertEquals(1.0, doc.getScore(), 0);
     assertNull(doc.getPayload());
     assertEquals("{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}", doc.get("$"));

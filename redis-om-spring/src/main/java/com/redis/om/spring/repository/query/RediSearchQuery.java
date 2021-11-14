@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.data.geo.Point;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.redis.core.index.Indexed;
@@ -45,14 +47,11 @@ import lombok.ToString;
 
 @ToString
 public class RediSearchQuery implements RepositoryQuery {
+  
+  private static final Log logger = LogFactory.getLog(RediSearchQuery.class);
 
   private final QueryMethod queryMethod;
   private final String searchIndex;
-
-  private static enum RediSearchQueryType {
-    QUERY,
-    AGGREGATION
-  };
 
   private RediSearchQueryType type;
   private static final Gson gson = GsonBuidlerFactory.getBuilder().create();
@@ -79,7 +78,7 @@ public class RediSearchQuery implements RepositoryQuery {
   public RediSearchQuery(QueryMethod queryMethod, RepositoryMetadata metadata,
       QueryMethodEvaluationContextProvider evaluationContextProvider, KeyValueOperations keyValueOperations,
       RedisModulesOperations<?, ?> rmo, Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
-    System.out.println(">>>> RediSearchQuery#new.... " + queryMethod.getName());
+    logger.debug(String.format("Creating %s", queryMethod.getName()));
 
     this.modulesOperations = (RedisModulesOperations<String, String>) rmo;
     this.queryMethod = queryMethod;
@@ -149,7 +148,7 @@ public class RediSearchQuery implements RepositoryQuery {
               }
             }
           } catch (NoSuchFieldException e) {
-            System.out.println(">>> NoSuchFieldException for ==> " + fieldName);
+            logger.debug(String.format("Did not find a field named ", fieldName));
           }
         }
 
@@ -157,8 +156,7 @@ public class RediSearchQuery implements RepositoryQuery {
         this.returnFields = new String[] {};
       }
     } catch (NoSuchMethodException | SecurityException e) {
-      System.out
-          .println(String.format(">>>> Did not find method %s(%s)", queryMethod.getName(), Arrays.toString(params)));
+      logger.warn(String.format("Did not find query method %s(%s)", queryMethod.getName(), Arrays.toString(params)), e);
     }
   }
 
@@ -214,7 +212,7 @@ public class RediSearchQuery implements RepositoryQuery {
   }
 
   private String prepareQuery(Object[] parameters) {
-    System.out.println(">>> parameters: " + Arrays.toString(parameters));
+    logger.debug(String.format("parameters: ", Arrays.toString(parameters)));
     StringBuilder preparedQuery = new StringBuilder();
     
     if (!queryFields.isEmpty()) {

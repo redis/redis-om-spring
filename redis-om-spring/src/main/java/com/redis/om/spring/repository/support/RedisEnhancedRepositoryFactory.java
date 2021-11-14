@@ -79,14 +79,11 @@ public class RedisEnhancedRepositoryFactory  extends RepositoryFactorySupport {
    */
   public RedisEnhancedRepositoryFactory(KeyValueOperations keyValueOperations, RedisModulesOperations<?, ?> rmo,
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator, Class<? extends RepositoryQuery> repositoryQueryType) {
-    
-    System.out.println(">>>> In RedisEnhancedRepositoryFactory#new..." + repositoryQueryType);
 
     Assert.notNull(keyValueOperations, "KeyValueOperations must not be null!");
     Assert.notNull(queryCreator, "Query creator type must not be null!");
     Assert.notNull(repositoryQueryType, "RepositoryQueryType type must not be null!");
 
-    
     this.keyValueOperations = keyValueOperations;
     this.rmo = rmo;
     this.context = keyValueOperations.getMappingContext();
@@ -196,9 +193,6 @@ public class RedisEnhancedRepositoryFactory  extends RepositoryFactorySupport {
     @SuppressWarnings("unchecked")
     public RepositoryQuery resolveQuery(Method method, RepositoryMetadata metadata, ProjectionFactory factory,
         NamedQueries namedQueries) {
-      
-      System.out.println(">>>> In RedisEnhancedRepositoryFactory#resolveQuery...");
-
       QueryMethod queryMethod = new QueryMethod(method, metadata, factory);
 
       Constructor<? extends KeyValuePartTreeQuery> constructor = (Constructor<? extends KeyValuePartTreeQuery>) ClassUtils

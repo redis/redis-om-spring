@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisKeyValueAdapter;
 import org.springframework.data.redis.core.RedisOperations;
@@ -17,9 +19,10 @@ import org.springframework.lang.Nullable;
 import com.redis.om.spring.ops.json.JSONOperations;
 
 public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
+  private static final Log logger = LogFactory.getLog(RedisJSONKeyValueAdapter.class);
   private JSONOperations<?> redisJSONOperations;
   private RedisOperations<?, ?> redisOperations;
-  
+
   /**
    * Creates new {@link RedisKeyValueAdapter} with default {@link RedisMappingContext} and default
    * {@link RedisCustomConversions}.
@@ -43,19 +46,19 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     this.redisJSONOperations = redisJSONOperations;
     this.redisOperations = redisOps;
   }
-  
+
   /*
    * (non-Javadoc)
    * @see org.springframework.data.keyvalue.core.KeyValueAdapter#put(java.lang.Object, java.lang.Object, java.lang.String)
    */
   @Override
   public Object put(Object id, Object item, String keyspace) {
-    System.out.println(String.format(">>>> RedisJSONKeyValueAdapter::put(%s, %s, %s", id, item, keyspace));
+    logger.debug(String.format("%s, %s, %s", id, item, keyspace));
     @SuppressWarnings("unchecked")
     JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
-    
+
     ops.set(getKey(keyspace, id), item);
-    
+
     redisOperations.execute((RedisCallback<Object>) connection -> {
       connection.sAdd(toBytes(keyspace), toBytes(id));
       return null;
@@ -63,7 +66,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
 
     return item;
   }
-  
+
   /*
    * (non-Javadoc)
    * @see org.springframework.data.keyvalue.core.KeyValueAdapter#get(java.lang.Object, java.lang.String, java.lang.Class)
@@ -71,12 +74,12 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   @Nullable
   @Override
   public <T> T get(Object id, String keyspace, Class<T> type) {
-    System.out.println(String.format(">>>> RedisJSONKeyValueAdapter::put(%s, %s, %s", id, keyspace, type));
+    logger.debug(String.format("%s, %s, %s", id, keyspace, type));
     @SuppressWarnings("unchecked")
     JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
     return ops.get(getKey(keyspace, id), type);
   }
-  
+
   /**
    * Get all elements for given keyspace.
    *
@@ -90,15 +93,14 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public <T> List<T> getAllOf(String keyspace, Class<T> type, long offset, int rows) {
-    System.out.println(">>>> In RedisJSONKeyValueAdapter#getAllOf...");
     @SuppressWarnings("unchecked")
     JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
-    
+
     byte[] binKeyspace = toBytes(keyspace);
     Set<byte[]> ids = redisOperations.execute((RedisCallback<Set<byte[]>>) connection -> connection.sMembers(binKeyspace));
-    
+
     String[] keys = ids.stream().map(b -> getKey(keyspace, new String(b, StandardCharsets.UTF_8))).toArray(String[]::new);
-    
+
     if ((keys.length == 0) || (keys.length < offset)) {
       return Collections.emptyList();
     }
@@ -107,18 +109,16 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     if (rows > 0) {
       keys = Arrays.copyOfRange(keys, (int)offset, Math.min((int) offset + rows, keys.length));
     }
-    
+
     return ops.mget(type, keys);
   }
-  
+
   public List<String> getAllKeysOf(String keyspace, long offset, int rows) {
-    System.out.println(">>>> In RedisJSONKeyValueAdapter#getAllKeysOf...");
-    
     byte[] binKeyspace = toBytes(keyspace);
     Set<byte[]> ids = redisOperations.execute((RedisCallback<Set<byte[]>>) connection -> connection.sMembers(binKeyspace));
-    
+
     List<String> keys = ids.stream().map(b -> getKey(keyspace, new String(b, StandardCharsets.UTF_8))).collect(Collectors.toList());
-    
+
     if (keys.isEmpty() || keys.size() < offset) {
       return Collections.emptyList();
     }
@@ -127,10 +127,10 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     if (rows > 0) {
       keys = keys.subList((int) offset, Math.min((int) offset + rows, keys.size()));
     }
-    
+
     return keys;
   }
-  
+
   protected String getKey(String keyspace, Object id) {
     // TODO: how to reuse or implement redisConverter
     // String idAsString = redisConverter.getConversionService().convert(id, String.class);

@@ -29,7 +29,6 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
    */
   public RedisDocumentRepositoryFactoryBean(Class<? extends T> repositoryInterface, RedisModulesOperations<?,?> rmo) {
     super(repositoryInterface);
-    System.out.println(">>>> IN RedisDocumentRepositoryFactoryBean#new...");
     setRedisModulesOperations(rmo);
   }
 
@@ -39,12 +38,11 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
    * @param operations must not be {@literal null}.
    */
   public void setKeyValueOperations(KeyValueOperations operations) {
-
     Assert.notNull(operations, "KeyValueOperations must not be null!");
 
     this.operations = operations;
   }
-  
+
   /**
    * Configures the {@link RedisModulesOperations} to be used for the repositories.
    *
@@ -52,15 +50,12 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
    */
   @SuppressWarnings("unchecked")
   public void setRedisModulesOperations(RedisModulesOperations<?,?> rmo) {
-    System.out.println(">>>> IN RedisDocumentRepositoryFactoryBean#setRedisModulesOperations...");
-
     Assert.notNull(rmo, "RedisModulesOperations must not be null!");
-
     this.rmo = (RedisModulesOperations<String, String>)rmo;
   }
 
   /* (non-Javadoc)
-   * 
+   *
    * @see
    * org.springframework.data.repository.core.support.RepositoryFactoryBeanSupport
    * #setMappingContext(org.springframework.data.mapping.context.
@@ -76,9 +71,7 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
    * @param queryCreator must not be {@literal null}.
    */
   public void setQueryCreator(Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
-
     Assert.notNull(queryCreator, "Query creator type must not be null!");
-
     this.queryCreator = queryCreator;
   }
 
@@ -94,7 +87,7 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
   }
 
   /* (non-Javadoc)
-   * 
+   *
    * @see
    * org.springframework.data.repository.core.support.RepositoryFactoryBeanSupport
    * #createRepositoryFactory() */
@@ -118,7 +111,7 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
   }
 
   /* (non-Javadoc)
-   * 
+   *
    * @see
    * org.springframework.data.repository.core.support.RepositoryFactoryBeanSupport
    * #afterPropertiesSet() */
