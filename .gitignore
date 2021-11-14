@@ -1,4 +1,20 @@
-.DS_Store
+HELP.md
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
 /target/
 redis-om-spring/target/
 data
+
+### VS Code ###
+.vscode/
+
+### Eclipse ###
+bin/
+tmp/
+/.apt_generated_tests/
+
+### Mac ###
+**/.DS_Store
