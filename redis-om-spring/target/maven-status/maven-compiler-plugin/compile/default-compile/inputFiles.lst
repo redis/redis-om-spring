@@ -29,6 +29,7 @@
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/repository/query/RedisEnhancedQuery.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/repository/support/RedisDocumentRepositoryFactory.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/repository/query/clause/QueryClause.java
+/Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/repository/query/RediSearchQueryType.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/repository/configuration/RedisJSONRepositoriesRegistrar.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/annotations/EnableRedisDocumentRepositories.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/ops/timeseries/TimeSeriesOperationsImpl.java

@@ -73,7 +73,7 @@ public enum QueryClause {
   ),
   // TAG
   Tag_SIMPLE_PROPERTY( //
-      QueryClauseTemplate.of(FieldType.Tag, Part.Type.SIMPLE_PROPERTY, "-@$field:$param_0", 1) //
+      QueryClauseTemplate.of(FieldType.Tag, Part.Type.SIMPLE_PROPERTY, "@$field:{$param_0}", 1) //
   ),
   Tag_NOT_IN( //
       QueryClauseTemplate.of(FieldType.Tag, Part.Type.NOT_IN, "@$field:$param_0", 1) //

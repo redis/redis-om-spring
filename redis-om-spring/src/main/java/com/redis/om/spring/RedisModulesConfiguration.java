@@ -165,7 +165,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
       try {
         Class<?> cl = Class.forName(beanDef.getBeanClassName());
         indexName = cl.getSimpleName() + "Idx";
-        logger.debug(String.format("Found @Document/@RedisHash annotated class: %s", cl.getSimpleName()));
+        logger.debug(String.format("Found @%s annotated class: %s", cls.getSimpleName(), cl.getSimpleName()));
 
         List<Field> fields = new ArrayList<Field>();
         for (java.lang.reflect.Field field : cl.getDeclaredFields()) {
@@ -176,53 +176,52 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
             // Any Character class -> Tag Search Field
             //
             if (CharSequence.class.isAssignableFrom(field.getType())) {
-              fields.add(indexAsTagFieldFor(field));
+              fields.add(indexAsTagFieldFor(cls, field));
             }
             //
             // Any Numeric class -> Numeric Search Field
             //
             if (Number.class.isAssignableFrom(field.getType())) {
-              fields.add(indexAsNumericFieldFor(field));
+              fields.add(indexAsNumericFieldFor(cls, field));
             }
             //
             // Set
             //
             if (Set.class.isAssignableFrom(field.getType())) {
-              fields.add(indexAsTagFieldFor(field));
+              fields.add(indexAsTagFieldFor(cls, field));
             }
             //
             // Point
             //
             if (field.getType() == Point.class) {
-              fields.add(indexAsGeoFieldFor(field));
+              fields.add(indexAsGeoFieldFor(cls, field));
             }
-
           }
 
           // Searchable - behaves like Text indexed
           if (field.isAnnotationPresent(Searchable.class)) {
             Searchable ti = field.getAnnotation(Searchable.class);
-            fields.add(indexAsTextFieldFor(field, ti));
+            fields.add(indexAsTextFieldFor(cls, field, ti));
           }
           // Text
           if (field.isAnnotationPresent(TextIndexed.class)) {
             TextIndexed ti = field.getAnnotation(TextIndexed.class);
-            fields.add(indexAsTextFieldFor(field, ti));
+            fields.add(indexAsTextFieldFor(cls, field, ti));
           }
           // Tag
           if (field.isAnnotationPresent(TagIndexed.class)) {
             TagIndexed ti = field.getAnnotation(TagIndexed.class);
-            fields.add(indexAsTagFieldFor(field, ti));
+            fields.add(indexAsTagFieldFor(cls, field, ti));
           }
           // Geo
           if (field.isAnnotationPresent(GeoIndexed.class)) {
             GeoIndexed gi = field.getAnnotation(GeoIndexed.class);
-            fields.add(indexAsGeoFieldFor(field, gi));
+            fields.add(indexAsGeoFieldFor(cls, field, gi));
           }
           // Numeric
           if (field.isAnnotationPresent(NumericIndexed.class)) {
             NumericIndexed ni = field.getAnnotation(NumericIndexed.class);
-            fields.add(indexAsNumericFieldFor(field, ni));
+            fields.add(indexAsNumericFieldFor(cls, field, ni));
           }
         }
 
@@ -275,8 +274,10 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     return beanDefs;
   }
 
-  private Field indexAsTagFieldFor(java.lang.reflect.Field field, TagIndexed ti) {
-    FieldName fieldName = FieldName.of("$." + field.getName() + "[*]");
+  private Field indexAsTagFieldFor(Class<?> cls, java.lang.reflect.Field field, TagIndexed ti) {
+    String fieldPrefix = cls == Document.class ? "$." : "";
+    String fieldPostfix = cls == Document.class ? "[*]" : "";
+    FieldName fieldName = FieldName.of(fieldPrefix + field.getName() + fieldPostfix);
 
     if (!ObjectUtils.isEmpty(ti.alias())) {
       fieldName = fieldName.as(ti.alias());
@@ -287,15 +288,20 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     return new Field(fieldName, FieldType.Tag, false, ti.noindex());
   }
 
-  private Field indexAsTagFieldFor(java.lang.reflect.Field field) {
-    FieldName fieldName = FieldName.of("$." + field.getName() + "[*]");
+  private Field indexAsTagFieldFor(Class<?> cls, java.lang.reflect.Field field) {
+    String fieldPrefix = cls == Document.class ? "$." : "";
+    String fieldPostfix = cls == Document.class ? "[*]" : ""; // the [*] is only for arrays BTW
+    FieldName fieldName = FieldName.of(fieldPrefix + field.getName() + fieldPostfix);
+    
     fieldName = fieldName.as(field.getName());
+   
 
     return new Field(fieldName, FieldType.Tag, false, false);
   }
 
-  private Field indexAsTextFieldFor(java.lang.reflect.Field field, TextIndexed ti) {
-    FieldName fieldName = FieldName.of("$." + field.getName());
+  private Field indexAsTextFieldFor(Class<?> cls, java.lang.reflect.Field field, TextIndexed ti) {
+    String fieldPrefix = cls == Document.class ? "$." : "";
+    FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
 
     if (!ObjectUtils.isEmpty(ti.alias())) {
       fieldName = fieldName.as(ti.alias());
@@ -307,8 +313,9 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     return new TextField(fieldName, ti.weight(), ti.sortable(), ti.nostem(), ti.noindex(), phonetic);
   }
 
-  private Field indexAsTextFieldFor(java.lang.reflect.Field field, Searchable ti) {
-    FieldName fieldName = FieldName.of("$." + field.getName());
+  private Field indexAsTextFieldFor(Class<?> cls, java.lang.reflect.Field field, Searchable ti) {
+    String fieldPrefix = cls == Document.class ? "$." : "";
+    FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
 
     if (!ObjectUtils.isEmpty(ti.alias())) {
       fieldName = fieldName.as(ti.alias());
@@ -320,8 +327,10 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     return new TextField(fieldName, ti.weight(), ti.sortable(), ti.nostem(), ti.noindex(), phonetic);
   }
 
-  private Field indexAsGeoFieldFor(java.lang.reflect.Field field, GeoIndexed gi) {
-    FieldName fieldName = FieldName.of("$." + field.getName());
+  private Field indexAsGeoFieldFor(Class<?> cls, java.lang.reflect.Field field, GeoIndexed gi) {
+    String fieldPrefix = cls == Document.class ? "$." : "";
+    FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
+    
     if (!ObjectUtils.isEmpty(gi.alias())) {
       fieldName = fieldName.as(gi.alias());
     } else {
@@ -331,8 +340,10 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     return new Field(fieldName, FieldType.Geo);
   }
 
-  private Field indexAsNumericFieldFor(java.lang.reflect.Field field, NumericIndexed ni) {
-    FieldName fieldName = FieldName.of("$." + field.getName());
+  private Field indexAsNumericFieldFor(Class<?> cls, java.lang.reflect.Field field, NumericIndexed ni) {
+    String fieldPrefix = cls == Document.class ? "$." : "";
+    FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
+    
     if (!ObjectUtils.isEmpty(ni.alias())) {
       fieldName = fieldName.as(ni.alias());
     } else {
@@ -342,15 +353,19 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     return new Field(fieldName, FieldType.Numeric);
   }
 
-  private Field indexAsNumericFieldFor(java.lang.reflect.Field field) {
-    FieldName fieldName = FieldName.of("$." + field.getName());
+  private Field indexAsNumericFieldFor(Class<?> cls, java.lang.reflect.Field field) {
+    String fieldPrefix = cls == Document.class ? "$." : "";
+    FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
+    
     fieldName = fieldName.as(field.getName());
 
     return new Field(fieldName, FieldType.Numeric);
   }
 
-  private Field indexAsGeoFieldFor(java.lang.reflect.Field field) {
-    FieldName fieldName = FieldName.of("$." + field.getName());
+  private Field indexAsGeoFieldFor(Class<?> cls, java.lang.reflect.Field field) {
+    String fieldPrefix = cls == Document.class ? "$." : "";
+    FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
+    
     fieldName = fieldName.as(field.getName());
 
     return new Field(fieldName, FieldType.Geo);

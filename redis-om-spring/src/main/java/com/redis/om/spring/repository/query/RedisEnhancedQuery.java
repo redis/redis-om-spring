@@ -7,6 +7,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -28,6 +30,7 @@ import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.data.util.Pair;
 import org.springframework.data.util.Streamable;
 
+import com.google.gson.Gson;
 import com.redis.om.spring.annotations.Aggregation;
 import com.redis.om.spring.annotations.Bloom;
 import com.redis.om.spring.annotations.GeoIndexed;
@@ -39,15 +42,17 @@ import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.pds.BloomOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.query.clause.QueryClause;
+import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
 
 import io.redisearch.AggregationResult;
+import io.redisearch.Document;
 import io.redisearch.Query;
 import io.redisearch.Schema.FieldType;
 import io.redisearch.SearchResult;
 import io.redisearch.aggregation.AggregationBuilder;
 
 public class RedisEnhancedQuery implements RepositoryQuery {
-  
+
   private static final Log logger = LogFactory.getLog(RedisEnhancedQuery.class);
 
   private final QueryMethod queryMethod;
@@ -58,6 +63,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     AGGREGATION
   };
 
+  private static final Gson gson = GsonBuidlerFactory.getBuilder().create();
+
   private RediSearchQueryType type;
   private String value;
 
@@ -66,7 +73,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
   // aggregation field
   private String[] load;
-  
+
   //
   private List<Pair<String,QueryClause>> queryFields = new ArrayList<Pair<String,QueryClause>>();
 
@@ -109,7 +116,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
         Streamable<Part> queryParts = pt.getParts();
         for (Part part : queryParts) {
           String fieldName = part.getProperty().getSegment();
-          
+
           //TODO: refactor this code is symmetrical to code executed during annotation processing
           Field field;
           try {
@@ -123,28 +130,33 @@ public class RedisEnhancedQuery implements RepositoryQuery {
             } else if (field.isAnnotationPresent(NumericIndexed.class)) {
               queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Numeric, part.getType())));
             } else if (field.isAnnotationPresent(Indexed.class)) {
+              logger.debug(String.format("Found @Indexed field %s of type %s", fieldName, field.getType()));
               //
               // Any Character class -> Tag Search Field
               //
               if (CharSequence.class.isAssignableFrom(field.getType())) {
+                logger.debug(">>>> Adding TAG field");
                 queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Tag, part.getType())));
-              }  
+              }
               //
               // Any Numeric class -> Numeric Search Field
               //
-              if (Number.class.isAssignableFrom(field.getType())) {
+              else if (Number.class.isAssignableFrom(field.getType())) {
+                logger.debug(">>>> Adding NUMERIC field");
                 queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Numeric, part.getType())));
               }
               //
-              // Set 
+              // Set
               //
-              if (Set.class.isAssignableFrom(field.getType())) {
+              else if (Set.class.isAssignableFrom(field.getType())) {
+                logger.debug(">>>> Adding TAG field");
                 queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Tag, part.getType())));
               }
-              // 
+              //
               // Point
               //
-              if (field.getType() == Point.class) {
+              else if (field.getType() == Point.class) {
+                logger.debug(">>>> Adding GEO field");
                 queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Geo, part.getType())));
               }
             }
@@ -157,7 +169,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
         this.returnFields = new String[] {};
       }
     } catch (NoSuchMethodException | SecurityException e) {
-      logger.warn(String.format("Did not find query method %s(%s)", queryMethod.getName(), Arrays.toString(params)), e);
+      logger.debug(String.format("Did not find query method %s(%s): %s", queryMethod.getName(), Arrays.toString(params), e.getMessage()));
     }
   }
 
@@ -184,17 +196,41 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     Query query = new Query(prepareQuery(parameters));
     query.returnFields(returnFields);
     SearchResult searchResult = ops.search(query);
+
+    if (logger.isDebugEnabled()) {
+      logger.debug("Total Results ==> " + searchResult.totalResults);
+      logger.debug("Docs.size() ==> " + searchResult.docs.size());
+      for (Document d : searchResult.docs) {
+        logger.debug(">>>> id: " + d.getId());
+        logger.debug(">>>> score: " + d.getScore());
+        logger.debug(">>>> toString: " + d.toString());
+      }
+    }
+
     // what to return
     Object result = null;
     if (queryMethod.getReturnedObjectType() == SearchResult.class) {
       result = searchResult;
     } else if (queryMethod.isQueryForEntity() && !queryMethod.isCollectionQuery()) {
-      String jsonResult = searchResult.docs.isEmpty() ? "{}" : searchResult.docs.get(0).get("$").toString();
-      //result = gson.fromJson(jsonResult, queryMethod.getReturnedObjectType());
+
+
+      Set<Map.Entry<String, Object>> objProps = (Set<Entry<String, Object>>) searchResult.docs.get(0).getProperties();
+      Map<String, Object> objAsJson = objProps.stream()
+          .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+
+      String jsonResult = searchResult.docs.isEmpty() ? "{}" : gson.toJson(objAsJson);
+      result = gson.fromJson(jsonResult, queryMethod.getReturnedObjectType());
+
     } else if (queryMethod.isQueryForEntity() && queryMethod.isCollectionQuery()) {
-//      result = searchResult.docs.stream()
-//          .map(d -> gson.fromJson(d.get("$").toString(), queryMethod.getReturnedObjectType()))
-//          .collect(Collectors.toList());
+      result = searchResult.docs.stream()
+          .map(d -> {
+            Set<Map.Entry<String, Object>> objProps = (Set<Entry<String, Object>>) d.getProperties();
+            Map<String, Object> objAsJson = objProps.stream()
+                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+
+            return gson.fromJson(objAsJson.toString(), queryMethod.getReturnedObjectType());
+          })
+          .collect(Collectors.toList());
     }
 
     return result;
@@ -215,9 +251,9 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
     return result;
   }
-  
+
   public static final String EXISTS_BY_PREFIX = "existsBy";
-  
+
   private Optional<String> getBloomFilter() {
     String methodName = getQueryMethod().getName();
     boolean hasExistByPrefix = methodName.startsWith(EXISTS_BY_PREFIX);
@@ -254,16 +290,16 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     logger.debug(
         String.format("parameters: %s", Arrays.toString(parameters)));
     StringBuilder preparedQuery = new StringBuilder();
-    
+
     if (!queryFields.isEmpty()) {
       for (Pair<String,QueryClause> fieldClauses : queryFields) {
         String fieldName = fieldClauses.getFirst();
         QueryClause queryClause = fieldClauses.getSecond();
         int paramsCnt = queryClause.getValue().getNumberOfArguments();
-        
+
         preparedQuery.append(queryClause.prepareQuery(fieldName, Arrays.copyOfRange(parameters, 0, paramsCnt)));
         preparedQuery.append(" ");
-        
+
         parameters = Arrays.copyOfRange(parameters, paramsCnt, parameters.length);
       }
     } else {
@@ -275,7 +311,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
         Parameter p = iterator.next();
         String key = (p.getName().isPresent() ? p.getName().get() : (paramNames.size() > index ? paramNames.get(index) : ""));
         String v = "";
-        
+
         if (parameters[index] instanceof Collection<?>) {
           @SuppressWarnings("rawtypes")
           Collection<?> c = (Collection) parameters[index];
@@ -283,7 +319,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
         } else {
           v = parameters[index].toString();
         }
-        
+
         if (value.isBlank()) {
           preparedQuery.append("@"+key+":"+v).append(" ");
         } else {
@@ -294,7 +330,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
     return preparedQuery.toString();
   }
-  
+
   private String firstToLowercase(String string) {
     char c[] = string.toCharArray();
     c[0] = Character.toLowerCase(c[0]);

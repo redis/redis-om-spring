@@ -38,6 +38,7 @@ public class OpsForAITest extends AbstractBaseDocumentTest {
   }
 
   // @Test
+  @SuppressWarnings("unused")
   public void testTorchScriptModelRun() {
     // $ redis-cli -x AI.MODELSTORE iris TORCH CPU BLOB < iris.pt
     AIOperations<String> ai = modulesOperations.opsForAI();

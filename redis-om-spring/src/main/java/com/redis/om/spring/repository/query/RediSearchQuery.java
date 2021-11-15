@@ -156,7 +156,7 @@ public class RediSearchQuery implements RepositoryQuery {
         this.returnFields = new String[] {};
       }
     } catch (NoSuchMethodException | SecurityException e) {
-      logger.warn(String.format("Did not find query method %s(%s)", queryMethod.getName(), Arrays.toString(params)), e);
+      logger.debug(String.format("Did not find query method %s(%s): %s", queryMethod.getName(), Arrays.toString(params), e.getMessage()));
     }
   }
 
