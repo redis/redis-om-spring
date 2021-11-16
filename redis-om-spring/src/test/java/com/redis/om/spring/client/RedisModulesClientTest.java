@@ -9,9 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.google.gson.Gson;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redislabs.modules.rejson.JReJSON;
-import com.redislabs.redisai.RedisAI;
-import com.redislabs.redisgraph.impl.api.RedisGraph;
-import com.redislabs.redistimeseries.RedisTimeSeries;
 
 import io.redisearch.Client;
 
@@ -45,18 +42,6 @@ public class RedisModulesClientTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testAIClient() {
-    RedisAI aiClient = client.clientForAI();
-    assertNotNull(aiClient);
-  }
-
-  @Test
-  public void testGraphClient() {
-    RedisGraph graphClient = client.clientForGraph();
-    assertNotNull(graphClient);
-  }
-
-  @Test
   public void testSearchClient() {
     Client searchClient = client.clientForSearch("index");
     assertNotNull(searchClient);
@@ -68,9 +53,4 @@ public class RedisModulesClientTest extends AbstractBaseDocumentTest {
     assertNotNull(bloomClient);
   }
 
-  @Test
-  public void testTimeSeriesClient() {
-    RedisTimeSeries timeSeriesClient = client.clientForTimeSeries();
-    assertNotNull(timeSeriesClient);
-  }
 }

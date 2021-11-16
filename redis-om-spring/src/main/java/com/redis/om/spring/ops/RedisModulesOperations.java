@@ -1,10 +1,6 @@
 package com.redis.om.spring.ops;
 
 import com.redis.om.spring.client.RedisModulesClient;
-import com.redis.om.spring.ops.ai.AIOperations;
-import com.redis.om.spring.ops.ai.AIOperationsImpl;
-import com.redis.om.spring.ops.graph.GraphOperations;
-import com.redis.om.spring.ops.graph.GraphOperationsImpl;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.json.JSONOperationsImpl;
 import com.redis.om.spring.ops.pds.BloomOperations;
@@ -17,8 +13,6 @@ import com.redis.om.spring.ops.pds.TopKOperations;
 import com.redis.om.spring.ops.pds.TopKOperationsImpl;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.ops.search.SearchOperationsImpl;
-import com.redis.om.spring.ops.timeseries.TimeSeriesOperations;
-import com.redis.om.spring.ops.timeseries.TimeSeriesOperationsImpl;
 
 public class RedisModulesOperations<K,V> {
   
@@ -32,16 +26,8 @@ public class RedisModulesOperations<K,V> {
     return new JSONOperationsImpl<>(client);
   }
   
-  public GraphOperations<K> opsForGraph() {
-    return new GraphOperationsImpl<>(client);
-  }
-  
   public SearchOperations<K> opsForSearch(K index) {
     return new SearchOperationsImpl<>(index, client);
-  }
-  
-  public TimeSeriesOperations<K> opsForTimeSeries() {
-    return new TimeSeriesOperationsImpl<>(client);
   }
   
   public BloomOperations<K> opsForBloom() {
@@ -58,10 +44,6 @@ public class RedisModulesOperations<K,V> {
   
   public TopKOperations<K> opsForTopK() {
     return new TopKOperationsImpl<>(client);
-  }
-  
-  public AIOperations<K> opsForAI() {
-    return new AIOperationsImpl<>(client);
   }
 
 }

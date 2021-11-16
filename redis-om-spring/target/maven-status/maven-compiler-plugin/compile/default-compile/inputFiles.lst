@@ -1,6 +1,5 @@
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/repository/query/clause/QueryClauseTemplate.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/ops/pds/TopKOperations.java
-/Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/ops/timeseries/TimeSeriesOperations.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/repository/support/RedisDocumentRepositoryFactoryBean.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/annotations/Searchable.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/ops/pds/CountMinSketchOperationsImpl.java
@@ -10,7 +9,6 @@
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/annotations/Aggregation.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/id/ULIDIdentifierGenerator.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/serialization/gson/GsonBuidlerFactory.java
-/Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/ops/ai/AIOperations.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/indexing/IndexBuilder.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/ops/search/SearchOperations.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/EnhancedRedisQueryEngine.java
@@ -23,7 +21,6 @@
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/annotations/GeoIndexed.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/repository/query/RediSearchQueryCreator.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/repository/support/RedisEnhancedRepositoryFactory.java
-/Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/ops/graph/GraphOperations.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/annotations/Bloom.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/ops/pds/TopKOperationsImpl.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/repository/query/RedisEnhancedQuery.java
@@ -32,7 +29,6 @@
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/repository/query/RediSearchQueryType.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/repository/configuration/RedisJSONRepositoriesRegistrar.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/annotations/EnableRedisDocumentRepositories.java
-/Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/ops/timeseries/TimeSeriesOperationsImpl.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/ops/RedisModulesOperations.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/CustomRedisKeyValueTemplate.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/serialization/gson/PointTypeAdapter.java
@@ -53,5 +49,3 @@
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/repository/configuration/RedisEnhancedRepositoriesRegistrar.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/RedisRepositoriesExcludeFilter.java
 /Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/ops/pds/CuckooFilterOperationsImpl.java
-/Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/ops/ai/AIOperationsImpl.java
-/Users/bsb/Code/module-clients/java/high-level/spring-integration/redis-om-spring/src/main/java/com/redis/om/spring/ops/graph/GraphOperationsImpl.java
