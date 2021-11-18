@@ -16,7 +16,7 @@
 
 **Redis OM Spring** extends [Spring Data Redis](https://spring.io/projects/spring-data-redis) to take full advantage of the power of Redis.
 
-**Redis OM Spring** | [Redis OM Node.js][redis-om-js] | [Redis OM Python][redis-om-python] | [Redis OM .NET][redis-om-dotnet]
+**Redis OM Spring** | [Redis OM Node.js](https://github.com/redis/redis-om-node) | [Redis OM Python](https://github.com/redis/redis-om-python) | [Redis OM .NET](https://github.com/redis/redis-om-dotnet)
 
 <details>
   <summary><strong>Table of contents</strong></summary>
@@ -44,7 +44,7 @@ The Redis OM family of projects aim is to provide high-level abstractions idioma
 
 ## 🍀 Redis OM Spring
 
-Redis OM Spring provides powerful repository and custom object-mapping abstractions build on top of the powerful Spring Data Redis (SDR) framework.
+Redis OM Spring provides powerful repository and custom object-mapping abstractions built on top of the powerful Spring Data Redis (SDR) framework.
 
 This **preview** release provides all of SDRs capabilities plus:
 
@@ -148,11 +148,11 @@ public class Company {
 }
 ```
 
-Redis OM Spring, replaces the conventional `UUID` primary key strategy generation with a `ULID` (Universally Unique Lexicographically Sortable Identifier) which are faster to generate and easier on the eyes.
+Redis OM Spring, replaces the conventional `UUID` primary key strategy generation with a `ULID` (Universally Unique Lexicographically Sortable Identifier) which is faster to generate and easier on the eyes.
 
 ### The Repository
 
-Redis OM Spring data repositories goal, like other Spring Data repositories, is to significantly reduce the amount of boilerplate code required to implement data access. Simply create a Java interface
+Redis OM Spring data repository's goal, like other Spring Data repositories, is to significantly reduce the amount of boilerplate code required to implement data access. Simply create a Java interface
 that extends `RedisDocumentRepository` that takes the domain class to manage as well as the ID type of the domain class as type arguments. `RedisDocumentRepository` extends Spring Data's `PagingAndSortingRepository`.
 
 Declare query methods on the interface. You can both, expose CRUD methods or create declarations for complex queries that Redis OM Spring will fullfil at runtime:
