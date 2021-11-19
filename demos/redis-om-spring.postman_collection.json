@@ -1,0 +1,246 @@
+{
+	"info": {
+		"_postman_id": "4d572bf7-7325-4958-877d-8ae6e1b8c5b7",
+		"name": "Redis OM Spring",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "RedisDocument",
+			"item": [
+				{
+					"name": "Company findAll - Pageable",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/companies/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"companies",
+								"all"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Company by Name",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/companies/name/Redis",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"companies",
+								"name",
+								"Redis"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Company by Name Starting With",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/companies/name/starts/Re",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"companies",
+								"name",
+								"starts",
+								"Re"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Company by Near Point/Distance",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/companies/near?lat=37.384&lon=-122.064&d=30",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"companies",
+								"near"
+							],
+							"query": [
+								{
+									"key": "lat",
+									"value": "37.384"
+								},
+								{
+									"key": "lon",
+									"value": "-122.064"
+								},
+								{
+									"key": "d",
+									"value": "30"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Companies by Tag",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/companies/tags?tags=reliable",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"companies",
+								"tags"
+							],
+							"query": [
+								{
+									"key": "tags",
+									"value": "reliable"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Companies by Number of Employees",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/companies/employees/count/182268",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"companies",
+								"employees",
+								"count",
+								"182268"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Person by last and first",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/persons/name/Royse/Guy",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"persons",
+								"name",
+								"Royse",
+								"Guy"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "RedisHash",
+			"item": [
+				{
+					"name": "Search Users by Name",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/users/q?firstName=Brad&lastName=Wilk",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"users",
+								"q"
+							],
+							"query": [
+								{
+									"key": "firstName",
+									"value": "Brad"
+								},
+								{
+									"key": "lastName",
+									"value": "Wilk"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Find One User by Last Name",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/users/name/Morello",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"users",
+								"name",
+								"Morello"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
