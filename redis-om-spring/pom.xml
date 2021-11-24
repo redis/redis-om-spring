@@ -22,7 +22,7 @@
     <maven.test.target>11</maven.test.target>
     <java.version>11</java.version>
     <!-- There is an issue with Spring Data Redis and Jedis after 2.6.0-M2 -->
-    <spring.version>2.6.0-M1</spring.version>
+    <spring.version>2.6.0</spring.version>
     <cdi>1.0</cdi>
   </properties>
 
