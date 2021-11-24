@@ -204,7 +204,7 @@ Add the Maven dependency:
 
 ```xml
 <dependency>
-  <groupId>com.redis.om.spring</groupId>
+  <groupId>com.redis.om</groupId>
   <artifactId>redis-om-spring</artifactId>
   <version>${version}</version>
 </dependency>
