@@ -14,7 +14,7 @@
     <maven.compiler.target>11</maven.compiler.target>
     <maven.test.source>11</maven.test.source>
     <maven.test.target>11</maven.test.target>
-    <spring.version>2.6.0-M1</spring.version>
+    <spring.version>2.6.0</spring.version>
 	</properties>
 	<dependencies>
     <dependency>
