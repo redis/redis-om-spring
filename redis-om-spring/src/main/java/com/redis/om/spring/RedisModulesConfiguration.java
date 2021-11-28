@@ -59,7 +59,7 @@ import io.redisearch.client.IndexDefinition;
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(RedisProperties.class)
 @EnableAspectJAutoProxy
-@ComponentScan("com.redis.spring.bloom")
+@ComponentScan("com.redis.om.spring.bloom")
 public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
   private static final Log logger = LogFactory.getLog(RedisModulesConfiguration.class);
@@ -292,9 +292,9 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     String fieldPrefix = cls == Document.class ? "$." : "";
     String fieldPostfix = cls == Document.class ? "[*]" : ""; // the [*] is only for arrays BTW
     FieldName fieldName = FieldName.of(fieldPrefix + field.getName() + fieldPostfix);
-    
+
     fieldName = fieldName.as(field.getName());
-   
+
 
     return new Field(fieldName, FieldType.Tag, false, false);
   }
@@ -330,7 +330,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   private Field indexAsGeoFieldFor(Class<?> cls, java.lang.reflect.Field field, GeoIndexed gi) {
     String fieldPrefix = cls == Document.class ? "$." : "";
     FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
-    
+
     if (!ObjectUtils.isEmpty(gi.alias())) {
       fieldName = fieldName.as(gi.alias());
     } else {
@@ -343,7 +343,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   private Field indexAsNumericFieldFor(Class<?> cls, java.lang.reflect.Field field, NumericIndexed ni) {
     String fieldPrefix = cls == Document.class ? "$." : "";
     FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
-    
+
     if (!ObjectUtils.isEmpty(ni.alias())) {
       fieldName = fieldName.as(ni.alias());
     } else {
@@ -356,7 +356,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   private Field indexAsNumericFieldFor(Class<?> cls, java.lang.reflect.Field field) {
     String fieldPrefix = cls == Document.class ? "$." : "";
     FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
-    
+
     fieldName = fieldName.as(field.getName());
 
     return new Field(fieldName, FieldType.Numeric);
@@ -365,7 +365,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   private Field indexAsGeoFieldFor(Class<?> cls, java.lang.reflect.Field field) {
     String fieldPrefix = cls == Document.class ? "$." : "";
     FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
-    
+
     fieldName = fieldName.as(field.getName());
 
     return new Field(fieldName, FieldType.Geo);

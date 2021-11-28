@@ -29,7 +29,7 @@ public class BloomAspect implements Ordered {
   @Pointcut("execution(public * org.springframework.data.repository.CrudRepository+.save(..))")
   public void inCrudRepositorySave() {}
 
-  @Pointcut("execution(public * com.redis.spring.repository.RedisDocumentRepository+.save(..))")
+  @Pointcut("execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.save(..))")
   public void inRedisDocumentRepositorySave() {}
 
   @Pointcut("inCrudRepositorySave() || inRedisDocumentRepositorySave()")
@@ -54,7 +54,7 @@ public class BloomAspect implements Ordered {
   @Pointcut("execution(public * org.springframework.data.repository.CrudRepository+.saveAll(..))")
   public void inCrudRepositorySaveAll() {}
 
-  @Pointcut("execution(public * com.redis.spring.repository.RedisDocumentRepository+.saveAll(..))")
+  @Pointcut("execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.saveAll(..))")
   public void inRedisDocumentRepositorySaveAll() {}
 
   @Pointcut("inCrudRepositorySaveAll() || inRedisDocumentRepositorySaveAll()")
