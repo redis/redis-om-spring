@@ -36,5 +36,10 @@ public class UserController {
   Optional<User> byName(@PathVariable("lastName") String lastName) {
     return userRepository.findOneByLastName(lastName);
   }
+  
+  @GetMapping("/exists/")
+  boolean isEmailTaken(@RequestParam("email") String email) {
+    return userRepository.existsByEmail(email);
+  }
 
 }

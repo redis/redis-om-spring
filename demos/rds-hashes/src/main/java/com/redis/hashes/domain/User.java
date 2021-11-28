@@ -5,6 +5,8 @@ import org.springframework.data.annotation.Reference;
 import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.index.Indexed;
 
+import com.redis.om.spring.annotations.Bloom;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -29,6 +31,11 @@ public class User {
   
   @Indexed @NonNull 
   private String lastName;
+  
+  @NonNull 
+  @Indexed
+  @Bloom(name = "bf_user_email", capacity = 100000, errorRate = 0.001)
+  String email;
   
   @NonNull 
   @Reference
