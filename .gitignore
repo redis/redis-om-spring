@@ -16,6 +16,7 @@ bin/
 tmp/
 /.apt_generated_tests/
 .settings/
+.project
 
 ### Mac ###
 **/.DS_Store
