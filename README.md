@@ -55,6 +55,7 @@ This **preview** release provides all of SDRs capabilities plus:
 * `RedisDocumentRepository` with automatic implementation of Repository interfaces for complex querying capabilities using `@EnableRedisDocumentRepositories`
 * Declarative Search Indices via `@Indexable`
 * Full-text Search Indices via `@Searchable`
+* `@Bloom` annotation to determine very fast, with and with high degree of certainty, whether a value is in a collection.
 
 ## 🏁 Getting Started
 
