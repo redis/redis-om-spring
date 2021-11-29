@@ -62,13 +62,22 @@ This **preview** release provides all of SDRs capabilities plus:
 Here is a quick teaser of an application using Redis OM Spring to map a Spring Data model
 using a RedisJSON document.
 
+### 🚀 Launch Redis
+
+Redis OM Spring relies on the power of the [RediSearch][redisearch-url] and [RedisJSON][redis-json-url] modules.
+We have provided a docker compose YAML file for you to quickly get started. To launch the docker compose application, on the command line (or via Docker Desktop), clone this repository and run (from the root folder):
+
+```bash
+docker compose up
+```
+
 ### The SpringBoot App
 
 Use the `@EnableRedisDocumentRepositories` annotation to scan for `@Document` annotated Spring models,
 Inject repositories beans implementing `RedisDocumentRepository` which you can use for CRUD operations and custom queries (all by declaring Spring Data Query Interfaces):
 
 ```java
-package com.redis.documents;
+package com.redis.om.documents;
 
 import java.util.Set;
 
@@ -80,16 +89,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.geo.Point;
 
-import com.redis.documents.domain.Company;
-import com.redis.documents.domain.Person;
-import com.redis.documents.repositories.CompanyRepository;
-import com.redis.documents.repositories.PersonRepository;
-import com.redis.spring.annotations.EnableRedisDocumentRepositories;
+import com.redis.om.documents.domain.Company;
+import com.redis.om.documents.repositories.CompanyRepository;
 
 @SpringBootApplication
 @Configuration
-@EnableRedisDocumentRepositories(basePackages = "com.redis.documents.*")
-public class RdsDocumentsApplication {
+@EnableRedisDocumentRepositories(basePackages = "com.redis.om.documents.*")
+public class RomsDocumentsApplication {
 
   @Autowired
   CompanyRepository companyRepo;
@@ -97,7 +103,10 @@ public class RdsDocumentsApplication {
   @Bean
   CommandLineRunner loadTestData() {
     return args -> {
+      // remove all companies
       companyRepo.deleteAll();
+
+      // Create a couple of `Company` domain entities
       Company redis = Company.of(
         "Redis", "https://redis.com", new Point(-122.066540, 37.377690), 526, 2011 //
       );
@@ -107,11 +116,15 @@ public class RdsDocumentsApplication {
         "Microsoft", "https://microsoft.com", new Point(-122.124500, 47.640160), 182268, 1975 //
       );
       microsoft.setTags(Set.of("innovative", "reliable"));
+
+      // save companies to the database
+      companyRepo.save(redis);
+      companyRepo.save(microsoft);
     };
   }
 
   public static void main(String[] args) {
-    SpringApplication.run(RdsDocumentsApplication.class, args);
+    SpringApplication.run(RomsDocumentsApplication.class, args);
   }
 }
 ```
@@ -122,13 +135,14 @@ Like many other Spring Data projects, an annotation at the class level determine
 of the class are persisted. Redis OM Spring provides the `@Document` annotation to persist models as JSON documents using RedisJSON:
 
 ```java
-package com.redis.documents;
+package com.redis.om.documents.domain;
 
 import java.util.HashSet;
 import java.util.Set;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.geo.Point;
-import com.redis.spring.annotations.*;
+import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.annotations.Searchable;
 import lombok.*;
 
 @Data
@@ -159,18 +173,17 @@ that extends `RedisDocumentRepository` that takes the domain class to manage as 
 Declare query methods on the interface. You can both, expose CRUD methods or create declarations for complex queries that Redis OM Spring will fullfil at runtime:
 
 ```java
-package com.redis.documents.repositories;
+package com.redis.om.documents.repositories;
 
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.repository.query.Param;
 
-import com.redis.documents.domain.Company;
-import com.redis.spring.annotations.Query;
-import com.redis.spring.repository.RedisDocumentRepository;
+import com.redis.om.documents.domain.Company;
+import com.redis.om.spring.annotations.Query;
+import com.redis.om.spring.repository.RedisDocumentRepository;
 
 public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
   // find one by property
@@ -221,12 +234,12 @@ The Redis OM documentation is available [here](docs/index.md).
 
 ### Basic JSON Mapping and Querying
 
-- **rds-documents**:
+- **roms-documents**:
   - Simple API example of `@Document` mapping, Spring Repositories and Querying.
-  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/rds-documents`
+  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-documents`
 - **rds-hashes**:
   - Simple API example of `@RedisHash`, enhanced secondary indices and querying.
-  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/rds-hashes`
+  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-hashes`
 
 ## ⛏️ Troubleshooting
 

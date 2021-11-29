@@ -3,7 +3,7 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.redis</groupId>
+  <groupId>com.redis.om</groupId>
   <artifactId>redis-om-spring-parent</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <name>redis-om-spring-parent</name>
@@ -23,7 +23,7 @@
     <!-- Main Project -->
     <module>redis-om-spring</module>
     <!-- Demos -->
-    <module>demos/rds-documents</module>
-    <module>demos/rds-hashes</module>
+    <module>demos/roms-documents</module>
+    <module>demos/roms-hashes</module>
   </modules>
 </project>

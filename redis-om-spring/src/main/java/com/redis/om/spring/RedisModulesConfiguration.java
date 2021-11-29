@@ -145,7 +145,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
           }
         }
       } catch (Exception e) {
-        System.err.println("In processBloom: Exception: " + e.getMessage());
+        logger.debug("Error during processing of @Bloom annotation: ", e);
       }
     }
   }

@@ -239,6 +239,34 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Exists by Email (Bloom)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/users/exists/?email=zack@ratm.com",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"users",
+								"exists",
+								""
+							],
+							"query": [
+								{
+									"key": "email",
+									"value": "zack@ratm.com"
+								}
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		}
