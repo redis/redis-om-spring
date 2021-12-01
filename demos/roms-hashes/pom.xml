@@ -7,7 +7,7 @@
   <artifactId>roms-hashes</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <name>roms-hashes</name>
-  <description>Basic demo project for Redis Spring Developer Enhanced RedisHashes</description>
+  <description>Redis OM Spring Enhanced RedisHash Demo</description>
   <properties>
     <java.version>11</java.version>
     <maven.compiler.release>11</maven.compiler.release>
