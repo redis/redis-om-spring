@@ -65,6 +65,9 @@ public class RediSearchQuery implements RepositoryQuery {
   // aggregation field
   private String[] load;
   
+  // is native? e.g. @Query or @Annotation
+  private boolean annotationBased;
+  
   //
   private List<Pair<String,QueryClause>> queryFields = new ArrayList<Pair<String,QueryClause>>();
 
@@ -95,11 +98,13 @@ public class RediSearchQuery implements RepositoryQuery {
         com.redis.om.spring.annotations.Query queryAnnotation = method
             .getAnnotation(com.redis.om.spring.annotations.Query.class);
         this.type = RediSearchQueryType.QUERY;
+        this.annotationBased = true;
         this.value = queryAnnotation.value();
         this.returnFields = queryAnnotation.returnFields();
       } else if (method.isAnnotationPresent(com.redis.om.spring.annotations.Aggregation.class)) {
         Aggregation aggregation = method.getAnnotation(Aggregation.class);
         this.type = RediSearchQueryType.AGGREGATION;
+        this.annotationBased = true;
         this.value = aggregation.value();
         this.load = aggregation.load();
       } else {
@@ -173,6 +178,10 @@ public class RediSearchQuery implements RepositoryQuery {
   public QueryMethod getQueryMethod() {
     return queryMethod;
   }
+  
+  public boolean isAnnotationBased() {
+    return annotationBased;
+  }
 
   private Object executeQuery(Object[] parameters) {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
@@ -212,7 +221,7 @@ public class RediSearchQuery implements RepositoryQuery {
   }
 
   private String prepareQuery(Object[] parameters) {
-    logger.debug(String.format("parameters: ", Arrays.toString(parameters)));
+    logger.debug(String.format("parameters: %s", Arrays.toString(parameters)));
     StringBuilder preparedQuery = new StringBuilder();
     
     if (!queryFields.isEmpty()) {
@@ -230,6 +239,10 @@ public class RediSearchQuery implements RepositoryQuery {
       @SuppressWarnings("unchecked")
       Iterator<Parameter> iterator = (Iterator<Parameter>) queryMethod.getParameters().iterator();
       int index = 0;
+      
+      if (!value.isBlank()) {
+        preparedQuery.append(value);
+      }
 
       while (iterator.hasNext()) {
         Parameter p = iterator.next();
@@ -247,8 +260,9 @@ public class RediSearchQuery implements RepositoryQuery {
         if (value.isBlank()) {
           preparedQuery.append("@"+key+":"+v).append(" ");
         } else {
-          preparedQuery.append(value.replace("$"+key, v)).append(" ");;
+          preparedQuery = new StringBuilder(preparedQuery.toString().replace("$"+key, v));
         }
+        index++;
       }
     }
 
