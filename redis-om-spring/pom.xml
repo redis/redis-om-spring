@@ -34,8 +34,11 @@
     <maven.test.source>11</maven.test.source>
     <maven.test.target>11</maven.test.target>
     <java.version>11</java.version>
-    <!-- There is an issue with Spring Data Redis and Jedis after 2.6.0-M2 -->
-    <spring.version>2.6.0-M1</spring.version>
+    <spring.version>2.6.1</spring.version>
+    <sdr.version>2.6.0</sdr.version>
+    <jredisjson.version>1.5.0</jredisjson.version>
+    <jredisearch.version>2.2.0-SNAPSHOT</jredisearch.version>
+    <jredisbloom.version>2.2.0-SNAPSHOT</jredisbloom.version>
     <cdi>1.0</cdi>
   </properties>
 
@@ -56,22 +59,6 @@
       <id>snapshots-repo</id>
       <url>https://oss.sonatype.org/content/repositories/snapshots</url>
     </repository>
-    <repository>
-      <id>spring-milestones</id>
-      <name>Spring Milestones</name>
-      <url>https://repo.spring.io/milestone</url>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-    <repository>
-      <id>spring-snapshots</id>
-      <name>Spring Snapshots</name>
-      <url>https://repo.spring.io/snapshot</url>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-    </repository>
   </repositories>
 
   <dependencies>
@@ -83,7 +70,7 @@
     <dependency>
       <groupId>org.springframework.data</groupId>
       <artifactId>spring-data-redis</artifactId>
-      <version>${spring.version}</version>
+      <version>${sdr.version}</version>
       <exclusions>
         <exclusion>
           <groupId>io.lettuce</groupId>
@@ -104,17 +91,17 @@
     <dependency>
       <groupId>com.redislabs</groupId>
       <artifactId>jrejson</artifactId>
-      <version>1.5.0</version>
+      <version>${jredisjson.version}</version>
     </dependency>
     <dependency>
       <groupId>com.redislabs</groupId>
       <artifactId>jredisearch</artifactId>
-      <version>2.2.0-SNAPSHOT</version>
+      <version>${jredisearch.version}</version>
     </dependency>
     <dependency>
       <groupId>com.redislabs</groupId>
       <artifactId>jrebloom</artifactId>
-      <version>2.2.0-SNAPSHOT</version>
+      <version>${jredisbloom.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -165,7 +152,7 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
-      <version>2.5.1</version>
+      <version>${spring.version}</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
