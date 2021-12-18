@@ -214,11 +214,26 @@ The repository proxy has two ways to derive a store-specific query from the meth
 
 ## 💻 Maven configuration
 
-Add the Maven dependency:
+### Official Releases
+
+**None Yet**
+
+### Snapshots
+
+```xml
+  <repositories>
+    <repository>
+      <id>snapshots-repo</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </repository>
+  </repositories>
+```
+
+and
 
 ```xml
 <dependency>
-  <groupId>com.redis.om.spring</groupId>
+  <groupId>com.redis.om</groupId>
   <artifactId>redis-om-spring</artifactId>
   <version>${version}</version>
 </dependency>
