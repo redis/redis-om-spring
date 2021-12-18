@@ -224,7 +224,7 @@ The repository proxy has two ways to derive a store-specific query from the meth
   <repositories>
     <repository>
       <id>snapshots-repo</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+      <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
     </repository>
   </repositories>
 ```
