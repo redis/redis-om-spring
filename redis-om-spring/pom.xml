@@ -10,7 +10,7 @@
 
   <name>redis-om-spring</name>
   <description>Redis OM Spring provides powerful repository and custom object-mapping abstractions built on top of the powerful Spring Data Redis (SDR) framework.</description>
-  <url>https://developer.redis.com</url>
+  <url>https://github.com/redis/redis-om-spring</url>
 
   <organization>
     <name>Redis</name>
@@ -23,8 +23,29 @@
   <scm>
     <url>https://github.com/redis/redis-om-spring</url>
     <connection>scm:git:git://github.com/redis/redis-om-spring.git</connection>
-    <developerConnection>scm:git:git@github.com:redis/redis-om-spring.git</developerConnection>
+    <developerConnection>scm:git:ssh://github.com:redis/redis-om-spring.git</developerConnection>
   </scm>
+
+  <licenses>
+    <license>
+      <name>BSD 3-Clause license</name>
+      <url>https://opensource.org/licenses/BSD-3-Clause</url>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>bsbodden</id>
+      <name>Brian Sam-Bodden</name>
+      <email>bsb at redis.com</email>
+      <organization>Redis</organization>
+      <organizationUrl>https://www.redis.com</organizationUrl>
+      <roles>
+        <role>Developer</role>
+      </roles>
+      <timezone>America/Phoenix</timezone>
+    </developer>
+  </developers>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -40,6 +61,7 @@
     <jredisearch.version>2.2.0-SNAPSHOT</jredisearch.version>
     <jredisbloom.version>2.2.0-SNAPSHOT</jredisbloom.version>
     <cdi>1.0</cdi>
+    <testcontainers.redis.version>1.4.6</testcontainers.redis.version>
   </properties>
 
   <dependencyManagement>
@@ -131,7 +153,7 @@
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
-
+    <!-- test dependencies -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
@@ -164,13 +186,13 @@
     <dependency>
       <groupId>com.redis.testcontainers</groupId>
       <artifactId>testcontainers-redis</artifactId>
-      <version>1.3.3</version>
+      <version>${testcontainers.redis.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.redis.testcontainers</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <version>1.15.3</version>
+      <artifactId>testcontainers-redis-junit-jupiter</artifactId>
+      <version>${testcontainers.redis.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -178,12 +200,8 @@
   <distributionManagement>
     <snapshotRepository>
       <id>ossrh</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+      <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
     </snapshotRepository>
-    <repository>
-      <id>ossrh</id>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
   </distributionManagement>
 
   <build>
@@ -216,10 +234,30 @@
         <extensions>true</extensions>
         <configuration>
           <serverId>ossrh</serverId>
-          <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+          <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
           <autoReleaseAfterClose>true</autoReleaseAfterClose>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.0.0-M5</version>
+        <configuration>
+            <argLine>
+                --illegal-access=permit
+            </argLine>
+        </configuration>
+    </plugin>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>3.0.0-M5</version>
+        <configuration>
+            <argLine>
+                --illegal-access=permit
+            </argLine>
+        </configuration>
+    </plugin>
     </plugins>
   </build>
   <profiles>
@@ -280,18 +318,4 @@
       </build>
     </profile>
   </profiles>
-
-  <developers>
-    <developer>
-      <id>bsbodden</id>
-      <name>Brian Sam-Bodden</name>
-      <email>bsb at redis.com</email>
-      <organization>Redis</organization>
-      <organizationUrl>https://www.redis.com</organizationUrl>
-      <roles>
-        <role>Developer</role>
-      </roles>
-      <timezone>America/Phoenix</timezone>
-    </developer>
-  </developers>
 </project>
