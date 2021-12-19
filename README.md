@@ -14,6 +14,10 @@
 
 ---
 
+| Project Stage | Snapshot | Issues | cc | License |
+| --- | --- | --- | --- |
+| [![Project stage][Badge-Stage]][Badge-Stage-Page] | [![Snapshots][badge-snapshots]][link-snapshots] | [![Percentage of issues still open](http://isitmaintained.com/badge/open/redis/redis-om-spring.svg)](http://isitmaintained.com/project/redis/redis-om-spring "Percentage of issues still open") | [![Average time to resolve an issue][Badge-IsItMaintained]][Link-IsItMaintained] | [![License][license-image]][license-url] |
+
 **Redis OM Spring** extends [Spring Data Redis](https://spring.io/projects/spring-data-redis) to take full advantage of the power of Redis.
 
 **Redis OM Spring** | [Redis OM Node.js](https://github.com/redis/redis-om-node) | [Redis OM Python](https://github.com/redis/redis-om-python) | [Redis OM .NET](https://github.com/redis/redis-om-dotnet)
@@ -56,6 +60,8 @@ This **preview** release provides all of SDRs capabilities plus:
 * Declarative Search Indices via `@Indexable`
 * Full-text Search Indices via `@Searchable`
 * `@Bloom` annotation to determine very fast, with and with high degree of certainty, whether a value is in a collection.
+
+**Note:** Redis OM Spring currently works only with Jedis.
 
 ## 🏁 Getting Started
 
@@ -286,6 +292,9 @@ Redis OM uses the [BSD 3-Clause license][license-url].
 <!-- Badges -->
 
 [ci-url]: https://github.com/redis-developer/redis-om-spring/actions/workflows/ci.yml
+[badge-stage]: https://img.shields.io/badge/Project%20Stage-Experimental-yellow.svg
+[badge-stage-page]: https://github.com/redis/redis-om-spring/wiki/Project-Stages
+[badge-snapshots]: https://img.shields.io/nexus/s/https/s01.oss.sonatype.org/com.redis.om/redis-om-spring.svg "Snapshots"
 [license-image]: http://img.shields.io/badge/license-BSD_3--Clause-green.svg?style=flat-square
 [license-url]: LICENSE
 
@@ -299,4 +308,7 @@ Redis OM uses the [BSD 3-Clause license][license-url].
 [redis-json-url]: https://oss.redis.com/redisjson/
 [ulid-url]: https://github.com/ulid/spec
 [redis-enterprise-url]: https://redis.com/try-free/
+[link-snapshots]: https://s01.oss.sonatype.org/content/repositories/snapshots/com/redis/om/redis-om-spring/ "Snapshots"
+
+
 
