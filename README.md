@@ -14,13 +14,11 @@
 
 ---
 
-| Project Stage | Snapshot | Issues | cc | License |
-| --- | --- | --- | --- |
-| [![Project stage][Badge-Stage]][Badge-Stage-Page] | [![Snapshots][badge-snapshots]][link-snapshots] | [![Percentage of issues still open](http://isitmaintained.com/badge/open/redis/redis-om-spring.svg)](http://isitmaintained.com/project/redis/redis-om-spring "Percentage of issues still open") | [![Average time to resolve an issue][Badge-IsItMaintained]][Link-IsItMaintained] | [![License][license-image]][license-url] |
-
 **Redis OM Spring** extends [Spring Data Redis](https://spring.io/projects/spring-data-redis) to take full advantage of the power of Redis.
 
-**Redis OM Spring** | [Redis OM Node.js](https://github.com/redis/redis-om-node) | [Redis OM Python](https://github.com/redis/redis-om-python) | [Redis OM .NET](https://github.com/redis/redis-om-dotnet)
+| Project Stage | Snapshot | Issues |  | License |
+| --- | --- | --- | --- | --- |
+| [![Project stage][badge-Stage]][badge-stage-page] | [![Snapshots][badge-snapshots]][link-snapshots] | [![Percentage of issues still open][badge-open-issues]][open-issues] | [![Average time to resolve an issue][badge-issue-resolution]][issue-resolution] | [![License][license-image]][license-url] |
 
 <details>
   <summary><strong>Table of contents</strong></summary>
@@ -36,6 +34,7 @@
   - [⛏️ Troubleshooting](#-troubleshooting)
   - [✨ So, How Do You Get RediSearch and RedisJSON?](#-so-how-do-you-get-redisearch-and-redisjson)
   - [❤️ Contributing](#-contributing)
+  - [🧑‍🤝‍🧑 Sibling Projects](#-sibling-projects)
   - [📝 License](#-license)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -285,6 +284,12 @@ We'd love your contributions!
 
 You can also **contribute documentation** -- or just let us know if something needs more detail. [Open an issue on GitHub](https://github.com/redis-om/redis-om-spring/issues/new) to get started.
 
+## 🧑‍🤝‍🧑 Sibling Projects
+
+- [Redis OM Node.js](https://github.com/redis/redis-om-node)
+- [Redis OM Python](https://github.com/redis/redis-om-python)
+- [Redis OM .NET](https://github.com/redis/redis-om-dotnet)
+
 ## 📝 License
 
 Redis OM uses the [BSD 3-Clause license][license-url].
@@ -294,7 +299,9 @@ Redis OM uses the [BSD 3-Clause license][license-url].
 [ci-url]: https://github.com/redis-developer/redis-om-spring/actions/workflows/ci.yml
 [badge-stage]: https://img.shields.io/badge/Project%20Stage-Experimental-yellow.svg
 [badge-stage-page]: https://github.com/redis/redis-om-spring/wiki/Project-Stages
-[badge-snapshots]: https://img.shields.io/nexus/s/https/s01.oss.sonatype.org/com.redis.om/redis-om-spring.svg "Snapshots"
+[badge-snapshots]: https://img.shields.io/nexus/s/https/s01.oss.sonatype.org/com.redis.om/redis-om-spring.svg
+[badge-open-issues]: http://isitmaintained.com/badge/open/redis/redis-om-spring.svg
+[badge-issue-resolution]: http://isitmaintained.com/badge/resolution/redis/redis-om-spring.svg
 [license-image]: http://img.shields.io/badge/license-BSD_3--Clause-green.svg?style=flat-square
 [license-url]: LICENSE
 
@@ -308,7 +315,10 @@ Redis OM uses the [BSD 3-Clause license][license-url].
 [redis-json-url]: https://oss.redis.com/redisjson/
 [ulid-url]: https://github.com/ulid/spec
 [redis-enterprise-url]: https://redis.com/try-free/
-[link-snapshots]: https://s01.oss.sonatype.org/content/repositories/snapshots/com/redis/om/redis-om-spring/ "Snapshots"
+[link-snapshots]: https://s01.oss.sonatype.org/content/repositories/snapshots/com/redis/om/redis-om-spring/
+[open-issues]: http://isitmaintained.com/project/redis/redis-om-spring
+[issue-resolution]: http://isitmaintained.com/project/redis/redis-om-spring
+
 
 
 
