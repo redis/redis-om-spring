@@ -21,4 +21,11 @@ public @interface Document {
 
   @AliasFor("value")
   String collection() default "";
+  
+  boolean async() default false;
+  String[] prefixes() default {};
+  String filter() default "";
+  String languageField() default "";
+  String language() default "";
+  double score() default 1.0; 
 }

@@ -9,12 +9,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.data.geo.Point;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
-import org.springframework.data.redis.core.index.Indexed;
+import org.springframework.data.mapping.PropertyPath;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.QueryMethod;
@@ -29,6 +30,7 @@ import org.springframework.data.util.Streamable;
 import com.google.gson.Gson;
 import com.redis.om.spring.annotations.Aggregation;
 import com.redis.om.spring.annotations.GeoIndexed;
+import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.NumericIndexed;
 import com.redis.om.spring.annotations.Searchable;
 import com.redis.om.spring.annotations.TagIndexed;
@@ -47,7 +49,7 @@ import lombok.ToString;
 
 @ToString
 public class RediSearchQuery implements RepositoryQuery {
-  
+
   private static final Log logger = LogFactory.getLog(RediSearchQuery.class);
 
   private final QueryMethod queryMethod;
@@ -64,10 +66,10 @@ public class RediSearchQuery implements RepositoryQuery {
 
   // aggregation field
   private String[] load;
-  
+
   // is native? e.g. @Query or @Annotation
   private boolean annotationBased;
-  
+
   //
   private List<Pair<String,QueryClause>> queryFields = new ArrayList<Pair<String,QueryClause>>();
 
@@ -77,11 +79,13 @@ public class RediSearchQuery implements RepositoryQuery {
 
   RedisModulesOperations<String, String> modulesOperations;
 
+  private boolean isANDQuery = false;
+
   @SuppressWarnings("unchecked")
   public RediSearchQuery(QueryMethod queryMethod, RepositoryMetadata metadata,
       QueryMethodEvaluationContextProvider evaluationContextProvider, KeyValueOperations keyValueOperations,
       RedisModulesOperations<?, ?> rmo, Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
-    logger.debug(String.format("Creating %s", queryMethod.getName()));
+    logger.debug(String.format("Creating %s query method", queryMethod.getName()));
 
     this.modulesOperations = (RedisModulesOperations<String, String>) rmo;
     this.queryMethod = queryMethod;
@@ -92,6 +96,7 @@ public class RediSearchQuery implements RepositoryQuery {
     Class<?> repoClass = metadata.getRepositoryInterface();
     @SuppressWarnings("rawtypes")
     Class[] params = queryMethod.getParameters().stream().map(p -> p.getType()).toArray(Class[]::new);
+
     try {
       java.lang.reflect.Method method = repoClass.getDeclaredMethod(queryMethod.getName(), params);
       if (method.isAnnotationPresent(com.redis.om.spring.annotations.Query.class)) {
@@ -101,67 +106,100 @@ public class RediSearchQuery implements RepositoryQuery {
         this.annotationBased = true;
         this.value = queryAnnotation.value();
         this.returnFields = queryAnnotation.returnFields();
-      } else if (method.isAnnotationPresent(com.redis.om.spring.annotations.Aggregation.class)) {
+      } else if (method.isAnnotationPresent(Aggregation.class)) {
         Aggregation aggregation = method.getAnnotation(Aggregation.class);
         this.type = RediSearchQueryType.AGGREGATION;
         this.annotationBased = true;
         this.value = aggregation.value();
         this.load = aggregation.load();
+      } else if (queryMethod.getName().equalsIgnoreCase("search")) {
+        this.type = RediSearchQueryType.QUERY;
+        queryFields.add(Pair.of("__all__", QueryClause.FullText_ALL));
+        this.returnFields = new String[] {};
       } else {
-        PartTree pt = new PartTree(queryMethod.getName(), metadata.getDomainType());
+
+        isANDQuery = QueryClause.hasContainingAllClause(queryMethod.getName());
+
+        String methodName = isANDQuery ? QueryClause.getPostProcessMethodName(queryMethod.getName()) : queryMethod.getName();
+
+        PartTree pt = new PartTree(methodName, metadata.getDomainType());
 
         Streamable<Part> queryParts = pt.getParts();
         for (Part part : queryParts) {
-          String fieldName = part.getProperty().getSegment();
-          
-          //TODO: refactor this code is symmetrical to code executed during annotation processing
-          Field field;
-          try {
-            field = domainType.getDeclaredField(fieldName);
-            if (field.isAnnotationPresent(TextIndexed.class) || field.isAnnotationPresent(Searchable.class)) {
-              queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.FullText, part.getType())));
-            } else if (field.isAnnotationPresent(TagIndexed.class)) {
-              queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Tag, part.getType())));
-            } else if (field.isAnnotationPresent(GeoIndexed.class)) {
-              queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Geo, part.getType())));
-            } else if (field.isAnnotationPresent(NumericIndexed.class)) {
-              queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Numeric, part.getType())));
-            } else if (field.isAnnotationPresent(Indexed.class)) {
-              //
-              // Any Character class -> Tag Search Field
-              //
-              if (CharSequence.class.isAssignableFrom(field.getType())) {
-                queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Tag, part.getType())));
-              }  
-              //
-              // Any Numeric class -> Numeric Search Field
-              //
-              if (Number.class.isAssignableFrom(field.getType())) {
-                queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Numeric, part.getType())));
-              }
-              //
-              // Set 
-              //
-              if (Set.class.isAssignableFrom(field.getType())) {
-                queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Tag, part.getType())));
-              }
-              // 
-              // Point
-              //
-              if (field.getType() == Point.class) {
-                queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Geo, part.getType())));
-              }
-            }
-          } catch (NoSuchFieldException e) {
-            logger.debug(String.format("Did not find a field named ", fieldName));
-          }
+          PropertyPath propertyPath = part.getProperty();
+
+          List<PropertyPath> path = StreamSupport
+              .stream(propertyPath.spliterator(), false)
+              .collect(Collectors.toList());
+          extractQueryFields(domainType, part, path);
         }
 
         this.type = RediSearchQueryType.QUERY;
         this.returnFields = new String[] {};
       }
     } catch (NoSuchMethodException | SecurityException e) {
-      logger.debug(String.format("Did not find query method %s(%s): %s", queryMethod.getName(), Arrays.toString(params), e.getMessage()));
+      logger.debug(String.format("Could not resolved query method %s(%s): %s", queryMethod.getName(), Arrays.toString(params), e.getMessage()));
+    }
+  }
+
+  private void extractQueryFields(Class<?> type, Part part, List<PropertyPath> path) {
+    extractQueryFields(type, part, path, 0);
+  }
+
+  private void extractQueryFields(Class<?> type, Part part, List<PropertyPath> path, int level) {
+    String property = path.get(level).getSegment();
+    String key = part.getProperty().toDotPath().replace(".", "_");
+
+    Field field;
+    try {
+      field = type.getDeclaredField(property);
+
+      if (field.isAnnotationPresent(TextIndexed.class) || field.isAnnotationPresent(Searchable.class)) {
+        queryFields.add(Pair.of(key, QueryClause.get(FieldType.FullText, part.getType())));
+      } else if (field.isAnnotationPresent(TagIndexed.class)) {
+        queryFields.add(Pair.of(key, QueryClause.get(FieldType.Tag, part.getType())));
+      } else if (field.isAnnotationPresent(GeoIndexed.class)) {
+        queryFields.add(Pair.of(key, QueryClause.get(FieldType.Geo, part.getType())));
+      } else if (field.isAnnotationPresent(NumericIndexed.class)) {
+        queryFields.add(Pair.of(key, QueryClause.get(FieldType.Numeric, part.getType())));
+      } else if (field.isAnnotationPresent(Indexed.class)) {
+        //
+        // Any Character class -> Tag Search Field
+        //
+        if (CharSequence.class.isAssignableFrom(field.getType())) {
+          queryFields.add(Pair.of(key, QueryClause.get(FieldType.Tag, part.getType())));
+        }
+        //
+        // Any Numeric class -> Numeric Search Field
+        //
+        else if (Number.class.isAssignableFrom(field.getType())) {
+          queryFields.add(Pair.of(key, QueryClause.get(FieldType.Numeric, part.getType())));
+        }
+        //
+        // Set
+        //
+        else if (Set.class.isAssignableFrom(field.getType())) {
+          if (isANDQuery) {
+            queryFields.add(Pair.of(key, QueryClause.Tag_CONTAINING_ALL));
+          } else {
+            queryFields.add(Pair.of(key, QueryClause.get(FieldType.Tag, part.getType())));
+          }
+        }
+        //
+        // Point
+        //
+        else if (field.getType() == Point.class) {
+          queryFields.add(Pair.of(key, QueryClause.get(FieldType.Geo, part.getType())));
+        }
+        //
+        // Recursively explore the fields for @Indexed annotated fields
+        //
+        else {
+          extractQueryFields(field.getType(), part, path, level + 1);
+        }
+      }
+    } catch (NoSuchFieldException e) {
+      logger.info(String.format("Did not find a field named %s", key));
     }
   }
 
@@ -178,7 +216,7 @@ public class RediSearchQuery implements RepositoryQuery {
   public QueryMethod getQueryMethod() {
     return queryMethod;
   }
-  
+
   public boolean isAnnotationBased() {
     return annotationBased;
   }
@@ -221,26 +259,28 @@ public class RediSearchQuery implements RepositoryQuery {
   }
 
   private String prepareQuery(Object[] parameters) {
-    logger.debug(String.format("parameters: %s", Arrays.toString(parameters)));
+    logger.debug(
+        String.format("parameters: %s", Arrays.toString(parameters)));
+
     StringBuilder preparedQuery = new StringBuilder();
-    
+
     if (!queryFields.isEmpty()) {
       for (Pair<String,QueryClause> fieldClauses : queryFields) {
         String fieldName = fieldClauses.getFirst();
         QueryClause queryClause = fieldClauses.getSecond();
         int paramsCnt = queryClause.getValue().getNumberOfArguments();
-        
+
         preparedQuery.append(queryClause.prepareQuery(fieldName, Arrays.copyOfRange(parameters, 0, paramsCnt)));
         preparedQuery.append(" ");
-        
+
         parameters = Arrays.copyOfRange(parameters, paramsCnt, parameters.length);
       }
     } else {
       @SuppressWarnings("unchecked")
       Iterator<Parameter> iterator = (Iterator<Parameter>) queryMethod.getParameters().iterator();
       int index = 0;
-      
-      if (!value.isBlank()) {
+
+      if (value != null && !value.isBlank()) {
         preparedQuery.append(value);
       }
 
@@ -248,7 +288,7 @@ public class RediSearchQuery implements RepositoryQuery {
         Parameter p = iterator.next();
         String key = (p.getName().isPresent() ? p.getName().get() : (paramNames.size() > index ? paramNames.get(index) : ""));
         String v = "";
-        
+
         if (parameters[index] instanceof Collection<?>) {
           @SuppressWarnings("rawtypes")
           Collection<?> c = (Collection) parameters[index];
@@ -256,8 +296,8 @@ public class RediSearchQuery implements RepositoryQuery {
         } else {
           v = parameters[index].toString();
         }
-        
-        if (value.isBlank()) {
+
+        if (value != null && value.isBlank()) {
           preparedQuery.append("@"+key+":"+v).append(" ");
         } else {
           preparedQuery = new StringBuilder(preparedQuery.toString().replace("$"+key, v));
@@ -265,6 +305,8 @@ public class RediSearchQuery implements RepositoryQuery {
         index++;
       }
     }
+
+    logger.debug(String.format("query: %s", preparedQuery.toString()));
 
     return preparedQuery.toString();
   }

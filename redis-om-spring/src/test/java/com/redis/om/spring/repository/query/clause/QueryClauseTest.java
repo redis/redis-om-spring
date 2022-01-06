@@ -1,6 +1,7 @@
 package com.redis.om.spring.repository.query.clause;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.data.geo.Distance;
@@ -45,6 +46,20 @@ class QueryClauseTest {
     Distance distance = new Distance(45, Metrics.MILES);
     String querySegment = QueryClause.Geo_NEAR.prepareQuery("location", point, distance);
     assertEquals("@location:[-122.06654 37.37769 45.0 mi]", querySegment);
+  }
+  
+  @Test
+  void testHasContainingAllClause() {
+    assertTrue(QueryClause.hasContainingAllClause("findByWorkTypeContainingAll"));
+    assertTrue(QueryClause.hasContainingAllClause("findByWorkTypeContainsAll"));
+    assertTrue(QueryClause.hasContainingAllClause("findByWorkTypeIsContainingAll"));
+  }
+  
+  @Test
+  void testGetNonCustomMethodName() {
+    assertEquals("findByWorkTypeContaining", QueryClause.getPostProcessMethodName("findByWorkTypeContainingAll"));
+    assertEquals("findByWorkTypeContaining", QueryClause.getPostProcessMethodName("findByWorkTypeContainingAll"));
+    assertEquals("findByWorkTypeIsContaining", QueryClause.getPostProcessMethodName("findByWorkTypeIsContainingAll"));
   }
 
 }
