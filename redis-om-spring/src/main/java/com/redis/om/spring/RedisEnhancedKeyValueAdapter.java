@@ -198,12 +198,6 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
         }
       }
 
-//      IndexWriter indexWriter = new IndexWriter(connection, converter);
-//      if (isNew) {
-//        indexWriter.createIndexes(key, rdo.getIndexedData());
-//      } else {
-//        indexWriter.deleteAndUpdateIndexes(key, rdo.getIndexedData());
-//      }
       return null;
     });
 
@@ -221,7 +215,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     redisOperations.execute((RedisCallback<Void>) connection -> {
 
       connection.del(toBytes(keyspace));
-//      new IndexWriter(connection, converter).removeAllIndexes(asString(keyspace));
+
       return null;
     });
   }
@@ -261,15 +255,6 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
             redisUpdateObject.fieldsToRemove.toArray(new byte[redisUpdateObject.fieldsToRemove.size()][]));
       }
 
-//      for (Index index : redisUpdateObject.indexesToUpdate) {
-//
-//        if (ObjectUtils.nullSafeEquals(DataType.ZSET, index.type)) {
-//          connection.zRem(index.key, toBytes(redisUpdateObject.targetId));
-//        } else {
-//          connection.sRem(index.key, toBytes(redisUpdateObject.targetId));
-//        }
-//      }
-
       if (!rdo.getBucket().isEmpty()) {
         if (rdo.getBucket().size() > 1
             || (rdo.getBucket().size() == 1 && !rdo.getBucket().asMap().containsKey("_class"))) {
@@ -300,7 +285,6 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
         }
       }
 
-//      new IndexWriter(connection, converter).updateIndexes(toBytes(id), rdo.getIndexedData());
       return null;
     });
   }
@@ -513,7 +497,6 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       ops.execute((RedisCallback<Void>) connection -> {
 
         connection.sRem(converter.getConversionService().convert(event.getKeyspace(), byte[].class), event.getId());
-//        new IndexWriter(connection, converter).removeKeyFromIndexes(event.getKeyspace(), event.getId());
         return null;
       });
 
