@@ -13,12 +13,13 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
 import com.redis.testcontainers.RedisModulesContainer;
+import static com.redis.testcontainers.RedisClusterContainer.DEFAULT_IMAGE_NAME;
 
 @Testcontainers
 @SpringBootTest(classes = AbstractBaseEnhancedRedisTest.Config.class, properties = {"spring.main.allow-bean-definition-overriding=true"})
 public abstract class AbstractBaseEnhancedRedisTest {
   @Container
-  static final RedisModulesContainer REDIS = new RedisModulesContainer("edge");
+  static final RedisModulesContainer REDIS = new RedisModulesContainer(DEFAULT_IMAGE_NAME.withTag("edge"));
   
   @SpringBootApplication
   @Configuration

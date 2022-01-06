@@ -1,5 +1,7 @@
 package com.redis.om.spring;
 
+import static com.redis.testcontainers.RedisClusterContainer.DEFAULT_IMAGE_NAME;
+
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
@@ -18,7 +20,7 @@ import com.redis.testcontainers.RedisModulesContainer;
 @SpringBootTest(classes = AbstractBaseDocumentTest.Config.class, properties = {"spring.main.allow-bean-definition-overriding=true"})
 public abstract class AbstractBaseDocumentTest {
   @Container
-  static final RedisModulesContainer REDIS = new RedisModulesContainer("edge");
+  static final RedisModulesContainer REDIS = new RedisModulesContainer(DEFAULT_IMAGE_NAME.withTag("edge"));
   
   @SpringBootApplication
   @Configuration
