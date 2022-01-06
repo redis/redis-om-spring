@@ -3,6 +3,9 @@ package com.redis.om.spring.repository.query.clause;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.springframework.data.geo.Distance;
@@ -15,6 +18,9 @@ import io.redisearch.Schema.FieldType;
 
 public enum QueryClause {
   // FULL TEXT
+  FullText_ALL( //
+      QueryClauseTemplate.of(FieldType.FullText, Part.Type.SIMPLE_PROPERTY, "$param_0", 1) //
+  ),
   FullText_SIMPLE_PROPERTY( //
       QueryClauseTemplate.of(FieldType.FullText, Part.Type.SIMPLE_PROPERTY, "@$field:$param_0", 1) //
   ),
@@ -80,6 +86,12 @@ public enum QueryClause {
   ),
   Tag_IN( //
       QueryClauseTemplate.of(FieldType.Tag, Part.Type.IN, "@$field:$param_0", 1) //
+  ),
+  Tag_CONTAINING( //
+      QueryClauseTemplate.of(FieldType.Tag, Part.Type.CONTAINING, "@$field:$param_0", 1) //
+  ),
+  Tag_CONTAINING_ALL( //
+      QueryClauseTemplate.of(FieldType.Tag, Part.Type.CONTAINING, "$param_0", 1) //
   );
 
   private final QueryClauseTemplate value;
@@ -93,9 +105,9 @@ public enum QueryClause {
   }
 
   public String prepareQuery(String field, Object... params) {
-    String prepared = value.getQuerySegmentTemplate().replace("$field", field);
+    String prepared = field.equalsIgnoreCase("__ALL__") ? value.getQuerySegmentTemplate() : value.getQuerySegmentTemplate().replace("$field", field);
 
-    Iterator<Object> iter = Arrays.asList(params).iterator();
+    Iterator<Object> iter = Arrays.asList(params).iterator(); 
 
     int i = 0;
     while (iter.hasNext()) {
@@ -116,7 +128,14 @@ public enum QueryClause {
           if (param instanceof Collection<?>) {
             @SuppressWarnings("rawtypes")
             Collection<?> c = (Collection) param;
-            String value = c.stream().map(n -> n.toString()).collect(Collectors.joining(", "));
+            
+            String value = "";
+            if (this == QueryClause.Tag_CONTAINING_ALL) {
+              value = c.stream().map(n -> "@"+field+":{"+n.toString()+"}").collect(Collectors.joining(" "));
+            } else {
+              value = c.stream().map(n -> n.toString()).collect(Collectors.joining("|")); 
+            }
+            
             prepared = prepared.replace("$param_" + i++, value);
           } else {
             prepared = prepared.replace("$param_" + i++, param.toString());
@@ -134,5 +153,31 @@ public enum QueryClause {
     } catch (IllegalArgumentException | NullPointerException e) {
       return Tag_SIMPLE_PROPERTY;
     }
+  }
+  
+  public static Map<String,String> methodNameMap = Map.of(
+      "IsContainingAll", "IsContaining",
+      "ContainingAll", "Containing",
+      "ContainsAll", "Contains"
+  );
+  
+  public static Pattern CONTAINING_ALL_PATTERN = Pattern.compile("(IsContainingAll|ContainingAll|ContainsAll)");
+  
+  public static boolean hasContainingAllClause(String methodName) {
+    return CONTAINING_ALL_PATTERN.matcher(methodName).find();
+  }
+  
+  public static String getPostProcessMethodName(String methodName) {
+    if (hasContainingAllClause(methodName)) {
+      Optional<String> maybeMatchSubstring = CONTAINING_ALL_PATTERN.matcher(methodName).results().map(mr -> mr.group(1)).findFirst();
+      if (maybeMatchSubstring.isPresent()) {
+        String matchSubstring = maybeMatchSubstring.get();  
+        return methodName.replace(matchSubstring, methodNameMap.get(matchSubstring));
+      } else {
+        return methodName;
+      }
+      
+    }
+    return methodName;
   }
 }
