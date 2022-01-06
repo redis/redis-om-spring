@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.redis.om</groupId>
   <artifactId>redis-om-spring-parent</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.2.0-SNAPSHOT</version>
   <name>redis-om-spring-parent</name>
   <packaging>pom</packaging>
 
@@ -25,5 +25,6 @@
     <!-- Demos -->
     <module>demos/roms-documents</module>
     <module>demos/roms-hashes</module>
+    <module>demos/roms-permits</module>
   </modules>
 </project>
