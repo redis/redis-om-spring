@@ -5,9 +5,9 @@ import java.util.Set;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.geo.Point;
-import org.springframework.data.redis.core.index.Indexed;
 
 import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.Searchable;
 
 import lombok.AccessLevel;

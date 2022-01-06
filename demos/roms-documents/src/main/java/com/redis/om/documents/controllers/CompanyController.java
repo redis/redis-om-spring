@@ -44,7 +44,6 @@ public class CompanyController {
     return repository.getIds(pageable);
   }
 
-
   @GetMapping("near")
   Iterable<Company> byLocationNear(//
       @RequestParam("lat") double lat, //

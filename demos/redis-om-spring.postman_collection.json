@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "4d572bf7-7325-4958-877d-8ae6e1b8c5b7",
+		"_postman_id": "d8a5e538-d9a9-46a4-868d-6804306da567",
 		"name": "Redis OM Spring",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -219,6 +219,40 @@
 					"response": []
 				},
 				{
+					"name": "Exists by email (Bloom)",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/users/exists?email=zack@ratm.com",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"users",
+								"exists"
+							],
+							"query": [
+								{
+									"key": "email",
+									"value": "zack@ratm.com"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Find One User by Last Name",
 					"request": {
 						"method": "GET",
@@ -239,14 +273,19 @@
 						}
 					},
 					"response": []
-				},
+				}
+			]
+		},
+		{
+			"name": "Permits",
+			"item": [
 				{
-					"name": "Exists by Email (Bloom)",
+					"name": "Permits by construction value",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8080/api/users/exists/?email=zack@ratm.com",
+							"raw": "http://localhost:8080/api/permits/value/42000",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -254,14 +293,151 @@
 							"port": "8080",
 							"path": [
 								"api",
-								"users",
-								"exists",
-								""
+								"permits",
+								"value",
+								"42000"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Full-text Search",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/permits/search/veranda",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"permits",
+								"search",
+								"veranda"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Full-text Fuzzy Search",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/permits/search/%25%25haus%25%25",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"permits",
+								"search",
+								"%25%25haus%25%25"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Permits by building type",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/permits/building_type/detached",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"permits",
+								"building_type",
+								"detached"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Permits by city",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/permits/city/Lisbon",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"permits",
+								"city",
+								"Lisbon"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Permits by work types",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/permits/worktypes?types=construction,design",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"permits",
+								"worktypes"
 							],
 							"query": [
 								{
-									"key": "email",
-									"value": "zack@ratm.com"
+									"key": "types",
+									"value": "construction,design"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Permits by ALL work types",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/permits/worktypes/all?types=construction,design",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"permits",
+								"worktypes",
+								"all"
+							],
+							"query": [
+								{
+									"key": "types",
+									"value": "construction,design"
 								}
 							]
 						}

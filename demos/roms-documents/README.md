@@ -1,1 +1,0 @@
-./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/rds-documents

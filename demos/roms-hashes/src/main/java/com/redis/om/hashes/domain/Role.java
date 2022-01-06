@@ -2,7 +2,8 @@ package com.redis.om.hashes.domain;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
-import org.springframework.data.redis.core.index.Indexed;
+
+import com.redis.om.spring.annotations.Indexed;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

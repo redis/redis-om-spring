@@ -32,12 +32,12 @@ public class UserController {
     return userRepository.findByFirstNameAndLastName(firstName, lastName);
   }
   
-  @GetMapping("name/{lastName}")
+  @GetMapping("/name/{lastName}")
   Optional<User> byName(@PathVariable("lastName") String lastName) {
     return userRepository.findOneByLastName(lastName);
   }
   
-  @GetMapping("/exists/")
+  @GetMapping("/exists")
   boolean isEmailTaken(@RequestParam("email") String email) {
     return userRepository.existsByEmail(email);
   }
