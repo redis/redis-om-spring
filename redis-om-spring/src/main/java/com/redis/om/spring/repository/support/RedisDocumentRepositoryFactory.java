@@ -1,7 +1,5 @@
 package com.redis.om.spring.repository.support;
 
-import static org.springframework.data.querydsl.QuerydslUtils.QUERY_DSL_PRESENT;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.Optional;
@@ -11,12 +9,10 @@ import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.repository.query.KeyValuePartTreeQuery;
 import org.springframework.data.keyvalue.repository.query.SpelQueryCreator;
 import org.springframework.data.keyvalue.repository.support.KeyValueRepositoryFactory;
-import org.springframework.data.keyvalue.repository.support.QuerydslKeyValueRepository;
 import org.springframework.data.keyvalue.repository.support.SimpleKeyValueRepository;
 import org.springframework.data.mapping.PersistentEntity;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
-import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.data.repository.core.EntityInformation;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.RepositoryInformation;
@@ -122,18 +118,7 @@ public class RedisDocumentRepositoryFactory extends RepositoryFactorySupport {
    */
   @Override
   protected Class<?> getRepositoryBaseClass(RepositoryMetadata metadata) {
-    return isQueryDslRepository(metadata.getRepositoryInterface()) ? QuerydslKeyValueRepository.class
-        : SimpleKeyValueRepository.class;
-  }
-
-  /**
-   * Returns whether the given repository interface requires a QueryDsl specific implementation to be chosen.
-   *
-   * @param repositoryInterface must not be {@literal null}.
-   * @return
-   */
-  private static boolean isQueryDslRepository(Class<?> repositoryInterface) {
-    return QUERY_DSL_PRESENT && QuerydslPredicateExecutor.class.isAssignableFrom(repositoryInterface);
+    return SimpleKeyValueRepository.class;
   }
 
   /*

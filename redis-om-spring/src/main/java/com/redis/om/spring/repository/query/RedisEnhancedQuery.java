@@ -7,8 +7,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -18,7 +16,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.data.geo.Point;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
-import org.springframework.data.redis.core.index.Indexed;
+import org.springframework.data.redis.core.RedisOperations;
+import org.springframework.data.redis.core.convert.Bucket;
+import org.springframework.data.redis.core.convert.MappingRedisConverter;
+import org.springframework.data.redis.core.convert.RedisData;
+import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.QueryMethod;
@@ -30,10 +33,10 @@ import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.data.util.Pair;
 import org.springframework.data.util.Streamable;
 
-import com.google.gson.Gson;
 import com.redis.om.spring.annotations.Aggregation;
 import com.redis.om.spring.annotations.Bloom;
 import com.redis.om.spring.annotations.GeoIndexed;
+import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.NumericIndexed;
 import com.redis.om.spring.annotations.Searchable;
 import com.redis.om.spring.annotations.TagIndexed;
@@ -42,7 +45,6 @@ import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.pds.BloomOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.query.clause.QueryClause;
-import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
 
 import io.redisearch.AggregationResult;
 import io.redisearch.Document;
@@ -58,13 +60,6 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   private final QueryMethod queryMethod;
   private final String searchIndex;
 
-  private static enum RediSearchQueryType {
-    QUERY,
-    AGGREGATION
-  };
-
-  private static final Gson gson = GsonBuidlerFactory.getBuilder().create();
-
   private RediSearchQueryType type;
   private String value;
 
@@ -75,24 +70,34 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   private String[] load;
 
   //
-  private List<Pair<String,QueryClause>> queryFields = new ArrayList<Pair<String,QueryClause>>();
+  private List<Pair<String, QueryClause>> queryFields = new ArrayList<Pair<String, QueryClause>>();
 
   // for non @Param annotated dynamic names
   private List<String> paramNames = new ArrayList<String>();
   private Class<?> domainType;
 
   RedisModulesOperations<String, String> modulesOperations;
+  MappingRedisConverter mappingConverter;
+  RedisOperations<?, ?> redisOperations;
+
+  private StringRedisSerializer stringSerializer = new StringRedisSerializer();
 
   @SuppressWarnings("unchecked")
-  public RedisEnhancedQuery(QueryMethod queryMethod, RepositoryMetadata metadata,
-      QueryMethodEvaluationContextProvider evaluationContextProvider, KeyValueOperations keyValueOperations,
-      RedisModulesOperations<?, ?> rmo, Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
+  public RedisEnhancedQuery(QueryMethod queryMethod, //
+      RepositoryMetadata metadata, //
+      QueryMethodEvaluationContextProvider evaluationContextProvider, //
+      KeyValueOperations keyValueOperations, RedisOperations<?, ?> redisOperations, RedisModulesOperations<?, ?> rmo, //
+      Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
     logger.debug(String.format("Creating query %s", queryMethod.getName()));
 
     this.modulesOperations = (RedisModulesOperations<String, String>) rmo;
     this.queryMethod = queryMethod;
     this.searchIndex = this.queryMethod.getEntityInformation().getJavaType().getSimpleName() + "Idx";
     this.domainType = this.queryMethod.getEntityInformation().getJavaType();
+
+    this.mappingConverter = new MappingRedisConverter(null, null, new ReferenceResolverImpl(redisOperations));
+
+    mappingConverter.afterPropertiesSet();
 
     Class<?> repoClass = metadata.getRepositoryInterface();
     @SuppressWarnings("rawtypes")
@@ -117,7 +122,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
         for (Part part : queryParts) {
           String fieldName = part.getProperty().getSegment();
 
-          //TODO: refactor this code is symmetrical to code executed during annotation processing
+          // TODO: refactor this code is symmetrical to code executed during annotation
+          // processing
           Field field;
           try {
             field = domainType.getDeclaredField(fieldName);
@@ -169,7 +175,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
         this.returnFields = new String[] {};
       }
     } catch (NoSuchMethodException | SecurityException e) {
-      logger.debug(String.format("Did not find query method %s(%s): %s", queryMethod.getName(), Arrays.toString(params), e.getMessage()));
+      logger.debug(String.format("Did not find query method %s(%s): %s", queryMethod.getName(), Arrays.toString(params),
+          e.getMessage()));
     }
   }
 
@@ -197,43 +204,26 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     query.returnFields(returnFields);
     SearchResult searchResult = ops.search(query);
 
-    if (logger.isDebugEnabled()) {
-      logger.debug("Total Results ==> " + searchResult.totalResults);
-      logger.debug("Docs.size() ==> " + searchResult.docs.size());
-      for (Document d : searchResult.docs) {
-        logger.debug(">>>> id: " + d.getId());
-        logger.debug(">>>> score: " + d.getScore());
-        logger.debug(">>>> toString: " + d.toString());
-      }
-    }
-
     // what to return
     Object result = null;
     if (queryMethod.getReturnedObjectType() == SearchResult.class) {
       result = searchResult;
     } else if (queryMethod.isQueryForEntity() && !queryMethod.isCollectionQuery()) {
-
-
-      Set<Map.Entry<String, Object>> objProps = (Set<Entry<String, Object>>) searchResult.docs.get(0).getProperties();
-      Map<String, Object> objAsJson = objProps.stream()
-          .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
-
-      String jsonResult = searchResult.docs.isEmpty() ? "{}" : gson.toJson(objAsJson);
-      result = gson.fromJson(jsonResult, queryMethod.getReturnedObjectType());
-
+      result = documentToObject(searchResult.docs.get(0));
     } else if (queryMethod.isQueryForEntity() && queryMethod.isCollectionQuery()) {
-      result = searchResult.docs.stream()
-          .map(d -> {
-            Set<Map.Entry<String, Object>> objProps = (Set<Entry<String, Object>>) d.getProperties();
-            Map<String, Object> objAsJson = objProps.stream()
-                .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
-
-            return gson.fromJson(objAsJson.toString(), queryMethod.getReturnedObjectType());
-          })
-          .collect(Collectors.toList());
+      result = searchResult.docs.stream().map(d -> documentToObject(d)).collect(Collectors.toList());
     }
 
     return result;
+  }
+
+  private Object documentToObject(Document document) {
+    Bucket b = new Bucket();
+    document.getProperties().forEach(p -> {
+      b.put(p.getKey(), stringSerializer.serialize(p.getValue().toString()));
+    });
+
+    return mappingConverter.read(queryMethod.getReturnedObjectType(), new RedisData(b));
   }
 
   private Object executeAggregation(Object[] parameters) {
@@ -280,19 +270,17 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   }
 
   public Object executeBloomQuery(Object[] parameters, String bloomFilter) {
-    logger.debug(
-        String.format("filter:%s, params:%s", bloomFilter, Arrays.toString(parameters)));
+    logger.debug(String.format("filter:%s, params:%s", bloomFilter, Arrays.toString(parameters)));
     BloomOperations<String> ops = modulesOperations.opsForBloom();
     return ops.exists(bloomFilter, parameters[0].toString());
   }
 
   private String prepareQuery(Object[] parameters) {
-    logger.debug(
-        String.format("parameters: %s", Arrays.toString(parameters)));
+    logger.debug(String.format("parameters: %s", Arrays.toString(parameters)));
     StringBuilder preparedQuery = new StringBuilder();
 
     if (!queryFields.isEmpty()) {
-      for (Pair<String,QueryClause> fieldClauses : queryFields) {
+      for (Pair<String, QueryClause> fieldClauses : queryFields) {
         String fieldName = fieldClauses.getFirst();
         QueryClause queryClause = fieldClauses.getSecond();
         int paramsCnt = queryClause.getValue().getNumberOfArguments();
@@ -309,7 +297,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
       while (iterator.hasNext()) {
         Parameter p = iterator.next();
-        String key = (p.getName().isPresent() ? p.getName().get() : (paramNames.size() > index ? paramNames.get(index) : ""));
+        String key = (p.getName().isPresent() ? p.getName().get()
+            : (paramNames.size() > index ? paramNames.get(index) : ""));
         String v = "";
 
         if (parameters[index] instanceof Collection<?>) {
@@ -321,9 +310,10 @@ public class RedisEnhancedQuery implements RepositoryQuery {
         }
 
         if (value.isBlank()) {
-          preparedQuery.append("@"+key+":"+v).append(" ");
+          preparedQuery.append("@" + key + ":" + v).append(" ");
         } else {
-          preparedQuery.append(value.replace("$"+key, v)).append(" ");;
+          preparedQuery.append(value.replace("$" + key, v)).append(" ");
+          ;
         }
       }
     }
@@ -336,4 +326,5 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     c[0] = Character.toLowerCase(c[0]);
     return new String(c);
   }
+
 }
