@@ -21,7 +21,6 @@ public class RomsHashesApplication {
   @Autowired
   private UserRepository userRepo;
 
-  @SuppressWarnings("unused")
   @Autowired
   private RoleRepository roleRepo;
 
@@ -33,8 +32,7 @@ public class RomsHashesApplication {
       Role guitar = Role.of("GUITAR");
       Role drums = Role.of("DRUMS");
 
-      //TODO: handle @Reference deserialization
-      //roleRepo.saveAll(List.of(bass, vocals, guitar, drums));
+      roleRepo.saveAll(List.of(bass, vocals, guitar, drums));
 
       User john = User.of("Zack", "de la Rocha", "zack@ratm.com", bass);
       User tim = User.of("Tim", "Commerford", "tim@ratm.com", vocals);
