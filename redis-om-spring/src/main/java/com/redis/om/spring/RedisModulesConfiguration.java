@@ -31,7 +31,9 @@ import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
+import org.springframework.data.util.ClassTypeInformation;
 
+import com.google.gson.annotations.JsonAdapter;
 import com.redis.om.spring.annotations.Bloom;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.DocumentScore;
@@ -322,9 +324,10 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   }
 
   private Field indexAsTagFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, TagIndexed ti) {
+    ClassTypeInformation<?> typeInfo = ClassTypeInformation.from(field.getType());
     String chain = (prefix == null || prefix.isBlank()) ? "" : prefix + ".";
     String fieldPrefix = isDocument ? "$." + chain : chain;
-    String fieldPostfix = isDocument ? "[*]" : "";
+    String fieldPostfix = (isDocument && typeInfo.isCollectionLike() && !field.isAnnotationPresent(JsonAdapter.class))? "[*]" : "";
     FieldName fieldName = FieldName.of(fieldPrefix + field.getName() + fieldPostfix);
 
     if (!ObjectUtils.isEmpty(ti.alias())) {
@@ -340,10 +343,11 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
   private Field indexAsTagFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, boolean sortable,
       String separator, int arrayIndex) {
+    ClassTypeInformation<?> typeInfo = ClassTypeInformation.from(field.getType());
     String chain = (prefix == null || prefix.isBlank()) ? "" : prefix + ".";
     String fieldPrefix = isDocument ? "$." + chain : chain;
     String index = (arrayIndex != Integer.MIN_VALUE) ? ".["+arrayIndex+"]" : "[*]";
-    String fieldPostfix = isDocument ? index : "";
+    String fieldPostfix = (isDocument && typeInfo.isCollectionLike() && !field.isAnnotationPresent(JsonAdapter.class)) ? index : "";
     FieldName fieldName = FieldName.of(fieldPrefix + field.getName() + fieldPostfix);
 
     if (prefix != null && !prefix.isBlank()) {

@@ -20,38 +20,6 @@ import lombok.Data;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-/*
-{
-"_score": 0.8,
-"permit_timestamp": 1254391200,
-"address": {
-  "street":"Bennelong Point",
-  "city":"Sydney"
-},
-"description": "Fix the facade",
-"building_type": "Residential",
-"work_type": "construction;design",
-"construction_value": 210000,
-"location": "151.22, -33.87"
-}
-
-with an index like:
-
-FT.CREATE permits
- ON JSON
-    PREFIX 1 "tst:"
-    SCORE_FIELD "$._score"
- SCHEMA
-   $.permit_timestamp AS permit_timestamp NUMERIC SORTABLE
-   $.address.street AS address TEXT NOSTEM
-   $.address.city AS city TAG
-   $.description AS description TEXT
-   $.building_type AS building_type TEXT WEIGHT 20 NOSTEM SORTABLE
-   $.work_type AS work_type TAG SEPARATOR ";"
-   $.construction_value AS construction_value NUMERIC SORTABLE
-   $.location AS location GEO
-   $.status_log.[-1] as status TAG   # Index the last element of the array as "status"
-*/
 @Data
 @RequiredArgsConstructor(staticName = "of")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)

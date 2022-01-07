@@ -1,10 +1,10 @@
-package com.example.demotest;
+package com.redis.om.permits;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class DemoTestApplicationTests {
+class PermitsApplicationTests {
 
 	@Test
 	void contextLoads() {

@@ -7,17 +7,6 @@ import lombok.Data;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-/*
-"address": {
-  "street":"Bennelong Point",
-  "city":"Sydney"
-},
-
-with an index like:
-
-   $.address.street AS address TEXT NOSTEM
-   $.address.city AS city TAG
-*/
 @Data
 @RequiredArgsConstructor(staticName = "of")
 public class Address {
