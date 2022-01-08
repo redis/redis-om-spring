@@ -395,7 +395,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8080/api/permits/worktypes?types=construction,design",
+							"raw": "http://localhost:8080/api/permits/worktypes?types=design,construction",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -409,7 +409,7 @@
 							"query": [
 								{
 									"key": "types",
-									"value": "construction,design"
+									"value": "design,construction"
 								}
 							]
 						}
@@ -438,6 +438,70 @@
 								{
 									"key": "types",
 									"value": "construction,design"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Permits by Building Type AND Description",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/permits/building_type_and_description/?buildingType=house&description=new",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"permits",
+								"building_type_and_description",
+								""
+							],
+							"query": [
+								{
+									"key": "buildingType",
+									"value": "house"
+								},
+								{
+									"key": "description",
+									"value": "new"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Permits by City OR Description Copy",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/permits/city_or_description/?city=Lagos&description=detached",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"permits",
+								"city_or_description",
+								""
+							],
+							"query": [
+								{
+									"key": "city",
+									"value": "Lagos"
+								},
+								{
+									"key": "description",
+									"value": "detached"
 								}
 							]
 						}
