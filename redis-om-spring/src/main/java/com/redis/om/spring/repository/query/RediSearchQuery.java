@@ -25,7 +25,6 @@ import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.data.util.Pair;
-import org.springframework.data.util.Streamable;
 
 import com.google.gson.Gson;
 import com.redis.om.spring.annotations.Aggregation;
@@ -69,9 +68,8 @@ public class RediSearchQuery implements RepositoryQuery {
 
   // is native? e.g. @Query or @Annotation
   private boolean annotationBased;
-
-  //
-  private List<Pair<String,QueryClause>> queryFields = new ArrayList<Pair<String,QueryClause>>();
+  
+  private List<List<Pair<String,QueryClause>>> queryOrParts = new ArrayList<List<Pair<String,QueryClause>>>();
 
   // for non @Param annotated dynamic names
   private List<String> paramNames = new ArrayList<String>();
@@ -114,7 +112,9 @@ public class RediSearchQuery implements RepositoryQuery {
         this.load = aggregation.load();
       } else if (queryMethod.getName().equalsIgnoreCase("search")) {
         this.type = RediSearchQueryType.QUERY;
-        queryFields.add(Pair.of("__all__", QueryClause.FullText_ALL));
+        List<Pair<String, QueryClause>> orPartParts = new ArrayList<Pair<String,QueryClause>>();
+        orPartParts.add(Pair.of("__ALL__", QueryClause.FullText_ALL));
+        queryOrParts.add(orPartParts);
         this.returnFields = new String[] {};
       } else {
 
@@ -123,16 +123,8 @@ public class RediSearchQuery implements RepositoryQuery {
         String methodName = isANDQuery ? QueryClause.getPostProcessMethodName(queryMethod.getName()) : queryMethod.getName();
 
         PartTree pt = new PartTree(methodName, metadata.getDomainType());
-
-        Streamable<Part> queryParts = pt.getParts();
-        for (Part part : queryParts) {
-          PropertyPath propertyPath = part.getProperty();
-
-          List<PropertyPath> path = StreamSupport
-              .stream(propertyPath.spliterator(), false)
-              .collect(Collectors.toList());
-          extractQueryFields(domainType, part, path);
-        }
+        
+        processPartTree(pt);
 
         this.type = RediSearchQueryType.QUERY;
         this.returnFields = new String[] {};
@@ -141,12 +133,28 @@ public class RediSearchQuery implements RepositoryQuery {
       logger.debug(String.format("Could not resolved query method %s(%s): %s", queryMethod.getName(), Arrays.toString(params), e.getMessage()));
     }
   }
+  
+  private void processPartTree(PartTree pt) {
+    pt.stream().forEach(orPart -> {
+      List<Pair<String, QueryClause>> orPartParts = new ArrayList<Pair<String,QueryClause>>();
+      orPart.iterator().forEachRemaining(part -> {
+        PropertyPath propertyPath = part.getProperty();
 
-  private void extractQueryFields(Class<?> type, Part part, List<PropertyPath> path) {
-    extractQueryFields(type, part, path, 0);
+        List<PropertyPath> path = StreamSupport
+            .stream(propertyPath.spliterator(), false)
+            .collect(Collectors.toList());
+        orPartParts.addAll(extractQueryFields(domainType, part, path));
+      });
+      queryOrParts.add(orPartParts);
+    });
   }
-
-  private void extractQueryFields(Class<?> type, Part part, List<PropertyPath> path, int level) {
+  
+  private List<Pair<String, QueryClause>> extractQueryFields(Class<?> type, Part part, List<PropertyPath> path) {
+    return extractQueryFields(type, part, path, 0);
+  }
+  
+  private List<Pair<String, QueryClause>> extractQueryFields(Class<?> type, Part part, List<PropertyPath> path, int level) {
+    List<Pair<String, QueryClause>> qf = new ArrayList<Pair<String,QueryClause>>();
     String property = path.get(level).getSegment();
     String key = part.getProperty().toDotPath().replace(".", "_");
 
@@ -155,52 +163,54 @@ public class RediSearchQuery implements RepositoryQuery {
       field = type.getDeclaredField(property);
 
       if (field.isAnnotationPresent(TextIndexed.class) || field.isAnnotationPresent(Searchable.class)) {
-        queryFields.add(Pair.of(key, QueryClause.get(FieldType.FullText, part.getType())));
+        qf.add(Pair.of(key, QueryClause.get(FieldType.FullText, part.getType())));
       } else if (field.isAnnotationPresent(TagIndexed.class)) {
-        queryFields.add(Pair.of(key, QueryClause.get(FieldType.Tag, part.getType())));
+        qf.add(Pair.of(key, QueryClause.get(FieldType.Tag, part.getType())));
       } else if (field.isAnnotationPresent(GeoIndexed.class)) {
-        queryFields.add(Pair.of(key, QueryClause.get(FieldType.Geo, part.getType())));
+        qf.add(Pair.of(key, QueryClause.get(FieldType.Geo, part.getType())));
       } else if (field.isAnnotationPresent(NumericIndexed.class)) {
-        queryFields.add(Pair.of(key, QueryClause.get(FieldType.Numeric, part.getType())));
+        qf.add(Pair.of(key, QueryClause.get(FieldType.Numeric, part.getType())));
       } else if (field.isAnnotationPresent(Indexed.class)) {
         //
         // Any Character class -> Tag Search Field
         //
         if (CharSequence.class.isAssignableFrom(field.getType())) {
-          queryFields.add(Pair.of(key, QueryClause.get(FieldType.Tag, part.getType())));
+          qf.add(Pair.of(key, QueryClause.get(FieldType.Tag, part.getType())));
         }
         //
         // Any Numeric class -> Numeric Search Field
         //
         else if (Number.class.isAssignableFrom(field.getType())) {
-          queryFields.add(Pair.of(key, QueryClause.get(FieldType.Numeric, part.getType())));
+          qf.add(Pair.of(key, QueryClause.get(FieldType.Numeric, part.getType())));
         }
         //
         // Set
         //
         else if (Set.class.isAssignableFrom(field.getType())) {
           if (isANDQuery) {
-            queryFields.add(Pair.of(key, QueryClause.Tag_CONTAINING_ALL));
+            qf.add(Pair.of(key, QueryClause.Tag_CONTAINING_ALL));
           } else {
-            queryFields.add(Pair.of(key, QueryClause.get(FieldType.Tag, part.getType())));
+            qf.add(Pair.of(key, QueryClause.get(FieldType.Tag, part.getType())));
           }
         }
         //
         // Point
         //
         else if (field.getType() == Point.class) {
-          queryFields.add(Pair.of(key, QueryClause.get(FieldType.Geo, part.getType())));
+          qf.add(Pair.of(key, QueryClause.get(FieldType.Geo, part.getType())));
         }
         //
         // Recursively explore the fields for @Indexed annotated fields
         //
         else {
-          extractQueryFields(field.getType(), part, path, level + 1);
+          qf.addAll(extractQueryFields(field.getType(), part, path, level + 1));
         }
       }
     } catch (NoSuchFieldException e) {
       logger.info(String.format("Did not find a field named %s", key));
     }
+    
+    return qf;
   }
 
   @Override
@@ -258,23 +268,34 @@ public class RediSearchQuery implements RepositoryQuery {
     return result;
   }
 
-  private String prepareQuery(Object[] parameters) {
-    logger.debug(
+  private String prepareQuery(final Object[] parameters) {
+    logger.info(
         String.format("parameters: %s", Arrays.toString(parameters)));
-
+    List<Object> params = new ArrayList<Object>(Arrays.asList(parameters));
     StringBuilder preparedQuery = new StringBuilder();
+    boolean multipleOrParts = queryOrParts.size() > 1;
+    logger.debug(
+        String.format("queryOrParts: %s", queryOrParts.size()));
+    if (!queryOrParts.isEmpty()) {
+      preparedQuery.append(
+         queryOrParts.stream().map(qop -> { 
+            String orPart = multipleOrParts ? "(" : "";
+            orPart = orPart + qop.stream().map(fieldClauses -> { 
+              String fieldName = fieldClauses.getFirst();
+              QueryClause queryClause = fieldClauses.getSecond();
+              int paramsCnt = queryClause.getValue().getNumberOfArguments();
+              
+              Object[] ps = params.subList(0, paramsCnt).toArray();
+              params.subList(0, paramsCnt).clear();
 
-    if (!queryFields.isEmpty()) {
-      for (Pair<String,QueryClause> fieldClauses : queryFields) {
-        String fieldName = fieldClauses.getFirst();
-        QueryClause queryClause = fieldClauses.getSecond();
-        int paramsCnt = queryClause.getValue().getNumberOfArguments();
-
-        preparedQuery.append(queryClause.prepareQuery(fieldName, Arrays.copyOfRange(parameters, 0, paramsCnt)));
-        preparedQuery.append(" ");
-
-        parameters = Arrays.copyOfRange(parameters, paramsCnt, parameters.length);
-      }
+              return queryClause.prepareQuery(fieldName, ps);
+            }).collect(Collectors.joining(" "));
+            orPart = orPart + (multipleOrParts ? ")" : "");
+            
+            return orPart;
+         })
+         .collect(Collectors.joining(" | "))
+      );
     } else {
       @SuppressWarnings("unchecked")
       Iterator<Parameter> iterator = (Iterator<Parameter>) queryMethod.getParameters().iterator();
@@ -310,5 +331,4 @@ public class RediSearchQuery implements RepositoryQuery {
 
     return preparedQuery.toString();
   }
-
 }

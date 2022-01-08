@@ -10,12 +10,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.data.geo.Point;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
+import org.springframework.data.mapping.PropertyPath;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.convert.Bucket;
 import org.springframework.data.redis.core.convert.MappingRedisConverter;
@@ -31,7 +33,6 @@ import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.data.util.Pair;
-import org.springframework.data.util.Streamable;
 
 import com.redis.om.spring.annotations.Aggregation;
 import com.redis.om.spring.annotations.Bloom;
@@ -70,7 +71,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   private String[] load;
 
   //
-  private List<Pair<String, QueryClause>> queryFields = new ArrayList<Pair<String, QueryClause>>();
+  private List<List<Pair<String,QueryClause>>> queryOrParts = new ArrayList<List<Pair<String,QueryClause>>>();
 
   // for non @Param annotated dynamic names
   private List<String> paramNames = new ArrayList<String>();
@@ -117,59 +118,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
         this.load = aggregation.load();
       } else {
         PartTree pt = new PartTree(queryMethod.getName(), metadata.getDomainType());
-
-        Streamable<Part> queryParts = pt.getParts();
-        for (Part part : queryParts) {
-          String fieldName = part.getProperty().getSegment();
-
-          // TODO: refactor this code is symmetrical to code executed during annotation
-          // processing
-          Field field;
-          try {
-            field = domainType.getDeclaredField(fieldName);
-            if (field.isAnnotationPresent(TextIndexed.class) || field.isAnnotationPresent(Searchable.class)) {
-              queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.FullText, part.getType())));
-            } else if (field.isAnnotationPresent(TagIndexed.class)) {
-              queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Tag, part.getType())));
-            } else if (field.isAnnotationPresent(GeoIndexed.class)) {
-              queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Geo, part.getType())));
-            } else if (field.isAnnotationPresent(NumericIndexed.class)) {
-              queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Numeric, part.getType())));
-            } else if (field.isAnnotationPresent(Indexed.class)) {
-              logger.debug(String.format("Found @Indexed field %s of type %s", fieldName, field.getType()));
-              //
-              // Any Character class -> Tag Search Field
-              //
-              if (CharSequence.class.isAssignableFrom(field.getType())) {
-                logger.debug(">>>> Adding TAG field");
-                queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Tag, part.getType())));
-              }
-              //
-              // Any Numeric class -> Numeric Search Field
-              //
-              else if (Number.class.isAssignableFrom(field.getType())) {
-                logger.debug(">>>> Adding NUMERIC field");
-                queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Numeric, part.getType())));
-              }
-              //
-              // Set
-              //
-              else if (Set.class.isAssignableFrom(field.getType())) {
-                logger.debug(">>>> Adding TAG field");
-                queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Tag, part.getType())));
-              }
-              //
-              // Point
-              //
-              else if (field.getType() == Point.class) {
-                logger.debug(">>>> Adding GEO field");
-                queryFields.add(Pair.of(fieldName, QueryClause.get(FieldType.Geo, part.getType())));
-              }
-            }
-          } catch (NoSuchFieldException e) {
-            logger.debug(String.format("Did not find a field named ", fieldName));
-          }
-        }
+        processPartTree(pt);
 
         this.type = RediSearchQueryType.QUERY;
         this.returnFields = new String[] {};
@@ -178,6 +127,76 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       logger.debug(String.format("Did not find query method %s(%s): %s", queryMethod.getName(), Arrays.toString(params),
           e.getMessage()));
     }
+  }
+  
+  
+  private void processPartTree(PartTree pt) {
+    pt.stream().forEach(orPart -> {
+      List<Pair<String, QueryClause>> orPartParts = new ArrayList<Pair<String,QueryClause>>();
+      orPart.iterator().forEachRemaining(part -> {
+        PropertyPath propertyPath = part.getProperty();
+
+        List<PropertyPath> path = StreamSupport
+            .stream(propertyPath.spliterator(), false)
+            .collect(Collectors.toList());
+        orPartParts.addAll(extractQueryFields(domainType, part, path));
+      });
+      queryOrParts.add(orPartParts);
+    });
+  }
+  
+  private List<Pair<String, QueryClause>> extractQueryFields(Class<?> type, Part part, List<PropertyPath> path) {
+    return extractQueryFields(type, part, path, 0);
+  }
+  
+  private List<Pair<String, QueryClause>> extractQueryFields(Class<?> type, Part part, List<PropertyPath> path, int level) {
+    List<Pair<String, QueryClause>> qf = new ArrayList<Pair<String,QueryClause>>();
+    String property = path.get(level).getSegment();
+    String key = part.getProperty().toDotPath().replace(".", "_");
+
+    Field field;
+    try {
+      field = type.getDeclaredField(property);
+
+      if (field.isAnnotationPresent(TextIndexed.class) || field.isAnnotationPresent(Searchable.class)) {
+        qf.add(Pair.of(key, QueryClause.get(FieldType.FullText, part.getType())));
+      } else if (field.isAnnotationPresent(TagIndexed.class)) {
+        qf.add(Pair.of(key, QueryClause.get(FieldType.Tag, part.getType())));
+      } else if (field.isAnnotationPresent(GeoIndexed.class)) {
+        qf.add(Pair.of(key, QueryClause.get(FieldType.Geo, part.getType())));
+      } else if (field.isAnnotationPresent(NumericIndexed.class)) {
+        qf.add(Pair.of(key, QueryClause.get(FieldType.Numeric, part.getType())));
+      } else if (field.isAnnotationPresent(Indexed.class)) {
+        //
+        // Any Character class -> Tag Search Field
+        //
+        if (CharSequence.class.isAssignableFrom(field.getType())) {
+          qf.add(Pair.of(key, QueryClause.get(FieldType.Tag, part.getType())));
+        }
+        //
+        // Any Numeric class -> Numeric Search Field
+        //
+        else if (Number.class.isAssignableFrom(field.getType())) {
+          qf.add(Pair.of(key, QueryClause.get(FieldType.Numeric, part.getType())));
+        }
+        //
+        // Set
+        //
+        else if (Set.class.isAssignableFrom(field.getType())) {
+          qf.add(Pair.of(key, QueryClause.get(FieldType.Tag, part.getType())));
+        }
+        //
+        // Point
+        //
+        else if (field.getType() == Point.class) {
+          qf.add(Pair.of(key, QueryClause.get(FieldType.Geo, part.getType())));
+        }
+      }
+    } catch (NoSuchFieldException e) {
+      logger.info(String.format("Did not find a field named %s", key));
+    }
+    
+    return qf;
   }
 
   @Override
@@ -276,20 +295,34 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   }
 
   private String prepareQuery(Object[] parameters) {
-    logger.debug(String.format("parameters: %s", Arrays.toString(parameters)));
+    logger.info(
+        String.format("parameters: %s", Arrays.toString(parameters)));
+    List<Object> params = new ArrayList<Object>(Arrays.asList(parameters));
     StringBuilder preparedQuery = new StringBuilder();
+    boolean multipleOrParts = queryOrParts.size() > 1;
+    logger.debug(
+        String.format("queryOrParts: %s", queryOrParts.size()));
 
-    if (!queryFields.isEmpty()) {
-      for (Pair<String, QueryClause> fieldClauses : queryFields) {
-        String fieldName = fieldClauses.getFirst();
-        QueryClause queryClause = fieldClauses.getSecond();
-        int paramsCnt = queryClause.getValue().getNumberOfArguments();
+    if (!queryOrParts.isEmpty()) {
+      preparedQuery.append(
+         queryOrParts.stream().map(qop -> { 
+            String orPart = multipleOrParts ? "(" : "";
+            orPart = orPart + qop.stream().map(fieldClauses -> { 
+              String fieldName = fieldClauses.getFirst();
+              QueryClause queryClause = fieldClauses.getSecond();
+              int paramsCnt = queryClause.getValue().getNumberOfArguments();
+              
+              Object[] ps = params.subList(0, paramsCnt).toArray();
+              params.subList(0, paramsCnt).clear();
 
-        preparedQuery.append(queryClause.prepareQuery(fieldName, Arrays.copyOfRange(parameters, 0, paramsCnt)));
-        preparedQuery.append(" ");
-
-        parameters = Arrays.copyOfRange(parameters, paramsCnt, parameters.length);
-      }
+              return queryClause.prepareQuery(fieldName, ps);
+            }).collect(Collectors.joining(" "));
+            orPart = orPart + (multipleOrParts ? ")" : "");
+            
+            return orPart;
+         })
+         .collect(Collectors.joining(" | "))
+      );
     } else {
       @SuppressWarnings("unchecked")
       Iterator<Parameter> iterator = (Iterator<Parameter>) queryMethod.getParameters().iterator();
