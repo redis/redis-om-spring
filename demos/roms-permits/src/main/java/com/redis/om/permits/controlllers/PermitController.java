@@ -47,4 +47,18 @@ public class PermitController {
   Iterable<Permit> byAllTags(@RequestParam("types") Set<String> wts) {
     return repository.findByWorkTypeContainingAll(wts);
   }
+  
+  @GetMapping("building_type_and_description")
+  Iterable<Permit> byBuildingTypeAndDescription(
+      @RequestParam("buildingType") String buildingType, //
+      @RequestParam("description") String description) {
+    return repository.findByBuildingTypeAndDescription(buildingType, description);
+  }
+  
+  @GetMapping("city_or_description")
+  Iterable<Permit> byCityOrDescription(
+      @RequestParam("city") String city, //
+      @RequestParam("description") String description) {
+    return repository.findByAddress_CityOrDescription(city, description);
+  }
 }
