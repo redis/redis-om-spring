@@ -260,6 +260,9 @@ The Redis OM documentation is available [here](docs/index.md).
 - **rds-hashes**:
   - Simple API example of `@RedisHash`, enhanced secondary indices and querying.
   - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-hashes`
+- **rds-permits**:
+  - Port of [Elena Kolevska's](https://github.com/elena-kolevska) Quick Start: Using RediSearch with JSON [Demo](https://github.com/redislabs-training/mod-devcap-redisjson-getting-started/blob/master/articles/QuickStart-RediSearchWithJSON.md) to Redis OM Spring.
+  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-permits`
 
 ## ⛏️ Troubleshooting
 
