@@ -1,6 +1,10 @@
 package com.redis.om.hashes.domain;
 
+import java.util.Date;
+
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Reference;
 import org.springframework.data.redis.core.RedisHash;
 
@@ -40,4 +44,12 @@ public class User {
   @NonNull 
   @Reference
   private Role role;
+  
+  // audit fields
+  
+  @CreatedDate
+  private Date createdDate;
+  
+  @LastModifiedDate
+  private Date lastModifiedDate;
 }

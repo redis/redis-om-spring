@@ -40,6 +40,7 @@ public class RomsHashesApplication {
       User brad = User.of("Brad", "Wilk", "brad@ratm.com", drums);
 
       userRepo.saveAll(List.of(john, tim, tom, brad));
+      userRepo.save(tom); // save again to trigger @LastModifiedDate
     };
   }
 

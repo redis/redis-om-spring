@@ -1,13 +1,22 @@
 package com.redis.om.spring;
 
+import java.lang.reflect.Field;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.Date;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.springframework.beans.PropertyAccessor;
+import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.keyvalue.core.KeyValueAdapter;
 import org.springframework.data.keyvalue.core.QueryEngine;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
@@ -149,6 +158,11 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * java.lang.Object, java.lang.String) */
   @Override
   public Object put(Object id, Object item, String keyspace) {
+    
+    if (!(item instanceof RedisData)) {
+      byte[] redisKey = createKey(keyspace, converter.getConversionService().convert(id, String.class));      
+      processAuditAnnotations(redisKey, item);
+    }
 
     RedisData rdo = item instanceof RedisData ? (RedisData) item : new RedisData();
     if (!(item instanceof RedisData)) {
@@ -505,6 +519,28 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
     private boolean isKeyExpirationMessage(Message message) {
       return BinaryKeyspaceIdentifier.isValid(message.getBody());
+    }
+  }
+  
+  private void processAuditAnnotations(byte[] redisKey, Object item) {
+    boolean isNew = (boolean) redisOperations.execute((RedisCallback<Object>) connection -> {
+      return !connection.exists(redisKey);
+    });
+    
+    var auditClass = isNew ? CreatedDate.class : LastModifiedDate.class;
+    
+    List<Field> fields = com.redis.om.spring.util.ObjectUtils.getFieldsWithAnnotation(item.getClass(), auditClass);
+    if (!fields.isEmpty()) {
+      PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(item);
+      fields.forEach(f -> {
+        if (f.getType() == Date.class) {
+          accessor.setPropertyValue(f.getName(), new Date(System.currentTimeMillis()));
+        } else if (f.getType() == LocalDateTime.class) {
+          accessor.setPropertyValue(f.getName(), LocalDateTime.now());
+        } else if (f.getType() == LocalDate.class) {
+          accessor.setPropertyValue(f.getName(), LocalDate.now());
+        }
+      });
     }
   }
 
