@@ -16,6 +16,8 @@
 
 **Redis OM Spring** extends [Spring Data Redis](https://spring.io/projects/spring-data-redis) to take full advantage of the power of Redis.
 
+[Redis OM .NET](https://github.com/redis/redis-om-dotnet) | [Redis OM Node.js](https://github.com/redis/redis-om-node) | **Redis OM Spring** | [Redis OM Python](https://github.com/redis/redis-om-python)
+
 | Project Stage | Snapshot | Issues |  | License |
 | --- | --- | --- | --- | --- |
 | [![Project stage][badge-Stage]][badge-stage-page] | [![Snapshots][badge-snapshots]][link-snapshots] | [![Percentage of issues still open][badge-open-issues]][open-issues] | [![Average time to resolve an issue][badge-issue-resolution]][issue-resolution] | [![License][license-image]][license-url] |
