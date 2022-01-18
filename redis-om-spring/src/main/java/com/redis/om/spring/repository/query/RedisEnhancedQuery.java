@@ -346,7 +346,6 @@ public class RedisEnhancedQuery implements RepositoryQuery {
           preparedQuery.append("@" + key + ":" + v).append(" ");
         } else {
           preparedQuery.append(value.replace("$" + key, v)).append(" ");
-          ;
         }
       }
     }
