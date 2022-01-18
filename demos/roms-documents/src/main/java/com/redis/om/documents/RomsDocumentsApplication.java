@@ -36,6 +36,7 @@ public class RomsDocumentsApplication {
       microsoft.setTags(Set.of("innovative", "reliable"));
 
       companyRepo.save(redis);
+      companyRepo.save(redis); // save again to test @LastModifiedDate
       companyRepo.save(microsoft);
 
       personRepo.deleteAll();

@@ -1,9 +1,12 @@
 package com.redis.om.documents.domain;
 
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.geo.Point;
 
 import com.redis.om.spring.annotations.Document;
@@ -47,4 +50,12 @@ public class Company {
   private Integer yearFounded;
 
   private boolean publiclyListed;
+  
+  // audit fields
+  
+  @CreatedDate
+  private Date createdDate;
+  
+  @LastModifiedDate
+  private Date lastModifiedDate;
 }
