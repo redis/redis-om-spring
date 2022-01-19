@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +33,7 @@ public class OpsForSearchTest extends AbstractBaseDocumentTest {
   RedisTemplate<String, String> template;
   
   @BeforeEach
-  public void setup() {
+  public void setup() {    
     HashOperations<String, String, String> hashOps = template.opsForHash();
     hashOps.putAll("profesor:5555", toMap("first", "Albert", "last", "Blue", "age", "55"));
     hashOps.putAll("student:1111", toMap("first", "Joe", "last", "Dod", "age", "18"));
@@ -42,21 +43,38 @@ public class OpsForSearchTest extends AbstractBaseDocumentTest {
     hashOps.putAll("student:5555", toMap("first", "Joen", "last", "Ko", "age", "20"));
     hashOps.putAll("teacher:6666", toMap("first", "Pat", "last", "Rod", "age", "20"));
     
-    SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
-    try {
-      ops.dropIndex();
-    } catch (JedisDataException jdee) {
-      // IGNORE: Unknown Index name
-    }
-
     Schema sc = new Schema() //
         .addTextField("first", 1.0) //
         .addTextField("last", 1.0) //
         .addNumericField("age");
 
     IndexDefinition def = new IndexDefinition().setPrefixes(new String[] { "student:", "pupil:" });
+    
+    SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
 
-    ops.createIndex(sc, Client.IndexOptions.defaultOptions().setDefinition(def));
+    try {
+      ops.createIndex(sc, Client.IndexOptions.defaultOptions().setDefinition(def));
+    } catch (JedisDataException jdee) {
+      // IGNORE: Unknown Index name
+    }
+  }
+  
+  @AfterEach
+  public void cleanUp() {
+    SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
+    try {
+      ops.dropIndex();
+    } catch (JedisDataException jdee) {
+      // IGNORE: Unknown Index name
+    }
+    
+    template.delete("profesor:5555");
+    template.delete("student:1111");
+    template.delete("pupil:2222");
+    template.delete("student:3333");
+    template.delete("pupil:4444");
+    template.delete("student:5555");
+    template.delete("teacher:6666");
   }
 
   @Test

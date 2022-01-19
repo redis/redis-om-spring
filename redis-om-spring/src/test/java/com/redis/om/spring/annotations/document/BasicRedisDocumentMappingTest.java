@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Optional;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -15,6 +16,11 @@ import com.redis.om.spring.annotations.document.fixtures.CompanyRepository;
 public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   @Autowired
   CompanyRepository repository;
+  
+  @AfterEach
+  public void cleanUp() {
+    repository.deleteAll();
+  }
 
   @Test
   public void testBasicCrudOperations() {

@@ -61,7 +61,8 @@
     <jredisearch.version>2.2.0-SNAPSHOT</jredisearch.version>
     <jredisbloom.version>2.2.0-SNAPSHOT</jredisbloom.version>
     <cdi>1.0</cdi>
-    <testcontainers.redis.version>1.4.6</testcontainers.redis.version>
+    <testcontainers.redis.version>1.5.2</testcontainers.redis.version>
+    <testcontainers.redis.junit.version>1.4.6</testcontainers.redis.junit.version>
   </properties>
 
   <dependencyManagement>
@@ -192,7 +193,7 @@
     <dependency>
       <groupId>com.redis.testcontainers</groupId>
       <artifactId>testcontainers-redis-junit-jupiter</artifactId>
-      <version>${testcontainers.redis.version}</version>
+      <version>${testcontainers.redis.junit.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
