@@ -58,8 +58,8 @@
     <spring.version>2.6.2</spring.version>
     <sdr.version>2.6.0</sdr.version>
     <jredisjson.version>1.5.0</jredisjson.version>
-    <jredisearch.version>2.2.0-SNAPSHOT</jredisearch.version>
-    <jredisbloom.version>2.2.0-SNAPSHOT</jredisbloom.version>
+    <jredisearch.version>2.2.0</jredisearch.version>
+    <jredisbloom.version>2.2.0</jredisbloom.version>
     <cdi>1.0</cdi>
     <testcontainers.redis.version>1.5.2</testcontainers.redis.version>
     <testcontainers.redis.junit.version>1.4.6</testcontainers.redis.junit.version>
