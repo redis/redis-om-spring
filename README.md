@@ -295,7 +295,7 @@ You can also **contribute documentation** -- or just let us know if something ne
 
 ## 📝 License
 
-Redis OM uses the [BSD 3-Clause license][license-url].
+Redis OM uses the [MIT license][license-url].
 
 <!-- Badges -->
 
