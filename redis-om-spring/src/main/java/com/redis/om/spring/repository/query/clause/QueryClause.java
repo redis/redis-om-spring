@@ -30,6 +30,7 @@ public enum QueryClause {
   FullText_STARTING_WITH( //
       QueryClauseTemplate.of(FieldType.FullText, Part.Type.STARTING_WITH, "@$field:$param_0*", 1) //
   ),
+  // TODO: currently not support with RediSearch - potential work around with aggregations
   FullText_ENDING_WITH( //
       QueryClauseTemplate.of(FieldType.FullText, Part.Type.ENDING_WITH, "@$field:$param_0", 1) //
   ),

@@ -35,7 +35,4 @@ public class PointTypeAdapter implements JsonSerializer<Point>, JsonDeserializer
   public static PointTypeAdapter getInstance() {
     return new PointTypeAdapter();
   }
-
-
-
 }

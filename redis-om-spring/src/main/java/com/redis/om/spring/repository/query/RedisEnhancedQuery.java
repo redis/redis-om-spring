@@ -93,7 +93,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
     this.modulesOperations = (RedisModulesOperations<String, String>) rmo;
     this.queryMethod = queryMethod;
-    this.searchIndex = this.queryMethod.getEntityInformation().getJavaType().getSimpleName() + "Idx";
+    this.searchIndex = this.queryMethod.getEntityInformation().getJavaType().getName() + "Idx";
     this.domainType = this.queryMethod.getEntityInformation().getJavaType();
 
     this.mappingConverter = new MappingRedisConverter(null, null, new ReferenceResolverImpl(redisOperations));
@@ -128,8 +128,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
           e.getMessage()));
     }
   }
-  
-  
+
+
   private void processPartTree(PartTree pt) {
     pt.stream().forEach(orPart -> {
       List<Pair<String, QueryClause>> orPartParts = new ArrayList<Pair<String,QueryClause>>();
@@ -144,11 +144,11 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       queryOrParts.add(orPartParts);
     });
   }
-  
+
   private List<Pair<String, QueryClause>> extractQueryFields(Class<?> type, Part part, List<PropertyPath> path) {
     return extractQueryFields(type, part, path, 0);
   }
-  
+
   private List<Pair<String, QueryClause>> extractQueryFields(Class<?> type, Part part, List<PropertyPath> path, int level) {
     List<Pair<String, QueryClause>> qf = new ArrayList<Pair<String,QueryClause>>();
     String property = path.get(level).getSegment();
@@ -195,7 +195,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     } catch (NoSuchFieldException e) {
       logger.info(String.format("Did not find a field named %s", key));
     }
-    
+
     return qf;
   }
 
@@ -305,20 +305,20 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
     if (!queryOrParts.isEmpty()) {
       preparedQuery.append(
-         queryOrParts.stream().map(qop -> { 
+         queryOrParts.stream().map(qop -> {
             String orPart = multipleOrParts ? "(" : "";
-            orPart = orPart + qop.stream().map(fieldClauses -> { 
+            orPart = orPart + qop.stream().map(fieldClauses -> {
               String fieldName = fieldClauses.getFirst();
               QueryClause queryClause = fieldClauses.getSecond();
               int paramsCnt = queryClause.getValue().getNumberOfArguments();
-              
+
               Object[] ps = params.subList(0, paramsCnt).toArray();
               params.subList(0, paramsCnt).clear();
 
               return queryClause.prepareQuery(fieldName, ps);
             }).collect(Collectors.joining(" "));
             orPart = orPart + (multipleOrParts ? ")" : "");
-            
+
             return orPart;
          })
          .collect(Collectors.joining(" | "))
