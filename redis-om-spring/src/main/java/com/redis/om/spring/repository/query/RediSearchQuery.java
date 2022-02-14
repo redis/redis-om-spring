@@ -68,7 +68,7 @@ public class RediSearchQuery implements RepositoryQuery {
 
   // is native? e.g. @Query or @Annotation
   private boolean annotationBased;
-  
+
   private List<List<Pair<String,QueryClause>>> queryOrParts = new ArrayList<List<Pair<String,QueryClause>>>();
 
   // for non @Param annotated dynamic names
@@ -87,7 +87,7 @@ public class RediSearchQuery implements RepositoryQuery {
 
     this.modulesOperations = (RedisModulesOperations<String, String>) rmo;
     this.queryMethod = queryMethod;
-    this.searchIndex = this.queryMethod.getEntityInformation().getJavaType().getSimpleName() + "Idx";
+    this.searchIndex = this.queryMethod.getEntityInformation().getJavaType().getName() + "Idx";
     this.metadata = metadata;
     this.domainType = this.queryMethod.getEntityInformation().getJavaType();
 
@@ -123,7 +123,7 @@ public class RediSearchQuery implements RepositoryQuery {
         String methodName = isANDQuery ? QueryClause.getPostProcessMethodName(queryMethod.getName()) : queryMethod.getName();
 
         PartTree pt = new PartTree(methodName, metadata.getDomainType());
-        
+
         processPartTree(pt);
 
         this.type = RediSearchQueryType.QUERY;
@@ -133,7 +133,7 @@ public class RediSearchQuery implements RepositoryQuery {
       logger.debug(String.format("Could not resolved query method %s(%s): %s", queryMethod.getName(), Arrays.toString(params), e.getMessage()));
     }
   }
-  
+
   private void processPartTree(PartTree pt) {
     pt.stream().forEach(orPart -> {
       List<Pair<String, QueryClause>> orPartParts = new ArrayList<Pair<String,QueryClause>>();
@@ -148,11 +148,11 @@ public class RediSearchQuery implements RepositoryQuery {
       queryOrParts.add(orPartParts);
     });
   }
-  
+
   private List<Pair<String, QueryClause>> extractQueryFields(Class<?> type, Part part, List<PropertyPath> path) {
     return extractQueryFields(type, part, path, 0);
   }
-  
+
   private List<Pair<String, QueryClause>> extractQueryFields(Class<?> type, Part part, List<PropertyPath> path, int level) {
     List<Pair<String, QueryClause>> qf = new ArrayList<Pair<String,QueryClause>>();
     String property = path.get(level).getSegment();
@@ -209,7 +209,7 @@ public class RediSearchQuery implements RepositoryQuery {
     } catch (NoSuchFieldException e) {
       logger.info(String.format("Did not find a field named %s", key));
     }
-    
+
     return qf;
   }
 
@@ -278,20 +278,20 @@ public class RediSearchQuery implements RepositoryQuery {
         String.format("queryOrParts: %s", queryOrParts.size()));
     if (!queryOrParts.isEmpty()) {
       preparedQuery.append(
-         queryOrParts.stream().map(qop -> { 
+         queryOrParts.stream().map(qop -> {
             String orPart = multipleOrParts ? "(" : "";
-            orPart = orPart + qop.stream().map(fieldClauses -> { 
+            orPart = orPart + qop.stream().map(fieldClauses -> {
               String fieldName = fieldClauses.getFirst();
               QueryClause queryClause = fieldClauses.getSecond();
               int paramsCnt = queryClause.getValue().getNumberOfArguments();
-              
+
               Object[] ps = params.subList(0, paramsCnt).toArray();
               params.subList(0, paramsCnt).clear();
 
               return queryClause.prepareQuery(fieldName, ps);
             }).collect(Collectors.joining(" "));
             orPart = orPart + (multipleOrParts ? ")" : "");
-            
+
             return orPart;
          })
          .collect(Collectors.joining(" | "))

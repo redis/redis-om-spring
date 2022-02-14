@@ -22,7 +22,7 @@ public class MyDocQueriesImpl implements MyDocQueries {
 
   @Override
   public Optional<MyDoc> findByTitle(String title) {
-    SearchOperations<String> ops = modulesOperations.opsForSearch("MyDocIdx");
+    SearchOperations<String> ops = modulesOperations.opsForSearch("com.redis.om.spring.annotations.document.fixtures.MyDocIdx");
     SearchResult result = ops.search(new Query("@title:'" + title + "'"));
     if (result.totalResults > 0) {
       Document doc = result.docs.get(0);

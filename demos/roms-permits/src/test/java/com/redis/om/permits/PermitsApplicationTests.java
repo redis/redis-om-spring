@@ -1,9 +1,8 @@
 package com.redis.om.permits;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
+//@SpringBootTest
 class PermitsApplicationTests {
 
 	@Test

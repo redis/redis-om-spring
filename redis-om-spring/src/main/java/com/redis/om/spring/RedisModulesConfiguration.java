@@ -50,6 +50,8 @@ import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.pds.BloomOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
+import com.redis.om.spring.search.stream.EntityStream;
+import com.redis.om.spring.search.stream.EntityStreamImpl;
 
 import io.redisearch.FieldName;
 import io.redisearch.Schema;
@@ -65,6 +67,7 @@ import io.redisearch.client.IndexDefinition;
 @EnableConfigurationProperties(RedisProperties.class)
 @EnableAspectJAutoProxy
 @ComponentScan("com.redis.om.spring.bloom")
+@ComponentScan("com.redis.om.spring.metamodel")
 public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
   private static final Log logger = LogFactory.getLog(RedisModulesConfiguration.class);
@@ -116,6 +119,11 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
       JSONOperations<?> redisJSONOperations) {
     RedisMappingContext mappingContext = new RedisMappingContext();
     return new CustomRedisKeyValueTemplate(new RedisEnhancedKeyValueAdapter(redisOps), mappingContext);
+  }
+  
+  @Bean(name = "streamingQueryBuilder")
+  EntityStream streamingQueryBuilder(RedisModulesOperations<?, ?> redisModulesOperations) {
+    return new EntityStreamImpl(redisModulesOperations);
   }
 
   @EventListener(ContextRefreshedEvent.class)
@@ -170,8 +178,8 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
       String scoreField = null;
       try {
         Class<?> cl = Class.forName(beanDef.getBeanClassName());
-        indexName = cl.getSimpleName() + "Idx";
-        logger.info(String.format("Found @%s annotated class: %s", cls.getSimpleName(), cl.getSimpleName()));
+        indexName = cl.getName() + "Idx";
+        logger.info(String.format("Found @%s annotated class: %s", cls.getSimpleName(), cl.getName()));
 
         List<Field> fields = new ArrayList<Field>();
 
@@ -227,7 +235,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     List<Field> fields = new ArrayList<Field>();
 
     if (field.isAnnotationPresent(Indexed.class)) {
-      logger.debug(String.format("FOUND @Indexed annotation on field of type: %s", field.getType()));
+      logger.info(String.format("FOUND @Indexed annotation on field of type: %s", field.getType()));
 
       Indexed indexed = (Indexed) field.getAnnotation(Indexed.class);
 
@@ -267,6 +275,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
     // Searchable - behaves like Text indexed
     else if (field.isAnnotationPresent(Searchable.class)) {
+      logger.info(String.format("FOUND @Searchable annotation on field of type: %s", field.getType()));
       Searchable searchable = field.getAnnotation(Searchable.class);
       fields.add(indexAsTextFieldFor(field, isDocument, prefix, searchable));
     }

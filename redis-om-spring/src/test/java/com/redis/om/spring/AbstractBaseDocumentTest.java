@@ -4,15 +4,18 @@ import static com.redis.testcontainers.RedisModulesContainer.DEFAULT_IMAGE_NAME;
 
 import java.time.Duration;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.junit.jupiter.Container;
@@ -24,6 +27,7 @@ import com.redis.testcontainers.RedisModulesContainer;
 import redis.clients.jedis.JedisPoolConfig;
 
 @Testcontainers
+@DirtiesContext
 @SpringBootTest(classes = AbstractBaseDocumentTest.Config.class, properties = {"spring.main.allow-bean-definition-overriding=true"})
 public abstract class AbstractBaseDocumentTest {
   @Container
@@ -44,9 +48,15 @@ public abstract class AbstractBaseDocumentTest {
   @Configuration
   @EnableRedisDocumentRepositories(basePackages = "com.redis.om.spring.annotations.document.fixtures")
   static class Config {
+    @Autowired
+    Environment env;
+    
     @Bean
     public JedisConnectionFactory jedisConnectionFactory() {
-      RedisStandaloneConfiguration conf = new RedisStandaloneConfiguration();
+      String host = env.getProperty("spring.redis.host");
+      int port = env.getProperty("spring.redis.port", Integer.class);
+      
+      RedisStandaloneConfiguration conf = new RedisStandaloneConfiguration(host, port);
       
       final JedisPoolConfig poolConfig = new JedisPoolConfig();
       poolConfig.setTestWhileIdle(true);
@@ -55,7 +65,6 @@ public abstract class AbstractBaseDocumentTest {
       poolConfig.setNumTestsPerEvictionRun(-1);
       
       final Integer timeout = 10000;
-      
       
       final JedisClientConfiguration jedisClientConfiguration = JedisClientConfiguration.builder()
           .connectTimeout(Duration.ofMillis(timeout))
@@ -69,11 +78,12 @@ public abstract class AbstractBaseDocumentTest {
 
     @Bean
     public RedisTemplate<?, ?> redisTemplate(RedisConnectionFactory connectionFactory) {
-      System.out.println(">>>> IN redisTemplate...");
       RedisTemplate<?, ?> template = new RedisTemplate<>();
       template.setConnectionFactory(connectionFactory);
 
       return template;
     }
+    
+    
   }
 }
