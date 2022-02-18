@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Spliterator;
-import java.util.StringJoiner;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
@@ -27,47 +26,22 @@ import java.util.stream.Stream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.data.geo.Distance;
-import org.springframework.data.geo.Point;
-import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
 
 import com.google.gson.Gson;
 import com.redis.om.spring.metamodel.FieldOperationInterceptor;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
-import com.redis.om.spring.search.stream.predicates.AndPredicate;
-import com.redis.om.spring.search.stream.predicates.BetweenPredicate;
-import com.redis.om.spring.search.stream.predicates.ContainsAllTagPredicate;
-import com.redis.om.spring.search.stream.predicates.EqualPredicate;
-import com.redis.om.spring.search.stream.predicates.GreaterThanOrEqualPredicate;
-import com.redis.om.spring.search.stream.predicates.GreaterThanPredicate;
-import com.redis.om.spring.search.stream.predicates.InPredicate;
-import com.redis.om.spring.search.stream.predicates.InTagPredicate;
-import com.redis.om.spring.search.stream.predicates.LessThanOrEqualPredicate;
-import com.redis.om.spring.search.stream.predicates.LessThanPredicate;
-import com.redis.om.spring.search.stream.predicates.LikePredicate;
-import com.redis.om.spring.search.stream.predicates.NearPredicate;
-import com.redis.om.spring.search.stream.predicates.NotEqualPredicate;
-import com.redis.om.spring.search.stream.predicates.NotLikePredicate;
-import com.redis.om.spring.search.stream.predicates.OrPredicate;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
-import com.redis.om.spring.search.stream.predicates.StartsWithPredicate;
 import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.TupleMapper;
 
 import io.redisearch.Query;
-import io.redisearch.Schema.FieldType;
 import io.redisearch.SearchResult;
 import io.redisearch.aggregation.SortedField;
 import io.redisearch.aggregation.SortedField.SortOrder;
-import io.redisearch.querybuilder.GeoValue;
 import io.redisearch.querybuilder.Node;
 import io.redisearch.querybuilder.QueryBuilder;
-import io.redisearch.querybuilder.QueryNode;
-import io.redisearch.querybuilder.Values;
-
-import static io.redisearch.querybuilder.GeoValue.Unit;
 
 public class SearchStreamImpl<E> implements SearchStream<E> {
 
@@ -106,163 +80,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     return this;
   }
 
-  private Node processPredicate(SearchFieldPredicate<? super E,?> predicate) {
-    if (predicate.getClass() == EqualPredicate.class) {
-      EqualPredicate<? super E,?> ep = (EqualPredicate<? super E, ?>)predicate;
-      Object value = ep.getValue();
-      String fieldName = ep.getField().getName();
-
-      if (ep.getSearchFieldType() == FieldType.FullText) {
-        return QueryBuilder.intersect(rootNode).add(fieldName, value.toString());
-      } else if (ep.getSearchFieldType() == FieldType.Numeric) {
-        return QueryBuilder.intersect(rootNode).add(fieldName, Values.eq(Integer.valueOf(value.toString())));
-      } else if (ep.getSearchFieldType() == FieldType.Tag) {
-        if (Iterable.class.isAssignableFrom(ep.getField().getType())) {
-          Iterable<?> values = (Iterable<?>)value;
-          QueryNode and = QueryBuilder.intersect();
-          for (Object v : values) {
-            and.add(fieldName, "{" + v.toString() + "}");
-          }
-          return QueryBuilder.intersect(rootNode, and);
-        } else {
-          return QueryBuilder.intersect(rootNode).add(fieldName, "{" +value.toString() + "}");
-        }
-      } else {
-        return QueryBuilder.intersect(rootNode).add(fieldName, value.toString());
-      }
-
-    } else if (predicate.getClass() == NotEqualPredicate.class) {
-      NotEqualPredicate<? super E,?> ep = (NotEqualPredicate<? super E, ?>)predicate;
-      Object value = ep.getValue();
-      String fieldName = ep.getField().getName();
-      return QueryBuilder.intersect(rootNode).add(QueryBuilder.disjunct(fieldName, Values.value(value.toString())));
-    } else if (predicate.getClass() == OrPredicate.class) {
-      OrPredicate<? super E,?> op = (OrPredicate<? super E, ?>)predicate;
-      Node[] nodes = op.stream().map(p -> processPredicate(p)).toArray(Node[]::new);
-      return QueryBuilder.union(nodes);
-    } else if (predicate.getClass() == AndPredicate.class) {
-      AndPredicate<? super E,?> op = (AndPredicate<? super E, ?>)predicate;
-      Node[] nodes = op.stream().map(p -> processPredicate(p)).toArray(Node[]::new);
-      return QueryBuilder.intersect(nodes);
-    } else if (predicate.getClass() == GreaterThanPredicate.class) {
-      GreaterThanPredicate<? super E,?> ep = (GreaterThanPredicate<? super E, ?>)predicate;
-      Object value = ep.getValue();
-      String fieldName = ep.getField().getName();
-
-      return QueryBuilder.intersect(rootNode).add(fieldName, Values.gt(Integer.valueOf(value.toString())));
-    } else if (predicate.getClass() == GreaterThanOrEqualPredicate.class) {
-      GreaterThanOrEqualPredicate<? super E,?> ep = (GreaterThanOrEqualPredicate<? super E, ?>)predicate;
-      Object value = ep.getValue();
-      String fieldName = ep.getField().getName();
-
-      return QueryBuilder.intersect(rootNode).add(fieldName, Values.ge(Integer.valueOf(value.toString())));
-    } else if (predicate.getClass() == LessThanPredicate.class) {
-      LessThanPredicate<? super E,?> ep = (LessThanPredicate<? super E, ?>)predicate;
-      Object value = ep.getValue();
-      String fieldName = ep.getField().getName();
-
-      return QueryBuilder.intersect(rootNode).add(fieldName, Values.lt(Integer.valueOf(value.toString())));
-    } else if (predicate.getClass() == LessThanOrEqualPredicate.class) {
-      LessThanOrEqualPredicate<? super E,?> ep = (LessThanOrEqualPredicate<? super E, ?>)predicate;
-      Object value = ep.getValue();
-      String fieldName = ep.getField().getName();
-
-      return QueryBuilder.intersect(rootNode).add(fieldName, Values.le(Integer.valueOf(value.toString())));
-    } else if (predicate.getClass() == BetweenPredicate.class) {
-      BetweenPredicate<? super E,?> ep = (BetweenPredicate<? super E, ?>)predicate;
-      Object min = ep.getMin();
-      Object max = ep.getMax();
-      String fieldName = ep.getField().getName();
-
-      return QueryBuilder.intersect(rootNode).add(fieldName, Values.between(Double.valueOf(min.toString()), Double.valueOf(max.toString())));
-    } else if (predicate.getClass() == InPredicate.class) {
-      InPredicate<? super E,?> ip = (InPredicate<? super E, ?>)predicate;
-      List<?> values = ip.getValues();
-      String fieldName = ip.getField().getName();
-
-      StringJoiner sj = new StringJoiner(" | ");
-      for (Object value : values) {
-          sj.add(value.toString());
-      }
-
-      if (ip.getSearchFieldType() == FieldType.Tag) {
-        return QueryBuilder.intersect(rootNode).add(fieldName, "{" + sj.toString() + "}");
-      } else if (ip.getSearchFieldType() == FieldType.Numeric) {
-        QueryNode or = QueryBuilder.union();
-
-        for (Object value : values) {
-          or.add(fieldName, Values.eq(Integer.valueOf(value.toString())));
-        }
-
-        return QueryBuilder.intersect(rootNode, or);
-
-      } else {
-        return QueryBuilder.intersect(rootNode).add(fieldName, sj.toString());
-      }
-    } else if (predicate.getClass() == InTagPredicate.class) {
-      InTagPredicate<? super E,?> ip = (InTagPredicate<? super E, ?>)predicate;
-      List<String> values = ip.getValues();
-      String fieldName = ip.getField().getName();
-      StringJoiner sj = new StringJoiner(" | ");
-      for (Object value : values) {
-          sj.add(value.toString());
-      }
-
-      return QueryBuilder.intersect(rootNode).add(fieldName, "{" + sj.toString() + "}");
-
-    // ContainsAllTagPredicate
-    } else if (predicate.getClass() == ContainsAllTagPredicate.class) {
-      ContainsAllTagPredicate<? super E,?> ip = (ContainsAllTagPredicate<? super E, ?>)predicate;
-      List<String> values = ip.getValues();
-      String fieldName = ip.getField().getName();
-
-      QueryNode and = QueryBuilder.intersect();
-      for (String value : values) {
-        and.add(fieldName, "{" + value + "}");
-      }
-
-      return QueryBuilder.intersect(rootNode, and);
-    } else if (predicate.getClass() == NearPredicate.class) {
-      NearPredicate<? super E,?> np = (NearPredicate<? super E, ?>)predicate;
-      String fieldName = np.getField().getName();
-      Point point = np.getPoint();
-      Distance distance = np.getDistance();
-      GeoValue geoValue = new GeoValue(point.getX(), point.getY(), distance.getValue(), getDistanceUnit(distance));
-
-      return QueryBuilder.intersect(rootNode).add(fieldName, geoValue);
-    } else if (predicate.getClass() == LikePredicate.class) {
-      LikePredicate<? super E,?> lp = (LikePredicate<? super E, ?>)predicate;
-      Object value = lp.getValue();
-      String fieldName = lp.getField().getName();
-
-      return QueryBuilder.intersect(rootNode).add(fieldName, "%%%"+value.toString()+"%%%");
-    } else if (predicate.getClass() == NotLikePredicate.class) {
-      NotLikePredicate<? super E,?> lp = (NotLikePredicate<? super E, ?>)predicate;
-      Object value = lp.getValue();
-      String fieldName = lp.getField().getName();
-
-      return QueryBuilder.intersect(rootNode).add(QueryBuilder.disjunct(fieldName, Values.value("%%%"+value.toString()+"%%%")));
-    } else if (predicate.getClass() == StartsWithPredicate.class) {
-      StartsWithPredicate<? super E,?> sw = (StartsWithPredicate<? super E, ?>)predicate;
-      Object value = sw.getValue();
-      String fieldName = sw.getField().getName();
-
-      return QueryBuilder.intersect(rootNode).add(fieldName, value.toString()+"*");
-    } else {
-      return null;
-    }
-  }
-
-  private static Unit getDistanceUnit(Distance distance) {
-    if (distance.getUnit().equals(DistanceUnit.MILES.getAbbreviation())) {
-      return GeoValue.Unit.MILES;
-    } else if (distance.getUnit().equals(DistanceUnit.FEET.getAbbreviation())) {
-      return GeoValue.Unit.FEET;
-    } else if (distance.getUnit().equals(DistanceUnit.KILOMETERS.getAbbreviation())) {
-      return GeoValue.Unit.KILOMETERS;
-    } else {
-      return GeoValue.Unit.METERS;
-    }
+  public Node processPredicate(SearchFieldPredicate<? super E,?> predicate) {
+    return predicate.apply(rootNode);
   }
 
   private Node processPredicate(Predicate<?> predicate) {

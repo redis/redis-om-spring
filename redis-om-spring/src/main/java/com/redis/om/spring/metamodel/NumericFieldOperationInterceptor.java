@@ -3,17 +3,27 @@ package com.redis.om.spring.metamodel;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
-import com.redis.om.spring.search.stream.predicates.BetweenPredicate;
-import com.redis.om.spring.search.stream.predicates.GreaterThanOrEqualPredicate;
-import com.redis.om.spring.search.stream.predicates.GreaterThanPredicate;
-import com.redis.om.spring.search.stream.predicates.InPredicate;
-import com.redis.om.spring.search.stream.predicates.LessThanOrEqualPredicate;
-import com.redis.om.spring.search.stream.predicates.LessThanPredicate;
+import com.redis.om.spring.search.stream.predicates.numeric.BetweenPredicate;
+import com.redis.om.spring.search.stream.predicates.numeric.GreaterThanOrEqualPredicate;
+import com.redis.om.spring.search.stream.predicates.numeric.GreaterThanPredicate;
+import com.redis.om.spring.search.stream.predicates.numeric.LessThanOrEqualPredicate;
+import com.redis.om.spring.search.stream.predicates.numeric.LessThanPredicate;
+import com.redis.om.spring.search.stream.predicates.numeric.EqualPredicate;
+import com.redis.om.spring.search.stream.predicates.numeric.InPredicate;
+import com.redis.om.spring.search.stream.predicates.numeric.NotEqualPredicate;
 
 public class NumericFieldOperationInterceptor<E, T> extends FieldOperationInterceptor<E, T> {
 
   public NumericFieldOperationInterceptor(Field field, boolean indexed) {
     super(field, indexed);
+  }
+  
+  public EqualPredicate<? super E,T> eq(T value) {
+    return new EqualPredicate<E,T>(field,value);
+  }
+  
+  public NotEqualPredicate<? super E,T> notEq(T value) {
+    return new NotEqualPredicate<E,T>(field,value);
   }
   
   public GreaterThanPredicate<? super E,T> gt(T value) {

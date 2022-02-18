@@ -1,7 +1,9 @@
 package com.redis.om.spring;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -120,7 +122,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     RedisMappingContext mappingContext = new RedisMappingContext();
     return new CustomRedisKeyValueTemplate(new RedisEnhancedKeyValueAdapter(redisOps), mappingContext);
   }
-  
+
   @Bean(name = "streamingQueryBuilder")
   EntityStream streamingQueryBuilder(RedisModulesOperations<?, ?> redisModulesOperations) {
     return new EntityStreamImpl(redisModulesOperations);
@@ -248,13 +250,13 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
       //
       // Any Numeric class -> Numeric Search Field
       //
-      else if (Number.class.isAssignableFrom(field.getType()) || field.getType() == LocalDateTime.class) {
+      else if (Number.class.isAssignableFrom(field.getType()) || (field.getType() == LocalDateTime.class) || (field.getType() == LocalDate.class) || (field.getType() == Date.class)) {
         fields.add(indexAsNumericFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.noindex()));
       }
       //
       // Set / List
       //
-      else if (Set.class.isAssignableFrom(field.getType()) || List.class.isAssignableFrom(field.getType())) {
+      else if (Set.class.isAssignableFrom(field.getType()) || List.class.isAssignableFrom(field.getType()) || Set.class.isAssignableFrom(field.getType())) {
         fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(), indexed.arrayIndex()));
       }
       //
@@ -380,7 +382,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     } else {
       fieldName = fieldName.as(field.getName());
     }
-    
+
     String phonetic = ObjectUtils.isEmpty(ti.phonetic()) ? null : ti.phonetic();
 
     return new TextField(fieldName, ti.weight(), ti.sortable(), ti.nostem(), ti.noindex(), phonetic);
@@ -442,7 +444,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
 
     fieldName = fieldName.as(field.getName());
-    
+
     if (prefix != null && !prefix.isBlank()) {
       fieldName = fieldName.as(prefix.replace(".", "_") + "_" + field.getName());
     } else {

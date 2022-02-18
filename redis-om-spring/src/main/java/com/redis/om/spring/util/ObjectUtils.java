@@ -7,6 +7,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.data.geo.Distance;
+import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
+
+import io.redisearch.querybuilder.GeoValue;
+import io.redisearch.querybuilder.GeoValue.Unit;
 
 public class ObjectUtils {
   public static String getDistanceAsRedisString(Distance distance) {
@@ -18,6 +22,26 @@ public class ObjectUtils {
         .stream(clazz.getDeclaredFields()) //
         .filter(f -> f.isAnnotationPresent(annotationClass)) //
         .collect(Collectors.toList());
+  }
+  
+  public static Class<?> getNumericClassFor(String str) {
+    try {
+      Double.parseDouble(str);
+      return Double.class;
+    } catch (NumberFormatException nfe) {}
+    return Integer.class;
+  }
+  
+  public static Unit getDistanceUnit(Distance distance) {
+    if (distance.getUnit().equals(DistanceUnit.MILES.getAbbreviation())) {
+      return GeoValue.Unit.MILES;
+    } else if (distance.getUnit().equals(DistanceUnit.FEET.getAbbreviation())) {
+      return GeoValue.Unit.FEET;
+    } else if (distance.getUnit().equals(DistanceUnit.KILOMETERS.getAbbreviation())) {
+      return GeoValue.Unit.KILOMETERS;
+    } else {
+      return GeoValue.Unit.METERS;
+    }
   }
 
 }

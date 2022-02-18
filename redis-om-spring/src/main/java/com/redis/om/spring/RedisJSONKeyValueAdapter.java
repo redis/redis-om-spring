@@ -31,7 +31,6 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private static final Log logger = LogFactory.getLog(RedisJSONKeyValueAdapter.class);
   private JSONOperations<?> redisJSONOperations;
   private RedisOperations<?, ?> redisOperations;
-//  private StringRedisSerializer stringSerializer = new StringRedisSerializer();
 
   /**
    * Creates new {@link RedisKeyValueAdapter} with default {@link RedisMappingContext} and default

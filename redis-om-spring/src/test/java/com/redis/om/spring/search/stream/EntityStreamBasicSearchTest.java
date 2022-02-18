@@ -572,5 +572,34 @@ public class EntityStreamBasicSearchTest extends AbstractBaseDocumentTest {
 
     assertTrue(names.contains("RedisInc"));
   }
-   
+  
+  @Test
+  public void testFindByTagsNotEquals() {
+    Set<String> tags = Set.of("fast", "scalable", "reliable", "database", "nosql");
+    List<String> names = entityStream //
+        .of(Company.class) //
+        .filter(Company$.TAGS.notEq(tags)) //
+        .map(Company$.NAME) //
+        .collect(Collectors.toList());
+
+    assertEquals(2, names.size());
+
+    assertTrue(names.contains("Microsoft"));
+    assertTrue(names.contains("Tesla"));
+  }
+  
+  @Test
+  public void testFindByTagsContainsNone() {
+    Set<String> tags = Set.of("innovative");
+    List<String> names = entityStream //
+        .of(Company.class) //
+        .filter(Company$.TAGS.containsNone(tags)) //
+        .map(Company$.NAME) //
+        .collect(Collectors.toList());
+
+    assertEquals(1, names.size());
+
+    assertTrue(names.contains("RedisInc"));
+  }
+  
 }

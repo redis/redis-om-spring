@@ -7,6 +7,7 @@ import java.io.Writer;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -172,7 +173,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
           //
           // Any Numeric class -> Numeric Search Field
           //
-          else if (Number.class.isAssignableFrom(targetCls) || targetCls == LocalDateTime.class || targetCls == Date.class ) {
+          else if (Number.class.isAssignableFrom(targetCls) || (targetCls == LocalDateTime.class) || (targetCls == LocalDate.class) || (targetCls == Date.class) ) {
             Triple<FieldSpec, FieldSpec, CodeBlock> fieldMetamodel = generateFieldMetamodel(entity, field, NumericFieldOperationInterceptor.class, fieldIsIndexed);
 
             fields.add(fieldMetamodel.getFirst());

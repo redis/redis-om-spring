@@ -25,8 +25,5 @@ public enum PredicateType {
   ENDS_WITH, 
   LIKE, 
   NOT_LIKE, 
-  
-  // Tag
-  TAG_IN,
-  
+  CONTAINS_ALL, 
 }

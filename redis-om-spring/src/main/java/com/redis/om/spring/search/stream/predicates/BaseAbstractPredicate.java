@@ -1,7 +1,9 @@
 package com.redis.om.spring.search.stream.predicates;
 
 import java.lang.reflect.Field;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -17,19 +19,19 @@ import com.redis.om.spring.annotations.TextIndexed;
 import io.redisearch.Schema.FieldType;
 
 public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicate<E, T> {
-  
+
   private FieldType fieldType;
   private Field field;
-  
+
   public BaseAbstractPredicate() {
-    
+
   }
-  
+
   public BaseAbstractPredicate(Field field) {
     this.field = field;
     this.fieldType = getFieldTypeFor(field);
   }
-  
+
   @Override
   public Field getField() {
     return field;
@@ -39,7 +41,7 @@ public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicat
   public FieldType getSearchFieldType() {
     return fieldType;
   }
-  
+
   private static FieldType getFieldTypeFor(java.lang.reflect.Field field) {
     FieldType result = FieldType.Tag;
     // Searchable - behaves like Text indexed
@@ -72,7 +74,7 @@ public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicat
       //
       // Any Numeric class -> Numeric Search Field
       //
-      else if (Number.class.isAssignableFrom(field.getType()) || field.getType() == LocalDateTime.class) {
+      else if (Number.class.isAssignableFrom(field.getType()) || (field.getType() == LocalDateTime.class) || (field.getType() == LocalDate.class)|| (field.getType() == Date.class)) {
         result = FieldType.Numeric;
       }
       //
@@ -88,6 +90,6 @@ public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicat
         result =  FieldType.Geo;
       }
     }
-    return result; 
+    return result;
   }
 }

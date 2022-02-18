@@ -3,15 +3,25 @@ package com.redis.om.spring.metamodel;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
-import com.redis.om.spring.search.stream.predicates.InPredicate;
-import com.redis.om.spring.search.stream.predicates.LikePredicate;
-import com.redis.om.spring.search.stream.predicates.NotLikePredicate;
-import com.redis.om.spring.search.stream.predicates.StartsWithPredicate;
+import com.redis.om.spring.search.stream.predicates.fulltext.EqualPredicate;
+import com.redis.om.spring.search.stream.predicates.fulltext.InPredicate;
+import com.redis.om.spring.search.stream.predicates.fulltext.NotEqualPredicate;
+import com.redis.om.spring.search.stream.predicates.fulltext.LikePredicate;
+import com.redis.om.spring.search.stream.predicates.fulltext.NotLikePredicate;
+import com.redis.om.spring.search.stream.predicates.fulltext.StartsWithPredicate;
 
 public class TextFieldOperationInterceptor<E, T> extends FieldOperationInterceptor<E, T> {
 
   public TextFieldOperationInterceptor(Field field, boolean indexed) {
     super(field, indexed);
+  }
+  
+  public EqualPredicate<? super E,T> eq(T value) {
+    return new EqualPredicate<E,T>(field,value);
+  }
+  
+  public NotEqualPredicate<? super E,T> notEq(T value) {
+    return new NotEqualPredicate<E,T>(field,value);
   }
   
   public StartsWithPredicate<? super E,T> startsWith(T value) {

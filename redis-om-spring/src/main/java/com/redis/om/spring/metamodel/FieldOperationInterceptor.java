@@ -4,9 +4,6 @@ import java.lang.reflect.Field;
 import java.util.Comparator;
 import java.util.function.Function;
 
-import com.redis.om.spring.search.stream.predicates.EqualPredicate;
-import com.redis.om.spring.search.stream.predicates.NotEqualPredicate;
-
 public class FieldOperationInterceptor<E, T> implements Comparator<E>, Function<E,T> {
 
   protected final Field field;
@@ -19,14 +16,6 @@ public class FieldOperationInterceptor<E, T> implements Comparator<E>, Function<
   
   public Field getField() {
     return field;
-  }
-  
-  public EqualPredicate<? super E,T> eq(T value) {
-    return new EqualPredicate<E,T>(field,value);
-  }
-
-  public NotEqualPredicate<? super E,T> notEq(T value) {
-    return new NotEqualPredicate<E,T>(field,value);
   }
 
   @Override

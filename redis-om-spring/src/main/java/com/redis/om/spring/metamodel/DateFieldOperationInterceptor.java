@@ -2,11 +2,11 @@ package com.redis.om.spring.metamodel;
 
 import java.lang.reflect.Field;
 
-import com.redis.om.spring.search.stream.predicates.BetweenPredicate;
-import com.redis.om.spring.search.stream.predicates.GreaterThanOrEqualPredicate;
-import com.redis.om.spring.search.stream.predicates.GreaterThanPredicate;
-import com.redis.om.spring.search.stream.predicates.LessThanOrEqualPredicate;
-import com.redis.om.spring.search.stream.predicates.LessThanPredicate;
+import com.redis.om.spring.search.stream.predicates.numeric.BetweenPredicate;
+import com.redis.om.spring.search.stream.predicates.numeric.GreaterThanOrEqualPredicate;
+import com.redis.om.spring.search.stream.predicates.numeric.GreaterThanPredicate;
+import com.redis.om.spring.search.stream.predicates.numeric.LessThanOrEqualPredicate;
+import com.redis.om.spring.search.stream.predicates.numeric.LessThanPredicate;
 
 public class DateFieldOperationInterceptor<E, T> extends FieldOperationInterceptor<E, T> {
 
