@@ -50,6 +50,7 @@ import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.Searchable;
 import com.redis.om.spring.tuple.Triple;
 import com.redis.om.spring.tuple.Tuples;
+import com.redis.om.spring.util.ObjectUtils;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
@@ -140,71 +141,63 @@ public final class MetamodelGenerator extends AbstractProcessor {
     List<CodeBlock> initCodeBlocks = new ArrayList<CodeBlock>();
     enclosedFields.forEach((field, getter) -> {
       boolean fieldIsIndexed = (field.getAnnotation(Searchable.class) != null) || (field.getAnnotation(Indexed.class) != null);
+      
+      String fieldName = field.getSimpleName().toString();
+      TypeName entityField = TypeName.get(field.asType());
+      
+      TypeMirror fieldType = field.asType();
+      String fullTypeClassName = fieldType.toString();
+      String cls = ObjectUtils.getTargetClassName(fullTypeClassName);
+      
+      if (field.asType().getKind().isPrimitive()) {
+        Class<?> primitive = ClassUtils.resolvePrimitiveClassName(cls);
+        Class<?> primitiveWrapper = ClassUtils.resolvePrimitiveIfNecessary(primitive);
+        entityField = TypeName.get(primitiveWrapper);
+      } 
+      
+      Class<?> targetInterceptor = FieldOperationInterceptor.class;
 
       if (field.getAnnotation(Searchable.class) != null) {
-        Triple<FieldSpec, FieldSpec, CodeBlock> fieldMetamodel = generateFieldMetamodel(entity, field, TextFieldOperationInterceptor.class, fieldIsIndexed);
-
-        fields.add(fieldMetamodel.getFirst());
-        interceptors.add(fieldMetamodel.getSecond());
-        initCodeBlocks.add(fieldMetamodel.getThird());
-      } else {
-        TypeMirror fieldType = field.asType();
-        String fullTypeClassName = fieldType.toString();
-
-        String[] splitted = fullTypeClassName.split(" ");
-        String cls = splitted[splitted.length-1];
-        if (cls.contains("<")) {
-          cls = cls.substring(0, cls.indexOf("<"));
-        }
-
+        targetInterceptor = TextFieldOperationInterceptor.class;
+      } else if (field.getAnnotation(Indexed.class) != null) {
         Class<?> targetCls;
         try {
           targetCls = ClassUtils.forName(cls, MetamodelGenerator.class.getClassLoader());
+          
           //
           // Any Character class -> Tag Search Field
           //
           if (CharSequence.class.isAssignableFrom(targetCls)) {
-            Triple<FieldSpec, FieldSpec, CodeBlock> fieldMetamodel = generateFieldMetamodel(entity, field, TagFieldOperationInterceptor.class, fieldIsIndexed);
-
-            fields.add(fieldMetamodel.getFirst());
-            interceptors.add(fieldMetamodel.getSecond());
-            initCodeBlocks.add(fieldMetamodel.getThird());
+            targetInterceptor = TagFieldOperationInterceptor.class;
           }
           //
           // Any Numeric class -> Numeric Search Field
           //
           else if (Number.class.isAssignableFrom(targetCls) || (targetCls == LocalDateTime.class) || (targetCls == LocalDate.class) || (targetCls == Date.class) ) {
-            Triple<FieldSpec, FieldSpec, CodeBlock> fieldMetamodel = generateFieldMetamodel(entity, field, NumericFieldOperationInterceptor.class, fieldIsIndexed);
-
-            fields.add(fieldMetamodel.getFirst());
-            interceptors.add(fieldMetamodel.getSecond());
-            initCodeBlocks.add(fieldMetamodel.getThird());
+            targetInterceptor = NumericFieldOperationInterceptor.class;
           }
           //
           // Set / List
           //
           else if (Set.class.isAssignableFrom(targetCls) || List.class.isAssignableFrom(targetCls)) {
-            Triple<FieldSpec, FieldSpec, CodeBlock> fieldMetamodel = generateFieldMetamodel(entity, field, TagFieldOperationInterceptor.class, fieldIsIndexed);
-
-            fields.add(fieldMetamodel.getFirst());
-            interceptors.add(fieldMetamodel.getSecond());
-            initCodeBlocks.add(fieldMetamodel.getThird());
+            targetInterceptor = TagFieldOperationInterceptor.class;
           }
           //
           // Point
           //
           else if (targetCls == Point.class) {
-            Triple<FieldSpec, FieldSpec, CodeBlock> fieldMetamodel = generateFieldMetamodel(entity, field, GeoFieldOperationInterceptor.class, fieldIsIndexed);
-
-            fields.add(fieldMetamodel.getFirst());
-            interceptors.add(fieldMetamodel.getSecond());
-            initCodeBlocks.add(fieldMetamodel.getThird());
+            targetInterceptor = GeoFieldOperationInterceptor.class;
           }
-        } catch (ClassNotFoundException e1) {
-          // TODO Auto-generated catch block
-          e1.printStackTrace();
+        } catch (ClassNotFoundException cnfe) {
+          messager.printMessage(Diagnostic.Kind.WARNING, "Processing class " + entityName + " could not resolve " + cls);
         }
-      }
+      } 
+      
+      Triple<FieldSpec, FieldSpec, CodeBlock> fieldMetamodel = generateFieldMetamodel(entity, fieldName, entityField, targetInterceptor, fieldIsIndexed);
+
+      fields.add(fieldMetamodel.getFirst());
+      interceptors.add(fieldMetamodel.getSecond());
+      initCodeBlocks.add(fieldMetamodel.getThird());
     });
 
     CodeBlock.Builder blockBuilder = CodeBlock.builder();
@@ -496,13 +489,12 @@ public final class MetamodelGenerator extends AbstractProcessor {
     return s;
   }
 
-  private Triple<FieldSpec, FieldSpec, CodeBlock> generateFieldMetamodel(TypeName entity, Element field, Class<?> interceptorClass, boolean fieldIsIndexed) {
-    String fieldAccessor = staticField(field.getSimpleName().toString());
+  private Triple<FieldSpec, FieldSpec, CodeBlock> generateFieldMetamodel(TypeName entity, String fieldName, TypeName entityField, Class<?> interceptorClass, boolean fieldIsIndexed) {
+    String fieldAccessor = staticField(fieldName);
 
-    FieldSpec objectField = FieldSpec.builder(Field.class, field.getSimpleName().toString())
+    FieldSpec objectField = FieldSpec.builder(Field.class, fieldName)
         .addModifiers(Modifier.PUBLIC, Modifier.STATIC).build();
 
-    TypeName entityField = TypeName.get(field.asType());
     TypeName interceptor = ParameterizedTypeName.get(ClassName.get(interceptorClass), entity, entityField);
 
     FieldSpec aField = FieldSpec.builder(interceptor, fieldAccessor)
@@ -510,7 +502,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
         .build();
 
     CodeBlock aFieldInit = CodeBlock.builder()
-        .addStatement("$L = new $T($L,$L)", fieldAccessor, interceptor, field.getSimpleName().toString(), fieldIsIndexed)
+        .addStatement("$L = new $T($L,$L)", fieldAccessor, interceptor, fieldName, fieldIsIndexed)
         .build();
 
     return Tuples.of(objectField, aField, aFieldInit);
