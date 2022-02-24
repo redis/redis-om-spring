@@ -30,8 +30,7 @@ public class BloomOperationsImpl<K> implements BloomOperations<K> {
 
   @Override
   public boolean[] insert(K name, InsertOptions options, String... items) {
-    // TODO Auto-generated method stub
-    return null;
+    return client.clientForBloom().insert(name.toString(), options, items);
   }
 
   @Override

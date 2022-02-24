@@ -103,10 +103,10 @@ public class ReturnFieldsSearchStreamImpl<E,T> implements SearchStream<T> {
     resolveStream().close();
   }
 
+  @SuppressWarnings("resource")
   @Override
   public SearchStream<T> filter(SearchFieldPredicate<? super T, ?> predicate) {
-    // TODO is this a NOOP?
-    return this;
+    return new WrapperSearchStream<T>(resolveStream()).filter(predicate);
   }
 
   @SuppressWarnings("unchecked")

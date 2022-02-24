@@ -90,7 +90,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       SearchFieldPredicate<? super E,?> p = (SearchFieldPredicate<? super E,?>)predicate;
       return processPredicate(p);
     }
-    return null;
+    return rootNode;
   }
 
   @Override
@@ -133,8 +133,6 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public <R> SearchStream<R> flatMap(Function<? super E, ? extends SearchStream<? extends R>> mapper) {
-    //return stream.flatMap(mapper);
-    //return resolveStream().flatMap(mapper);
     return null;
   }
 
@@ -155,14 +153,14 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public SearchStream<E> distinct() {
-    //return stream.distinct();
-    return null;
+    // NO-OP
+    return this;
   }
 
   @Override
   public SearchStream<E> sorted() {
     // TODO possible impl: find the first "sortable" field in the schema and sort by it in ASC order
-    return null;
+    return this;
   }
 
   @Override
@@ -187,8 +185,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public SearchStream<E> peek(Consumer<? super E> action) {
-    // TODO Auto-generated method stub
-    return null;
+    return new WrapperSearchStream<E>(resolveStream().peek(action));
   }
 
   @Override
@@ -285,15 +282,14 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   @Override
-  public Optional<E> findFirst() { // first match unsorted
-    // TODO Auto-generated method stub
-    return null;
+  public Optional<E> findFirst() {
+    limit = Optional.of(1);
+    return resolveStream().findFirst();
   }
 
   @Override
-  public Optional<E> findAny() { // first match sorted
-    // TODO Auto-generated method stub
-    return null;
+  public Optional<E> findAny() {
+    return findFirst();
   }
 
   @Override
@@ -318,25 +314,23 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public SearchStream<E> parallel() {
-    // TODO Auto-generated method stub
-    return null;
+    return this;
   }
 
   @Override
   public SearchStream<E> unordered() {
-    // TODO Auto-generated method stub
-    return null;
+    return this;
   }
 
   @Override
   public SearchStream<E> onClose(Runnable closeHandler) {
-    // TODO Auto-generated method stub
-    return null;
+    resolveStream().onClose(closeHandler);
+    return this;
   }
 
   @Override
   public void close() {
-    // TODO Auto-generated method stub
+    resolveStream().close();
   }
 
   SearchOperations<String> getOps() {

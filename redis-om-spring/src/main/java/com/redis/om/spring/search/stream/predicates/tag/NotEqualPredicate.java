@@ -21,22 +21,23 @@ public class NotEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   public PredicateType getPredicateType() {
     return PredicateType.EQUAL;
   }
-  
+
   public T getValue() {
     return value;
   }
-  
+
   @Override
   public Node apply(Node root) {
     if (Iterable.class.isAssignableFrom(value.getClass())) {
-      Iterable<?> values = (Iterable<?>)value;
+      Iterable<?> values = (Iterable<?>) value;
       QueryNode and = QueryBuilder.intersect();
       for (Object v : values) {
         and.add(getField().getName(), "{" + v.toString() + "}");
       }
       return QueryBuilder.intersect(root, QueryBuilder.disjunct(and));
     } else {
-      return QueryBuilder.intersect(root).add(QueryBuilder.disjunct(getField().getName(), "{" +value.toString() + "}"));
+      return QueryBuilder.intersect(root)
+          .add(QueryBuilder.disjunct(getField().getName(), "{" + value.toString() + "}"));
     }
   }
 

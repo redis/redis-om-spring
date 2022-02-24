@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurationImportFilter;
 import org.springframework.boot.autoconfigure.AutoConfigurationMetadata;
 
 public class RedisRepositoriesExcludeFilter implements AutoConfigurationImportFilter {
-  
+
   private static final Set<String> SHOULD_SKIP = new HashSet<>(
       Arrays.asList("org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration"));
 
@@ -16,12 +16,10 @@ public class RedisRepositoriesExcludeFilter implements AutoConfigurationImportFi
   public boolean[] match(String[] autoConfigurationClasses, AutoConfigurationMetadata autoConfigurationMetadata) {
     boolean[] matches = new boolean[autoConfigurationClasses.length];
 
-    for(int i = 0; i< autoConfigurationClasses.length; i++) {
-        matches[i] = !SHOULD_SKIP.contains(autoConfigurationClasses[i]);
+    for (int i = 0; i < autoConfigurationClasses.length; i++) {
+      matches[i] = !SHOULD_SKIP.contains(autoConfigurationClasses[i]);
     }
     return matches;
   }
-  
-  
 
 }

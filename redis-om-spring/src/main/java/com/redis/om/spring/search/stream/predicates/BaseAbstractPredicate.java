@@ -46,25 +46,24 @@ public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicat
     FieldType result = FieldType.Tag;
     // Searchable - behaves like Text indexed
     if (field.isAnnotationPresent(Searchable.class)) {
-      result =  FieldType.Geo;
+      result = FieldType.Geo;
     }
     // Text
     else if (field.isAnnotationPresent(TextIndexed.class)) {
-      result =  FieldType.FullText;
+      result = FieldType.FullText;
     }
     // Tag
     else if (field.isAnnotationPresent(TagIndexed.class)) {
-      result =  FieldType.Tag;
+      result = FieldType.Tag;
     }
     // Geo
     else if (field.isAnnotationPresent(GeoIndexed.class)) {
-      result =  FieldType.Geo;
+      result = FieldType.Geo;
     }
     // Numeric
     else if (field.isAnnotationPresent(NumericIndexed.class)) {
       result = FieldType.Numeric;
-    }
-    else if (field.isAnnotationPresent(Indexed.class)) {
+    } else if (field.isAnnotationPresent(Indexed.class)) {
       //
       // Any Character class -> Tag Search Field
       //
@@ -74,7 +73,8 @@ public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicat
       //
       // Any Numeric class -> Numeric Search Field
       //
-      else if (Number.class.isAssignableFrom(field.getType()) || (field.getType() == LocalDateTime.class) || (field.getType() == LocalDate.class)|| (field.getType() == Date.class)) {
+      else if (Number.class.isAssignableFrom(field.getType()) || (field.getType() == LocalDateTime.class)
+          || (field.getType() == LocalDate.class) || (field.getType() == Date.class)) {
         result = FieldType.Numeric;
       }
       //
@@ -87,9 +87,16 @@ public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicat
       // Point
       //
       else if (field.getType() == Point.class) {
-        result =  FieldType.Geo;
+        result = FieldType.Geo;
       }
     }
     return result;
   }
+
+  @Override
+  public boolean test(T t) {
+    // TODO: determine what to do here!
+    return false;
+  }
+
 }

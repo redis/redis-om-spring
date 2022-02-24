@@ -26,7 +26,7 @@ public class GreaterThanPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   public T getValue() {
     return value;
   }
-  
+
   @Override
   public Node apply(Node root) {
     Class<?> cls = ObjectUtils.getNumericClassFor(value.toString());

@@ -26,10 +26,11 @@ public class NotLikePredicate<E, T> extends BaseAbstractPredicate<E, T> {
   public T getValue() {
     return value;
   }
-  
+
   @Override
   public Node apply(Node root) {
-    return QueryBuilder.intersect(root).add(QueryBuilder.disjunct(getField().getName(), Values.value("%%%"+value.toString()+"%%%")));
+    return QueryBuilder.intersect(root)
+        .add(QueryBuilder.disjunct(getField().getName(), Values.value("%%%" + value.toString() + "%%%")));
   }
 
 }

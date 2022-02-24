@@ -1,113 +1,36 @@
-
 package com.redis.om.spring.tuple;
 
-import com.redis.om.spring.tuple.getter.TupleGetter;
-import com.redis.om.spring.tuple.getter.TupleGetter0;
-import com.redis.om.spring.tuple.getter.TupleGetter1;
-import com.redis.om.spring.tuple.getter.TupleGetter2;
-import com.redis.om.spring.tuple.getter.TupleGetter3;
-import com.redis.om.spring.tuple.getter.TupleGetter4;
-import com.redis.om.spring.tuple.getter.TupleGetter5;
-import com.redis.om.spring.tuple.getter.TupleGetter6;
-import com.redis.om.spring.tuple.getter.TupleGetter7;
-import com.redis.om.spring.tuple.getter.TupleGetter8;
-import com.redis.om.spring.tuple.getter.TupleGetter9;
+import com.redis.om.spring.tuple.accessor.EighthAccessor;
+import com.redis.om.spring.tuple.accessor.FifthAccessor;
+import com.redis.om.spring.tuple.accessor.FirstAccessor;
+import com.redis.om.spring.tuple.accessor.FourthAccessor;
+import com.redis.om.spring.tuple.accessor.NinthAccessor;
+import com.redis.om.spring.tuple.accessor.SecondAccessor;
+import com.redis.om.spring.tuple.accessor.SeventhAccessor;
+import com.redis.om.spring.tuple.accessor.SixthAccessor;
+import com.redis.om.spring.tuple.accessor.TenthAccessor;
+import com.redis.om.spring.tuple.accessor.ThirdAccessor;
 
-/**
- * This interface defines a generic {@link Tuple} of degree 10 that can hold
- * non-null values. A Tuple is type safe, immutable and thread safe. For tuples
- * that can hold null elements see {@link OptionalTuple}. For mutable tuples see
- * {@link MutableTuple}
- *
- * This {@link Tuple} has a degree of 10
- * <p>
- *
- *
- * @param <T0> type of element 0
- * @param <T1> type of element 1
- * @param <T2> type of element 2
- * @param <T3> type of element 3
- * @param <T4> type of element 4
- * @param <T5> type of element 5
- * @param <T6> type of element 6
- * @param <T7> type of element 7
- * @param <T8> type of element 8
- * @param <T9> type of element 9
- *
- * @see Tuple
- * @see OptionalTuple
- * @see MutableTuple
- */
 public interface Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> extends Tuple {
 
-  /**
-   * Returns the 0th element from this tuple.
-   *
-   * @return the 0th element from this tuple.
-   */
-  T0 get0();
+  T0 getFirst();
 
-  /**
-   * Returns the 1st element from this tuple.
-   *
-   * @return the 1st element from this tuple.
-   */
-  T1 get1();
+  T1 getSecond();
 
-  /**
-   * Returns the 2nd element from this tuple.
-   *
-   * @return the 2nd element from this tuple.
-   */
-  T2 get2();
+  T2 getThird();
 
-  /**
-   * Returns the 3rd element from this tuple.
-   *
-   * @return the 3rd element from this tuple.
-   */
-  T3 get3();
+  T3 getFourth();
 
-  /**
-   * Returns the 4th element from this tuple.
-   *
-   * @return the 4th element from this tuple.
-   */
-  T4 get4();
+  T4 getFifth();
 
-  /**
-   * Returns the 5th element from this tuple.
-   *
-   * @return the 5th element from this tuple.
-   */
-  T5 get5();
+  T5 getSixth();
 
-  /**
-   * Returns the 6th element from this tuple.
-   *
-   * @return the 6th element from this tuple.
-   */
   T6 get6();
 
-  /**
-   * Returns the 7th element from this tuple.
-   *
-   * @return the 7th element from this tuple.
-   */
   T7 get7();
 
-  /**
-   * Returns the 8th element from this tuple.
-   *
-   * @return the 8th element from this tuple.
-   */
   T8 get8();
 
-  /**
-   * Returns the 9th element from this tuple.
-   *
-   * @return the 9th element from this tuple.
-   */
   T9 get9();
 
   @Override
@@ -118,17 +41,17 @@ public interface Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> extends Tuple {
   default Object get(int index) {
     switch (index) {
       case 0:
-        return get0();
+        return getFirst();
       case 1:
-        return get1();
+        return getSecond();
       case 2:
-        return get2();
+        return getThird();
       case 3:
-        return get3();
+        return getFourth();
       case 4:
-        return get4();
+        return getFifth();
       case 5:
-        return get5();
+        return getSixth();
       case 6:
         return get6();
       case 7:
@@ -143,203 +66,43 @@ public interface Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> extends Tuple {
     }
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 0th element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 0th position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   * @param <T3> the 3rd element type
-   * @param <T4> the 4th element type
-   * @param <T5> the 5th element type
-   * @param <T6> the 6th element type
-   * @param <T7> the 7th element type
-   * @param <T8> the 8th element type
-   * @param <T9> the 9th element type
-   */
-  static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> TupleGetter0<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T0> getter0() {
-    return Decuple::get0;
+  static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> FirstAccessor<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T0> getter0() {
+    return Decuple::getFirst;
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 1st element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 1st position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   * @param <T3> the 3rd element type
-   * @param <T4> the 4th element type
-   * @param <T5> the 5th element type
-   * @param <T6> the 6th element type
-   * @param <T7> the 7th element type
-   * @param <T8> the 8th element type
-   * @param <T9> the 9th element type
-   */
-  static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> TupleGetter1<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T1> getter1() {
-    return Decuple::get1;
+  static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> SecondAccessor<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T1> getter1() {
+    return Decuple::getSecond;
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 2nd element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 2nd position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   * @param <T3> the 3rd element type
-   * @param <T4> the 4th element type
-   * @param <T5> the 5th element type
-   * @param <T6> the 6th element type
-   * @param <T7> the 7th element type
-   * @param <T8> the 8th element type
-   * @param <T9> the 9th element type
-   */
-  static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> TupleGetter2<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T2> getter2() {
-    return Decuple::get2;
+  static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> ThirdAccessor<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T2> getter2() {
+    return Decuple::getThird;
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 3rd element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 3rd position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   * @param <T3> the 3rd element type
-   * @param <T4> the 4th element type
-   * @param <T5> the 5th element type
-   * @param <T6> the 6th element type
-   * @param <T7> the 7th element type
-   * @param <T8> the 8th element type
-   * @param <T9> the 9th element type
-   */
-  static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> TupleGetter3<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T3> getter3() {
-    return Decuple::get3;
+  static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> FourthAccessor<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T3> getter3() {
+    return Decuple::getFourth;
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 4th element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 4th position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   * @param <T3> the 3rd element type
-   * @param <T4> the 4th element type
-   * @param <T5> the 5th element type
-   * @param <T6> the 6th element type
-   * @param <T7> the 7th element type
-   * @param <T8> the 8th element type
-   * @param <T9> the 9th element type
-   */
-  static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> TupleGetter4<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T4> getter4() {
-    return Decuple::get4;
+  static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> FifthAccessor<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T4> getter4() {
+    return Decuple::getFifth;
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 5th element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 5th position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   * @param <T3> the 3rd element type
-   * @param <T4> the 4th element type
-   * @param <T5> the 5th element type
-   * @param <T6> the 6th element type
-   * @param <T7> the 7th element type
-   * @param <T8> the 8th element type
-   * @param <T9> the 9th element type
-   */
-  static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> TupleGetter5<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T5> getter5() {
-    return Decuple::get5;
+  static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> SixthAccessor<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T5> getter5() {
+    return Decuple::getSixth;
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 6th element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 6th position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   * @param <T3> the 3rd element type
-   * @param <T4> the 4th element type
-   * @param <T5> the 5th element type
-   * @param <T6> the 6th element type
-   * @param <T7> the 7th element type
-   * @param <T8> the 8th element type
-   * @param <T9> the 9th element type
-   */
-  static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> TupleGetter6<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T6> getter6() {
+  static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> SeventhAccessor<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T6> getter6() {
     return Decuple::get6;
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 7th element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 7th position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   * @param <T3> the 3rd element type
-   * @param <T4> the 4th element type
-   * @param <T5> the 5th element type
-   * @param <T6> the 6th element type
-   * @param <T7> the 7th element type
-   * @param <T8> the 8th element type
-   * @param <T9> the 9th element type
-   */
-  static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> TupleGetter7<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T7> getter7() {
+  static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> EighthAccessor<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T7> getter7() {
     return Decuple::get7;
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 8th element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 8th position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   * @param <T3> the 3rd element type
-   * @param <T4> the 4th element type
-   * @param <T5> the 5th element type
-   * @param <T6> the 6th element type
-   * @param <T7> the 7th element type
-   * @param <T8> the 8th element type
-   * @param <T9> the 9th element type
-   */
-  static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> TupleGetter8<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T8> getter8() {
+  static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> NinthAccessor<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T8> getter8() {
     return Decuple::get8;
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 9th element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 9th position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   * @param <T3> the 3rd element type
-   * @param <T4> the 4th element type
-   * @param <T5> the 5th element type
-   * @param <T6> the 6th element type
-   * @param <T7> the 7th element type
-   * @param <T8> the 8th element type
-   * @param <T9> the 9th element type
-   */
-  static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> TupleGetter9<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T9> getter9() {
+  static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> TenthAccessor<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T9> getter9() {
     return Decuple::get9;
   }
 }

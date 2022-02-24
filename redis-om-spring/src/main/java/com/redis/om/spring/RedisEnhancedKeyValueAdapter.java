@@ -70,7 +70,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   private EnableKeyspaceEvents enableKeyspaceEvents = EnableKeyspaceEvents.OFF;
   private @Nullable String keyspaceNotificationsConfigParameter = null;
   private ShadowCopy shadowCopy = ShadowCopy.DEFAULT;
-  
+
   private QueryEngine<? extends KeyValueAdapter, ?, ?> queryEngine;
 
   /**
@@ -121,7 +121,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   }
 
   /**
-   * Creates new {@link RedisKeyValueAdapter} with specific
+   * Creates new {@link RedisEnhancedKeyValueAdapter} with specific
    * {@link RedisConverter}.
    *
    * @param redisOps       must not be {@literal null}.
@@ -141,7 +141,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * Default constructor.
    */
   protected RedisEnhancedKeyValueAdapter() {}
-  
+
   /**
    * Get the {@link QueryEngine} used.
    *
@@ -158,9 +158,9 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * java.lang.Object, java.lang.String) */
   @Override
   public Object put(Object id, Object item, String keyspace) {
-    
+
     if (!(item instanceof RedisData)) {
-      byte[] redisKey = createKey(keyspace, converter.getConversionService().convert(id, String.class));      
+      byte[] redisKey = createKey(keyspace, converter.getConversionService().convert(id, String.class));
       processAuditAnnotations(redisKey, item);
     }
 
@@ -428,8 +428,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
     if (this.expirationListener.get() == null) {
 
-      MappingExpirationListener listener = new MappingExpirationListener(this.messageListenerContainer, this.redisOperations,
-          this.converter);
+      MappingExpirationListener listener = new MappingExpirationListener(this.messageListenerContainer,
+          this.redisOperations, this.converter);
       listener.setKeyspaceNotificationsConfigParameter(keyspaceNotificationsConfigParameter);
 
       if (this.eventPublisher != null) {
@@ -447,9 +447,6 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * notifications. Tries to read a previously created phantom key
    * {@code keyspace:id:phantom} to provide the expired object as part of the
    * published {@link RedisKeyExpiredEvent}.
-   *
-   * @author Christoph Strobl
-   * @since 1.7
    */
   static class MappingExpirationListener extends KeyExpirationEventMessageListener {
 
@@ -521,14 +518,14 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       return BinaryKeyspaceIdentifier.isValid(message.getBody());
     }
   }
-  
+
   private void processAuditAnnotations(byte[] redisKey, Object item) {
     boolean isNew = (boolean) redisOperations.execute((RedisCallback<Object>) connection -> {
       return !connection.exists(redisKey);
     });
-    
+
     var auditClass = isNew ? CreatedDate.class : LastModifiedDate.class;
-    
+
     List<Field> fields = com.redis.om.spring.util.ObjectUtils.getFieldsWithAnnotation(item.getClass(), auditClass);
     if (!fields.isEmpty()) {
       PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(item);

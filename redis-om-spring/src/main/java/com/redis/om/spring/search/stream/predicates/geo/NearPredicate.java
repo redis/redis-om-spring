@@ -36,11 +36,12 @@ public class NearPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   public Distance getDistance() {
     return distance;
   }
-  
+
   @Override
   public Node apply(Node root) {
-    GeoValue geoValue = new GeoValue(point.getX(), point.getY(), distance.getValue(), ObjectUtils.getDistanceUnit(distance));
-    
+    GeoValue geoValue = new GeoValue(point.getX(), point.getY(), distance.getValue(),
+        ObjectUtils.getDistanceUnit(distance));
+
     return QueryBuilder.intersect(root).add(getField().getName(), geoValue);
   }
 

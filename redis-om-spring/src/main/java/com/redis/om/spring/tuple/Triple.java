@@ -1,51 +1,16 @@
-
 package com.redis.om.spring.tuple;
 
-import com.redis.om.spring.tuple.getter.TupleGetter;
-import com.redis.om.spring.tuple.getter.TupleGetter0;
-import com.redis.om.spring.tuple.getter.TupleGetter1;
-import com.redis.om.spring.tuple.getter.TupleGetter2;
+import com.redis.om.spring.tuple.accessor.FirstAccessor;
+import com.redis.om.spring.tuple.accessor.SecondAccessor;
+import com.redis.om.spring.tuple.accessor.ThirdAccessor;
 
-/**
- * This interface defines a generic {@link Tuple} of degree 3 that can hold
- * non-null values. A Tuple is type safe, immutable and thread safe. For tuples
- * that can hold null elements see {@link OptionalTuple}. For mutable tuples see
- * {@link MutableTuple}
- *
- * This {@link Tuple} has a degree of 3
- * <p>
- *
- *
- * @param <T0> type of element 0
- * @param <T1> type of element 1
- * @param <T2> type of element 2
- *
- * @see Tuple
- * @see OptionalTuple
- * @see MutableTuple
- */
-public interface Triple<T0, T1, T2> extends Tuple {
+public interface Triple<E1, E2, E3> extends Tuple {
 
-  /**
-   * Returns the 0th element from this tuple.
-   *
-   * @return the 0th element from this tuple.
-   */
-  T0 getFirst();
+  E1 getFirst();
 
-  /**
-   * Returns the 1st element from this tuple.
-   *
-   * @return the 1st element from this tuple.
-   */
-  T1 getSecond();
+  E2 getSecond();
 
-  /**
-   * Returns the 2nd element from this tuple.
-   *
-   * @return the 2nd element from this tuple.
-   */
-  T2 getThird();
+  E3 getThird();
 
   @Override
   default int size() {
@@ -66,42 +31,15 @@ public interface Triple<T0, T1, T2> extends Tuple {
     }
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 0th element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 0th position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   */
-  static <T0, T1, T2> TupleGetter0<Triple<T0, T1, T2>, T0> getter0() {
+  static <E1, E2, E3> FirstAccessor<Triple<E1, E2, E3>, E1> getFirstGetter() {
     return Triple::getFirst;
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 1st element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 1st position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   */
-  static <T0, T1, T2> TupleGetter1<Triple<T0, T1, T2>, T1> getter1() {
+  static <E1, E2, E3> SecondAccessor<Triple<E1, E2, E3>, E2> getSecondGetter() {
     return Triple::getSecond;
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 2nd element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 2nd position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   */
-  static <T0, T1, T2> TupleGetter2<Triple<T0, T1, T2>, T2> getter2() {
+  static <E1, E2, E3> ThirdAccessor<Triple<E1, E2, E3>, E3> getThirdGetter() {
     return Triple::getThird;
   }
 }

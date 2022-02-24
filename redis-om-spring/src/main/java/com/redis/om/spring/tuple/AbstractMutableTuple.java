@@ -1,4 +1,3 @@
-
 package com.redis.om.spring.tuple;
 
 import java.util.Optional;
@@ -6,9 +5,6 @@ import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 
-/**
- *
- */
 public abstract class AbstractMutableTuple extends BasicAbstractTuple<AbstractMutableTuple, Optional<Object>>
     implements MutableTuple {
 

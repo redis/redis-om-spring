@@ -103,7 +103,6 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
    * @param queryCreator        will never be {@literal null}.
    * @param repositoryQueryType will never be {@literal null}.
    * @return must not be {@literal null}.
-   * @since 1.1
    */
   protected RedisDocumentRepositoryFactory createRepositoryFactory(KeyValueOperations operations,
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator, Class<? extends RepositoryQuery> repositoryQueryType) {

@@ -29,18 +29,20 @@ public class BetweenPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   public T getMin() {
     return min;
   }
-  
+
   public T getMax() {
     return max;
   }
-  
+
   @Override
   public Node apply(Node root) {
     Class<?> cls = ObjectUtils.getNumericClassFor(min.toString());
     if (cls == Integer.class) {
-      return QueryBuilder.intersect(root).add(getField().getName(), Values.between(Integer.valueOf(min.toString()), Integer.valueOf(max.toString())));
+      return QueryBuilder.intersect(root).add(getField().getName(),
+          Values.between(Integer.valueOf(min.toString()), Integer.valueOf(max.toString())));
     } else {
-      return QueryBuilder.intersect(root).add(getField().getName(), Values.between(Double.valueOf(min.toString()), Double.valueOf(max.toString())));
+      return QueryBuilder.intersect(root).add(getField().getName(),
+          Values.between(Double.valueOf(min.toString()), Double.valueOf(max.toString())));
     }
   }
 }

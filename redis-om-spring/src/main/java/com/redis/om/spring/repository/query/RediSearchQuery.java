@@ -69,7 +69,7 @@ public class RediSearchQuery implements RepositoryQuery {
   // is native? e.g. @Query or @Annotation
   private boolean annotationBased;
 
-  private List<List<Pair<String,QueryClause>>> queryOrParts = new ArrayList<List<Pair<String,QueryClause>>>();
+  private List<List<Pair<String, QueryClause>>> queryOrParts = new ArrayList<List<Pair<String, QueryClause>>>();
 
   // for non @Param annotated dynamic names
   private List<String> paramNames = new ArrayList<String>();
@@ -112,7 +112,7 @@ public class RediSearchQuery implements RepositoryQuery {
         this.load = aggregation.load();
       } else if (queryMethod.getName().equalsIgnoreCase("search")) {
         this.type = RediSearchQueryType.QUERY;
-        List<Pair<String, QueryClause>> orPartParts = new ArrayList<Pair<String,QueryClause>>();
+        List<Pair<String, QueryClause>> orPartParts = new ArrayList<Pair<String, QueryClause>>();
         orPartParts.add(Pair.of("__ALL__", QueryClause.FullText_ALL));
         queryOrParts.add(orPartParts);
         this.returnFields = new String[] {};
@@ -120,7 +120,8 @@ public class RediSearchQuery implements RepositoryQuery {
 
         isANDQuery = QueryClause.hasContainingAllClause(queryMethod.getName());
 
-        String methodName = isANDQuery ? QueryClause.getPostProcessMethodName(queryMethod.getName()) : queryMethod.getName();
+        String methodName = isANDQuery ? QueryClause.getPostProcessMethodName(queryMethod.getName())
+            : queryMethod.getName();
 
         PartTree pt = new PartTree(methodName, metadata.getDomainType());
 
@@ -130,19 +131,18 @@ public class RediSearchQuery implements RepositoryQuery {
         this.returnFields = new String[] {};
       }
     } catch (NoSuchMethodException | SecurityException e) {
-      logger.debug(String.format("Could not resolved query method %s(%s): %s", queryMethod.getName(), Arrays.toString(params), e.getMessage()));
+      logger.debug(String.format("Could not resolved query method %s(%s): %s", queryMethod.getName(),
+          Arrays.toString(params), e.getMessage()));
     }
   }
 
   private void processPartTree(PartTree pt) {
     pt.stream().forEach(orPart -> {
-      List<Pair<String, QueryClause>> orPartParts = new ArrayList<Pair<String,QueryClause>>();
+      List<Pair<String, QueryClause>> orPartParts = new ArrayList<Pair<String, QueryClause>>();
       orPart.iterator().forEachRemaining(part -> {
         PropertyPath propertyPath = part.getProperty();
 
-        List<PropertyPath> path = StreamSupport
-            .stream(propertyPath.spliterator(), false)
-            .collect(Collectors.toList());
+        List<PropertyPath> path = StreamSupport.stream(propertyPath.spliterator(), false).collect(Collectors.toList());
         orPartParts.addAll(extractQueryFields(domainType, part, path));
       });
       queryOrParts.add(orPartParts);
@@ -153,8 +153,9 @@ public class RediSearchQuery implements RepositoryQuery {
     return extractQueryFields(type, part, path, 0);
   }
 
-  private List<Pair<String, QueryClause>> extractQueryFields(Class<?> type, Part part, List<PropertyPath> path, int level) {
-    List<Pair<String, QueryClause>> qf = new ArrayList<Pair<String,QueryClause>>();
+  private List<Pair<String, QueryClause>> extractQueryFields(Class<?> type, Part part, List<PropertyPath> path,
+      int level) {
+    List<Pair<String, QueryClause>> qf = new ArrayList<Pair<String, QueryClause>>();
     String property = path.get(level).getSegment();
     String key = part.getProperty().toDotPath().replace(".", "_");
 
@@ -269,33 +270,28 @@ public class RediSearchQuery implements RepositoryQuery {
   }
 
   private String prepareQuery(final Object[] parameters) {
-    logger.info(
-        String.format("parameters: %s", Arrays.toString(parameters)));
+    logger.info(String.format("parameters: %s", Arrays.toString(parameters)));
     List<Object> params = new ArrayList<Object>(Arrays.asList(parameters));
     StringBuilder preparedQuery = new StringBuilder();
     boolean multipleOrParts = queryOrParts.size() > 1;
-    logger.debug(
-        String.format("queryOrParts: %s", queryOrParts.size()));
+    logger.debug(String.format("queryOrParts: %s", queryOrParts.size()));
     if (!queryOrParts.isEmpty()) {
-      preparedQuery.append(
-         queryOrParts.stream().map(qop -> {
-            String orPart = multipleOrParts ? "(" : "";
-            orPart = orPart + qop.stream().map(fieldClauses -> {
-              String fieldName = fieldClauses.getFirst();
-              QueryClause queryClause = fieldClauses.getSecond();
-              int paramsCnt = queryClause.getValue().getNumberOfArguments();
+      preparedQuery.append(queryOrParts.stream().map(qop -> {
+        String orPart = multipleOrParts ? "(" : "";
+        orPart = orPart + qop.stream().map(fieldClauses -> {
+          String fieldName = fieldClauses.getFirst();
+          QueryClause queryClause = fieldClauses.getSecond();
+          int paramsCnt = queryClause.getValue().getNumberOfArguments();
 
-              Object[] ps = params.subList(0, paramsCnt).toArray();
-              params.subList(0, paramsCnt).clear();
+          Object[] ps = params.subList(0, paramsCnt).toArray();
+          params.subList(0, paramsCnt).clear();
 
-              return queryClause.prepareQuery(fieldName, ps);
-            }).collect(Collectors.joining(" "));
-            orPart = orPart + (multipleOrParts ? ")" : "");
+          return queryClause.prepareQuery(fieldName, ps);
+        }).collect(Collectors.joining(" "));
+        orPart = orPart + (multipleOrParts ? ")" : "");
 
-            return orPart;
-         })
-         .collect(Collectors.joining(" | "))
-      );
+        return orPart;
+      }).collect(Collectors.joining(" | ")));
     } else {
       @SuppressWarnings("unchecked")
       Iterator<Parameter> iterator = (Iterator<Parameter>) queryMethod.getParameters().iterator();
@@ -307,7 +303,8 @@ public class RediSearchQuery implements RepositoryQuery {
 
       while (iterator.hasNext()) {
         Parameter p = iterator.next();
-        String key = (p.getName().isPresent() ? p.getName().get() : (paramNames.size() > index ? paramNames.get(index) : ""));
+        String key = (p.getName().isPresent() ? p.getName().get()
+            : (paramNames.size() > index ? paramNames.get(index) : ""));
         String v = "";
 
         if (parameters[index] instanceof Collection<?>) {
@@ -319,9 +316,9 @@ public class RediSearchQuery implements RepositoryQuery {
         }
 
         if (value != null && value.isBlank()) {
-          preparedQuery.append("@"+key+":"+v).append(" ");
+          preparedQuery.append("@" + key + ":" + v).append(" ");
         } else {
-          preparedQuery = new StringBuilder(preparedQuery.toString().replace("$"+key, v));
+          preparedQuery = new StringBuilder(preparedQuery.toString().replace("$" + key, v));
         }
         index++;
       }

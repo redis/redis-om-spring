@@ -20,13 +20,11 @@ public class FieldOperationInterceptor<E, T> implements Comparator<E>, Function<
 
   @Override
   public int compare(E o1, E o2) {
-    // TODO Auto-generated method stub
     return 0;
   }
 
   @Override
   public T apply(E t) {
-    // TODO Auto-generated method stub
     return null;
   }
   

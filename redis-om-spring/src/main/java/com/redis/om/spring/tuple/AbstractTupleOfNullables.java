@@ -1,4 +1,3 @@
-
 package com.redis.om.spring.tuple;
 
 import java.util.Optional;

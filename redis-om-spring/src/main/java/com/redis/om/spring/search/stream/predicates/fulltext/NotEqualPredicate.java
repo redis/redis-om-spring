@@ -25,13 +25,12 @@ public class NotEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   public T getValue() {
     return value;
   }
-  
+
   @Override
   public Node apply(Node root) {
     Object value = getValue();
     String fieldName = getField().getName();
     return QueryBuilder.intersect(root).add(QueryBuilder.disjunct(fieldName, Values.value(value.toString())));
   }
-  
 
 }

@@ -33,8 +33,8 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private RedisOperations<?, ?> redisOperations;
 
   /**
-   * Creates new {@link RedisKeyValueAdapter} with default {@link RedisMappingContext} and default
-   * {@link RedisCustomConversions}.
+   * Creates new {@link RedisKeyValueAdapter} with default
+   * {@link RedisMappingContext} and default {@link RedisCustomConversions}.
    *
    * @param redisOps must not be {@literal null}.
    */
@@ -45,29 +45,32 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   }
 
   /**
-   * Creates new {@link RedisKeyValueAdapter} with default {@link RedisCustomConversions}.
+   * Creates new {@link RedisKeyValueAdapter} with default
+   * {@link RedisCustomConversions}.
    *
-   * @param redisOps must not be {@literal null}.
+   * @param redisOps       must not be {@literal null}.
    * @param mappingContext must not be {@literal null}.
    */
-  public RedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps, JSONOperations<?> redisJSONOperations, RedisMappingContext mappingContext) {
+  public RedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps, JSONOperations<?> redisJSONOperations,
+      RedisMappingContext mappingContext) {
     super(redisOps, mappingContext, new RedisCustomConversions());
     this.redisJSONOperations = redisJSONOperations;
     this.redisOperations = redisOps;
   }
 
-  /*
-   * (non-Javadoc)
-   * @see org.springframework.data.keyvalue.core.KeyValueAdapter#put(java.lang.Object, java.lang.Object, java.lang.String)
-   */
+  /* (non-Javadoc)
+   * 
+   * @see
+   * org.springframework.data.keyvalue.core.KeyValueAdapter#put(java.lang.Object,
+   * java.lang.Object, java.lang.String) */
   @Override
   public Object put(Object id, Object item, String keyspace) {
     logger.debug(String.format("%s, %s, %s", id, item, keyspace));
     @SuppressWarnings("unchecked")
     JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
-    
+
     String key = getKey(keyspace, id);
-    
+
     processAuditAnnotations(key, item);
 
     ops.set(key, item);
@@ -80,10 +83,11 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     return item;
   }
 
-  /*
-   * (non-Javadoc)
-   * @see org.springframework.data.keyvalue.core.KeyValueAdapter#get(java.lang.Object, java.lang.String, java.lang.Class)
-   */
+  /* (non-Javadoc)
+   * 
+   * @see
+   * org.springframework.data.keyvalue.core.KeyValueAdapter#get(java.lang.Object,
+   * java.lang.String, java.lang.Class) */
   @Nullable
   @Override
   public <T> T get(Object id, String keyspace, Class<T> type) {
@@ -92,7 +96,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
     return ops.get(getKey(keyspace, id), type);
   }
-  
+
   @Nullable
   public <T> T get(String key, Class<T> type) {
     @SuppressWarnings("unchecked")
@@ -104,12 +108,11 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    * Get all elements for given keyspace.
    *
    * @param keyspace the keyspace to fetch entities from.
-   * @param type the desired target type.
-   * @param offset index value to start reading.
-   * @param rows maximum number or entities to return.
+   * @param type     the desired target type.
+   * @param offset   index value to start reading.
+   * @param rows     maximum number or entities to return.
    * @param <T>
    * @return never {@literal null}.
-   * @since 2.5
    */
   @Override
   public <T> List<T> getAllOf(String keyspace, Class<T> type, long offset, int rows) {
@@ -117,9 +120,11 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
 
     byte[] binKeyspace = toBytes(keyspace);
-    Set<byte[]> ids = redisOperations.execute((RedisCallback<Set<byte[]>>) connection -> connection.sMembers(binKeyspace));
+    Set<byte[]> ids = redisOperations
+        .execute((RedisCallback<Set<byte[]>>) connection -> connection.sMembers(binKeyspace));
 
-    String[] keys = ids.stream().map(b -> getKey(keyspace, new String(b, StandardCharsets.UTF_8))).toArray(String[]::new);
+    String[] keys = ids.stream().map(b -> getKey(keyspace, new String(b, StandardCharsets.UTF_8)))
+        .toArray(String[]::new);
 
     if ((keys.length == 0) || (keys.length < offset)) {
       return Collections.emptyList();
@@ -127,7 +132,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
 
     offset = Math.max(0, offset);
     if (rows > 0) {
-      keys = Arrays.copyOfRange(keys, (int)offset, Math.min((int) offset + rows, keys.length));
+      keys = Arrays.copyOfRange(keys, (int) offset, Math.min((int) offset + rows, keys.length));
     }
 
     return ops.mget(type, keys);
@@ -135,9 +140,11 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
 
   public List<String> getAllKeysOf(String keyspace, long offset, int rows) {
     byte[] binKeyspace = toBytes(keyspace);
-    Set<byte[]> ids = redisOperations.execute((RedisCallback<Set<byte[]>>) connection -> connection.sMembers(binKeyspace));
+    Set<byte[]> ids = redisOperations
+        .execute((RedisCallback<Set<byte[]>>) connection -> connection.sMembers(binKeyspace));
 
-    List<String> keys = ids.stream().map(b -> getKey(keyspace, new String(b, StandardCharsets.UTF_8))).collect(Collectors.toList());
+    List<String> keys = ids.stream().map(b -> getKey(keyspace, new String(b, StandardCharsets.UTF_8)))
+        .collect(Collectors.toList());
 
     if (keys.isEmpty() || keys.size() < offset) {
       return Collections.emptyList();
@@ -150,14 +157,14 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
 
     return keys;
   }
-  
+
   private void processAuditAnnotations(String key, Object item) {
     boolean isNew = (boolean) redisOperations.execute((RedisCallback<Object>) connection -> {
       return !connection.exists(toBytes(key));
     });
-    
+
     var auditClass = isNew ? CreatedDate.class : LastModifiedDate.class;
-    
+
     List<Field> fields = ObjectUtils.getFieldsWithAnnotation(item.getClass(), auditClass);
     if (!fields.isEmpty()) {
       PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(item);

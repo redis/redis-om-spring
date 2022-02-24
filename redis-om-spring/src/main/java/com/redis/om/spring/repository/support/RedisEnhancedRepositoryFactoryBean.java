@@ -31,7 +31,8 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
    *
    * @param repositoryInterface must not be {@literal null}.
    */
-  public RedisEnhancedRepositoryFactoryBean(Class<? extends T> repositoryInterface, RedisOperations<?, ?> redisOperations, RedisModulesOperations<?, ?> rmo) {
+  public RedisEnhancedRepositoryFactoryBean(Class<? extends T> repositoryInterface,
+      RedisOperations<?, ?> redisOperations, RedisModulesOperations<?, ?> rmo) {
     super(repositoryInterface);
     setRedisModulesOperations(rmo);
     setRedisOperations(redisOperations);
@@ -61,17 +62,16 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
 
     this.rmo = (RedisModulesOperations<String, String>) rmo;
   }
-  
+
   /**
-   * Configures the {@link RedisOperations} to be used for the
-   * repositories.
+   * Configures the {@link RedisOperations} to be used for the repositories.
    *
    * @param redisOperations must not be {@literal null}.
    */
   @SuppressWarnings("unchecked")
   public void setRedisOperations(RedisOperations<?, ?> redisOperations) {
     Assert.notNull(redisOperations, "RedisOperations must not be null!");
-    this.redisOperations = (RedisOperations<String, String>)redisOperations;
+    this.redisOperations = (RedisOperations<String, String>) redisOperations;
   }
 
   /* (non-Javadoc)
@@ -125,7 +125,6 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
    * @param queryCreator        will never be {@literal null}.
    * @param repositoryQueryType will never be {@literal null}.
    * @return must not be {@literal null}.
-   * @since 1.1
    */
   protected RedisEnhancedRepositoryFactory createRepositoryFactory(KeyValueOperations operations,
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator, Class<? extends RepositoryQuery> repositoryQueryType) {

@@ -15,7 +15,7 @@ public class CustomRedisKeyValueTemplate extends KeyValueTemplate {
   /**
    * Create new {@link RedisKeyValueTemplate}.
    *
-   * @param adapter must not be {@literal null}.
+   * @param adapter        must not be {@literal null}.
    * @param mappingContext must not be {@literal null}.
    */
   public CustomRedisKeyValueTemplate(RedisKeyValueAdapter adapter, RedisMappingContext mappingContext) {
@@ -24,19 +24,18 @@ public class CustomRedisKeyValueTemplate extends KeyValueTemplate {
   }
 
   /**
-   * Obtain the underlying redis specific {@link org.springframework.data.convert.EntityConverter}.
-   *
-   * @return never {@literal null}.
-   * @since 2.1
+   * Obtain the underlying redis specific
+   * {@link org.springframework.data.convert.EntityConverter}.
    */
   public RedisConverter getConverter() {
     return adapter.getConverter();
   }
 
-  /*
-   * (non-Javadoc)
-   * @see org.springframework.data.keyvalue.core.KeyValueTemplate#getMappingContext()
-   */
+  /* (non-Javadoc)
+   * 
+   * @see
+   * org.springframework.data.keyvalue.core.KeyValueTemplate#getMappingContext(
+   * ) */
   @Override
   public RedisMappingContext getMappingContext() {
     return (RedisMappingContext) super.getMappingContext();

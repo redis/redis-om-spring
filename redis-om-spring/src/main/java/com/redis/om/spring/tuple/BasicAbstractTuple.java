@@ -1,21 +1,13 @@
-
 package com.redis.om.spring.tuple;
+
+import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.joining;
-
-/**
- * The BasicAbstractTuple implements parts of a generic Tuple of any order.
- * Tuple elements are stored in an array.
- *
- * @param <T> type of BasicTuple
- * @param <R> The return type of {@link #get(int)}
- */
-public abstract class BasicAbstractTuple<T extends BasicTuple<R>, R> implements BasicTuple<R> {
+public abstract class BasicAbstractTuple<T extends GenericTuple<R>, R> implements GenericTuple<R> {
 
   protected final Object[] values;
   protected final Class<? extends T> baseClass;
@@ -38,11 +30,6 @@ public abstract class BasicAbstractTuple<T extends BasicTuple<R>, R> implements 
     }
   }
 
-  /**
-   * Returns if this Tuple can contain null elements.
-   *
-   * @return if this Tuple can contain null elements
-   */
   protected abstract boolean isNullable();
 
   protected int assertIndexBounds(int index) {
@@ -72,7 +59,7 @@ public abstract class BasicAbstractTuple<T extends BasicTuple<R>, R> implements 
       return Arrays.equals(this.values, tuple.values);
     }
     // Must be a BasicTuple since baseClass is a BasicTuple
-    final BasicTuple<?> tuple = (BasicTuple<?>) obj;
+    final GenericTuple<?> tuple = (GenericTuple<?>) obj;
     final int capacity = tuple.size();
     for (int i = 0; i < capacity; i++) {
       if (!Objects.equals(get(i), tuple.get(i))) {

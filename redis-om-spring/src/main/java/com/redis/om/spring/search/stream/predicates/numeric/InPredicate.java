@@ -29,11 +29,11 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   public List<T> getValues() {
     return values;
   }
-  
+
   @Override
   public Node apply(Node root) {
     QueryNode or = QueryBuilder.union();
-    
+
     Class<?> cls = ObjectUtils.getNumericClassFor(values.get(0).toString());
 
     for (Object value : values) {

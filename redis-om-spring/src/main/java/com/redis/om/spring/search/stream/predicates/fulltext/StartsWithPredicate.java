@@ -25,10 +25,10 @@ public class StartsWithPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   public T getValue() {
     return value;
   }
-  
+
   @Override
   public Node apply(Node root) {
-    return QueryBuilder.intersect(root).add(getField().getName(), value.toString()+"*");
+    return QueryBuilder.intersect(root).add(getField().getName(), value.toString() + "*");
   }
 
 }

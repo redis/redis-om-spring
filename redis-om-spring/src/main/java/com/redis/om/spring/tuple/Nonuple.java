@@ -1,105 +1,34 @@
-
 package com.redis.om.spring.tuple;
 
-import com.redis.om.spring.tuple.getter.TupleGetter;
-import com.redis.om.spring.tuple.getter.TupleGetter0;
-import com.redis.om.spring.tuple.getter.TupleGetter1;
-import com.redis.om.spring.tuple.getter.TupleGetter2;
-import com.redis.om.spring.tuple.getter.TupleGetter3;
-import com.redis.om.spring.tuple.getter.TupleGetter4;
-import com.redis.om.spring.tuple.getter.TupleGetter5;
-import com.redis.om.spring.tuple.getter.TupleGetter6;
-import com.redis.om.spring.tuple.getter.TupleGetter7;
-import com.redis.om.spring.tuple.getter.TupleGetter8;
+import com.redis.om.spring.tuple.accessor.EighthAccessor;
+import com.redis.om.spring.tuple.accessor.FifthAccessor;
+import com.redis.om.spring.tuple.accessor.FirstAccessor;
+import com.redis.om.spring.tuple.accessor.FourthAccessor;
+import com.redis.om.spring.tuple.accessor.NinthAccessor;
+import com.redis.om.spring.tuple.accessor.SecondAccessor;
+import com.redis.om.spring.tuple.accessor.SeventhAccessor;
+import com.redis.om.spring.tuple.accessor.SixthAccessor;
+import com.redis.om.spring.tuple.accessor.ThirdAccessor;
 
-/**
- * This interface defines a generic {@link Tuple} of degree 9 that can hold
- * non-null values. A Tuple is type safe, immutable and thread safe. For tuples
- * that can hold null elements see {@link OptionalTuple}. For mutable tuples see
- * {@link MutableTuple}
- *
- * This {@link Tuple} has a degree of 9
- * <p>
- *
- *
- * @param <T0> type of element 0
- * @param <T1> type of element 1
- * @param <T2> type of element 2
- * @param <T3> type of element 3
- * @param <T4> type of element 4
- * @param <T5> type of element 5
- * @param <T6> type of element 6
- * @param <T7> type of element 7
- * @param <T8> type of element 8
- *
- * @see Tuple
- * @see OptionalTuple
- * @see MutableTuple
- */
-public interface Nonuple<T0, T1, T2, T3, T4, T5, T6, T7, T8> extends Tuple {
+public interface Nonuple<E1, E2, E3, E4, E5, E6, E7, E8, E9> extends Tuple {
 
-  /**
-   * Returns the 0th element from this tuple.
-   *
-   * @return the 0th element from this tuple.
-   */
-  T0 get0();
+  E1 getFirst();
 
-  /**
-   * Returns the 1st element from this tuple.
-   *
-   * @return the 1st element from this tuple.
-   */
-  T1 get1();
+  E2 getSecond();
 
-  /**
-   * Returns the 2nd element from this tuple.
-   *
-   * @return the 2nd element from this tuple.
-   */
-  T2 get2();
+  E3 getThird();
 
-  /**
-   * Returns the 3rd element from this tuple.
-   *
-   * @return the 3rd element from this tuple.
-   */
-  T3 get3();
+  E4 getFourth();
 
-  /**
-   * Returns the 4th element from this tuple.
-   *
-   * @return the 4th element from this tuple.
-   */
-  T4 get4();
+  E5 getFifth();
 
-  /**
-   * Returns the 5th element from this tuple.
-   *
-   * @return the 5th element from this tuple.
-   */
-  T5 get5();
+  E6 getSixth();
 
-  /**
-   * Returns the 6th element from this tuple.
-   *
-   * @return the 6th element from this tuple.
-   */
-  T6 get6();
+  E7 getSeventh();
 
-  /**
-   * Returns the 7th element from this tuple.
-   *
-   * @return the 7th element from this tuple.
-   */
-  T7 get7();
+  E8 getEighth();
 
-  /**
-   * Returns the 8th element from this tuple.
-   *
-   * @return the 8th element from this tuple.
-   */
-  T8 get8();
+  E9 getNinth();
 
   @Override
   default int size() {
@@ -109,197 +38,62 @@ public interface Nonuple<T0, T1, T2, T3, T4, T5, T6, T7, T8> extends Tuple {
   default Object get(int index) {
     switch (index) {
       case 0:
-        return get0();
+        return getFirst();
       case 1:
-        return get1();
+        return getSecond();
       case 2:
-        return get2();
+        return getThird();
       case 3:
-        return get3();
+        return getFourth();
       case 4:
-        return get4();
+        return getFifth();
       case 5:
-        return get5();
+        return getSixth();
       case 6:
-        return get6();
+        return getSeventh();
       case 7:
-        return get7();
+        return getEighth();
       case 8:
-        return get8();
+        return getNinth();
       default:
         throw new IndexOutOfBoundsException(
             String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
     }
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 0th element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 0th position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   * @param <T3> the 3rd element type
-   * @param <T4> the 4th element type
-   * @param <T5> the 5th element type
-   * @param <T6> the 6th element type
-   * @param <T7> the 7th element type
-   * @param <T8> the 8th element type
-   */
-  static <T0, T1, T2, T3, T4, T5, T6, T7, T8> TupleGetter0<Nonuple<T0, T1, T2, T3, T4, T5, T6, T7, T8>, T0> getter0() {
-    return Nonuple::get0;
+  static <E1, E2, E3, E4, E5, E6, E7, E8, E9> FirstAccessor<Nonuple<E1, E2, E3, E4, E5, E6, E7, E8, E9>, E1> getFirstGetter() {
+    return Nonuple::getFirst;
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 1st element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 1st position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   * @param <T3> the 3rd element type
-   * @param <T4> the 4th element type
-   * @param <T5> the 5th element type
-   * @param <T6> the 6th element type
-   * @param <T7> the 7th element type
-   * @param <T8> the 8th element type
-   */
-  static <T0, T1, T2, T3, T4, T5, T6, T7, T8> TupleGetter1<Nonuple<T0, T1, T2, T3, T4, T5, T6, T7, T8>, T1> getter1() {
-    return Nonuple::get1;
+  static <E1, E2, E3, E4, E5, E6, E7, E8, E9> SecondAccessor<Nonuple<E1, E2, E3, E4, E5, E6, E7, E8, E9>, E2> getSecondGetter() {
+    return Nonuple::getSecond;
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 2nd element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 2nd position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   * @param <T3> the 3rd element type
-   * @param <T4> the 4th element type
-   * @param <T5> the 5th element type
-   * @param <T6> the 6th element type
-   * @param <T7> the 7th element type
-   * @param <T8> the 8th element type
-   */
-  static <T0, T1, T2, T3, T4, T5, T6, T7, T8> TupleGetter2<Nonuple<T0, T1, T2, T3, T4, T5, T6, T7, T8>, T2> getter2() {
-    return Nonuple::get2;
+  static <E1, E2, E3, E4, E5, E6, E7, E8, E9> ThirdAccessor<Nonuple<E1, E2, E3, E4, E5, E6, E7, E8, E9>, E3> getThirdGetter() {
+    return Nonuple::getThird;
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 3rd element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 3rd position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   * @param <T3> the 3rd element type
-   * @param <T4> the 4th element type
-   * @param <T5> the 5th element type
-   * @param <T6> the 6th element type
-   * @param <T7> the 7th element type
-   * @param <T8> the 8th element type
-   */
-  static <T0, T1, T2, T3, T4, T5, T6, T7, T8> TupleGetter3<Nonuple<T0, T1, T2, T3, T4, T5, T6, T7, T8>, T3> getter3() {
-    return Nonuple::get3;
+  static <E1, E2, E3, E4, E5, E6, E7, E8, E9> FourthAccessor<Nonuple<E1, E2, E3, E4, E5, E6, E7, E8, E9>, E4> getFourthGetter() {
+    return Nonuple::getFourth;
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 4th element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 4th position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   * @param <T3> the 3rd element type
-   * @param <T4> the 4th element type
-   * @param <T5> the 5th element type
-   * @param <T6> the 6th element type
-   * @param <T7> the 7th element type
-   * @param <T8> the 8th element type
-   */
-  static <T0, T1, T2, T3, T4, T5, T6, T7, T8> TupleGetter4<Nonuple<T0, T1, T2, T3, T4, T5, T6, T7, T8>, T4> getter4() {
-    return Nonuple::get4;
+  static <E1, E2, E3, E4, E5, E6, E7, E8, E9> FifthAccessor<Nonuple<E1, E2, E3, E4, E5, E6, E7, E8, E9>, E5> getFifthGetter() {
+    return Nonuple::getFifth;
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 5th element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 5th position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   * @param <T3> the 3rd element type
-   * @param <T4> the 4th element type
-   * @param <T5> the 5th element type
-   * @param <T6> the 6th element type
-   * @param <T7> the 7th element type
-   * @param <T8> the 8th element type
-   */
-  static <T0, T1, T2, T3, T4, T5, T6, T7, T8> TupleGetter5<Nonuple<T0, T1, T2, T3, T4, T5, T6, T7, T8>, T5> getter5() {
-    return Nonuple::get5;
+  static <E1, E2, E3, E4, E5, E6, E7, E8, E9> SixthAccessor<Nonuple<E1, E2, E3, E4, E5, E6, E7, E8, E9>, E6> getSixthGetter() {
+    return Nonuple::getSixth;
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 6th element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 6th position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   * @param <T3> the 3rd element type
-   * @param <T4> the 4th element type
-   * @param <T5> the 5th element type
-   * @param <T6> the 6th element type
-   * @param <T7> the 7th element type
-   * @param <T8> the 8th element type
-   */
-  static <T0, T1, T2, T3, T4, T5, T6, T7, T8> TupleGetter6<Nonuple<T0, T1, T2, T3, T4, T5, T6, T7, T8>, T6> getter6() {
-    return Nonuple::get6;
+  static <E1, E2, E3, E4, E5, E6, E7, E8, E9> SeventhAccessor<Nonuple<E1, E2, E3, E4, E5, E6, E7, E8, E9>, E7> getSeventhGetter() {
+    return Nonuple::getSeventh;
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 7th element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 7th position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   * @param <T3> the 3rd element type
-   * @param <T4> the 4th element type
-   * @param <T5> the 5th element type
-   * @param <T6> the 6th element type
-   * @param <T7> the 7th element type
-   * @param <T8> the 8th element type
-   */
-  static <T0, T1, T2, T3, T4, T5, T6, T7, T8> TupleGetter7<Nonuple<T0, T1, T2, T3, T4, T5, T6, T7, T8>, T7> getter7() {
-    return Nonuple::get7;
+  static <E1, E2, E3, E4, E5, E6, E7, E8, E9> EighthAccessor<Nonuple<E1, E2, E3, E4, E5, E6, E7, E8, E9>, E8> getEighthGetter() {
+    return Nonuple::getEighth;
   }
 
-  /**
-   * Returns a {@link TupleGetter getter} for the 8th element in the {@code
-   * Tuple}.
-   *
-   * @return the element at the 8th position
-   * @param <T0> the 0th element type
-   * @param <T1> the 1st element type
-   * @param <T2> the 2nd element type
-   * @param <T3> the 3rd element type
-   * @param <T4> the 4th element type
-   * @param <T5> the 5th element type
-   * @param <T6> the 6th element type
-   * @param <T7> the 7th element type
-   * @param <T8> the 8th element type
-   */
-  static <T0, T1, T2, T3, T4, T5, T6, T7, T8> TupleGetter8<Nonuple<T0, T1, T2, T3, T4, T5, T6, T7, T8>, T8> getter8() {
-    return Nonuple::get8;
+  static <E1, E2, E3, E4, E5, E6, E7, E8, E9> NinthAccessor<Nonuple<E1, E2, E3, E4, E5, E6, E7, E8, E9>, E9> getNinthGetter() {
+    return Nonuple::getNinth;
   }
 }

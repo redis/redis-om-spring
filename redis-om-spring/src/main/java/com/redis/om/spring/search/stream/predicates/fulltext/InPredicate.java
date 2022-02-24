@@ -23,16 +23,16 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   public PredicateType getPredicateType() {
     return PredicateType.IN;
   }
-  
+
   public List<T> getValues() {
     return values;
   }
-  
+
   @Override
   public Node apply(Node root) {
     StringJoiner sj = new StringJoiner(" | ");
     for (Object value : values) {
-        sj.add(value.toString());
+      sj.add(value.toString());
     }
 
     return QueryBuilder.intersect(root).add(getField().getName(), sj.toString());

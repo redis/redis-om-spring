@@ -31,9 +31,11 @@ public class NotEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   public Node apply(Node root) {
     Class<?> cls = ObjectUtils.getNumericClassFor(value.toString());
     if (cls == Integer.class) {
-      return QueryBuilder.intersect(root).add(QueryBuilder.disjunct(getField().getName(), Values.eq(Integer.valueOf(value.toString()))));
+      return QueryBuilder.intersect(root)
+          .add(QueryBuilder.disjunct(getField().getName(), Values.eq(Integer.valueOf(value.toString()))));
     } else {
-      return QueryBuilder.intersect(root).add(QueryBuilder.disjunct(getField().getName(), Values.eq(Double.valueOf(value.toString()))));
+      return QueryBuilder.intersect(root)
+          .add(QueryBuilder.disjunct(getField().getName(), Values.eq(Double.valueOf(value.toString()))));
     }
   }
 

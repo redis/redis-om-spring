@@ -43,5 +43,14 @@ public class ObjectUtils {
       return GeoValue.Unit.METERS;
     }
   }
+  
+  public static String getTargetClassName(String fullTypeClassName) {
+    String[] splitted = fullTypeClassName.split(" ");
+    String cls = splitted[splitted.length-1];
+    if (cls.contains("<")) {
+      cls = cls.substring(0, cls.indexOf("<"));
+    }
+    return cls;
+  }
 
 }

@@ -23,7 +23,7 @@ public class ContainsAllPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   public PredicateType getPredicateType() {
     return PredicateType.CONTAINS_ALL;
   }
-  
+
   public List<String> getValues() {
     return values;
   }

@@ -245,19 +245,23 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
       // Any Character class -> Tag Search Field
       //
       if (CharSequence.class.isAssignableFrom(field.getType())) {
-        fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(), indexed.arrayIndex()));
+        fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
+            indexed.arrayIndex()));
       }
       //
       // Any Numeric class -> Numeric Search Field
       //
-      else if (Number.class.isAssignableFrom(field.getType()) || (field.getType() == LocalDateTime.class) || (field.getType() == LocalDate.class) || (field.getType() == Date.class)) {
+      else if (Number.class.isAssignableFrom(field.getType()) || (field.getType() == LocalDateTime.class)
+          || (field.getType() == LocalDate.class) || (field.getType() == Date.class)) {
         fields.add(indexAsNumericFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.noindex()));
       }
       //
       // Set / List
       //
-      else if (Set.class.isAssignableFrom(field.getType()) || List.class.isAssignableFrom(field.getType()) || Set.class.isAssignableFrom(field.getType())) {
-        fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(), indexed.arrayIndex()));
+      else if (Set.class.isAssignableFrom(field.getType()) || List.class.isAssignableFrom(field.getType())
+          || Set.class.isAssignableFrom(field.getType())) {
+        fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
+            indexed.arrayIndex()));
       }
       //
       // Point
@@ -338,7 +342,9 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     ClassTypeInformation<?> typeInfo = ClassTypeInformation.from(field.getType());
     String chain = (prefix == null || prefix.isBlank()) ? "" : prefix + ".";
     String fieldPrefix = isDocument ? "$." + chain : chain;
-    String fieldPostfix = (isDocument && typeInfo.isCollectionLike() && !field.isAnnotationPresent(JsonAdapter.class))? "[*]" : "";
+    String fieldPostfix = (isDocument && typeInfo.isCollectionLike() && !field.isAnnotationPresent(JsonAdapter.class))
+        ? "[*]"
+        : "";
     FieldName fieldName = FieldName.of(fieldPrefix + field.getName() + fieldPostfix);
 
     if (!ObjectUtils.isEmpty(ti.alias())) {
@@ -357,8 +363,10 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     ClassTypeInformation<?> typeInfo = ClassTypeInformation.from(field.getType());
     String chain = (prefix == null || prefix.isBlank()) ? "" : prefix + ".";
     String fieldPrefix = isDocument ? "$." + chain : chain;
-    String index = (arrayIndex != Integer.MIN_VALUE) ? ".["+arrayIndex+"]" : "[*]";
-    String fieldPostfix = (isDocument && typeInfo.isCollectionLike() && !field.isAnnotationPresent(JsonAdapter.class)) ? index : "";
+    String index = (arrayIndex != Integer.MIN_VALUE) ? ".[" + arrayIndex + "]" : "[*]";
+    String fieldPostfix = (isDocument && typeInfo.isCollectionLike() && !field.isAnnotationPresent(JsonAdapter.class))
+        ? index
+        : "";
     FieldName fieldName = FieldName.of(fieldPrefix + field.getName() + fieldPostfix);
 
     if (prefix != null && !prefix.isBlank()) {
@@ -421,7 +429,8 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     return new Field(fieldName, FieldType.Geo);
   }
 
-  private Field indexAsNumericFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, NumericIndexed ni) {
+  private Field indexAsNumericFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix,
+      NumericIndexed ni) {
     String chain = (prefix == null || prefix.isBlank()) ? "" : prefix + ".";
     String fieldPrefix = isDocument ? "$." + chain : chain;
     FieldName fieldName = FieldName.of(fieldPrefix + field.getName());

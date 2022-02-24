@@ -33,7 +33,7 @@ import org.springframework.util.ClassUtils;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.query.RedisEnhancedQuery;
 
-public class RedisEnhancedRepositoryFactory  extends RepositoryFactorySupport {
+public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
 
   private static final Class<SpelQueryCreator> DEFAULT_QUERY_CREATOR = SpelQueryCreator.class;
 
@@ -45,7 +45,8 @@ public class RedisEnhancedRepositoryFactory  extends RepositoryFactorySupport {
   private final Class<? extends RepositoryQuery> repositoryQueryType;
 
   /**
-   * Creates a new {@link KeyValueRepositoryFactory} for the given {@link KeyValueOperations}.
+   * Creates a new {@link KeyValueRepositoryFactory} for the given
+   * {@link KeyValueOperations}.
    *
    * @param keyValueOperations must not be {@literal null}.
    */
@@ -57,11 +58,11 @@ public class RedisEnhancedRepositoryFactory  extends RepositoryFactorySupport {
   }
 
   /**
-   * Creates a new {@link KeyValueRepositoryFactory} for the given {@link KeyValueOperations} and
-   * {@link AbstractQueryCreator}-type.
+   * Creates a new {@link KeyValueRepositoryFactory} for the given
+   * {@link KeyValueOperations} and {@link AbstractQueryCreator}-type.
    *
    * @param keyValueOperations must not be {@literal null}.
-   * @param queryCreator must not be {@literal null}.
+   * @param queryCreator       must not be {@literal null}.
    */
   public RedisEnhancedRepositoryFactory( //
       KeyValueOperations keyValueOperations, //
@@ -73,11 +74,11 @@ public class RedisEnhancedRepositoryFactory  extends RepositoryFactorySupport {
   }
 
   /**
-   * Creates a new {@link KeyValueRepositoryFactory} for the given {@link KeyValueOperations} and
-   * {@link AbstractQueryCreator}-type.
+   * Creates a new {@link KeyValueRepositoryFactory} for the given
+   * {@link KeyValueOperations} and {@link AbstractQueryCreator}-type.
    *
-   * @param keyValueOperations must not be {@literal null}.
-   * @param queryCreator must not be {@literal null}.
+   * @param keyValueOperations  must not be {@literal null}.
+   * @param queryCreator        must not be {@literal null}.
    * @param repositoryQueryType must not be {@literal null}.
    * @since 1.1
    */
@@ -102,10 +103,11 @@ public class RedisEnhancedRepositoryFactory  extends RepositoryFactorySupport {
     this.repositoryQueryType = repositoryQueryType;
   }
 
-  /*
-   * (non-Javadoc)
-   * @see org.springframework.data.repository.core.support.RepositoryFactorySupport#getEntityInformation(java.lang.Class)
-   */
+  /* (non-Javadoc)
+   * 
+   * @see
+   * org.springframework.data.repository.core.support.RepositoryFactorySupport#
+   * getEntityInformation(java.lang.Class) */
   @Override
   @SuppressWarnings("unchecked")
   public <T, ID> EntityInformation<T, ID> getEntityInformation(Class<T> domainClass) {
@@ -115,10 +117,12 @@ public class RedisEnhancedRepositoryFactory  extends RepositoryFactorySupport {
     return new PersistentEntityInformation<>(entity);
   }
 
-  /*
-   * (non-Javadoc)
-   * @see org.springframework.data.repository.core.support.RepositoryFactorySupport#getTargetRepository(org.springframework.data.repository.core.RepositoryMetadata)
-   */
+  /* (non-Javadoc)
+   * 
+   * @see
+   * org.springframework.data.repository.core.support.RepositoryFactorySupport#
+   * getTargetRepository(org.springframework.data.repository.core.
+   * RepositoryMetadata) */
   @Override
   protected Object getTargetRepository(RepositoryInformation repositoryInformation) {
 
@@ -126,24 +130,29 @@ public class RedisEnhancedRepositoryFactory  extends RepositoryFactorySupport {
     return super.getTargetRepositoryViaReflection(repositoryInformation, entityInformation, keyValueOperations);
   }
 
-  /*
-   * (non-Javadoc)
-   * @see org.springframework.data.repository.core.support.RepositoryFactorySupport#getRepositoryBaseClass(org.springframework.data.repository.core.RepositoryMetadata)
-   */
+  /* (non-Javadoc)
+   * 
+   * @see
+   * org.springframework.data.repository.core.support.RepositoryFactorySupport#
+   * getRepositoryBaseClass(org.springframework.data.repository.core.
+   * RepositoryMetadata) */
   @Override
   protected Class<?> getRepositoryBaseClass(RepositoryMetadata metadata) {
     return SimpleKeyValueRepository.class;
   }
 
-  /*
-   * (non-Javadoc)
-   * @see org.springframework.data.repository.core.support.RepositoryFactorySupport#getQueryLookupStrategy(org.springframework.data.repository.query.QueryLookupStrategy.Key, org.springframework.data.repository.query.EvaluationContextProvider)
-   */
+  /* (non-Javadoc)
+   * 
+   * @see
+   * org.springframework.data.repository.core.support.RepositoryFactorySupport#
+   * getQueryLookupStrategy(org.springframework.data.repository.query.
+   * QueryLookupStrategy.Key,
+   * org.springframework.data.repository.query.EvaluationContextProvider) */
   @Override
   protected Optional<QueryLookupStrategy> getQueryLookupStrategy(@Nullable Key key,
       QueryMethodEvaluationContextProvider evaluationContextProvider) {
-    return Optional.of(new RedisEnhancedQueryLookupStrategy(key, evaluationContextProvider, this.keyValueOperations, this.redisOperations, this.rmo,
-        this.queryCreator, this.repositoryQueryType));
+    return Optional.of(new RedisEnhancedQueryLookupStrategy(key, evaluationContextProvider, this.keyValueOperations,
+        this.redisOperations, this.rmo, this.queryCreator, this.repositoryQueryType));
   }
 
   /**
@@ -154,7 +163,7 @@ public class RedisEnhancedRepositoryFactory  extends RepositoryFactorySupport {
 
     private QueryMethodEvaluationContextProvider evaluationContextProvider;
     private KeyValueOperations keyValueOperations;
-    private RedisModulesOperations<?,?> rmo;
+    private RedisModulesOperations<?, ?> rmo;
     private RedisOperations<?, ?> redisOperations;
 
     private Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
@@ -171,7 +180,7 @@ public class RedisEnhancedRepositoryFactory  extends RepositoryFactorySupport {
         QueryMethodEvaluationContextProvider evaluationContextProvider, //
         KeyValueOperations keyValueOperations, //
         RedisOperations<?, ?> redisOperations, //
-        RedisModulesOperations<?,?> rmo, //
+        RedisModulesOperations<?, ?> rmo, //
         Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
         Class<? extends RepositoryQuery> repositoryQueryType) {
 
@@ -190,10 +199,14 @@ public class RedisEnhancedRepositoryFactory  extends RepositoryFactorySupport {
       this.repositoryQueryType = repositoryQueryType;
     }
 
-    /*
-     * (non-Javadoc)
-     * @see org.springframework.data.repository.query.QueryLookupStrategy#resolveQuery(java.lang.reflect.Method, org.springframework.data.repository.core.RepositoryMetadata, org.springframework.data.projection.ProjectionFactory, org.springframework.data.repository.core.NamedQueries)
-     */
+    /* (non-Javadoc)
+     * 
+     * @see
+     * org.springframework.data.repository.query.QueryLookupStrategy#resolveQuery(
+     * java.lang.reflect.Method,
+     * org.springframework.data.repository.core.RepositoryMetadata,
+     * org.springframework.data.projection.ProjectionFactory,
+     * org.springframework.data.repository.core.NamedQueries) */
     @Override
     @SuppressWarnings("unchecked")
     public RepositoryQuery resolveQuery(Method method, RepositoryMetadata metadata, ProjectionFactory factory,
@@ -202,15 +215,15 @@ public class RedisEnhancedRepositoryFactory  extends RepositoryFactorySupport {
 
       Constructor<? extends KeyValuePartTreeQuery> constructor = (Constructor<? extends KeyValuePartTreeQuery>) ClassUtils
           .getConstructorIfAvailable(this.repositoryQueryType, QueryMethod.class, RepositoryMetadata.class,
-              QueryMethodEvaluationContextProvider.class, KeyValueOperations.class, RedisOperations.class, RedisModulesOperations.class, Class.class);
+              QueryMethodEvaluationContextProvider.class, KeyValueOperations.class, RedisOperations.class,
+              RedisModulesOperations.class, Class.class);
 
-      Assert.state(constructor != null,
-          String.format(
-              "Constructor %s(QueryMethod, EvaluationContextProvider, KeyValueOperations, RedisOperations, RedisModulesOperations, Class) not available!",
-              ClassUtils.getShortName(this.repositoryQueryType)));
+      Assert.state(constructor != null, String.format(
+          "Constructor %s(QueryMethod, EvaluationContextProvider, KeyValueOperations, RedisOperations, RedisModulesOperations, Class) not available!",
+          ClassUtils.getShortName(this.repositoryQueryType)));
 
-      return BeanUtils.instantiateClass(constructor, queryMethod, metadata, evaluationContextProvider, this.keyValueOperations, this.redisOperations, this.rmo,
-          this.queryCreator);
+      return BeanUtils.instantiateClass(constructor, queryMethod, metadata, evaluationContextProvider,
+          this.keyValueOperations, this.redisOperations, this.rmo, this.queryCreator);
     }
   }
 }

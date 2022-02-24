@@ -11,12 +11,11 @@ import io.redisearch.querybuilder.QueryBuilder;
 public class OrPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   private List<Predicate<T>> predicates = new ArrayList<Predicate<T>>();
-  
-  
+
   public OrPredicate(SearchFieldPredicate<E, T> root) {
     predicates.add(root);
   }
-  
+
   public void addPredicate(Predicate<T> predicate) {
     this.predicates.add(predicate);
   }
@@ -26,20 +25,14 @@ public class OrPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     return PredicateType.OR;
   }
 
-  @Override
-  public boolean test(T t) {
-    // TODO Auto-generated method stub
-    return false;
-  }
-  
   public Stream<Predicate<T>> stream() {
     return predicates.stream();
   }
-  
+
   @SuppressWarnings("rawtypes")
   @Override
   public Node apply(Node root) {
-    Node[] nodes = stream().map(p -> ((SearchFieldPredicate)p).apply(root)).toArray(Node[]::new);
+    Node[] nodes = stream().map(p -> ((SearchFieldPredicate) p).apply(root)).toArray(Node[]::new);
     return QueryBuilder.union(nodes);
   }
 

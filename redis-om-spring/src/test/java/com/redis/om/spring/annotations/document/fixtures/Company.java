@@ -26,29 +26,29 @@ import lombok.RequiredArgsConstructor;
 public class Company {
   @Id
   private String id;
-  
+
   @NonNull
   @Searchable(sortable = true)
   private String name;
-  
+
   @NonNull
   @Indexed
   private Integer yearFounded;
-  
+
   @NonNull
   @Indexed
   private Point location;
-  
+
   @Indexed
   private Set<String> tags = new HashSet<String>();
-  
+
   private boolean publiclyListed;
-  
+
   // audit fields
-  
+
   @CreatedDate
   private Date createdDate;
-  
+
   @LastModifiedDate
   private Date lastModifiedDate;
 }
