@@ -57,8 +57,8 @@
     <maven.test.source>11</maven.test.source>
     <maven.test.target>11</maven.test.target>
     <java.version>11</java.version>
-    <spring.version>2.6.2</spring.version>
-    <sdr.version>2.6.0</sdr.version>
+    <spring.version>2.6.4</spring.version>
+    <sdr.version>2.6.2</sdr.version>
     <jredisjson.version>1.5.0</jredisjson.version>
     <jredisearch.version>2.2.0</jredisearch.version>
     <jredisbloom.version>2.2.0</jredisbloom.version>
