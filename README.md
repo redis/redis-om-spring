@@ -33,7 +33,7 @@
   - [📚 Documentation](#-documentation)
   - [⛏️ Troubleshooting](#-troubleshooting)
   - [✨ So, How Do You Get RediSearch and RedisJSON?](#-so-how-do-you-get-redisearch-and-redisjson)
-  - [❤️ Contributing](#-contributing)
+  - [💖 Contributing](#-contributing)
   - [🧑‍🤝‍🧑 Sibling Projects](#-sibling-projects)
   - [📝 License](#-license)
 
@@ -58,6 +58,7 @@ This **preview** release provides all of SDRs capabilities plus:
 * `RedisDocumentRepository` with automatic implementation of Repository interfaces for complex querying capabilities using `@EnableRedisDocumentRepositories`
 * Declarative Search Indices via `@Indexable`
 * Full-text Search Indices via `@Searchable`
+* `EntityStream`s: Streams-based Query Builder
 * `@Bloom` annotation to determine very fast, with and with high degree of certainty, whether a value is in a collection.
 
 **Note:** Redis OM Spring currently works only with Jedis.
@@ -134,7 +135,7 @@ public class RomsDocumentsApplication {
 }
 ```
 
-### The Mapped Model
+### 💁‍♂️ The Mapped Model
 
 Like many other Spring Data projects, an annotation at the class level determines how instances
 of the class are persisted. Redis OM Spring provides the `@Document` annotation to persist models as JSON documents using RedisJSON:
@@ -170,7 +171,7 @@ public class Company {
 
 Redis OM Spring, replaces the conventional `UUID` primary key strategy generation with a `ULID` (Universally Unique Lexicographically Sortable Identifier) which is faster to generate and easier on the eyes.
 
-### The Repository
+### 🧰 The Repository
 
 Redis OM Spring data repository's goal, like other Spring Data repositories, is to significantly reduce the amount of boilerplate code required to implement data access. Simply create a Java interface
 that extends `RedisDocumentRepository` that takes the domain class to manage as well as the ID type of the domain class as type arguments. `RedisDocumentRepository` extends Spring Data's `PagingAndSortingRepository`.
@@ -217,6 +218,63 @@ The repository proxy has two ways to derive a store-specific query from the meth
 - By deriving the query from the method name directly.
 - By using a manually defined query using the `@Query` or `@Aggregation` annotations.
 
+### 🚤 Querying with Entity Streams
+
+Redis OM Spring Entity Streams provides a Java 8 Streams interface to Query Redis JSON documents using RediSearch. Entity Streams allow you to process data in a typesafe declarative way similar to SQL statements. Streams can be used to express a query as a chain of operations.
+
+Entity Streams in Redis OM Spring provide the same semantics as Java 8 streams. Streams can be made of Redis Mapped entities (`@Document`) or one or more properties of an Entity. Entity Streams progressively build the query until a terminal operation is invoked (such as `collect`). Whenever a Terminal operation is applied to a Stream, the Stream cannot accept additional operations to its pipeline and it also means that the Stream is started.
+
+Let's start with a simple example, a Spring `@Service` which includes `EntityStream` to query for instances of the mapped class `Person`:
+
+```java
+package com.redis.om.skeleton.services;
+
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.redis.om.skeleton.models.Person;
+import com.redis.om.skeleton.models.Person$;
+import com.redis.om.spring.search.stream.EntityStream;
+
+@Service
+public class PeopleService {
+  @Autowired
+  EntityStream entityStream;
+
+  // Find all people
+  public Iterable<Person> findAllPeople(int minAge, int maxAge) {
+    return entityStream //
+        .of(Person.class) //
+        .collect(Collectors.toList());
+  }
+
+}
+```
+
+The `EntityStream` is injected into the `PeopleService` using `@Autowired`. We can then get a stream for `Person` objects by using `entityStream.of(Person.class)`. At this point the stream represents the equivalent of a `SELECT * FROM Person` on a relational database. The call to `collect` will then execute the underlying query and return a collection of all `Person` objects in Redis.
+
+#### 👭 Entity Meta-model
+
+To produce more elaborate queries, you're provided with a generated meta-model, which is a class with the same name as your model but ending with a dollar sign. In the
+example below, our entity model is `Person` therefore we get a meta-model named `Person$`. With the meta-model you have access to the operations related to the
+underlying search engine field. For example, in the example we have an `age` property which is an integer. Therefore our metamodel has an `AGE` property which has
+numeric operations we can use with the stream's `filter` method such as `between`.
+
+```java
+  // Find people by age range
+  public Iterable<Person> findByAgeBetween(int minAge, int maxAge) {
+    return entityStream //
+        .of(Person.class) //
+        .filter(Person$.AGE.between(minAge, maxAge)) //
+        .sorted(Person$.AGE, SortOrder.ASC) //
+        .collect(Collectors.toList());
+  }
+```
+
+In this example we also make use of the Streams `sorted` method to declare that our stream will be sorted by the `Person$.AGE` in `ASC`ending order.
+
 ## 💻 Maven configuration
 
 ### Official Releases
@@ -261,7 +319,7 @@ The Redis OM documentation is available [here](docs/index.md).
   - Simple API example of `@RedisHash`, enhanced secondary indices and querying.
   - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-hashes`
 - **rds-permits**:
-  - Port of [Elena Kolevska's](https://github.com/elena-kolevska) Quick Start: Using RediSearch with JSON [Demo](https://github.com/redislabs-training/mod-devcap-redisjson-getting-started/blob/master/articles/QuickStart-RediSearchWithJSON.md) to Redis OM Spring.
+  - Port of [Elena Kolevska's](https://github.com/elena-kolevska) Quick Start: Using RediSearch with JSON [Demo][redisearch-wjso] to Redis OM Spring.
   - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-permits`
 
 ## ⛏️ Troubleshooting
@@ -279,7 +337,7 @@ You can run these modules in your self-hosted Redis deployment, or you can use [
 
 To learn more, read [our documentation](docs/redis_modules.md).
 
-## ❤️ Contributing
+## 💖 Contributing
 
 We'd love your contributions!
 
@@ -321,6 +379,7 @@ Redis OM uses the [MIT license][license-url].
 [link-snapshots]: https://s01.oss.sonatype.org/content/repositories/snapshots/com/redis/om/redis-om-spring/
 [open-issues]: http://isitmaintained.com/project/redis/redis-om-spring
 [issue-resolution]: http://isitmaintained.com/project/redis/redis-om-spring
+[redisearch-wjson]: https://github.com/redislabs-training/mod-devcap-redisjson-getting-started/blob/master/articles/QuickStart-RediSearchWithJSON.md
 
 
 
