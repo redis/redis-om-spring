@@ -210,7 +210,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
       blockBuilder.add(initCodeBlock);
     }
     blockBuilder.nextControlFlow("catch($T | $T e)", NoSuchFieldException.class, SecurityException.class);
-    blockBuilder.addStatement("System.err.println(\"e.getMessage()\")");
+    blockBuilder.addStatement("System.err.println(e.getMessage())");
     blockBuilder.endControlFlow();
 
     CodeBlock staticBlock = blockBuilder.build();
