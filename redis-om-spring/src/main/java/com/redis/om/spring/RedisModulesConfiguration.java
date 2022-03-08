@@ -14,6 +14,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.annotation.CachingConfigurerSupport;
@@ -80,6 +81,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   }
 
   @Bean(name = "redisModulesOperations")
+  @ConditionalOnMissingBean
   RedisModulesOperations<?, ?> redisModulesOperations(RedisModulesClient rmc) {
     return new RedisModulesOperations<>(rmc);
   }
