@@ -16,7 +16,7 @@ import com.redis.om.documents.repositories.PersonRepository;
 import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
 
 @SpringBootApplication
-@EnableRedisDocumentRepositories(basePackages = "com.redis.om.documents.*")
+@EnableRedisDocumentRepositories
 public class RomsDocumentsApplication {
 
   @Autowired

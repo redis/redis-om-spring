@@ -327,16 +327,32 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     if (app.isAnnotationPresent(EnableRedisDocumentRepositories.class)) {
       EnableRedisDocumentRepositories edr = (EnableRedisDocumentRepositories) app
           .getAnnotation(EnableRedisDocumentRepositories.class);
-      for (String pkg : edr.basePackages()) {
-        beanDefs.addAll(provider.findCandidateComponents(pkg));
+      if (edr.basePackages().length > 0) {
+        for (String pkg : edr.basePackages()) {
+          beanDefs.addAll(provider.findCandidateComponents(pkg));
+        }
+      } else if (edr.basePackageClasses().length > 0) {
+        for (Class<?> pkg : edr.basePackageClasses()) {
+          beanDefs.addAll(provider.findCandidateComponents(pkg.getPackageName()));
+        }
+      } else {
+        beanDefs.addAll(provider.findCandidateComponents(app.getPackageName()));
       }
     }
 
     if (app.isAnnotationPresent(EnableRedisEnhancedRepositories.class)) {
       EnableRedisEnhancedRepositories er = (EnableRedisEnhancedRepositories) app
           .getAnnotation(EnableRedisEnhancedRepositories.class);
-      for (String pkg : er.basePackages()) {
-        beanDefs.addAll(provider.findCandidateComponents(pkg));
+      if (er.basePackages().length > 0) {
+        for (String pkg : er.basePackages()) {
+          beanDefs.addAll(provider.findCandidateComponents(pkg));
+        }
+      } else if (er.basePackageClasses().length > 0) {
+        for (Class<?> pkg : er.basePackageClasses()) {
+          beanDefs.addAll(provider.findCandidateComponents(pkg.getPackageName()));
+        }
+      } else {
+        beanDefs.addAll(provider.findCandidateComponents(app.getPackageName()));
       }
     }
 
