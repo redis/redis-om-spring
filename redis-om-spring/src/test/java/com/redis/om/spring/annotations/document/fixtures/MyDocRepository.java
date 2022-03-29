@@ -2,6 +2,8 @@ package com.redis.om.spring.annotations.document.fixtures;
 
 import java.util.Set;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
 
 import com.redis.om.spring.annotations.Aggregation;
@@ -32,4 +34,10 @@ public interface MyDocRepository extends RedisDocumentRepository<MyDoc, String>,
    */
   @Aggregation(load = { "$.tag[1]", "AS", "tag2" })
   AggregationResult getSecondTagWithAggregation();
+  
+  /**
+   * > FT.SEARCH idx @title:hel* SORTBY title ASC LIMIT 0 2
+   *
+   */
+  Page<MyDoc> findAllByTitleStartingWith(String title, Pageable pageable);
 }
