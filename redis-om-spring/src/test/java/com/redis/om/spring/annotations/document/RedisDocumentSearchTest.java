@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import static org.assertj.core.api.Assertions.*;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
@@ -57,7 +59,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
     tags2.add("noticias");
     tags2.add("articulo");
 
-    doc2.setTag(tags);
+    doc2.setTag(tags2);
     doc2 = repository.save(doc2);
   }
 
@@ -118,7 +120,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   @Test
   public void testQueryAnnotation02() {
     Iterable<MyDoc> results = repository.findByTitleAndTags("hello", Set.of("news"));
-    assertEquals(2, ((Collection<MyDoc>) results).size());
+    assertEquals(1, ((Collection<MyDoc>) results).size());
     MyDoc doc = results.iterator().next();
     assertEquals("hello world", doc.getTitle());
     assertTrue(doc.getTag().contains("news"));
@@ -183,5 +185,11 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
       
       assertEquals("hello mundo", result.getContent().get(0).getTitle());
       assertEquals("hello world", result.getContent().get(1).getTitle());
+  }
+  
+  @Test
+  public void testTagValsQuery() {
+      Iterable<String> values = repository.getAllTags();
+      assertThat(values).hasSize(4).contains("news", "article", "noticias", "articulo");
   }
 }

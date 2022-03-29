@@ -61,13 +61,13 @@ public enum QueryClause {
   ),
   Numeric_LESS_THAN_EQUAL( //
       QueryClauseTemplate.of(FieldType.Numeric, Part.Type.LESS_THAN_EQUAL, "@$field:[-inf $param_0]", 1) //
-  ), 
+  ),
   Numeric_GREATER_THAN( //
       QueryClauseTemplate.of(FieldType.Numeric, Part.Type.GREATER_THAN, "@$field:[($param_0 inf]", 1) //
   ),
   Numeric_GREATER_THAN_EQUAL( //
       QueryClauseTemplate.of(FieldType.Numeric, Part.Type.GREATER_THAN_EQUAL, "@$field:[$param_0 inf]", 1) //
-  ), 
+  ),
   Numeric_BEFORE( //
       QueryClauseTemplate.of(FieldType.Numeric, Part.Type.BEFORE, "@$field:[-inf ($param_0]", 1) //
   ),
@@ -108,7 +108,7 @@ public enum QueryClause {
   public String prepareQuery(String field, Object... params) {
     String prepared = field.equalsIgnoreCase("__ALL__") ? value.getQuerySegmentTemplate() : value.getQuerySegmentTemplate().replace("$field", field);
 
-    Iterator<Object> iter = Arrays.asList(params).iterator(); 
+    Iterator<Object> iter = Arrays.asList(params).iterator();
 
     int i = 0;
     while (iter.hasNext()) {
@@ -129,14 +129,14 @@ public enum QueryClause {
           if (param instanceof Collection<?>) {
             @SuppressWarnings("rawtypes")
             Collection<?> c = (Collection) param;
-            
+
             String value = "";
             if (this == QueryClause.Tag_CONTAINING_ALL) {
               value = c.stream().map(n -> "@"+field+":{"+n.toString()+"}").collect(Collectors.joining(" "));
             } else {
-              value = c.stream().map(n -> n.toString()).collect(Collectors.joining("|")); 
+              value = c.stream().map(n -> n.toString()).collect(Collectors.joining("|"));
             }
-            
+
             prepared = prepared.replace("$param_" + i++, value);
           } else {
             prepared = prepared.replace("$param_" + i++, param.toString());
@@ -155,29 +155,29 @@ public enum QueryClause {
       return Tag_SIMPLE_PROPERTY;
     }
   }
-  
+
   public static Map<String,String> methodNameMap = Map.of(
       "IsContainingAll", "IsContaining",
       "ContainingAll", "Containing",
       "ContainsAll", "Contains"
   );
-  
+
   public static Pattern CONTAINING_ALL_PATTERN = Pattern.compile("(IsContainingAll|ContainingAll|ContainsAll)");
-  
+
   public static boolean hasContainingAllClause(String methodName) {
     return CONTAINING_ALL_PATTERN.matcher(methodName).find();
   }
-  
+
   public static String getPostProcessMethodName(String methodName) {
     if (hasContainingAllClause(methodName)) {
       Optional<String> maybeMatchSubstring = CONTAINING_ALL_PATTERN.matcher(methodName).results().map(mr -> mr.group(1)).findFirst();
       if (maybeMatchSubstring.isPresent()) {
-        String matchSubstring = maybeMatchSubstring.get();  
+        String matchSubstring = maybeMatchSubstring.get();
         return methodName.replace(matchSubstring, methodNameMap.get(matchSubstring));
       } else {
         return methodName;
       }
-      
+
     }
     return methodName;
   }

@@ -60,4 +60,5 @@ public interface SearchOperations<K> {
   boolean deleteAlias(String name);
   boolean updateSynonym(String synonymGroupId, String ...terms);
   Map<String, List<String>> dumpSynonym();
+  List<String> tagVals(String value);
 }
