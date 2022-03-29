@@ -40,4 +40,10 @@ public interface MyDocRepository extends RedisDocumentRepository<MyDoc, String>,
    *
    */
   Page<MyDoc> findAllByTitleStartingWith(String title, Pageable pageable);
+  
+  /**
+   * > FT.TAGVALS idx tags
+   *
+   */
+  Iterable<String> getAllTags();
 }

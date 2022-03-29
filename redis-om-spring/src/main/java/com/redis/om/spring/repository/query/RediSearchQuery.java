@@ -38,6 +38,7 @@ import com.redis.om.spring.annotations.NumericIndexed;
 import com.redis.om.spring.annotations.Searchable;
 import com.redis.om.spring.annotations.TagIndexed;
 import com.redis.om.spring.annotations.TextIndexed;
+import com.redis.om.spring.metamodel.MetamodelGenerator;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.query.clause.QueryClause;
@@ -72,6 +73,9 @@ public class RediSearchQuery implements RepositoryQuery {
 
   // is native? e.g. @Query or @Annotation
   private boolean annotationBased;
+  
+  // is it an FT.TAGVALS query?
+  private boolean isTagValsQuery = false;
 
   private List<List<Pair<String, QueryClause>>> queryOrParts = new ArrayList<List<Pair<String, QueryClause>>>();
 
@@ -120,8 +124,10 @@ public class RediSearchQuery implements RepositoryQuery {
         orPartParts.add(Pair.of("__ALL__", QueryClause.FullText_ALL));
         queryOrParts.add(orPartParts);
         this.returnFields = new String[] {};
+      } else if (queryMethod.getName().startsWith("getAll")) {
+        this.type = RediSearchQueryType.TAGVALS;
+        this.value = MetamodelGenerator.lcfirst(queryMethod.getName().substring(6, queryMethod.getName().length() - 1));
       } else {
-
         isANDQuery = QueryClause.hasContainingAllClause(queryMethod.getName());
 
         String methodName = isANDQuery ? QueryClause.getPostProcessMethodName(queryMethod.getName())
@@ -222,8 +228,12 @@ public class RediSearchQuery implements RepositoryQuery {
   public Object execute(Object[] parameters) {
     if (type == RediSearchQueryType.QUERY) {
       return executeQuery(parameters);
-    } else /* if (type == RediSearchQueryType.AGGREGATION) */ {
+    } else if (type == RediSearchQueryType.AGGREGATION) {
       return executeAggregation(parameters);
+    } else if (type == RediSearchQueryType.TAGVALS) {
+      return executeFtTagVals();
+    } else {
+      return null;
     }
   }
 
@@ -240,19 +250,19 @@ public class RediSearchQuery implements RepositoryQuery {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
     Query query = new Query(prepareQuery(parameters));
     query.returnFields(returnFields);
-    
+
     Optional<Pageable> maybePageable = Optional.empty();
-    
+
     if (queryMethod.isPageQuery()) {
       maybePageable = Arrays.stream(parameters)
           .filter(o -> o instanceof Pageable)
           .map(o -> (Pageable) o)
           .findFirst();
-      
+
       if (maybePageable.isPresent()) {
         Pageable pageable = maybePageable.get();
         query.limit(Long.valueOf(pageable.getOffset()).intValue(), pageable.getPageSize());
-        
+
         if (pageable.getSort() != null) {
           for (Order order : pageable.getSort()) {
             query.setSortBy(order.getProperty(),  order.isAscending());
@@ -260,7 +270,7 @@ public class RediSearchQuery implements RepositoryQuery {
         }
       }
     }
-    
+
     SearchResult searchResult = ops.search(query);
     // what to return
     Object result = null;
@@ -270,12 +280,12 @@ public class RediSearchQuery implements RepositoryQuery {
       List<Object> content = searchResult.docs.stream()
       .map(d -> gson.fromJson(d.get("$").toString(), queryMethod.getReturnedObjectType()))
       .collect(Collectors.toList());
-      
+
       if (maybePageable.isPresent()) {
         Pageable pageable = maybePageable.get();
         result = new PageImpl<>(content, pageable, searchResult.totalResults);
       }
-        
+
     } else if (queryMethod.isQueryForEntity() && !queryMethod.isCollectionQuery()) {
       String jsonResult = searchResult.docs.isEmpty() ? "{}" : searchResult.docs.get(0).get("$").toString();
       result = gson.fromJson(jsonResult, queryMethod.getReturnedObjectType());
@@ -300,6 +310,14 @@ public class RediSearchQuery implements RepositoryQuery {
     } else if (queryMethod.isCollectionQuery()) {
       result = Collections.EMPTY_LIST;
     }
+
+    return result;
+  }
+  
+  private Object executeFtTagVals() {
+    SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
+
+    List<String> result = ops.tagVals(this.value);
 
     return result;
   }
