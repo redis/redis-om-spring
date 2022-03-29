@@ -15,6 +15,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
@@ -31,6 +35,8 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
 
   @Autowired
   RedisTemplate<String, String> template;
+  
+  String id1;
 
   @BeforeEach
   public void loadTestData() {
@@ -42,6 +48,17 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
 
     doc1.setTag(tags);
     doc1 = repository.save(doc1);
+    
+    id1 = doc1.getId();
+    
+    MyDoc doc2 = MyDoc.of("hello mundo");
+
+    Set<String> tags2 = new HashSet<String>();
+    tags2.add("noticias");
+    tags2.add("articulo");
+
+    doc2.setTag(tags);
+    doc2 = repository.save(doc2);
   }
 
   @AfterEach
@@ -51,14 +68,9 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
 
   @Test
   public void testBasicCrudOperations() {
-    assertEquals(1, repository.count());
+    assertEquals(2, repository.count());
 
-    Set<String> keys = template.opsForSet().members(MyDoc.class.getName());
-
-
-    String id = keys.iterator().next();
-
-    Optional<MyDoc> maybeDoc1 = repository.findById(id);
+    Optional<MyDoc> maybeDoc1 = repository.findById(id1);
     assertTrue(maybeDoc1.isPresent());
 
     assertEquals("hello world", maybeDoc1.get().getTitle());
@@ -87,7 +99,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
      * SearchResult getFirstTag();
      */
     SearchResult result = repository.getFirstTag();
-    assertEquals(1, result.totalResults);
+    assertEquals(2, result.totalResults);
     Document doc = result.docs.get(0);
     assertEquals(1.0, doc.getScore(), 0);
     assertNull(doc.getPayload());
@@ -106,7 +118,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   @Test
   public void testQueryAnnotation02() {
     Iterable<MyDoc> results = repository.findByTitleAndTags("hello", Set.of("news"));
-    assertEquals(1, ((Collection<MyDoc>) results).size());
+    assertEquals(2, ((Collection<MyDoc>) results).size());
     MyDoc doc = results.iterator().next();
     assertEquals("hello world", doc.getTitle());
     assertTrue(doc.getTag().contains("news"));
@@ -127,6 +139,49 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
     Row row = result.getRow(0);
     assertNotNull(row);
     assertTrue(row.containsKey("tag2"));
-    assertEquals(row.getString("tag2"), "article");
+    assertEquals("article", row.getString("tag2"));
+  }
+  
+  @Test
+  public void testBasicPagination() {
+      Pageable pageRequest = PageRequest.of(0, 1);
+
+      Page<MyDoc> result = repository.findAllByTitleStartingWith("hel", pageRequest);
+
+      assertEquals(2, result.getTotalPages());
+      assertEquals(2, result.getTotalElements());
+      assertEquals(1, result.getContent().size());
+      
+      MyDoc doc1 = result.getContent().get(0);
+      assertEquals("hello world", doc1.getTitle());
+  }
+  
+  @Test
+  public void testBasicPagination2() {
+      Pageable pageRequest = PageRequest.of(1, 1);
+
+      Page<MyDoc> result = repository.findAllByTitleStartingWith("hel", pageRequest);
+
+      assertEquals(2, result.getTotalPages());
+      assertEquals(2, result.getTotalElements());
+      assertEquals(1, result.getContent().size());
+      
+      MyDoc doc1 = result.getContent().get(0);
+      assertEquals("hello mundo", doc1.getTitle());
+  }
+  
+  @Test
+  public void testBasicPaginationWithSorting() {
+      Pageable pageRequest = PageRequest.of(0, 2, Sort.by("title")
+          .ascending());
+
+      Page<MyDoc> result = repository.findAllByTitleStartingWith("hel", pageRequest);
+
+      assertEquals(1, result.getTotalPages());
+      assertEquals(2, result.getTotalElements());
+      assertEquals(2, result.getContent().size());
+      
+      assertEquals("hello mundo", result.getContent().get(0).getTitle());
+      assertEquals("hello world", result.getContent().get(1).getTitle());
   }
 }

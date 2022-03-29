@@ -7,12 +7,16 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.geo.Point;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.mapping.PropertyPath;
@@ -236,11 +240,42 @@ public class RediSearchQuery implements RepositoryQuery {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
     Query query = new Query(prepareQuery(parameters));
     query.returnFields(returnFields);
+    
+    Optional<Pageable> maybePageable = Optional.empty();
+    
+    if (queryMethod.isPageQuery()) {
+      maybePageable = Arrays.stream(parameters)
+          .filter(o -> o instanceof Pageable)
+          .map(o -> (Pageable) o)
+          .findFirst();
+      
+      if (maybePageable.isPresent()) {
+        Pageable pageable = maybePageable.get();
+        query.limit(Long.valueOf(pageable.getOffset()).intValue(), pageable.getPageSize());
+        
+        if (pageable.getSort() != null) {
+          for (Order order : pageable.getSort()) {
+            query.setSortBy(order.getProperty(),  order.isAscending());
+          }
+        }
+      }
+    }
+    
     SearchResult searchResult = ops.search(query);
     // what to return
     Object result = null;
     if (queryMethod.getReturnedObjectType() == SearchResult.class) {
       result = searchResult;
+    } else if (queryMethod.isPageQuery()) {
+      List<Object> content = searchResult.docs.stream()
+      .map(d -> gson.fromJson(d.get("$").toString(), queryMethod.getReturnedObjectType()))
+      .collect(Collectors.toList());
+      
+      if (maybePageable.isPresent()) {
+        Pageable pageable = maybePageable.get();
+        result = new PageImpl<>(content, pageable, searchResult.totalResults);
+      }
+        
     } else if (queryMethod.isQueryForEntity() && !queryMethod.isCollectionQuery()) {
       String jsonResult = searchResult.docs.isEmpty() ? "{}" : searchResult.docs.get(0).get("$").toString();
       result = gson.fromJson(jsonResult, queryMethod.getReturnedObjectType());
