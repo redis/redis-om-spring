@@ -20,7 +20,6 @@ import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.geo.Point;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.mapping.PropertyPath;
-import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.QueryMethod;
@@ -74,7 +73,7 @@ public class RediSearchQuery implements RepositoryQuery {
 
   // is native? e.g. @Query or @Annotation
   private boolean annotationBased;
-  
+
   // is it an FT.TAGVALS query?
   private boolean isTagValsQuery = false;
 
@@ -131,9 +130,6 @@ public class RediSearchQuery implements RepositoryQuery {
         orPartParts.add(Pair.of("__ALL__", QueryClause.FullText_ALL));
         queryOrParts.add(orPartParts);
         this.returnFields = new String[] {};
-      } else if (queryMethod.getName().equalsIgnoreCase("getIds")) {
-        System.out.println(">>>> FOUND getIds...");
-        this.type = RediSearchQueryType.IDS;
       } else if (queryMethod.getName().startsWith("getAll")) {
         this.type = RediSearchQueryType.TAGVALS;
         this.value = MetamodelGenerator.lcfirst(queryMethod.getName().substring(6, queryMethod.getName().length() - 1));
@@ -236,15 +232,12 @@ public class RediSearchQuery implements RepositoryQuery {
 
   @Override
   public Object execute(Object[] parameters) {
-    System.out.println(">>>> IN RediSearchQuery EXECUTE... " + type);
     if (type == RediSearchQueryType.QUERY) {
       return executeQuery(parameters);
     } else if (type == RediSearchQueryType.AGGREGATION) {
       return executeAggregation(parameters);
     } else if (type == RediSearchQueryType.TAGVALS) {
       return executeFtTagVals();
-    } else if (type == RediSearchQueryType.IDS) {
-      return executeIdQuery(parameters);
     } else {
       return null;
     }
@@ -326,32 +319,13 @@ public class RediSearchQuery implements RepositoryQuery {
 
     return result;
   }
-  
+
   private Object executeFtTagVals() {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
 
     List<String> result = ops.tagVals(this.value);
 
     return result;
-  }
-  
-  private Object executeIdQuery(Object[] parameters) {
-    SetOperations<String, String> setOps = modulesOperations.getTemplate().opsForSet();
-    List<String> ids = new ArrayList<String>(setOps.members(this.queryMethod.getEntityInformation().getJavaType().getName()));
-    
-    Optional<Pageable> maybePageable = Arrays.stream(parameters)
-          .filter(o -> o instanceof Pageable)
-          .map(o -> (Pageable) o)
-          .findFirst();
-
-    if (maybePageable.isPresent()) {
-      Pageable pageable = maybePageable.get();
-      int fromIndex = Long.valueOf(pageable.getOffset()).intValue();
-      int toIndex = fromIndex + pageable.getPageSize();
-      return new PageImpl<String>(ids.subList(fromIndex, toIndex), pageable, ids.size());
-    } else {
-      return ids;
-    }
   }
 
   private String prepareQuery(final Object[] parameters) {

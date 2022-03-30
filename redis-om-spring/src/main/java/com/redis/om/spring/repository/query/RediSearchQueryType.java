@@ -4,5 +4,4 @@ public enum RediSearchQueryType {
   QUERY,
   AGGREGATION,
   TAGVALS,
-  IDS
 }

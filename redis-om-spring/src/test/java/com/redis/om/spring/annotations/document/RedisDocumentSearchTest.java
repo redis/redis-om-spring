@@ -26,6 +26,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.MyDoc;
 import com.redis.om.spring.annotations.document.fixtures.MyDocRepository;
+import com.redislabs.modules.rejson.Path;
 
 import io.redisearch.AggregationResult;
 import io.redisearch.Document;
@@ -212,4 +213,19 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
     ids = repository.getIds(pageRequest.next());
     assertThat(ids).hasSize(1);
   }
+  
+  @Test
+  public void testDeleteByIdWithPath() {
+    repository.deleteById(id1, Path.of("$.tag"));
+    
+    Optional<MyDoc> maybeDoc1 = repository.findById(id1);
+    assertTrue(maybeDoc1.isPresent());
+    
+    MyDoc doc1 = maybeDoc1.get();
+
+    assertEquals("hello world", doc1.getTitle());
+    
+    assertNull(doc1.getTag());
+  }
+  
 }
