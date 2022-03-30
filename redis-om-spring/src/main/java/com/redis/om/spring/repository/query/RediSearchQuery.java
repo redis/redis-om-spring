@@ -20,6 +20,7 @@ import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.geo.Point;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.mapping.PropertyPath;
+import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.query.Parameter;
 import org.springframework.data.repository.query.QueryMethod;
@@ -84,15 +85,21 @@ public class RediSearchQuery implements RepositoryQuery {
   private Class<?> domainType;
 
   RedisModulesOperations<String, String> modulesOperations;
+  KeyValueOperations keyValueOperations;
 
   private boolean isANDQuery = false;
 
   @SuppressWarnings("unchecked")
-  public RediSearchQuery(QueryMethod queryMethod, RepositoryMetadata metadata,
-      QueryMethodEvaluationContextProvider evaluationContextProvider, KeyValueOperations keyValueOperations,
-      RedisModulesOperations<?, ?> rmo, Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
-    logger.debug(String.format("Creating %s query method", queryMethod.getName()));
+  public RediSearchQuery(//
+      QueryMethod queryMethod, //
+      RepositoryMetadata metadata, //
+      QueryMethodEvaluationContextProvider evaluationContextProvider, //
+      KeyValueOperations keyValueOperations, //
+      RedisModulesOperations<?, ?> rmo, //
+      Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
+    logger.info(String.format("Creating %s query method", queryMethod.getName()));
 
+    this.keyValueOperations = keyValueOperations;
     this.modulesOperations = (RedisModulesOperations<String, String>) rmo;
     this.queryMethod = queryMethod;
     this.searchIndex = this.queryMethod.getEntityInformation().getJavaType().getName() + "Idx";
@@ -104,7 +111,7 @@ public class RediSearchQuery implements RepositoryQuery {
     Class[] params = queryMethod.getParameters().stream().map(p -> p.getType()).toArray(Class[]::new);
 
     try {
-      java.lang.reflect.Method method = repoClass.getDeclaredMethod(queryMethod.getName(), params);
+      java.lang.reflect.Method method = repoClass.getMethod(queryMethod.getName(), params);
       if (method.isAnnotationPresent(com.redis.om.spring.annotations.Query.class)) {
         com.redis.om.spring.annotations.Query queryAnnotation = method
             .getAnnotation(com.redis.om.spring.annotations.Query.class);
@@ -124,6 +131,9 @@ public class RediSearchQuery implements RepositoryQuery {
         orPartParts.add(Pair.of("__ALL__", QueryClause.FullText_ALL));
         queryOrParts.add(orPartParts);
         this.returnFields = new String[] {};
+      } else if (queryMethod.getName().equalsIgnoreCase("getIds")) {
+        System.out.println(">>>> FOUND getIds...");
+        this.type = RediSearchQueryType.IDS;
       } else if (queryMethod.getName().startsWith("getAll")) {
         this.type = RediSearchQueryType.TAGVALS;
         this.value = MetamodelGenerator.lcfirst(queryMethod.getName().substring(6, queryMethod.getName().length() - 1));
@@ -226,12 +236,15 @@ public class RediSearchQuery implements RepositoryQuery {
 
   @Override
   public Object execute(Object[] parameters) {
+    System.out.println(">>>> IN RediSearchQuery EXECUTE... " + type);
     if (type == RediSearchQueryType.QUERY) {
       return executeQuery(parameters);
     } else if (type == RediSearchQueryType.AGGREGATION) {
       return executeAggregation(parameters);
     } else if (type == RediSearchQueryType.TAGVALS) {
       return executeFtTagVals();
+    } else if (type == RediSearchQueryType.IDS) {
+      return executeIdQuery(parameters);
     } else {
       return null;
     }
@@ -320,6 +333,25 @@ public class RediSearchQuery implements RepositoryQuery {
     List<String> result = ops.tagVals(this.value);
 
     return result;
+  }
+  
+  private Object executeIdQuery(Object[] parameters) {
+    SetOperations<String, String> setOps = modulesOperations.getTemplate().opsForSet();
+    List<String> ids = new ArrayList<String>(setOps.members(this.queryMethod.getEntityInformation().getJavaType().getName()));
+    
+    Optional<Pageable> maybePageable = Arrays.stream(parameters)
+          .filter(o -> o instanceof Pageable)
+          .map(o -> (Pageable) o)
+          .findFirst();
+
+    if (maybePageable.isPresent()) {
+      Pageable pageable = maybePageable.get();
+      int fromIndex = Long.valueOf(pageable.getOffset()).intValue();
+      int toIndex = fromIndex + pageable.getPageSize();
+      return new PageImpl<String>(ids.subList(fromIndex, toIndex), pageable, ids.size());
+    } else {
+      return ids;
+    }
   }
 
   private String prepareQuery(final Object[] parameters) {

@@ -34,6 +34,7 @@ import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.data.util.ClassTypeInformation;
 
 import com.google.gson.annotations.JsonAdapter;
@@ -82,8 +83,8 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
   @Bean(name = "redisModulesOperations")
   @ConditionalOnMissingBean
-  RedisModulesOperations<?, ?> redisModulesOperations(RedisModulesClient rmc) {
-    return new RedisModulesOperations<>(rmc);
+  RedisModulesOperations<?, ?> redisModulesOperations(RedisModulesClient rmc, RedisTemplate<?, ?> template) {
+    return new RedisModulesOperations<>(rmc, template);
   }
 
   @Bean(name = "redisJSONOperations")
@@ -100,6 +101,8 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   @Primary
   public RedisTemplate<?, ?> redisTemplate(JedisConnectionFactory connectionFactory) {
     RedisTemplate<?, ?> template = new RedisTemplate<>();
+    template.setKeySerializer(new StringRedisSerializer());
+    template.setDefaultSerializer(new StringRedisSerializer());
     template.setConnectionFactory(connectionFactory);
 
     return template;

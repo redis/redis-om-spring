@@ -1,5 +1,7 @@
 package com.redis.om.spring.ops;
 
+import org.springframework.data.redis.core.RedisTemplate;
+
 import com.redis.om.spring.client.RedisModulesClient;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.json.JSONOperationsImpl;
@@ -17,9 +19,12 @@ import com.redis.om.spring.ops.search.SearchOperationsImpl;
 public class RedisModulesOperations<K,V> {
   
   private RedisModulesClient client;
+  private RedisTemplate<String, String> template;
   
-  public RedisModulesOperations(RedisModulesClient client) {
+  @SuppressWarnings("unchecked")
+  public RedisModulesOperations(RedisModulesClient client, RedisTemplate<K, V> template) {
     this.client = client;
+    this.template = (RedisTemplate<String, String>)template;
   }
 
   public JSONOperations<K> opsForJSON() {
@@ -44,6 +49,10 @@ public class RedisModulesOperations<K,V> {
   
   public TopKOperations<K> opsForTopK() {
     return new TopKOperationsImpl<>(client);
+  }
+  
+  public RedisTemplate<String, String> getTemplate() {
+    return template;
   }
 
 }

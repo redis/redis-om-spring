@@ -39,6 +39,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   RedisTemplate<String, String> template;
   
   String id1;
+  String id2;
 
   @BeforeEach
   public void loadTestData() {
@@ -61,6 +62,8 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
 
     doc2.setTag(tags2);
     doc2 = repository.save(doc2);
+    
+    id2 = doc2.getId();
   }
 
   @AfterEach
@@ -191,5 +194,22 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   public void testTagValsQuery() {
       Iterable<String> values = repository.getAllTags();
       assertThat(values).hasSize(4).contains("news", "article", "noticias", "articulo");
+  }
+  
+  @Test
+  public void testGetIds() {
+    Iterable<String> ids = repository.getIds();
+    assertThat(ids).hasSize(2).contains(id1, id2);
+  }
+  
+  @Test
+  public void testGetIdsWithPaging() {
+    Pageable pageRequest = PageRequest.of(0, 1);
+    
+    Page<String> ids = repository.getIds(pageRequest);
+    assertThat(ids).hasSize(1);
+
+    ids = repository.getIds(pageRequest.next());
+    assertThat(ids).hasSize(1);
   }
 }
