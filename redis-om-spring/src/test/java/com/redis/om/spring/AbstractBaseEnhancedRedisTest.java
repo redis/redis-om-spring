@@ -46,7 +46,7 @@ public abstract class AbstractBaseEnhancedRedisTest {
   
   @SpringBootApplication
   @Configuration
-  @EnableRedisEnhancedRepositories
+  @EnableRedisEnhancedRepositories("com.redis.om.spring.annotations.bloom.fixtures")
   static class Config {
     @Autowired
     Environment env;

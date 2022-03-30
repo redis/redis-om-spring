@@ -26,6 +26,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.MyDoc;
 import com.redis.om.spring.annotations.document.fixtures.MyDocRepository;
+import com.redislabs.modules.rejson.Path;
 
 import io.redisearch.AggregationResult;
 import io.redisearch.Document;
@@ -39,6 +40,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   RedisTemplate<String, String> template;
   
   String id1;
+  String id2;
 
   @BeforeEach
   public void loadTestData() {
@@ -61,6 +63,8 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
 
     doc2.setTag(tags2);
     doc2 = repository.save(doc2);
+
+    id2 = doc2.getId();
   }
 
   @AfterEach
@@ -192,4 +196,36 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
       Iterable<String> values = repository.getAllTags();
       assertThat(values).hasSize(4).contains("news", "article", "noticias", "articulo");
   }
+  
+  @Test
+  public void testGetIds() {
+    Iterable<String> ids = repository.getIds();
+    assertThat(ids).hasSize(2).contains(id1, id2);
+  }
+  
+  @Test
+  public void testGetIdsWithPaging() {
+    Pageable pageRequest = PageRequest.of(0, 1);
+    
+    Page<String> ids = repository.getIds(pageRequest);
+    assertThat(ids).hasSize(1);
+
+    ids = repository.getIds(pageRequest.next());
+    assertThat(ids).hasSize(1);
+  }
+  
+  @Test
+  public void testDeleteByIdWithPath() {
+    repository.deleteById(id1, Path.of("$.tag"));
+    
+    Optional<MyDoc> maybeDoc1 = repository.findById(id1);
+    assertTrue(maybeDoc1.isPresent());
+    
+    MyDoc doc1 = maybeDoc1.get();
+
+    assertEquals("hello world", doc1.getTitle());
+    
+    assertNull(doc1.getTag());
+  }
+  
 }

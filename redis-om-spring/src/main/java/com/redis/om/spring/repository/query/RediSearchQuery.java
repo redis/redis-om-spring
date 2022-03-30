@@ -84,15 +84,21 @@ public class RediSearchQuery implements RepositoryQuery {
   private Class<?> domainType;
 
   RedisModulesOperations<String, String> modulesOperations;
+  KeyValueOperations keyValueOperations;
 
   private boolean isANDQuery = false;
 
   @SuppressWarnings("unchecked")
-  public RediSearchQuery(QueryMethod queryMethod, RepositoryMetadata metadata,
-      QueryMethodEvaluationContextProvider evaluationContextProvider, KeyValueOperations keyValueOperations,
-      RedisModulesOperations<?, ?> rmo, Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
-    logger.debug(String.format("Creating %s query method", queryMethod.getName()));
+  public RediSearchQuery(//
+      QueryMethod queryMethod, //
+      RepositoryMetadata metadata, //
+      QueryMethodEvaluationContextProvider evaluationContextProvider, //
+      KeyValueOperations keyValueOperations, //
+      RedisModulesOperations<?, ?> rmo, //
+      Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
+    logger.info(String.format("Creating %s query method", queryMethod.getName()));
 
+    this.keyValueOperations = keyValueOperations;
     this.modulesOperations = (RedisModulesOperations<String, String>) rmo;
     this.queryMethod = queryMethod;
     this.searchIndex = this.queryMethod.getEntityInformation().getJavaType().getName() + "Idx";
@@ -104,7 +110,7 @@ public class RediSearchQuery implements RepositoryQuery {
     Class[] params = queryMethod.getParameters().stream().map(p -> p.getType()).toArray(Class[]::new);
 
     try {
-      java.lang.reflect.Method method = repoClass.getDeclaredMethod(queryMethod.getName(), params);
+      java.lang.reflect.Method method = repoClass.getMethod(queryMethod.getName(), params);
       if (method.isAnnotationPresent(com.redis.om.spring.annotations.Query.class)) {
         com.redis.om.spring.annotations.Query queryAnnotation = method
             .getAnnotation(com.redis.om.spring.annotations.Query.class);
@@ -313,7 +319,7 @@ public class RediSearchQuery implements RepositoryQuery {
 
     return result;
   }
-  
+
   private Object executeFtTagVals() {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
 

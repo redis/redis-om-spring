@@ -9,7 +9,6 @@ import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.repository.query.KeyValuePartTreeQuery;
 import org.springframework.data.keyvalue.repository.query.SpelQueryCreator;
 import org.springframework.data.keyvalue.repository.support.KeyValueRepositoryFactory;
-import org.springframework.data.keyvalue.repository.support.SimpleKeyValueRepository;
 import org.springframework.data.mapping.PersistentEntity;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
@@ -111,7 +110,7 @@ public class RedisDocumentRepositoryFactory extends RepositoryFactorySupport {
   protected Object getTargetRepository(RepositoryInformation repositoryInformation) {
 
     EntityInformation<?, ?> entityInformation = getEntityInformation(repositoryInformation.getDomainType());
-    return super.getTargetRepositoryViaReflection(repositoryInformation, entityInformation, keyValueOperations);
+    return super.getTargetRepositoryViaReflection(repositoryInformation, entityInformation, keyValueOperations, rmo);
   }
 
   /* (non-Javadoc)
@@ -122,7 +121,7 @@ public class RedisDocumentRepositoryFactory extends RepositoryFactorySupport {
    * RepositoryMetadata) */
   @Override
   protected Class<?> getRepositoryBaseClass(RepositoryMetadata metadata) {
-    return SimpleKeyValueRepository.class;
+    return SimpleRedisDocumentRepository.class;
   }
 
   /* (non-Javadoc)
