@@ -73,6 +73,9 @@ public class RediSearchQuery implements RepositoryQuery {
 
   // is native? e.g. @Query or @Annotation
   private boolean annotationBased;
+  
+  // is it an FT.TAGVALS query?
+  private boolean isTagValsQuery = false;
 
   // is it an FT.TAGVALS query?
   private boolean isTagValsQuery = false;
@@ -316,6 +319,14 @@ public class RediSearchQuery implements RepositoryQuery {
     } else if (queryMethod.isCollectionQuery()) {
       result = Collections.EMPTY_LIST;
     }
+
+    return result;
+  }
+  
+  private Object executeFtTagVals() {
+    SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
+
+    List<String> result = ops.tagVals(this.value);
 
     return result;
   }

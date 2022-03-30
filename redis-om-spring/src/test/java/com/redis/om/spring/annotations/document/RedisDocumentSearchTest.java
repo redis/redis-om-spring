@@ -63,7 +63,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
 
     doc2.setTag(tags2);
     doc2 = repository.save(doc2);
-    
+
     id2 = doc2.getId();
   }
 
