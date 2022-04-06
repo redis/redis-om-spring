@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redislabs.modules.rejson.Path;
 
 public class OpsForJSONTest extends AbstractBaseDocumentTest {
 
@@ -38,5 +39,22 @@ public class OpsForJSONTest extends AbstractBaseDocumentTest {
     ops.set("obj", obj);
 
     assertEquals(obj, ops.get("obj", IRLObject.class));
+  }
+  
+  @Test
+  public void testSetWithPath() {
+    JSONOperations<String> ops = modulesOperations.opsForJSON();
+
+    IRLObject obj = new IRLObject();
+    ops.set("obj", obj);
+    
+    IRLObject obj1 = ops.get("obj", IRLObject.class);
+    
+    assertEquals("string", obj1.str);
+    
+    ops.set("obj", "String", Path.of("$.str"));
+    IRLObject obj2 = ops.get("obj", IRLObject.class);
+
+    assertEquals("String", obj2.str);
   }
 }

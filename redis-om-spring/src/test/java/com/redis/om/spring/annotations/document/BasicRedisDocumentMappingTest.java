@@ -14,6 +14,7 @@ import org.springframework.data.geo.Point;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.Company;
+import com.redis.om.spring.annotations.document.fixtures.Company$;
 import com.redis.om.spring.annotations.document.fixtures.CompanyRepository;
 
 public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
@@ -50,6 +51,18 @@ public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
     repository.deleteById(redis.getId());
     
     assertEquals(0, repository.count());
+  }
+  
+  @Test
+  public void testUpdateSingleField() {
+    Company redisInc = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690)));
+    repository.updateField(redisInc, Company$.NAME, "Redis");
+    
+    Optional<Company> maybeRedis = repository.findById(redisInc.getId());
+
+    assertTrue(maybeRedis.isPresent());
+
+    assertEquals("Redis", maybeRedis.get().getName());
   }
   
   @Test

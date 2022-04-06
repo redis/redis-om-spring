@@ -12,6 +12,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.repository.core.EntityInformation;
 
+import com.redis.om.spring.metamodel.FieldOperationInterceptor;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.RedisDocumentRepository;
 import com.redislabs.modules.rejson.Path;
@@ -52,6 +53,11 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   @Override
   public void deleteById(ID id, Path path) {
     modulesOperations.opsForJSON().del(metadata.getJavaType().getName() + ":" + id.toString(), path);
+  }
+
+  @Override
+  public void updateField(T entity, FieldOperationInterceptor<T, ?> field, Object value) {
+    modulesOperations.opsForJSON().set(metadata.getJavaType().getName() + ":" + metadata.getId(entity).toString(), value, Path.of("$." + field.getField().getName()));
   }
 
 }
