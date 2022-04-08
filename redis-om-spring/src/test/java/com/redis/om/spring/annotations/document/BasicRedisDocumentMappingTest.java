@@ -4,7 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
+
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -84,7 +87,16 @@ public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
     // last modified dates should not be null after a second save
     assertNotNull(redis.getLastModifiedDate());
     assertNotNull(microsoft.getLastModifiedDate());
-    
+  }
+  
+  @Test
+  public void testGetFieldsByIds() {
+    Company redis = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690)));
+    Company microsoft = repository.save(Company.of("Microsoft", 1975, new Point(-122.124500, 47.640160)));
+
+    Iterable<String> ids = List.of(redis.getId(), microsoft.getId());
+    Iterable<String> companyNames = repository.getFieldsByIds(ids, Company$.NAME);
+    assertThat(companyNames).containsExactly(redis.getName(), microsoft.getName());
   }
   
 }

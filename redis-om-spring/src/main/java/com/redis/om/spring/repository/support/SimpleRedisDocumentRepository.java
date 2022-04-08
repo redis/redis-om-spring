@@ -2,6 +2,8 @@ package com.redis.om.spring.repository.support;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.StreamSupport;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -58,6 +60,13 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   @Override
   public void updateField(T entity, FieldOperationInterceptor<T, ?> field, Object value) {
     modulesOperations.opsForJSON().set(metadata.getJavaType().getName() + ":" + metadata.getId(entity).toString(), value, Path.of("$." + field.getField().getName()));
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, FieldOperationInterceptor<T, F> field) {
+    String[] keys = StreamSupport.stream(ids.spliterator(), false).map(id -> metadata.getJavaType().getName() + ":" + id).toArray(String[]::new);
+    return (Iterable<F>) modulesOperations.opsForJSON().mget(Path.of("$." + field.getField().getName()), List.class, keys).stream().flatMap(List::stream).collect(Collectors.toList());
   }
 
 }

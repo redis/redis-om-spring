@@ -23,4 +23,6 @@ public interface RedisDocumentRepository<T, ID> extends KeyValueRepository<T, ID
   void deleteById(ID id, Path path);
   
   void updateField(T entity, FieldOperationInterceptor<T, ?> field, Object value);
+  
+  <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, FieldOperationInterceptor<T, F> field);
 }
