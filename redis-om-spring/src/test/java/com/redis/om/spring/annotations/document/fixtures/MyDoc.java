@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 @Data
 @RequiredArgsConstructor(staticName = "of")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-@Document("my-doc")
+@Document
 public class MyDoc {
   @Id
   private String id;

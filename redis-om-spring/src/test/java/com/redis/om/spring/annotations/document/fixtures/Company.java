@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 @Data
 @RequiredArgsConstructor(staticName = "of")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-@Document("company")
+@Document
 public class Company {
   @Id
   private String id;
