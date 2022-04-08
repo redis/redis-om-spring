@@ -27,6 +27,7 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.ResolvableType;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
@@ -249,7 +250,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
       //
       // Any Character class -> Tag Search Field
       //
-      if (CharSequence.class.isAssignableFrom(field.getType())) {
+      if (CharSequence.class.isAssignableFrom(field.getType()) || (field.getType() == Boolean.class)) {
         fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
             indexed.arrayIndex()));
       }
@@ -265,8 +266,17 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
       //
       else if (Set.class.isAssignableFrom(field.getType()) || List.class.isAssignableFrom(field.getType())
           || Set.class.isAssignableFrom(field.getType())) {
-        fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
-            indexed.arrayIndex()));
+        ResolvableType collectionType = ResolvableType.forField(field);
+         Class<?> elementType = collectionType.getGeneric(0).getRawClass();
+        // It is only possible to index an array of strings or booleans in a TAG identifier. 
+        // https://redis.io/docs/stack/json/indexing_json/#json-arrays-can-only-be-indexed-in-tag-identifiers
+        if (CharSequence.class.isAssignableFrom(elementType) || (elementType == Boolean.class)) {
+          fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
+              indexed.arrayIndex()));
+        } else {
+          logger.error(String.format("The collection \"%s\" of \"%s\"s in \"%s\" cannot be indexed. It is only possible to index a Collections of String or Boolean",
+                  field.getName(), elementType.getSimpleName(), field.getDeclaringClass().getSimpleName())); 
+        }
       }
       //
       // Point
