@@ -52,5 +52,11 @@ public class ObjectUtils {
     }
     return cls;
   }
+  
+  public static String firstToLowercase(String string) {
+    char c[] = string.toCharArray();
+    c[0] = Character.toLowerCase(c[0]);
+    return new String(c);
+  }
 
 }
