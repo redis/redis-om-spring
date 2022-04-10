@@ -12,7 +12,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.data.geo.Point;
@@ -35,7 +34,6 @@ import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.data.util.Pair;
 
 import com.redis.om.spring.annotations.Aggregation;
-import com.redis.om.spring.annotations.Bloom;
 import com.redis.om.spring.annotations.GeoIndexed;
 import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.NumericIndexed;
@@ -43,8 +41,9 @@ import com.redis.om.spring.annotations.Searchable;
 import com.redis.om.spring.annotations.TagIndexed;
 import com.redis.om.spring.annotations.TextIndexed;
 import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.ops.pds.BloomOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
+import com.redis.om.spring.repository.query.autocomplete.AutoCompleteQueryExecutor;
+import com.redis.om.spring.repository.query.bloom.BloomQueryExecutor;
 import com.redis.om.spring.repository.query.clause.QueryClause;
 
 import io.redisearch.AggregationResult;
@@ -82,6 +81,9 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   RedisOperations<?, ?> redisOperations;
 
   private StringRedisSerializer stringSerializer = new StringRedisSerializer();
+  
+  private BloomQueryExecutor bloomQueryExecutor;
+  private AutoCompleteQueryExecutor autoCompleteQueryExecutor;
 
   @SuppressWarnings("unchecked")
   public RedisEnhancedQuery(QueryMethod queryMethod, //
@@ -96,7 +98,10 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     this.searchIndex = this.queryMethod.getEntityInformation().getJavaType().getName() + "Idx";
     this.domainType = this.queryMethod.getEntityInformation().getJavaType();
 
-    this.mappingConverter = new MappingRedisConverter(null, null, new ReferenceResolverImpl(redisOperations));
+    this.mappingConverter = new MappingRedisConverter(null, null, new ReferenceResolverImpl(redisOperations)); 
+    
+    bloomQueryExecutor = new BloomQueryExecutor(this, modulesOperations);
+    autoCompleteQueryExecutor = new AutoCompleteQueryExecutor(this, modulesOperations);
 
     mappingConverter.afterPropertiesSet();
 
@@ -116,6 +121,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
         this.type = RediSearchQueryType.AGGREGATION;
         this.value = aggregation.value();
         this.load = aggregation.load();
+      } else if (queryMethod.getName().startsWith(AutoCompleteQueryExecutor.AUTOCOMPLETE_PREFIX)) {
+        this.type = RediSearchQueryType.AUTOCOMPLETE;
       } else {
         PartTree pt = new PartTree(queryMethod.getName(), metadata.getDomainType());
         processPartTree(pt);
@@ -199,14 +206,19 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
   @Override
   public Object execute(Object[] parameters) {
-    Optional<String> maybeBloomFilter = getBloomFilter();
+    Optional<String> maybeBloomFilter = bloomQueryExecutor.getBloomFilter();
     if (maybeBloomFilter.isPresent()) {
       logger.debug("Bloom filter found...");
-      return executeBloomQuery(parameters, maybeBloomFilter.get());
+      return bloomQueryExecutor.executeBloomQuery(parameters, maybeBloomFilter.get());
     } else if (type == RediSearchQueryType.QUERY) {
       return executeQuery(parameters);
-    } else /* if (type == RediSearchQueryType.AGGREGATION) */ {
+    } else if (type == RediSearchQueryType.AGGREGATION) {
       return executeAggregation(parameters);
+    } else if (type == RediSearchQueryType.AUTOCOMPLETE) {
+      Optional<String> maybeAutoCompleteDictionaryKey = autoCompleteQueryExecutor.getAutoCompleteDictionaryKey();
+      return autoCompleteQueryExecutor.executeAutoCompleteQuery(parameters, maybeAutoCompleteDictionaryKey.get());
+    } else {
+      return null;
     }
   }
 
@@ -257,39 +269,6 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     }
 
     return result;
-  }
-
-  public static final String EXISTS_BY_PREFIX = "existsBy";
-
-  private Optional<String> getBloomFilter() {
-    String methodName = getQueryMethod().getName();
-    boolean hasExistByPrefix = methodName.startsWith(EXISTS_BY_PREFIX);
-
-    if (hasExistByPrefix && boolean.class.isAssignableFrom(getQueryMethod().getReturnedObjectType())) {
-      String targetProperty = firstToLowercase(methodName.substring(EXISTS_BY_PREFIX.length(), methodName.length()));
-      logger.debug(String.format("Target Property : %s", targetProperty));
-      Class<?> entityClass = getQueryMethod().getEntityInformation().getJavaType();
-
-      try {
-        Field field = entityClass.getDeclaredField(targetProperty);
-        if (field.isAnnotationPresent(Bloom.class)) {
-          Bloom bloom = field.getAnnotation(Bloom.class);
-          return Optional.of(!ObjectUtils.isEmpty(bloom.name()) ? bloom.name()
-              : String.format("bf:%s:%s", entityClass.getSimpleName(), field.getName()));
-        }
-      } catch (NoSuchFieldException e) {
-        // NO-OP
-      } catch (SecurityException e) {
-        // NO-OP
-      }
-    }
-    return Optional.empty();
-  }
-
-  public Object executeBloomQuery(Object[] parameters, String bloomFilter) {
-    logger.debug(String.format("filter:%s, params:%s", bloomFilter, Arrays.toString(parameters)));
-    BloomOperations<String> ops = modulesOperations.opsForBloom();
-    return ops.exists(bloomFilter, parameters[0].toString());
   }
 
   private String prepareQuery(Object[] parameters) {
@@ -344,12 +323,6 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     }
 
     return preparedQuery.toString();
-  }
-
-  private String firstToLowercase(String string) {
-    char c[] = string.toCharArray();
-    c[0] = Character.toLowerCase(c[0]);
-    return new String(c);
   }
 
 }

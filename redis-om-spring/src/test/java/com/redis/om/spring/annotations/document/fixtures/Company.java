@@ -9,6 +9,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.geo.Point;
 
+import com.redis.om.spring.annotations.Bloom;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.Searchable;
@@ -41,6 +42,10 @@ public class Company {
 
   @Indexed
   private Set<String> tags = new HashSet<String>();
+  
+  @NonNull 
+  @Bloom(name = "bf_company_email", capacity = 100000, errorRate = 0.001)
+  private String email;
 
   private boolean publiclyListed;
 

@@ -41,6 +41,8 @@ import com.redis.om.spring.annotations.TextIndexed;
 import com.redis.om.spring.metamodel.MetamodelGenerator;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
+import com.redis.om.spring.repository.query.autocomplete.AutoCompleteQueryExecutor;
+import com.redis.om.spring.repository.query.bloom.BloomQueryExecutor;
 import com.redis.om.spring.repository.query.clause.QueryClause;
 import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
 
@@ -87,6 +89,9 @@ public class RediSearchQuery implements RepositoryQuery {
   KeyValueOperations keyValueOperations;
 
   private boolean isANDQuery = false;
+  
+  private BloomQueryExecutor bloomQueryExecutor;
+  private AutoCompleteQueryExecutor autoCompleteQueryExecutor;
 
   @SuppressWarnings("unchecked")
   public RediSearchQuery(//
@@ -104,6 +109,9 @@ public class RediSearchQuery implements RepositoryQuery {
     this.searchIndex = this.queryMethod.getEntityInformation().getJavaType().getName() + "Idx";
     this.metadata = metadata;
     this.domainType = this.queryMethod.getEntityInformation().getJavaType();
+    
+    bloomQueryExecutor = new BloomQueryExecutor(this, modulesOperations);
+    autoCompleteQueryExecutor = new AutoCompleteQueryExecutor(this, modulesOperations);
 
     Class<?> repoClass = metadata.getRepositoryInterface();
     @SuppressWarnings("rawtypes")
@@ -133,6 +141,8 @@ public class RediSearchQuery implements RepositoryQuery {
       } else if (queryMethod.getName().startsWith("getAll")) {
         this.type = RediSearchQueryType.TAGVALS;
         this.value = MetamodelGenerator.lcfirst(queryMethod.getName().substring(6, queryMethod.getName().length() - 1));
+      } else if (queryMethod.getName().startsWith(AutoCompleteQueryExecutor.AUTOCOMPLETE_PREFIX)) {
+        this.type = RediSearchQueryType.AUTOCOMPLETE;
       } else {
         isANDQuery = QueryClause.hasContainingAllClause(queryMethod.getName());
 
@@ -232,12 +242,20 @@ public class RediSearchQuery implements RepositoryQuery {
 
   @Override
   public Object execute(Object[] parameters) {
-    if (type == RediSearchQueryType.QUERY) {
+    Optional<String> maybeBloomFilter = bloomQueryExecutor.getBloomFilter();
+    
+    if (maybeBloomFilter.isPresent()) {
+      logger.debug("Bloom filter found...");
+      return bloomQueryExecutor.executeBloomQuery(parameters, maybeBloomFilter.get());
+    } else if (type == RediSearchQueryType.QUERY) {
       return executeQuery(parameters);
     } else if (type == RediSearchQueryType.AGGREGATION) {
       return executeAggregation(parameters);
     } else if (type == RediSearchQueryType.TAGVALS) {
       return executeFtTagVals();
+    } else if (type == RediSearchQueryType.AUTOCOMPLETE) {
+      Optional<String> maybeAutoCompleteDictionaryKey = autoCompleteQueryExecutor.getAutoCompleteDictionaryKey();
+      return autoCompleteQueryExecutor.executeAutoCompleteQuery(parameters, maybeAutoCompleteDictionaryKey.get());
     } else {
       return null;
     }

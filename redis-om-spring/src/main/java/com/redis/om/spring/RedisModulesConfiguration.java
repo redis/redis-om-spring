@@ -72,6 +72,7 @@ import io.redisearch.client.IndexDefinition;
 @EnableConfigurationProperties(RedisProperties.class)
 @EnableAspectJAutoProxy
 @ComponentScan("com.redis.om.spring.bloom")
+@ComponentScan("com.redis.om.spring.autocomplete")
 @ComponentScan("com.redis.om.spring.metamodel")
 public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
@@ -170,7 +171,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
       }
     }
   }
-
+  
   private void createIndicesFor(Class<?> cls, ApplicationContext ac) {
     @SuppressWarnings("unchecked")
     RedisModulesOperations<String, String> rmo = (RedisModulesOperations<String, String>) ac

@@ -3,6 +3,7 @@ package com.redis.om.spring.annotations.bloom.fixtures;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
 
+import com.redis.om.spring.annotations.AutoComplete;
 import com.redis.om.spring.annotations.Bloom;
 
 import lombok.AccessLevel;
@@ -24,6 +25,7 @@ public class Person {
   String name;
   
   @NonNull 
+  @AutoComplete 
   @Bloom(name = "bf_person_email", capacity = 100000, errorRate = 0.001)
   String email;
 }

@@ -1,11 +1,11 @@
 package com.redis.om.spring.annotations.document;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.assertj.core.api.Assertions.assertThat;
-
 
 import java.util.List;
 import java.util.Optional;
@@ -31,8 +31,8 @@ public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
 
   @Test
   public void testBasicCrudOperations() {
-    Company redis = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690)));
-    Company microsoft = repository.save(Company.of("Microsoft", 1975, new Point(-122.124500, 47.640160)));
+    Company redis = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company microsoft = repository.save(Company.of("Microsoft", 1975, new Point(-122.124500, 47.640160), "research@microsoft.com"));
 
     assertEquals(2, repository.count());
 
@@ -58,7 +58,7 @@ public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   
   @Test
   public void testUpdateSingleField() {
-    Company redisInc = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690)));
+    Company redisInc = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com"));
     repository.updateField(redisInc, Company$.NAME, "Redis");
     
     Optional<Company> maybeRedis = repository.findById(redisInc.getId());
@@ -70,8 +70,8 @@ public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   
   @Test
   public void testAuditAnnotations() {
-    Company redis = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690)));
-    Company microsoft = repository.save(Company.of("Microsoft", 1975, new Point(-122.124500, 47.640160)));
+    Company redis = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company microsoft = repository.save(Company.of("Microsoft", 1975, new Point(-122.124500, 47.640160), "research@microsoft.com"));
     
     // created dates should not be null
     assertNotNull(redis.getCreatedDate());
@@ -91,12 +91,22 @@ public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   
   @Test
   public void testGetFieldsByIds() {
-    Company redis = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690)));
-    Company microsoft = repository.save(Company.of("Microsoft", 1975, new Point(-122.124500, 47.640160)));
+    Company redis = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company microsoft = repository.save(Company.of("Microsoft", 1975, new Point(-122.124500, 47.640160), "research@microsoft.com"));
 
     Iterable<String> ids = List.of(redis.getId(), microsoft.getId());
     Iterable<String> companyNames = repository.getFieldsByIds(ids, Company$.NAME);
     assertThat(companyNames).containsExactly(redis.getName(), microsoft.getName());
+  }
+  
+  @Test
+  public void testDynamicBloomRepositoryMethod() {
+    Company redis = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company microsoft = repository.save(Company.of("Microsoft", 1975, new Point(-122.124500, 47.640160), "research@microsoft.com"));
+
+    assertTrue(repository.existsByEmail(redis.getEmail()));
+    assertTrue(repository.existsByEmail(microsoft.getEmail()));
+    assertFalse(repository.existsByEmail("bsb@redis.com"));
   }
   
 }
