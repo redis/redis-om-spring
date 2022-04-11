@@ -86,17 +86,17 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   @Bean(name = "redisModulesOperations")
   @Primary
   @ConditionalOnMissingBean
-  RedisModulesOperations<?, ?> redisModulesOperations(RedisModulesClient rmc, RedisTemplate<?, ?> template) {
+  RedisModulesOperations<?> redisModulesOperations(RedisModulesClient rmc, RedisTemplate<?, ?> template) {
     return new RedisModulesOperations<>(rmc, template);
   }
 
   @Bean(name = "redisJSONOperations")
-  JSONOperations<?> redisJSONOperations(RedisModulesOperations<?, ?> redisModulesOperations) {
+  JSONOperations<?> redisJSONOperations(RedisModulesOperations<?> redisModulesOperations) {
     return redisModulesOperations.opsForJSON();
   }
 
   @Bean(name = "redisBloomOperations")
-  BloomOperations<?> redisBloomOperations(RedisModulesOperations<?, ?> redisModulesOperations) {
+  BloomOperations<?> redisBloomOperations(RedisModulesOperations<?> redisModulesOperations) {
     return redisModulesOperations.opsForBloom();
   }
 
@@ -132,7 +132,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   }
 
   @Bean(name = "streamingQueryBuilder")
-  EntityStream streamingQueryBuilder(RedisModulesOperations<?, ?> redisModulesOperations) {
+  EntityStream streamingQueryBuilder(RedisModulesOperations<?> redisModulesOperations) {
     return new EntityStreamImpl(redisModulesOperations);
   }
 
@@ -149,7 +149,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   public void processBloom(ContextRefreshedEvent cre) {
     ApplicationContext ac = cre.getApplicationContext();
     @SuppressWarnings("unchecked")
-    RedisModulesOperations<String, String> rmo = (RedisModulesOperations<String, String>) ac
+    RedisModulesOperations<String> rmo = (RedisModulesOperations<String>) ac
         .getBean("redisModulesOperations");
 
     Set<BeanDefinition> beanDefs = getBeanDefinitionsFor(ac, Document.class, RedisHash.class);
@@ -175,7 +175,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
   private void createIndicesFor(Class<?> cls, ApplicationContext ac) {
     @SuppressWarnings("unchecked")
-    RedisModulesOperations<String, String> rmo = (RedisModulesOperations<String, String>) ac
+    RedisModulesOperations<String> rmo = (RedisModulesOperations<String>) ac
         .getBean("redisModulesOperations");
 
     Set<BeanDefinition> beanDefs = new HashSet<BeanDefinition>();

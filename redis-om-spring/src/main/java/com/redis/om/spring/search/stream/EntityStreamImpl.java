@@ -4,11 +4,11 @@ import com.redis.om.spring.ops.RedisModulesOperations;
 
 public class EntityStreamImpl implements EntityStream {
 
-  RedisModulesOperations<String, String> modulesOperations;
+  RedisModulesOperations<String> modulesOperations;
 
   @SuppressWarnings("unchecked")
-  public EntityStreamImpl(RedisModulesOperations<?, ?> rmo) {
-    this.modulesOperations = (RedisModulesOperations<String, String>) rmo;
+  public EntityStreamImpl(RedisModulesOperations<?> rmo) {
+    this.modulesOperations = (RedisModulesOperations<String>) rmo;
   }
 
   @Override

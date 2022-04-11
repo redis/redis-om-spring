@@ -85,7 +85,7 @@ public class RediSearchQuery implements RepositoryQuery {
   private List<String> paramNames = new ArrayList<String>();
   private Class<?> domainType;
 
-  RedisModulesOperations<String, String> modulesOperations;
+  RedisModulesOperations<String> modulesOperations;
   KeyValueOperations keyValueOperations;
 
   private boolean isANDQuery = false;
@@ -95,16 +95,16 @@ public class RediSearchQuery implements RepositoryQuery {
 
   @SuppressWarnings("unchecked")
   public RediSearchQuery(//
-      QueryMethod queryMethod, //
-      RepositoryMetadata metadata, //
-      QueryMethodEvaluationContextProvider evaluationContextProvider, //
-      KeyValueOperations keyValueOperations, //
-      RedisModulesOperations<?, ?> rmo, //
-      Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
+                         QueryMethod queryMethod, //
+                         RepositoryMetadata metadata, //
+                         QueryMethodEvaluationContextProvider evaluationContextProvider, //
+                         KeyValueOperations keyValueOperations, //
+                         RedisModulesOperations<?> rmo, //
+                         Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
     logger.info(String.format("Creating %s query method", queryMethod.getName()));
 
     this.keyValueOperations = keyValueOperations;
-    this.modulesOperations = (RedisModulesOperations<String, String>) rmo;
+    this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.queryMethod = queryMethod;
     this.searchIndex = this.queryMethod.getEntityInformation().getJavaType().getName() + "Idx";
     this.metadata = metadata;

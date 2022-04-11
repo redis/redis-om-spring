@@ -8,7 +8,7 @@ import com.redis.om.spring.ops.pds.BloomOperations;
 public class EmailTakenImpl implements EmailTaken {
   
   @Autowired
-  RedisModulesOperations<String, String> modulesOperations;
+  RedisModulesOperations<String> modulesOperations;
 
   @Override
   public boolean isEmailTaken(String email) {

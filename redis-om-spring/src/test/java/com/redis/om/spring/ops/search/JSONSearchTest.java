@@ -52,7 +52,7 @@ public class JSONSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Autowired
-  RedisModulesOperations<String, String> modulesOperations;
+  RedisModulesOperations<String> modulesOperations;
 
   @Autowired
   private StringRedisTemplate template;

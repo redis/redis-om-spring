@@ -29,7 +29,7 @@ public class OpsForJSONTest extends AbstractBaseDocumentTest {
   }
 
   @Autowired
-  RedisModulesOperations<String, IRLObject> modulesOperations;
+  RedisModulesOperations<String> modulesOperations;
 
   @Test
   public void testJSONClient() {

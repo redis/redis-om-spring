@@ -20,7 +20,7 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
     extends RepositoryFactoryBeanSupport<T, S, ID> {
 
   private @Nullable KeyValueOperations operations;
-  private @Nullable RedisModulesOperations<String, String> rmo;
+  private @Nullable RedisModulesOperations<String> rmo;
   private @Nullable RedisOperations<?, ?> redisOperations;
   private @Nullable Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
   private @Nullable Class<? extends RepositoryQuery> repositoryQueryType;
@@ -32,7 +32,7 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
    * @param repositoryInterface must not be {@literal null}.
    */
   public RedisEnhancedRepositoryFactoryBean(Class<? extends T> repositoryInterface,
-      RedisOperations<?, ?> redisOperations, RedisModulesOperations<?, ?> rmo) {
+      RedisOperations<?, ?> redisOperations, RedisModulesOperations<?> rmo) {
     super(repositoryInterface);
     setRedisModulesOperations(rmo);
     setRedisOperations(redisOperations);
@@ -57,10 +57,10 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
    * @param rmo must not be {@literal null}.
    */
   @SuppressWarnings("unchecked")
-  public void setRedisModulesOperations(RedisModulesOperations<?, ?> rmo) {
+  public void setRedisModulesOperations(RedisModulesOperations<?> rmo) {
     Assert.notNull(rmo, "RedisModulesOperations must not be null!");
 
-    this.rmo = (RedisModulesOperations<String, String>) rmo;
+    this.rmo = (RedisModulesOperations<String>) rmo;
   }
 
   /**

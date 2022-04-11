@@ -39,7 +39,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
 
   private final KeyValueOperations keyValueOperations;
   private final RedisOperations<?, ?> redisOperations;
-  private final RedisModulesOperations<?, ?> rmo;
+  private final RedisModulesOperations<?> rmo;
   private final MappingContext<?, ?> context;
   private final Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
   private final Class<? extends RepositoryQuery> repositoryQueryType;
@@ -53,7 +53,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
   public RedisEnhancedRepositoryFactory( //
       KeyValueOperations keyValueOperations, //
       RedisOperations<?, ?> redisOperations, //
-      RedisModulesOperations<?, ?> rmo) {
+      RedisModulesOperations<?> rmo) {
     this(keyValueOperations, redisOperations, rmo, DEFAULT_QUERY_CREATOR);
   }
 
@@ -65,10 +65,10 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
    * @param queryCreator       must not be {@literal null}.
    */
   public RedisEnhancedRepositoryFactory( //
-      KeyValueOperations keyValueOperations, //
-      RedisOperations<?, ?> redisOperations, //
-      RedisModulesOperations<?, ?> rmo, //
-      Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
+                                         KeyValueOperations keyValueOperations, //
+                                         RedisOperations<?, ?> redisOperations, //
+                                         RedisModulesOperations<?> rmo, //
+                                         Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
 
     this(keyValueOperations, redisOperations, rmo, queryCreator, RedisEnhancedQuery.class);
   }
@@ -83,11 +83,11 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
    * @since 1.1
    */
   public RedisEnhancedRepositoryFactory( //
-      KeyValueOperations keyValueOperations, //
-      RedisOperations<?, ?> redisOperations, //
-      RedisModulesOperations<?, ?> rmo, //
-      Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
-      Class<? extends RepositoryQuery> repositoryQueryType) {
+                                         KeyValueOperations keyValueOperations, //
+                                         RedisOperations<?, ?> redisOperations, //
+                                         RedisModulesOperations<?> rmo, //
+                                         Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
+                                         Class<? extends RepositoryQuery> repositoryQueryType) {
 
     Assert.notNull(keyValueOperations, "KeyValueOperations must not be null!");
     Assert.notNull(redisOperations, "RedisOperations must not be null!");
@@ -163,7 +163,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
 
     private QueryMethodEvaluationContextProvider evaluationContextProvider;
     private KeyValueOperations keyValueOperations;
-    private RedisModulesOperations<?, ?> rmo;
+    private RedisModulesOperations<?> rmo;
     private RedisOperations<?, ?> redisOperations;
 
     private Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
@@ -177,12 +177,12 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
      * @since 1.1
      */
     public RedisEnhancedQueryLookupStrategy(@Nullable Key key,
-        QueryMethodEvaluationContextProvider evaluationContextProvider, //
-        KeyValueOperations keyValueOperations, //
-        RedisOperations<?, ?> redisOperations, //
-        RedisModulesOperations<?, ?> rmo, //
-        Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
-        Class<? extends RepositoryQuery> repositoryQueryType) {
+                                            QueryMethodEvaluationContextProvider evaluationContextProvider, //
+                                            KeyValueOperations keyValueOperations, //
+                                            RedisOperations<?, ?> redisOperations, //
+                                            RedisModulesOperations<?> rmo, //
+                                            Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
+                                            Class<? extends RepositoryQuery> repositoryQueryType) {
 
       Assert.notNull(evaluationContextProvider, "EvaluationContextProvider must not be null!");
       Assert.notNull(keyValueOperations, "KeyValueOperations must not be null!");

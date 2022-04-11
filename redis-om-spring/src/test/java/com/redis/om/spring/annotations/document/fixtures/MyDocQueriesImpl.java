@@ -15,7 +15,7 @@ import io.redisearch.SearchResult;
 public class MyDocQueriesImpl implements MyDocQueries {
 
   @Autowired
-  RedisModulesOperations<String, String> modulesOperations;
+  RedisModulesOperations<String> modulesOperations;
 
   private static final Gson gson = new Gson();
 
