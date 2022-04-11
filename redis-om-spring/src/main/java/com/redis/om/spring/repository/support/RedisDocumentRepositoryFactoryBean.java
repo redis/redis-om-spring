@@ -1,6 +1,7 @@
 package com.redis.om.spring.repository.support;
 
 import com.redis.om.spring.ops.RedisModulesOperations;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.repository.support.KeyValueRepositoryFactoryBean;
 import org.springframework.data.mapping.context.MappingContext;
@@ -13,6 +14,7 @@ import org.springframework.util.Assert;
 public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, ID>
     extends KeyValueRepositoryFactoryBean<T, S, ID> {
 
+  @Autowired
   private @Nullable RedisModulesOperations<String> rmo;
 
   /**
