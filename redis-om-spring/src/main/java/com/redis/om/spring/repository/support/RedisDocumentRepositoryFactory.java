@@ -5,6 +5,7 @@ import java.lang.reflect.Method;
 import java.util.Optional;
 
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.repository.query.KeyValuePartTreeQuery;
 import org.springframework.data.keyvalue.repository.query.SpelQueryCreator;
@@ -47,7 +48,7 @@ public class RedisDocumentRepositoryFactory extends RepositoryFactorySupport {
    *
    * @param keyValueOperations must not be {@literal null}.
    */
-  public RedisDocumentRepositoryFactory(KeyValueOperations keyValueOperations, RedisModulesOperations<?, ?> rmo) {
+  public RedisDocumentRepositoryFactory(KeyValueOperations keyValueOperations, @Qualifier("redisModulesOperations") RedisModulesOperations<?, ?> rmo) {
     this(keyValueOperations, rmo, DEFAULT_QUERY_CREATOR);
   }
 
