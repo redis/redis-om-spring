@@ -35,7 +35,7 @@ public class AutoCompleteTest extends AbstractBaseDocumentTest {
   public AirportsRepository repository;
 
   @Autowired
-  RedisModulesOperations<String, String> modulesOperations;
+  RedisModulesOperations<String> modulesOperations;
 
   @BeforeEach
   public void loadAirports(@Value("classpath:/data/airport_codes.csv") File dataFile) throws IOException {

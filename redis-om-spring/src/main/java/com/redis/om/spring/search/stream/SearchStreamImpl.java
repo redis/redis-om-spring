@@ -49,7 +49,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private static final Log logger = LogFactory.getLog(SearchStreamImpl.class);
 
   @SuppressWarnings("unused")
-  private RedisModulesOperations<String, String> modulesOperations;
+  private RedisModulesOperations<String> modulesOperations;
   private SearchOperations<String> ops;
   private String searchIndex;
   private Class<E> entityClass;
@@ -59,7 +59,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private Optional<Integer> skip = Optional.empty();
   private Optional<SortedField> sortBy = Optional.empty();
 
-  public SearchStreamImpl(Class<E> entityClass, RedisModulesOperations<String, String> modulesOperations) {
+  public SearchStreamImpl(Class<E> entityClass, RedisModulesOperations<String> modulesOperations) {
     this.modulesOperations = modulesOperations;
     this.entityClass = entityClass;
     searchIndex = entityClass.getName() + "Idx";

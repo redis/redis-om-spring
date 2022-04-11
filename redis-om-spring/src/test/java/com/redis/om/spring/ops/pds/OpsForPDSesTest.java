@@ -10,7 +10,7 @@ import com.redis.om.spring.ops.RedisModulesOperations;
 
 public class OpsForPDSesTest extends AbstractBaseDocumentTest {
   @Autowired
-  RedisModulesOperations<String,String> modulesOperations;
+  RedisModulesOperations<String> modulesOperations;
   
   @Test
   public void testBasicBloomOperations() {

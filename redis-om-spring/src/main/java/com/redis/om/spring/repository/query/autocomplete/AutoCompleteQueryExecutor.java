@@ -23,9 +23,9 @@ public class AutoCompleteQueryExecutor {
   public static final String AUTOCOMPLETE_PREFIX = "autoComplete";
   
   RepositoryQuery query;
-  RedisModulesOperations<String, String> modulesOperations;
+  RedisModulesOperations<String> modulesOperations;
 
-  public AutoCompleteQueryExecutor(RepositoryQuery query, RedisModulesOperations<String, String> modulesOperations) {
+  public AutoCompleteQueryExecutor(RepositoryQuery query, RedisModulesOperations<String> modulesOperations) {
     this.query = query;
     this.modulesOperations = modulesOperations;
   }

@@ -13,7 +13,7 @@ import org.springframework.util.Assert;
 public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, ID>
     extends KeyValueRepositoryFactoryBean<T, S, ID> {
 
-  private @Nullable RedisModulesOperations<String, String> rmo;
+  private @Nullable RedisModulesOperations<String> rmo;
 
   /**
    * Creates a new {@link RedisDocumentRepositoryFactoryBean} for the given repository
@@ -30,7 +30,7 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
    *
    * @param rmo must not be {@literal null}.
    */
-  public void setRedisModulesOperations(RedisModulesOperations<String, String> rmo) {
+  public void setRedisModulesOperations(RedisModulesOperations<String> rmo) {
     Assert.notNull(rmo, "RedisModulesOperations must not be null!");
 
     this.rmo = rmo;

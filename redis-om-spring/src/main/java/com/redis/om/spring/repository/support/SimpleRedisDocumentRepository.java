@@ -22,13 +22,13 @@ import com.redislabs.modules.rejson.Path;
 
 public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueRepository<T, ID> implements RedisDocumentRepository<T, ID> {
   
-  protected RedisModulesOperations<String, String> modulesOperations;
+  protected RedisModulesOperations<String> modulesOperations;
   protected EntityInformation<T, ID> metadata;
 
   @SuppressWarnings("unchecked")
-  public SimpleRedisDocumentRepository(EntityInformation<T, ID> metadata, KeyValueOperations operations, @Qualifier("redisModulesOperations") RedisModulesOperations<?, ?> rmo) {
+  public SimpleRedisDocumentRepository(EntityInformation<T, ID> metadata, KeyValueOperations operations, @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo) {
     super(metadata, operations);
-    this.modulesOperations = (RedisModulesOperations<String, String>)rmo;
+    this.modulesOperations = (RedisModulesOperations<String>)rmo;
     this.metadata = metadata;
   }
 

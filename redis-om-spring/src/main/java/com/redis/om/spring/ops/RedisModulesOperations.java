@@ -16,7 +16,7 @@ import com.redis.om.spring.ops.pds.TopKOperationsImpl;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.ops.search.SearchOperationsImpl;
 
-public class RedisModulesOperations<K,V> {
+public class RedisModulesOperations<K> {
 
   private RedisModulesClient client;
   private RedisTemplate<?, ?> template;

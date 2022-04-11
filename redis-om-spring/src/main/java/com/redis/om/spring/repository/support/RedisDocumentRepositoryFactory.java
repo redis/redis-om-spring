@@ -33,7 +33,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
   private final KeyValueOperations keyValueOperations;
   private final Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
   private final Class<? extends RepositoryQuery> repositoryQueryType;
-  private final RedisModulesOperations<?, ?> rmo;
+  private final RedisModulesOperations<?> rmo;
 
   /**
    * Creates a new {@link KeyValueRepositoryFactory} for the given
@@ -42,7 +42,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
    * @param keyValueOperations must not be {@literal null}.
    * @param rmo                must not be {@literal null}.
    */
-  public RedisDocumentRepositoryFactory(KeyValueOperations keyValueOperations, RedisModulesOperations<?, ?> rmo) {
+  public RedisDocumentRepositoryFactory(KeyValueOperations keyValueOperations, RedisModulesOperations<?> rmo) {
     this(keyValueOperations, rmo, DEFAULT_QUERY_CREATOR);
   }
 
@@ -53,7 +53,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
    * @param keyValueOperations must not be {@literal null}.
    * @param queryCreator       must not be {@literal null}.
    */
-  public RedisDocumentRepositoryFactory(KeyValueOperations keyValueOperations, RedisModulesOperations<?, ?> rmo,
+  public RedisDocumentRepositoryFactory(KeyValueOperations keyValueOperations, RedisModulesOperations<?> rmo,
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
 
     this(keyValueOperations, rmo, queryCreator, RediSearchQuery.class);
@@ -67,7 +67,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
    * @param queryCreator        must not be {@literal null}.
    * @param repositoryQueryType must not be {@literal null}.
    */
-  public RedisDocumentRepositoryFactory(KeyValueOperations keyValueOperations, RedisModulesOperations<?, ?> rmo,
+  public RedisDocumentRepositoryFactory(KeyValueOperations keyValueOperations, RedisModulesOperations<?> rmo,
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator, Class<? extends RepositoryQuery> repositoryQueryType) {
 
     super(keyValueOperations, queryCreator, repositoryQueryType);
@@ -103,7 +103,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
 
     private QueryMethodEvaluationContextProvider evaluationContextProvider;
     private KeyValueOperations keyValueOperations;
-    private RedisModulesOperations<?, ?> rmo;
+    private RedisModulesOperations<?> rmo;
 
     private Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
     private Class<? extends RepositoryQuery> repositoryQueryType;
@@ -115,9 +115,9 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
      * @param queryCreator
      */
     public RediSearchQueryLookupStrategy(@Nullable Key key,
-        QueryMethodEvaluationContextProvider evaluationContextProvider, KeyValueOperations keyValueOperations,
-        RedisModulesOperations<?, ?> rmo, Class<? extends AbstractQueryCreator<?, ?>> queryCreator,
-        Class<? extends RepositoryQuery> repositoryQueryType) {
+                                         QueryMethodEvaluationContextProvider evaluationContextProvider, KeyValueOperations keyValueOperations,
+                                         RedisModulesOperations<?> rmo, Class<? extends AbstractQueryCreator<?, ?>> queryCreator,
+                                         Class<? extends RepositoryQuery> repositoryQueryType) {
 
       Assert.notNull(evaluationContextProvider, "EvaluationContextProvider must not be null!");
       Assert.notNull(keyValueOperations, "KeyValueOperations must not be null!");
