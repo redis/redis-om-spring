@@ -1,6 +1,6 @@
 package com.redis.om.spring.repository.support;
 
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.repository.config.QueryCreatorType;
 import org.springframework.data.mapping.context.MappingContext;
@@ -18,6 +18,7 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
     extends RepositoryFactoryBeanSupport<T, S, ID> {
 
   private @Nullable KeyValueOperations operations;
+  @Autowired
   private @Nullable RedisModulesOperations<String, String> rmo;
   private @Nullable Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
   private @Nullable Class<? extends RepositoryQuery> repositoryQueryType;
@@ -28,9 +29,8 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
    *
    * @param repositoryInterface must not be {@literal null}.
    */
-  public RedisDocumentRepositoryFactoryBean(Class<? extends T> repositoryInterface, @Qualifier("redisModulesOperations") RedisModulesOperations<?,?> rmo) {
+  public RedisDocumentRepositoryFactoryBean(Class<? extends T> repositoryInterface) {
     super(repositoryInterface);
-    setRedisModulesOperations(rmo);
   }
 
   /**
@@ -47,7 +47,7 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
   /**
    * Configures the {@link RedisModulesOperations} to be used for the repositories.
    *
-   * @param operations must not be {@literal null}.
+   * @param rmo must not be {@literal null}.
    */
   @SuppressWarnings("unchecked")
   public void setRedisModulesOperations(RedisModulesOperations<?,?> rmo) {
