@@ -36,10 +36,10 @@ import io.redisearch.Suggestion;
 @Aspect
 @Component
 public class AutoCompleteAspect implements Ordered {
-  private RedisModulesOperations<String, String> rmo;
+  private RedisModulesOperations<String> rmo;
   private GsonBuilder gsonBuilder = GsonBuidlerFactory.getBuilder();
 
-  public AutoCompleteAspect(RedisModulesOperations<String, String> rmo) {
+  public AutoCompleteAspect(RedisModulesOperations<String> rmo) {
     this.rmo = rmo;
   }
 

@@ -76,7 +76,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   private List<String> paramNames = new ArrayList<String>();
   private Class<?> domainType;
 
-  RedisModulesOperations<String, String> modulesOperations;
+  RedisModulesOperations<String> modulesOperations;
   MappingRedisConverter mappingConverter;
   RedisOperations<?, ?> redisOperations;
 
@@ -87,13 +87,13 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
   @SuppressWarnings("unchecked")
   public RedisEnhancedQuery(QueryMethod queryMethod, //
-      RepositoryMetadata metadata, //
-      QueryMethodEvaluationContextProvider evaluationContextProvider, //
-      KeyValueOperations keyValueOperations, RedisOperations<?, ?> redisOperations, RedisModulesOperations<?, ?> rmo, //
-      Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
+                            RepositoryMetadata metadata, //
+                            QueryMethodEvaluationContextProvider evaluationContextProvider, //
+                            KeyValueOperations keyValueOperations, RedisOperations<?, ?> redisOperations, RedisModulesOperations<?> rmo, //
+                            Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
     logger.debug(String.format("Creating query %s", queryMethod.getName()));
 
-    this.modulesOperations = (RedisModulesOperations<String, String>) rmo;
+    this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.queryMethod = queryMethod;
     this.searchIndex = this.queryMethod.getEntityInformation().getJavaType().getName() + "Idx";
     this.domainType = this.queryMethod.getEntityInformation().getJavaType();

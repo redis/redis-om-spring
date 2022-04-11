@@ -27,7 +27,7 @@ public class OpsForSearchTest extends AbstractBaseDocumentTest {
   static String HASH_PREFIX = "Article";
 
   @Autowired
-  RedisModulesOperations<String, String> modulesOperations;
+  RedisModulesOperations<String> modulesOperations;
   
   @Autowired
   RedisTemplate<String, String> template;

@@ -19,9 +19,9 @@ public class BloomQueryExecutor {
   private static final Log logger = LogFactory.getLog(BloomQueryExecutor.class);
   public static final String EXISTS_BY_PREFIX = "existsBy";
   RepositoryQuery query;
-  RedisModulesOperations<String, String> modulesOperations;
+  RedisModulesOperations<String> modulesOperations;
   
-  public BloomQueryExecutor(RepositoryQuery query, RedisModulesOperations<String, String> modulesOperations) {
+  public BloomQueryExecutor(RepositoryQuery query, RedisModulesOperations<String> modulesOperations) {
     this.query = query;
     this.modulesOperations = modulesOperations;
   }
