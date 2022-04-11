@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.StreamSupport;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -25,7 +26,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   protected EntityInformation<T, ID> metadata;
 
   @SuppressWarnings("unchecked")
-  public SimpleRedisDocumentRepository(EntityInformation<T, ID> metadata, KeyValueOperations operations, RedisModulesOperations<?, ?> rmo) {
+  public SimpleRedisDocumentRepository(EntityInformation<T, ID> metadata, KeyValueOperations operations, @Qualifier("redisModulesOperations") RedisModulesOperations<?, ?> rmo) {
     super(metadata, operations);
     this.modulesOperations = (RedisModulesOperations<String, String>)rmo;
     this.metadata = metadata;

@@ -1,5 +1,6 @@
 package com.redis.om.spring.repository.support;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.repository.config.QueryCreatorType;
 import org.springframework.data.mapping.context.MappingContext;
@@ -27,7 +28,7 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
    *
    * @param repositoryInterface must not be {@literal null}.
    */
-  public RedisDocumentRepositoryFactoryBean(Class<? extends T> repositoryInterface, RedisModulesOperations<?,?> rmo) {
+  public RedisDocumentRepositoryFactoryBean(Class<? extends T> repositoryInterface, @Qualifier("redisModulesOperations") RedisModulesOperations<?,?> rmo) {
     super(repositoryInterface);
     setRedisModulesOperations(rmo);
   }
