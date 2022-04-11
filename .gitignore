@@ -18,6 +18,9 @@ tmp/
 .settings/
 .project
 
+### IDEA ###
+.idea
+
 ### Mac ###
 **/.DS_Store
 redis-om-spring/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst
