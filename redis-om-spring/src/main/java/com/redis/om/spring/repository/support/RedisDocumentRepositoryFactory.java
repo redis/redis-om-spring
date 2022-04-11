@@ -59,7 +59,7 @@ public class RedisDocumentRepositoryFactory extends RepositoryFactorySupport {
    * @param keyValueOperations must not be {@literal null}.
    * @param queryCreator       must not be {@literal null}.
    */
-  public RedisDocumentRepositoryFactory(KeyValueOperations keyValueOperations, RedisModulesOperations<?, ?> rmo,
+  public RedisDocumentRepositoryFactory(KeyValueOperations keyValueOperations, @Qualifier("redisModulesOperations") RedisModulesOperations<?, ?> rmo,
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
 
     this(keyValueOperations, rmo, queryCreator, RediSearchQuery.class);
@@ -73,7 +73,7 @@ public class RedisDocumentRepositoryFactory extends RepositoryFactorySupport {
    * @param queryCreator        must not be {@literal null}.
    * @param repositoryQueryType must not be {@literal null}.
    */
-  public RedisDocumentRepositoryFactory(KeyValueOperations keyValueOperations, RedisModulesOperations<?, ?> rmo,
+  public RedisDocumentRepositoryFactory(KeyValueOperations keyValueOperations, @Qualifier("redisModulesOperations") RedisModulesOperations<?, ?> rmo,
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator, Class<? extends RepositoryQuery> repositoryQueryType) {
 
     Assert.notNull(keyValueOperations, "KeyValueOperations must not be null!");
@@ -88,7 +88,7 @@ public class RedisDocumentRepositoryFactory extends RepositoryFactorySupport {
   }
 
   /* (non-Javadoc)
-   * 
+   *
    * @see
    * org.springframework.data.repository.core.support.RepositoryFactorySupport#
    * getEntityInformation(java.lang.Class) */
@@ -102,7 +102,7 @@ public class RedisDocumentRepositoryFactory extends RepositoryFactorySupport {
   }
 
   /* (non-Javadoc)
-   * 
+   *
    * @see
    * org.springframework.data.repository.core.support.RepositoryFactorySupport#
    * getTargetRepository(org.springframework.data.repository.core.
@@ -115,7 +115,7 @@ public class RedisDocumentRepositoryFactory extends RepositoryFactorySupport {
   }
 
   /* (non-Javadoc)
-   * 
+   *
    * @see
    * org.springframework.data.repository.core.support.RepositoryFactorySupport#
    * getRepositoryBaseClass(org.springframework.data.repository.core.
@@ -126,7 +126,7 @@ public class RedisDocumentRepositoryFactory extends RepositoryFactorySupport {
   }
 
   /* (non-Javadoc)
-   * 
+   *
    * @see
    * org.springframework.data.repository.core.support.RepositoryFactorySupport#
    * getQueryLookupStrategy(org.springframework.data.repository.query.
@@ -173,7 +173,7 @@ public class RedisDocumentRepositoryFactory extends RepositoryFactorySupport {
     }
 
     /* (non-Javadoc)
-     * 
+     *
      * @see
      * org.springframework.data.repository.query.QueryLookupStrategy#resolveQuery(
      * java.lang.reflect.Method,
