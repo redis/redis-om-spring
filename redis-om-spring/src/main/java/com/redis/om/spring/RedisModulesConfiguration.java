@@ -84,6 +84,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   }
 
   @Bean(name = "redisModulesOperations")
+  @Primary
   @ConditionalOnMissingBean
   RedisModulesOperations<?, ?> redisModulesOperations(RedisModulesClient rmc, RedisTemplate<?, ?> template) {
     return new RedisModulesOperations<>(rmc, template);
@@ -171,7 +172,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
       }
     }
   }
-  
+
   private void createIndicesFor(Class<?> cls, ApplicationContext ac) {
     @SuppressWarnings("unchecked")
     RedisModulesOperations<String, String> rmo = (RedisModulesOperations<String, String>) ac
@@ -269,14 +270,14 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
           || Set.class.isAssignableFrom(field.getType())) {
         ResolvableType collectionType = ResolvableType.forField(field);
          Class<?> elementType = collectionType.getGeneric(0).getRawClass();
-        // It is only possible to index an array of strings or booleans in a TAG identifier. 
+        // It is only possible to index an array of strings or booleans in a TAG identifier.
         // https://redis.io/docs/stack/json/indexing_json/#json-arrays-can-only-be-indexed-in-tag-identifiers
         if (CharSequence.class.isAssignableFrom(elementType) || (elementType == Boolean.class)) {
           fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
               indexed.arrayIndex()));
         } else {
           logger.error(String.format("The collection \"%s\" of \"%s\"s in \"%s\" cannot be indexed. It is only possible to index a Collections of String or Boolean",
-                  field.getName(), elementType.getSimpleName(), field.getDeclaringClass().getSimpleName())); 
+                  field.getName(), elementType.getSimpleName(), field.getDeclaringClass().getSimpleName()));
         }
       }
       //
