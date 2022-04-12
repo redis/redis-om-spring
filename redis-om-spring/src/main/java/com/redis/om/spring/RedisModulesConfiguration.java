@@ -328,17 +328,17 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
   @SuppressWarnings({ "unchecked", "rawtypes" })
   private Set<BeanDefinition> getBeanDefinitionsFor(ApplicationContext ac, Class... classes) {
-    ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(false);
-    for (Class cls : classes) {
-      provider.addIncludeFilter(new AnnotationTypeFilter(cls));
-    }
-
     Map<String, Object> annotatedBeans = ac.getBeansWithAnnotation(SpringBootApplication.class);
     Class<?> app = annotatedBeans.isEmpty() ? null : annotatedBeans.values().toArray()[0].getClass();
-    Set<BeanDefinition> beanDefs = new HashSet<BeanDefinition>();
+    Set<BeanDefinition> beanDefs = new HashSet<>();
 
     if (app == null) {
       return beanDefs;
+    }
+
+    ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(false);
+    for (Class cls : classes) {
+      provider.addIncludeFilter(new AnnotationTypeFilter(cls));
     }
 
     if (app.isAnnotationPresent(EnableRedisDocumentRepositories.class)) {
