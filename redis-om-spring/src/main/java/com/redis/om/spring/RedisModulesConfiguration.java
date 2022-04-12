@@ -336,6 +336,11 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     Map<String, Object> annotatedBeans = ac.getBeansWithAnnotation(SpringBootApplication.class);
     Class<?> app = annotatedBeans.isEmpty() ? null : annotatedBeans.values().toArray()[0].getClass();
     Set<BeanDefinition> beanDefs = new HashSet<BeanDefinition>();
+
+    if (app == null) {
+      return beanDefs;
+    }
+
     if (app.isAnnotationPresent(EnableRedisDocumentRepositories.class)) {
       EnableRedisDocumentRepositories edr = (EnableRedisDocumentRepositories) app
           .getAnnotation(EnableRedisDocumentRepositories.class);
