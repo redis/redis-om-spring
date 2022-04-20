@@ -363,7 +363,7 @@ Redis OM uses the [MIT license][license-url].
 [badge-snapshots]: https://img.shields.io/nexus/s/https/s01.oss.sonatype.org/com.redis.om/redis-om-spring.svg
 [badge-open-issues]: http://isitmaintained.com/badge/open/redis/redis-om-spring.svg
 [badge-issue-resolution]: http://isitmaintained.com/badge/resolution/redis/redis-om-spring.svg
-[license-image]: http://img.shields.io/badge/license-BSD_3--Clause-green.svg?style=flat-square
+[license-image]: https://img.shields.io/github/license/redis/redis-om-spring
 [license-url]: LICENSE
 
 <!-- Links -->
