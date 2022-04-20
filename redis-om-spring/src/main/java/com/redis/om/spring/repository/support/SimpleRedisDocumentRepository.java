@@ -2,8 +2,8 @@ package com.redis.om.spring.repository.support;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.StreamSupport;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
@@ -24,12 +24,14 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   
   protected RedisModulesOperations<String> modulesOperations;
   protected EntityInformation<T, ID> metadata;
+  protected KeyValueOperations operations;
 
   @SuppressWarnings("unchecked")
   public SimpleRedisDocumentRepository(EntityInformation<T, ID> metadata, KeyValueOperations operations, @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo) {
     super(metadata, operations);
     this.modulesOperations = (RedisModulesOperations<String>)rmo;
     this.metadata = metadata;
+    this.operations = operations;
   }
 
   @Override
@@ -55,8 +57,14 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
   @Override
   public void deleteById(ID id, Path path) {
-    // TODO: need to remove id from set
-    modulesOperations.opsForJSON().del(metadata.getJavaType().getName() + ":" + id.toString(), path);
+    Long deletedCount = modulesOperations.opsForJSON().del(metadata.getJavaType().getName() + ":" + id.toString(), path);
+    
+    if ((deletedCount > 0) && path.equals(Path.ROOT_PATH)) {
+      @SuppressWarnings("unchecked")
+      RedisTemplate<String,ID> template = (RedisTemplate<String,ID>)modulesOperations.getTemplate();
+      SetOperations<String, ID> setOps = template.opsForSet();
+      setOps.remove(metadata.getJavaType().getName(), id);
+    }
   }
 
   @Override
