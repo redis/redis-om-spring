@@ -358,7 +358,7 @@ Redis OM uses the [MIT license][license-url].
 <!-- Badges -->
 
 [ci-url]: https://github.com/redis-developer/redis-om-spring/actions/workflows/ci.yml
-[badge-stage]: https://img.shields.io/badge/Project%20Stage-Experimental-yellow.svg
+[badge-stage]: https://img.shields.io/badge/Project%20Stage-Development-green.svg
 [badge-stage-page]: https://github.com/redis/redis-om-spring/wiki/Project-Stages
 [badge-snapshots]: https://img.shields.io/nexus/s/https/s01.oss.sonatype.org/com.redis.om/redis-om-spring.svg
 [badge-open-issues]: http://isitmaintained.com/badge/open/redis/redis-om-spring.svg
