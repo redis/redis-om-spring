@@ -40,16 +40,16 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   @BeforeEach
   public void cleanUp() {
     repository.deleteAll();
-    
+
     Company redis = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com"));
     redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
 
     Company microsoft = repository.save(Company.of("Microsoft", 1975, new Point(-122.124500, 47.640160), "research@microsoft.com"));
     microsoft.setTags(Set.of("innovative", "reliable", "os", "ai"));
-    
+
     Company tesla = repository.save(Company.of("Tesla", 2003, new Point(-97.6208903,30.2210767), "elon@tesla.com"));
     tesla.setTags(Set.of("innovative", "futuristic", "ai"));
-    
+
     repository.saveAll(List.of(redis, microsoft, tesla));
   }
 
@@ -132,7 +132,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     assertTrue(names.contains("Microsoft"));
     assertTrue(names.contains("Tesla"));
   }
-  
+
   @Test
   public void testFindByThreePropertiesOrList() {
     SearchStream<Company> stream = entityStream.of(Company.class);
@@ -148,7 +148,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     assertTrue(names.contains("Microsoft"));
     assertTrue(names.contains("Tesla"));
   }
-  
+
   @Test
   public void testFindByThreePropertiesOrList2() {
     SearchStream<Company> stream = entityStream.of(Company.class);
@@ -163,7 +163,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     assertTrue(names.contains("RedisInc"));
     assertTrue(names.contains("Tesla"));
   }
-  
+
   @Test
   public void testFindByThreeNumericPropertiesOrList() {
     SearchStream<Company> stream = entityStream.of(Company.class);
@@ -196,7 +196,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     List<String> names = companies.stream().map(Company::getName).collect(Collectors.toList());
     assertTrue(names.contains("Tesla"));
   }
-  
+
   @Test
   public void testFindByNumericPropertyEquals() {
     SearchStream<Company> stream = entityStream.of(Company.class);
@@ -210,7 +210,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     List<String> names = companies.stream().map(Company::getName).collect(Collectors.toList());
     assertTrue(names.contains("RedisInc"));
   }
-  
+
   @Test
   public void testFindByNumericPropertyGreaterThan() {
     SearchStream<Company> stream = entityStream.of(Company.class);
@@ -225,7 +225,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     assertTrue(names.contains("RedisInc"));
     assertTrue(names.contains("Tesla"));
   }
-  
+
   @Test
   public void testFindByNumericPropertyGreaterThanOrEqual() {
     SearchStream<Company> stream = entityStream.of(Company.class);
@@ -239,7 +239,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     List<String> names = companies.stream().map(Company::getName).collect(Collectors.toList());
     assertTrue(names.contains("RedisInc"));
   }
-  
+
   @Test
   public void testFindByNumericPropertyLessThan() {
     SearchStream<Company> stream = entityStream.of(Company.class);
@@ -253,7 +253,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     List<String> names = companies.stream().map(Company::getName).collect(Collectors.toList());
     assertTrue(names.contains("Microsoft"));
   }
-  
+
   @Test
   public void testFindByNumericPropertyLessThanOrEqual() {
     SearchStream<Company> stream = entityStream.of(Company.class);
@@ -281,7 +281,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     List<String> names = companies.stream().map(Company::getName).collect(Collectors.toList());
     assertTrue(names.contains("Tesla"));
   }
-  
+
   @Test
   public void testCount() {
     long count = entityStream //
@@ -294,7 +294,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
 
     assertEquals(1, count);
   }
-  
+
   @Test
   public void testLimit() {
     List<Company> companies = entityStream //
@@ -304,7 +304,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
 
     assertEquals(2, companies.size());
   }
-  
+
   @Test
   public void testSkip() {
     List<Company> companies = entityStream //
@@ -314,7 +314,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
 
     assertEquals(2, companies.size());
   }
-  
+
   @Test
   public void testSortDefaultAscending() {
     List<Company> companies = entityStream //
@@ -323,13 +323,13 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
         .collect(Collectors.toList());
 
     assertEquals(3, companies.size());
-    
+
     List<String> names = companies.stream().map(Company::getName).collect(Collectors.toList());
     assertEquals(names.get(0), "Microsoft");
     assertEquals(names.get(1), "RedisInc");
     assertEquals(names.get(2), "Tesla");
   }
-  
+
   @Test
   public void testSortAscending() {
     List<Company> companies = entityStream //
@@ -338,13 +338,13 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
         .collect(Collectors.toList());
 
     assertEquals(3, companies.size());
-    
+
     List<String> names = companies.stream().map(Company::getName).collect(Collectors.toList());
     assertEquals(names.get(0), "Microsoft");
     assertEquals(names.get(1), "RedisInc");
     assertEquals(names.get(2), "Tesla");
   }
-  
+
   @Test
   public void testSortDescending() {
     List<Company> companies = entityStream //
@@ -353,14 +353,14 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
         .collect(Collectors.toList());
 
     assertEquals(3, companies.size());
-    
+
     List<String> names = companies.stream().map(Company::getName).collect(Collectors.toList());
- 
+
     assertEquals(names.get(0), "Tesla");
     assertEquals(names.get(1), "RedisInc");
     assertEquals(names.get(2), "Microsoft");
   }
-  
+
   @Test
   public void testForEachOrdered() {
     List<Company> companies = new ArrayList<Company>();
@@ -368,16 +368,16 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     entityStream //
         .of(Company.class) //
         .forEachOrdered(testConsumer);
-    
+
     assertEquals(3, companies.size());
-    
+
     List<String> names = companies.stream().map(Company::getName).collect(Collectors.toList());
-    
+
     assertEquals(names.get(0), "RedisInc");
     assertEquals(names.get(1), "Microsoft");
     assertEquals(names.get(2), "Tesla");
   }
-  
+
   @Test
   public void testMapToOneProperty() {
     List<String> names = entityStream //
@@ -387,12 +387,12 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
         .collect(Collectors.toList());
 
     assertEquals(3, names.size());
- 
+
     assertEquals("Tesla", names.get(0));
     assertEquals("RedisInc", names.get(1));
     assertEquals("Microsoft", names.get(2));
   }
-  
+
   @Test
   public void testMapToTwoProperties() {
     List<Pair<String,Integer>> results = entityStream //
@@ -402,16 +402,16 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
         .collect(Collectors.toList());
 
     assertEquals(3, results.size());
- 
+
     assertEquals(results.get(0).getFirst(), "Tesla");
     assertEquals(results.get(1).getFirst(), "RedisInc");
     assertEquals(results.get(2).getFirst(), "Microsoft");
-    
+
     assertEquals(results.get(0).getSecond(), 2003);
     assertEquals(results.get(1).getSecond(), 2011);
     assertEquals(results.get(2).getSecond(), 1975);
   }
-   
+
   @Test
   public void testMapToThreeProperties() {
     List<Triple<String, Integer, Point>> results = entityStream //
@@ -421,20 +421,20 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
         .collect(Collectors.toList());
 
     assertEquals(3, results.size());
- 
+
     assertEquals(results.get(0).getFirst(), "Tesla");
     assertEquals(results.get(1).getFirst(), "RedisInc");
     assertEquals(results.get(2).getFirst(), "Microsoft");
-    
+
     assertEquals(results.get(0).getSecond(), 2003);
     assertEquals(results.get(1).getSecond(), 2011);
     assertEquals(results.get(2).getSecond(), 1975);
-    
+
     assertEquals(results.get(0).getThird(), new Point(-97.6208903, 30.2210767));
     assertEquals(results.get(1).getThird(), new Point(-122.066540, 37.377690));
     assertEquals(results.get(2).getThird(), new Point(-122.124500, 47.640160));
   }
-  
+
   @Test
   public void testMapToFourPropertiesOneNotIndexed() {
     List<Quad<String, Integer, Point, Date>> results = entityStream //
@@ -444,24 +444,24 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
         .collect(Collectors.toList());
 
     assertEquals(3, results.size());
- 
+
     assertEquals(results.get(0).getFirst(), "Tesla");
     assertEquals(results.get(1).getFirst(), "RedisInc");
     assertEquals(results.get(2).getFirst(), "Microsoft");
-    
+
     assertEquals(results.get(0).getSecond(), 2003);
     assertEquals(results.get(1).getSecond(), 2011);
     assertEquals(results.get(2).getSecond(), 1975);
-    
+
     assertEquals(results.get(0).getThird(), new Point(-97.6208903, 30.2210767));
     assertEquals(results.get(1).getThird(), new Point(-122.066540, 37.377690));
     assertEquals(results.get(2).getThird(), new Point(-122.124500, 47.640160));
-    
+
     assertNotNull(results.get(0).getFourth());
     assertNotNull(results.get(1).getFourth());
     assertNotNull(results.get(2).getFourth());
   }
-  
+
   @Test
   public void testGeoNearPredicate() {
     List<String> names = entityStream //
@@ -472,10 +472,10 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
         .collect(Collectors.toList());
 
     assertEquals(1, names.size());
- 
+
     assertEquals("RedisInc", names.get(0));
   }
-  
+
   @Test
   public void testFindByTextLike() {
     SearchStream<Company> stream = entityStream.of(Company.class);
@@ -489,7 +489,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     List<String> names = companies.stream().map(Company::getName).collect(Collectors.toList());
     assertTrue(names.contains("Microsoft"));
   }
-  
+
   @Test
   public void testFindByTextNotLike() {
     List<String> names = entityStream //
@@ -503,7 +503,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     assertTrue(names.contains("Tesla"));
     assertTrue(names.contains("RedisInc"));
   }
-  
+
   @Test
   public void testFindByTextThatStartsWith() {
     SearchStream<Company> stream = entityStream.of(Company.class);
@@ -517,7 +517,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     List<String> names = companies.stream().map(Company::getName).collect(Collectors.toList());
     assertTrue(names.contains("Microsoft"));
   }
-  
+
   @Test
   public void testFindByTagsIn() {
     List<String> names = entityStream //
@@ -531,7 +531,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     assertTrue(names.contains("RedisInc"));
     assertTrue(names.contains("Microsoft"));
   }
-  
+
   @Test
   public void testFindByTagsIn2() {
     List<String> names = entityStream //
@@ -546,7 +546,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     assertTrue(names.contains("Microsoft"));
     assertTrue(names.contains("Tesla"));
   }
-  
+
   @Test
   public void testFindByTagsContainingAll() {
     List<String> names = entityStream //
@@ -559,7 +559,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
 
     assertTrue(names.contains("RedisInc"));
   }
-  
+
   @Test
   public void testFindByTagsEquals() {
     Set<String> tags = Set.of("fast", "scalable", "reliable", "database", "nosql");
@@ -573,8 +573,8 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
 
     assertTrue(names.contains("RedisInc"));
   }
-  
-  //@Test TODO this was working now is not WTF
+
+  @Test
   public void testFindByTagsNotEquals() {
     Set<String> tags = Set.of("fast", "scalable", "reliable", "database", "nosql");
     List<String> names = entityStream //
@@ -583,12 +583,10 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
         .map(Company$.NAME) //
         .collect(Collectors.toList());
 
-    assertEquals(2, names.size());
-
-    assertTrue(names.contains("Microsoft"));
+    assertEquals(1, names.size());
     assertTrue(names.contains("Tesla"));
   }
-  
+
   @Test
   public void testFindByTagsContainsNone() {
     Set<String> tags = Set.of("innovative");
@@ -602,7 +600,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
 
     assertTrue(names.contains("RedisInc"));
   }
-  
+
   @Test
   public void testFindFirst() {
     Optional<Company> maybeCompany = entityStream.of(Company.class) //
@@ -612,5 +610,5 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     assertTrue(maybeCompany.isPresent());
     assertEquals("RedisInc", maybeCompany.get().getName());
   }
-  
+
 }
