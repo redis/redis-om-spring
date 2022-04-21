@@ -3,9 +3,12 @@ package com.redis.om.spring.util;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.springframework.core.ResolvableType;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
 
@@ -57,6 +60,16 @@ public class ObjectUtils {
     char c[] = string.toCharArray();
     c[0] = Character.toLowerCase(c[0]);
     return new String(c);
+  }
+  
+  public static Optional<Class<?>> getCollectionElementType(Field field) {
+    if (Collection.class.isAssignableFrom(field.getType())) {
+      ResolvableType collectionType = ResolvableType.forField(field);
+      Class<?> elementType = collectionType.getGeneric(0).getRawClass();
+      return Optional.of(elementType);
+    }
+
+    return Optional.empty();
   }
 
 }

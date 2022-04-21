@@ -9,7 +9,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
+import com.google.common.collect.Sets;
+import com.redis.om.spring.annotations.document.fixtures.Employee;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -108,5 +111,15 @@ public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
     assertTrue(repository.existsByEmail(microsoft.getEmail()));
     assertFalse(repository.existsByEmail("bsb@redis.com"));
   }
-  
+
+  @Test
+  public void testGetNestedFields() {
+    Set<Employee> employees = Sets.newHashSet(Employee.of("Jackey"), Employee.of("Love"));
+    Company redisInc = Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com");
+    redisInc.setEmployees(employees);
+    repository.save(redisInc);
+
+    List<Company> jackey = repository.findByEmployees_name("Jackey");
+    assertNotNull(jackey.get(0).getEmployees());
+  }
 }
