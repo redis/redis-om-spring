@@ -44,5 +44,16 @@ public interface PermitRepository extends RedisDocumentRepository<Permit, String
   // Performing a combined search on two fields (OR):
   // FT.SEARCH permits "(@city:{Lagos})|(@description:detached)"
   Iterable<Permit> findByAddress_CityOrDescription(String buildingType, String description);
-  
+
+  // Performing a nested tag search
+  // FT.SEARCH permits "(@value:{M})"
+  Iterable<Permit> findByAttrList_Value(String value);
+
+  // Performing a multi-level nested tag search
+  // FT.SEARCH permits "(@skuNo:{ABC})"
+  Iterable<Permit> findByAttrList_orderList_skuNo(String skuNo);
+
+  // performing a combined search on two fields (or):
+  // FT.SEARCH permits "(@skuNo:{GHJ})|(@description:New)"
+  Iterable<Permit> findByAttrList_orderList_skuNoOrDescription(String skuNo, String description);
 }
