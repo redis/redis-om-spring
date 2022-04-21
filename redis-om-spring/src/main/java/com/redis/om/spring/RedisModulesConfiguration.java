@@ -1,5 +1,7 @@
 package com.redis.om.spring;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -7,6 +9,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.commons.lang3.ObjectUtils;
@@ -27,7 +30,6 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.core.ResolvableType;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
@@ -266,18 +268,20 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
       //
       // Set / List
       //
-      else if (Set.class.isAssignableFrom(field.getType()) || List.class.isAssignableFrom(field.getType())
-          || Set.class.isAssignableFrom(field.getType())) {
-        ResolvableType collectionType = ResolvableType.forField(field);
-         Class<?> elementType = collectionType.getGeneric(0).getRawClass();
+      else if (Set.class.isAssignableFrom(field.getType()) || List.class.isAssignableFrom(field.getType())) {
+        Optional<Class<?>> maybeCollectionType = com.redis.om.spring.util.ObjectUtils.getCollectionElementType(field);
+
         // It is only possible to index an array of strings or booleans in a TAG identifier.
         // https://redis.io/docs/stack/json/indexing_json/#json-arrays-can-only-be-indexed-in-tag-identifiers
-        if (CharSequence.class.isAssignableFrom(elementType) || (elementType == Boolean.class)) {
+        if (maybeCollectionType.isPresent() && (CharSequence.class.isAssignableFrom(maybeCollectionType.get()) || (maybeCollectionType.get() == Boolean.class))) {
           fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
               indexed.arrayIndex()));
-        } else {
-          logger.error(String.format("The collection \"%s\" of \"%s\"s in \"%s\" cannot be indexed. It is only possible to index a Collections of String or Boolean",
-                  field.getName(), elementType.getSimpleName(), field.getDeclaringClass().getSimpleName()));
+        // Index nested fields
+        } else if (isDocument) {
+          // Index nested JSON Array field. But the current implementation of RediSearch supports array only for TAG fields, not TEXT fields.
+          // https://github.com/RediSearch/RediSearch/issues/2293
+          logger.info(String.format("FOUND @Nested annotation on field of type: %s", field.getType()));
+          fields.addAll(indexAsNestedFieldFor(field, prefix));
         }
       }
       //
@@ -514,6 +518,69 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     }
 
     return new Field(fieldName, FieldType.Geo);
+  }
+
+  private List<Field> indexAsNestedFieldFor(java.lang.reflect.Field field, String prefix) {
+    String chain = (prefix == null || prefix.isBlank()) ? "" : prefix + ".";
+    String fieldPrefix = "$." + chain;
+    return getNestedField(fieldPrefix, field, prefix, null);
+  }
+
+  private List<Field> getNestedField(String fieldPrefix, java.lang.reflect.Field field, String prefix, List<Field> fieldList) {
+    if (fieldList == null) {
+      fieldList = new ArrayList<>();
+    }
+    Type genericType = field.getGenericType();
+    if (genericType instanceof ParameterizedType) {
+      ParameterizedType pt = (ParameterizedType) genericType;
+      Class<?> actualTypeArgument = (Class<?>)pt.getActualTypeArguments()[0];
+      java.lang.reflect.Field[] subDeclaredFields = actualTypeArgument.getDeclaredFields();
+      String tempPrefix = "";
+      if (prefix == null) {
+        prefix = field.getName();
+      } else {
+        prefix += "." + field.getName();
+      }
+      for (java.lang.reflect.Field subField : subDeclaredFields) {
+
+        Optional<Class<?>> maybeCollectionType = com.redis.om.spring.util.ObjectUtils.getCollectionElementType(subField);
+
+        if (subField.isAnnotationPresent(TagIndexed.class)) {
+          TagIndexed ti = subField.getAnnotation(TagIndexed.class);
+          tempPrefix = field.getName() + "[0:].";
+
+          FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName());
+          fieldName = fieldName.as(prefix.replace(".", "_") + "_" + subField.getName());
+
+          logger.info(String.format("Creating nested relationships: %s -> %s", field.getName(), subField.getName()));
+          fieldList.add(new TagField(fieldName, ti.separator(), false));
+          continue;
+        } else if (subField.isAnnotationPresent(Indexed.class)) {
+          System.out.println(">>> Found Indexed SUBFIELD....");
+          boolean subFieldIsTagField = ((subField
+              .isAnnotationPresent(Indexed.class)
+              && ((CharSequence.class.isAssignableFrom(subField.getType()) || (subField.getType() == Boolean.class)
+                  || (maybeCollectionType.isPresent() && (CharSequence.class.isAssignableFrom(maybeCollectionType.get())
+                      || (maybeCollectionType.get() == Boolean.class)))))));
+          System.out.println(">>> subFieldIsTagField ==> " + subFieldIsTagField);
+          if (subFieldIsTagField) {
+
+            Indexed indexed = subField.getAnnotation(Indexed.class);
+            tempPrefix = field.getName() + "[0:].";
+
+            FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName());
+            fieldName = fieldName.as(prefix.replace(".", "_") + "_" + subField.getName());
+
+            logger.info(String.format("Creating nested relationships: %s -> %s", field.getName(), subField.getName()));
+            fieldList.add(new TagField(fieldName, indexed.separator(), false));
+            continue;
+          }
+        }
+        fieldPrefix += tempPrefix;
+        getNestedField(fieldPrefix, subField, prefix, fieldList);
+      }
+    }
+    return fieldList;
   }
 
 }

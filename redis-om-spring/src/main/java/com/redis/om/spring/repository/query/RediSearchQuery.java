@@ -232,7 +232,7 @@ public class RediSearchQuery implements RepositoryQuery {
         else {
           qf.addAll(extractQueryFields(field.getType(), part, path, level + 1));
         }
-      }
+      } 
     } catch (NoSuchFieldException e) {
       logger.info(String.format("Did not find a field named %s", key));
     }
