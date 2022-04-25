@@ -556,15 +556,12 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
           fieldList.add(new TagField(fieldName, ti.separator(), false));
           continue;
         } else if (subField.isAnnotationPresent(Indexed.class)) {
-          System.out.println(">>> Found Indexed SUBFIELD....");
           boolean subFieldIsTagField = ((subField
               .isAnnotationPresent(Indexed.class)
               && ((CharSequence.class.isAssignableFrom(subField.getType()) || (subField.getType() == Boolean.class)
                   || (maybeCollectionType.isPresent() && (CharSequence.class.isAssignableFrom(maybeCollectionType.get())
                       || (maybeCollectionType.get() == Boolean.class)))))));
-          System.out.println(">>> subFieldIsTagField ==> " + subFieldIsTagField);
           if (subFieldIsTagField) {
-
             Indexed indexed = subField.getAnnotation(Indexed.class);
             tempPrefix = field.getName() + "[0:].";
 
