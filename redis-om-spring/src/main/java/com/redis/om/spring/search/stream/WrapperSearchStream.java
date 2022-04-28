@@ -253,4 +253,9 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
     return backingStream.findAny();
   }
 
+  @Override
+  public Stream<Long> map(ToLongFunction<? super E> mapper) {
+    return backingStream.mapToLong(mapper).boxed();
+  }
+
 }

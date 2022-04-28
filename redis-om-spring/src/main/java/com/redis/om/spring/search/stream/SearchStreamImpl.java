@@ -1,5 +1,7 @@
 package com.redis.om.spring.search.stream;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -28,13 +30,19 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.google.gson.Gson;
-import com.redis.om.spring.metamodel.FieldOperationInterceptor;
+import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
+import com.redis.om.spring.search.stream.actions.NumIncrByAction;
+import com.redis.om.spring.search.stream.actions.StrLengthAction;
+import com.redis.om.spring.search.stream.actions.StringAppendAction;
+import com.redis.om.spring.search.stream.actions.ToggleAction;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
 import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.TupleMapper;
+import com.redis.om.spring.util.ObjectUtils;
 
 import io.redisearch.Query;
 import io.redisearch.SearchResult;
@@ -50,7 +58,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @SuppressWarnings("unused")
   private RedisModulesOperations<String> modulesOperations;
-  private SearchOperations<String> ops;
+  private SearchOperations<String> search;
+  private JSONOperations<String> json;
   private String searchIndex;
   private Class<E> entityClass;
   private Node rootNode = QueryBuilder.union();
@@ -58,16 +67,23 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private Optional<Integer> limit = Optional.empty();
   private Optional<Integer> skip = Optional.empty();
   private Optional<SortedField> sortBy = Optional.empty();
+  private boolean onlyIds = false;
+  private Field idField;
 
   public SearchStreamImpl(Class<E> entityClass, RedisModulesOperations<String> modulesOperations) {
     this.modulesOperations = modulesOperations;
     this.entityClass = entityClass;
     searchIndex = entityClass.getName() + "Idx";
-    ops = modulesOperations.opsForSearch(searchIndex);
+    search = modulesOperations.opsForSearch(searchIndex);
+    json = modulesOperations.opsForJSON();
+    Optional<Field> maybeIdField = ObjectUtils.getIdFieldForEntityClass(entityClass);
+    if (maybeIdField.isPresent()) {
+      idField = maybeIdField.get();
+    }
   }
 
   @Override
-  public SearchStream<E> filter(SearchFieldPredicate<? super E,?> predicate) {
+  public SearchStream<E> filter(SearchFieldPredicate<? super E, ?> predicate) {
     Node node = processPredicate(predicate);
     rootNode = node;
     return this;
@@ -80,14 +96,14 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     return this;
   }
 
-  public Node processPredicate(SearchFieldPredicate<? super E,?> predicate) {
+  public Node processPredicate(SearchFieldPredicate<? super E, ?> predicate) {
     return predicate.apply(rootNode);
   }
 
   private Node processPredicate(Predicate<?> predicate) {
     if (SearchFieldPredicate.class.isAssignableFrom(predicate.getClass())) {
       @SuppressWarnings("unchecked")
-      SearchFieldPredicate<? super E,?> p = (SearchFieldPredicate<? super E,?>)predicate;
+      SearchFieldPredicate<? super E, ?> p = (SearchFieldPredicate<? super E, ?>) predicate;
       return processPredicate(p);
     }
     return rootNode;
@@ -95,22 +111,32 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public <T> SearchStream<T> map(Function<? super E, ? extends T> mapper) {
-    List<FieldOperationInterceptor<E, ?>> returning = new ArrayList<FieldOperationInterceptor<E, ?>>();
+    List<MetamodelField<E, ?>> returning = new ArrayList<MetamodelField<E, ?>>();
 
-    if (FieldOperationInterceptor.class.isAssignableFrom(mapper.getClass())) {
+    if (MetamodelField.class.isAssignableFrom(mapper.getClass())) {
       @SuppressWarnings("unchecked")
-      FieldOperationInterceptor<E, T> foi = (FieldOperationInterceptor<E, T>)mapper;
+      MetamodelField<E, T> foi = (MetamodelField<E, T>) mapper;
 
       returning.add(foi);
     } else if (TupleMapper.class.isAssignableFrom(mapper.getClass())) {
       @SuppressWarnings("rawtypes")
-      AbstractTupleMapper tm = (AbstractTupleMapper)mapper;
+      AbstractTupleMapper tm = (AbstractTupleMapper) mapper;
 
       IntStream.range(0, tm.degree()).forEach(i -> {
         @SuppressWarnings("unchecked")
-        FieldOperationInterceptor<E, ?> foi = (FieldOperationInterceptor<E, ?>)tm.get(i);
+        MetamodelField<E, ?> foi = (MetamodelField<E, ?>) tm.get(i);
         returning.add(foi);
       });
+//    } else if (StringLengthAction.class.isAssignableFrom(mapper.getClass())) {
+//      @SuppressWarnings("unchecked")
+//      StringLengthAction<E,?> action = (StringLengthAction<E,?>)mapper;
+//      onlyIds = true;
+//      List<Object> ids = executeQuery().docs//
+//        .stream()
+//        .map(d -> gson.fromJson(d.get("$").toString(), idField.getType()))
+//      .collect(Collectors.toList());
+////      ids.stream().map(action);
+
     }
 
     return new ReturnFieldsSearchStreamImpl<E, T>(this, returning);
@@ -159,15 +185,16 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public SearchStream<E> sorted() {
-    // TODO possible impl: find the first "sortable" field in the schema and sort by it in ASC order
+    // TODO possible impl: find the first "sortable" field in the schema and sort by
+    // it in ASC order
     return this;
   }
 
   @Override
   public SearchStream<E> sorted(Comparator<? super E> comparator) {
-    if (FieldOperationInterceptor.class.isAssignableFrom(comparator.getClass())) {
+    if (MetamodelField.class.isAssignableFrom(comparator.getClass())) {
       @SuppressWarnings("unchecked")
-      FieldOperationInterceptor<E,?> foi = (FieldOperationInterceptor<E,?>)comparator;
+      MetamodelField<E, ?> foi = (MetamodelField<E, ?>) comparator;
       sortBy = Optional.of(SortedField.asc(foi.getField().getName()));
     }
     return this;
@@ -175,9 +202,9 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public SearchStream<E> sorted(Comparator<? super E> comparator, SortOrder order) {
-    if (FieldOperationInterceptor.class.isAssignableFrom(comparator.getClass())) {
+    if (MetamodelField.class.isAssignableFrom(comparator.getClass())) {
       @SuppressWarnings("unchecked")
-      FieldOperationInterceptor<E,?> foi = (FieldOperationInterceptor<E,?>)comparator;
+      MetamodelField<E, ?> foi = (MetamodelField<E, ?>) comparator;
       sortBy = Optional.of(new SortedField(foi.getField().getName(), order));
     }
     return this;
@@ -200,14 +227,44 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     return this;
   }
 
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   @Override
   public void forEach(Consumer<? super E> action) {
-    resolveStream().forEach(action);
+    if (action.getClass() == ToggleAction.class) {
+      ToggleAction toggle = (ToggleAction) action;
+      toggle.setJSONOperations(json);
+      resolveStream().forEach(toggle);
+    } else if (action.getClass() == NumIncrByAction.class) {
+      NumIncrByAction numIncrBy = (NumIncrByAction) action;
+      numIncrBy.setJSONOperations(json);
+      resolveStream().forEach(numIncrBy);
+    } else if (action.getClass() == StringAppendAction.class) {
+      StringAppendAction stringAppend = (StringAppendAction) action;
+      stringAppend.setJSONOperations(json);
+      resolveStream().forEach(stringAppend);
+    } else {
+      resolveStream().forEach(action);
+    }
   }
 
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   @Override
   public void forEachOrdered(Consumer<? super E> action) {
-    resolveStream().forEachOrdered(action);
+    if (action.getClass() == ToggleAction.class) {
+      ToggleAction toggle = (ToggleAction) action;
+      toggle.setJSONOperations(json);
+      resolveStream().forEachOrdered(toggle);
+    } else if (action.getClass() == NumIncrByAction.class) {
+      NumIncrByAction numIncrBy = (NumIncrByAction) action;
+      numIncrBy.setJSONOperations(json);
+      resolveStream().forEachOrdered(numIncrBy);
+    } else if (action.getClass() == StringAppendAction.class) {
+      StringAppendAction stringAppend = (StringAppendAction) action;
+      stringAppend.setJSONOperations(json);
+      resolveStream().forEachOrdered(stringAppend);
+    } else {
+      resolveStream().forEachOrdered(action);
+    }
   }
 
   @Override
@@ -261,7 +318,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   public long count() {
     Query query = (rootNode.toString().isBlank()) ? new Query() : new Query(rootNode.toString());
     query.limit(0, 0);
-    SearchResult searchResult = ops.search(query);
+    SearchResult searchResult = search.search(query);
 
     return searchResult.totalResults;
   }
@@ -334,7 +391,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   SearchOperations<String> getOps() {
-    return ops;
+    return search;
   }
 
   Query prepareQuery() {
@@ -347,16 +404,19 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       query.setSortBy(sortField.getField(), sortField.getOrder().equals("ASC"));
     }
 
+    if (onlyIds) {
+      query.returnFields(idField.getName());
+    }
+
     return query;
   }
 
   private SearchResult executeQuery() {
-    return ops.search(prepareQuery());
+    return search.search(prepareQuery());
   }
 
   private List<E> toEntityList(SearchResult searchResult) {
-    return searchResult.docs.stream()
-        .map(d -> gson.fromJson(d.get("$").toString(), entityClass))
+    return searchResult.docs.stream().map(d -> gson.fromJson(d.get("$").toString(), entityClass))
         .collect(Collectors.toList());
   }
 
@@ -366,6 +426,45 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   public Class<E> getEntityClass() {
     return entityClass;
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public Stream<Long> map(ToLongFunction<? super E> mapper) {
+    Stream<Long> result = Stream.empty();
+    if (StrLengthAction.class.isAssignableFrom(mapper.getClass())) {
+      @SuppressWarnings("rawtypes")
+      StrLengthAction action = (StrLengthAction)mapper;
+      action.setJSONOperations(json);
+      onlyIds = true;
+      
+      Method idSetter = ObjectUtils.getSetterForField(entityClass, idField);
+
+      Stream<E> wrappedIds = (Stream<E>) executeQuery().docs //
+          .stream() //
+          .map(d -> {
+            try {
+              String key = idField.getType().getDeclaredConstructor(new Class[] { idField.getType() }).newInstance(d.getId()).toString();
+              String id = key.substring(key.indexOf(":")+1);
+              return id;
+            } catch (Exception e) {
+              return null;
+            }
+          }).filter(id -> id != null).map(id -> {
+            Object entity;
+            try {
+              entity = entityClass.getDeclaredConstructor().newInstance();
+              idSetter.invoke(entity, id);
+            } catch (Exception e) {
+              entity = null;
+            }
+
+            return entity;
+          });
+
+      result = wrappedIds.mapToLong(action).boxed();
+    }
+    return result;
   }
 
 }

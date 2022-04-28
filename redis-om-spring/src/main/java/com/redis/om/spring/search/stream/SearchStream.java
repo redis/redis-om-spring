@@ -18,6 +18,7 @@ import java.util.stream.Collector;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
 
@@ -30,6 +31,7 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
   SearchStream<E> filter(Predicate<?> predicate);
 
   <R> SearchStream<R> map(Function<? super E, ? extends R> field);
+  Stream<Long> map(ToLongFunction<? super E> mapper);
 
   IntStream mapToInt(ToIntFunction<? super E> mapper);
 

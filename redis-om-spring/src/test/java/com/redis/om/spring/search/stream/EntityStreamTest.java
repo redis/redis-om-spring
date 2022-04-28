@@ -3,6 +3,7 @@ package com.redis.om.spring.search.stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -44,10 +45,11 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     Company redis = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com"));
     redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
 
-    Company microsoft = repository.save(Company.of("Microsoft", 1975, new Point(-122.124500, 47.640160), "research@microsoft.com"));
+    Company microsoft = repository
+        .save(Company.of("Microsoft", 1975, new Point(-122.124500, 47.640160), "research@microsoft.com"));
     microsoft.setTags(Set.of("innovative", "reliable", "os", "ai"));
 
-    Company tesla = repository.save(Company.of("Tesla", 2003, new Point(-97.6208903,30.2210767), "elon@tesla.com"));
+    Company tesla = repository.save(Company.of("Tesla", 2003, new Point(-97.6208903, 30.2210767), "elon@tesla.com"));
     tesla.setTags(Set.of("innovative", "futuristic", "ai"));
 
     repository.saveAll(List.of(redis, microsoft, tesla));
@@ -138,8 +140,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
-        .filter(Company$.NAME.in("RedisInc", "Microsoft", "Tesla"))
-        .collect(Collectors.toList());
+        .filter(Company$.NAME.in("RedisInc", "Microsoft", "Tesla")).collect(Collectors.toList());
 
     assertEquals(3, companies.size());
 
@@ -154,8 +155,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
-        .filter(Company$.NAME.in("RedisInc", "Tesla"))
-        .collect(Collectors.toList());
+        .filter(Company$.NAME.in("RedisInc", "Tesla")).collect(Collectors.toList());
 
     assertEquals(2, companies.size());
 
@@ -169,8 +169,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
-        .filter(Company$.YEAR_FOUNDED.in(2011, 1975, 2003))
-        .collect(Collectors.toList());
+        .filter(Company$.YEAR_FOUNDED.in(2011, 1975, 2003)).collect(Collectors.toList());
 
     assertEquals(3, companies.size());
 
@@ -289,8 +288,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
         .filter( //
             Company$.NAME.notEq("RedisInc") //
                 .and(Company$.NAME.notEq("Microsoft")) //
-        )
-        .count();
+        ).count();
 
     assertEquals(1, count);
   }
@@ -299,8 +297,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   public void testLimit() {
     List<Company> companies = entityStream //
         .of(Company.class) //
-        .limit(2)
-        .collect(Collectors.toList());
+        .limit(2).collect(Collectors.toList());
 
     assertEquals(2, companies.size());
   }
@@ -309,8 +306,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   public void testSkip() {
     List<Company> companies = entityStream //
         .of(Company.class) //
-        .skip(1)
-        .collect(Collectors.toList());
+        .skip(1).collect(Collectors.toList());
 
     assertEquals(2, companies.size());
   }
@@ -319,8 +315,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   public void testSortDefaultAscending() {
     List<Company> companies = entityStream //
         .of(Company.class) //
-        .sorted(Company$.NAME)
-        .collect(Collectors.toList());
+        .sorted(Company$.NAME).collect(Collectors.toList());
 
     assertEquals(3, companies.size());
 
@@ -334,8 +329,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   public void testSortAscending() {
     List<Company> companies = entityStream //
         .of(Company.class) //
-        .sorted(Company$.NAME, SortOrder.ASC)
-        .collect(Collectors.toList());
+        .sorted(Company$.NAME, SortOrder.ASC).collect(Collectors.toList());
 
     assertEquals(3, companies.size());
 
@@ -349,8 +343,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   public void testSortDescending() {
     List<Company> companies = entityStream //
         .of(Company.class) //
-        .sorted(Company$.NAME, SortOrder.DESC)
-        .collect(Collectors.toList());
+        .sorted(Company$.NAME, SortOrder.DESC).collect(Collectors.toList());
 
     assertEquals(3, companies.size());
 
@@ -364,7 +357,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   @Test
   public void testForEachOrdered() {
     List<Company> companies = new ArrayList<Company>();
-    Consumer<? super Company> testConsumer =  (Company c) -> companies.add(c);
+    Consumer<? super Company> testConsumer = (Company c) -> companies.add(c);
     entityStream //
         .of(Company.class) //
         .forEachOrdered(testConsumer);
@@ -395,7 +388,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
 
   @Test
   public void testMapToTwoProperties() {
-    List<Pair<String,Integer>> results = entityStream //
+    List<Pair<String, Integer>> results = entityStream //
         .of(Company.class) //
         .sorted(Company$.NAME, SortOrder.DESC) //
         .map(Fields.of(Company$.NAME, Company$.YEAR_FOUNDED)) //
@@ -481,7 +474,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
-        .filter(Company$.NAME.like("Micros"))
+        .filter(Company$.NAME.like("Micros")) //
         .collect(Collectors.toList());
 
     assertEquals(1, companies.size());
@@ -494,7 +487,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   public void testFindByTextNotLike() {
     List<String> names = entityStream //
         .of(Company.class) //
-        .filter(Company$.NAME.notLike("Micros"))
+        .filter(Company$.NAME.notLike("Micros")) //
         .map(Company$.NAME) //
         .collect(Collectors.toList());
 
@@ -609,6 +602,90 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
 
     assertTrue(maybeCompany.isPresent());
     assertEquals("RedisInc", maybeCompany.get().getName());
+  }
+
+  @Test
+  public void testToggleBooleanFieldInDocuments() {
+    Optional<Company> maybeRedisBefore = repository.findFirstByName("RedisInc");
+    assertTrue(maybeRedisBefore.isPresent());
+    assertEquals(false, maybeRedisBefore.get().isPubliclyListed());
+
+    entityStream.of(Company.class) //
+        .filter(Company$.NAME.eq("RedisInc")) //
+        .forEach(Company$.PUBLICLY_LISTED.toggle());
+
+    Optional<Company> maybeRedisAfter = repository.findFirstByName("RedisInc");
+    assertTrue(maybeRedisAfter.isPresent());
+    assertEquals(true, maybeRedisAfter.get().isPubliclyListed());
+  }
+
+  @Test
+  public void testNumIncrByNumericFieldInDocuments() {
+    Optional<Company> maybeRedisBefore = repository.findFirstByName("RedisInc");
+    assertTrue(maybeRedisBefore.isPresent());
+    assertEquals(2011, maybeRedisBefore.get().getYearFounded());
+
+    entityStream.of(Company.class) //
+        .filter(Company$.NAME.eq("RedisInc")) //
+        .forEach(Company$.YEAR_FOUNDED.incrBy(5L));
+
+    Optional<Company> maybeRedisAfter = repository.findFirstByName("RedisInc");
+    assertTrue(maybeRedisAfter.isPresent());
+    assertEquals(2016, maybeRedisAfter.get().getYearFounded());
+  }
+
+  @Test
+  public void testNumDecrByNumericFieldInDocuments() {
+    Optional<Company> maybeRedisBefore = repository.findFirstByName("RedisInc");
+    assertTrue(maybeRedisBefore.isPresent());
+    assertEquals(2011, maybeRedisBefore.get().getYearFounded());
+
+    entityStream.of(Company.class) //
+        .filter(Company$.NAME.eq("RedisInc")) //
+        .forEach(Company$.YEAR_FOUNDED.decrBy(2L));
+
+    Optional<Company> maybeRedisAfter = repository.findFirstByName("RedisInc");
+    assertTrue(maybeRedisAfter.isPresent());
+    assertEquals(2009, maybeRedisAfter.get().getYearFounded());
+  }
+
+  @Test
+  public void testStrAppendToIndexedTextFieldInDocuments() {
+    entityStream.of(Company.class) //
+        .filter(Company$.NAME.eq("Microsoft")) //
+        .forEach(Company$.NAME.append(" Corp"));
+
+    Optional<Company> maybeMicrosoft = repository.findFirstByName("Microsoft Corp");
+    assertTrue(maybeMicrosoft.isPresent());
+  }
+
+  @Test
+  public void testStrAppendToNonIndexedTextFieldInDocuments() {
+    entityStream.of(Company.class) //
+        .filter(Company$.NAME.eq("Microsoft")) //
+        .forEach(Company$.EMAIL.append("zzz"));
+
+    Optional<Company> maybeMicrosoft = repository.findFirstByName("Microsoft");
+    assertTrue(maybeMicrosoft.isPresent());
+    assertThat(maybeMicrosoft.get().getEmail()).endsWith("zzz");
+  }
+
+  @Test
+  public void testStrLenToIndexedTextFieldInDocuments() {
+    List<Long> emailLengths = entityStream.of(Company.class) //
+        .map(Company$.NAME.length()) //
+        .collect(Collectors.toList());
+    assertThat(emailLengths).hasSize(3);
+    assertThat(emailLengths).containsExactly(8L, 9L, 5L);
+  }
+
+  @Test
+  public void testStrLenToNonIndexedTextFieldInDocuments() {
+    List<Long> emailLengths = entityStream.of(Company.class) //
+        .map(Company$.EMAIL.length()) //
+        .collect(Collectors.toList());
+    assertThat(emailLengths).hasSize(3);
+    assertThat(emailLengths).containsExactly(15L, 22L, 14L);
   }
 
 }

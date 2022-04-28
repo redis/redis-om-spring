@@ -364,4 +364,9 @@ public class ReturnFieldsSearchStreamImpl<E,T> implements SearchStream<T> {
     return results;
   }
 
+  @Override
+  public Stream<Long> map(ToLongFunction<? super T> mapper) {
+    return resolveStream().mapToLong(mapper).boxed();
+  }
+
 }
