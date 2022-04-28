@@ -5,7 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.keyvalue.repository.KeyValueRepository;
 import org.springframework.data.repository.NoRepositoryBean;
 
-import com.redis.om.spring.metamodel.FieldOperationInterceptor;
+import com.redis.om.spring.metamodel.MetamodelField;
 import com.redislabs.modules.rejson.Path;
 
 @NoRepositoryBean
@@ -22,7 +22,7 @@ public interface RedisDocumentRepository<T, ID> extends KeyValueRepository<T, ID
   
   void deleteById(ID id, Path path);
   
-  void updateField(T entity, FieldOperationInterceptor<T, ?> field, Object value);
+  void updateField(T entity, MetamodelField<T, ?> field, Object value);
   
-  <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, FieldOperationInterceptor<T, F> field);
+  <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field);
 }

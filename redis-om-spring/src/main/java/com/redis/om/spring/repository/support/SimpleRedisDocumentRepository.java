@@ -15,7 +15,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.repository.core.EntityInformation;
 
-import com.redis.om.spring.metamodel.FieldOperationInterceptor;
+import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.RedisDocumentRepository;
 import com.redislabs.modules.rejson.Path;
@@ -68,13 +68,13 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   }
 
   @Override
-  public void updateField(T entity, FieldOperationInterceptor<T, ?> field, Object value) {
+  public void updateField(T entity, MetamodelField<T, ?> field, Object value) {
     modulesOperations.opsForJSON().set(metadata.getJavaType().getName() + ":" + metadata.getId(entity).toString(), value, Path.of("$." + field.getField().getName()));
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, FieldOperationInterceptor<T, F> field) {
+  public <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field) {
     String[] keys = StreamSupport.stream(ids.spliterator(), false).map(id -> metadata.getJavaType().getName() + ":" + id).toArray(String[]::new);
     return (Iterable<F>) modulesOperations.opsForJSON().mget(Path.of("$." + field.getField().getName()), List.class, keys).stream().flatMap(List::stream).collect(Collectors.toList());
   }

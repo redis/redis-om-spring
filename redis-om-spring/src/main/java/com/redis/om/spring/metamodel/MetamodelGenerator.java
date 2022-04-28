@@ -48,6 +48,15 @@ import com.google.auto.service.AutoService;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.Searchable;
+import com.redis.om.spring.metamodel.indexed.BooleanField;
+import com.redis.om.spring.metamodel.indexed.GeoField;
+import com.redis.om.spring.metamodel.indexed.NumericField;
+import com.redis.om.spring.metamodel.indexed.TagField;
+import com.redis.om.spring.metamodel.indexed.TextField;
+import com.redis.om.spring.metamodel.indexed.TextTagField;
+import com.redis.om.spring.metamodel.nonindexed.NonIndexedBooleanField;
+import com.redis.om.spring.metamodel.nonindexed.NonIndexedNumericField;
+import com.redis.om.spring.metamodel.nonindexed.NonIndexedTextField;
 import com.redis.om.spring.tuple.Triple;
 import com.redis.om.spring.tuple.Tuples;
 import com.redis.om.spring.util.ObjectUtils;
@@ -104,7 +113,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
   void generateMetaModelClass(final Element annotatedElement) throws IOException {
     String qualifiedGenEntityName = annotatedElement.asType().toString() + "$";
-    final String entityName = shortName(annotatedElement.asType().toString());
+    final String entityName = ObjectUtils.shortName(annotatedElement.asType().toString());
     final String genEntityName = entityName + "$";
     TypeName entity = TypeName.get(annotatedElement.asType());
 
@@ -118,7 +127,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
     final Set<String> isGetters = getters.values().stream()
         // todo: Filter out methods only returning boolean or Boolean
         .map(Element::getSimpleName).map(Object::toString).filter(n -> n.startsWith(IS_PREFIX)).map(n -> n.substring(2))
-        .map(MetamodelGenerator::lcfirst).collect(Collectors.toSet());
+        .map(ObjectUtils::lcfirst).collect(Collectors.toSet());
 
     // Retrieve all declared non-final instance fields of the annotated class
     Map<? extends Element, String> enclosedFields = annotatedElement.getEnclosedElements().stream()
@@ -153,12 +162,14 @@ public final class MetamodelGenerator extends AbstractProcessor {
         Class<?> primitive = ClassUtils.resolvePrimitiveClassName(cls);
         Class<?> primitiveWrapper = ClassUtils.resolvePrimitiveIfNecessary(primitive);
         entityField = TypeName.get(primitiveWrapper);
+        fullTypeClassName = entityField.toString();
+        cls = ObjectUtils.getTargetClassName(fullTypeClassName);
       } 
       
-      Class<?> targetInterceptor = FieldOperationInterceptor.class;
+      Class<?> targetInterceptor = MetamodelField.class;
 
       if (field.getAnnotation(Searchable.class) != null) {
-        targetInterceptor = TextFieldOperationInterceptor.class;
+        targetInterceptor = TextField.class;
       } else if (field.getAnnotation(Indexed.class) != null) {
         Class<?> targetCls;
         try {
@@ -168,30 +179,61 @@ public final class MetamodelGenerator extends AbstractProcessor {
           // Any Character class -> Tag Search Field
           //
           if (CharSequence.class.isAssignableFrom(targetCls)) {
-            targetInterceptor = TagFieldOperationInterceptor.class;
+            targetInterceptor = TextTagField.class;
           }
           //
           // Any Numeric class -> Numeric Search Field
           //
           else if (Number.class.isAssignableFrom(targetCls) || (targetCls == LocalDateTime.class) || (targetCls == LocalDate.class) || (targetCls == Date.class) ) {
-            targetInterceptor = NumericFieldOperationInterceptor.class;
+            targetInterceptor = NumericField.class;
           }
           //
           // Set / List
           //
           else if (Set.class.isAssignableFrom(targetCls) || List.class.isAssignableFrom(targetCls)) {
-            targetInterceptor = TagFieldOperationInterceptor.class;
+            targetInterceptor = TagField.class;
           }
           //
           // Point
           //
           else if (targetCls == Point.class) {
-            targetInterceptor = GeoFieldOperationInterceptor.class;
+            targetInterceptor = GeoField.class;
+          }
+          //
+          // Boolean
+          //
+          else if (targetCls == Boolean.class) {
+            targetInterceptor = BooleanField.class;
           }
         } catch (ClassNotFoundException cnfe) {
           messager.printMessage(Diagnostic.Kind.WARNING, "Processing class " + entityName + " could not resolve " + cls);
         }
-      } 
+      } else  {
+        Class<?> targetCls;
+        try {
+          targetCls = ClassUtils.forName(cls, MetamodelGenerator.class.getClassLoader());
+          //
+          // Any Character class 
+          //
+          if (CharSequence.class.isAssignableFrom(targetCls)) {
+            targetInterceptor = NonIndexedTextField.class;
+          }
+          //
+          // Non-indexed Boolean
+          //
+          else if (targetCls == Boolean.class) {
+            targetInterceptor = NonIndexedBooleanField.class;
+          }
+          //
+          // Numeric class 
+          //
+          else if (Number.class.isAssignableFrom(targetCls) || (targetCls == LocalDateTime.class) || (targetCls == LocalDate.class) || (targetCls == Date.class) ) {
+            targetInterceptor = NonIndexedNumericField.class;
+          }
+        } catch (ClassNotFoundException cnfe) {
+          messager.printMessage(Diagnostic.Kind.WARNING, "Processing class " + entityName + " could not resolve " + cls);
+        }
+      }
       
       Triple<FieldSpec, FieldSpec, CodeBlock> fieldMetamodel = generateFieldMetamodel(entity, fieldName, entityField, targetInterceptor, fieldIsIndexed);
 
@@ -229,72 +271,6 @@ public final class MetamodelGenerator extends AbstractProcessor {
     javaFile.writeTo(writer);
 
     writer.close();
-  }
-
-  /**
-   * Returns the 'name' part of a long name. This is everything after the last dot
-   * for non-parameterized types. For parameterized types the rule applies to the
-   * part proceeding the bracket enclosed parameters e.g.
-   * {@code long name java.util.Map<String, java.util.Date>} returns
-   * {@code Map<String, java.util.Date>}.
-   *
-   * @param longName The long name.
-   * @return The name part.
-   */
-  public static String shortName(String longName) {
-    String temp = longName.replace('$', '.');
-    final int openBrPos = temp.indexOf('<');
-    String parameters = "";
-    if (openBrPos > 0) {
-      parameters = temp.substring(openBrPos);
-      temp = temp.substring(0, openBrPos);
-    }
-    if (temp.contains(".")) {
-      temp = temp.substring(temp.lastIndexOf('.') + 1);
-    }
-    return temp + parameters;
-  }
-
-  /**
-   * Does something with the first character in the specified String.
-   *
-   * @param input    The String.
-   * @param callback The something.
-   * @return The new String.
-   */
-  public static String withFirst(String input, Function<Character, String> callback) {
-    if (input == null) {
-      return null;
-    } else if (input.length() == 0) {
-      return "";
-    } else {
-      return String.join("", callback.apply(input.charAt(0)), input.subSequence(1, input.length()));
-    }
-  }
-
-  /**
-   * Returns the specified text but with the first character uppercase.
-   *
-   * @param input The text.
-   * @return The resulting text.
-   */
-  public static String ucfirst(String input) {
-    return withFirst(input, first -> String.valueOf(Character.toUpperCase(first)));
-  }
-
-  /**
-   * Returns the specified text but with the first character lowercase.
-   *
-   * @param input The text.
-   * @return The resulting text.
-   */
-  public static String lcfirst(String input) {
-    return withFirst(input, first -> String.valueOf(Character.toLowerCase(first)));
-  }
-
-  public static boolean isFirstLowerCase(String string) {
-    String first = string.substring(0, 1);
-    return first.toLowerCase().equals(first);
   }
 
   private static final Set<String> DISALLOWED_ACCESS_LEVELS = Stream.of("PROTECTED", "PRIVATE", "NONE")
@@ -360,7 +336,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
       return entityName + "::" + standardGetterName;
     }
 
-    final String lambdaName = lcfirst(entityName);
+    final String lambdaName = ObjectUtils.lcfirst(entityName);
 
     if (!field.getModifiers().contains(Modifier.PROTECTED) && !field.getModifiers().contains(Modifier.PRIVATE)) {
 // We can use a lambda. Great escape hatch!
@@ -386,46 +362,23 @@ public final class MetamodelGenerator extends AbstractProcessor {
    */
   public static String staticField(final String externalName) {
     requireNonNull(externalName);
-    return toUnderscoreSeparated(javaNameFromExternal(externalName)).toUpperCase();
-  }
-
-  /**
-   * Turns the specified string into an underscore-separated string.
-   *
-   * @param javaName the string to parse
-   * @return as underscore separated
-   */
-  public static String toUnderscoreSeparated(final String javaName) {
-    requireNonNull(javaName);
-    final StringBuilder result = new StringBuilder();
-    final String input = unQuote(javaName.trim());
-    for (int i = 0; i < input.length(); i++) {
-      final char c = input.charAt(i);
-      if (result.length() == 0) {
-        result.append(Character.toLowerCase(c));
-      } else if (Character.isUpperCase(c)) {
-        result.append("_").append(Character.toLowerCase(c));
-      } else {
-        result.append(c);
-      }
-    }
-    return result.toString();
+    return ObjectUtils.toUnderscoreSeparated(javaNameFromExternal(externalName)).toUpperCase();
   }
 
   public static String javaNameFromExternal(final String externalName) {
     requireNonNull(externalName);
-    return replaceIfIllegalJavaIdentifierCharacter(replaceIfJavaUsedWord(nameFromExternal(externalName)));
+    return MetamodelGenerator.replaceIfIllegalJavaIdentifierCharacter(replaceIfJavaUsedWord(nameFromExternal(externalName)));
   }
 
   public static String nameFromExternal(final String externalName) {
     requireNonNull(externalName);
-    String result = unQuote(externalName.trim()); // Trim if there are initial spaces or trailing spaces...
+    String result = ObjectUtils.unQuote(externalName.trim()); // Trim if there are initial spaces or trailing spaces...
     /* CamelCase
      * http://stackoverflow.com/questions/4050381/regular-expression-for-checking-if
      * -capital-letters-are-found-consecutively-in-a [A-Z] -> \p{Lu} [^A-Za-z0-9] ->
      * [^\pL0-90-9] */
     result = Stream.of(result.replaceAll("([\\p{Lu}]+)", "_$1").split("[^\\pL0-9]")).map(String::toLowerCase)
-        .map(MetamodelGenerator::ucfirst).collect(Collectors.joining());
+        .map(ObjectUtils::ucfirst).collect(Collectors.joining());
     return result;
   }
 
@@ -439,6 +392,27 @@ public final class MetamodelGenerator extends AbstractProcessor {
       return word + "_";
     }
     return word;
+  }
+
+  public static final Character REPLACEMENT_CHARACTER = '_';
+
+  private Triple<FieldSpec, FieldSpec, CodeBlock> generateFieldMetamodel(TypeName entity, String fieldName, TypeName entityField, Class<?> interceptorClass, boolean fieldIsIndexed) {
+    String fieldAccessor = staticField(fieldName);
+
+    FieldSpec objectField = FieldSpec.builder(Field.class, fieldName)
+        .addModifiers(Modifier.PUBLIC, Modifier.STATIC).build();
+
+    TypeName interceptor = ParameterizedTypeName.get(ClassName.get(interceptorClass), entity, entityField);
+
+    FieldSpec aField = FieldSpec.builder(interceptor, fieldAccessor)
+        .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+        .build();
+
+    CodeBlock aFieldInit = CodeBlock.builder()
+        .addStatement("$L = new $T($L,$L)", fieldAccessor, interceptor, fieldName, fieldIsIndexed)
+        .build();
+
+    return Tuples.of(objectField, aField, aFieldInit);
   }
 
   public static String replaceIfIllegalJavaIdentifierCharacter(final String word) {
@@ -467,45 +441,9 @@ public final class MetamodelGenerator extends AbstractProcessor {
         // Cannot be used as a java identifier. Replace it
         sb.append(REPLACEMENT_CHARACTER);
       }
-
+  
     }
     return sb.toString();
-  }
-
-  private static final Character REPLACEMENT_CHARACTER = '_';
-
-  /**
-   * Returns the string but with any leading and trailing quotation marks trimmed.
-   *
-   * @param s the string to unquote
-   * @return the string without surrounding quotation marks
-   */
-  public static String unQuote(final String s) {
-    requireNonNull(s);
-    if (s.startsWith("\"") && s.endsWith("\"")) {
-      // Un-quote the name
-      return s.substring(1, s.length() - 1);
-    }
-    return s;
-  }
-
-  private Triple<FieldSpec, FieldSpec, CodeBlock> generateFieldMetamodel(TypeName entity, String fieldName, TypeName entityField, Class<?> interceptorClass, boolean fieldIsIndexed) {
-    String fieldAccessor = staticField(fieldName);
-
-    FieldSpec objectField = FieldSpec.builder(Field.class, fieldName)
-        .addModifiers(Modifier.PUBLIC, Modifier.STATIC).build();
-
-    TypeName interceptor = ParameterizedTypeName.get(ClassName.get(interceptorClass), entity, entityField);
-
-    FieldSpec aField = FieldSpec.builder(interceptor, fieldAccessor)
-        .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-        .build();
-
-    CodeBlock aFieldInit = CodeBlock.builder()
-        .addStatement("$L = new $T($L,$L)", fieldAccessor, interceptor, fieldName, fieldIsIndexed)
-        .build();
-
-    return Tuples.of(objectField, aField, aFieldInit);
   }
 
   static final Set<String> JAVA_LITERAL_WORDS = Collections

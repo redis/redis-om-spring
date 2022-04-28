@@ -1,20 +1,23 @@
-package com.redis.om.spring.metamodel;
+package com.redis.om.spring.metamodel.indexed;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.function.Consumer;
 
+import com.redis.om.spring.metamodel.MetamodelField;
+import com.redis.om.spring.search.stream.actions.NumIncrByAction;
 import com.redis.om.spring.search.stream.predicates.numeric.BetweenPredicate;
+import com.redis.om.spring.search.stream.predicates.numeric.EqualPredicate;
 import com.redis.om.spring.search.stream.predicates.numeric.GreaterThanOrEqualPredicate;
 import com.redis.om.spring.search.stream.predicates.numeric.GreaterThanPredicate;
+import com.redis.om.spring.search.stream.predicates.numeric.InPredicate;
 import com.redis.om.spring.search.stream.predicates.numeric.LessThanOrEqualPredicate;
 import com.redis.om.spring.search.stream.predicates.numeric.LessThanPredicate;
-import com.redis.om.spring.search.stream.predicates.numeric.EqualPredicate;
-import com.redis.om.spring.search.stream.predicates.numeric.InPredicate;
 import com.redis.om.spring.search.stream.predicates.numeric.NotEqualPredicate;
 
-public class NumericFieldOperationInterceptor<E, T> extends FieldOperationInterceptor<E, T> {
+public class NumericField<E, T> extends MetamodelField<E, T> {
 
-  public NumericFieldOperationInterceptor(Field field, boolean indexed) {
+  public NumericField(Field field, boolean indexed) {
     super(field, indexed);
   }
   
@@ -49,6 +52,14 @@ public class NumericFieldOperationInterceptor<E, T> extends FieldOperationInterc
   @SuppressWarnings("unchecked")
   public InPredicate<? super E, ?> in(T... values) {
     return new InPredicate<E,T>(field, Arrays.asList(values));
+  }
+
+  public Consumer<? super E> incrBy(Long value) {
+    return new NumIncrByAction<E>(field, value);
+  }
+  
+  public Consumer<? super E> decrBy(Long value) {
+    return new NumIncrByAction<E>(field, -value);
   }
 
 }

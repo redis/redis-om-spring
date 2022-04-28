@@ -1,16 +1,17 @@
-package com.redis.om.spring.metamodel;
+package com.redis.om.spring.metamodel.indexed;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
+import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.search.stream.predicates.tag.ContainsAllPredicate;
 import com.redis.om.spring.search.stream.predicates.tag.EqualPredicate;
 import com.redis.om.spring.search.stream.predicates.tag.InPredicate;
 import com.redis.om.spring.search.stream.predicates.tag.NotEqualPredicate;
 
-public class TagFieldOperationInterceptor<E, T> extends FieldOperationInterceptor<E, T> {
+public class TagField<E, T> extends MetamodelField<E, T> {
 
-  public TagFieldOperationInterceptor(Field field, boolean indexed) {
+  public TagField(Field field, boolean indexed) {
     super(field, indexed);
   }
   

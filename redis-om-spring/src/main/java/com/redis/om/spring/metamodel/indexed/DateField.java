@@ -1,16 +1,17 @@
-package com.redis.om.spring.metamodel;
+package com.redis.om.spring.metamodel.indexed;
 
 import java.lang.reflect.Field;
 
+import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.search.stream.predicates.numeric.BetweenPredicate;
 import com.redis.om.spring.search.stream.predicates.numeric.GreaterThanOrEqualPredicate;
 import com.redis.om.spring.search.stream.predicates.numeric.GreaterThanPredicate;
 import com.redis.om.spring.search.stream.predicates.numeric.LessThanOrEqualPredicate;
 import com.redis.om.spring.search.stream.predicates.numeric.LessThanPredicate;
 
-public class DateFieldOperationInterceptor<E, T> extends FieldOperationInterceptor<E, T> {
+public class DateField<E, T> extends MetamodelField<E, T> {
 
-  public DateFieldOperationInterceptor(Field field, boolean indexed) {
+  public DateField(Field field, boolean indexed) {
     super(field, indexed);
   }
   

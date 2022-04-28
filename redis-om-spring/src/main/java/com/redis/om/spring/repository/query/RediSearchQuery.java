@@ -38,13 +38,13 @@ import com.redis.om.spring.annotations.NumericIndexed;
 import com.redis.om.spring.annotations.Searchable;
 import com.redis.om.spring.annotations.TagIndexed;
 import com.redis.om.spring.annotations.TextIndexed;
-import com.redis.om.spring.metamodel.MetamodelGenerator;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.query.autocomplete.AutoCompleteQueryExecutor;
 import com.redis.om.spring.repository.query.bloom.BloomQueryExecutor;
 import com.redis.om.spring.repository.query.clause.QueryClause;
 import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
+import com.redis.om.spring.util.ObjectUtils;
 
 import io.redisearch.AggregationResult;
 import io.redisearch.Query;
@@ -140,7 +140,7 @@ public class RediSearchQuery implements RepositoryQuery {
         this.returnFields = new String[] {};
       } else if (queryMethod.getName().startsWith("getAll")) {
         this.type = RediSearchQueryType.TAGVALS;
-        this.value = MetamodelGenerator.lcfirst(queryMethod.getName().substring(6, queryMethod.getName().length() - 1));
+        this.value = ObjectUtils.lcfirst(queryMethod.getName().substring(6, queryMethod.getName().length() - 1));
       } else if (queryMethod.getName().startsWith(AutoCompleteQueryExecutor.AUTOCOMPLETE_PREFIX)) {
         this.type = RediSearchQueryType.AUTOCOMPLETE;
       } else {

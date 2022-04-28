@@ -37,11 +37,11 @@ import org.springframework.data.geo.Point;
 import org.springframework.util.ReflectionUtils;
 
 import com.google.gson.Gson;
-import com.redis.om.spring.metamodel.FieldOperationInterceptor;
-import com.redis.om.spring.metamodel.MetamodelGenerator;
+import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
 import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
 import com.redis.om.spring.tuple.Tuples;
+import com.redis.om.spring.util.ObjectUtils;
 
 import io.redisearch.Query;
 import io.redisearch.SearchResult;
@@ -55,9 +55,9 @@ public class ReturnFieldsSearchStreamImpl<E,T> implements SearchStream<T> {
   private static final Gson gson = GsonBuidlerFactory.getBuilder().create();
 
   private SearchStreamImpl<E> entitySearchStream;
-  private List<FieldOperationInterceptor<E, ?>> returning = new ArrayList<FieldOperationInterceptor<E, ?>>();
+  private List<MetamodelField<E, ?>> returning = new ArrayList<MetamodelField<E, ?>>();
 
-  public ReturnFieldsSearchStreamImpl(SearchStreamImpl<E> entitySearchStream, List<FieldOperationInterceptor<E, ?>> returning) {
+  public ReturnFieldsSearchStreamImpl(SearchStreamImpl<E> entitySearchStream, List<MetamodelField<E, ?>> returning) {
     this.entitySearchStream = entitySearchStream;
     this.returning = returning;
   }
@@ -349,7 +349,7 @@ public class ReturnFieldsSearchStreamImpl<E,T> implements SearchStream<T> {
     entities.stream().forEach(entity -> {
       List<Object> mappedResults = new ArrayList<Object>();
       returning.stream().forEach(foi -> {
-        String getterName = "get" + MetamodelGenerator.ucfirst(foi.getField().getName());
+        String getterName = "get" + ObjectUtils.ucfirst(foi.getField().getName());
         Method getter = ReflectionUtils.findMethod(entitySearchStream.getEntityClass(), getterName);
         mappedResults.add(ReflectionUtils.invokeMethod(getter, entity));
       });
