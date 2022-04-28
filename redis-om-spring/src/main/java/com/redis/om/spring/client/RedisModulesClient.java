@@ -31,7 +31,7 @@ public class RedisModulesClient {
     return new io.rebloom.client.Client(getJedis());
   }
 
-  private Jedis getJedis() {
+  public Jedis getJedis() {
     return (Jedis) jedisConnectionFactory.getConnection().getNativeConnection();
   }
 
