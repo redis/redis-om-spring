@@ -152,6 +152,7 @@ import com.redis.om.spring.annotations.Searchable;
 import lombok.*;
 
 @Data
+@NoArgsConstructor
 @RequiredArgsConstructor(staticName = "of")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Document
