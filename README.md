@@ -16,9 +16,9 @@
 
 **Redis OM Spring** extends [Spring Data Redis](https://spring.io/projects/spring-data-redis) to take full advantage of the power of Redis.
 
-| Project Stage | Snapshot | Issues |  | License |
-| --- | --- | --- | --- | --- |
-| [![Project stage][badge-Stage]][badge-stage-page] | [![Snapshots][badge-snapshots]][link-snapshots] | [![Percentage of issues still open][badge-open-issues]][open-issues] | [![Average time to resolve an issue][badge-issue-resolution]][issue-resolution] | [![License][license-image]][license-url] |
+| Project Stage | Snapshot | Issues | Resolution | Code QL | License |
+| --- | --- | --- | --- | --- | --- |
+| [![Project stage][badge-Stage]][badge-stage-page] | [![Snapshots][badge-snapshots]][link-snapshots] | [![Percentage of issues still open][badge-open-issues]][open-issues] | [![Average time to resolve an issue][badge-issue-resolution]][issue-resolution] | [![CodeQL][badge-codeql]][badge-codeql-page] | [![License][license-image]][license-url] |
 
 <details>
   <summary><strong>Table of contents</strong></summary>
@@ -364,6 +364,8 @@ Redis OM uses the [MIT license][license-url].
 [badge-snapshots]: https://img.shields.io/nexus/s/https/s01.oss.sonatype.org/com.redis.om/redis-om-spring.svg
 [badge-open-issues]: http://isitmaintained.com/badge/open/redis/redis-om-spring.svg
 [badge-issue-resolution]: http://isitmaintained.com/badge/resolution/redis/redis-om-spring.svg
+[badge-codeql]: https://github.com/redis/redis-om-spring/actions/workflows/codeql-analysis.yml/badge.svg
+[badge-codeql-page]: https://github.com/redis/redis-om-spring/actions/workflows/codeql-analysis.yml
 [license-image]: https://img.shields.io/github/license/redis/redis-om-spring
 [license-url]: LICENSE
 
