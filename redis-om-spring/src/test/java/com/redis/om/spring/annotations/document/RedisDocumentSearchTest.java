@@ -1,11 +1,10 @@
 package com.redis.om.spring.annotations.document;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import static org.assertj.core.api.Assertions.*;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -225,7 +224,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
 
     assertEquals("hello world", doc1.getTitle());
     
-    assertNull(doc1.getTag());
+    assertThat(doc1.getTag()).isEmpty();
   }
   
 }
