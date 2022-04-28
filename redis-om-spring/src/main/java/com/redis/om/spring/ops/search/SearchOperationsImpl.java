@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.redis.om.spring.client.RedisModulesClient;
+import com.redis.om.spring.ops.Command;
 
 import io.redisearch.AggregationResult;
 import io.redisearch.Client;
@@ -18,15 +19,14 @@ import io.redisearch.Suggestion;
 import io.redisearch.aggregation.AggregationBuilder;
 import io.redisearch.client.AddOptions;
 import io.redisearch.client.Client.IndexOptions;
-import redis.clients.jedis.BinaryClient;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.commands.ProtocolCommand;
-import redis.clients.jedis.util.SafeEncoder;
 import io.redisearch.client.ConfigOption;
 import io.redisearch.client.SuggestionOptions;
+import redis.clients.jedis.BinaryClient;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.util.SafeEncoder;
 
 public class SearchOperationsImpl<K> implements SearchOperations<K> {
-  
+
   Client client;
   K index;
 
@@ -245,41 +245,25 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
   public Map<String, List<String>> dumpSynonym() {
     return client.dumpSynonym();
   }
-  
-  public enum Command implements ProtocolCommand {
-    TAGVALS("FT.TAGVALS");
-  
-    private final byte[] raw;
-  
-    Command(String alt) {
-        raw = SafeEncoder.encode(alt);
-    }
-  
-    @Override
-    public byte[] getRaw() {
-        return raw;
-    }
-  }
 
   @Override
   public List<String> tagVals(String field) {
     ArrayList<byte[]> args = new ArrayList<>();
     args.add(SafeEncoder.encode(index.toString()));
     args.add(SafeEncoder.encode(field));
-    
+
     List<String> result = List.of();
 
     try (Jedis conn = client.connection()) {
-        BinaryClient bc = conn.getClient();
-        bc.sendCommand(Command.TAGVALS, args.toArray(new byte[args.size()][]));
-        List<Object> resp = bc.getObjectMultiBulkReply();
-        
-        result = resp
-            .stream()
-            .map(x -> x instanceof Long ? String.valueOf(x) : SafeEncoder.encode((byte[])x))
-            .collect(Collectors.toList());
+      BinaryClient bc = conn.getClient();
+      bc.sendCommand(Command.FT_TAGVALS, args.toArray(new byte[args.size()][]));
+      List<Object> resp = bc.getObjectMultiBulkReply();
+
+      result = resp.stream() //
+          .map(x -> x instanceof Long ? String.valueOf(x) : SafeEncoder.encode((byte[]) x)) //
+          .collect(Collectors.toList());
     }
-    
+
     return result;
 
   }

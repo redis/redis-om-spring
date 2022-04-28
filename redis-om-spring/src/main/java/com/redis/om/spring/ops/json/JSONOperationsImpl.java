@@ -1,16 +1,22 @@
 package com.redis.om.spring.ops.json;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.redislabs.modules.rejson.JReJSON.ExistenceModifier;
 import com.google.gson.GsonBuilder;
 import com.redis.om.spring.client.RedisModulesClient;
+import com.redis.om.spring.ops.Command;
 import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
+import com.redislabs.modules.rejson.JReJSON.ExistenceModifier;
 import com.redislabs.modules.rejson.Path;
 
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Protocol;
+import redis.clients.jedis.util.SafeEncoder;
+
 public class JSONOperationsImpl<K> implements JSONOperations<K> {
-  
+
   RedisModulesClient client;
   GsonBuilder builder = GsonBuidlerFactory.getBuilder();
 
@@ -123,6 +129,28 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
   @Override
   public Long arrTrim(K key, Path path, Long start, Long stop) {
     return client.clientForJSON(builder).arrTrim(key.toString(), path, start, stop);
+  }
+
+  @Override
+  public void toggle(K key, Path path) {
+    client.clientForJSON(builder).toggle(key.toString(), path);
+  }
+
+  // https://redis.io/commands/json.numincrby/
+  @Override
+  public Long numIncrBy(K key, Path path, Long value) {
+    List<byte[]> args = new ArrayList<>();
+    args.add(SafeEncoder.encode(key.toString()));
+    args.add(SafeEncoder.encode(path != null ? path.toString() : Path.ROOT_PATH.toString()));
+    args.add(Protocol.toByteArray(value));
+
+    Long results = -1L;
+    try (Jedis conn = client.getJedis()) {
+      conn.getClient().sendCommand(Command.JSON_NUMINCRBY, args.toArray(new byte[args.size()][]));
+      results = Long.parseLong(conn.getClient().getBulkReply());
+    }
+    
+    return results;
   }
 
 }

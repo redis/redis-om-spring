@@ -57,4 +57,8 @@ public interface JSONOperations<K> {
   
   Long arrTrim(K key, Path path, Long start, Long stop);
 
+  void toggle(K key, Path path);
+
+  Long numIncrBy(K key, Path path, Long value);
+
 }
