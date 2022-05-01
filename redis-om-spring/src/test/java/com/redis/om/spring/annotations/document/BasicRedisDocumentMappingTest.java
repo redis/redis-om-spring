@@ -60,6 +60,19 @@ public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   }
   
   @Test
+  public void testFindAllById() {
+    Company redis = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company microsoft = repository.save(Company.of("Microsoft", 1975, new Point(-122.124500, 47.640160), "research@microsoft.com"));
+
+    assertEquals(2, repository.count());
+
+    Iterable<Company> companies = repository.findAllById(List.of(redis.getId(), microsoft.getId()));
+    
+    assertThat(companies).hasSize(2);
+    assertThat(companies).containsExactly(redis, microsoft);
+  }
+  
+  @Test
   public void testUpdateSingleField() {
     Company redisInc = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com"));
     repository.updateField(redisInc, Company$.NAME, "Redis");
