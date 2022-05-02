@@ -13,6 +13,9 @@ import java.util.Set;
 
 import com.google.common.collect.Sets;
 import com.redis.om.spring.annotations.document.fixtures.Employee;
+import com.redis.om.spring.annotations.document.fixtures.Metadata;
+import com.redis.om.spring.annotations.document.fixtures.MetadataRepository;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +29,9 @@ import com.redis.om.spring.annotations.document.fixtures.CompanyRepository;
 public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   @Autowired
   CompanyRepository repository;
+  
+  @Autowired
+  MetadataRepository metadataRepo;
   
   @BeforeEach
   public void cleanUp() {
@@ -134,5 +140,36 @@ public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
 
     List<Company> jackey = repository.findByEmployees_name("Jackey");
     assertNotNull(jackey.get(0).getEmployees());
+  }
+  
+  @Test
+  public void testFindByMany() {
+    /**
+     * A 100
+     * B 200
+     * C 300
+     */
+    Metadata md1 = new Metadata();
+    md1.setDeptId("A");
+    md1.setEmployeeId("100");
+    
+    Metadata md2 = new Metadata();
+    md2.setDeptId("B");
+    md2.setEmployeeId("200");
+    
+    Metadata md3 = new Metadata();
+    md3.setDeptId("C");
+    md3.setEmployeeId("300");
+    
+    metadataRepo.saveAll(Set.of(md1, md2, md3));
+    
+    assertEquals(3, metadataRepo.count());
+    
+    Iterable<Metadata> metadata = metadataRepo.findByDeptId(Set.of("C", "B"));
+    // NOTE: order of the results will NOT match the order of the ids
+    //       provided
+    assertThat(metadata).contains(md2, md3);
+    
+    metadataRepo.deleteAll();
   }
 }
