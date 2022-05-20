@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 @NoArgsConstructor
 @RequiredArgsConstructor(staticName = "of")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-@Document(collection = "tst")
+@Document("tst")
 public class Permit {
   @Id
   private String id;
