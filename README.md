@@ -16,9 +16,9 @@
 
 **Redis OM Spring** extends [Spring Data Redis](https://spring.io/projects/spring-data-redis) to take full advantage of the power of Redis.
 
-| Project Stage | Snapshot | Issues | Resolution | Code QL | License |
-| --- | --- | --- | --- | --- | --- |
-| [![Project stage][badge-Stage]][badge-stage-page] | [![Snapshots][badge-snapshots]][link-snapshots] | [![Percentage of issues still open][badge-open-issues]][open-issues] | [![Average time to resolve an issue][badge-issue-resolution]][issue-resolution] | [![CodeQL][badge-codeql]][badge-codeql-page] | [![License][license-image]][license-url] |
+| Project Stage | Release | Snapshot | Issues | Resolution | Code QL | License |
+| --- | --- | --- | --- | --- | --- | --- |
+| [![Project stage][badge-Stage]][badge-stage-page] | [![Releases][badge-releases]][link-releases] | [![Snapshots][badge-snapshots]][link-snapshots] | [![Percentage of issues still open][badge-open-issues]][open-issues] | [![Average time to resolve an issue][badge-issue-resolution]][issue-resolution] | [![CodeQL][badge-codeql]][badge-codeql-page] | [![License][license-image]][license-url] |
 
 <details>
   <summary><strong>Table of contents</strong></summary>
@@ -362,6 +362,7 @@ Redis OM uses the [MIT license][license-url].
 [badge-stage]: https://img.shields.io/badge/Project%20Stage-Development-green.svg
 [badge-stage-page]: https://github.com/redis/redis-om-spring/wiki/Project-Stages
 [badge-snapshots]: https://img.shields.io/nexus/s/https/s01.oss.sonatype.org/com.redis.om/redis-om-spring.svg
+[badge-releases]: https://img.shields.io/maven-central/v/com.redis.om/redis-om-spring
 [badge-open-issues]: http://isitmaintained.com/badge/open/redis/redis-om-spring.svg
 [badge-issue-resolution]: http://isitmaintained.com/badge/resolution/redis/redis-om-spring.svg
 [badge-codeql]: https://github.com/redis/redis-om-spring/actions/workflows/codeql-analysis.yml/badge.svg
@@ -380,6 +381,7 @@ Redis OM uses the [MIT license][license-url].
 [ulid-url]: https://github.com/ulid/spec
 [redis-enterprise-url]: https://redis.com/try-free/
 [link-snapshots]: https://s01.oss.sonatype.org/content/repositories/snapshots/com/redis/om/redis-om-spring/
+[link-releases]: https://repo1.maven.org/maven2/com/redis/om/redis-om-spring/
 [open-issues]: http://isitmaintained.com/project/redis/redis-om-spring
 [issue-resolution]: http://isitmaintained.com/project/redis/redis-om-spring
 [redisearch-wjson]: https://github.com/redislabs-training/mod-devcap-redisjson-getting-started/blob/master/articles/QuickStart-RediSearchWithJSON.md
