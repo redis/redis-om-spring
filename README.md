@@ -280,7 +280,13 @@ In this example we also make use of the Streams `sorted` method to declare that 
 
 ### Official Releases
 
-**None Yet**
+```xml
+<dependency>
+  <groupId>com.redis.om</groupId>
+  <artifactId>redis-om-spring</artifactId>
+  <version>${version}</version>
+</dependency>
+```
 
 ### Snapshots
 
@@ -299,7 +305,7 @@ and
 <dependency>
   <groupId>com.redis.om</groupId>
   <artifactId>redis-om-spring</artifactId>
-  <version>${version}</version>
+  <version>${version}-SNAPSHOT</version>
 </dependency>
 ```
 
