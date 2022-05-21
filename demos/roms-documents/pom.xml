@@ -82,6 +82,13 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+  
+  <repositories>
+    <repository>
+      <id>snapshots-repo</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </repository>
+  </repositories>
 
   <build>
     <plugins>
