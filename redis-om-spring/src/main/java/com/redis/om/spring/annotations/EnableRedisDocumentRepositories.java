@@ -41,6 +41,7 @@ public @interface EnableRedisDocumentRepositories {
    * Alias for the {@link #basePackages()} attribute. Allows for more concise annotation declarations e.g.:
    * {@code @EnableRedisRepositories("org.my.pkg")} instead of
    * {@code @EnableRedisRepositories(basePackages="org.my.pkg")}.
+   * @return basePackages
    */
   @AliasFor("basePackages")
   String[] value() default {};
@@ -48,6 +49,7 @@ public @interface EnableRedisDocumentRepositories {
   /**
    * Base packages to scan for annotated components. {@link #value()} is an alias for (and mutually exclusive with) this
    * attribute. Use {@link #basePackageClasses()} for a type-safe alternative to String-based package names.
+   * @return basePackages as a String
    */
   @AliasFor("value")
   String[] basePackages() default {};
@@ -56,17 +58,21 @@ public @interface EnableRedisDocumentRepositories {
    * Type-safe alternative to {@link #basePackages()} for specifying the packages to scan for annotated components. The
    * package of each class specified will be scanned. Consider creating a special no-op marker class or interface in
    * each package that serves no purpose other than being referenced by this attribute.
+   * @return array of base Package Classes
    */
   Class<?>[] basePackageClasses() default {};
 
   /**
    * Specifies which types are not eligible for component scanning.
+   * @return array of components to exclude
    */
   Filter[] excludeFilters() default {};
 
   /**
-   * Specifies which types are eligible for component scanning. Further narrows the set of candidate components from
-   * everything in {@link #basePackages()} to everything in the base packages that matches the given filter or filters.
+   * Specifies which types are eligible for component scanning. Further narrows
+   * the set of candidate components from everything in {@link #basePackages()} to
+   * everything in the base packages that matches the given filter or filters.
+   * @return array of components to include
    */
   Filter[] includeFilters() default {};
 
@@ -75,14 +81,14 @@ public @interface EnableRedisDocumentRepositories {
    * for a repository named {@code PersonRepository} the corresponding implementation class will be looked up scanning
    * for {@code PersonRepositoryImpl}.
    *
-   * @return
+   * @return postfix for the dynamically generated repository class
    */
   String repositoryImplementationPostfix() default "Impl";
 
   /**
    * Configures the location of where to find the Spring Data named queries properties file.
    *
-   * @return
+   * @return named queries relative location
    */
   String namedQueriesLocation() default "";
 
@@ -90,7 +96,7 @@ public @interface EnableRedisDocumentRepositories {
    * Returns the key of the {@link QueryLookupStrategy} to be used for lookup queries for query methods. Defaults to
    * {@link Key#CREATE_IF_NOT_FOUND}.
    *
-   * @return
+   * @return lookup strategy key
    */
   Key queryLookupStrategy() default Key.CREATE_IF_NOT_FOUND;
 
@@ -98,55 +104,56 @@ public @interface EnableRedisDocumentRepositories {
    * Returns the {@link FactoryBean} class to be used for each repository instance. Defaults to
    * {@link RedisRepositoryFactoryBean}.
    *
-   * @return
+   * @return repository factory bean class
    */
   Class<?> repositoryFactoryBeanClass() default RedisDocumentRepositoryFactoryBean.class;
 
   /**
    * Configure the repository base class to be used to create repository proxies for this particular configuration.
    *
-   * @return
+   * @return repository base class
    */
   Class<?> repositoryBaseClass() default DefaultRepositoryBaseClass.class;
 
   /**
    * Configures the name of the {@link KeyValueOperations} bean to be used with the repositories detected.
    *
-   * @return
+   * @return key value operations template name
    */
   String keyValueTemplateRef() default "redisJSONKeyValueTemplate";
 
   /**
    * Configures whether nested repository-interfaces (e.g. defined as inner classes) should be discovered by the
    * repositories infrastructure.
+   * @return whether to consider nested repositories
    */
   boolean considerNestedRepositories() default false;
 
   /**
    * Configures the bean name of the {@link RedisOperations} to be used. Defaulted to {@literal redisTemplate}.
    *
-   * @return
+   * @return name of the ops template
    */
   String redisTemplateRef() default "redisTemplate";
 
   /**
    * Set up index patterns using simple configuration class.
    *
-   * @return
+   * @return index configuration class
    */
   Class<? extends IndexConfiguration> indexConfiguration() default IndexConfiguration.class;
 
   /**
    * Set up keyspaces for specific types.
    *
-   * @return
+   * @return keyspace configuration
    */
   Class<? extends KeyspaceConfiguration> keyspaceConfiguration() default KeyspaceConfiguration.class;
 
   /**
    * Configure usage of {@link KeyExpirationEventMessageListener}.
    *
-   * @return
+   * @return whether to enable keyspace events
    * @since 1.8
    */
   EnableKeyspaceEvents enableKeyspaceEvents() default EnableKeyspaceEvents.OFF;
@@ -155,13 +162,13 @@ public @interface EnableRedisDocumentRepositories {
    * Configuration flag controlling storage of phantom keys (shadow copies) of expiring entities to read them later when
    * publishing {@link org.springframework.data.redis.core.RedisKeyspaceEvent keyspace events}.
    *
-   * @return
+   * @return shadow copy
    * @since 2.4
    */
   ShadowCopy shadowCopy() default ShadowCopy.DEFAULT;
 
   /**
-   * Configure the {@literal notify-keyspace-events} property if not already set. <br />
+   * Configure the {@literal notify-keyspace-events} property if not already set.
    * Use an empty {@link String} to keep (<b>not</b> alter) existing server configuration.
    *
    * @return {@literal Ex} by default.

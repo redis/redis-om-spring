@@ -11,8 +11,7 @@ public interface BloomOperations<K> {
    * @param initCapacity Optimize for this many items
    * @param errorRate The desired rate of false positives
    *
-   * Note that if a filter is not reserved, a new one is created when {@link #add(String, byte[])}
-   * is called.
+   * Note that if a filter is not reserved, a new one is created when is called.
    */
   public void createFilter(K name, long initCapacity, double errorRate);
 
@@ -25,7 +24,7 @@ public interface BloomOperations<K> {
   public boolean add(K name, String value);
 
   /**
-   * Like {@link #add(String, String)}, but allows you to store non-string items
+   * Like add but allows you to store non-string items
    * @param name Name of the filter
    * @param value Value to add to the filter
    * @return true if the item was not previously in the filter
@@ -38,7 +37,7 @@ public interface BloomOperations<K> {
    * @param name The name of the filter
    * @param options {@link io.rebloom.client.InsertOptions}
    * @param items items to add to the filter
-   * @return
+   * @return array of booleans, true for each succesful insertion
    */
   public boolean[] insert(K name, InsertOptions options, String... items);
   
@@ -50,8 +49,6 @@ public interface BloomOperations<K> {
    * Each boolean values indicates whether the corresponding element was previously in the
    * filter or not. A true value means the item did not previously exist, whereas a
    * false value means it may have previously existed.
-   *
-   * @see #add(String, byte[])
    */
   public boolean[] addMulti(K name, byte[] ...values);
 
@@ -63,8 +60,6 @@ public interface BloomOperations<K> {
    * Each boolean values indicates whether the corresponding element was previously in the
    * filter or not. A true value means the item did not previously exist, whereas a
    * false value means it may have previously existed.
-   *
-   * @see #add(String, String)
    */
   public boolean[] addMulti(K name, String ...values);
 
@@ -77,7 +72,7 @@ public interface BloomOperations<K> {
   public boolean exists(K name, String value);
 
   /**
-   * Check if an item exists in the filter. Similar to {@link #exists(String, String)}
+   * Check if an item exists in the filter. 
    * @param name Key of the filter to check
    * @param value Value to check for
    * @return true if the item may exist in the filter, false if the item does not exist in the filter.
@@ -96,14 +91,14 @@ public interface BloomOperations<K> {
 
   /**
    * Remove the filter
-   * @param name
+   * @param name the name of the filter
    * @return true if delete the filter, false is not delete the filter
    */
   public boolean delete(K name);
 
   /**
    * Get information about the filter
-   * @param name
+   * @param name the name of the filter
    * @return Return information
    */
   public Map<String, Object> info(K name);

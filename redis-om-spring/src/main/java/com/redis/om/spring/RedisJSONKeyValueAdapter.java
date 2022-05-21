@@ -37,6 +37,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    * {@link RedisMappingContext} and default {@link RedisCustomConversions}.
    *
    * @param redisOps must not be {@literal null}.
+   * @param redisJSONOperations must not be {@literal null}.
    */
   public RedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps, JSONOperations<?> redisJSONOperations) {
     super(redisOps, new RedisMappingContext());
@@ -50,6 +51,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    *
    * @param redisOps       must not be {@literal null}.
    * @param mappingContext must not be {@literal null}.
+   * @param redisJSONOperations must not be {@literal null}.
    */
   public RedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps, JSONOperations<?> redisJSONOperations,
       RedisMappingContext mappingContext) {
@@ -111,7 +113,6 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    * @param type     the desired target type.
    * @param offset   index value to start reading.
    * @param rows     maximum number or entities to return.
-   * @param <T>
    * @return never {@literal null}.
    */
   @Override

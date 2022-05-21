@@ -145,7 +145,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   /**
    * Get the {@link QueryEngine} used.
    *
-   * @return
+   * @return the QueryEngine
    */
   public QueryEngine<? extends KeyValueAdapter, ?, ?> getQueryEngine() {
     return queryEngine;

@@ -10,14 +10,15 @@ import com.redislabs.modules.rejson.Path;
 
 @NoRepositoryBean
 public interface RedisDocumentRepository<T, ID> extends KeyValueRepository<T, ID> {
+
+  Iterable<ID> getIds();
+  
   /**
    * Returns a {@link Page} of entities meeting the paging restriction provided in the {@code Pageable} object.
    *
    * @param pageable
    * @return a page of entities
    */
-  Iterable<ID> getIds();
-  
   Page<ID> getIds(Pageable pageable);
   
   void deleteById(ID id, Path path);
