@@ -56,6 +56,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @SuppressWarnings("unused")
   private static final Log logger = LogFactory.getLog(SearchStreamImpl.class);
 
+  private static final Integer MAX_LIMIT = 10000;
+
   @SuppressWarnings("unused")
   private RedisModulesOperations<String> modulesOperations;
   private SearchOperations<String> search;
@@ -127,16 +129,6 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
         MetamodelField<E, ?> foi = (MetamodelField<E, ?>) tm.get(i);
         returning.add(foi);
       });
-//    } else if (StringLengthAction.class.isAssignableFrom(mapper.getClass())) {
-//      @SuppressWarnings("unchecked")
-//      StringLengthAction<E,?> action = (StringLengthAction<E,?>)mapper;
-//      onlyIds = true;
-//      List<Object> ids = executeQuery().docs//
-//        .stream()
-//        .map(d -> gson.fromJson(d.get("$").toString(), idField.getType()))
-//      .collect(Collectors.toList());
-////      ids.stream().map(action);
-
     }
 
     return new ReturnFieldsSearchStreamImpl<E, T>(this, returning);
@@ -397,7 +389,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   Query prepareQuery() {
     Query query = (rootNode.toString().isBlank()) ? new Query() : new Query(rootNode.toString());
 
-    query.limit(skip.isPresent() ? skip.get() : 0, limit.isPresent() ? limit.get() : 1000000);
+    query.limit(skip.isPresent() ? skip.get() : 0, limit.isPresent() ? limit.get() : MAX_LIMIT);
 
     if (sortBy.isPresent()) {
       SortedField sortField = sortBy.get();
@@ -437,7 +429,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       StrLengthAction action = (StrLengthAction)mapper;
       action.setJSONOperations(json);
       onlyIds = true;
-      
+
       Method idSetter = ObjectUtils.getSetterForField(entityClass, idField);
 
       Stream<E> wrappedIds = (Stream<E>) executeQuery().docs //
