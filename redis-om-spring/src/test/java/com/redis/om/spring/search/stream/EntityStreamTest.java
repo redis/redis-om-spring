@@ -680,12 +680,26 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testStrLenToNonIndexedTextFieldInDocuments() {
+  public void testStrLenToNonIndexedTagFieldInDocuments() {
     List<Long> emailLengths = entityStream.of(Company.class) //
         .map(Company$.EMAIL.length()) //
         .collect(Collectors.toList());
     assertThat(emailLengths).hasSize(3);
     assertThat(emailLengths).containsExactly(15L, 22L, 14L);
+  }
+  
+  @Test
+  public void testFindByTagEscapesChars() {
+    SearchStream<Company> stream = entityStream.of(Company.class);
+
+    List<Company> companies = stream //
+        .filter(Company$.EMAIL.eq("stack@redis.com")) //
+        .collect(Collectors.toList());
+
+    assertEquals(1, companies.size());
+
+    List<String> names = companies.stream().map(Company::getName).collect(Collectors.toList());
+    assertTrue(names.contains("RedisInc"));
   }
 
 }

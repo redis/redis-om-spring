@@ -172,4 +172,21 @@ public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
     
     metadataRepo.deleteAll();
   }
+  
+  @Test
+  public void testTagEscapeChars() {
+    Company redis = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company microsoft = repository.save(Company.of("Microsoft", 1975, new Point(-122.124500, 47.640160), "research@microsoft.com"));
+
+    assertEquals(2, repository.count());
+
+    Optional<Company> maybeRedisLabs = repository.findFirstByEmail(redis.getEmail());
+    Optional<Company> maybeMicrosoft = repository.findFirstByEmail(microsoft.getEmail());
+
+    assertTrue(maybeRedisLabs.isPresent());
+    assertTrue(maybeMicrosoft.isPresent());
+
+    assertEquals(redis, maybeRedisLabs.get());
+    assertEquals(microsoft, maybeMicrosoft.get());
+  }
 }

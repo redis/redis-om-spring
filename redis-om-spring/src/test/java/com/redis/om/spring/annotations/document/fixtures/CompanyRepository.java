@@ -11,4 +11,5 @@ public interface CompanyRepository extends RedisDocumentRepository<Company, Stri
 
   List<Company> findByEmployees_name(String name);
   Optional<Company> findFirstByName(String name);
+  Optional<Company> findFirstByEmail(String email);
 }

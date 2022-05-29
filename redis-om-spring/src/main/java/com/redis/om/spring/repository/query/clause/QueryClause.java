@@ -12,6 +12,7 @@ import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.repository.query.parser.Part;
 
+import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.util.ObjectUtils;
 
 import io.redisearch.Schema.FieldType;
@@ -132,14 +133,14 @@ public enum QueryClause {
 
             String value = "";
             if (this == QueryClause.Tag_CONTAINING_ALL) {
-              value = c.stream().map(n -> "@"+field+":{"+n.toString()+"}").collect(Collectors.joining(" "));
+              value = c.stream().map(n -> "@"+field+":{"+QueryUtils.escapeTagField(n.toString())+"}").collect(Collectors.joining(" "));
             } else {
-              value = c.stream().map(n -> n.toString()).collect(Collectors.joining("|"));
+              value = c.stream().map(n -> QueryUtils.escapeTagField(n.toString())).collect(Collectors.joining("|"));
             }
 
             prepared = prepared.replace("$param_" + i++, value);
           } else {
-            prepared = prepared.replace("$param_" + i++, param.toString());
+            prepared = prepared.replace("$param_" + i++, QueryUtils.escapeTagField(param.toString()));
           }
           break;
       }

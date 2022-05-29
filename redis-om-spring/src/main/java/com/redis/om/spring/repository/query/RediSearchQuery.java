@@ -75,7 +75,7 @@ public class RediSearchQuery implements RepositoryQuery {
 
   // is native? e.g. @Query or @Annotation
   private boolean annotationBased;
-  
+
   // is it an FT.TAGVALS query?
   private boolean isTagValsQuery = false;
 
@@ -89,7 +89,7 @@ public class RediSearchQuery implements RepositoryQuery {
   KeyValueOperations keyValueOperations;
 
   private boolean isANDQuery = false;
-  
+
   private BloomQueryExecutor bloomQueryExecutor;
   private AutoCompleteQueryExecutor autoCompleteQueryExecutor;
 
@@ -109,7 +109,7 @@ public class RediSearchQuery implements RepositoryQuery {
     this.searchIndex = this.queryMethod.getEntityInformation().getJavaType().getName() + "Idx";
     this.metadata = metadata;
     this.domainType = this.queryMethod.getEntityInformation().getJavaType();
-    
+
     bloomQueryExecutor = new BloomQueryExecutor(this, modulesOperations);
     autoCompleteQueryExecutor = new AutoCompleteQueryExecutor(this, modulesOperations);
 
@@ -232,7 +232,7 @@ public class RediSearchQuery implements RepositoryQuery {
         else {
           qf.addAll(extractQueryFields(field.getType(), part, path, level + 1));
         }
-      } 
+      }
     } catch (NoSuchFieldException e) {
       logger.info(String.format("Did not find a field named %s", key));
     }
@@ -243,7 +243,7 @@ public class RediSearchQuery implements RepositoryQuery {
   @Override
   public Object execute(Object[] parameters) {
     Optional<String> maybeBloomFilter = bloomQueryExecutor.getBloomFilter();
-    
+
     if (maybeBloomFilter.isPresent()) {
       logger.debug("Bloom filter found...");
       return bloomQueryExecutor.executeBloomQuery(parameters, maybeBloomFilter.get());
@@ -347,7 +347,7 @@ public class RediSearchQuery implements RepositoryQuery {
   }
 
   private String prepareQuery(final Object[] parameters) {
-    logger.info(String.format("parameters: %s", Arrays.toString(parameters)));
+    logger.debug(String.format("parameters: %s", Arrays.toString(parameters)));
     List<Object> params = new ArrayList<Object>(Arrays.asList(parameters));
     StringBuilder preparedQuery = new StringBuilder();
     boolean multipleOrParts = queryOrParts.size() > 1;
