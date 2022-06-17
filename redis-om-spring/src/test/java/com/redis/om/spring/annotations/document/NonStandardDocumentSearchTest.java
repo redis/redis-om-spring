@@ -29,9 +29,9 @@ public class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
 
   @BeforeEach
   public void loadTestData() {
-    Custom c1 = Custom.of("foo");
-    Custom c2 = Custom.of("bar");
-    Custom c3 = Custom.of("baz");
+    Custom c1 = Custom.of("foofoo");
+    Custom c2 = Custom.of("barbar");
+    Custom c3 = Custom.of("bazbaz");
     c2.setTaken(true);
 
     repository.saveAll(List.of(c1, c2, c3));
@@ -49,9 +49,13 @@ public class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
   @Test
   public void testGetByName() {
     assertEquals(3, repository.count());
+    
+    repository.findAll().forEach(c -> System.out.println(c.getName()));
 
-    Optional<Custom> maybeCustom = repository.findFirstByName("bar");
-    assertThat(maybeCustom).isPresent();
+    List<Custom> customs = repository.searchByName("barbar");
+    assertThat(customs.size()).isEqualTo(1);
+    Custom barbar = customs.get(0);    
+    assertThat(barbar.getName()).isEqualTo("barbar");
   }
   
   @Test

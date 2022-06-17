@@ -655,7 +655,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
         .filter(Company$.NAME.eq("Microsoft")) //
         .forEach(Company$.NAME.append(" Corp"));
 
-    Optional<Company> maybeMicrosoft = repository.findFirstByName("Microsoft Corp");
+    Optional<Company> maybeMicrosoft = repository.findFirstByEmail("research@microsoft.com");
     assertTrue(maybeMicrosoft.isPresent());
   }
 

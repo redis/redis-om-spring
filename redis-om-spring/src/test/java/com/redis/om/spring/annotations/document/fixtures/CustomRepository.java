@@ -1,9 +1,9 @@
 package com.redis.om.spring.annotations.document.fixtures;
 
-import java.util.Optional;
+import java.util.List;
 
 import com.redis.om.spring.repository.RedisDocumentRepository;
 
 public interface CustomRepository extends RedisDocumentRepository<Custom, Long> {
-  Optional<Custom> findFirstByName(String name);
+  List<Custom> searchByName(String name);
 }
