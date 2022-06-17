@@ -7,7 +7,7 @@
 
   <groupId>com.redis.om</groupId>
   <artifactId>redis-om-spring</artifactId>
-  <version>0.5.0</version>
+  <version>0.5.1</version>
   <packaging>jar</packaging>
 
   <name>redis-om-spring</name>

@@ -31,7 +31,7 @@
     <dependency>
       <groupId>com.redis.om</groupId>
       <artifactId>redis-om-spring</artifactId>
-      <version>0.5.0-SNAPSHOT</version>
+      <version>0.5.1-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -82,7 +82,7 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-  
+
   <repositories>
     <repository>
       <id>snapshots-repo</id>
