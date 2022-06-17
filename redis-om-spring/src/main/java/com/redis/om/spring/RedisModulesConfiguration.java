@@ -214,10 +214,15 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
           IndexDefinition index = new IndexDefinition(
               cls == Document.class ? IndexDefinition.Type.JSON : IndexDefinition.Type.HASH);
+          
+          String entityPrefix = cl.getName() + ":";
 
           if (cl.isAnnotationPresent(Document.class)) {
             Document document = (Document) cl.getAnnotation(Document.class);
             index.setAsync(document.async());
+            if (ObjectUtils.isNotEmpty(document.value())) {
+              entityPrefix = document.value();
+            }
             if (ObjectUtils.isNotEmpty(document.filter())) {
               index.setFilter(document.filter());
             }
@@ -231,9 +236,14 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
             if (scoreField != null) {
               index.setScoreFiled(scoreField);
             }
+          } else if (cl.isAnnotationPresent(RedisHash.class)) {
+            RedisHash hash = (RedisHash) cl.getAnnotation(RedisHash.class);
+            if (ObjectUtils.isNotEmpty(hash.value())) {
+              entityPrefix = hash.value();
+            }
           }
 
-          index.setPrefixes(cl.getName() + ":");
+          index.setPrefixes(entityPrefix);
           IndexOptions ops = Client.IndexOptions.defaultOptions().setDefinition(index);
           opsForSearch.createIndex(schema, ops);
         }
