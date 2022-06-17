@@ -189,4 +189,24 @@ public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
     assertEquals(redis, maybeRedisLabs.get());
     assertEquals(microsoft, maybeMicrosoft.get());
   }
+  
+  @Test
+  public void testQueriesAgainstNoData() {
+    repository.deleteAll();
+    
+    Iterable<Company> all = repository.findAll();
+    assertFalse(all.iterator().hasNext());
+    
+    Optional<Company> maybeRedisLabs = repository.findById("not-here");
+    assertTrue(maybeRedisLabs.isEmpty());
+    
+    Optional<Company> maybeMicrosoft = repository.findFirstByEmail("research@microsoft.com");
+    assertTrue(maybeMicrosoft.isEmpty());
+    
+    Iterable<Company> companies = repository.findAllById(List.of("8675309", "42"));
+    assertFalse(companies.iterator().hasNext());
+    
+    List<Company> employees = repository.findByEmployees_name("Seymour");
+    assertTrue(employees.isEmpty());
+  }
 }
