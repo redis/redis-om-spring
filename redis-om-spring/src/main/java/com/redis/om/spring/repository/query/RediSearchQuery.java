@@ -311,8 +311,12 @@ public class RediSearchQuery implements RepositoryQuery {
       }
 
     } else if (queryMethod.isQueryForEntity() && !queryMethod.isCollectionQuery()) {
-      String jsonResult = searchResult.docs.isEmpty() ? "{}" : searchResult.docs.get(0).get("$").toString();
-      result = gson.fromJson(jsonResult, queryMethod.getReturnedObjectType());
+      if (!searchResult.docs.isEmpty()) {
+        String jsonResult = searchResult.docs.get(0).get("$").toString();
+        result = gson.fromJson(jsonResult, queryMethod.getReturnedObjectType());
+      } else {
+        result = null;
+      }
     } else if (queryMethod.isQueryForEntity() && queryMethod.isCollectionQuery()) {
       result = searchResult.docs.stream()
           .map(d -> gson.fromJson(d.get("$").toString(), queryMethod.getReturnedObjectType()))
