@@ -20,10 +20,12 @@ import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Metrics;
 import org.springframework.data.geo.Point;
 
+import com.google.common.collect.Sets;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.Company;
 import com.redis.om.spring.annotations.document.fixtures.Company$;
 import com.redis.om.spring.annotations.document.fixtures.CompanyRepository;
+import com.redis.om.spring.annotations.document.fixtures.Employee;
 import com.redis.om.spring.tuple.Fields;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.Quad;
@@ -44,6 +46,9 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
 
     Company redis = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com"));
     redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
+    
+    Set<Employee> employees = Sets.newHashSet(Employee.of("Brian Sam-Bodden"), Employee.of("Guy Royse"), Employee.of("Justin Castilla"));
+    redis.setEmployees(employees);
 
     Company microsoft = repository
         .save(Company.of("Microsoft", 1975, new Point(-122.124500, 47.640160), "research@microsoft.com"));
@@ -701,6 +706,32 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
 
     List<String> names = companies.stream().map(Company::getName).collect(Collectors.toList());
     assertTrue(names.contains("RedisInc"));
+  }
+  
+  @Test
+  public void testArrayAppendToSimpleIndexedTagFieldInDocuments() {
+    entityStream.of(Company.class) //
+        .filter(Company$.NAME.eq("Microsoft")) //
+        .forEach(Company$.TAGS.add("gaming"));
+
+    Optional<Company> maybeMicrosoft = repository.findFirstByEmail("research@microsoft.com");
+    assertTrue(maybeMicrosoft.isPresent());
+    Company microsoft = maybeMicrosoft.get();
+    assertThat(microsoft.getTags()).contains("innovative", "reliable", "os", "ai", "gaming");
+  }
+  
+  @Test
+  public void testArrayAppendToComplexIndexedTagFieldInDocuments() {
+    entityStream.of(Company.class) //
+      .filter(Company$.NAME.eq("RedisInc")) //
+      .forEach(Company$.EMPLOYEES.add(Employee.of("Simon Prickett")));
+
+    Optional<Company> maybeRedis = repository.findFirstByEmail("stack@redis.com");
+    assertTrue(maybeRedis.isPresent());
+    Company microsoft = maybeRedis.get();
+    
+    List<String> employeeNames = microsoft.getEmployees().stream().map(Employee::getName).collect(Collectors.toList());
+    assertThat(employeeNames).contains("Simon Prickett", "Brian Sam-Bodden", "Guy Royse", "Justin Castilla");
   }
 
 }

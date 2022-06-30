@@ -34,6 +34,7 @@ import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
+import com.redis.om.spring.search.stream.actions.ArrayAppendAction;
 import com.redis.om.spring.search.stream.actions.NumIncrByAction;
 import com.redis.om.spring.search.stream.actions.StrLengthAction;
 import com.redis.om.spring.search.stream.actions.StringAppendAction;
@@ -234,6 +235,10 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       StringAppendAction stringAppend = (StringAppendAction) action;
       stringAppend.setJSONOperations(json);
       resolveStream().forEach(stringAppend);
+    } else if (action.getClass() == ArrayAppendAction.class) {
+      ArrayAppendAction arrayAppend = (ArrayAppendAction) action;
+      arrayAppend.setJSONOperations(json);
+      resolveStream().forEach(arrayAppend);
     } else {
       resolveStream().forEach(action);
     }
