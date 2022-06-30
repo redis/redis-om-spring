@@ -15,35 +15,57 @@ import io.redisearch.SearchResult;
 
 public interface MyDocRepository extends RedisDocumentRepository<MyDoc, String>, MyDocQueries {
   /**
+   * <pre>
    * > FT.SEARCH idx * RETURN 3 $.tag[0] AS first_tag 1) (integer) 1 2) "doc1" 3)
-   * 1) "first_tag" 2) "news"
+   * 1) "first_tag" 
+   * 2) "news"
+   * </pre>
    */
   @Query(returnFields = { "$.tag[0]", "AS", "first_tag" })
   SearchResult getFirstTag();
 
   /**
-   * > FT.SEARCH idx '@title:hello @tag:{news}' 1) (integer) 1 2) "doc1" 3) 1) "$"
-   * 2) "{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}"
+   * <pre>
+   * > FT.SEARCH idx '@title:hello @tag:{news}' 
+   * 1) (integer) 1 
+   * 2) "doc1" 
+   * 3) 1) "$"
+   *    2) "{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}"
+   * </pre>
    */
   @Query("@title:$title @tag:{$tags}")
   Iterable<MyDoc> findByTitleAndTags(@Param("title") String title, @Param("tags") Set<String> tags);
 
   /**
-   * > FT.AGGREGATE idx * LOAD 3 $.tag[1] AS tag2 1) (integer) 1 2) 1) "tag2" 2)
-   * "article"
+   * <pre>
+   * > FT.AGGREGATE idx * LOAD 3 $.tag[1] AS tag2 
+   * 1) (integer) 1 
+   * 2) 1) "tag2" 
+   *    2) "article"
+   * </pre>
    */
   @Aggregation(load = { "$.tag[1]", "AS", "tag2" })
   AggregationResult getSecondTagWithAggregation();
   
   /**
+   * <pre>
    * > FT.SEARCH idx @title:hel* SORTBY title ASC LIMIT 0 2
-   *
+   * </pre>
    */
   Page<MyDoc> findAllByTitleStartingWith(String title, Pageable pageable);
   
   /**
+   * <pre>
+   * > FT.SEARCH idx @title:hel* LIMIT 0 2
+   * </pre>
+   */
+  @Query("@title:$prefix*")
+  Page<MyDoc> customFindAllByTitleStartingWith(@Param("prefix") String prefix, Pageable pageable);
+  
+  /**
+   * <pre>
    * > FT.TAGVALS idx tags
-   *
+   * </pre>
    */
   Iterable<String> getAllTags();
 }
