@@ -657,6 +657,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
 
     Optional<Company> maybeMicrosoft = repository.findFirstByEmail("research@microsoft.com");
     assertTrue(maybeMicrosoft.isPresent());
+    assertThat(maybeMicrosoft.get().getName()).isEqualTo("Microsoft Corp");
   }
 
   @Test
