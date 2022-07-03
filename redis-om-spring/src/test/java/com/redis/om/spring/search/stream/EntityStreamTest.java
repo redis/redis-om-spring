@@ -806,6 +806,78 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     assertThat(rolesLengths).containsExactly(2L);
   }
 
+  @Test
+  public void testArrayPopOnSimpleIndexedTagFieldInDocuments() {
+    List<Object> roles = entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .map(User$.ROLES.pop()) //
+        .collect(Collectors.toList());
+
+    // contains the last
+    assertThat(roles).containsExactly("guru");
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    
+    // the rest remains
+    assertThat(steve.getRoles()).containsExactly("devrel", "educator");
+  }
+  
+  @Test
+  public void testArrayRemoveLastOnSimpleIndexedTagFieldInDocuments() {
+    List<Object> roles = entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .map(User$.ROLES.removeLast()) //
+        .collect(Collectors.toList());
+
+    // contains the last
+    assertThat(roles).containsExactly("guru");
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    
+    // the first remains
+    assertThat(steve.getRoles()).containsExactly("devrel", "educator");
+  }
+  
+  @Test
+  public void testArrayPopFirstOnSimpleIndexedTagFieldInDocuments() {
+    List<Object> roles = entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .map(User$.ROLES.pop(0L)) //
+        .collect(Collectors.toList());
+
+    // contains the last
+    assertThat(roles).containsExactly("devrel");
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    
+    // the rest remains
+    assertThat(steve.getRoles()).containsExactly("educator", "guru");
+  }
+  
+  @Test
+  public void testArrayRemoveFirstOnSimpleIndexedTagFieldInDocuments() {
+    List<Object> roles = entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .map(User$.ROLES.removeFirst()) //
+        .collect(Collectors.toList());
+
+    // contains the first
+    assertThat(roles).containsExactly("devrel");
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    
+    // the rest remains
+    assertThat(steve.getRoles()).containsExactly("educator", "guru");
+  }
+  
   }
 
 }

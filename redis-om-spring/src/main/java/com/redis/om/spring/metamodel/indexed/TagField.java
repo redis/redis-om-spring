@@ -10,6 +10,7 @@ import com.redis.om.spring.search.stream.actions.ArrayAppendAction;
 import com.redis.om.spring.search.stream.actions.ArrayIndexOfAction;
 import com.redis.om.spring.search.stream.actions.ArrayInsertAction;
 import com.redis.om.spring.search.stream.actions.ArrayLengthAction;
+import com.redis.om.spring.search.stream.actions.ArrayPopAction;
 import com.redis.om.spring.search.stream.predicates.tag.ContainsAllPredicate;
 import com.redis.om.spring.search.stream.predicates.tag.EqualPredicate;
 import com.redis.om.spring.search.stream.predicates.tag.InPredicate;
@@ -61,4 +62,24 @@ public class TagField<E, T> extends MetamodelField<E, T> {
     return new ArrayIndexOfAction<E>(field, element);
   }
   
+  public <R> ArrayPopAction<? super E,R> pop(Long index) {
+    return new ArrayPopAction<E,R>(field, index);
+  }
+  
+  public <R> ArrayPopAction<? super E,R> pop() {
+    return pop(-1L);
+  }
+  
+  public <R> ArrayPopAction<? super E,R> removeFirst() {
+    return pop(0L);
+  }
+  
+  public <R> ArrayPopAction<? super E,R> removeLast() {
+    return pop(-1L);
+  }
+  
+  public <R> ArrayPopAction<? super E,R> remove(Long index) {
+    return pop(index);
+  }
+
 }
