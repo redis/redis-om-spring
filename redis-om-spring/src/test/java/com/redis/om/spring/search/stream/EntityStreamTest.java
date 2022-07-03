@@ -1,9 +1,9 @@
 package com.redis.om.spring.search.stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -26,6 +26,9 @@ import com.redis.om.spring.annotations.document.fixtures.Company;
 import com.redis.om.spring.annotations.document.fixtures.Company$;
 import com.redis.om.spring.annotations.document.fixtures.CompanyRepository;
 import com.redis.om.spring.annotations.document.fixtures.Employee;
+import com.redis.om.spring.annotations.document.fixtures.User;
+import com.redis.om.spring.annotations.document.fixtures.User$;
+import com.redis.om.spring.annotations.document.fixtures.UserRepository;
 import com.redis.om.spring.tuple.Fields;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.Quad;
@@ -38,15 +41,19 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   CompanyRepository repository;
 
   @Autowired
+  UserRepository userRepository;
+
+  @Autowired
   EntityStream entityStream;
 
   @BeforeEach
   public void cleanUp() {
+    // companies
     repository.deleteAll();
 
     Company redis = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com"));
     redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
-    
+
     Set<Employee> employees = Sets.newHashSet(Employee.of("Brian Sam-Bodden"), Employee.of("Guy Royse"), Employee.of("Justin Castilla"));
     redis.setEmployees(employees);
 
@@ -58,6 +65,15 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     tesla.setTags(Set.of("innovative", "futuristic", "ai"));
 
     repository.saveAll(List.of(redis, microsoft, tesla));
+
+    // users
+    userRepository.deleteAll();
+    List<User> users = List.of(User.of("Steve Lorello"), User.of("Nava Levy"), User.of("Savannah Norem"),
+        User.of("Suze Shardlow"));
+    for (User user : users) {
+      user.setRoles(List.of("devrel", "educator", "guru"));
+    }
+    userRepository.saveAll(users);
   }
 
   @Test
@@ -693,7 +709,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     assertThat(emailLengths).hasSize(3);
     assertThat(emailLengths).containsExactly(15L, 22L, 14L);
   }
-  
+
   @Test
   public void testFindByTagEscapesChars() {
     SearchStream<Company> stream = entityStream.of(Company.class);
@@ -707,7 +723,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     List<String> names = companies.stream().map(Company::getName).collect(Collectors.toList());
     assertTrue(names.contains("RedisInc"));
   }
-  
+
   @Test
   public void testArrayAppendToSimpleIndexedTagFieldInDocuments() {
     entityStream.of(Company.class) //
@@ -719,19 +735,58 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     Company microsoft = maybeMicrosoft.get();
     assertThat(microsoft.getTags()).contains("innovative", "reliable", "os", "ai", "gaming");
   }
-  
+
   @Test
   public void testArrayAppendToComplexIndexedTagFieldInDocuments() {
     entityStream.of(Company.class) //
-      .filter(Company$.NAME.eq("RedisInc")) //
-      .forEach(Company$.EMPLOYEES.add(Employee.of("Simon Prickett")));
+        .filter(Company$.NAME.eq("RedisInc")) //
+        .forEach(Company$.EMPLOYEES.add(Employee.of("Simon Prickett")));
 
     Optional<Company> maybeRedis = repository.findFirstByEmail("stack@redis.com");
     assertTrue(maybeRedis.isPresent());
     Company microsoft = maybeRedis.get();
-    
+
     List<String> employeeNames = microsoft.getEmployees().stream().map(Employee::getName).collect(Collectors.toList());
-    assertThat(employeeNames).contains("Simon Prickett", "Brian Sam-Bodden", "Guy Royse", "Justin Castilla");
+    assertThat(employeeNames).contains("Brian Sam-Bodden", "Guy Royse", "Justin Castilla", "Simon Prickett");
+  }
+
+  @Test
+  public void testArrayInsertToSimpleIndexedTagFieldInDocuments() {
+    entityStream.of(User.class) //
+        .filter(
+            User$.NAME.eq("Steve Lorello")) //
+        .forEach(User$.ROLES.insert("dotnet", 0L));
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    assertThat(steve.getRoles()).containsExactly("dotnet", "devrel", "educator", "guru");
+  }
+
+  @Test
+  public void testArrayPrependToSimpleIndexedTagFieldInDocuments() {
+    entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .forEach(User$.ROLES.prepend("dotnet"));
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    assertThat(steve.getRoles()).containsExactly("dotnet", "devrel", "educator", "guru");
+  }
+
+  @Test
+  public void testArrayInsertToSimpleIndexedTagFieldInDocuments2() {
+    entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .forEach(User$.ROLES.insert("dotnet", 1L));
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    assertThat(steve.getRoles()).containsExactly("devrel", "dotnet", "educator", "guru");
+  }
+
   }
 
 }

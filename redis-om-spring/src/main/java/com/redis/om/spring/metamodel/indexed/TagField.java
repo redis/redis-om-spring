@@ -6,6 +6,7 @@ import java.util.function.Consumer;
 
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.search.stream.actions.ArrayAppendAction;
+import com.redis.om.spring.search.stream.actions.ArrayInsertAction;
 import com.redis.om.spring.search.stream.predicates.tag.ContainsAllPredicate;
 import com.redis.om.spring.search.stream.predicates.tag.EqualPredicate;
 import com.redis.om.spring.search.stream.predicates.tag.InPredicate;
@@ -41,4 +42,12 @@ public class TagField<E, T> extends MetamodelField<E, T> {
     return new ArrayAppendAction<E>(field, value);
   }
 
+  public Consumer<? super E> insert(Object value, Long index) {
+    return new ArrayInsertAction<E>(field, value, index);
+  }
+  
+  public Consumer<? super E> prepend(Object value) {
+    return new ArrayInsertAction<E>(field, value, 0L);
+  }
+  
 }
