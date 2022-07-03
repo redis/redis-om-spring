@@ -7,7 +7,7 @@ import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.util.ObjectUtils;
 import com.redislabs.modules.rejson.Path;
 
-public class StrLengthAction<E> implements ToLongFunction<E> {
+public class StrLengthAction<E> implements TakesJSONOperations, ToLongFunction<E> {
 
   private Field field;
   private JSONOperations<String> json;
@@ -22,6 +22,7 @@ public class StrLengthAction<E> implements ToLongFunction<E> {
     return json.strLen(key, Path.of("." + field.getName()));
   }
   
+  @Override
   public void setJSONOperations(JSONOperations<String> json) {
     this.json = json;
   }

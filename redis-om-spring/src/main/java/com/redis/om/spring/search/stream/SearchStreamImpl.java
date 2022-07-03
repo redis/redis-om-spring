@@ -34,11 +34,7 @@ import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
-import com.redis.om.spring.search.stream.actions.ArrayAppendAction;
-import com.redis.om.spring.search.stream.actions.NumIncrByAction;
-import com.redis.om.spring.search.stream.actions.StrLengthAction;
-import com.redis.om.spring.search.stream.actions.StringAppendAction;
-import com.redis.om.spring.search.stream.actions.ToggleAction;
+import com.redis.om.spring.search.stream.actions.TakesJSONOperations;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
 import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
 import com.redis.om.spring.tuple.AbstractTupleMapper;
@@ -130,6 +126,12 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
         MetamodelField<E, ?> foi = (MetamodelField<E, ?>) tm.get(i);
         returning.add(foi);
       });
+    } else {
+      if (TakesJSONOperations.class.isAssignableFrom(mapper.getClass())) {
+        TakesJSONOperations tjo = (TakesJSONOperations)mapper;
+        tjo.setJSONOperations(json);
+      }
+      return new WrapperSearchStream<T>(resolveStream().map(mapper));
     }
 
     return new ReturnFieldsSearchStreamImpl<E, T>(this, returning);
@@ -220,48 +222,24 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     return this;
   }
 
-  @SuppressWarnings({ "unchecked", "rawtypes" })
   @Override
   public void forEach(Consumer<? super E> action) {
-    if (action.getClass() == ToggleAction.class) {
-      ToggleAction toggle = (ToggleAction) action;
-      toggle.setJSONOperations(json);
-      resolveStream().forEach(toggle);
-    } else if (action.getClass() == NumIncrByAction.class) {
-      NumIncrByAction numIncrBy = (NumIncrByAction) action;
-      numIncrBy.setJSONOperations(json);
-      resolveStream().forEach(numIncrBy);
-    } else if (action.getClass() == StringAppendAction.class) {
-      StringAppendAction stringAppend = (StringAppendAction) action;
-      stringAppend.setJSONOperations(json);
-      resolveStream().forEach(stringAppend);
-    } else if (action.getClass() == ArrayAppendAction.class) {
-      ArrayAppendAction arrayAppend = (ArrayAppendAction) action;
-      arrayAppend.setJSONOperations(json);
-      resolveStream().forEach(arrayAppend);
-    } else {
-      resolveStream().forEach(action);
+    if (TakesJSONOperations.class.isAssignableFrom(action.getClass())) {
+      TakesJSONOperations tjo = (TakesJSONOperations)action;
+      tjo.setJSONOperations(json);
     }
+    
+    resolveStream().forEach(action);
   }
 
-  @SuppressWarnings({ "unchecked", "rawtypes" })
   @Override
   public void forEachOrdered(Consumer<? super E> action) {
-    if (action.getClass() == ToggleAction.class) {
-      ToggleAction toggle = (ToggleAction) action;
-      toggle.setJSONOperations(json);
-      resolveStream().forEachOrdered(toggle);
-    } else if (action.getClass() == NumIncrByAction.class) {
-      NumIncrByAction numIncrBy = (NumIncrByAction) action;
-      numIncrBy.setJSONOperations(json);
-      resolveStream().forEachOrdered(numIncrBy);
-    } else if (action.getClass() == StringAppendAction.class) {
-      StringAppendAction stringAppend = (StringAppendAction) action;
-      stringAppend.setJSONOperations(json);
-      resolveStream().forEachOrdered(stringAppend);
-    } else {
-      resolveStream().forEachOrdered(action);
+    if (TakesJSONOperations.class.isAssignableFrom(action.getClass())) {
+      TakesJSONOperations tjo = (TakesJSONOperations)action;
+      tjo.setJSONOperations(json);
     }
+
+    resolveStream().forEachOrdered(action);
   }
 
   @Override
@@ -429,10 +407,11 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @Override
   public Stream<Long> map(ToLongFunction<? super E> mapper) {
     Stream<Long> result = Stream.empty();
-    if (StrLengthAction.class.isAssignableFrom(mapper.getClass())) {
-      @SuppressWarnings("rawtypes")
-      StrLengthAction action = (StrLengthAction)mapper;
-      action.setJSONOperations(json);
+    
+    if (TakesJSONOperations.class.isAssignableFrom(mapper.getClass())) {
+      TakesJSONOperations tjo = (TakesJSONOperations)mapper;
+      tjo.setJSONOperations(json);
+      
       onlyIds = true;
 
       Method idSetter = ObjectUtils.getSetterForField(entityClass, idField);
@@ -459,7 +438,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
             return entity;
           });
 
-      result = wrappedIds.mapToLong(action).boxed();
+      result = wrappedIds.mapToLong(mapper).boxed();
     }
     return result;
   }

@@ -8,7 +8,7 @@ import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.util.ObjectUtils;
 import com.redislabs.modules.rejson.Path;
 
-public class ArrayAppendAction<E> implements Consumer<E> {
+public class ArrayAppendAction<E> implements TakesJSONOperations, Consumer<E> {
   
   private Field field;
   private JSONOperations<String> json;
@@ -28,6 +28,7 @@ public class ArrayAppendAction<E> implements Consumer<E> {
     }
   }
 
+  @Override
   public void setJSONOperations(JSONOperations<String> json) {
     this.json = json;
   }
