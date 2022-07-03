@@ -878,6 +878,53 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     assertThat(steve.getRoles()).containsExactly("educator", "guru");
   }
   
+  @Test
+  public void testArrayTrimToRangeOnSimpleIndexedTagFieldInDocuments() {
+    entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .forEach(User$.ROLES.trimToRange(1L, 1L));
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    assertThat(steve.getRoles()).containsExactly("educator");
+  }
+  
+  @Test
+  public void testArrayTrimToRangeOnSimpleIndexedTagFieldInDocuments2() {
+    entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .forEach(User$.ROLES.trimToRange(0L, 0L));
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    assertThat(steve.getRoles()).containsExactly("devrel");
+  }
+  
+  @Test
+  public void testArrayTrimToRangeOnSimpleIndexedTagFieldInDocuments3() {    
+    entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .forEach(User$.ROLES.trimToRange(1L, 2L));
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    assertThat(steve.getRoles()).containsExactly("educator", "guru");
+  }
+  
+  @Test
+  public void testArrayTrimToRangeOnSimpleIndexedTagFieldInDocuments4() {   
+    // "devrel", "educator", "guru"
+    entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .forEach(User$.ROLES.trimToRange(1L, -1L));
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    assertThat(steve.getRoles()).containsExactly("educator", "guru");
   }
 
 }

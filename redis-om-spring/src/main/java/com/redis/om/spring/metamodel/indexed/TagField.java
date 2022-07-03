@@ -11,6 +11,7 @@ import com.redis.om.spring.search.stream.actions.ArrayIndexOfAction;
 import com.redis.om.spring.search.stream.actions.ArrayInsertAction;
 import com.redis.om.spring.search.stream.actions.ArrayLengthAction;
 import com.redis.om.spring.search.stream.actions.ArrayPopAction;
+import com.redis.om.spring.search.stream.actions.ArrayTrimAction;
 import com.redis.om.spring.search.stream.predicates.tag.ContainsAllPredicate;
 import com.redis.om.spring.search.stream.predicates.tag.EqualPredicate;
 import com.redis.om.spring.search.stream.predicates.tag.InPredicate;
@@ -80,6 +81,10 @@ public class TagField<E, T> extends MetamodelField<E, T> {
   
   public <R> ArrayPopAction<? super E,R> remove(Long index) {
     return pop(index);
+  }
+
+  public Consumer<? super E> trimToRange(Long begin, Long end) {
+    return new ArrayTrimAction<E>(field, begin, end);
   }
 
 }
