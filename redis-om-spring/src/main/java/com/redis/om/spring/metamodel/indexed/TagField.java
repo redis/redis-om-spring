@@ -7,6 +7,7 @@ import java.util.function.ToLongFunction;
 
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.search.stream.actions.ArrayAppendAction;
+import com.redis.om.spring.search.stream.actions.ArrayIndexOfAction;
 import com.redis.om.spring.search.stream.actions.ArrayInsertAction;
 import com.redis.om.spring.search.stream.actions.ArrayLengthAction;
 import com.redis.om.spring.search.stream.predicates.tag.ContainsAllPredicate;
@@ -56,4 +57,8 @@ public class TagField<E, T> extends MetamodelField<E, T> {
     return new ArrayLengthAction<E>(field);
   }
 
+  public ToLongFunction<? super E> indexOf(Object element) {
+    return new ArrayIndexOfAction<E>(field, element);
+  }
+  
 }

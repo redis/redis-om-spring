@@ -796,6 +796,16 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     assertThat(rolesLengths).containsExactly(3L, 3L, 3L, 3L);
   }
 
+  @Test
+  public void testArrayIndexOfOnSimpleIndexedTagFieldInDocuments() {
+    List<Long> rolesLengths = entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .map(User$.ROLES.indexOf("guru")) //
+        .collect(Collectors.toList());
+    assertThat(rolesLengths).hasSize(1);
+    assertThat(rolesLengths).containsExactly(2L);
+  }
+
   }
 
 }
