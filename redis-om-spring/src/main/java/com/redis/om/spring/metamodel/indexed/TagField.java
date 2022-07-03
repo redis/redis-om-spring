@@ -3,10 +3,12 @@ package com.redis.om.spring.metamodel.indexed;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.function.Consumer;
+import java.util.function.ToLongFunction;
 
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.search.stream.actions.ArrayAppendAction;
 import com.redis.om.spring.search.stream.actions.ArrayInsertAction;
+import com.redis.om.spring.search.stream.actions.ArrayLengthAction;
 import com.redis.om.spring.search.stream.predicates.tag.ContainsAllPredicate;
 import com.redis.om.spring.search.stream.predicates.tag.EqualPredicate;
 import com.redis.om.spring.search.stream.predicates.tag.InPredicate;
@@ -50,4 +52,8 @@ public class TagField<E, T> extends MetamodelField<E, T> {
     return new ArrayInsertAction<E>(field, value, 0L);
   }
   
+  public ToLongFunction<? super E> length() {
+    return new ArrayLengthAction<E>(field);
+  }
+
 }
