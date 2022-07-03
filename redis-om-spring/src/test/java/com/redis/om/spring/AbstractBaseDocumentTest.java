@@ -83,7 +83,5 @@ public abstract class AbstractBaseDocumentTest {
 
       return template;
     }
-    
-    
   }
 }

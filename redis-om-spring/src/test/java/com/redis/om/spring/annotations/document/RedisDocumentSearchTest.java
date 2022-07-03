@@ -33,11 +33,12 @@ import io.redisearch.SearchResult;
 import io.redisearch.aggregation.Row;
 
 public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
-  @Autowired MyDocRepository repository;
+  @Autowired
+  MyDocRepository repository;
 
   @Autowired
   RedisTemplate<String, String> template;
-  
+
   String id1;
   String id2;
 
@@ -51,9 +52,9 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
 
     doc1.setTag(tags);
     doc1 = repository.save(doc1);
-    
+
     id1 = doc1.getId();
-    
+
     MyDoc doc2 = MyDoc.of("hello mundo");
 
     Set<String> tags2 = new HashSet<String>();
@@ -88,21 +89,19 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   /**
-   * > FT.SEARCH idx * RETURN 3 $.tag[0] AS first_tag
-   * 1) (integer) 1
-   * 2) "doc1"
-   * 3) 1) "first_tag"
+   * <pre>
+   * > FT.SEARCH idx * RETURN 3 $.tag[0] AS first_tag 
+   * 1) (integer) 1 
+   * 2) "doc1" 
+   * 3) 1) "first_tag" 
    *    2) "news"
    *
-   * @Query(returnFields = {"$.tag[0]", "AS", "first_tag"})
+   * @Query(returnFields = {"$.tag[0]", "AS", "first_tag"}) 
    * SearchResult getFirstTag();
+   * </pre>
    */
   @Test
   public void testQueryAnnotation01() {
-    /*
-     * @Query("* RETURN 3 $.tag[0] AS first_tag")
-     * SearchResult getFirstTag();
-     */
     SearchResult result = repository.getFirstTag();
     assertEquals(2, result.totalResults);
     Document doc = result.docs.get(0);
@@ -114,11 +113,14 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   /**
+   * <pre>
    * @Query("@title:$title @tag:{$tags}")
    *
-   * > FT.SEARCH idx '@title:hello @tag:{news}'
-   * 1) (integer) 1 2) "doc1" 3) 1) "$"
-   * 2) "{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}"
+   * > FT.SEARCH idx '@title:hello @tag:{news}' 
+   * 1) (integer) 1 2) "doc1" 
+   * 3) 1) "$"
+   *    2) "{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}"
+   * </pre>
    */
   @Test
   public void testQueryAnnotation02() {
@@ -130,12 +132,13 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   /**
+   * <pre>
    * @Aggregation(load = {"$.tag[1]", "AS", "tag2"})
    *
-   * > FT.AGGREGATE idx * LOAD 3 $.tag[1] AS tag2
-   *   1) (integer) 1
-   *   2) 1) "tag2"
-   *      2) "article"
+   * > FT.AGGREGATE idx * LOAD 3 $.tag[1] AS tag2 1) (integer) 1
+   * 2) 1) "tag2" 
+   *    2) "article"
+   * </pre>
    */
   @Test
   public void testAggregationAnnotation01() {
@@ -146,85 +149,98 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
     assertTrue(row.containsKey("tag2"));
     assertEquals("article", row.getString("tag2"));
   }
-  
+
   @Test
   public void testBasicPagination() {
-      Pageable pageRequest = PageRequest.of(0, 1);
+    Pageable pageRequest = PageRequest.of(0, 1);
 
-      Page<MyDoc> result = repository.findAllByTitleStartingWith("hel", pageRequest);
+    Page<MyDoc> result = repository.findAllByTitleStartingWith("hel", pageRequest);
 
-      assertEquals(2, result.getTotalPages());
-      assertEquals(2, result.getTotalElements());
-      assertEquals(1, result.getContent().size());
-      
-      MyDoc doc1 = result.getContent().get(0);
-      assertEquals("hello world", doc1.getTitle());
+    assertEquals(2, result.getTotalPages());
+    assertEquals(2, result.getTotalElements());
+    assertEquals(1, result.getContent().size());
+
+    MyDoc doc1 = result.getContent().get(0);
+    assertEquals("hello world", doc1.getTitle());
   }
-  
+
+  @Test
+  public void testQueryAnnotationWithLimitAndOffset() {
+    Pageable pageRequest = PageRequest.of(0, 1);
+    Page<MyDoc> result = repository.customFindAllByTitleStartingWith("hel", pageRequest);
+
+    assertThat(result).hasSize(1);
+    assertEquals(2, result.getTotalPages());
+    assertEquals(2, result.getTotalElements());
+    assertEquals(1, result.getContent().size());
+
+    MyDoc doc1 = result.getContent().get(0);
+    assertEquals("hello world", doc1.getTitle());
+  }
+
   @Test
   public void testBasicPagination2() {
-      Pageable pageRequest = PageRequest.of(1, 1);
+    Pageable pageRequest = PageRequest.of(1, 1);
 
-      Page<MyDoc> result = repository.findAllByTitleStartingWith("hel", pageRequest);
+    Page<MyDoc> result = repository.findAllByTitleStartingWith("hel", pageRequest);
 
-      assertEquals(2, result.getTotalPages());
-      assertEquals(2, result.getTotalElements());
-      assertEquals(1, result.getContent().size());
-      
-      MyDoc doc1 = result.getContent().get(0);
-      assertEquals("hello mundo", doc1.getTitle());
+    assertEquals(2, result.getTotalPages());
+    assertEquals(2, result.getTotalElements());
+    assertEquals(1, result.getContent().size());
+
+    MyDoc doc1 = result.getContent().get(0);
+    assertEquals("hello mundo", doc1.getTitle());
   }
-  
+
   @Test
   public void testBasicPaginationWithSorting() {
-      Pageable pageRequest = PageRequest.of(0, 2, Sort.by("title")
-          .ascending());
+    Pageable pageRequest = PageRequest.of(0, 2, Sort.by("title").ascending());
 
-      Page<MyDoc> result = repository.findAllByTitleStartingWith("hel", pageRequest);
+    Page<MyDoc> result = repository.findAllByTitleStartingWith("hel", pageRequest);
 
-      assertEquals(1, result.getTotalPages());
-      assertEquals(2, result.getTotalElements());
-      assertEquals(2, result.getContent().size());
-      
-      assertEquals("hello mundo", result.getContent().get(0).getTitle());
-      assertEquals("hello world", result.getContent().get(1).getTitle());
+    assertEquals(1, result.getTotalPages());
+    assertEquals(2, result.getTotalElements());
+    assertEquals(2, result.getContent().size());
+
+    assertEquals("hello mundo", result.getContent().get(0).getTitle());
+    assertEquals("hello world", result.getContent().get(1).getTitle());
   }
-  
+
   @Test
   public void testTagValsQuery() {
-      Iterable<String> values = repository.getAllTags();
-      assertThat(values).hasSize(4).contains("news", "article", "noticias", "articulo");
+    Iterable<String> values = repository.getAllTags();
+    assertThat(values).hasSize(4).contains("news", "article", "noticias", "articulo");
   }
-  
+
   @Test
   public void testGetIds() {
     Iterable<String> ids = repository.getIds();
     assertThat(ids).hasSize(2).contains(id1, id2);
   }
-  
+
   @Test
   public void testGetIdsWithPaging() {
     Pageable pageRequest = PageRequest.of(0, 1);
-    
+
     Page<String> ids = repository.getIds(pageRequest);
     assertThat(ids).hasSize(1);
 
     ids = repository.getIds(pageRequest.next());
     assertThat(ids).hasSize(1);
   }
-  
+
   @Test
   public void testDeleteByIdWithPath() {
     repository.deleteById(id1, Path.of("$.tag"));
-    
+
     Optional<MyDoc> maybeDoc1 = repository.findById(id1);
     assertTrue(maybeDoc1.isPresent());
-    
+
     MyDoc doc1 = maybeDoc1.get();
 
     assertEquals("hello world", doc1.getTitle());
-    
+
     assertThat(doc1.getTag()).isEmpty();
   }
-  
+
 }
