@@ -8,12 +8,12 @@ import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.util.ObjectUtils;
 import com.redislabs.modules.rejson.Path;
 
-public class StrLengthAction<E> implements TakesJSONOperations, ToLongFunction<E> {
+public class ArrayLengthAction<E> implements TakesJSONOperations, ToLongFunction<E> {
 
   private Field field;
   private JSONOperations<String> json;
 
-  public StrLengthAction(Field field) {
+  public ArrayLengthAction(Field field) {
     this.field = field;
   }
 
@@ -23,7 +23,7 @@ public class StrLengthAction<E> implements TakesJSONOperations, ToLongFunction<E
     
     if (maybeId.isPresent()) {
       String key = field.getDeclaringClass().getName() + ":" + maybeId.get().toString();
-      return json.strLen(key, Path.of("." + field.getName()));
+      return json.arrLen(key, Path.of("." + field.getName()));
     } else {
       throw new IllegalArgumentException(value.getClass().getName() + " does not appear to have an ID field");
     }

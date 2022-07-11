@@ -1,9 +1,9 @@
 package com.redis.om.spring.search.stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -20,10 +20,15 @@ import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Metrics;
 import org.springframework.data.geo.Point;
 
+import com.google.common.collect.Sets;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.Company;
 import com.redis.om.spring.annotations.document.fixtures.Company$;
 import com.redis.om.spring.annotations.document.fixtures.CompanyRepository;
+import com.redis.om.spring.annotations.document.fixtures.Employee;
+import com.redis.om.spring.annotations.document.fixtures.User;
+import com.redis.om.spring.annotations.document.fixtures.User$;
+import com.redis.om.spring.annotations.document.fixtures.UserRepository;
 import com.redis.om.spring.tuple.Fields;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.Quad;
@@ -36,14 +41,21 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   CompanyRepository repository;
 
   @Autowired
+  UserRepository userRepository;
+
+  @Autowired
   EntityStream entityStream;
 
   @BeforeEach
   public void cleanUp() {
+    // companies
     repository.deleteAll();
 
     Company redis = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com"));
     redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
+
+    Set<Employee> employees = Sets.newHashSet(Employee.of("Brian Sam-Bodden"), Employee.of("Guy Royse"), Employee.of("Justin Castilla"));
+    redis.setEmployees(employees);
 
     Company microsoft = repository
         .save(Company.of("Microsoft", 1975, new Point(-122.124500, 47.640160), "research@microsoft.com"));
@@ -53,6 +65,15 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     tesla.setTags(Set.of("innovative", "futuristic", "ai"));
 
     repository.saveAll(List.of(redis, microsoft, tesla));
+
+    // users
+    userRepository.deleteAll();
+    List<User> users = List.of(User.of("Steve Lorello"), User.of("Nava Levy"), User.of("Savannah Norem"),
+        User.of("Suze Shardlow"));
+    for (User user : users) {
+      user.setRoles(List.of("devrel", "educator", "guru"));
+    }
+    userRepository.saveAll(users);
   }
 
   @Test
@@ -657,6 +678,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
 
     Optional<Company> maybeMicrosoft = repository.findFirstByEmail("research@microsoft.com");
     assertTrue(maybeMicrosoft.isPresent());
+    assertThat(maybeMicrosoft.get().getName()).isEqualTo("Microsoft Corp");
   }
 
   @Test
@@ -687,7 +709,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
     assertThat(emailLengths).hasSize(3);
     assertThat(emailLengths).containsExactly(15L, 22L, 14L);
   }
-  
+
   @Test
   public void testFindByTagEscapesChars() {
     SearchStream<Company> stream = entityStream.of(Company.class);
@@ -700,6 +722,209 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
 
     List<String> names = companies.stream().map(Company::getName).collect(Collectors.toList());
     assertTrue(names.contains("RedisInc"));
+  }
+
+  @Test
+  public void testArrayAppendToSimpleIndexedTagFieldInDocuments() {
+    entityStream.of(Company.class) //
+        .filter(Company$.NAME.eq("Microsoft")) //
+        .forEach(Company$.TAGS.add("gaming"));
+
+    Optional<Company> maybeMicrosoft = repository.findFirstByEmail("research@microsoft.com");
+    assertTrue(maybeMicrosoft.isPresent());
+    Company microsoft = maybeMicrosoft.get();
+    assertThat(microsoft.getTags()).contains("innovative", "reliable", "os", "ai", "gaming");
+  }
+
+  @Test
+  public void testArrayAppendToComplexIndexedTagFieldInDocuments() {
+    entityStream.of(Company.class) //
+        .filter(Company$.NAME.eq("RedisInc")) //
+        .forEach(Company$.EMPLOYEES.add(Employee.of("Simon Prickett")));
+
+    Optional<Company> maybeRedis = repository.findFirstByEmail("stack@redis.com");
+    assertTrue(maybeRedis.isPresent());
+    Company microsoft = maybeRedis.get();
+
+    List<String> employeeNames = microsoft.getEmployees().stream().map(Employee::getName).collect(Collectors.toList());
+    assertThat(employeeNames).contains("Brian Sam-Bodden", "Guy Royse", "Justin Castilla", "Simon Prickett");
+  }
+
+  @Test
+  public void testArrayInsertToSimpleIndexedTagFieldInDocuments() {
+    entityStream.of(User.class) //
+        .filter(
+            User$.NAME.eq("Steve Lorello")) //
+        .forEach(User$.ROLES.insert("dotnet", 0L));
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    assertThat(steve.getRoles()).containsExactly("dotnet", "devrel", "educator", "guru");
+  }
+
+  @Test
+  public void testArrayPrependToSimpleIndexedTagFieldInDocuments() {
+    entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .forEach(User$.ROLES.prepend("dotnet"));
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    assertThat(steve.getRoles()).containsExactly("dotnet", "devrel", "educator", "guru");
+  }
+
+  @Test
+  public void testArrayInsertToSimpleIndexedTagFieldInDocuments2() {
+    entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .forEach(User$.ROLES.insert("dotnet", 1L));
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    assertThat(steve.getRoles()).containsExactly("devrel", "dotnet", "educator", "guru");
+  }
+
+  @Test
+  public void testArrayLenToSimpleIndexedTagFieldInDocuments() {
+    List<Long> rolesLengths = entityStream.of(User.class) //
+        .map(User$.ROLES.length()) //
+        .collect(Collectors.toList());
+    assertThat(rolesLengths).hasSize(4);
+    assertThat(rolesLengths).containsExactly(3L, 3L, 3L, 3L);
+  }
+
+  @Test
+  public void testArrayIndexOfOnSimpleIndexedTagFieldInDocuments() {
+    List<Long> rolesLengths = entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .map(User$.ROLES.indexOf("guru")) //
+        .collect(Collectors.toList());
+    assertThat(rolesLengths).hasSize(1);
+    assertThat(rolesLengths).containsExactly(2L);
+  }
+
+  @Test
+  public void testArrayPopOnSimpleIndexedTagFieldInDocuments() {
+    List<Object> roles = entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .map(User$.ROLES.pop()) //
+        .collect(Collectors.toList());
+
+    // contains the last
+    assertThat(roles).containsExactly("guru");
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    
+    // the rest remains
+    assertThat(steve.getRoles()).containsExactly("devrel", "educator");
+  }
+  
+  @Test
+  public void testArrayRemoveLastOnSimpleIndexedTagFieldInDocuments() {
+    List<Object> roles = entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .map(User$.ROLES.removeLast()) //
+        .collect(Collectors.toList());
+
+    // contains the last
+    assertThat(roles).containsExactly("guru");
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    
+    // the first remains
+    assertThat(steve.getRoles()).containsExactly("devrel", "educator");
+  }
+  
+  @Test
+  public void testArrayPopFirstOnSimpleIndexedTagFieldInDocuments() {
+    List<Object> roles = entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .map(User$.ROLES.pop(0L)) //
+        .collect(Collectors.toList());
+
+    // contains the last
+    assertThat(roles).containsExactly("devrel");
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    
+    // the rest remains
+    assertThat(steve.getRoles()).containsExactly("educator", "guru");
+  }
+  
+  @Test
+  public void testArrayRemoveFirstOnSimpleIndexedTagFieldInDocuments() {
+    List<Object> roles = entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .map(User$.ROLES.removeFirst()) //
+        .collect(Collectors.toList());
+
+    // contains the first
+    assertThat(roles).containsExactly("devrel");
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    
+    // the rest remains
+    assertThat(steve.getRoles()).containsExactly("educator", "guru");
+  }
+  
+  @Test
+  public void testArrayTrimToRangeOnSimpleIndexedTagFieldInDocuments() {
+    entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .forEach(User$.ROLES.trimToRange(1L, 1L));
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    assertThat(steve.getRoles()).containsExactly("educator");
+  }
+  
+  @Test
+  public void testArrayTrimToRangeOnSimpleIndexedTagFieldInDocuments2() {
+    entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .forEach(User$.ROLES.trimToRange(0L, 0L));
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    assertThat(steve.getRoles()).containsExactly("devrel");
+  }
+  
+  @Test
+  public void testArrayTrimToRangeOnSimpleIndexedTagFieldInDocuments3() {    
+    entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .forEach(User$.ROLES.trimToRange(1L, 2L));
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    assertThat(steve.getRoles()).containsExactly("educator", "guru");
+  }
+  
+  @Test
+  public void testArrayTrimToRangeOnSimpleIndexedTagFieldInDocuments4() {   
+    // "devrel", "educator", "guru"
+    entityStream.of(User.class) //
+        .filter(User$.NAME.eq("Steve Lorello")) //
+        .forEach(User$.ROLES.trimToRange(1L, -1L));
+
+    Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
+    assertTrue(maybeSteve.isPresent());
+    User steve = maybeSteve.get();
+    assertThat(steve.getRoles()).containsExactly("educator", "guru");
   }
 
 }

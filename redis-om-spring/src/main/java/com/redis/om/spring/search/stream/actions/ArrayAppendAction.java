@@ -8,13 +8,13 @@ import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.util.ObjectUtils;
 import com.redislabs.modules.rejson.Path;
 
-public class StringAppendAction<E> implements TakesJSONOperations, Consumer<E> {
+public class ArrayAppendAction<E> implements TakesJSONOperations, Consumer<E> {
   
   private Field field;
   private JSONOperations<String> json;
-  private String value;
+  private Object value;
 
-  public StringAppendAction(Field field, String value) {
+  public ArrayAppendAction(Field field, Object value) {
     this.field = field;
     this.value = value;
   }
@@ -24,7 +24,7 @@ public class StringAppendAction<E> implements TakesJSONOperations, Consumer<E> {
     Optional<?> maybeId = ObjectUtils.getIdFieldForEntity(entity);
     
     if (maybeId.isPresent()) {
-      json.strAppend(entity.getClass().getName() + ":" + maybeId.get().toString(), Path.of("." + field.getName()), value);
+      json.arrAppend(entity.getClass().getName() + ":" + maybeId.get().toString(), Path.of("." + field.getName()), value);
     }
   }
 
