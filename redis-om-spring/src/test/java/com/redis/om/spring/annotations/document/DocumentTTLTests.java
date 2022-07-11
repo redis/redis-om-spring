@@ -15,7 +15,7 @@ import com.redis.om.spring.annotations.document.fixtures.ExpiringPersonRepositor
 import com.redis.om.spring.annotations.document.fixtures.ExpiringPersonWithDefault;
 import com.redis.om.spring.annotations.document.fixtures.ExpiringPersonWithDefaultRepository;
 
-public class TTLTests extends AbstractBaseDocumentTest {
+public class DocumentTTLTests extends AbstractBaseDocumentTest {
   @Autowired
   ExpiringPersonWithDefaultRepository withDefaultrepository;
   
