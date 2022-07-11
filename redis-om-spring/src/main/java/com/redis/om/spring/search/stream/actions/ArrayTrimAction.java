@@ -34,7 +34,11 @@ public class ArrayTrimAction<E> implements TakesJSONOperations, Consumer<E> {
       Optional<Class<?>> maybeClass = ObjectUtils.getCollectionElementType(field);
       if (maybeClass.isPresent()) {
         json.arrTrim(entity.getClass().getName() + ":" + maybeId.get().toString(), Path.of("." + field.getName()), begin, end); 
+      } else {
+        throw new RuntimeException("Cannot determine contain element type for collection " + field.getName());
       }
+    } else {
+      throw new IllegalArgumentException(entity.getClass().getName() + " does not appear to have an ID field");
     }
     
   }

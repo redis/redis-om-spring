@@ -33,8 +33,11 @@ public class ArrayPopAction<E,R> implements TakesJSONOperations, Function<E,R> {
       Optional<Class<?>> maybeClass = ObjectUtils.getCollectionElementType(field);
       if (maybeClass.isPresent()) {
         return (R) json.arrPop(entity.getClass().getName() + ":" + maybeId.get().toString(), maybeClass.get(), Path.of("." + field.getName()), index); 
+      } else {
+        throw new RuntimeException("Cannot determine contain element type for collection " + field.getName());
       }
+    } else {
+      throw new IllegalArgumentException(entity.getClass().getName() + " does not appear to have an ID field");
     }
-    return null;
   }
 }

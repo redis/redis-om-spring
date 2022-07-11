@@ -1,6 +1,7 @@
 package com.redis.om.spring.search.stream.actions;
 
 import java.lang.reflect.Field;
+import java.util.Optional;
 import java.util.function.ToLongFunction;
 
 import com.redis.om.spring.ops.json.JSONOperations;
@@ -18,8 +19,14 @@ public class ArrayLengthAction<E> implements TakesJSONOperations, ToLongFunction
 
   @Override
   public long applyAsLong(E value) {
-    String key = field.getDeclaringClass().getName() + ":" + ObjectUtils.getIdFieldForEntity(value).get().toString();
-    return json.arrLen(key, Path.of("." + field.getName()));
+    Optional<?> maybeId = ObjectUtils.getIdFieldForEntity(value);
+    
+    if (maybeId.isPresent()) {
+      String key = field.getDeclaringClass().getName() + ":" + maybeId.get().toString();
+      return json.arrLen(key, Path.of("." + field.getName()));
+    } else {
+      throw new IllegalArgumentException(value.getClass().getName() + " does not appear to have an ID field");
+    }
   }
   
   @Override
