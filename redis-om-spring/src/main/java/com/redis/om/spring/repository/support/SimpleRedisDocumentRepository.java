@@ -79,4 +79,11 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     return (Iterable<F>) modulesOperations.opsForJSON().mget(Path.of("$." + field.getField().getName()), List.class, keys).stream().flatMap(List::stream).collect(Collectors.toList());
   }
 
+  @Override
+  public Long getExpiration(ID id) {
+    @SuppressWarnings("unchecked")
+    RedisTemplate<String, String> template = (RedisTemplate<String, String>) modulesOperations.getTemplate();
+    return template.getExpire(metadata.getJavaType().getName() + ":" + id.toString());
+  }
+
 }

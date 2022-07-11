@@ -26,4 +26,6 @@ public interface RedisDocumentRepository<T, ID> extends KeyValueRepository<T, ID
   void updateField(T entity, MetamodelField<T, ?> field, Object value);
   
   <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field);
+  
+  Long getExpiration(ID id);
 }
