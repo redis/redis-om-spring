@@ -36,6 +36,8 @@ import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.TimeToLive;
+import org.springframework.data.redis.core.convert.KeyspaceConfiguration.KeyspaceSettings;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.data.util.ClassTypeInformation;
@@ -115,21 +117,19 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
   @Bean(name = "redisJSONKeyValueAdapter")
   RedisJSONKeyValueAdapter getRedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps,
-      JSONOperations<?> redisJSONOperations) {
-    return new RedisJSONKeyValueAdapter(redisOps, redisJSONOperations);
+      JSONOperations<?> redisJSONOperations, RedisMappingContext mappingContext) {
+    return new RedisJSONKeyValueAdapter(redisOps, redisJSONOperations, mappingContext);
   }
 
   @Bean(name = "redisJSONKeyValueTemplate")
   public CustomRedisKeyValueTemplate getRedisJSONKeyValueTemplate(RedisOperations<?, ?> redisOps,
-      JSONOperations<?> redisJSONOperations) {
-    RedisMappingContext mappingContext = new RedisMappingContext();
-    return new CustomRedisKeyValueTemplate(getRedisJSONKeyValueAdapter(redisOps, redisJSONOperations), mappingContext);
+      JSONOperations<?> redisJSONOperations, RedisMappingContext mappingContext) {
+    return new CustomRedisKeyValueTemplate(getRedisJSONKeyValueAdapter(redisOps, redisJSONOperations, mappingContext), mappingContext);
   }
 
   @Bean(name = "redisCustomKeyValueTemplate")
   public CustomRedisKeyValueTemplate getKeyValueTemplate(RedisOperations<?, ?> redisOps,
-      JSONOperations<?> redisJSONOperations) {
-    RedisMappingContext mappingContext = new RedisMappingContext();
+      JSONOperations<?> redisJSONOperations, RedisMappingContext mappingContext) {
     return new CustomRedisKeyValueTemplate(new RedisEnhancedKeyValueAdapter(redisOps), mappingContext);
   }
 
@@ -180,6 +180,8 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     RedisModulesOperations<String> rmo = (RedisModulesOperations<String>) ac
         .getBean("redisModulesOperations");
 
+    RedisMappingContext mappingContext = (RedisMappingContext)ac.getBean("keyValueMappingContext");
+
     Set<BeanDefinition> beanDefs = new HashSet<BeanDefinition>();
     beanDefs.addAll(getBeanDefinitionsFor(ac, cls));
 
@@ -214,7 +216,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
           IndexDefinition index = new IndexDefinition(
               cls == Document.class ? IndexDefinition.Type.JSON : IndexDefinition.Type.HASH);
-          
+
           String entityPrefix = cl.getName() + ":";
 
           if (cl.isAnnotationPresent(Document.class)) {
@@ -246,6 +248,27 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
           index.setPrefixes(entityPrefix);
           IndexOptions ops = Client.IndexOptions.defaultOptions().setDefinition(index);
           opsForSearch.createIndex(schema, ops);
+        }
+
+
+        // TTL
+        if (cl.isAnnotationPresent(Document.class)) {
+          KeyspaceSettings setting = new KeyspaceSettings(cl, cl.getName() + ":");
+          
+          // Default TTL
+          Document document = (Document) cl.getAnnotation(Document.class);
+          if (document.timeToLive() > 0) {
+            setting.setTimeToLive(document.timeToLive());
+          }
+          
+          for (java.lang.reflect.Field field : cl.getDeclaredFields()) {
+            // @TimeToLive
+            if (field.isAnnotationPresent(TimeToLive.class)) {
+              setting.setTimeToLivePropertyName(field.getName());
+            }
+          }
+          
+          mappingContext.getMappingConfiguration().getKeyspaceConfiguration().addKeyspaceSettings(setting);
         }
       } catch (Exception e) {
         logger.warn(String.format("Skipping index creation for %s because %s", indexName, e.getMessage()));
