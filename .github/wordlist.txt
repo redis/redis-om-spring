@@ -21,3 +21,4 @@ YAML
 JSON
 runtime
 Redis
+redis
