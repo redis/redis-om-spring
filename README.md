@@ -52,7 +52,7 @@ Redis OM Spring provides powerful repository and custom object-mapping abstracti
 This **preview** release provides all of SDRs capabilities plus:
 
 * `@Document` annotation to map Spring Data models to Redis JSON documents
-* Enhances SDR's `@RedisHash` via `@EnableRedisEnhancedRepositories` to:
+* Enhances SDRs `@RedisHash` via `@EnableRedisEnhancedRepositories` to:
   - uses Redis' native search engine (RediSearch) for secondary indexing
   - uses [ULID](https://github.com/ulid/spec) for `@Id` annotated fields
 * `RedisDocumentRepository` with automatic implementation of Repository interfaces for complex querying capabilities using `@EnableRedisDocumentRepositories`
@@ -175,9 +175,9 @@ Redis OM Spring, replaces the conventional `UUID` primary key strategy generatio
 ### 🧰 The Repository
 
 Redis OM Spring data repository's goal, like other Spring Data repositories, is to significantly reduce the amount of boilerplate code required to implement data access. Simply create a Java interface
-that extends `RedisDocumentRepository` that takes the domain class to manage as well as the ID type of the domain class as type arguments. `RedisDocumentRepository` extends Spring Data's `PagingAndSortingRepository`.
+that extends `RedisDocumentRepository` that takes the domain class to manage as well as the ID type of the domain class as type arguments. `RedisDocumentRepository` extends the Spring Data class `PagingAndSortingRepository`.
 
-Declare query methods on the interface. You can both, expose CRUD methods or create declarations for complex queries that Redis OM Spring will fullfil at runtime:
+Declare query methods on the interface. You can both, expose CRUD methods or create declarations for complex queries that Redis OM Spring will fulfill at runtime:
 
 ```java
 package com.redis.om.documents.repositories;
@@ -221,7 +221,7 @@ The repository proxy has two ways to derive a store-specific query from the meth
 
 ### 🚤 Querying with Entity Streams
 
-Redis OM Spring Entity Streams provides a Java 8 Streams interface to Query Redis JSON documents using RediSearch. Entity Streams allow you to process data in a typesafe declarative way similar to SQL statements. Streams can be used to express a query as a chain of operations.
+Redis OM Spring Entity Streams provides a Java 8 Streams interface to Query Redis JSON documents using RediSearch. Entity Streams allow you to process data in a type safe declarative way similar to SQL statements. Streams can be used to express a query as a chain of operations.
 
 Entity Streams in Redis OM Spring provide the same semantics as Java 8 streams. Streams can be made of Redis Mapped entities (`@Document`) or one or more properties of an Entity. Entity Streams progressively build the query until a terminal operation is invoked (such as `collect`). Whenever a Terminal operation is applied to a Stream, the Stream cannot accept additional operations to its pipeline and it also means that the Stream is started.
 

@@ -25,3 +25,6 @@ tmp/
 **/.DS_Store
 redis-om-spring/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst
 redis-om-spring/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst
+
+# spelling
+*.dic
