@@ -1,6 +1,7 @@
 package com.redis.om.spring;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -9,6 +10,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
@@ -20,10 +22,15 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisKeyValueAdapter;
 import org.springframework.data.redis.core.RedisOperations;
+import org.springframework.data.redis.core.TimeToLive;
+import org.springframework.data.redis.core.convert.KeyspaceConfiguration;
 import org.springframework.data.redis.core.convert.RedisCustomConversions;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.lang.Nullable;
+import org.springframework.util.ReflectionUtils;
+import org.springframework.util.StringUtils;
 
+import com.google.common.base.Optional;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.util.ObjectUtils;
 
@@ -31,19 +38,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private static final Log logger = LogFactory.getLog(RedisJSONKeyValueAdapter.class);
   private JSONOperations<?> redisJSONOperations;
   private RedisOperations<?, ?> redisOperations;
-
-  /**
-   * Creates new {@link RedisKeyValueAdapter} with default
-   * {@link RedisMappingContext} and default {@link RedisCustomConversions}.
-   *
-   * @param redisOps must not be {@literal null}.
-   * @param redisJSONOperations must not be {@literal null}.
-   */
-  public RedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps, JSONOperations<?> redisJSONOperations) {
-    super(redisOps, new RedisMappingContext());
-    this.redisJSONOperations = redisJSONOperations;
-    this.redisOperations = redisOps;
-  }
+  private RedisMappingContext mappingContext;
 
   /**
    * Creates new {@link RedisKeyValueAdapter} with default
@@ -58,6 +53,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     super(redisOps, mappingContext, new RedisCustomConversions());
     this.redisJSONOperations = redisJSONOperations;
     this.redisOperations = redisOps;
+    this.mappingContext = mappingContext;
   }
 
   /* (non-Javadoc)
@@ -74,10 +70,15 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     String key = getKey(keyspace, id);
 
     processAuditAnnotations(key, item);
+    Optional<Long> maybeTtl = getTTLForEntity(item);
 
     ops.set(key, item);
 
     redisOperations.execute((RedisCallback<Object>) connection -> {
+      
+      if (maybeTtl.isPresent()) {
+        connection.expire(toBytes(key), maybeTtl.get());
+      }
       connection.sAdd(toBytes(keyspace), toBytes(id));
       return null;
     });
@@ -183,5 +184,37 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
 
   protected String getKey(String keyspace, Object id) {
     return String.format("%s:%s", keyspace, id);
+  }
+  
+  private Optional<Long> getTTLForEntity(Object entity) {
+    KeyspaceConfiguration keyspaceConfig = mappingContext.getMappingConfiguration().getKeyspaceConfiguration();
+    if (keyspaceConfig.hasSettingsFor(entity.getClass())) {
+      var settings = keyspaceConfig.getKeyspaceSettings(entity.getClass());
+      
+      if (StringUtils.hasText(settings.getTimeToLivePropertyName())) {
+        Method ttlGetter;
+        try {
+          Field fld = ReflectionUtils.findField(entity.getClass(), settings.getTimeToLivePropertyName());
+          ttlGetter = ObjectUtils.getGetterForField(entity.getClass(), fld);
+          Long ttlPropertyValue = ((Number)ReflectionUtils.invokeMethod(ttlGetter, entity)).longValue();
+          
+          ReflectionUtils.invokeMethod(ttlGetter, entity);
+          
+          if (ttlPropertyValue != null) {
+            TimeToLive ttl = (TimeToLive) fld.getAnnotation(TimeToLive.class);
+            if (!ttl.unit().equals(TimeUnit.SECONDS)) {
+              return Optional.of(TimeUnit.SECONDS.convert(ttlPropertyValue, ttl.unit()));
+            } else {
+              return Optional.of(ttlPropertyValue);
+            }
+          } 
+        } catch (SecurityException | IllegalArgumentException e) {
+          return Optional.absent();
+        }
+      } else if (settings != null && settings.getTimeToLive() != null && settings.getTimeToLive() > 0) {
+        return Optional.of(settings.getTimeToLive());
+      } 
+    }
+    return Optional.absent();
   }
 }

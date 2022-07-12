@@ -27,4 +27,11 @@ public @interface Document {
   String languageField() default "";
   String language() default "";
   double score() default 1.0; 
+  
+  /**
+   * Time before expire in seconds. Superseded by {@link TimeToLive}.
+   *
+   * @return positive number when expiration should be applied.
+   */
+  long timeToLive() default -1L;
 }
