@@ -18,3 +18,6 @@ SpringBoot
 ULID
 wjso
 YAML
+JSON
+runtime
+Redis
