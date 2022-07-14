@@ -159,13 +159,14 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   @Override
   public Object put(Object id, Object item, String keyspace) {
 
-    if (!(item instanceof RedisData)) {
+    RedisData rdo;
+    if (item instanceof RedisData) {
+      rdo = (RedisData)item; 
+    } else {
       byte[] redisKey = createKey(keyspace, converter.getConversionService().convert(id, String.class));
       processAuditAnnotations(redisKey, item);
-    }
 
-    RedisData rdo = item instanceof RedisData ? (RedisData) item : new RedisData();
-    if (!(item instanceof RedisData)) {
+      rdo = new RedisData();
       converter.write(item, rdo);
     }
 
@@ -181,14 +182,17 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       rdo.setId(converter.getConversionService().convert(id, String.class));
     }
 
-    redisOperations.execute((RedisCallback<Object>) connection -> {
+    byte[] objectKey = createKey(rdo.getKeyspace(), rdo.getId());
+    boolean isNew = redisOperations.execute((RedisCallback<Boolean>) connection -> {
+      return connection.del(objectKey) == 0;
+    });
+    
+    redisOperations.executePipelined((RedisCallback<Object>) connection -> {
 
       byte[] key = toBytes(rdo.getId());
-      byte[] objectKey = createKey(rdo.getKeyspace(), rdo.getId());
 
-      boolean isNew = connection.del(objectKey) == 0;
-
-      connection.hMSet(objectKey, rdo.getBucket().rawMap());
+      Map<byte[], byte[]> rawMap = rdo.getBucket().rawMap();
+      connection.hMSet(objectKey, rawMap);
 
       if (isNew) {
         connection.sAdd(toBytes(rdo.getKeyspace()), key);
@@ -205,7 +209,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
         if (expires(rdo)) {
 
           connection.del(phantomKey);
-          connection.hMSet(phantomKey, rdo.getBucket().rawMap());
+          connection.hMSet(phantomKey, rawMap);
           connection.expire(phantomKey, rdo.getTimeToLive() + PHANTOM_KEY_TTL);
         } else if (!isNew) {
           connection.del(phantomKey);
