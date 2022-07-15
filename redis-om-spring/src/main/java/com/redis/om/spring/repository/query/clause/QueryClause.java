@@ -140,7 +140,11 @@ public enum QueryClause {
 
             prepared = prepared.replace("$param_" + i++, value);
           } else {
-            prepared = prepared.replace("$param_" + i++, QueryUtils.escapeTagField(param.toString()));
+            if (value.getIndexType() == FieldType.FullText) {
+              prepared = prepared.replace("$param_" + i++, param.toString());
+            } else {
+              prepared = prepared.replace("$param_" + i++, QueryUtils.escapeTagField(param.toString()));
+            }
           }
           break;
       }
