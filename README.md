@@ -311,6 +311,31 @@ and
 
 **Ready to learn more?** Check out the [getting started](docs/getting_started.md) guide.
 
+## 🐘 Gradle configuration
+
+### Add Repository - Snapshots Only
+
+```groovy
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+    }
+}
+```
+
+### Dependency
+```groovy
+ext {
+  redisOmVersion = '0.5.2-SNAPSHOT'
+}
+
+dependencies {
+    implementation: "com.redis.om:redis-om-spring:$redisOmVersion"
+    }
+}
+```
+
 ## 📚 Documentation
 
 The Redis OM documentation is available [here](docs/index.md).
