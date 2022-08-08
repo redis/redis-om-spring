@@ -31,6 +31,15 @@ public class CustomRedisKeyValueTemplate extends KeyValueTemplate {
   public RedisConverter getConverter() {
     return adapter.getConverter();
   }
+  
+  /**
+   * Obtain the underlying redis specific
+   * {@link org.springframework.data.redis.core.RedisKeyValueAdapter}.
+   * @return the KeyValueAdapter
+   */
+  public RedisKeyValueAdapter getAdapter() {
+    return adapter;
+  }
 
   /* (non-Javadoc)
    * 
