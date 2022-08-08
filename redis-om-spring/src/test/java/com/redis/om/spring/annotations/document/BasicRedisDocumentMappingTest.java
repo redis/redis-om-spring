@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -40,8 +42,10 @@ public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
 
   @Test
   public void testBasicCrudOperations() {
-    Company redis = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com"));
-    Company microsoft = repository.save(Company.of("Microsoft", 1975, new Point(-122.124500, 47.640160), "research@microsoft.com"));
+    Company redis = repository.save(
+        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company microsoft = repository.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
+        new Point(-122.124500, 47.640160), "research@microsoft.com"));
 
     assertEquals(2, repository.count());
 
@@ -67,8 +71,10 @@ public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   
   @Test
   public void testFindAllById() {
-    Company redis = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com"));
-    Company microsoft = repository.save(Company.of("Microsoft", 1975, new Point(-122.124500, 47.640160), "research@microsoft.com"));
+    Company redis = repository.save(
+        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company microsoft = repository.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
+        new Point(-122.124500, 47.640160), "research@microsoft.com"));
 
     assertEquals(2, repository.count());
 
@@ -80,7 +86,8 @@ public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   
   @Test
   public void testUpdateSingleField() {
-    Company redisInc = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company redisInc = repository.save(
+        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
     repository.updateField(redisInc, Company$.NAME, "Redis");
     
     Optional<Company> maybeRedis = repository.findById(redisInc.getId());
@@ -92,9 +99,11 @@ public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   
   @Test
   public void testAuditAnnotations() {
-    Company redis = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com"));
-    Company microsoft = repository.save(Company.of("Microsoft", 1975, new Point(-122.124500, 47.640160), "research@microsoft.com"));
-    
+    Company redis = repository.save(
+        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company microsoft = repository.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
+        new Point(-122.124500, 47.640160), "research@microsoft.com"));
+
     // created dates should not be null
     assertNotNull(redis.getCreatedDate());
     assertNotNull(microsoft.getCreatedDate());
@@ -113,8 +122,10 @@ public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   
   @Test
   public void testGetFieldsByIds() {
-    Company redis = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com"));
-    Company microsoft = repository.save(Company.of("Microsoft", 1975, new Point(-122.124500, 47.640160), "research@microsoft.com"));
+    Company redis = repository.save(
+        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company microsoft = repository.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
+        new Point(-122.124500, 47.640160), "research@microsoft.com"));
 
     Iterable<String> ids = List.of(redis.getId(), microsoft.getId());
     Iterable<String> companyNames = repository.getFieldsByIds(ids, Company$.NAME);
@@ -123,8 +134,10 @@ public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   
   @Test
   public void testDynamicBloomRepositoryMethod() {
-    Company redis = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com"));
-    Company microsoft = repository.save(Company.of("Microsoft", 1975, new Point(-122.124500, 47.640160), "research@microsoft.com"));
+    Company redis = repository.save(
+        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company microsoft = repository.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
+        new Point(-122.124500, 47.640160), "research@microsoft.com"));
 
     assertTrue(repository.existsByEmail(redis.getEmail()));
     assertTrue(repository.existsByEmail(microsoft.getEmail()));
@@ -133,13 +146,19 @@ public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
 
   @Test
   public void testGetNestedFields() {
-    Set<Employee> employees = Sets.newHashSet(Employee.of("Jackey"), Employee.of("Love"));
-    Company redisInc = Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com");
-    redisInc.setEmployees(employees);
-    repository.save(redisInc);
+    Set<Employee> redisEmployees = Sets.newHashSet(Employee.of("Guy Royse"), Employee.of("Simon Prickett"));
+    Company redisInc = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "stack@redis.com");
+    redisInc.setEmployees(redisEmployees);
 
-    List<Company> jackey = repository.findByEmployees_name("Jackey");
-    assertNotNull(jackey.get(0).getEmployees());
+    Set<Employee> msEmployees = Sets.newHashSet(Employee.of("Kevin Scott"));
+    Company microsoft = repository.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
+        new Point(-122.124500, 47.640160), "research@microsoft.com"));
+    microsoft.setEmployees(msEmployees);
+    repository.saveAll(List.of(redisInc, microsoft));
+
+    List<Company> companies = repository.findByEmployees_name("Guy Royse");
+    assertThat(companies).containsExactly(redisInc);
   }
   
   @Test
@@ -175,8 +194,10 @@ public class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   
   @Test
   public void testTagEscapeChars() {
-    Company redis = repository.save(Company.of("RedisInc", 2011, new Point(-122.066540, 37.377690), "stack@redis.com"));
-    Company microsoft = repository.save(Company.of("Microsoft", 1975, new Point(-122.124500, 47.640160), "research@microsoft.com"));
+    Company redis = repository.save(
+        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company microsoft = repository.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
+        new Point(-122.124500, 47.640160), "research@microsoft.com"));
 
     assertEquals(2, repository.count());
 
