@@ -110,6 +110,22 @@ public class AutoCompleteTest extends AbstractBaseDocumentTest {
     long sugCountAfter = ops.getSuggestionLength();
     assertTrue(sugCountAfter == sugCountBefore - 3);
   }
+  
+  @Test
+  public void deleteAllEntitiesByCollectionShouldDeleteSuggestions() {
+    String key = String.format("sugg:%s:%s", Airport.class.getSimpleName(), "name");
+    SearchOperations<String> ops = modulesOperations.opsForSearch(key);
+    long sugCountBefore = ops.getSuggestionLength();
+
+    Pageable pageRequest = PageRequest.of(0, 3);
+    List<String> ids = repository.getIds(pageRequest).getContent();
+    assertThat(ids).hasSize(3);
+    Iterable<Airport> airportsToDelete = repository.findAllById(ids);
+    repository.deleteAll(airportsToDelete);
+
+    long sugCountAfter = ops.getSuggestionLength();
+    assertTrue(sugCountAfter == sugCountBefore - 3);
+  }
 
   @Test
   public void testGetAutocompleteSuggestions() {
