@@ -44,8 +44,8 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    * Creates new {@link RedisKeyValueAdapter} with default
    * {@link RedisCustomConversions}.
    *
-   * @param redisOps       must not be {@literal null}.
-   * @param mappingContext must not be {@literal null}.
+   * @param redisOps            must not be {@literal null}.
+   * @param mappingContext      must not be {@literal null}.
    * @param redisJSONOperations must not be {@literal null}.
    */
   public RedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps, JSONOperations<?> redisJSONOperations,
@@ -75,7 +75,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     ops.set(key, item);
 
     redisOperations.execute((RedisCallback<Object>) connection -> {
-      
+
       if (maybeTtl.isPresent()) {
         connection.expire(toBytes(key), maybeTtl.get());
       }
@@ -94,10 +94,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   @Nullable
   @Override
   public <T> T get(Object id, String keyspace, Class<T> type) {
-    logger.debug(String.format("%s, %s, %s", id, keyspace, type));
-    @SuppressWarnings("unchecked")
-    JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
-    return ops.get(getKey(keyspace, id), type);
+    return get(getKey(keyspace, id), type);
   }
 
   @Nullable
@@ -185,21 +182,21 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   protected String getKey(String keyspace, Object id) {
     return String.format("%s:%s", keyspace, id);
   }
-  
+
   private Optional<Long> getTTLForEntity(Object entity) {
     KeyspaceConfiguration keyspaceConfig = mappingContext.getMappingConfiguration().getKeyspaceConfiguration();
     if (keyspaceConfig.hasSettingsFor(entity.getClass())) {
       var settings = keyspaceConfig.getKeyspaceSettings(entity.getClass());
-      
+
       if (StringUtils.hasText(settings.getTimeToLivePropertyName())) {
         Method ttlGetter;
         try {
           Field fld = ReflectionUtils.findField(entity.getClass(), settings.getTimeToLivePropertyName());
           ttlGetter = ObjectUtils.getGetterForField(entity.getClass(), fld);
-          Long ttlPropertyValue = ((Number)ReflectionUtils.invokeMethod(ttlGetter, entity)).longValue();
-          
+          Long ttlPropertyValue = ((Number) ReflectionUtils.invokeMethod(ttlGetter, entity)).longValue();
+
           ReflectionUtils.invokeMethod(ttlGetter, entity);
-          
+
           if (ttlPropertyValue != null) {
             TimeToLive ttl = (TimeToLive) fld.getAnnotation(TimeToLive.class);
             if (!ttl.unit().equals(TimeUnit.SECONDS)) {
@@ -207,13 +204,13 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
             } else {
               return Optional.of(ttlPropertyValue);
             }
-          } 
+          }
         } catch (SecurityException | IllegalArgumentException e) {
           return Optional.absent();
         }
       } else if (settings != null && settings.getTimeToLive() != null && settings.getTimeToLive() > 0) {
         return Optional.of(settings.getTimeToLive());
-      } 
+      }
     }
     return Optional.absent();
   }
