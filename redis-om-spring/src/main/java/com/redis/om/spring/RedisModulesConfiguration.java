@@ -115,6 +115,11 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     return template;
   }
 
+  @Bean(name = "keyspaceToIndexMap")
+  public KeyspaceToIndexMap keyspaceToIndexMap(){
+      return new KeyspaceToIndexMap();
+  }
+
   @Bean(name = "redisJSONKeyValueAdapter")
   RedisJSONKeyValueAdapter getRedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps,
       JSONOperations<?> redisJSONOperations, RedisMappingContext mappingContext) {
@@ -181,6 +186,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
         .getBean("redisModulesOperations");
 
     RedisMappingContext mappingContext = (RedisMappingContext)ac.getBean("keyValueMappingContext");
+    KeyspaceToIndexMap keyspaceToIndexMap = (KeyspaceToIndexMap) ac.getBean("keyspaceToIndexMap");
 
     Set<BeanDefinition> beanDefs = new HashSet<BeanDefinition>();
     beanDefs.addAll(getBeanDefinitionsFor(ac, cls));
@@ -206,6 +212,8 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
             scoreField = fieldPrefix + field.getName();
           }
         }
+        
+        String entityPrefix = cl.getName() + ":";
 
         if (!fields.isEmpty()) {
           Schema schema = new Schema();
@@ -216,8 +224,6 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
           IndexDefinition index = new IndexDefinition(
               cls == Document.class ? IndexDefinition.Type.JSON : IndexDefinition.Type.HASH);
-
-          String entityPrefix = cl.getName() + ":";
 
           if (cl.isAnnotationPresent(Document.class)) {
             Document document = (Document) cl.getAnnotation(Document.class);
@@ -248,6 +254,9 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
           index.setPrefixes(entityPrefix);
           IndexOptions ops = Client.IndexOptions.defaultOptions().setDefinition(index);
           opsForSearch.createIndex(schema, ops);
+          keyspaceToIndexMap.addKeySpaceMapping(entityPrefix, cl, true);
+        } else {
+          keyspaceToIndexMap.addKeySpaceMapping(entityPrefix, cl, false);
         }
 
 
