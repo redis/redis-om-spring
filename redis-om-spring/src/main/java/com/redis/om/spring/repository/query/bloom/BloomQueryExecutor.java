@@ -41,9 +41,7 @@ public class BloomQueryExecutor {
           return Optional.of(!org.apache.commons.lang3.ObjectUtils.isEmpty(bloom.name()) ? bloom.name()
               : String.format("bf:%s:%s", entityClass.getSimpleName(), field.getName()));
         }
-      } catch (NoSuchFieldException e) {
-        // NO-OP
-      } catch (SecurityException e) {
+      } catch (NoSuchFieldException | SecurityException e) {
         // NO-OP
       }
     }
