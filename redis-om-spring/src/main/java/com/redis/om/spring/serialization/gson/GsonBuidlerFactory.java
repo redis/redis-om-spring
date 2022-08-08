@@ -6,6 +6,7 @@ import java.util.Date;
 
 import org.springframework.data.geo.Point;
 
+import com.github.f4b6a3.ulid.Ulid;
 import com.google.gson.GsonBuilder;
 
 public class GsonBuidlerFactory {
@@ -15,6 +16,7 @@ public class GsonBuidlerFactory {
     builder.registerTypeAdapter(Date.class, DateTypeAdapter.getInstance());
     builder.registerTypeAdapter(LocalDate.class, LocalDateTypeAdapter.getInstance());
     builder.registerTypeAdapter(LocalDateTime.class, LocalDateTimeTypeAdapter.getInstance());
+    builder.registerTypeAdapter(Ulid.class, UlidTypeAdapter.getInstance());
   }
   
   public static GsonBuilder getBuilder() {

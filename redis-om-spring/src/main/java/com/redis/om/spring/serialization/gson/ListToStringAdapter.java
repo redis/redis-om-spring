@@ -1,7 +1,7 @@
 package com.redis.om.spring.serialization.gson;
 
 import java.io.IOException;
-import java.util.Set;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import com.google.gson.TypeAdapter;
@@ -10,10 +10,10 @@ import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 
 @SuppressWarnings("rawtypes")
-public class SetToStringAdapter extends TypeAdapter<Set<?>> {
+public class ListToStringAdapter extends TypeAdapter<List<?>> {
 
   @Override
-  public void write(JsonWriter writer, Set<?> value) throws IOException {
+  public void write(JsonWriter writer, List<?> value) throws IOException {
     if (value == null || value.isEmpty()) {
       writer.nullValue();
       return;
@@ -22,14 +22,14 @@ public class SetToStringAdapter extends TypeAdapter<Set<?>> {
   }
 
   @Override
-  public Set read(JsonReader reader) throws IOException {
+  public List read(JsonReader reader) throws IOException {
     if (reader.peek() == JsonToken.NULL) {
       reader.nextNull();
       return null;
     }
     String csv = reader.nextString();
     String[] parts = csv.split(",");
-    return Set.of(parts);
+    return List.of(parts);
   }
 
 }
