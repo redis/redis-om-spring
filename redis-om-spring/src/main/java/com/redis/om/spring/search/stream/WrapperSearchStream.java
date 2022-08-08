@@ -28,8 +28,7 @@ import io.redisearch.aggregation.SortedField.SortOrder;
 public class WrapperSearchStream<E> implements SearchStream<E> {
 
   private Stream<E> backingStream = Stream.empty();
-
-  public WrapperSearchStream() {}
+  private Runnable closeHandler;
 
   public WrapperSearchStream(Stream<E> backingStream) {
     this.backingStream = backingStream;
@@ -67,13 +66,18 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
 
   @Override
   public SearchStream<E> onClose(Runnable closeHandler) {
-    backingStream.onClose(closeHandler);
+    this.closeHandler = closeHandler;
     return this;
   }
 
   @Override
   public void close() {
-    backingStream.close();
+    if (closeHandler == null) {
+      backingStream.close();
+    } else {
+      backingStream.onClose(closeHandler);
+      backingStream.close();
+    }
   }
 
   @Override
@@ -110,12 +114,8 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
   }
 
   @Override
-  public <R> SearchStream<R> flatMap(Function<? super E, ? extends SearchStream<? extends R>> mapper) {
-    // TODO: need to test this cast!
-//    @SuppressWarnings("unchecked")
-//    Function<? super E, ? extends Stream<? extends R>> casted = (Function<? super E, ? extends Stream<? extends R>>) mapper;
-//    return new WrapperSearchStream<R>(backingStream.flatMap(casted));
-    return null;
+  public <R> SearchStream<R> flatMap(Function<? super E, ? extends Stream<? extends R>> mapper) {
+    return new WrapperSearchStream<R>(backingStream.flatMap(mapper));
   }
 
   @Override
@@ -131,16 +131,6 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
   @Override
   public DoubleStream flatMapToDouble(Function<? super E, ? extends DoubleStream> mapper) {
     return backingStream.flatMapToDouble(mapper);
-  }
-
-  @Override
-  public SearchStream<E> distinct() {
-    return new WrapperSearchStream<E>(backingStream.distinct());
-  }
-
-  @Override
-  public SearchStream<E> sorted() {
-    return new WrapperSearchStream<E>(backingStream.sorted());
   }
 
   @Override

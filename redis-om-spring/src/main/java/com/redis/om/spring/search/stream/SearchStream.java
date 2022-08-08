@@ -31,6 +31,7 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
   SearchStream<E> filter(Predicate<?> predicate);
 
   <R> SearchStream<R> map(Function<? super E, ? extends R> field);
+  
   Stream<Long> map(ToLongFunction<? super E> mapper);
 
   IntStream mapToInt(ToIntFunction<? super E> mapper);
@@ -39,17 +40,13 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
 
   DoubleStream mapToDouble(ToDoubleFunction<? super E> mapper);
 
-  <R> SearchStream<R> flatMap(Function<? super E, ? extends SearchStream<? extends R>> mapper);
+  <R> SearchStream<R> flatMap(Function<? super E, ? extends Stream<? extends R>> mapper);
 
   IntStream flatMapToInt(Function<? super E, ? extends IntStream> mapper);
 
   LongStream flatMapToLong(Function<? super E, ? extends LongStream> mapper);
 
   DoubleStream flatMapToDouble(Function<? super E, ? extends DoubleStream> mapper);
-
-  SearchStream<E> distinct();
-
-  SearchStream<E> sorted();
 
   SearchStream<E> sorted(Comparator<? super E> comparator);
 
