@@ -1,19 +1,50 @@
 package com.redis.om.spring.id;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.math.BigInteger;
+import java.util.Date;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.data.util.ClassTypeInformation;
 
 import com.github.f4b6a3.ulid.Ulid;
+import com.google.gson.JsonObject;
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.annotations.document.fixtures.BadDoc;
+import com.redis.om.spring.annotations.document.fixtures.BadDocRepository;
+import com.redis.om.spring.annotations.document.fixtures.DocWithExplicitUlidId;
+import com.redis.om.spring.annotations.document.fixtures.DocWithExplicitUlidIdRepository;
+import com.redis.om.spring.annotations.document.fixtures.DocWithIntegerId;
+import com.redis.om.spring.annotations.document.fixtures.DocWithIntegerIdRepository;
 import com.redis.om.spring.annotations.hash.fixtures.Person;
 import com.redis.om.spring.annotations.hash.fixtures.PersonRepository;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.json.JSONOperations;
 
 public class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
+  
+  private ULIDIdentifierGenerator generator = ULIDIdentifierGenerator.INSTANCE;
 
   @Autowired
   PersonRepository repository;
+  
+  @Autowired
+  BadDocRepository badDocRepo;
+  
+  @Autowired
+  DocWithExplicitUlidIdRepository docWithUlidRepo;
+  
+  @Autowired
+  DocWithIntegerIdRepository docWithIntRepo;
+  
+  @Autowired
+  RedisModulesOperations<String> modulesOperations;
   
   @Test
   public void testMonotonicallyIncreasingUlidAssignment() {
@@ -25,6 +56,57 @@ public class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
     Ulid oferUlid = Ulid.from(oferId);
     Ulid yiftachUlid = Ulid.from(yiftachId);
     assertTrue(oferUlid.getInstant().isBefore(yiftachUlid.getInstant()));
+  }
+  
+  @Test
+  public void testUnsupportedIdTypesThrowException() {
+    BadDoc badDoc = new BadDoc();
+    InvalidDataAccessApiUsageException exception = Assertions.assertThrows(InvalidDataAccessApiUsageException.class, () -> {
+      badDocRepo.save(badDoc);
+    });
+
+    String expectedErrorMessage = String.format("Identifier cannot be generated for %s. Supported types are: ULID, String, Integer, and Long.", BigInteger.class.getName());
+    Assertions.assertEquals(expectedErrorMessage, exception.getMessage());
+  }
+  
+  @Test
+  public void testExplicitUlid() {
+    JSONOperations<String> ops = modulesOperations.opsForJSON();
+    
+    DocWithExplicitUlidId ulidDoc = new DocWithExplicitUlidId();
+    Ulid generatedId = docWithUlidRepo.save(ulidDoc).getId();
+    
+    JsonObject rawJSON = ops.get(DocWithExplicitUlidId.class.getName() + ":" + generatedId.toString(), JsonObject.class);
+    String ulidAsString = rawJSON.get("id").getAsString();
+    Ulid ulidFromRawJSON = Ulid.from(ulidAsString);
+    
+    assertThat(ulidFromRawJSON).isEqualByComparingTo(generatedId);
+  }
+  
+  @Test
+  void shouldThrowExceptionForUnsupportedType() {
+    assertThatExceptionOfType(InvalidDataAccessApiUsageException.class)
+        .isThrownBy(() -> generator.generateIdentifierOfType(ClassTypeInformation.from(Date.class)));
+  }
+
+  @Test
+  void shouldGenerateUlidValueCorrectly() {
+
+    Object value = generator.generateIdentifierOfType(ClassTypeInformation.from(Ulid.class));
+
+    assertThat(value).isNotNull().isInstanceOf(Ulid.class);
+  }
+  
+  @Test
+  public void testIntegerId() {
+    JSONOperations<String> ops = modulesOperations.opsForJSON();
+    
+    DocWithIntegerId intDoc = new DocWithIntegerId();
+    Integer generatedId = docWithIntRepo.save(intDoc).getId();
+    
+    JsonObject rawJSON = ops.get(DocWithIntegerId.class.getName() + ":" + generatedId.toString(), JsonObject.class);
+    
+    assertThat(rawJSON.get("id").getAsInt()).isEqualByComparingTo(generatedId);
   }
 
 }
