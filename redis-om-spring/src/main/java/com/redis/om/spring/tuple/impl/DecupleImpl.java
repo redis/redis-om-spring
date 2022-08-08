@@ -48,25 +48,25 @@ public final class DecupleImpl<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> extends A
 
   @SuppressWarnings("unchecked")
   @Override
-  public T6 get6() {
+  public T6 getSeventh() {
     return ((T6) values[6]);
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public T7 get7() {
+  public T7 getEighth() {
     return ((T7) values[7]);
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public T8 get8() {
+  public T8 getNinth() {
     return ((T8) values[8]);
   }
 
   @SuppressWarnings("unchecked")
   @Override
-  public T9 get9() {
+  public T9 getTenth() {
     return ((T9) values[9]);
   }
 }

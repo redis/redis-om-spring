@@ -20,7 +20,7 @@ public interface Single<T0> extends Tuple {
     }
   }
 
-  static <T0> FirstAccessor<Single<T0>, T0> getter0() {
+  static <T0> FirstAccessor<Single<T0>, T0> getFirstGetter() {
     return Single::getFirst;
   }
 }

@@ -6,9 +6,4 @@ public interface EmptyTuple extends Tuple {
   default int size() {
     return 0;
   }
-
-  default Object get(int index) {
-    throw new IndexOutOfBoundsException(
-        String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
-  }
 }
