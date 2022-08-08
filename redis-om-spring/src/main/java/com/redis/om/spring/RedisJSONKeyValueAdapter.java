@@ -11,7 +11,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -136,26 +135,6 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     }
 
     return ops.mget(type, keys);
-  }
-
-  public List<String> getAllKeysOf(String keyspace, long offset, int rows) {
-    byte[] binKeyspace = toBytes(keyspace);
-    Set<byte[]> ids = redisOperations
-        .execute((RedisCallback<Set<byte[]>>) connection -> connection.sMembers(binKeyspace));
-
-    List<String> keys = ids.stream().map(b -> getKey(keyspace, new String(b, StandardCharsets.UTF_8)))
-        .collect(Collectors.toList());
-
-    if (keys.isEmpty() || keys.size() < offset) {
-      return Collections.emptyList();
-    }
-
-    offset = Math.max(0, offset);
-    if (rows > 0) {
-      keys = keys.subList((int) offset, Math.min((int) offset + rows, keys.size()));
-    }
-
-    return keys;
   }
 
   private void processAuditAnnotations(String key, Object item) {
