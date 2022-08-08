@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -15,6 +16,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.repository.core.EntityInformation;
 
+import com.redis.om.spring.KeyspaceToIndexMap;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.RedisDocumentRepository;
@@ -25,13 +27,18 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   protected RedisModulesOperations<String> modulesOperations;
   protected EntityInformation<T, ID> metadata;
   protected KeyValueOperations operations;
+  protected KeyspaceToIndexMap keyspaceToIndexMap;
 
   @SuppressWarnings("unchecked")
-  public SimpleRedisDocumentRepository(EntityInformation<T, ID> metadata, KeyValueOperations operations, @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo) {
+  public SimpleRedisDocumentRepository(EntityInformation<T, ID> metadata, //
+      KeyValueOperations operations, //
+      @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo, //
+      KeyspaceToIndexMap keyspaceToIndexMap) {
     super(metadata, operations);
     this.modulesOperations = (RedisModulesOperations<String>)rmo;
     this.metadata = metadata;
     this.operations = operations;
+    this.keyspaceToIndexMap = keyspaceToIndexMap;
   }
 
   @Override
@@ -57,25 +64,25 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
   @Override
   public void deleteById(ID id, Path path) {
-    Long deletedCount = modulesOperations.opsForJSON().del(metadata.getJavaType().getName() + ":" + id.toString(), path);
+    Long deletedCount = modulesOperations.opsForJSON().del(getKey(id), path);
     
     if ((deletedCount > 0) && path.equals(Path.ROOT_PATH)) {
       @SuppressWarnings("unchecked")
       RedisTemplate<String,ID> template = (RedisTemplate<String,ID>)modulesOperations.getTemplate();
       SetOperations<String, ID> setOps = template.opsForSet();
-      setOps.remove(metadata.getJavaType().getName(), id);
+      setOps.remove(StringUtils.chop(getKeyspace()), id);
     }
   }
 
   @Override
   public void updateField(T entity, MetamodelField<T, ?> field, Object value) {
-    modulesOperations.opsForJSON().set(metadata.getJavaType().getName() + ":" + metadata.getId(entity).toString(), value, Path.of("$." + field.getField().getName()));
+    modulesOperations.opsForJSON().set(getKey(metadata.getId(entity)), value, Path.of("$." + field.getField().getName()));
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field) {
-    String[] keys = StreamSupport.stream(ids.spliterator(), false).map(id -> metadata.getJavaType().getName() + ":" + id).toArray(String[]::new);
+    String[] keys = StreamSupport.stream(ids.spliterator(), false).map(id -> getKey(id)).toArray(String[]::new);
     return (Iterable<F>) modulesOperations.opsForJSON().mget(Path.of("$." + field.getField().getName()), List.class, keys).stream().flatMap(List::stream).collect(Collectors.toList());
   }
 
@@ -83,7 +90,15 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   public Long getExpiration(ID id) {
     @SuppressWarnings("unchecked")
     RedisTemplate<String, String> template = (RedisTemplate<String, String>) modulesOperations.getTemplate();
-    return template.getExpire(metadata.getJavaType().getName() + ":" + id.toString());
+    return template.getExpire(getKey(id));
+  }
+  
+  private String getKeyspace() {
+    return keyspaceToIndexMap.getKeyspaceForEntityClass(metadata.getJavaType());
+  }
+  
+  private String getKey(Object id) {
+    return getKeyspace() + id.toString();
   }
 
 }

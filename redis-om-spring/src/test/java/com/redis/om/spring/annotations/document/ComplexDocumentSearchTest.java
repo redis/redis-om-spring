@@ -127,6 +127,29 @@ public class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
+  void testByTagsWithNullParams() {
+    // # Document 4
+    List<Attribute> attrs = List.of(); 
+    Address address4 = Address.of("Coimbra", "R. Serra 14");
+    Permit permit4 = Permit.of( //
+            address4, //
+            "Historical Renovation", //
+            "church", //
+            Set.of(), //
+            260000L, //
+            new Point(37.0990749,-8.6868258), //
+            List.of(), //
+            attrs
+    );
+
+    repository.save(permit4);
+
+    Iterable<Permit> permits = repository.findByWorkType(Set.of());
+    assertThat(permits).isEmpty();
+  }
+
+
+  @Test
   void testByAllTags() {
     Set<String> wts = Set.of("design","construction");
     Iterable<Permit> permits =  repository.findByWorkTypeContainingAll(wts);
@@ -155,21 +178,21 @@ public class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
     Iterable<Permit> permits = repository.search(q);
     assertThat(permits).containsExactly(permit1);
   }
-  
+
   @Test
   void testFullTextSearchWithExplicitEscaping() {
     String q = "house\\ with\\ a\\ front";
     Iterable<Permit> permits = repository.search(q);
     assertThat(permits).isEmpty();
   }
-  
+
   @Test
   void testFullTextSearchExplicitEscapeSearchTerm() {
     String q = "\"single detached house\"";
     Iterable<Permit> permits = repository.search(q);
     assertThat(permits).containsExactly(permit1);
   }
-  
+
   @Test
   void testFullTextSearchExplicitEscapeSearchTermPrefixSearch() {
     String q = "To construct*";

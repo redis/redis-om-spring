@@ -1,5 +1,6 @@
 package com.redis.om.spring.repository.support;
 
+import com.redis.om.spring.KeyspaceToIndexMap;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.query.RediSearchQuery;
 import org.springframework.beans.BeanUtils;
@@ -34,6 +35,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
   private final Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
   private final Class<? extends RepositoryQuery> repositoryQueryType;
   private final RedisModulesOperations<?> rmo;
+  private final KeyspaceToIndexMap keyspaceToIndexMap;
 
   /**
    * Creates a new {@link KeyValueRepositoryFactory} for the given
@@ -42,8 +44,11 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
    * @param keyValueOperations must not be {@literal null}.
    * @param rmo                must not be {@literal null}.
    */
-  public RedisDocumentRepositoryFactory(KeyValueOperations keyValueOperations, RedisModulesOperations<?> rmo) {
-    this(keyValueOperations, rmo, DEFAULT_QUERY_CREATOR);
+  public RedisDocumentRepositoryFactory( //
+      KeyValueOperations keyValueOperations, //
+      RedisModulesOperations<?> rmo, //
+      KeyspaceToIndexMap keyspaceToIndexMap) {
+    this(keyValueOperations, rmo, keyspaceToIndexMap, DEFAULT_QUERY_CREATOR);
   }
 
   /**
@@ -53,10 +58,13 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
    * @param keyValueOperations must not be {@literal null}.
    * @param queryCreator       must not be {@literal null}.
    */
-  public RedisDocumentRepositoryFactory(KeyValueOperations keyValueOperations, RedisModulesOperations<?> rmo,
+  public RedisDocumentRepositoryFactory( //
+      KeyValueOperations keyValueOperations, //
+      RedisModulesOperations<?> rmo, //
+      KeyspaceToIndexMap keyspaceToIndexMap, //
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
 
-    this(keyValueOperations, rmo, queryCreator, RediSearchQuery.class);
+    this(keyValueOperations, rmo, keyspaceToIndexMap, queryCreator, RediSearchQuery.class);
   }
 
   /**
@@ -67,8 +75,12 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
    * @param queryCreator        must not be {@literal null}.
    * @param repositoryQueryType must not be {@literal null}.
    */
-  public RedisDocumentRepositoryFactory(KeyValueOperations keyValueOperations, RedisModulesOperations<?> rmo,
-      Class<? extends AbstractQueryCreator<?, ?>> queryCreator, Class<? extends RepositoryQuery> repositoryQueryType) {
+  public RedisDocumentRepositoryFactory( //
+      KeyValueOperations keyValueOperations, // 
+      RedisModulesOperations<?> rmo, //
+      KeyspaceToIndexMap keyspaceToIndexMap, //
+      Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
+      Class<? extends RepositoryQuery> repositoryQueryType) {
 
     super(keyValueOperations, queryCreator, repositoryQueryType);
 
@@ -76,6 +88,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
 
     this.keyValueOperations = keyValueOperations;
     this.rmo = rmo;
+    this.keyspaceToIndexMap = keyspaceToIndexMap;
     this.queryCreator = queryCreator;
     this.repositoryQueryType = repositoryQueryType;
   }
@@ -84,7 +97,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
   protected Object getTargetRepository(RepositoryInformation repositoryInformation) {
 
     EntityInformation<?, ?> entityInformation = getEntityInformation(repositoryInformation.getDomainType());
-    return super.getTargetRepositoryViaReflection(repositoryInformation, entityInformation, keyValueOperations, rmo);
+    return super.getTargetRepositoryViaReflection(repositoryInformation, entityInformation, keyValueOperations, rmo, keyspaceToIndexMap);
   }
 
   @Override
