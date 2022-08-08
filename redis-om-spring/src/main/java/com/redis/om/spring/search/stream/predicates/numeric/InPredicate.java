@@ -34,7 +34,7 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   public Node apply(Node root) {
     QueryNode or = QueryBuilder.union();
 
-    Class<?> cls = ObjectUtils.getNumericClassFor(values.get(0).toString());
+    Class<?> cls = values.get(0).getClass();
 
     for (Object value : values) {
       if (cls == Integer.class) {

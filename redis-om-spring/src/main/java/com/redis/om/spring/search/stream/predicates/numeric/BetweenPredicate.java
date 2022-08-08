@@ -36,7 +36,7 @@ public class BetweenPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
-    Class<?> cls = ObjectUtils.getNumericClassFor(min.toString());
+    Class<?> cls = min.getClass();
     if (cls == Integer.class) {
       return QueryBuilder.intersect(root).add(getField().getName(),
           Values.between(Integer.valueOf(min.toString()), Integer.valueOf(max.toString())));

@@ -29,7 +29,7 @@ public class EqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
-    Class<?> cls = ObjectUtils.getNumericClassFor(value.toString());
+    Class<?> cls = getValue().getClass();
     if (cls == Integer.class) {
       return QueryBuilder.intersect(root).add(getField().getName(), Values.eq(Integer.valueOf(value.toString())));
     } else {

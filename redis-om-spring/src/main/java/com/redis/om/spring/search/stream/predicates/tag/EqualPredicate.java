@@ -15,7 +15,7 @@ public class EqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   public EqualPredicate(Field field, T value) {
     super(field);
-    this.value = QueryUtils.escapeTagField(value);
+    this.value = QueryUtils.escape(value);
   }
 
   @Override

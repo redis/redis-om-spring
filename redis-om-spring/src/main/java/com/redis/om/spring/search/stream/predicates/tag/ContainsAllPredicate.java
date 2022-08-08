@@ -18,7 +18,7 @@ public class ContainsAllPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   public ContainsAllPredicate(Field field, List<String> list) {
     super(field);
-    this.values = list.stream().map(QueryUtils::escapeTagField).collect(Collectors.toList());
+    this.values = list.stream().map(QueryUtils::escape).collect(Collectors.toList());
   }
 
   @Override

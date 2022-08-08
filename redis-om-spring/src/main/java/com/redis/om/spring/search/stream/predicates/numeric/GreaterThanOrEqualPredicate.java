@@ -30,7 +30,7 @@ public class GreaterThanOrEqualPredicate<E, T> extends BaseAbstractPredicate<E, 
 
   @Override
   public Node apply(Node root) {
-    Class<?> cls = ObjectUtils.getNumericClassFor(value.toString());
+    Class<?> cls = value.getClass();
     if (cls == Integer.class) {
       return QueryBuilder.intersect(root).add(getField().getName(), Values.ge(Integer.valueOf(value.toString())));
     } else {
