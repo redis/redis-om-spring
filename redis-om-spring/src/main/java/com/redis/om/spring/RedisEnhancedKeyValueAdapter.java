@@ -3,7 +3,9 @@ package com.redis.om.spring;
 import java.lang.reflect.Field;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -17,10 +19,7 @@ import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.keyvalue.core.KeyValueAdapter;
-import org.springframework.data.keyvalue.core.QueryEngine;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
-import org.springframework.data.redis.connection.DataType;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.connection.RedisConnection;
@@ -33,11 +32,6 @@ import org.springframework.data.redis.core.RedisKeyValueAdapter;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.TimeToLive;
-import org.springframework.data.redis.core.convert.GeoIndexedPropertyValue;
-import org.springframework.data.redis.core.convert.MappingRedisConverter;
-import org.springframework.data.redis.core.convert.MappingRedisConverter.BinaryKeyspaceIdentifier;
-import org.springframework.data.redis.core.convert.MappingRedisConverter.KeyspaceIdentifier;
-import org.springframework.data.redis.core.convert.PathIndexResolver;
 import org.springframework.data.redis.core.convert.RedisConverter;
 import org.springframework.data.redis.core.convert.RedisCustomConversions;
 import org.springframework.data.redis.core.convert.RedisData;
@@ -52,6 +46,14 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
+
+import com.google.gson.Gson;
+import com.redis.om.spring.convert.MappingRedisOMConverter;
+import com.redis.om.spring.convert.MappingRedisOMConverter.BinaryKeyspaceIdentifier;
+import com.redis.om.spring.convert.MappingRedisOMConverter.KeyspaceIdentifier;
+import com.redis.om.spring.convert.RedisOMCustomConversions;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
 
 public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
@@ -71,7 +73,13 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   private @Nullable String keyspaceNotificationsConfigParameter = null;
   private ShadowCopy shadowCopy = ShadowCopy.DEFAULT;
 
-  private QueryEngine<? extends KeyValueAdapter, ?, ?> queryEngine;
+  @SuppressWarnings("unused")
+  private RedisModulesOperations<String> modulesOperations;
+  @SuppressWarnings("unused")
+  private KeyspaceToIndexMap keyspaceToIndexMap;
+
+  @SuppressWarnings("unused")
+  private static final Gson gson = GsonBuidlerFactory.getBuilder().create();
 
   /**
    * Creates new {@link RedisKeyValueAdapter} with default
@@ -79,8 +87,9 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    *
    * @param redisOps must not be {@literal null}.
    */
-  public RedisEnhancedKeyValueAdapter(RedisOperations<?, ?> redisOps) {
-    this(redisOps, new RedisMappingContext());
+  public RedisEnhancedKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisModulesOperations<?> rmo,
+      KeyspaceToIndexMap keyspaceToIndexMap) {
+    this(redisOps, rmo, new RedisMappingContext(), keyspaceToIndexMap);
   }
 
   /**
@@ -90,8 +99,9 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * @param redisOps       must not be {@literal null}.
    * @param mappingContext must not be {@literal null}.
    */
-  public RedisEnhancedKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisMappingContext mappingContext) {
-    this(redisOps, mappingContext, new RedisCustomConversions());
+  public RedisEnhancedKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisModulesOperations<?> rmo,
+      RedisMappingContext mappingContext, KeyspaceToIndexMap keyspaceToIndexMap) {
+    this(redisOps, rmo, mappingContext, new RedisOMCustomConversions(), keyspaceToIndexMap);
   }
 
   /**
@@ -102,53 +112,27 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * @param customConversions can be {@literal null}.
    * @since 2.0
    */
-  public RedisEnhancedKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisMappingContext mappingContext,
-      @Nullable org.springframework.data.convert.CustomConversions customConversions) {
+  @SuppressWarnings("unchecked")
+  public RedisEnhancedKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisModulesOperations<?> rmo,
+      RedisMappingContext mappingContext,
+      @Nullable org.springframework.data.convert.CustomConversions customConversions,
+      KeyspaceToIndexMap keyspaceToIndexMap) {
     super(redisOps, mappingContext, customConversions);
-    queryEngine = new EnhancedRedisQueryEngine();
 
     Assert.notNull(redisOps, "RedisOperations must not be null!");
     Assert.notNull(mappingContext, "RedisMappingContext must not be null!");
 
-    MappingRedisConverter mappingConverter = new MappingRedisConverter(mappingContext,
-        new PathIndexResolver(mappingContext), new ReferenceResolverImpl(redisOps));
-    mappingConverter.setCustomConversions(customConversions == null ? new RedisCustomConversions() : customConversions);
+    MappingRedisOMConverter mappingConverter = new MappingRedisOMConverter(mappingContext,
+        /* new PathIndexResolver(mappingContext), */ new ReferenceResolverImpl(redisOps));
+    mappingConverter
+        .setCustomConversions(customConversions == null ? new RedisOMCustomConversions() : customConversions);
     mappingConverter.afterPropertiesSet();
 
     this.converter = mappingConverter;
     this.redisOperations = redisOps;
+    this.modulesOperations = (RedisModulesOperations<String>) rmo;
+    this.keyspaceToIndexMap = keyspaceToIndexMap;
     initMessageListenerContainer();
-  }
-
-  /**
-   * Creates new {@link RedisEnhancedKeyValueAdapter} with specific
-   * {@link RedisConverter}.
-   *
-   * @param redisOps       must not be {@literal null}.
-   * @param redisConverter must not be {@literal null}.
-   */
-  public RedisEnhancedKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisConverter redisConverter) {
-    queryEngine = new EnhancedRedisQueryEngine();
-
-    Assert.notNull(redisOps, "RedisOperations must not be null!");
-
-    this.converter = redisConverter;
-    this.redisOperations = redisOps;
-    initMessageListenerContainer();
-  }
-
-  /**
-   * Default constructor.
-   */
-  protected RedisEnhancedKeyValueAdapter() {}
-
-  /**
-   * Get the {@link QueryEngine} used.
-   *
-   * @return the QueryEngine
-   */
-  public QueryEngine<? extends KeyValueAdapter, ?, ?> getQueryEngine() {
-    return queryEngine;
   }
 
   /* (non-Javadoc)
@@ -161,7 +145,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
     RedisData rdo;
     if (item instanceof RedisData) {
-      rdo = (RedisData)item; 
+      rdo = (RedisData) item;
     } else {
       byte[] redisKey = createKey(keyspace, converter.getConversionService().convert(id, String.class));
       processAuditAnnotations(redisKey, item);
@@ -186,7 +170,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     boolean isNew = redisOperations.execute((RedisCallback<Boolean>) connection -> {
       return connection.del(objectKey) == 0;
     });
-    
+
     redisOperations.executePipelined((RedisCallback<Object>) connection -> {
 
       byte[] key = toBytes(rdo.getId());
@@ -225,6 +209,34 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   /* (non-Javadoc)
    * 
    * @see
+   * org.springframework.data.keyvalue.core.KeyValueAdapter#get(java.lang.Object,
+   * java.lang.String, java.lang.Class) */
+  @Nullable
+  @Override
+  public <T> T get(Object id, String keyspace, Class<T> type) {
+
+    String stringId = asString(id);
+    String stringKeyspace = asString(keyspace);
+
+    byte[] binId = createKey(stringKeyspace, stringId);
+
+    Map<byte[], byte[]> raw = redisOperations
+        .execute((RedisCallback<Map<byte[], byte[]>>) connection -> connection.hGetAll(binId));
+
+    if (CollectionUtils.isEmpty(raw)) {
+      return null;
+    }
+
+    RedisData data = new RedisData(raw);
+    data.setId(stringId);
+    data.setKeyspace(stringKeyspace);
+
+    return readBackTimeToLiveIfSet(binId, converter.read(type, data));
+  }
+
+  /* (non-Javadoc)
+   * 
+   * @see
    * org.springframework.data.keyvalue.core.KeyValueAdapter#deleteAllOf(java.lang.
    * String) */
   @Override
@@ -236,6 +248,41 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
       return null;
     });
+  }
+
+  /**
+   * Get all elements for given keyspace.
+   *
+   * @param keyspace the keyspace to fetch entities from.
+   * @param type     the desired target type.
+   * @param offset   index value to start reading.
+   * @param rows     maximum number or entities to return.
+   * @param <T>
+   * @return never {@literal null}.
+   * @since 2.5
+   */
+  public <T> List<T> getAllOf(String keyspace, Class<T> type, long offset, int rows) {
+    byte[] binKeyspace = toBytes(keyspace);
+
+    Set<byte[]> ids = redisOperations
+        .execute((RedisCallback<Set<byte[]>>) connection -> connection.sMembers(binKeyspace));
+
+    List<T> result = new ArrayList<>();
+    List<byte[]> keys = new ArrayList<>(ids);
+
+    if (keys.isEmpty() || keys.size() < offset) {
+      return Collections.emptyList();
+    }
+
+    offset = Math.max(0, offset);
+    if (rows > 0) {
+      keys = keys.subList((int) offset, Math.min((int) offset + rows, keys.size()));
+    }
+
+    for (byte[] key : keys) {
+      result.add(get(key, keyspace, type));
+    }
+    return result;
   }
 
   public void update(PartialUpdate<?> update) {
@@ -253,7 +300,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
     redisOperations.execute((RedisCallback<Void>) connection -> {
 
-      RedisUpdateObject redisUpdateObject = new RedisUpdateObject(redisKey, keyspace, id);
+      RedisUpdateObject redisUpdateObject = new RedisUpdateObject(redisKey);
 
       for (PropertyUpdate pUpdate : update.getPropertyUpdates()) {
 
@@ -264,7 +311,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
             || (pUpdate.getValue() != null && pUpdate.getValue().getClass().isArray()) || (pUpdate.getValue() != null
                 && !converter.getConversionService().canConvert(pUpdate.getValue().getClass(), byte[].class))) {
 
-          redisUpdateObject = fetchDeletePathsFromHashAndUpdateIndex(redisUpdateObject, propertyPath, connection);
+          redisUpdateObject = fetchDeletePathsFromHash(redisUpdateObject, propertyPath, connection);
         }
       }
 
@@ -307,21 +354,13 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     });
   }
 
-  private RedisUpdateObject fetchDeletePathsFromHashAndUpdateIndex(RedisUpdateObject redisUpdateObject, String path,
+  private RedisUpdateObject fetchDeletePathsFromHash(RedisUpdateObject redisUpdateObject, String path,
       RedisConnection connection) {
 
     redisUpdateObject.addFieldToRemove(toBytes(path));
     byte[] value = connection.hGet(redisUpdateObject.targetKey, toBytes(path));
 
     if (value != null && value.length > 0) {
-
-      byte[] existingValueIndexKey = ByteUtils.concatAll(toBytes(redisUpdateObject.keyspace), toBytes(":" + path),
-          toBytes(":"), value);
-
-      if (connection.exists(existingValueIndexKey)) {
-        redisUpdateObject.addIndexToUpdate(new RedisUpdateObject.Index(existingValueIndexKey, DataType.SET));
-      }
-
       return redisUpdateObject;
     }
 
@@ -330,28 +369,9 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     for (byte[] field : existingFields) {
 
       if (asString(field).startsWith(path + ".")) {
-
         redisUpdateObject.addFieldToRemove(field);
         value = connection.hGet(redisUpdateObject.targetKey, toBytes(field));
-
-        if (value != null) {
-
-          byte[] existingValueIndexKey = ByteUtils.concatAll(toBytes(redisUpdateObject.keyspace), toBytes(":"), field,
-              toBytes(":"), value);
-
-          if (connection.exists(existingValueIndexKey)) {
-            redisUpdateObject.addIndexToUpdate(new RedisUpdateObject.Index(existingValueIndexKey, DataType.SET));
-          }
-        }
       }
-    }
-
-    String pathToUse = GeoIndexedPropertyValue.geoIndexName(path);
-    byte[] existingGeoIndexKey = ByteUtils.concatAll(toBytes(redisUpdateObject.keyspace), toBytes(":"),
-        toBytes(pathToUse));
-
-    if (connection.zRank(existingGeoIndexKey, toBytes(redisUpdateObject.targetId)) != null) {
-      redisUpdateObject.addIndexToUpdate(new RedisUpdateObject.Index(existingGeoIndexKey, DataType.ZSET));
     }
 
     return redisUpdateObject;
@@ -564,38 +584,16 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * @author Christoph Strobl
    */
   static class RedisUpdateObject {
-
-    private final String keyspace;
-    private final Object targetId;
     private final byte[] targetKey;
 
     private final Set<byte[]> fieldsToRemove = new LinkedHashSet<>();
-    private final Set<Index> indexesToUpdate = new LinkedHashSet<>();
 
-    RedisUpdateObject(byte[] targetKey, String keyspace, Object targetId) {
-
+    RedisUpdateObject(byte[] targetKey) {
       this.targetKey = targetKey;
-      this.keyspace = keyspace;
-      this.targetId = targetId;
     }
 
     void addFieldToRemove(byte[] field) {
       fieldsToRemove.add(field);
-    }
-
-    void addIndexToUpdate(Index index) {
-      indexesToUpdate.add(index);
-    }
-
-    static class Index {
-      final DataType type;
-      final byte[] key;
-
-      public Index(byte[] key, DataType type) {
-        this.key = key;
-        this.type = type;
-      }
-
     }
   }
 }

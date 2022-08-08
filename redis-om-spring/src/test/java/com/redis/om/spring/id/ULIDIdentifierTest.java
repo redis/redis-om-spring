@@ -7,8 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.github.f4b6a3.ulid.Ulid;
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.bloom.fixtures.Person;
-import com.redis.om.spring.annotations.bloom.fixtures.PersonRepository;
+import com.redis.om.spring.annotations.hash.fixtures.Person;
+import com.redis.om.spring.annotations.hash.fixtures.PersonRepository;
 
 public class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
 
@@ -17,9 +17,9 @@ public class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
   
   @Test
   public void testMonotonicallyIncreasingUlidAssignment() {
-    Person ofer = Person.of("Ofer Bengal", "ofer@redis.com");
+    Person ofer = Person.of("Ofer Bengal", "ofer@redis.com", "ofer");
     String oferId = repository.save(ofer).getId();
-    Person yiftach = Person.of("Yiftach Shoolman", "yiftach@redis.com");
+    Person yiftach = Person.of("Yiftach Shoolman", "yiftach@redis.com", "yiftach");
     String yiftachId = repository.save(yiftach).getId();
     // get the Ulid objects from the String ids
     Ulid oferUlid = Ulid.from(oferId);

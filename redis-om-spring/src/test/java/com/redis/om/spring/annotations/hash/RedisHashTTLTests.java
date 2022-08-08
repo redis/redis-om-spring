@@ -38,7 +38,7 @@ public class RedisHashTTLTests extends AbstractBaseEnhancedRedisTest {
     ExpiringPersonWithDefault gordon = ExpiringPersonWithDefault.of("Gordon Welchman");
     withDefaultrepository.save(gordon);
     
-    Long expire = template.getExpire(ExpiringPersonWithDefault.class.getName() + ":" + gordon.getId());
+    Long expire = withDefaultrepository.getExpiration(gordon.getId());
     
     assertThat(expire).isEqualTo(5L);
   }
@@ -48,7 +48,7 @@ public class RedisHashTTLTests extends AbstractBaseEnhancedRedisTest {
     ExpiringPerson mWoodger = ExpiringPerson.of("Mike Woodger", 15L);
     withTTLAnnotationRepository.save(mWoodger);
  
-    Long expire = template.getExpire(ExpiringPerson.class.getName() + ":" + mWoodger.getId());
+    Long expire = withTTLAnnotationRepository.getExpiration(mWoodger.getId());
 
     assertThat(expire).isEqualTo(15L);
   }
@@ -58,7 +58,7 @@ public class RedisHashTTLTests extends AbstractBaseEnhancedRedisTest {
     ExpiringPersonDifferentTimeUnit jWilkinson = ExpiringPersonDifferentTimeUnit.of("Jim Wilkinson", 7L);
     withTTLwTimeUnitAnnotationRepository.save(jWilkinson);
 
-    Long expire = template.getExpire(ExpiringPersonDifferentTimeUnit.class.getName() + ":" + jWilkinson.getId());
+    Long expire = withTTLwTimeUnitAnnotationRepository.getExpiration(jWilkinson.getId());
 
     assertThat(expire).isEqualTo(7L*24*60*60);
   }

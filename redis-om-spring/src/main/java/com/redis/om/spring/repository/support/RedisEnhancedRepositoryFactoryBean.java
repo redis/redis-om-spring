@@ -13,6 +13,7 @@ import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
+import com.redis.om.spring.KeyspaceToIndexMap;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.query.RedisEnhancedQuery;
 
@@ -22,6 +23,7 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
   private @Nullable KeyValueOperations operations;
   private @Nullable RedisModulesOperations<String> rmo;
   private @Nullable RedisOperations<?, ?> redisOperations;
+  private @Nullable KeyspaceToIndexMap keyspaceToIndexMap;
   private @Nullable Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
   private @Nullable Class<? extends RepositoryQuery> repositoryQueryType;
 
@@ -32,10 +34,11 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
    * @param repositoryInterface must not be {@literal null}.
    */
   public RedisEnhancedRepositoryFactoryBean(Class<? extends T> repositoryInterface,
-      RedisOperations<?, ?> redisOperations, RedisModulesOperations<?> rmo) {
+      RedisOperations<?, ?> redisOperations, RedisModulesOperations<?> rmo, KeyspaceToIndexMap keyspaceToIndexMap) {
     super(repositoryInterface);
     setRedisModulesOperations(rmo);
     setRedisOperations(redisOperations);
+    setKeyspaceToIndexMap(keyspaceToIndexMap);
   }
 
   /**
@@ -84,6 +87,10 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
   public void setMappingContext(MappingContext<?, ?> mappingContext) {
     super.setMappingContext(mappingContext);
   }
+  
+  public void setKeyspaceToIndexMap(KeyspaceToIndexMap keyspaceToIndexMap) { 
+    this.keyspaceToIndexMap = keyspaceToIndexMap;
+  }
 
   /**
    * Configures the {@link QueryCreatorType} to be used.
@@ -128,7 +135,7 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
    */
   protected RedisEnhancedRepositoryFactory createRepositoryFactory(KeyValueOperations operations,
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator, Class<? extends RepositoryQuery> repositoryQueryType) {
-    return new RedisEnhancedRepositoryFactory(operations, redisOperations, rmo, queryCreator, RedisEnhancedQuery.class);
+    return new RedisEnhancedRepositoryFactory(operations, redisOperations, rmo, keyspaceToIndexMap, queryCreator, RedisEnhancedQuery.class);
   }
 
   /* (non-Javadoc)
@@ -141,8 +148,9 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
     Assert.notNull(operations, "KeyValueOperations must not be null!");
     Assert.notNull(redisOperations, "RedisOperations must not be null!");
     Assert.notNull(rmo, "RedisModulesOperations must not be null!");
-    Assert.notNull(queryCreator, "Query creator type must not be null!");
-    Assert.notNull(repositoryQueryType, "RepositoryQueryType type type must not be null!");
+    Assert.notNull(queryCreator, "Query creator must not be null!");
+    Assert.notNull(repositoryQueryType, "RepositoryQueryType must not be null!");
+    Assert.notNull(keyspaceToIndexMap, "KeyspaceToIndexMap type must not be null");
 
     super.afterPropertiesSet();
   }
