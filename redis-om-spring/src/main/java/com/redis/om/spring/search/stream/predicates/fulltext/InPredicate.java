@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.StringJoiner;
 
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
-import com.redis.om.spring.search.stream.predicates.PredicateType;
 
 import io.redisearch.querybuilder.Node;
 import io.redisearch.querybuilder.QueryBuilder;
@@ -19,11 +18,6 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     this.values = values;
   }
 
-  @Override
-  public PredicateType getPredicateType() {
-    return PredicateType.IN;
-  }
-
   public List<T> getValues() {
     return values;
   }
@@ -31,7 +25,7 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   @Override
   public Node apply(Node root) {
     StringJoiner sj = new StringJoiner(" | ");
-    for (Object value : values) {
+    for (Object value : getValues()) {
       sj.add(value.toString());
     }
 

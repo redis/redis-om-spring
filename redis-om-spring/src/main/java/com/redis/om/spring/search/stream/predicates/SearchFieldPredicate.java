@@ -8,8 +8,6 @@ import io.redisearch.Schema.FieldType;
 import io.redisearch.querybuilder.Node;
 
 public interface SearchFieldPredicate<E, T> extends Predicate<T> {
-  PredicateType getPredicateType();
-
   FieldType getSearchFieldType();
 
   Field getField();

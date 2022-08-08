@@ -1,10 +1,11 @@
 package com.redis.om.spring.search.stream.predicates.numeric;
 
 import java.lang.reflect.Field;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
-import com.redis.om.spring.search.stream.predicates.PredicateType;
-import com.redis.om.spring.util.ObjectUtils;
 
 import io.redisearch.querybuilder.Node;
 import io.redisearch.querybuilder.QueryBuilder;
@@ -18,11 +19,6 @@ public class GreaterThanPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     this.value = value;
   }
 
-  @Override
-  public PredicateType getPredicateType() {
-    return PredicateType.GREATER_THAN;
-  }
-
   public T getValue() {
     return value;
   }
@@ -30,10 +26,17 @@ public class GreaterThanPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   @Override
   public Node apply(Node root) {
     Class<?> cls = value.getClass();
-    if (cls == Integer.class) {
-      return QueryBuilder.intersect(root).add(getField().getName(), Values.gt(Integer.valueOf(value.toString())));
+    if (cls == LocalDate.class) {
+      LocalDate localDate = (LocalDate) getValue();
+      Instant instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+      Long unixTime = instant.getEpochSecond();
+      return QueryBuilder.intersect(root).add(getField().getName(), Values.gt(unixTime));
+    } else if (cls == Integer.class) {
+      return QueryBuilder.intersect(root).add(getField().getName(), Values.gt(Integer.valueOf(getValue().toString())));
+    } else if (cls == Double.class) {
+      return QueryBuilder.intersect(root).add(getField().getName(), Values.gt(Double.valueOf(getValue().toString())));
     } else {
-      return QueryBuilder.intersect(root).add(getField().getName(), Values.gt(Double.valueOf(value.toString())));
+      return root;
     }
   }
 }

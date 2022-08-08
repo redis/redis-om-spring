@@ -1,10 +1,11 @@
 package com.redis.om.spring.search.stream.predicates.numeric;
 
 import java.lang.reflect.Field;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
-import com.redis.om.spring.search.stream.predicates.PredicateType;
-import com.redis.om.spring.util.ObjectUtils;
 
 import io.redisearch.querybuilder.Node;
 import io.redisearch.querybuilder.QueryBuilder;
@@ -21,11 +22,6 @@ public class BetweenPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     this.max = max;
   }
 
-  @Override
-  public PredicateType getPredicateType() {
-    return PredicateType.BETWEEN;
-  }
-
   public T getMin() {
     return min;
   }
@@ -37,12 +33,23 @@ public class BetweenPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   @Override
   public Node apply(Node root) {
     Class<?> cls = min.getClass();
-    if (cls == Integer.class) {
+    if (cls == LocalDate.class) {
+      LocalDate minLocalDate = (LocalDate) min;
+      LocalDate maxLocalDate = (LocalDate) max;
+      Instant minInstant = minLocalDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+      Instant maxInstant = maxLocalDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+      Long minUnixTime = minInstant.getEpochSecond();
+      Long maxUnixTime = maxInstant.getEpochSecond();
       return QueryBuilder.intersect(root).add(getField().getName(),
-          Values.between(Integer.valueOf(min.toString()), Integer.valueOf(max.toString())));
+          Values.between(Double.valueOf(minUnixTime.toString()), Double.valueOf(maxUnixTime.toString())));
+    } else if (cls == Integer.class) {
+      return QueryBuilder.intersect(root).add(getField().getName(),
+          Values.between(Integer.valueOf(getMin().toString()), Integer.valueOf(getMax().toString())));
+    } else if (cls == Double.class) {
+      return QueryBuilder.intersect(root).add(getField().getName(),
+          Values.between(Double.valueOf(getMin().toString()), Double.valueOf(getMax().toString())));
     } else {
-      return QueryBuilder.intersect(root).add(getField().getName(),
-          Values.between(Double.valueOf(min.toString()), Double.valueOf(max.toString())));
+      return root;
     }
   }
 }

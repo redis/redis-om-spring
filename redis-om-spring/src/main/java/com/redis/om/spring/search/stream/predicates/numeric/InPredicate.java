@@ -4,8 +4,6 @@ import java.lang.reflect.Field;
 import java.util.List;
 
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
-import com.redis.om.spring.search.stream.predicates.PredicateType;
-import com.redis.om.spring.util.ObjectUtils;
 
 import io.redisearch.querybuilder.Node;
 import io.redisearch.querybuilder.QueryBuilder;
@@ -21,11 +19,6 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     this.values = values;
   }
 
-  @Override
-  public PredicateType getPredicateType() {
-    return PredicateType.IN;
-  }
-
   public List<T> getValues() {
     return values;
   }
@@ -36,7 +29,7 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
     Class<?> cls = values.get(0).getClass();
 
-    for (Object value : values) {
+    for (Object value : getValues()) {
       if (cls == Integer.class) {
         or.add(getField().getName(), Values.eq(Integer.valueOf(value.toString())));
       } else {

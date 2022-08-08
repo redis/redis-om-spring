@@ -12,12 +12,12 @@ import io.redisearch.querybuilder.GeoValue;
 import io.redisearch.querybuilder.Node;
 import io.redisearch.querybuilder.QueryBuilder;
 
-public class NearPredicate<E, T> extends BaseAbstractPredicate<E, T> {
+public class OutsideOfPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   private Point point;
   private Distance distance;
 
-  public NearPredicate(Field field, Point point, Distance distance) {
+  public OutsideOfPredicate(Field field, Point point, Distance distance) {
     super(field);
     this.point = point;
     this.distance = distance;
@@ -36,7 +36,8 @@ public class NearPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     GeoValue geoValue = new GeoValue(getPoint().getX(), getPoint().getY(), getDistance().getValue(),
         ObjectUtils.getDistanceUnit(getDistance()));
 
-    return QueryBuilder.intersect(root).add(getField().getName(), geoValue);
+    return QueryBuilder.intersect(root)
+        .add(QueryBuilder.disjunct(getField().getName(), geoValue));
   }
 
 }

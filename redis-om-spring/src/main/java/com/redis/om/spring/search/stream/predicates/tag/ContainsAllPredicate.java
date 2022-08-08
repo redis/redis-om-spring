@@ -6,7 +6,6 @@ import java.util.stream.Collectors;
 
 import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
-import com.redis.om.spring.search.stream.predicates.PredicateType;
 
 import io.redisearch.querybuilder.Node;
 import io.redisearch.querybuilder.QueryBuilder;
@@ -21,11 +20,6 @@ public class ContainsAllPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     this.values = list.stream().map(QueryUtils::escape).collect(Collectors.toList());
   }
 
-  @Override
-  public PredicateType getPredicateType() {
-    return PredicateType.CONTAINS_ALL;
-  }
-
   public List<String> getValues() {
     return values;
   }
@@ -33,7 +27,7 @@ public class ContainsAllPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   @Override
   public Node apply(Node root) {
     QueryNode and = QueryBuilder.intersect();
-    for (String value : values) {
+    for (String value : getValues()) {
       and.add(getField().getName(), "{" + value + "}");
     }
 

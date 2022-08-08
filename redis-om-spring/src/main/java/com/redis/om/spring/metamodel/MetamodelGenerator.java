@@ -50,6 +50,7 @@ import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.Searchable;
 import com.redis.om.spring.metamodel.indexed.BooleanField;
+import com.redis.om.spring.metamodel.indexed.DateField;
 import com.redis.om.spring.metamodel.indexed.GeoField;
 import com.redis.om.spring.metamodel.indexed.NumericField;
 import com.redis.om.spring.metamodel.indexed.TagField;
@@ -57,6 +58,7 @@ import com.redis.om.spring.metamodel.indexed.TextField;
 import com.redis.om.spring.metamodel.indexed.TextTagField;
 import com.redis.om.spring.metamodel.nonindexed.NonIndexedBooleanField;
 import com.redis.om.spring.metamodel.nonindexed.NonIndexedNumericField;
+import com.redis.om.spring.metamodel.nonindexed.NonIndexedTagField;
 import com.redis.om.spring.metamodel.nonindexed.NonIndexedTextField;
 import com.redis.om.spring.tuple.Triple;
 import com.redis.om.spring.tuple.Tuples;
@@ -190,8 +192,14 @@ public final class MetamodelGenerator extends AbstractProcessor {
           //
           // Any Numeric class -> Numeric Search Field
           //
-          else if (Number.class.isAssignableFrom(targetCls) || (targetCls == LocalDateTime.class) || (targetCls == LocalDate.class) || (targetCls == Date.class) ) {
+          else if (Number.class.isAssignableFrom(targetCls)) {
             targetInterceptor = NumericField.class;
+          }
+          //
+          // Any Date/Time Types
+          //
+          else if ((targetCls == LocalDateTime.class) || (targetCls == LocalDate.class) || (targetCls == Date.class)) {
+            targetInterceptor = DateField.class;
           }
           //
           // Set / List
@@ -215,12 +223,12 @@ public final class MetamodelGenerator extends AbstractProcessor {
           messager.printMessage(Diagnostic.Kind.WARNING,
               "Processing class " + entityName + " could not resolve " + cls);
         }
-      } else  {
+      } else {
         Class<?> targetCls;
         try {
           targetCls = ClassUtils.forName(cls, MetamodelGenerator.class.getClassLoader());
           //
-          // Any Character class 
+          // Any Character class
           //
           if (CharSequence.class.isAssignableFrom(targetCls)) {
             targetInterceptor = NonIndexedTextField.class;
@@ -232,10 +240,17 @@ public final class MetamodelGenerator extends AbstractProcessor {
             targetInterceptor = NonIndexedBooleanField.class;
           }
           //
-          // Numeric class 
+          // Numeric class AND Any Date/Time Types
           //
-          else if (Number.class.isAssignableFrom(targetCls) || (targetCls == LocalDateTime.class) || (targetCls == LocalDate.class) || (targetCls == Date.class) ) {
+          else if (Number.class.isAssignableFrom(targetCls) || (targetCls == LocalDateTime.class)
+              || (targetCls == LocalDate.class) || (targetCls == Date.class)) {
             targetInterceptor = NonIndexedNumericField.class;
+          }
+          //
+          // Set / List
+          //
+          else if (Set.class.isAssignableFrom(targetCls) || List.class.isAssignableFrom(targetCls)) {
+            targetInterceptor = NonIndexedTagField.class;
           }
         } catch (ClassNotFoundException cnfe) {
           messager.printMessage(Diagnostic.Kind.WARNING,
