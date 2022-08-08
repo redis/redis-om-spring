@@ -8,9 +8,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.keyvalue.core.IdentifierGenerator;
+import org.springframework.data.util.TypeInformation;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
-import org.springframework.data.util.TypeInformation;
 
 import com.github.f4b6a3.ulid.Ulid;
 import com.github.f4b6a3.ulid.UlidCreator;
@@ -37,7 +37,7 @@ public enum ULIDIdentifierGenerator implements IdentifierGenerator {
     }
 
     throw new InvalidDataAccessApiUsageException(
-        String.format("Identifier cannot be generated for %s. Supported types are: UUID, String, Integer, and Long.",
+        String.format("Identifier cannot be generated for %s. Supported types are: ULID, String, Integer, and Long.",
             identifierType.getType().getName()));
   }
 
