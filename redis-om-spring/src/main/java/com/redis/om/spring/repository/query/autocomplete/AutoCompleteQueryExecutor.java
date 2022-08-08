@@ -46,10 +46,8 @@ public class AutoCompleteQueryExecutor {
           return Optional.of(!org.apache.commons.lang3.ObjectUtils.isEmpty(bloom.name()) ? bloom.name()
               : String.format("sugg:%s:%s", entityClass.getSimpleName(), field.getName()));
         }
-      } catch (NoSuchFieldException e) {
-        e.printStackTrace();
-      } catch (SecurityException e) {
-        e.printStackTrace();
+      } catch (NoSuchFieldException | SecurityException e) {
+        return Optional.empty();
       }
     }
     return Optional.empty();
