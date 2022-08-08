@@ -31,6 +31,7 @@ import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 import com.google.common.base.Optional;
+import com.redis.om.spring.convert.RedisOMCustomConversions;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.util.ObjectUtils;
 
@@ -50,7 +51,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    */
   public RedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps, JSONOperations<?> redisJSONOperations,
       RedisMappingContext mappingContext) {
-    super(redisOps, mappingContext, new RedisCustomConversions());
+    super(redisOps, mappingContext, new RedisOMCustomConversions());
     this.redisJSONOperations = redisJSONOperations;
     this.redisOperations = redisOps;
     this.mappingContext = mappingContext;
