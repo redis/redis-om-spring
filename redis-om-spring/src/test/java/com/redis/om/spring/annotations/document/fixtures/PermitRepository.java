@@ -1,6 +1,9 @@
 package com.redis.om.spring.annotations.document.fixtures;
 import java.util.Set;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import com.redis.om.spring.repository.RedisDocumentRepository;
 
 public interface PermitRepository extends RedisDocumentRepository<Permit, String> {
@@ -15,6 +18,9 @@ public interface PermitRepository extends RedisDocumentRepository<Permit, String
   // FT.SEARCH permits "veranda"
   // Result: Documents inside which the word 'veranda' occurs, so tst:permit:1.
   Iterable<Permit> search(String text);
+  
+  // Perform search with paging and sorting parameters
+  Page<Permit> search(String text, Pageable pageable);
   
   // A fuzzy text search on all text fields:
   // FT.SEARCH permits "%%haus%%" 
