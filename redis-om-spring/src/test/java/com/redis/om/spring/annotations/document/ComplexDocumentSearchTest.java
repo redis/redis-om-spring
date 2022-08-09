@@ -8,6 +8,11 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.geo.Point;
 
 import com.google.common.collect.Lists;
@@ -16,6 +21,7 @@ import com.redis.om.spring.annotations.document.fixtures.Address;
 import com.redis.om.spring.annotations.document.fixtures.Attribute;
 import com.redis.om.spring.annotations.document.fixtures.Order;
 import com.redis.om.spring.annotations.document.fixtures.Permit;
+import com.redis.om.spring.annotations.document.fixtures.Permit$;
 import com.redis.om.spring.annotations.document.fixtures.PermitRepository;
 
 public class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
@@ -198,5 +204,33 @@ public class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
     String q = "To construct*";
     Iterable<Permit> permits = repository.search(q);
     assertThat(permits).containsExactly(permit1,permit2);
+  }
+  
+  @Test
+  void testFullTextSearchWithPaginationDesc() {
+    String q = "To construct*";
+    Pageable pageRequest = PageRequest.of(0, 10).withSort(Sort.by(Direction.DESC, Permit$.CONSTRUCTION_VALUE.getField().getName()));
+    
+    Page<Permit> result = repository.search(q, pageRequest);
+    
+    System.out.println(result.getContent());
+    
+    assertThat(result.getTotalPages()).isEqualTo(1);
+    assertThat(result.getTotalElements()).isEqualTo(2);
+    assertThat(result.getContent()).containsExactly(permit2,permit1);
+  }
+  
+  @Test
+  void testFullTextSearchWithPaginationAsc() {
+    String q = "To construct*";
+    Pageable pageRequest = PageRequest.of(0, 10).withSort(Sort.by(Direction.ASC, Permit$.CONSTRUCTION_VALUE.getField().getName()));
+    
+    Page<Permit> result = repository.search(q, pageRequest);
+    
+    System.out.println(result.getContent());
+    
+    assertThat(result.getTotalPages()).isEqualTo(1);
+    assertThat(result.getTotalElements()).isEqualTo(2);
+    assertThat(result.getContent()).containsExactly(permit1,permit2);
   }
 }
