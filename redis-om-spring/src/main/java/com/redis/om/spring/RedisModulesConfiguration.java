@@ -60,6 +60,7 @@ import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.pds.BloomOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
+import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.EntityStreamImpl;
 
@@ -437,10 +438,8 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
     if (!ObjectUtils.isEmpty(ti.alias())) {
       fieldName = fieldName.as(ti.alias());
-    } else if (prefix != null && !prefix.isBlank()) {
-      fieldName = fieldName.as(prefix.replace(".", "_") + "_" + field.getName());
     } else {
-      fieldName = fieldName.as(field.getName());
+      fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
     }
 
     return new TagField(fieldName, ti.separator(), false);
@@ -457,11 +456,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
         : "";
     FieldName fieldName = FieldName.of(fieldPrefix + field.getName() + fieldPostfix);
 
-    if (prefix != null && !prefix.isBlank()) {
-      fieldName = fieldName.as(prefix.replace(".", "_") + "_" + field.getName());
-    } else {
-      fieldName = fieldName.as(field.getName());
-    }
+    fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
 
     return new TagField(fieldName, separator.isBlank() ? null : separator, sortable);
   }
@@ -473,10 +468,8 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
     if (!ObjectUtils.isEmpty(ti.alias())) {
       fieldName = fieldName.as(ti.alias());
-    } else if (prefix != null && !prefix.isBlank()) {
-      fieldName = fieldName.as(prefix.replace(".", "_") + "_" + field.getName());
     } else {
-      fieldName = fieldName.as(field.getName());
+      fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
     }
 
     String phonetic = ObjectUtils.isEmpty(ti.phonetic()) ? null : ti.phonetic();
@@ -491,10 +484,8 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
     if (!ObjectUtils.isEmpty(ti.alias())) {
       fieldName = fieldName.as(ti.alias());
-    } else if (prefix != null && !prefix.isBlank()) {
-      fieldName = fieldName.as(prefix.replace(".", "_") + "_" + field.getName());
     } else {
-      fieldName = fieldName.as(field.getName());
+      fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
     }
     String phonetic = ObjectUtils.isEmpty(ti.phonetic()) ? null : ti.phonetic();
 
@@ -508,10 +499,8 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
     if (!ObjectUtils.isEmpty(gi.alias())) {
       fieldName = fieldName.as(gi.alias());
-    } else if (prefix != null && !prefix.isBlank()) {
-      fieldName = fieldName.as(prefix.replace(".", "_") + "_" + field.getName());
     } else {
-      fieldName = fieldName.as(field.getName());
+      fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
     }
 
     return new Field(fieldName, FieldType.Geo);
@@ -525,10 +514,8 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
     if (!ObjectUtils.isEmpty(ni.alias())) {
       fieldName = fieldName.as(ni.alias());
-    } else if (prefix != null && !prefix.isBlank()) {
-      fieldName = fieldName.as(prefix.replace(".", "_") + "_" + field.getName());
     } else {
-      fieldName = fieldName.as(field.getName());
+      fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
     }
 
     return new Field(fieldName, FieldType.Numeric);
@@ -540,13 +527,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     String fieldPrefix = isDocument ? "$." + chain : chain;
     FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
 
-    fieldName = fieldName.as(field.getName());
-
-    if (prefix != null && !prefix.isBlank()) {
-      fieldName = fieldName.as(prefix.replace(".", "_") + "_" + field.getName());
-    } else {
-      fieldName = fieldName.as(field.getName());
-    }
+    fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
 
     return new Field(fieldName, FieldType.Numeric, sortable, noIndex);
   }
@@ -557,11 +538,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     String fieldPrefix = isDocument ? "$." + chain : chain;
     FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
 
-    if (prefix != null && !prefix.isBlank()) {
-      fieldName = fieldName.as(prefix.replace(".", "_") + "_" + field.getName());
-    } else {
-      fieldName = fieldName.as(field.getName());
-    }
+    fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
 
     return new Field(fieldName, FieldType.Geo);
   }
@@ -596,7 +573,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
           tempPrefix = field.getName() + "[0:].";
 
           FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName());
-          fieldName = fieldName.as(prefix.replace(".", "_") + "_" + subField.getName());
+          fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(subField, prefix));
 
           logger.info(String.format("Creating nested relationships: %s -> %s", field.getName(), subField.getName()));
           fieldList.add(new TagField(fieldName, ti.separator(), false));
@@ -612,7 +589,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
             tempPrefix = field.getName() + "[0:].";
 
             FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName());
-            fieldName = fieldName.as(prefix.replace(".", "_") + "_" + subField.getName());
+            fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(subField, prefix));
 
             logger.info(String.format("Creating nested relationships: %s -> %s", field.getName(), subField.getName()));
             fieldList.add(new TagField(fieldName, indexed.separator(), false));
