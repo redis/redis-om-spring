@@ -35,6 +35,7 @@ public class SerializationTest extends AbstractBaseEnhancedRedisTest {
   private KitchenSink ks;
   private KitchenSink ks1;
   private KitchenSink ks2;
+  private KitchenSink ks3;
 
   private LocalDate localDate;
   private LocalDateTime localDateTime;
@@ -88,8 +89,18 @@ public class SerializationTest extends AbstractBaseEnhancedRedisTest {
 
     ks2.setSetThings(null);
     ks2.setListThings(null);
+    
+    ks3 = KitchenSink.builder() //
+        .localDate(localDate) //
+        .localDateTime(localDateTime) //
+        .date(date) //
+        .point(point) //
+        .ulid(ulid) //
+        .build();
+    
+    ks3.setUlid(null);
 
-    repository.saveAll(List.of(ks, ks1, ks2));
+    repository.saveAll(List.of(ks, ks1, ks2, ks3));
   }
 
   @Test
@@ -146,7 +157,14 @@ public class SerializationTest extends AbstractBaseEnhancedRedisTest {
   @Test
   void testLocalDateDeSerializationInQuery() {
     List<KitchenSink> all = repository.findByLocalDateGreaterThan(localDate.minus(2, ChronoUnit.DAYS));
-    assertThat(all).containsExactlyInAnyOrder(ks, ks1, ks2);
+    assertThat(all).containsExactlyInAnyOrder(ks, ks1, ks2, ks3);
+  }
+  
+  @Test
+  void testEmptyUlidReturnsAsNull() {
+    Optional<KitchenSink> fromDb = repository.findById(ks3.getId());
+    assertThat(fromDb.isPresent());
+    assertThat(fromDb.get().getUlid()).isNull();
   }
 
 }
