@@ -57,4 +57,6 @@ public class KitchenSink {
   @Singular
   @Indexed
   private List<String> listThings;
+  
+  private byte[] byteArray;
 }

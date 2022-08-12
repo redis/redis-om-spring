@@ -42,6 +42,7 @@ public class SerializationTest extends AbstractBaseEnhancedRedisTest {
   private Date date;
   private Point point;
   private Ulid ulid;
+  private byte[] byteArray; 
 
   private Set<String> setThings;
   private List<String> listThings;
@@ -56,6 +57,7 @@ public class SerializationTest extends AbstractBaseEnhancedRedisTest {
     date = new Date();
     point = new Point(-111.83592170193586,33.62826024782707);
     ulid = UlidCreator.getMonotonicUlid();
+    byteArray = "Hello World!".getBytes();
     setThings = Set.of("thingOne", "thingTwo", "thingThree");
     listThings = List.of("redFish", "blueFish");
 
@@ -99,6 +101,7 @@ public class SerializationTest extends AbstractBaseEnhancedRedisTest {
         .build();
     
     ks3.setUlid(null);
+    ks3.setByteArray(byteArray);
 
     repository.saveAll(List.of(ks, ks1, ks2, ks3));
   }
@@ -165,6 +168,13 @@ public class SerializationTest extends AbstractBaseEnhancedRedisTest {
     Optional<KitchenSink> fromDb = repository.findById(ks3.getId());
     assertThat(fromDb.isPresent());
     assertThat(fromDb.get().getUlid()).isNull();
+  }
+  
+  @Test
+  void testByArraySerialization() {
+    Optional<KitchenSink> fromDb = repository.findById(ks3.getId());
+    assertThat(fromDb.isPresent());
+    assertThat(fromDb.get().getByteArray()).isEqualTo(byteArray);
   }
 
 }
