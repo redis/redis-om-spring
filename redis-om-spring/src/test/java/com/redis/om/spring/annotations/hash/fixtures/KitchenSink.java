@@ -59,4 +59,6 @@ public class KitchenSink {
   private List<String> listThings;
   
   private byte[] byteArray;
+  
+  private List<String[]> listOfStringArrays;
 }
