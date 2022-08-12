@@ -46,7 +46,7 @@ public class KitchenSink {
   @NonNull
   @Indexed
   private Point point;
-  @NonNull
+
   @Indexed
   private Ulid ulid;
 
