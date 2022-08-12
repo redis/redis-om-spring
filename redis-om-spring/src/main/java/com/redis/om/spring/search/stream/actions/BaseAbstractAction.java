@@ -14,11 +14,7 @@ public abstract class BaseAbstractAction implements TakesJSONOperations {
   public BaseAbstractAction(Field field) {
     this.field = field;
     Optional<Field> maybeId = ObjectUtils.getIdFieldForEntityClass(field.getDeclaringClass());
-    if (maybeId.isPresent()) {
-      this.idField = maybeId.get();
-    } else {
-      throw new IllegalArgumentException(field.getDeclaringClass().getName() + " does not appear to have an ID field");
-    }
+    this.idField = maybeId.get();
   }
 
   @Override
