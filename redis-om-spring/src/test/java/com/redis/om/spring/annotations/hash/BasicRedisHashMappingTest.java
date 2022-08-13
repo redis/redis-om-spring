@@ -17,6 +17,7 @@ import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
 import org.assertj.core.util.Arrays;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -344,7 +345,8 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
     Iterable<Company> result = companyRepo.findAll(Sort.by("name").ascending());
 
-    List<String> companyNames = StreamSupport.stream(result.spliterator(), false).map(Company::getName).collect(Collectors.toList());
+    List<String> companyNames = StreamSupport.stream(result.spliterator(), false).map(Company::getName)
+        .collect(Collectors.toList());
     assertThat(Ordering.<String>natural().isOrdered(companyNames)).isTrue();
   }
 
@@ -426,7 +428,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
     companyRepo.saveAll(List.of(redis, microsoft, tesla));
 
-    Point point = new Point(-122.064,37.384);
+    Point point = new Point(-122.064, 37.384);
     var distance = new Distance(30.0, DistanceUnit.MILES);
     List<Company> results = companyRepo.findByLocationNear(point, distance);
 
@@ -473,5 +475,14 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
     Iterable<String> ids = List.of(redis.getId(), microsoft.getId());
     Iterable<String> companyNames = companyRepo.getFieldsByIds(ids, Company$.NAME);
     assertThat(companyNames).containsExactly(redis.getName(), microsoft.getName());
+  }
+
+  @Test
+  public void testPersistingEntityMustNotBeNull() {
+    IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> {
+      companyRepo.save(null);
+    });
+
+    Assertions.assertEquals("Entity must not be null!", exception.getMessage());
   }
 }
