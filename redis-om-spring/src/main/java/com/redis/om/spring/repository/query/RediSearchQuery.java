@@ -285,7 +285,7 @@ public class RediSearchQuery implements RepositoryQuery {
         Pageable pageable = maybePageable.get();
         if (!pageable.isUnpaged()) {
           query.limit(Long.valueOf(pageable.getOffset()).intValue(), pageable.getPageSize());
-  
+
           if (pageable.getSort() != null) {
             for (Order order : pageable.getSort()) {
               query.setSortBy(order.getProperty(), order.isAscending());
@@ -353,7 +353,7 @@ public class RediSearchQuery implements RepositoryQuery {
     if (queryMethod.getReturnedObjectType() == AggregationResult.class) {
       result = aggregationResult;
     } else if (queryMethod.isCollectionQuery()) {
-      result = Collections.EMPTY_LIST; // TODO: WTF Sam-Bodden?
+      result = Collections.EMPTY_LIST; // TODO: Handle custom return values, see https://github.com/redis/redis-om-spring/issues/88
     }
 
     return result;
@@ -405,7 +405,7 @@ public class RediSearchQuery implements RepositoryQuery {
             : (paramNames.size() > index ? paramNames.get(index) : ""));
         if (!key.isBlank()) {
           String v = "";
-  
+
           if (parameters[index] instanceof Collection<?>) {
             @SuppressWarnings("rawtypes")
             Collection<?> c = (Collection) parameters[index];
@@ -413,7 +413,7 @@ public class RediSearchQuery implements RepositoryQuery {
           } else {
             v = parameters[index].toString();
           }
-  
+
 
           preparedQuery = new StringBuilder(preparedQuery.toString().replace("$" + key, v));
         }
