@@ -8,11 +8,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.StreamSupport;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +23,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Point;
+import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
@@ -44,7 +50,8 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
 
   @BeforeEach
   public void loadTestData() {
-    MyDoc doc1 = MyDoc.of("hello world");
+    Point point1 = new Point(-122.124500, 47.640160);
+    MyDoc doc1 = MyDoc.of("hello world", point1, point1, 1);
 
     Set<String> tags = new HashSet<String>();
     tags.add("news");
@@ -55,7 +62,8 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
 
     id1 = doc1.getId();
 
-    MyDoc doc2 = MyDoc.of("hello mundo");
+    Point point2 = new Point(-122.066540, 37.377690);
+    MyDoc doc2 = MyDoc.of("hello mundo", point2, point2, 2);
 
     Set<String> tags2 = new HashSet<String>();
     tags2.add("noticias");
@@ -114,7 +122,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
 
   /**
    * <pre>
-   * @Query("@title:$title @tag:{$tags}")
+   * &#64;Query("@title:$title @tag:{$tags}")
    *
    * > FT.SEARCH idx '@title:hello @tag:{news}' 
    * 1) (integer) 1 2) "doc1" 
@@ -165,6 +173,18 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
+  public void testUnpagedPagination() {
+    Page<MyDoc> result = repository.findAllByTitleStartingWith("hel", Pageable.unpaged());
+
+    assertEquals(1, result.getTotalPages());
+    assertEquals(2, result.getTotalElements());
+    assertEquals(2, result.getContent().size());
+
+    MyDoc doc1 = result.getContent().get(0);
+    assertEquals("hello world", doc1.getTitle());
+  }
+
+  @Test
   public void testQueryAnnotationWithLimitAndOffset() {
     Pageable pageRequest = PageRequest.of(0, 1);
     Page<MyDoc> result = repository.customFindAllByTitleStartingWith("hel", pageRequest);
@@ -208,7 +228,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
 
   @Test
   public void testTagValsQuery() {
-    Iterable<String> values = repository.getAllTags();
+    Iterable<String> values = repository.getAllTag();
     assertThat(values).hasSize(4).contains("news", "article", "noticias", "articulo");
   }
 
@@ -241,6 +261,54 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
     assertEquals("hello world", doc1.getTitle());
 
     assertThat(doc1.getTag()).isEmpty();
+  }
+
+  @Test
+  public void testFindByFieldWithExplicitTagIndexedAnnotation() {
+    Iterable<MyDoc> results = repository.findByTag(Set.of("news"));
+    assertEquals(1, ((Collection<MyDoc>) results).size());
+    MyDoc doc = results.iterator().next();
+    assertEquals("hello world", doc.getTitle());
+    assertTrue(doc.getTag().contains("news"));
+  }
+
+  @Test
+  public void testFindByFieldWithExplicitGeoIndexedAnnotation() {
+    Point point = new Point(-122.064, 37.384);
+    var distance = new Distance(30.0, DistanceUnit.MILES);
+    Iterable<MyDoc> results = repository.findByLocationNear(point, distance);
+    Iterator<MyDoc> iter = results.iterator();
+    MyDoc doc = iter.next();
+    assertEquals("hello mundo", doc.getTitle());
+
+    @SuppressWarnings("unused")
+    NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class, () -> {
+      iter.next();
+    });
+  }
+
+  @Test
+  public void testFindByFieldWithIndexedGeoAnnotation() {
+    Point point = new Point(-122.064, 37.384);
+    var distance = new Distance(30.0, DistanceUnit.MILES);
+    Iterable<MyDoc> results = repository.findByLocation2Near(point, distance);
+    Iterator<MyDoc> iter = results.iterator();
+    MyDoc doc = iter.next();
+    assertEquals("hello mundo", doc.getTitle());
+
+    @SuppressWarnings("unused")
+    NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class, () -> {
+      iter.next();
+    });
+  }
+
+  @Test
+  public void testFindByFieldWithExplicitNumericIndexedAnnotation() {
+    Iterable<MyDoc> results = repository.findByaNumber(1);
+    assertEquals(1, ((Collection<MyDoc>) results).size());
+    MyDoc doc = results.iterator().next();
+    assertEquals("hello world", doc.getTitle());
+    assertTrue(doc.getTag().contains("news"));
   }
 
 }

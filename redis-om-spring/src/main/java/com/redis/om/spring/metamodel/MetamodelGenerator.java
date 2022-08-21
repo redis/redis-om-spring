@@ -42,6 +42,7 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
 import org.springframework.data.geo.Point;
+import org.springframework.data.redis.core.RedisHash;
 import org.springframework.util.ClassUtils;
 
 import com.google.auto.service.AutoService;
@@ -49,6 +50,7 @@ import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.Searchable;
 import com.redis.om.spring.metamodel.indexed.BooleanField;
+import com.redis.om.spring.metamodel.indexed.DateField;
 import com.redis.om.spring.metamodel.indexed.GeoField;
 import com.redis.om.spring.metamodel.indexed.NumericField;
 import com.redis.om.spring.metamodel.indexed.TagField;
@@ -56,6 +58,7 @@ import com.redis.om.spring.metamodel.indexed.TextField;
 import com.redis.om.spring.metamodel.indexed.TextTagField;
 import com.redis.om.spring.metamodel.nonindexed.NonIndexedBooleanField;
 import com.redis.om.spring.metamodel.nonindexed.NonIndexedNumericField;
+import com.redis.om.spring.metamodel.nonindexed.NonIndexedTagField;
 import com.redis.om.spring.metamodel.nonindexed.NonIndexedTextField;
 import com.redis.om.spring.tuple.Triple;
 import com.redis.om.spring.tuple.Tuples;
@@ -99,14 +102,18 @@ public final class MetamodelGenerator extends AbstractProcessor {
       return false;
     }
 
-    roundEnv.getElementsAnnotatedWith(Document.class).stream().filter(ae -> ae.getKind() == ElementKind.CLASS)
-        .forEach(ae -> {
-          try {
-            generateMetaModelClass(ae);
-          } catch (IOException e) {
-            e.printStackTrace();
-          }
-        });
+    Set<? extends Element> documentEntities = roundEnv.getElementsAnnotatedWith(Document.class);
+    Set<? extends Element> hashEntities = roundEnv.getElementsAnnotatedWith(RedisHash.class);
+    Set<? extends Element> metamodelCandidates = Stream.of(documentEntities, hashEntities) //
+        .flatMap(x -> x.stream()).collect(Collectors.toSet());
+
+    metamodelCandidates.stream().filter(ae -> ae.getKind() == ElementKind.CLASS).forEach(ae -> {
+      try {
+        generateMetaModelClass(ae);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    });
 
     return true;
   }
@@ -149,23 +156,24 @@ public final class MetamodelGenerator extends AbstractProcessor {
     List<FieldSpec> fields = new ArrayList<FieldSpec>();
     List<CodeBlock> initCodeBlocks = new ArrayList<CodeBlock>();
     enclosedFields.forEach((field, getter) -> {
-      boolean fieldIsIndexed = (field.getAnnotation(Searchable.class) != null) || (field.getAnnotation(Indexed.class) != null);
-      
+      boolean fieldIsIndexed = (field.getAnnotation(Searchable.class) != null)
+          || (field.getAnnotation(Indexed.class) != null);
+
       String fieldName = field.getSimpleName().toString();
       TypeName entityField = TypeName.get(field.asType());
-      
+
       TypeMirror fieldType = field.asType();
       String fullTypeClassName = fieldType.toString();
       String cls = ObjectUtils.getTargetClassName(fullTypeClassName);
-      
+
       if (field.asType().getKind().isPrimitive()) {
         Class<?> primitive = ClassUtils.resolvePrimitiveClassName(cls);
         Class<?> primitiveWrapper = ClassUtils.resolvePrimitiveIfNecessary(primitive);
         entityField = TypeName.get(primitiveWrapper);
         fullTypeClassName = entityField.toString();
         cls = ObjectUtils.getTargetClassName(fullTypeClassName);
-      } 
-      
+      }
+
       Class<?> targetInterceptor = MetamodelField.class;
 
       if (field.getAnnotation(Searchable.class) != null) {
@@ -174,7 +182,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
         Class<?> targetCls;
         try {
           targetCls = ClassUtils.forName(cls, MetamodelGenerator.class.getClassLoader());
-          
+
           //
           // Any Character class -> Tag Search Field
           //
@@ -184,8 +192,14 @@ public final class MetamodelGenerator extends AbstractProcessor {
           //
           // Any Numeric class -> Numeric Search Field
           //
-          else if (Number.class.isAssignableFrom(targetCls) || (targetCls == LocalDateTime.class) || (targetCls == LocalDate.class) || (targetCls == Date.class) ) {
+          else if (Number.class.isAssignableFrom(targetCls)) {
             targetInterceptor = NumericField.class;
+          }
+          //
+          // Any Date/Time Types
+          //
+          else if ((targetCls == LocalDateTime.class) || (targetCls == LocalDate.class) || (targetCls == Date.class)) {
+            targetInterceptor = DateField.class;
           }
           //
           // Set / List
@@ -206,14 +220,15 @@ public final class MetamodelGenerator extends AbstractProcessor {
             targetInterceptor = BooleanField.class;
           }
         } catch (ClassNotFoundException cnfe) {
-          messager.printMessage(Diagnostic.Kind.WARNING, "Processing class " + entityName + " could not resolve " + cls);
+          messager.printMessage(Diagnostic.Kind.WARNING,
+              "Processing class " + entityName + " could not resolve " + cls);
         }
-      } else  {
+      } else {
         Class<?> targetCls;
         try {
           targetCls = ClassUtils.forName(cls, MetamodelGenerator.class.getClassLoader());
           //
-          // Any Character class 
+          // Any Character class
           //
           if (CharSequence.class.isAssignableFrom(targetCls)) {
             targetInterceptor = NonIndexedTextField.class;
@@ -225,17 +240,26 @@ public final class MetamodelGenerator extends AbstractProcessor {
             targetInterceptor = NonIndexedBooleanField.class;
           }
           //
-          // Numeric class 
+          // Numeric class AND Any Date/Time Types
           //
-          else if (Number.class.isAssignableFrom(targetCls) || (targetCls == LocalDateTime.class) || (targetCls == LocalDate.class) || (targetCls == Date.class) ) {
+          else if (Number.class.isAssignableFrom(targetCls) || (targetCls == LocalDateTime.class)
+              || (targetCls == LocalDate.class) || (targetCls == Date.class)) {
             targetInterceptor = NonIndexedNumericField.class;
           }
+          //
+          // Set / List
+          //
+          else if (Set.class.isAssignableFrom(targetCls) || List.class.isAssignableFrom(targetCls)) {
+            targetInterceptor = NonIndexedTagField.class;
+          }
         } catch (ClassNotFoundException cnfe) {
-          messager.printMessage(Diagnostic.Kind.WARNING, "Processing class " + entityName + " could not resolve " + cls);
+          messager.printMessage(Diagnostic.Kind.WARNING,
+              "Processing class " + entityName + " could not resolve " + cls);
         }
       }
-      
-      Triple<FieldSpec, FieldSpec, CodeBlock> fieldMetamodel = generateFieldMetamodel(entity, fieldName, entityField, targetInterceptor, fieldIsIndexed);
+
+      Triple<FieldSpec, FieldSpec, CodeBlock> fieldMetamodel = generateFieldMetamodel(entity, fieldName, entityField,
+          targetInterceptor, fieldIsIndexed);
 
       fields.add(fieldMetamodel.getFirst());
       interceptors.add(fieldMetamodel.getSecond());
@@ -257,8 +281,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
     CodeBlock staticBlock = blockBuilder.build();
 
-    TypeSpec metaclass = TypeSpec.classBuilder(genEntityName)
-        .addModifiers(Modifier.PUBLIC, Modifier.FINAL) //
+    TypeSpec metaclass = TypeSpec.classBuilder(genEntityName).addModifiers(Modifier.PUBLIC, Modifier.FINAL) //
         .addFields(fields) //
         .addStaticBlock(staticBlock) //
         .addFields(interceptors) //
@@ -367,7 +390,8 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
   public static String javaNameFromExternal(final String externalName) {
     requireNonNull(externalName);
-    return MetamodelGenerator.replaceIfIllegalJavaIdentifierCharacter(replaceIfJavaUsedWord(nameFromExternal(externalName)));
+    return MetamodelGenerator
+        .replaceIfIllegalJavaIdentifierCharacter(replaceIfJavaUsedWord(nameFromExternal(externalName)));
   }
 
   public static String nameFromExternal(final String externalName) {
@@ -396,21 +420,20 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
   public static final Character REPLACEMENT_CHARACTER = '_';
 
-  private Triple<FieldSpec, FieldSpec, CodeBlock> generateFieldMetamodel(TypeName entity, String fieldName, TypeName entityField, Class<?> interceptorClass, boolean fieldIsIndexed) {
+  private Triple<FieldSpec, FieldSpec, CodeBlock> generateFieldMetamodel(TypeName entity, String fieldName,
+      TypeName entityField, Class<?> interceptorClass, boolean fieldIsIndexed) {
     String fieldAccessor = staticField(fieldName);
 
-    FieldSpec objectField = FieldSpec.builder(Field.class, fieldName)
-        .addModifiers(Modifier.PUBLIC, Modifier.STATIC).build();
+    FieldSpec objectField = FieldSpec.builder(Field.class, fieldName).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+        .build();
 
     TypeName interceptor = ParameterizedTypeName.get(ClassName.get(interceptorClass), entity, entityField);
 
-    FieldSpec aField = FieldSpec.builder(interceptor, fieldAccessor)
-        .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+    FieldSpec aField = FieldSpec.builder(interceptor, fieldAccessor).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
         .build();
 
     CodeBlock aFieldInit = CodeBlock.builder()
-        .addStatement("$L = new $T($L,$L)", fieldAccessor, interceptor, fieldName, fieldIsIndexed)
-        .build();
+        .addStatement("$L = new $T($L,$L)", fieldAccessor, interceptor, fieldName, fieldIsIndexed).build();
 
     return Tuples.of(objectField, aField, aFieldInit);
   }
@@ -441,7 +464,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
         // Cannot be used as a java identifier. Replace it
         sb.append(REPLACEMENT_CHARACTER);
       }
-  
+
     }
     return sb.toString();
   }

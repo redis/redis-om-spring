@@ -4,8 +4,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.geo.Point;
 
 import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.annotations.GeoIndexed;
+import com.redis.om.spring.annotations.Indexed;
+import com.redis.om.spring.annotations.NumericIndexed;
 import com.redis.om.spring.annotations.TagIndexed;
 import com.redis.om.spring.annotations.TextIndexed;
 
@@ -27,6 +31,19 @@ public class MyDoc {
   @NonNull
   @TextIndexed(alias = "title")
   private String title;
+  
+  @NonNull
+  @GeoIndexed(alias = "location")
+  private Point location;
+  
+  @NonNull
+  @Indexed
+  private Point location2;
+  
+  @NonNull
+  @NumericIndexed
+  private Integer aNumber;
+  
   @TagIndexed(alias = "tag")
   private Set<String> tag = new HashSet<String>();
 }

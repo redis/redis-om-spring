@@ -7,6 +7,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
@@ -21,6 +23,7 @@ import com.redis.om.spring.ops.pds.BloomOperations;
 @Component
 public class BloomAspect implements Ordered {
   private BloomOperations<String> ops;
+  private static final Log logger = LogFactory.getLog(BloomAspect.class);
 
   public BloomAspect(BloomOperations<String> ops) {
     this.ops = ops;
@@ -45,7 +48,7 @@ public class BloomAspect implements Ordered {
           PropertyDescriptor pd = new PropertyDescriptor(field.getName(), entity.getClass());
           ops.add(filterName, pd.getReadMethod().invoke(entity).toString());
         } catch (IllegalArgumentException | IllegalAccessException | IntrospectionException | InvocationTargetException e) {
-          e.printStackTrace();
+          logger.error(String.format("Could not add value to Bloom filter %s", filterName), e);
         }
       }
     }
@@ -71,7 +74,7 @@ public class BloomAspect implements Ordered {
             PropertyDescriptor pd = new PropertyDescriptor(field.getName(), entity.getClass());
             ops.add(filterName, pd.getReadMethod().invoke(entity).toString());
           } catch (IllegalArgumentException | IllegalAccessException | IntrospectionException | InvocationTargetException e) {
-            e.printStackTrace();
+            logger.error(String.format("Could not add values to Bloom filter %s", filterName), e);
           }
         }
       }

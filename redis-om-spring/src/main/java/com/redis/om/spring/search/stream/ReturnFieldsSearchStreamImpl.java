@@ -47,7 +47,7 @@ import io.redisearch.Query;
 import io.redisearch.SearchResult;
 import io.redisearch.aggregation.SortedField.SortOrder;
 
-public class ReturnFieldsSearchStreamImpl<E,T> implements SearchStream<T> {
+public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
 
   @SuppressWarnings("unused")
   private static final Log logger = LogFactory.getLog(ReturnFieldsSearchStreamImpl.class);
@@ -56,6 +56,8 @@ public class ReturnFieldsSearchStreamImpl<E,T> implements SearchStream<T> {
 
   private SearchStreamImpl<E> entitySearchStream;
   private List<MetamodelField<E, ?>> returning = new ArrayList<MetamodelField<E, ?>>();
+  private Stream<T> resolvedStream;
+  private Runnable closeHandler;
 
   public ReturnFieldsSearchStreamImpl(SearchStreamImpl<E> entitySearchStream, List<MetamodelField<E, ?>> returning) {
     this.entitySearchStream = entitySearchStream;
@@ -94,32 +96,35 @@ public class ReturnFieldsSearchStreamImpl<E,T> implements SearchStream<T> {
 
   @Override
   public SearchStream<T> onClose(Runnable closeHandler) {
-    resolveStream().onClose(closeHandler);
+    this.closeHandler = closeHandler;
     return this;
   }
 
   @Override
   public void close() {
-    resolveStream().close();
+    if (closeHandler == null) {
+      resolveStream().close();
+    } else {
+      resolveStream().onClose(closeHandler);
+      resolveStream().close();
+    }
   }
 
-  @SuppressWarnings("resource")
   @Override
   public SearchStream<T> filter(SearchFieldPredicate<? super T, ?> predicate) {
-    return new WrapperSearchStream<T>(resolveStream()).filter(predicate);
+    throw new UnsupportedOperationException("Filter on a field predicate is not supported on mapped stream");
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public SearchStream<T> filter(Predicate<?> predicate) {
-    // TODO: need to test this cast!
     return new WrapperSearchStream<T>(resolveStream().filter((Predicate<? super T>) predicate));
   }
 
   @SuppressWarnings("resource")
   @Override
-  public <R> SearchStream<R> map(Function<? super T, ? extends R> field) {
-    return new WrapperSearchStream<T>(resolveStream()).map(field);
+  public <R> SearchStream<R> map(Function<? super T, ? extends R> mapper) {
+    return new WrapperSearchStream<T>(resolveStream()).map(mapper);
   }
 
   @Override
@@ -139,7 +144,7 @@ public class ReturnFieldsSearchStreamImpl<E,T> implements SearchStream<T> {
 
   @SuppressWarnings("resource")
   @Override
-  public <R> SearchStream<R> flatMap(Function<? super T, ? extends SearchStream<? extends R>> mapper) {
+  public <R> SearchStream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper) {
     return new WrapperSearchStream<T>(resolveStream()).flatMap(mapper);
   }
 
@@ -159,16 +164,6 @@ public class ReturnFieldsSearchStreamImpl<E,T> implements SearchStream<T> {
   @Override
   public DoubleStream flatMapToDouble(Function<? super T, ? extends DoubleStream> mapper) {
     return new WrapperSearchStream<T>(resolveStream()).flatMapToDouble(mapper);
-  }
-
-  @Override
-  public SearchStream<T> distinct() {
-    return new WrapperSearchStream<T>(resolveStream().distinct());
-  }
-
-  @Override
-  public SearchStream<T> sorted() {
-    return new WrapperSearchStream<T>(resolveStream().sorted());
   }
 
   @Override
@@ -282,52 +277,52 @@ public class ReturnFieldsSearchStreamImpl<E,T> implements SearchStream<T> {
   }
 
   private Stream<T> resolveStream() {
-    List<T> results = Collections.emptyList();
-    Query query = entitySearchStream.prepareQuery();
+    if (resolvedStream == null) {
+      List<T> results = Collections.emptyList();
+      Query query = entitySearchStream.prepareQuery();
 
-    boolean resultSetHasNonIndexedFields = returning.stream().anyMatch(foi -> !foi.isIndexed());
+      boolean resultSetHasNonIndexedFields = returning.stream().anyMatch(foi -> !foi.isIndexed());
 
-    if (resultSetHasNonIndexedFields) {
-      SearchResult searchResult = entitySearchStream.getOps().search(query);
+      if (resultSetHasNonIndexedFields) {
+        SearchResult searchResult = entitySearchStream.getOps().search(query);
 
-      List<E> entities = searchResult.docs.stream()
-          .map(d -> gson.fromJson(d.get("$").toString(), entitySearchStream.getEntityClass()))
-          .collect(Collectors.toList());
+        List<E> entities = searchResult.docs.stream()
+            .map(d -> gson.fromJson(d.get("$").toString(), entitySearchStream.getEntityClass()))
+            .collect(Collectors.toList());
 
-      results = toResultTuple(entities);
+        results = toResultTuple(entities);
 
-    } else {
-      String[] returnFields = returning.stream().map(foi -> foi.getField().getName()).toArray(String[]::new);
-      query.returnFields(returnFields);
-      results = toResultTuple(entitySearchStream.getOps().search(query));
+      } else {
+        String[] returnFields = returning.stream().map(foi -> "$." + foi.getField().getName()).toArray(String[]::new);
+        query.returnFields(returnFields);
+        results = toResultTuple(entitySearchStream.getOps().search(query));
+      }
+      resolvedStream = results.stream();
     }
-
-
-    return results.stream();
+    return resolvedStream;
   }
 
   @SuppressWarnings("unchecked")
   private List<T> toResultTuple(SearchResult searchResult) {
     List<T> results = new ArrayList<T>();
     searchResult.docs.stream().forEach(doc -> {
-
-      Map<String, Object> props = StreamSupport.stream(doc.getProperties().spliterator(), false).collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+      Map<String, Object> props = StreamSupport.stream(doc.getProperties().spliterator(), false)
+          .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
 
       List<Object> mappedResults = new ArrayList<Object>();
       returning.stream().forEach(foi -> {
         String field = foi.getField().getName();
-        Object value = props.get(field);
+        Object value = props.get("$." + field);
         Class<?> targetClass = foi.getField().getType();
         if (targetClass == Date.class) {
           mappedResults.add(new Date(Long.valueOf(value.toString())));
-        }
-        else if (targetClass == Point.class) {
+        } else if (targetClass == Point.class) {
           StringTokenizer st = new StringTokenizer(value.toString(), ",");
           String lon = st.nextToken();
           String lat = st.nextToken();
 
           mappedResults.add(new Point(Double.parseDouble(lon), Double.parseDouble(lat)));
-        } else  {
+        } else {
           mappedResults.add(gson.fromJson(value.toString(), targetClass));
         }
       });

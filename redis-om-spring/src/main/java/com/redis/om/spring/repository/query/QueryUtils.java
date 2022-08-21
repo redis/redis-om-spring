@@ -3,19 +3,29 @@ package com.redis.om.spring.repository.query;
 import java.util.Set;
 
 public class QueryUtils {
-  public static Set<Character> tagEscapeChars = Set.of( //
+  public static final Set<Character> TAG_ESCAPE_CHARS = Set.of( //
       ',', '.', '<', '>', '{', '}', '[', //
       ']', '"', '\'', ':', ';', '!', '@', //
       '#', '$', '%', '^', '&', '*', '(', //
       ')', '-', '+', '=', '~', '|', ' ' //
   );
+  
+  public static String escape(String text) {
+    return escape(text, false, false);
+  }
+  public static String escape(String text, boolean querying) {
+    return escape(text, querying, false);
+  }
 
-  public static String escapeTagField(String text) {
+  public static String escape(String text, boolean querying, boolean isCsv) {
     var sb = new StringBuilder();
     char[] chars = text.toCharArray();
 
     for (char c : chars) {
-      if (tagEscapeChars.contains(c)) {
+      if (TAG_ESCAPE_CHARS.contains(c)) {
+        sb.append("\\");
+      }
+      if (querying && c == ' ') {
         sb.append("\\");
       }
       sb.append(c);
@@ -24,8 +34,13 @@ public class QueryUtils {
     return sb.toString();
   }
   
-  @SuppressWarnings("unchecked")
-  public static <T> T escapeTagField(T maybeText) {
-    return CharSequence.class.isAssignableFrom(maybeText.getClass()) ? (T) escapeTagField(maybeText.toString()) : maybeText;
+  public static String unescape(String text) {
+    return text.replace("\\", "");
   }
+  
+  @SuppressWarnings("unchecked")
+  public static <T> T escape(T maybeText) {
+    return CharSequence.class.isAssignableFrom(maybeText.getClass()) ? (T) escape(maybeText.toString()) : maybeText;
+  }
+  
 }

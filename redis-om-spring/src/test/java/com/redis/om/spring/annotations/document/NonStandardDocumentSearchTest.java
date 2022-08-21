@@ -22,7 +22,7 @@ public class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
 
   @Autowired
   RedisTemplate<String, String> template;
-  
+
   long id1;
   long id2;
   long id3;
@@ -35,7 +35,7 @@ public class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
     c2.setTaken(true);
 
     repository.saveAll(List.of(c1, c2, c3));
-    
+
     id1 = c1.getId();
     id2 = c2.getId();
     id3 = c3.getId();
@@ -49,15 +49,12 @@ public class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
   @Test
   public void testGetByName() {
     assertEquals(3, repository.count());
-    
-    repository.findAll().forEach(c -> System.out.println(c.getName()));
-
     List<Custom> customs = repository.searchByName("barbar");
     assertThat(customs.size()).isEqualTo(1);
-    Custom barbar = customs.get(0);    
+    Custom barbar = customs.get(0);
     assertThat(barbar.getName()).isEqualTo("barbar");
   }
-  
+
   @Test
   public void testBasicCrudOperations() {
     Optional<Custom> maybeC1 = repository.findById(id1);
@@ -67,16 +64,16 @@ public class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
     assertTrue(maybeC1.isPresent());
     assertTrue(maybeC2.isPresent());
     assertTrue(nonExistent.isEmpty());
-    
+
     // delete given an entity
     repository.delete(maybeC1.get());
-    
+
     assertEquals(2, repository.count());
-    
+
     // delete given an id
     repository.deleteById(id2);
-    
+
     assertEquals(1, repository.count());
   }
-  
+
 }

@@ -9,7 +9,6 @@ import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.repository.query.KeyValuePartTreeQuery;
 import org.springframework.data.keyvalue.repository.query.SpelQueryCreator;
 import org.springframework.data.keyvalue.repository.support.KeyValueRepositoryFactory;
-import org.springframework.data.keyvalue.repository.support.SimpleKeyValueRepository;
 import org.springframework.data.mapping.PersistentEntity;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
@@ -30,6 +29,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
+import com.redis.om.spring.KeyspaceToIndexMap;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.query.RedisEnhancedQuery;
 
@@ -40,6 +40,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
   private final KeyValueOperations keyValueOperations;
   private final RedisOperations<?, ?> redisOperations;
   private final RedisModulesOperations<?> rmo;
+  private final KeyspaceToIndexMap keyspaceToIndexMap;
   private final MappingContext<?, ?> context;
   private final Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
   private final Class<? extends RepositoryQuery> repositoryQueryType;
@@ -53,8 +54,9 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
   public RedisEnhancedRepositoryFactory( //
       KeyValueOperations keyValueOperations, //
       RedisOperations<?, ?> redisOperations, //
-      RedisModulesOperations<?> rmo) {
-    this(keyValueOperations, redisOperations, rmo, DEFAULT_QUERY_CREATOR);
+      RedisModulesOperations<?> rmo, //
+      KeyspaceToIndexMap keyspaceToIndexMap) {
+    this(keyValueOperations, redisOperations, rmo, keyspaceToIndexMap, DEFAULT_QUERY_CREATOR);
   }
 
   /**
@@ -68,9 +70,10 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
                                          KeyValueOperations keyValueOperations, //
                                          RedisOperations<?, ?> redisOperations, //
                                          RedisModulesOperations<?> rmo, //
+                                         KeyspaceToIndexMap keyspaceToIndexMap, //
                                          Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
 
-    this(keyValueOperations, redisOperations, rmo, queryCreator, RedisEnhancedQuery.class);
+    this(keyValueOperations, redisOperations, rmo, keyspaceToIndexMap, queryCreator, RedisEnhancedQuery.class);
   }
 
   /**
@@ -86,6 +89,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
                                          KeyValueOperations keyValueOperations, //
                                          RedisOperations<?, ?> redisOperations, //
                                          RedisModulesOperations<?> rmo, //
+                                         KeyspaceToIndexMap keyspaceToIndexMap, //
                                          Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
                                          Class<? extends RepositoryQuery> repositoryQueryType) {
 
@@ -98,6 +102,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
     this.keyValueOperations = keyValueOperations;
     this.redisOperations = redisOperations;
     this.rmo = rmo;
+    this.keyspaceToIndexMap = keyspaceToIndexMap;
     this.context = keyValueOperations.getMappingContext();
     this.queryCreator = queryCreator;
     this.repositoryQueryType = repositoryQueryType;
@@ -124,10 +129,9 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
    * getTargetRepository(org.springframework.data.repository.core.
    * RepositoryMetadata) */
   @Override
-  protected Object getTargetRepository(RepositoryInformation repositoryInformation) {
-
+  protected Object getTargetRepository(RepositoryInformation repositoryInformation) {    
     EntityInformation<?, ?> entityInformation = getEntityInformation(repositoryInformation.getDomainType());
-    return super.getTargetRepositoryViaReflection(repositoryInformation, entityInformation, keyValueOperations);
+    return super.getTargetRepositoryViaReflection(repositoryInformation, entityInformation, keyValueOperations, rmo, keyspaceToIndexMap);
   }
 
   /* (non-Javadoc)
@@ -138,7 +142,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
    * RepositoryMetadata) */
   @Override
   protected Class<?> getRepositoryBaseClass(RepositoryMetadata metadata) {
-    return SimpleKeyValueRepository.class;
+    return SimpleRedisEnhancedRepository.class;
   }
 
   /* (non-Javadoc)

@@ -20,11 +20,6 @@ public class OrPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     this.predicates.add(predicate);
   }
 
-  @Override
-  public PredicateType getPredicateType() {
-    return PredicateType.OR;
-  }
-
   public Stream<Predicate<T>> stream() {
     return predicates.stream();
   }

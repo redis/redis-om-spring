@@ -6,7 +6,6 @@ import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
-import com.redis.om.spring.search.stream.predicates.PredicateType;
 import com.redis.om.spring.util.ObjectUtils;
 
 import io.redisearch.querybuilder.GeoValue;
@@ -24,11 +23,6 @@ public class NearPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     this.distance = distance;
   }
 
-  @Override
-  public PredicateType getPredicateType() {
-    return PredicateType.NEAR;
-  }
-
   public Point getPoint() {
     return point;
   }
@@ -39,8 +33,8 @@ public class NearPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
-    GeoValue geoValue = new GeoValue(point.getX(), point.getY(), distance.getValue(),
-        ObjectUtils.getDistanceUnit(distance));
+    GeoValue geoValue = new GeoValue(getPoint().getX(), getPoint().getY(), getDistance().getValue(),
+        ObjectUtils.getDistanceUnit(getDistance()));
 
     return QueryBuilder.intersect(root).add(getField().getName(), geoValue);
   }

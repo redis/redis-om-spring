@@ -68,6 +68,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private Optional<SortedField> sortBy = Optional.empty();
   private boolean onlyIds = false;
   private Field idField;
+  private Runnable closeHandler;
+  private Stream<E> resolvedStream;
 
   public SearchStreamImpl(Class<E> entityClass, RedisModulesOperations<String> modulesOperations) {
     this.modulesOperations = modulesOperations;
@@ -78,6 +80,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     Optional<Field> maybeIdField = ObjectUtils.getIdFieldForEntityClass(entityClass);
     if (maybeIdField.isPresent()) {
       idField = maybeIdField.get();
+    } else {
+      throw new IllegalArgumentException(entityClass.getName() + " does not appear to have an ID field");
     }
   }
 
@@ -128,7 +132,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       });
     } else {
       if (TakesJSONOperations.class.isAssignableFrom(mapper.getClass())) {
-        TakesJSONOperations tjo = (TakesJSONOperations)mapper;
+        TakesJSONOperations tjo = (TakesJSONOperations) mapper;
         tjo.setJSONOperations(json);
       }
       return new WrapperSearchStream<T>(resolveStream().map(mapper));
@@ -153,8 +157,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   @Override
-  public <R> SearchStream<R> flatMap(Function<? super E, ? extends SearchStream<? extends R>> mapper) {
-    return null;
+  public <R> SearchStream<R> flatMap(Function<? super E, ? extends Stream<? extends R>> mapper) {
+    return new WrapperSearchStream<R>(resolveStream().flatMap(mapper));
   }
 
   @Override
@@ -170,19 +174,6 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @Override
   public DoubleStream flatMapToDouble(Function<? super E, ? extends DoubleStream> mapper) {
     return resolveStream().flatMapToDouble(mapper);
-  }
-
-  @Override
-  public SearchStream<E> distinct() {
-    // NO-OP
-    return this;
-  }
-
-  @Override
-  public SearchStream<E> sorted() {
-    // TODO possible impl: find the first "sortable" field in the schema and sort by
-    // it in ASC order
-    return this;
   }
 
   @Override
@@ -225,20 +216,15 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @Override
   public void forEach(Consumer<? super E> action) {
     if (TakesJSONOperations.class.isAssignableFrom(action.getClass())) {
-      TakesJSONOperations tjo = (TakesJSONOperations)action;
+      TakesJSONOperations tjo = (TakesJSONOperations) action;
       tjo.setJSONOperations(json);
     }
-    
+
     resolveStream().forEach(action);
   }
 
   @Override
   public void forEachOrdered(Consumer<? super E> action) {
-    if (TakesJSONOperations.class.isAssignableFrom(action.getClass())) {
-      TakesJSONOperations tjo = (TakesJSONOperations)action;
-      tjo.setJSONOperations(json);
-    }
-
     resolveStream().forEachOrdered(action);
   }
 
@@ -356,13 +342,18 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public SearchStream<E> onClose(Runnable closeHandler) {
-    resolveStream().onClose(closeHandler);
+    this.closeHandler = closeHandler;
     return this;
   }
 
   @Override
   public void close() {
-    resolveStream().close();
+    if (closeHandler == null) {
+      resolveStream().close();
+    } else {
+      resolveStream().onClose(closeHandler);
+      resolveStream().close();
+    }
   }
 
   SearchOperations<String> getOps() {
@@ -396,7 +387,10 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   private Stream<E> resolveStream() {
-    return toEntityList(executeQuery()).stream();
+    if (resolvedStream == null) {
+      resolvedStream = toEntityList(executeQuery()).stream();
+    }
+    return resolvedStream;
   }
 
   public Class<E> getEntityClass() {
@@ -407,21 +401,21 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @Override
   public Stream<Long> map(ToLongFunction<? super E> mapper) {
     Stream<Long> result = Stream.empty();
-    
+
     if (TakesJSONOperations.class.isAssignableFrom(mapper.getClass())) {
-      TakesJSONOperations tjo = (TakesJSONOperations)mapper;
+      TakesJSONOperations tjo = (TakesJSONOperations) mapper;
       tjo.setJSONOperations(json);
-      
+
       onlyIds = true;
 
       Method idSetter = ObjectUtils.getSetterForField(entityClass, idField);
-
       Stream<E> wrappedIds = (Stream<E>) executeQuery().docs //
           .stream() //
           .map(d -> {
             try {
-              String key = idField.getType().getDeclaredConstructor(new Class[] { idField.getType() }).newInstance(d.getId()).toString();
-              String id = key.substring(key.indexOf(":")+1);
+              String key = idField.getType().getDeclaredConstructor(new Class[] { idField.getType() })
+                  .newInstance(d.getId()).toString();
+              String id = key.substring(key.indexOf(":") + 1);
               return id;
             } catch (Exception e) {
               return null;

@@ -14,7 +14,7 @@ public class SetToStringAdapter extends TypeAdapter<Set<?>> {
 
   @Override
   public void write(JsonWriter writer, Set<?> value) throws IOException {
-    if (value == null) {
+    if (value == null || value.isEmpty()) {
       writer.nullValue();
       return;
     }

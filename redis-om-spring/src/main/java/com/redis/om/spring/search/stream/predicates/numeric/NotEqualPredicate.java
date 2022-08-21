@@ -1,10 +1,11 @@
 package com.redis.om.spring.search.stream.predicates.numeric;
 
 import java.lang.reflect.Field;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
-import com.redis.om.spring.search.stream.predicates.PredicateType;
-import com.redis.om.spring.util.ObjectUtils;
 
 import io.redisearch.querybuilder.Node;
 import io.redisearch.querybuilder.QueryBuilder;
@@ -18,24 +19,28 @@ public class NotEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     this.value = value;
   }
 
-  @Override
-  public PredicateType getPredicateType() {
-    return PredicateType.EQUAL;
-  }
-
   public T getValue() {
     return value;
   }
 
   @Override
   public Node apply(Node root) {
-    Class<?> cls = ObjectUtils.getNumericClassFor(value.toString());
-    if (cls == Integer.class) {
+    Class<?> cls = value.getClass();
+    if (cls == LocalDate.class) {
+      LocalDate localDate = (LocalDate) getValue();
+      Instant instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+      Long unixTime = instant.getEpochSecond();
+
       return QueryBuilder.intersect(root)
-          .add(QueryBuilder.disjunct(getField().getName(), Values.eq(Integer.valueOf(value.toString()))));
+          .add(QueryBuilder.disjunct(getField().getName(), Values.eq(Integer.valueOf(unixTime.toString()))));
+    } else if (cls == Integer.class) {
+      return QueryBuilder.intersect(root)
+          .add(QueryBuilder.disjunct(getField().getName(), Values.eq(Integer.valueOf(getValue().toString()))));
+    } else if (cls == Double.class) {
+      return QueryBuilder.intersect(root)
+          .add(QueryBuilder.disjunct(getField().getName(), Values.eq(Double.valueOf(getValue().toString()))));
     } else {
-      return QueryBuilder.intersect(root)
-          .add(QueryBuilder.disjunct(getField().getName(), Values.eq(Double.valueOf(value.toString()))));
+      return root;
     }
   }
 

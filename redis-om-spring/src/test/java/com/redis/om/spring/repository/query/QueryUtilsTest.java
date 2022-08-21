@@ -7,6 +7,6 @@ import org.junit.jupiter.api.Test;
 public class QueryUtilsTest {
   @Test
   void testEscapeTagField() {
-    assertEquals("roger\\.green\\@example\\.com", QueryUtils.escapeTagField("roger.green@example.com"));
+    assertEquals("roger\\.green\\@example\\.com", QueryUtils.escape("roger.green@example.com"));
   }
 }

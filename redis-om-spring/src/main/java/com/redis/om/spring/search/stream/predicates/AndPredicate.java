@@ -20,11 +20,6 @@ public class AndPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     this.predicates.add(predicate);
   }
 
-  @Override
-  public PredicateType getPredicateType() {
-    return PredicateType.AND;
-  }
-
   public Stream<Predicate<T>> stream() {
     return predicates.stream();
   }

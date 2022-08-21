@@ -31,6 +31,10 @@ public class TagField<E, T> extends MetamodelField<E, T> {
     return new NotEqualPredicate<E,T>(field,value);
   }
   
+  public NotEqualPredicate<? super E,T> notEq(String... values) {
+    return new NotEqualPredicate<E,T>(field, Arrays.asList(values));
+  }
+  
   public InPredicate<? super E, ?> in(String... values) {
     return new InPredicate<E, T>(field, Arrays.asList(values));
   }

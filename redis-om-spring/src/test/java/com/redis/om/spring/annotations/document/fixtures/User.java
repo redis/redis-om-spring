@@ -28,6 +28,10 @@ public class User {
   @Indexed
   private String name;
   
+  @NonNull
+  @Indexed
+  private Double lotteryWinnings;
+  
   @Indexed
   private List<String> roles = new ArrayList<String>();
 }

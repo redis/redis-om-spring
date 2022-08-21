@@ -12,6 +12,7 @@ import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.repository.query.parser.Part;
 
+import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.util.ObjectUtils;
 
@@ -97,6 +98,7 @@ public enum QueryClause {
   );
 
   private final QueryClauseTemplate value;
+  private final MappingRedisOMConverter converter = new MappingRedisOMConverter();
 
   private QueryClause(QueryClauseTemplate value) {
     this.value = value;
@@ -130,12 +132,11 @@ public enum QueryClause {
           if (param instanceof Collection<?>) {
             @SuppressWarnings("rawtypes")
             Collection<?> c = (Collection) param;
-
             String value = "";
             if (this == QueryClause.Tag_CONTAINING_ALL) {
-              value = c.stream().map(n -> "@"+field+":{"+QueryUtils.escapeTagField(n.toString())+"}").collect(Collectors.joining(" "));
+              value = c.stream().map(n -> "@"+field+":{"+QueryUtils.escape(ObjectUtils.asString(n, converter))+"}").collect(Collectors.joining(" "));
             } else {
-              value = c.stream().map(n -> QueryUtils.escapeTagField(n.toString())).collect(Collectors.joining("|"));
+              value = c.stream().map(n -> QueryUtils.escape(ObjectUtils.asString(n, converter), true)).collect(Collectors.joining("|"));
             }
 
             prepared = prepared.replace("$param_" + i++, value);
@@ -143,7 +144,7 @@ public enum QueryClause {
             if (value.getIndexType() == FieldType.FullText) {
               prepared = prepared.replace("$param_" + i++, param.toString());
             } else {
-              prepared = prepared.replace("$param_" + i++, QueryUtils.escapeTagField(param.toString()));
+              prepared = prepared.replace("$param_" + i++, QueryUtils.escape(ObjectUtils.asString(param, converter)));
             }
           }
           break;

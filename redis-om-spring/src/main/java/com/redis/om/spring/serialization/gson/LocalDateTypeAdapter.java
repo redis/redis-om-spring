@@ -12,19 +12,23 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
+/**
+ * GSON Serializer/Deserializer for LocalDate to Unix Timestamp
+ *
+ */
 public class LocalDateTypeAdapter  implements JsonSerializer<LocalDate>, JsonDeserializer<LocalDate>{
 
   @Override
   public JsonElement serialize(LocalDate localDate, Type typeOfSrc, JsonSerializationContext context) {
     Instant instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();  
-    long timeInMillis = instant.toEpochMilli();
-    return new JsonPrimitive(timeInMillis);
+    long unixTime = instant.getEpochSecond();
+    return new JsonPrimitive(unixTime);
   }
   
   @Override
   public LocalDate deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
       throws JsonParseException {
-    return LocalDate.ofInstant(Instant.ofEpochMilli(json.getAsLong()), ZoneId.systemDefault());
+    return LocalDate.ofInstant(Instant.ofEpochSecond(json.getAsLong()), ZoneId.systemDefault());
   }
   
   public static LocalDateTypeAdapter getInstance() {

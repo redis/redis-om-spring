@@ -1,5 +1,6 @@
 package com.redis.om.spring.repository.support;
 
+import com.redis.om.spring.KeyspaceToIndexMap;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
@@ -15,6 +16,8 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
 
   @Autowired
   private @Nullable RedisModulesOperations<String> rmo;
+  @Autowired
+  private @Nullable KeyspaceToIndexMap keyspaceToIndexMap;
 
   /**
    * Creates a new {@link RedisDocumentRepositoryFactoryBean} for the given repository
@@ -26,22 +29,11 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
     super(repositoryInterface);
   }
 
-  /**
-   * Configures the {@link RedisModulesOperations} to be used for the repositories.
-   *
-   * @param rmo must not be {@literal null}.
-   */
-  public void setRedisModulesOperations(RedisModulesOperations<String> rmo) {
-    Assert.notNull(rmo, "RedisModulesOperations must not be null!");
-
-    this.rmo = rmo;
-  }
-
   @Override
   protected final RedisDocumentRepositoryFactory createRepositoryFactory(KeyValueOperations operations,
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator, Class<? extends RepositoryQuery> repositoryQueryType) {
 
-    return new RedisDocumentRepositoryFactory(operations, rmo, queryCreator, repositoryQueryType);
+    return new RedisDocumentRepositoryFactory(operations, rmo, keyspaceToIndexMap, queryCreator, repositoryQueryType);
   }
 
   @Override

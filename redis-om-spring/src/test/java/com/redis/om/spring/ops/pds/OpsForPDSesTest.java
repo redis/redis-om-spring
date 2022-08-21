@@ -21,9 +21,9 @@ public class OpsForPDSesTest extends AbstractBaseDocumentTest {
   
   @Test
   public void testBasicCMSOperations() {
-    CountMinSketchOperations<String> bloom = modulesOperations.opsForCountMinSketch();
+    CountMinSketchOperations<String> cms = modulesOperations.opsForCountMinSketch();
 
-    assertNotNull(bloom);
+    assertNotNull(cms);
   }
   
   @Test

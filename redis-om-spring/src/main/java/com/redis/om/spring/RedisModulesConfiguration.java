@@ -41,6 +41,7 @@ import org.springframework.data.redis.core.convert.KeyspaceConfiguration.Keyspac
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.data.util.ClassTypeInformation;
+import org.springframework.util.ClassUtils;
 
 import com.google.gson.annotations.JsonAdapter;
 import com.redis.om.spring.annotations.Bloom;
@@ -115,6 +116,11 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     return template;
   }
 
+  @Bean(name = "keyspaceToIndexMap")
+  public KeyspaceToIndexMap keyspaceToIndexMap(){
+      return new KeyspaceToIndexMap();
+  }
+
   @Bean(name = "redisJSONKeyValueAdapter")
   RedisJSONKeyValueAdapter getRedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps,
       JSONOperations<?> redisJSONOperations, RedisMappingContext mappingContext) {
@@ -129,8 +135,8 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
   @Bean(name = "redisCustomKeyValueTemplate")
   public CustomRedisKeyValueTemplate getKeyValueTemplate(RedisOperations<?, ?> redisOps,
-      JSONOperations<?> redisJSONOperations, RedisMappingContext mappingContext) {
-    return new CustomRedisKeyValueTemplate(new RedisEnhancedKeyValueAdapter(redisOps), mappingContext);
+      RedisModulesOperations<?> redisModulesOperations, RedisMappingContext mappingContext, KeyspaceToIndexMap keyspaceToIndexMap) {
+    return new CustomRedisKeyValueTemplate(new RedisEnhancedKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap), mappingContext);
   }
 
   @Bean(name = "streamingQueryBuilder")
@@ -181,6 +187,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
         .getBean("redisModulesOperations");
 
     RedisMappingContext mappingContext = (RedisMappingContext)ac.getBean("keyValueMappingContext");
+    KeyspaceToIndexMap keyspaceToIndexMap = (KeyspaceToIndexMap) ac.getBean("keyspaceToIndexMap");
 
     Set<BeanDefinition> beanDefs = new HashSet<BeanDefinition>();
     beanDefs.addAll(getBeanDefinitionsFor(ac, cls));
@@ -206,6 +213,8 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
             scoreField = fieldPrefix + field.getName();
           }
         }
+        
+        String entityPrefix = cl.getName() + ":";
 
         if (!fields.isEmpty()) {
           Schema schema = new Schema();
@@ -216,8 +225,6 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
           IndexDefinition index = new IndexDefinition(
               cls == Document.class ? IndexDefinition.Type.JSON : IndexDefinition.Type.HASH);
-
-          String entityPrefix = cl.getName() + ":";
 
           if (cl.isAnnotationPresent(Document.class)) {
             Document document = (Document) cl.getAnnotation(Document.class);
@@ -248,8 +255,10 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
           index.setPrefixes(entityPrefix);
           IndexOptions ops = Client.IndexOptions.defaultOptions().setDefinition(index);
           opsForSearch.createIndex(schema, ops);
+          keyspaceToIndexMap.addKeySpaceMapping(entityPrefix, cl, true);
+        } else {
+          keyspaceToIndexMap.addKeySpaceMapping(entityPrefix, cl, false);
         }
-
 
         // TTL
         if (cl.isAnnotationPresent(Document.class)) {
@@ -284,43 +293,51 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
       Indexed indexed = (Indexed) field.getAnnotation(Indexed.class);
 
+      Class<?> fieldType = ClassUtils.resolvePrimitiveIfNecessary(field.getType());
+      
       //
-      // Any Character class -> Tag Search Field
+      // Any Character class or Boolean -> Tag Search Field
       //
-      if (CharSequence.class.isAssignableFrom(field.getType()) || (field.getType() == Boolean.class)) {
+      if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class)) {
         fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
             indexed.arrayIndex()));
       }
       //
       // Any Numeric class -> Numeric Search Field
       //
-      else if (Number.class.isAssignableFrom(field.getType()) || (field.getType() == LocalDateTime.class)
+      else if (Number.class.isAssignableFrom(fieldType) || (fieldType == LocalDateTime.class)
           || (field.getType() == LocalDate.class) || (field.getType() == Date.class)) {
         fields.add(indexAsNumericFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.noindex()));
       }
       //
       // Set / List
       //
-      else if (Set.class.isAssignableFrom(field.getType()) || List.class.isAssignableFrom(field.getType())) {
+      else if (Set.class.isAssignableFrom(fieldType) || List.class.isAssignableFrom(fieldType)) {
         Optional<Class<?>> maybeCollectionType = com.redis.om.spring.util.ObjectUtils.getCollectionElementType(field);
 
         // It is only possible to index an array of strings or booleans in a TAG identifier.
         // https://redis.io/docs/stack/json/indexing_json/#json-arrays-can-only-be-indexed-in-tag-identifiers
-        if (maybeCollectionType.isPresent() && (CharSequence.class.isAssignableFrom(maybeCollectionType.get()) || (maybeCollectionType.get() == Boolean.class))) {
-          fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
+        if (maybeCollectionType.isPresent()) {
+          Class<?> collectionType = maybeCollectionType.get();
+          
+          if (CharSequence.class.isAssignableFrom(collectionType) || (collectionType == Boolean.class)) {
+            fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
               indexed.arrayIndex()));
-        // Index nested fields
-        } else if (isDocument) {
-          // Index nested JSON Array field. But the current implementation of RediSearch supports array only for TAG fields, not TEXT fields.
-          // https://github.com/RediSearch/RediSearch/issues/2293
-          logger.info(String.format("FOUND @Nested annotation on field of type: %s", field.getType()));
-          fields.addAll(indexAsNestedFieldFor(field, prefix));
+          // Index nested fields
+          } else if (isDocument) {
+            // Index nested JSON Array field. But the current implementation of RediSearch supports array only for TAG fields, not TEXT fields.
+            // https://github.com/RediSearch/RediSearch/issues/2293
+            logger.debug(String.format("FOUND nested field on field of type: %s", field.getType()));
+            fields.addAll(indexAsNestedFieldFor(field, prefix));
+          }
+        } else {
+          logger.debug(String.format("Could not determine the type of elements in the collection %s in entity %s", field.getName(), field.getDeclaringClass().getSimpleName()));
         }
       }
       //
       // Point
       //
-      else if (field.getType() == Point.class) {
+      else if (fieldType == Point.class) {
         fields.add(indexAsGeoFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.noindex()));
       }
       //
@@ -366,12 +383,8 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   @SuppressWarnings({ "unchecked", "rawtypes" })
   private Set<BeanDefinition> getBeanDefinitionsFor(ApplicationContext ac, Class... classes) {
     Map<String, Object> annotatedBeans = ac.getBeansWithAnnotation(SpringBootApplication.class);
-    Class<?> app = annotatedBeans.isEmpty() ? null : annotatedBeans.values().toArray()[0].getClass();
+    Class<?> app = annotatedBeans.values().toArray()[0].getClass();
     Set<BeanDefinition> beanDefs = new HashSet<>();
-
-    if (app == null) {
-      return beanDefs;
-    }
 
     ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(false);
     for (Class cls : classes) {

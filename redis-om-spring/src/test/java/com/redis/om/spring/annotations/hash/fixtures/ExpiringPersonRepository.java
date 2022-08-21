@@ -1,6 +1,6 @@
 package com.redis.om.spring.annotations.hash.fixtures;
 
-import org.springframework.data.repository.CrudRepository;
+import com.redis.om.spring.repository.RedisEnhancedRepository;
 
-public interface ExpiringPersonRepository extends CrudRepository<ExpiringPerson, String> {
+public interface ExpiringPersonRepository extends RedisEnhancedRepository<ExpiringPerson, String> {
 }

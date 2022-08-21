@@ -16,8 +16,14 @@ import org.springframework.core.ResolvableType;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
+import org.springframework.data.redis.core.convert.Bucket;
+import org.springframework.data.redis.core.convert.RedisData;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.util.ReflectionUtils;
 
+import com.redis.om.spring.convert.MappingRedisOMConverter;
+
+import io.redisearch.Document;
 import io.redisearch.querybuilder.GeoValue;
 import io.redisearch.querybuilder.GeoValue.Unit;
 
@@ -31,14 +37,6 @@ public class ObjectUtils {
         .stream(clazz.getDeclaredFields()) //
         .filter(f -> f.isAnnotationPresent(annotationClass)) //
         .collect(Collectors.toList());
-  }
-  
-  public static Class<?> getNumericClassFor(String str) {
-    try {
-      Double.parseDouble(str);
-      return Double.class;
-    } catch (NumberFormatException nfe) {}
-    return Integer.class;
   }
   
   public static Unit getDistanceUnit(Distance distance) {
@@ -69,7 +67,7 @@ public class ObjectUtils {
   }
   
   public static Optional<Class<?>> getCollectionElementType(Field field) {
-    if (Collection.class.isAssignableFrom(field.getType())) {
+    if (Collection.class.isAssignableFrom(field.getType()) || Iterable.class.isAssignableFrom(field.getType())) {
       ResolvableType collectionType = ResolvableType.forField(field);
       Class<?> elementType = collectionType.getGeneric(0).getRawClass();
       return Optional.of(elementType);
@@ -95,6 +93,13 @@ public class ObjectUtils {
     } else {
       return Optional.empty();
     }
+  }
+  
+  public static Object getIdFieldForEntity(Field idField, Object entity) {
+    String getterName = "get" + ObjectUtils.ucfirst(idField.getName());
+    Method getter = ReflectionUtils.findMethod(entity.getClass(), getterName);
+    Object id = ReflectionUtils.invokeMethod(getter, entity);
+    return id;
   }
   
   public static Method getGetterForField(Class<?> cls, Field field) {
@@ -138,7 +143,7 @@ public class ObjectUtils {
 
   public static boolean isFirstLowerCase(String string) {
     String first = string.substring(0, 1);
-    return first.toLowerCase().equals(first);
+    return Character.isLetter(first.charAt(0)) && first.toLowerCase().equals(first);
   }
 
   /**
@@ -211,6 +216,40 @@ public class ObjectUtils {
       temp = temp.substring(temp.lastIndexOf('.') + 1);
     }
     return temp + parameters;
+  }
+  
+  public static boolean isPropertyAnnotatedWith(Class<?> cls, String property, Class<? extends Annotation> annotationClass) {
+    Field field;
+    try {
+      field = cls.getDeclaredField(property);
+      return field.isAnnotationPresent(annotationClass);
+    } catch (NoSuchFieldException | SecurityException e) {
+      return false;
+    }
+   
+  }
+  
+  public static Object documentToObject(Document document, Class<?> returnedObjectType, MappingRedisOMConverter mappingConverter) {
+    Bucket b = new Bucket();
+    document.getProperties().forEach(p -> {
+      b.put(p.getKey(), StringRedisSerializer.UTF_8.serialize(p.getValue().toString()));
+    });
+
+    return mappingConverter.read(returnedObjectType, new RedisData(b));
+  }
+  
+  public static <T> T documentToEntity(Document document, Class<T> classOfT, MappingRedisOMConverter mappingConverter) {
+    Bucket b = new Bucket();
+    document.getProperties().forEach(p -> {
+      b.put(p.getKey(), StringRedisSerializer.UTF_8.serialize(p.getValue().toString()));
+    });
+
+    return mappingConverter.read(classOfT, new RedisData(b));
+  }
+  
+  public static String asString(Object value, MappingRedisOMConverter mappingConverter) {
+    return value instanceof String ? (String) value
+        : mappingConverter.getConversionService().convert(value, String.class);
   }
 
 }

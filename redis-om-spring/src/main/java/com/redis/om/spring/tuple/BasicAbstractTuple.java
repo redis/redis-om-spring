@@ -21,13 +21,7 @@ public abstract class BasicAbstractTuple<T extends GenericTuple<R>, R> implement
       }
     }
 
-    // Defensive copying
-    this.values = Arrays.copyOf(values, values.length);
-
-    if (values.length != size()) {
-      throw new IllegalArgumentException("A Tuple of degree " + size() + " must contain exactly " + size()
-          + " elements. Element length was " + values.length);
-    }
+    this.values = values;
   }
 
   protected abstract boolean isNullable();
@@ -52,26 +46,16 @@ public abstract class BasicAbstractTuple<T extends GenericTuple<R>, R> implement
     }
     if (!baseClass.isInstance(obj)) {
       return false;
-    }
-    if (obj instanceof BasicAbstractTuple) {
+    } else {//if (obj instanceof BasicAbstractTuple) {
       final BasicAbstractTuple<?, ?> tuple = (BasicAbstractTuple<?, ?>) obj;
       // Faster
       return Arrays.equals(this.values, tuple.values);
     }
-    // Must be a BasicTuple since baseClass is a BasicTuple
-    final GenericTuple<?> tuple = (GenericTuple<?>) obj;
-    final int capacity = tuple.size();
-    for (int i = 0; i < capacity; i++) {
-      if (!Objects.equals(get(i), tuple.get(i))) {
-        return false;
-      }
-    }
-    return true;
   }
 
   @Override
   public String toString() {
-    return getClass().getSimpleName() + " " + Stream.of(values).map(Objects::toString).collect(joining(", ", "{", "}"));
+    return getClass().getSimpleName() + " " + Stream.of(values).map(Objects::toString).collect(joining(", ", "(", ")"));
   }
 
   @Override

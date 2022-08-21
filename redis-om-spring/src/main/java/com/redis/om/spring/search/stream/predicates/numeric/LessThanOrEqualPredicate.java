@@ -1,10 +1,11 @@
 package com.redis.om.spring.search.stream.predicates.numeric;
 
 import java.lang.reflect.Field;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
-import com.redis.om.spring.search.stream.predicates.PredicateType;
-import com.redis.om.spring.util.ObjectUtils;
 
 import io.redisearch.querybuilder.Node;
 import io.redisearch.querybuilder.QueryBuilder;
@@ -19,22 +20,24 @@ public class LessThanOrEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> 
     this.value = value;
   }
 
-  @Override
-  public PredicateType getPredicateType() {
-    return PredicateType.LESS_THAN_OR_EQUAL;
-  }
-
   public T getValue() {
     return value;
   }
 
   @Override
   public Node apply(Node root) {
-    Class<?> cls = ObjectUtils.getNumericClassFor(value.toString());
-    if (cls == Integer.class) {
-      return QueryBuilder.intersect(root).add(getField().getName(), Values.le(Integer.valueOf(value.toString())));
+    Class<?> cls = value.getClass();
+    if (cls == LocalDate.class) {
+      LocalDate localDate = (LocalDate) getValue();
+      Instant instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+      Long unixTime = instant.getEpochSecond();
+      return QueryBuilder.intersect(root).add(getField().getName(), Values.le(unixTime));
+    } else if (cls == Integer.class) {
+      return QueryBuilder.intersect(root).add(getField().getName(), Values.le(Integer.valueOf(getValue().toString())));
+    } else if (cls == Double.class) {
+      return QueryBuilder.intersect(root).add(getField().getName(), Values.le(Double.valueOf(getValue().toString())));
     } else {
-      return QueryBuilder.intersect(root).add(getField().getName(), Values.le(Double.valueOf(value.toString())));
+      return root;
     }
   }
 

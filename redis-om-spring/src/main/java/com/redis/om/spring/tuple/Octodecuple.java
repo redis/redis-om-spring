@@ -19,7 +19,7 @@ import com.redis.om.spring.tuple.accessor.ThirdAccessor;
 import com.redis.om.spring.tuple.accessor.ThirteenthAccessor;
 import com.redis.om.spring.tuple.accessor.TwelfthAccessor;
 
-public interface Octodecuple<E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E15, E25, E26, E27>
+public interface Octodecuple<E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E15, E16, E17, E18>
     extends Tuple {
 
   E1 getFirst();
@@ -52,11 +52,11 @@ public interface Octodecuple<E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, 
 
   E15 getFifteenth();
 
-  E25 getSixteenth();
+  E16 getSixteenth();
 
-  E26 getSeventeenth();
+  E17 getSeventeenth();
 
-  E27 getEighteenth();
+  E18 getEighteenth();
 
   @Override
   default int size() {

@@ -4,6 +4,7 @@ import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -12,6 +13,11 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
+/**
+ * NOTE: This Adapter will lose nanosecond precision on LocalDateTimes
+ * In order to perform range searches we need to store this as GSon serialized Java longs
+ * so that they can be indexed as NUMERIC in the index's schema
+ */
 public class LocalDateTimeTypeAdapter  implements JsonSerializer<LocalDateTime>, JsonDeserializer<LocalDateTime>{
 
   @Override

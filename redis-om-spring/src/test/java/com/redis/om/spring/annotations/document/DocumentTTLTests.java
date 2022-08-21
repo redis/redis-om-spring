@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.ExpiringPerson;
@@ -25,12 +24,11 @@ public class DocumentTTLTests extends AbstractBaseDocumentTest {
   @Autowired
   ExpiringPersonDifferentTimeUnitRepository withTTLwTimeUnitAnnotationRepository;
   
-  @Autowired
-  RedisTemplate<String, String> template;
-  
   @BeforeEach
   public void cleanUp() {
     withDefaultrepository.deleteAll();
+    withTTLAnnotationRepository.deleteAll();
+    withTTLwTimeUnitAnnotationRepository.deleteAll();
   }
   
   @Test

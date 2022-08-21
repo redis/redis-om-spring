@@ -1,4 +1,4 @@
-package com.redis.om.spring.annotations.bloom.fixtures;
+package com.redis.om.spring.annotations.hash.fixtures;
 
 import org.springframework.beans.factory.annotation.Autowired;
 

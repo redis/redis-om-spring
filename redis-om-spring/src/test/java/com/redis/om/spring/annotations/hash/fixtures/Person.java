@@ -1,10 +1,14 @@
-package com.redis.om.spring.annotations.bloom.fixtures;
+package com.redis.om.spring.annotations.hash.fixtures;
+
+import java.util.HashSet;
+import java.util.Set;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
 
 import com.redis.om.spring.annotations.AutoComplete;
 import com.redis.om.spring.annotations.Bloom;
+import com.redis.om.spring.annotations.Indexed;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -30,4 +34,15 @@ public class Person {
   @AutoComplete 
   @Bloom(name = "bf_person_email", capacity = 100000, errorRate = 0.001)
   String email;
+  
+  @NonNull
+  @Bloom(capacity = 100000, errorRate = 0.001)
+  String nickname;
+  
+  @NonNull
+  @Indexed
+  Set<String> roles = new HashSet<String>();
+  
+  @NonNull
+  Set<String> favoriteFoods = new HashSet<String>();
 }

@@ -4,6 +4,8 @@ import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Point;
 import org.springframework.data.repository.query.Param;
 
 import com.redis.om.spring.annotations.Aggregation;
@@ -67,5 +69,13 @@ public interface MyDocRepository extends RedisDocumentRepository<MyDoc, String>,
    * > FT.TAGVALS idx tags
    * </pre>
    */
-  Iterable<String> getAllTags();
+  Iterable<String> getAllTag();
+  
+  Iterable<MyDoc> findByTag(Set<String> tags);
+
+  Iterable<MyDoc> findByLocationNear(Point point, Distance distance); 
+  
+  Iterable<MyDoc> findByLocation2Near(Point point, Distance distance); 
+  
+  Iterable<MyDoc> findByaNumber(Integer anotherNumber);
 }

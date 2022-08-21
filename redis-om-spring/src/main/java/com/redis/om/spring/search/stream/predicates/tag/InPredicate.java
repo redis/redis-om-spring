@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 
 import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
-import com.redis.om.spring.search.stream.predicates.PredicateType;
 
 import io.redisearch.querybuilder.Node;
 import io.redisearch.querybuilder.QueryBuilder;
@@ -18,12 +17,7 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   public InPredicate(Field field, List<String> list) {
     super(field);
-    this.values = list.stream().map(QueryUtils::escapeTagField).collect(Collectors.toList());
-  }
-
-  @Override
-  public PredicateType getPredicateType() {
-    return PredicateType.IN;
+    this.values = list.stream().map(QueryUtils::escape).collect(Collectors.toList());
   }
 
   public List<String> getValues() {
@@ -33,7 +27,7 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   @Override
   public Node apply(Node root) {
     StringJoiner sj = new StringJoiner(" | ");
-    for (Object value : values) {
+    for (Object value : getValues()) {
       sj.add(value.toString());
     }
 

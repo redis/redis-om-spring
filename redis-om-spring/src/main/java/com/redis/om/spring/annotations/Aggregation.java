@@ -12,4 +12,5 @@ import java.lang.annotation.Target;
 public @interface Aggregation {
   String value() default "*";
   String[] load() default {};
+  String[] apply() default {};
 }
