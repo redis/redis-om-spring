@@ -6,7 +6,7 @@ target/
 
 /target/
 redis-om-spring/target/
-data
+/data
 
 ### VS Code ###
 .vscode/
