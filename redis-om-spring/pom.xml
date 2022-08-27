@@ -252,7 +252,6 @@
           <source>${maven.compiler.source}</source>
           <target>${maven.compiler.target}</target>
           <encoding>${project.build.sourceEncoding}</encoding>
-          <!-- showWarnings>true</showWarnings -->
         </configuration>
       </plugin>
       <plugin>
