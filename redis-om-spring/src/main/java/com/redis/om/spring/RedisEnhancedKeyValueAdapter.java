@@ -122,8 +122,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     Assert.notNull(redisOps, "RedisOperations must not be null!");
     Assert.notNull(mappingContext, "RedisMappingContext must not be null!");
 
-    MappingRedisOMConverter mappingConverter = new MappingRedisOMConverter(mappingContext,
-        /* new PathIndexResolver(mappingContext), */ new ReferenceResolverImpl(redisOps));
+    MappingRedisOMConverter mappingConverter = new MappingRedisOMConverter(mappingContext, new ReferenceResolverImpl(redisOps));
     mappingConverter
         .setCustomConversions(customConversions == null ? new RedisOMCustomConversions() : customConversions);
     mappingConverter.afterPropertiesSet();
@@ -136,7 +135,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   }
 
   /* (non-Javadoc)
-   * 
+   *
    * @see
    * org.springframework.data.keyvalue.core.KeyValueAdapter#put(java.lang.Object,
    * java.lang.Object, java.lang.String) */
@@ -207,7 +206,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   }
 
   /* (non-Javadoc)
-   * 
+   *
    * @see
    * org.springframework.data.keyvalue.core.KeyValueAdapter#get(java.lang.Object,
    * java.lang.String, java.lang.Class) */
@@ -235,7 +234,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   }
 
   /* (non-Javadoc)
-   * 
+   *
    * @see
    * org.springframework.data.keyvalue.core.KeyValueAdapter#deleteAllOf(java.lang.
    * String) */
@@ -493,7 +492,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     }
 
     /* (non-Javadoc)
-     * 
+     *
      * @see org.springframework.data.redis.listener.KeyspaceEventMessageListener#
      * onMessage(org.springframework.data.redis.connection.Message, byte[]) */
     @Override
