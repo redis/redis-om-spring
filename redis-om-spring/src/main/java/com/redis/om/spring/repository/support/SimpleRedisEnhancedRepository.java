@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import com.redis.om.spring.id.ULIDIdentifierGenerator;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -14,12 +15,15 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.keyvalue.core.IterableConverter;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
+import org.springframework.data.keyvalue.core.mapping.KeyValuePersistentEntity;
 import org.springframework.data.keyvalue.repository.support.SimpleKeyValueRepository;
 import org.springframework.data.redis.core.PartialUpdate;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SetOperations;
+import org.springframework.data.redis.core.convert.RedisData;
 import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
 import org.springframework.data.repository.core.EntityInformation;
+import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.util.Assert;
 
 import com.redis.om.spring.KeyspaceToIndexMap;
@@ -33,6 +37,9 @@ import com.redis.om.spring.util.ObjectUtils;
 
 import io.redisearch.Query;
 import io.redisearch.SearchResult;
+import org.springframework.util.ClassUtils;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Pipeline;
 
 public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueRepository<T, ID>
     implements RedisEnhancedRepository<T, ID> {
@@ -45,6 +52,8 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   protected KeyspaceToIndexMap keyspaceToIndexMap;
   protected MappingRedisOMConverter mappingConverter;
   protected RedisEnhancedKeyValueAdapter enhancedKeyValueAdapter;
+
+  private final ULIDIdentifierGenerator generator;
 
   @SuppressWarnings("unchecked")
   public SimpleRedisEnhancedRepository(EntityInformation<T, ID> metadata, //
@@ -59,6 +68,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     this.mappingConverter = new MappingRedisOMConverter(null,
         new ReferenceResolverImpl(modulesOperations.getTemplate()));
     this.enhancedKeyValueAdapter = new RedisEnhancedKeyValueAdapter(rmo.getTemplate(), rmo, keyspaceToIndexMap);
+    this.generator = ULIDIdentifierGenerator.INSTANCE;
   }
 
   @Override
@@ -184,6 +194,38 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   
   private String getKey(Object id) {
     return getKeyspace() + id.toString();
+  }
+
+  @Override
+  public <S extends T> Iterable<S> saveAll(Iterable<S> entities) {
+    Assert.notNull(entities, "The given Iterable of entities must not be null!");
+    List<S> saved = new ArrayList();
+
+    try (Jedis jedis = modulesOperations.getClient().getJedis()) {
+      Pipeline pipeline = jedis.pipelined();
+
+      for (S entity : entities) {
+        KeyValuePersistentEntity<?, ?> keyValueEntity = mappingConverter.getMappingContext().getRequiredPersistentEntity(ClassUtils.getUserClass(entity));
+        Object id = metadata.isNew(entity) ? generator.generateIdentifierOfType(keyValueEntity.getIdProperty().getTypeInformation()) : (String) keyValueEntity.getPropertyAccessor(entity).getProperty(keyValueEntity.getIdProperty());
+        keyValueEntity.getPropertyAccessor(entity).setProperty(keyValueEntity.getIdProperty(), id);
+
+        RedisData rdo = new RedisData();
+        mappingConverter.write(entity, rdo);
+        byte[] objectKey = createKey(rdo.getKeyspace(), id.toString());
+
+        pipeline.sadd(rdo.getKeyspace(), id.toString());
+        pipeline.hmset(objectKey, rdo.getBucket().rawMap());
+
+        saved.add(entity);
+      }
+      pipeline.sync();
+    }
+
+    return saved;
+  }
+
+  public byte[] createKey(String keyspace, String id) {
+    return this.mappingConverter.toBytes(keyspace + ":" + id);
   }
 
 }

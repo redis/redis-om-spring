@@ -54,4 +54,7 @@ public class RedisModulesOperations<K> {
     return template;
   }
 
+  public RedisModulesClient getClient() {
+    return client;
+  }
 }
