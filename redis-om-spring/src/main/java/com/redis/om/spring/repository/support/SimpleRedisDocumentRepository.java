@@ -120,7 +120,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
     List<S> saved = new ArrayList();
 
-    Jedis jedis = modulesOperations.getClient().getJedis();
+    try (Jedis jedis = modulesOperations.getClient().getJedis()) {
       Pipeline pipeline = jedis.pipelined();
 
       for (S entity : entities) {
@@ -143,7 +143,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
         saved.add(entity);
       }
       pipeline.sync();
-
+    }
 
     return saved;
   }
