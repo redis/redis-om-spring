@@ -18,7 +18,7 @@ public class ListToStringAdapter extends TypeAdapter<List<?>> {
       writer.nullValue();
       return;
     }
-    writer.value((String) value.stream().map(Object::toString).collect(Collectors.joining(",")));
+    writer.value((String) value.stream().map(Object::toString).collect(Collectors.joining("|")));
   }
 
   @Override
@@ -28,7 +28,7 @@ public class ListToStringAdapter extends TypeAdapter<List<?>> {
       return null;
     }
     String csv = reader.nextString();
-    String[] parts = csv.split(",");
+    String[] parts = csv.split("\\|");
     return List.of(parts);
   }
 

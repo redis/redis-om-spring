@@ -443,7 +443,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
       fieldName = fieldName.as(field.getName());
     }
 
-    return new Field(fieldName, FieldType.Tag, false, ti.noindex());
+    return new TagField(fieldName, ti.separator(), false);
   }
 
   private Field indexAsTagFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, boolean sortable,

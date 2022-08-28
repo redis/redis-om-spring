@@ -54,7 +54,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
   @Autowired
   CompanyRepository companyRepo;
-  
+
   @Autowired
   NonIndexedHashRepository nihRepo;
 
@@ -96,7 +96,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   void testThatIndexedSimpleCollectionsAreSerializedAsCSV() {
     String hashKey = "people:" + eric.getId();
     String ericRolesRaw = template.opsForHash().get(hashKey, "roles").toString();
-    Set<String> ericRoles = Arrays.asList(ericRolesRaw.split(",")).stream().map(Object::toString)
+    Set<String> ericRoles = Arrays.asList(ericRolesRaw.split("\\|")).stream().map(Object::toString)
         .map(QueryUtils::unescape).collect(Collectors.toSet());
     assertThat(ericRoles).containsExactlyInAnyOrderElementsOf(eric.getRoles());
   }
@@ -331,7 +331,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
     List<String> companyNames = result.get().map(Company::getName).collect(Collectors.toList());
     assertThat(Ordering.<String>natural().isOrdered(companyNames)).isTrue();
   }
-  
+
   @Test
   public void testFindAllWithSorting() {
     final List<Company> bunchOfCompanies = new ArrayList<>();
@@ -347,7 +347,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
     List<String> companyNames = StreamSupport.stream(result.spliterator(), false).map(Company::getName).collect(Collectors.toList());
     assertThat(Ordering.<String>natural().isOrdered(companyNames)).isTrue();
   }
-  
+
   @Test
   public void testBasicPaginationForNonIndexedEntity() {
     final List<NonIndexedHash> bunchOfNihs = new ArrayList<>();
@@ -432,7 +432,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
     assertThat(results).containsExactly(redis);
   }
-  
+
   @Test
   public void testFindAllUnpages() {
     final List<Company> bunchOfCompanies = new ArrayList<>();
@@ -449,7 +449,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
     assertEquals(4, result.getTotalElements());
     assertEquals(4, result.getContent().size());
   }
-  
+
   @Test
   public void testUpdateSingleField() {
     Company redisInc = companyRepo.save(
@@ -462,7 +462,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
     assertEquals("Redis", maybeRedis.get().getName());
   }
-  
+
   @Test
   public void testGetFieldsByIds() {
     Company redis = companyRepo.save(

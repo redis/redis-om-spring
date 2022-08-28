@@ -768,9 +768,9 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
   }
 
   @Nullable
-  private Object readCollectionOrArray(Class<?> entityClass, String path, Class<?> collectionType, Class<?> valueType, Bucket bucket) {    
+  private Object readCollectionOrArray(Class<?> entityClass, String path, Class<?> collectionType, Class<?> valueType, Bucket bucket) {
     Field field = null;
-    Class<?> collectionElementType = null;    
+    Class<?> collectionElementType = null;
     Indexed indexed = null;
     TagIndexed tagIndexed = null;
     try {
@@ -804,7 +804,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       if (collectionAsString == null) {
         collectionAsString = "";
       }
-      List<String> values = Arrays.asList(collectionAsString.split(separator)).stream().map(QueryUtils::unescape).collect(Collectors.toList());
+      List<String> values = Arrays.asList(collectionAsString.split("\\"+separator)).stream().map(QueryUtils::unescape).collect(Collectors.toList());
       target = CollectionFactory.createCollection(collectionTypeToUse, valueType, values.size());
       target.addAll(values);
     } else {

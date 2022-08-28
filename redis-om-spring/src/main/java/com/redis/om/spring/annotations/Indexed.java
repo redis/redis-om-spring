@@ -23,8 +23,8 @@ public @interface Indexed {
   boolean nostem() default false;
 
   String phonetic() default "";
-  
-  String separator() default ",";
-  
+
+  String separator() default "|";
+
   int arrayIndex() default Integer.MIN_VALUE;
 }

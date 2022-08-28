@@ -33,25 +33,25 @@ public class SerializationTest extends AbstractBaseDocumentTest {
 
   @Autowired
   RedisModulesOperations<String> modulesOperations;
-  
+
   private KitchenSink ks;
   private KitchenSink ks1;
   private KitchenSink ks2;
-  
+
   private LocalDate localDate;
   private LocalDateTime localDateTime;
   private Date date;
   private Point point;
   private Ulid ulid;
-  
+
   private Set<String> setThings;
   private List<String> listThings;
 
-  
+
   @BeforeEach
   public void cleanUp() {
     repository.deleteAll();
-    
+
     localDate = LocalDate.now();
     localDateTime = LocalDateTime.now();
     date = new Date();
@@ -59,7 +59,7 @@ public class SerializationTest extends AbstractBaseDocumentTest {
     ulid = UlidCreator.getMonotonicUlid();
     setThings = Set.of("thingOne", "thingTwo", "thingThree");
     listThings = List.of("redFish", "blueFish");
-    
+
     ks = KitchenSink.builder() //
         .localDate(localDate) //
         .localDateTime(localDateTime) //
@@ -69,7 +69,7 @@ public class SerializationTest extends AbstractBaseDocumentTest {
         .setThings(setThings) //
         .listThings(listThings) //
         .build();
-    
+
     ks1 = KitchenSink.builder() //
         .localDate(localDate) //
         .localDateTime(localDateTime) //
@@ -79,7 +79,7 @@ public class SerializationTest extends AbstractBaseDocumentTest {
         .setThings(Set.of()) //
         .listThings(List.of()) //
         .build();
-    
+
     ks2 = KitchenSink.builder() //
         .localDate(localDate) //
         .localDateTime(localDateTime) //
@@ -87,7 +87,7 @@ public class SerializationTest extends AbstractBaseDocumentTest {
         .point(point) //
         .ulid(ulid) //
         .build();
-    
+
     ks2.setSetThings(null);
     ks2.setListThings(null);
 
@@ -108,7 +108,7 @@ public class SerializationTest extends AbstractBaseDocumentTest {
 
     // Date
     long dateInMillis = date.getTime();
-    
+
     // Point
     String redisGeo = "33.62826024782707,-111.83592170193586";
 
@@ -119,10 +119,10 @@ public class SerializationTest extends AbstractBaseDocumentTest {
     assertThat(rawJSON.get("date").getAsLong()).isEqualTo(dateInMillis);
     assertThat(rawJSON.get("point").getAsString()).isEqualTo(redisGeo);
     assertThat(rawJSON.get("ulid").getAsString()).isEqualTo(ulid.toString());
-    assertThat(Arrays.asList(rawJSON.get("setThings").getAsString().split(","))).containsExactlyInAnyOrder("thingOne", "thingTwo", "thingThree");
-    assertThat(rawJSON.get("listThings").getAsString()).isEqualTo("redFish,blueFish");
+    assertThat(Arrays.asList(rawJSON.get("setThings").getAsString().split("\\|"))).containsExactlyInAnyOrder("thingOne", "thingTwo", "thingThree");
+    assertThat(rawJSON.get("listThings").getAsString()).isEqualTo("redFish|blueFish");
   }
-  
+
   @Test
   void testJSONDeserialization() {
     Optional<KitchenSink> fromDb = repository.findById(ks.getId());
@@ -136,18 +136,18 @@ public class SerializationTest extends AbstractBaseDocumentTest {
     assertThat(fromDb.get().getSetThings()).isEqualTo(setThings);
     assertThat(fromDb.get().getListThings()).isEqualTo(listThings);
   }
-  
+
   @Test
   void testEmptySetToStringDeserialization() {
     Optional<KitchenSink> fromDb1 = repository.findById(ks1.getId());
     assertThat(fromDb1.get().getSetThings()).isEqualTo(null);
     assertThat(fromDb1.get().getListThings()).isEqualTo(null);
-    
+
     Optional<KitchenSink> fromDb2 = repository.findById(ks2.getId());
     assertThat(fromDb2.get().getSetThings()).isEqualTo(null);
     assertThat(fromDb2.get().getListThings()).isEqualTo(null);
   }
-  
+
   @Test
   void testStringEncodedSerializationForUlid() {
     var serializer = new JdkSerializationRedisSerializer();
