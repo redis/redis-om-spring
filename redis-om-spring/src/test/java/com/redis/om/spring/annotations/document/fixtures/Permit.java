@@ -49,7 +49,7 @@ public class Permit {
   private String buildingType;
 
   @NonNull
-  @Indexed(separator = ",")
+  @Indexed
   @JsonAdapter(SetToStringAdapter.class)
   private Set<String> workType;
 

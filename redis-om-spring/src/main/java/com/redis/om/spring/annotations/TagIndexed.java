@@ -13,5 +13,5 @@ public @interface TagIndexed {
   String fieldName() default "";
   String alias() default "";
   boolean noindex() default false;
-  String separator() default ",";
+  String separator() default "|";
 }

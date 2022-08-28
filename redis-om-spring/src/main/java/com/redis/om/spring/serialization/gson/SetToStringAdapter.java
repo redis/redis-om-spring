@@ -18,7 +18,7 @@ public class SetToStringAdapter extends TypeAdapter<Set<?>> {
       writer.nullValue();
       return;
     }
-    writer.value((String) value.stream().map(Object::toString).collect(Collectors.joining(",")));
+    writer.value((String) value.stream().map(Object::toString).collect(Collectors.joining("|")));
   }
 
   @Override
@@ -28,7 +28,7 @@ public class SetToStringAdapter extends TypeAdapter<Set<?>> {
       return null;
     }
     String csv = reader.nextString();
-    String[] parts = csv.split(",");
+    String[] parts = csv.split("\\|");
     return Set.of(parts);
   }
 

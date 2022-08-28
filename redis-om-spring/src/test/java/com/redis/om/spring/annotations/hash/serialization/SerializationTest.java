@@ -124,8 +124,8 @@ public class SerializationTest extends AbstractBaseEnhancedRedisTest {
     assertThat(rawDate).isEqualTo(dateInMillis);
     assertThat(rawPoint).isEqualTo(redisGeo);
     assertThat(rawUlid).isEqualTo(ulid.toString());
-    assertThat(rawSetThings.split(",")).containsExactlyInAnyOrder("thingOne", "thingTwo", "thingThree");
-    assertThat(rawListThings).isEqualTo("redFish,blueFish");
+    assertThat(rawSetThings.split("\\|")).containsExactlyInAnyOrder("thingOne", "thingTwo", "thingThree");
+    assertThat(rawListThings).isEqualTo("redFish|blueFish");
   }
 
   @Test
