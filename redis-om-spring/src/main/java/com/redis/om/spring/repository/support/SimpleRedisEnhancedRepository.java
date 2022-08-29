@@ -23,7 +23,6 @@ import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.core.convert.RedisData;
 import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
 import org.springframework.data.repository.core.EntityInformation;
-import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.util.Assert;
 
 import com.redis.om.spring.KeyspaceToIndexMap;
@@ -199,7 +198,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   @Override
   public <S extends T> Iterable<S> saveAll(Iterable<S> entities) {
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
-    List<S> saved = new ArrayList();
+    List<S> saved = new ArrayList<>();
 
     try (Jedis jedis = modulesOperations.getClient().getJedis()) {
       Pipeline pipeline = jedis.pipelined();
