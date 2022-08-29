@@ -72,7 +72,7 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 
 @SupportedAnnotationTypes("com.redis.om.spring.annotations.Document")
-@SupportedSourceVersion(SourceVersion.RELEASE_8)
+@SupportedSourceVersion(SourceVersion.RELEASE_11)
 @AutoService(Processor.class)
 public final class MetamodelGenerator extends AbstractProcessor {
 

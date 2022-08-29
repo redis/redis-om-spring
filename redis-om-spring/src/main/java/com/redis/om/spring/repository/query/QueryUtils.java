@@ -1,5 +1,6 @@
 package com.redis.om.spring.repository.query;
 
+import java.lang.reflect.Field;
 import java.util.Set;
 
 public class QueryUtils {
@@ -41,6 +42,18 @@ public class QueryUtils {
   @SuppressWarnings("unchecked")
   public static <T> T escape(T maybeText) {
     return CharSequence.class.isAssignableFrom(maybeText.getClass()) ? (T) escape(maybeText.toString()) : maybeText;
+  }
+  
+  public static String searchIndexFieldAliasFor(Field field, String prefix) {
+    String alias = field.getName();
+    if (prefix != null && !prefix.isBlank()) {
+      alias = prefix.replace(".", "_") + "_" + alias;
+    } 
+    return alias;
+  }
+  
+  public static String searchIndexFieldAliasFor(Field field) {
+    return searchIndexFieldAliasFor(field, null);
   }
   
 }

@@ -121,7 +121,6 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     this.entityInstantiators = new EntityInstantiators();
     this.conversionService = new DefaultConversionService();
     this.customConversions = new RedisOMCustomConversions();
-    //customConversions.registerConvertersIn(conversionService);
     this.typeMapper = typeMapper != null ? typeMapper
         : new DefaultRedisTypeMapper(DefaultRedisTypeMapper.DEFAULT_TYPE_KEY, this.mappingContext);
     this.referenceResolver = referenceResolver;

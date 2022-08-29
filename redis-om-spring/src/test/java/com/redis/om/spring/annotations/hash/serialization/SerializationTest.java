@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -35,12 +36,16 @@ public class SerializationTest extends AbstractBaseEnhancedRedisTest {
   private KitchenSink ks;
   private KitchenSink ks1;
   private KitchenSink ks2;
+  private KitchenSink ks3;
+  private KitchenSink ks4;
 
   private LocalDate localDate;
   private LocalDateTime localDateTime;
   private Date date;
   private Point point;
   private Ulid ulid;
+  private byte[] byteArray; 
+  private List<String[]> listOfStringArrays; 
 
   private Set<String> setThings;
   private List<String> listThings;
@@ -55,6 +60,14 @@ public class SerializationTest extends AbstractBaseEnhancedRedisTest {
     date = new Date();
     point = new Point(-111.83592170193586,33.62826024782707);
     ulid = UlidCreator.getMonotonicUlid();
+    byteArray = "Hello World!".getBytes();
+    
+    listOfStringArrays = new ArrayList<String[]>();
+    listOfStringArrays.add(new String[] {"a", "b"});
+    listOfStringArrays.add(new String[] {"c", "d"});
+    listOfStringArrays.add(new String[] { null, "e"});
+    listOfStringArrays.add(null);
+    
     setThings = Set.of("thingOne", "thingTwo", "thingThree");
     listThings = List.of("redFish", "blueFish");
 
@@ -88,8 +101,31 @@ public class SerializationTest extends AbstractBaseEnhancedRedisTest {
 
     ks2.setSetThings(null);
     ks2.setListThings(null);
+    
+    ks3 = KitchenSink.builder() //
+        .localDate(localDate) //
+        .localDateTime(localDateTime) //
+        .date(date) //
+        .point(point) //
+        .ulid(ulid) //
+        .build();
+    
+    ks3.setUlid(null);
+    ks3.setByteArray(byteArray);
+    
+    ks4 = KitchenSink.builder() //
+        .localDate(localDate) //
+        .localDateTime(localDateTime) //
+        .date(date) //
+        .point(point) //
+        .ulid(ulid) //
+        .build();
+    
+    ks4.setUlid(null);
+    ks4.setByteArray(null);
+    ks4.setListOfStringArrays(listOfStringArrays);
 
-    repository.saveAll(List.of(ks, ks1, ks2));
+    repository.saveAll(List.of(ks, ks1, ks2, ks3, ks4));
   }
 
   @Test
@@ -146,7 +182,28 @@ public class SerializationTest extends AbstractBaseEnhancedRedisTest {
   @Test
   void testLocalDateDeSerializationInQuery() {
     List<KitchenSink> all = repository.findByLocalDateGreaterThan(localDate.minus(2, ChronoUnit.DAYS));
-    assertThat(all).containsExactlyInAnyOrder(ks, ks1, ks2);
+    assertThat(all).containsExactlyInAnyOrder(ks, ks1, ks2, ks3, ks4);
+  }
+  
+  @Test
+  void testEmptyUlidReturnsAsNull() {
+    Optional<KitchenSink> fromDb = repository.findById(ks3.getId());
+    assertThat(fromDb.isPresent());
+    assertThat(fromDb.get().getUlid()).isNull();
+  }
+  
+  @Test
+  void testArraySerialization() {
+    Optional<KitchenSink> fromDb = repository.findById(ks3.getId());
+    assertThat(fromDb.isPresent());
+    assertThat(fromDb.get().getByteArray()).isEqualTo(byteArray);
+  }
+  
+  @Test
+  void testCantPersistCollectionWithNulls() {
+    Optional<KitchenSink> fromDb = repository.findById(ks4.getId());
+    assertThat(fromDb.isPresent());
+    assertThat(fromDb.get().getListOfStringArrays()).isEqualTo(null);
   }
 
 }

@@ -11,6 +11,7 @@ public class FieldsTest {
   public void testFieldsOf() {
     Function<Integer, Integer> f = (Integer i) -> i * 2;
 
+    Function<Integer, EmptyTuple> fEmpty = Fields.of();
     Function<Integer, Single<Integer>> fSingle = Fields.of(f);
     Function<Integer, Pair<Integer, Integer>> fPair = Fields.of(f, f);
     Function<Integer, Triple<Integer, Integer, Integer>> fTriple = Fields.of(f, f, f);
@@ -79,6 +80,7 @@ public class FieldsTest {
         Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> //
     > fVigintuple = Fields.of(f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f);
 
+    assertThat(fEmpty.apply(0).streamOf(Integer.class)).isEmpty();
     assertThat(fSingle.apply(2).streamOf(Integer.class)).containsExactly(4);
     assertThat(fPair.apply(3).streamOf(Integer.class)).containsSequence(6, 6);
     assertThat(fTriple.apply(4).streamOf(Integer.class)).containsExactly(8, 8, 8);

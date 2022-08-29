@@ -5,6 +5,7 @@ import static com.redis.testcontainers.RedisModulesContainer.DEFAULT_IMAGE_NAME;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -32,6 +33,10 @@ public class AbstractBaseOMTest {
 
   @Autowired
   protected RedisModulesOperations<String> modulesOperations;
+  
+  @Autowired
+  @Qualifier("redisCustomKeyValueTemplate")
+  protected CustomRedisKeyValueTemplate kvTemplate;
 
   @DynamicPropertySource
   static void properties(DynamicPropertyRegistry registry) {

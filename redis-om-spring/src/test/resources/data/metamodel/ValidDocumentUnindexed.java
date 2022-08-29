@@ -1,4 +1,4 @@
-package com.redis.om.spring.annotations.hash.fixtures;
+package valid;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -8,15 +8,18 @@ import java.util.Set;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.geo.Point;
-import org.springframework.data.redis.core.RedisHash;
 
 import com.github.f4b6a3.ulid.Ulid;
+import com.google.gson.annotations.JsonAdapter;
+import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.Indexed;
+import com.redis.om.spring.annotations.Searchable;
+import com.redis.om.spring.serialization.gson.ListToStringAdapter;
+import com.redis.om.spring.serialization.gson.SetToStringAdapter;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -27,38 +30,41 @@ import lombok.Singular;
 @RequiredArgsConstructor(staticName = "of")
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@RedisHash
-public class KitchenSink {
+@Document
+public class ValidDocumentUnindexed {
   @Id
-  @EqualsAndHashCode.Include
   private String id;
+  
+  @NonNull
+  private String string;
+  
+  @NonNull
+  private Boolean bool;
 
   @NonNull
-  @Indexed
+  private Integer integerWrapper;
+  
+  @NonNull
+  private int integerPrimitive;
+
+  @NonNull
   private LocalDate localDate;
   @NonNull
-  @Indexed
   private LocalDateTime localDateTime;
   @NonNull
-  @Indexed
   private Date date;
   @NonNull
-  @Indexed
   private Point point;
-
-  @Indexed
+  @NonNull
   private Ulid ulid;
 
   @Singular
-  @Indexed
+  @JsonAdapter(SetToStringAdapter.class)
   private Set<String> setThings;
 
   @Singular
-  @Indexed
+  @JsonAdapter(ListToStringAdapter.class)
   private List<String> listThings;
-  
-  private byte[] byteArray;
-  
-  private List<String[]> listOfStringArrays;
+
 }
+
