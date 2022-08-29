@@ -40,7 +40,7 @@ public class AbstractBaseOMTest {
 
   @DynamicPropertySource
   static void properties(DynamicPropertyRegistry registry) {
-    registry.add("spring.redis.host", REDIS::getContainerIpAddress);
+    registry.add("spring.redis.host", REDIS::getHost);
     registry.add("spring.redis.port", REDIS::getFirstMappedPort);
   }
 

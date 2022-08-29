@@ -118,7 +118,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   @Override
   public <S extends T> Iterable<S> saveAll(Iterable<S> entities) {
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
-    List<S> saved = new ArrayList();
+    List<S> saved = new ArrayList<S>();
 
     try (Jedis jedis = modulesOperations.getClient().getJedis()) {
       Pipeline pipeline = jedis.pipelined();
@@ -134,7 +134,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
         pipeline.sadd(rdo.getKeyspace(), id.toString());
 
-        List<byte[]> args = new ArrayList(4);
+        List<byte[]> args = new ArrayList<byte[]>(4);
         args.add(objectKey);
         args.add(SafeEncoder.encode(Path.ROOT_PATH.toString()));
         args.add(SafeEncoder.encode(this.gson.toJson(entity)));
