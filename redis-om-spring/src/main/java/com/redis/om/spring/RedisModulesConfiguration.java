@@ -118,8 +118,8 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   }
 
   @Bean(name = "keyspaceToIndexMap")
-  public KeyspaceToIndexMap keyspaceToIndexMap(){
-      return new KeyspaceToIndexMap();
+  public KeyspaceToIndexMap keyspaceToIndexMap() {
+    return new KeyspaceToIndexMap();
   }
 
   @Bean(name = "redisJSONKeyValueAdapter")
@@ -131,13 +131,17 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   @Bean(name = "redisJSONKeyValueTemplate")
   public CustomRedisKeyValueTemplate getRedisJSONKeyValueTemplate(RedisOperations<?, ?> redisOps,
       JSONOperations<?> redisJSONOperations, RedisMappingContext mappingContext) {
-    return new CustomRedisKeyValueTemplate(getRedisJSONKeyValueAdapter(redisOps, redisJSONOperations, mappingContext), mappingContext);
+    return new CustomRedisKeyValueTemplate(getRedisJSONKeyValueAdapter(redisOps, redisJSONOperations, mappingContext),
+        mappingContext);
   }
 
   @Bean(name = "redisCustomKeyValueTemplate")
   public CustomRedisKeyValueTemplate getKeyValueTemplate(RedisOperations<?, ?> redisOps,
-      RedisModulesOperations<?> redisModulesOperations, RedisMappingContext mappingContext, KeyspaceToIndexMap keyspaceToIndexMap) {
-    return new CustomRedisKeyValueTemplate(new RedisEnhancedKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap), mappingContext);
+      RedisModulesOperations<?> redisModulesOperations, RedisMappingContext mappingContext,
+      KeyspaceToIndexMap keyspaceToIndexMap) {
+    return new CustomRedisKeyValueTemplate(
+        new RedisEnhancedKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap),
+        mappingContext);
   }
 
   @Bean(name = "streamingQueryBuilder")
@@ -158,8 +162,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   public void processBloom(ContextRefreshedEvent cre) {
     ApplicationContext ac = cre.getApplicationContext();
     @SuppressWarnings("unchecked")
-    RedisModulesOperations<String> rmo = (RedisModulesOperations<String>) ac
-        .getBean("redisModulesOperations");
+    RedisModulesOperations<String> rmo = (RedisModulesOperations<String>) ac.getBean("redisModulesOperations");
 
     Set<BeanDefinition> beanDefs = getBeanDefinitionsFor(ac, Document.class, RedisHash.class);
 
@@ -184,10 +187,9 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
   private void createIndicesFor(Class<?> cls, ApplicationContext ac) {
     @SuppressWarnings("unchecked")
-    RedisModulesOperations<String> rmo = (RedisModulesOperations<String>) ac
-        .getBean("redisModulesOperations");
+    RedisModulesOperations<String> rmo = (RedisModulesOperations<String>) ac.getBean("redisModulesOperations");
 
-    RedisMappingContext mappingContext = (RedisMappingContext)ac.getBean("keyValueMappingContext");
+    RedisMappingContext mappingContext = (RedisMappingContext) ac.getBean("keyValueMappingContext");
     KeyspaceToIndexMap keyspaceToIndexMap = (KeyspaceToIndexMap) ac.getBean("keyspaceToIndexMap");
 
     Set<BeanDefinition> beanDefs = new HashSet<BeanDefinition>();
@@ -214,7 +216,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
             scoreField = fieldPrefix + field.getName();
           }
         }
-        
+
         String entityPrefix = cl.getName() + ":";
 
         if (!fields.isEmpty()) {
@@ -228,7 +230,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
               cls == Document.class ? IndexDefinition.Type.JSON : IndexDefinition.Type.HASH);
 
           if (cl.isAnnotationPresent(Document.class)) {
-            Document document = (Document) cl.getAnnotation(Document.class);
+            Document document = cl.getAnnotation(Document.class);
             index.setAsync(document.async());
             if (ObjectUtils.isNotEmpty(document.value())) {
               entityPrefix = document.value();
@@ -247,7 +249,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
               index.setScoreFiled(scoreField);
             }
           } else if (cl.isAnnotationPresent(RedisHash.class)) {
-            RedisHash hash = (RedisHash) cl.getAnnotation(RedisHash.class);
+            RedisHash hash = cl.getAnnotation(RedisHash.class);
             if (ObjectUtils.isNotEmpty(hash.value())) {
               entityPrefix = hash.value();
             }
@@ -264,20 +266,20 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
         // TTL
         if (cl.isAnnotationPresent(Document.class)) {
           KeyspaceSettings setting = new KeyspaceSettings(cl, cl.getName() + ":");
-          
+
           // Default TTL
-          Document document = (Document) cl.getAnnotation(Document.class);
+          Document document = cl.getAnnotation(Document.class);
           if (document.timeToLive() > 0) {
             setting.setTimeToLive(document.timeToLive());
           }
-          
+
           for (java.lang.reflect.Field field : cl.getDeclaredFields()) {
             // @TimeToLive
             if (field.isAnnotationPresent(TimeToLive.class)) {
               setting.setTimeToLivePropertyName(field.getName());
             }
           }
-          
+
           mappingContext.getMappingConfiguration().getKeyspaceConfiguration().addKeyspaceSettings(setting);
         }
       } catch (Exception e) {
@@ -292,10 +294,10 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     if (field.isAnnotationPresent(Indexed.class)) {
       logger.info(String.format("FOUND @Indexed annotation on field of type: %s", field.getType()));
 
-      Indexed indexed = (Indexed) field.getAnnotation(Indexed.class);
+      Indexed indexed = field.getAnnotation(Indexed.class);
 
       Class<?> fieldType = ClassUtils.resolvePrimitiveIfNecessary(field.getType());
-      
+
       //
       // Any Character class or Boolean -> Tag Search Field
       //
@@ -316,23 +318,26 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
       else if (Set.class.isAssignableFrom(fieldType) || List.class.isAssignableFrom(fieldType)) {
         Optional<Class<?>> maybeCollectionType = com.redis.om.spring.util.ObjectUtils.getCollectionElementType(field);
 
-        // It is only possible to index an array of strings or booleans in a TAG identifier.
+        // It is only possible to index an array of strings or booleans in a TAG
+        // identifier.
         // https://redis.io/docs/stack/json/indexing_json/#json-arrays-can-only-be-indexed-in-tag-identifiers
         if (maybeCollectionType.isPresent()) {
           Class<?> collectionType = maybeCollectionType.get();
-          
+
           if (CharSequence.class.isAssignableFrom(collectionType) || (collectionType == Boolean.class)) {
             fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
-              indexed.arrayIndex()));
-          // Index nested fields
+                indexed.arrayIndex()));
+            // Index nested fields
           } else if (isDocument) {
-            // Index nested JSON Array field. But the current implementation of RediSearch supports array only for TAG fields, not TEXT fields.
+            // Index nested JSON Array field. But the current implementation of RediSearch
+            // supports array only for TAG fields, not TEXT fields.
             // https://github.com/RediSearch/RediSearch/issues/2293
             logger.debug(String.format("FOUND nested field on field of type: %s", field.getType()));
             fields.addAll(indexAsNestedFieldFor(field, prefix));
           }
         } else {
-          logger.debug(String.format("Could not determine the type of elements in the collection %s in entity %s", field.getName(), field.getDeclaringClass().getSimpleName()));
+          logger.debug(String.format("Could not determine the type of elements in the collection %s in entity %s",
+              field.getName(), field.getDeclaringClass().getSimpleName()));
         }
       }
       //
@@ -393,8 +398,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     }
 
     if (app.isAnnotationPresent(EnableRedisDocumentRepositories.class)) {
-      EnableRedisDocumentRepositories edr = (EnableRedisDocumentRepositories) app
-          .getAnnotation(EnableRedisDocumentRepositories.class);
+      EnableRedisDocumentRepositories edr = app.getAnnotation(EnableRedisDocumentRepositories.class);
       if (edr.basePackages().length > 0) {
         for (String pkg : edr.basePackages()) {
           beanDefs.addAll(provider.findCandidateComponents(pkg));
@@ -409,8 +413,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     }
 
     if (app.isAnnotationPresent(EnableRedisEnhancedRepositories.class)) {
-      EnableRedisEnhancedRepositories er = (EnableRedisEnhancedRepositories) app
-          .getAnnotation(EnableRedisEnhancedRepositories.class);
+      EnableRedisEnhancedRepositories er = app.getAnnotation(EnableRedisEnhancedRepositories.class);
       if (er.basePackages().length > 0) {
         for (String pkg : er.basePackages()) {
           beanDefs.addAll(provider.findCandidateComponents(pkg));
@@ -549,14 +552,15 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     return getNestedField(fieldPrefix, field, prefix, null);
   }
 
-  private List<Field> getNestedField(String fieldPrefix, java.lang.reflect.Field field, String prefix, List<Field> fieldList) {
+  private List<Field> getNestedField(String fieldPrefix, java.lang.reflect.Field field, String prefix,
+      List<Field> fieldList) {
     if (fieldList == null) {
       fieldList = new ArrayList<>();
     }
     Type genericType = field.getGenericType();
     if (genericType instanceof ParameterizedType) {
       ParameterizedType pt = (ParameterizedType) genericType;
-      Class<?> actualTypeArgument = (Class<?>)pt.getActualTypeArguments()[0];
+      Class<?> actualTypeArgument = (Class<?>) pt.getActualTypeArguments()[0];
       java.lang.reflect.Field[] subDeclaredFields = actualTypeArgument.getDeclaredFields();
       String tempPrefix = "";
       if (prefix == null) {
@@ -566,7 +570,8 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
       }
       for (java.lang.reflect.Field subField : subDeclaredFields) {
 
-        Optional<Class<?>> maybeCollectionType = com.redis.om.spring.util.ObjectUtils.getCollectionElementType(subField);
+        Optional<Class<?>> maybeCollectionType = com.redis.om.spring.util.ObjectUtils
+            .getCollectionElementType(subField);
 
         if (subField.isAnnotationPresent(TagIndexed.class)) {
           TagIndexed ti = subField.getAnnotation(TagIndexed.class);
@@ -579,8 +584,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
           fieldList.add(new TagField(fieldName, ti.separator(), false));
           continue;
         } else if (subField.isAnnotationPresent(Indexed.class)) {
-          boolean subFieldIsTagField = ((subField
-              .isAnnotationPresent(Indexed.class)
+          boolean subFieldIsTagField = ((subField.isAnnotationPresent(Indexed.class)
               && ((CharSequence.class.isAssignableFrom(subField.getType()) || (subField.getType() == Boolean.class)
                   || (maybeCollectionType.isPresent() && (CharSequence.class.isAssignableFrom(maybeCollectionType.get())
                       || (maybeCollectionType.get() == Boolean.class)))))));

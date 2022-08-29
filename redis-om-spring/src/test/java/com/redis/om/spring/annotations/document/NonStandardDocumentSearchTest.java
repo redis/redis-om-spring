@@ -17,7 +17,7 @@ import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.Custom;
 import com.redis.om.spring.annotations.document.fixtures.CustomRepository;
 
-public class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
+class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
   @Autowired CustomRepository repository;
 
   @Autowired
@@ -28,7 +28,7 @@ public class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
   long id3;
 
   @BeforeEach
-  public void loadTestData() {
+  void loadTestData() {
     Custom c1 = Custom.of("foofoo");
     Custom c2 = Custom.of("barbar");
     Custom c3 = Custom.of("bazbaz");
@@ -42,12 +42,12 @@ public class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   @AfterEach
-  public void cleanUp() {
+  void cleanUp() {
     repository.deleteAll();
   }
 
   @Test
-  public void testGetByName() {
+  void testGetByName() {
     assertEquals(3, repository.count());
     List<Custom> customs = repository.searchByName("barbar");
     assertThat(customs.size()).isEqualTo(1);
@@ -56,7 +56,7 @@ public class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testBasicCrudOperations() {
+  void testBasicCrudOperations() {
     Optional<Custom> maybeC1 = repository.findById(id1);
     Optional<Custom> maybeC2 = repository.findById(id2);
     Optional<Custom> nonExistent = repository.findById(8675309L);

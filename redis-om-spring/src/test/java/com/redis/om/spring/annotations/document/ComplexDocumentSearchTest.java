@@ -24,7 +24,7 @@ import com.redis.om.spring.annotations.document.fixtures.Permit;
 import com.redis.om.spring.annotations.document.fixtures.Permit$;
 import com.redis.om.spring.annotations.document.fixtures.PermitRepository;
 
-public class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
+class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
   Permit permit1;
   Permit permit2;
   Permit permit3;
@@ -33,7 +33,7 @@ public class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
   PermitRepository repository;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     repository.deleteAll();
 
     // # Document 1

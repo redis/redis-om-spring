@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.function.BiConsumer;
@@ -413,14 +414,13 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
           .stream() //
           .map(d -> {
             try {
-              String key = idField.getType().getDeclaredConstructor(new Class[] { idField.getType() })
+              String key = idField.getType().getDeclaredConstructor((Class<?>)idField.getType())
                   .newInstance(d.getId()).toString();
-              String id = key.substring(key.indexOf(":") + 1);
-              return id;
+              return key.substring(key.indexOf(":") + 1);
             } catch (Exception e) {
               return null;
             }
-          }).filter(id -> id != null).map(id -> {
+          }).filter(Objects::nonNull).map(id -> {
             Object entity;
             try {
               entity = entityClass.getDeclaredConstructor().newInstance();

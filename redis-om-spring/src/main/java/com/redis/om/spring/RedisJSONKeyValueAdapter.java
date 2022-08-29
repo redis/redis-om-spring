@@ -138,9 +138,8 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   }
 
   private void processAuditAnnotations(String key, Object item) {
-    boolean isNew = (boolean) redisOperations.execute((RedisCallback<Object>) connection -> {
-      return !connection.exists(toBytes(key));
-    });
+    boolean isNew = (boolean) redisOperations
+        .execute((RedisCallback<Object>) connection -> !connection.exists(toBytes(key)));
 
     var auditClass = isNew ? CreatedDate.class : LastModifiedDate.class;
 
@@ -178,7 +177,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
           ReflectionUtils.invokeMethod(ttlGetter, entity);
 
           if (ttlPropertyValue != null) {
-            TimeToLive ttl = (TimeToLive) fld.getAnnotation(TimeToLive.class);
+            TimeToLive ttl = fld.getAnnotation(TimeToLive.class);
             if (!ttl.unit().equals(TimeUnit.SECONDS)) {
               return Optional.of(TimeUnit.SECONDS.convert(ttlPropertyValue, ttl.unit()));
             } else {

@@ -15,7 +15,7 @@ import com.redis.om.spring.annotations.hash.fixtures.ExpiringPersonRepository;
 import com.redis.om.spring.annotations.hash.fixtures.ExpiringPersonWithDefault;
 import com.redis.om.spring.annotations.hash.fixtures.ExpiringPersonWithDefaultRepository;
 
-public class RedisHashTTLTests extends AbstractBaseEnhancedRedisTest {
+class RedisHashTTLTests extends AbstractBaseEnhancedRedisTest {
   @Autowired
   ExpiringPersonWithDefaultRepository withDefaultrepository;
   
@@ -29,7 +29,7 @@ public class RedisHashTTLTests extends AbstractBaseEnhancedRedisTest {
   RedisTemplate<String, String> template;
   
   @BeforeEach
-  public void cleanUp() {
+  void cleanUp() {
     withDefaultrepository.deleteAll();
   }
   

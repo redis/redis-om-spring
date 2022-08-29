@@ -6,9 +6,9 @@ import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 
-public class FieldsTest {
+class FieldsTest {
   @Test
-  public void testFieldsOf() {
+  void testFieldsOf() {
     Function<Integer, Integer> f = (Integer i) -> i * 2;
 
     Function<Integer, EmptyTuple> fEmpty = Fields.of();

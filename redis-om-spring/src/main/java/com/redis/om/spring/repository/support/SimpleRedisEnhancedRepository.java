@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import com.redis.om.spring.id.ULIDIdentifierGenerator;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -23,12 +22,13 @@ import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.core.convert.RedisData;
 import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
 import org.springframework.data.repository.core.EntityInformation;
-import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 
 import com.redis.om.spring.KeyspaceToIndexMap;
 import com.redis.om.spring.RedisEnhancedKeyValueAdapter;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
+import com.redis.om.spring.id.ULIDIdentifierGenerator;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
@@ -37,7 +37,6 @@ import com.redis.om.spring.util.ObjectUtils;
 
 import io.redisearch.Query;
 import io.redisearch.SearchResult;
-import org.springframework.util.ClassUtils;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
 
@@ -84,12 +83,12 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     @SuppressWarnings("unchecked")
     RedisTemplate<String, ID> template = (RedisTemplate<String, ID>) modulesOperations.getTemplate();
     SetOperations<String, ID> setOps = template.opsForSet();
-    List<ID> ids = new ArrayList<ID>(setOps.members(metadata.getJavaType().getName()));
+    List<ID> ids = new ArrayList<>(setOps.members(metadata.getJavaType().getName()));
 
     int fromIndex = Long.valueOf(pageable.getOffset()).intValue();
     int toIndex = fromIndex + pageable.getPageSize();
 
-    return new PageImpl<ID>((List<ID>) ids.subList(fromIndex, toIndex), pageable, ids.size());
+    return new PageImpl<>(ids.subList(fromIndex, toIndex), pageable, ids.size());
   }
 
   @Override
@@ -199,7 +198,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   @Override
   public <S extends T> Iterable<S> saveAll(Iterable<S> entities) {
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
-    List<S> saved = new ArrayList();
+    List<S> saved = new ArrayList<>();
 
     try (Jedis jedis = modulesOperations.getClient().getJedis()) {
       Pipeline pipeline = jedis.pipelined();

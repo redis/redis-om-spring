@@ -71,10 +71,9 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
    *
    * @param redisOperations must not be {@literal null}.
    */
-  @SuppressWarnings("unchecked")
   public void setRedisOperations(RedisOperations<?, ?> redisOperations) {
     Assert.notNull(redisOperations, "RedisOperations must not be null!");
-    this.redisOperations = (RedisOperations<String, String>) redisOperations;
+    this.redisOperations = redisOperations;
   }
 
   /* (non-Javadoc)

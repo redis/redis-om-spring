@@ -162,13 +162,13 @@ public enum QueryClause {
     }
   }
 
-  public static Map<String,String> methodNameMap = Map.of(
+  public final static Map<String,String> methodNameMap = Map.of(
       "IsContainingAll", "IsContaining",
       "ContainingAll", "Containing",
       "ContainsAll", "Contains"
   );
 
-  public static Pattern CONTAINING_ALL_PATTERN = Pattern.compile("(IsContainingAll|ContainingAll|ContainsAll)");
+  public final static Pattern CONTAINING_ALL_PATTERN = Pattern.compile("(IsContainingAll|ContainingAll|ContainsAll)");
 
   public static boolean hasContainingAllClause(String methodName) {
     return CONTAINING_ALL_PATTERN.matcher(methodName).find();

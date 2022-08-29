@@ -15,13 +15,13 @@ public class RedisModulesClient {
 
   public JReJSON clientForJSON() {
     return new JReJSON(getJedis());
-  };
+  }
   
   public JReJSON clientForJSON(GsonBuilder builder) {
     JReJSON client = new JReJSON(getJedis());
     client.setGsonBuilder(builder);
     return client;
-  };
+  }
 
   public io.redisearch.Client clientForSearch(String index) {
     return new io.redisearch.client.Client(index, getJedis());

@@ -1309,12 +1309,6 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     public static final byte DELIMITER = ':';
     public static final byte[] PHANTOM_SUFFIX = ByteUtils.concat(new byte[] { DELIMITER }, PHANTOM);
 
-    /**
-     * @deprecated since 2.6. Please use {@link #DELIMITER} instead.
-     */
-    @Deprecated(/* since="2.6" */)
-    public static final byte DELIMITTER = DELIMITER;
-
     private final byte[] keyspace;
     private final byte[] id;
     private final boolean phantomKey;

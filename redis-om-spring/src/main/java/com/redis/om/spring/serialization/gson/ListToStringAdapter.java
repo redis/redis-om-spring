@@ -18,7 +18,7 @@ public class ListToStringAdapter extends TypeAdapter<List<?>> {
       writer.nullValue();
       return;
     }
-    writer.value((String) value.stream().map(Object::toString).collect(Collectors.joining("|")));
+    writer.value(value.stream().map(Object::toString).collect(Collectors.joining("|")));
   }
 
   @Override

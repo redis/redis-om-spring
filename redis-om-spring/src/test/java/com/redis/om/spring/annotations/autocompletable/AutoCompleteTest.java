@@ -2,6 +2,7 @@ package com.redis.om.spring.annotations.autocompletable;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,7 +30,7 @@ import com.redis.om.spring.repository.query.autocomplete.AutoCompleteOptions;
 
 import io.redisearch.Suggestion;
 
-public class AutoCompleteTest extends AbstractBaseDocumentTest {
+class AutoCompleteTest extends AbstractBaseDocumentTest {
 
   @Autowired
   public AirportsRepository repository;
@@ -38,7 +39,7 @@ public class AutoCompleteTest extends AbstractBaseDocumentTest {
   RedisModulesOperations<String> modulesOperations;
 
   @BeforeEach
-  public void loadAirports(@Value("classpath:/data/airport_codes.csv") File dataFile) throws IOException {
+  void loadAirports(@Value("classpath:/data/airport_codes.csv") File dataFile) throws IOException {
     List<Airport> data = Files //
         .readLines(dataFile, StandardCharsets.UTF_8) //
         .stream() //
@@ -49,7 +50,7 @@ public class AutoCompleteTest extends AbstractBaseDocumentTest {
   };
 
   @Test
-  public void deleteEntityShouldDeleteSuggestion() {
+  void deleteEntityShouldDeleteSuggestion() {
     String key = String.format("sugg:%s:%s", Airport.class.getSimpleName(), "name");
     SearchOperations<String> ops = modulesOperations.opsForSearch(key);
     long sugCountBefore = ops.getSuggestionLength();
@@ -68,7 +69,7 @@ public class AutoCompleteTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void deleteAllShouldDeleteAllSuggestion() {
+  void deleteAllShouldDeleteAllSuggestion() {
     String key = String.format("sugg:%s:%s", Airport.class.getSimpleName(), "name");
     SearchOperations<String> ops = modulesOperations.opsForSearch(key);
     long sugCountBefore = ops.getSuggestionLength();
@@ -81,7 +82,7 @@ public class AutoCompleteTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void deleteEntityByIdShouldDeleteSuggestion() {
+  void deleteEntityByIdShouldDeleteSuggestion() {
     String key = String.format("sugg:%s:%s", Airport.class.getSimpleName(), "name");
     SearchOperations<String> ops = modulesOperations.opsForSearch(key);
     long sugCountBefore = ops.getSuggestionLength();
@@ -97,7 +98,7 @@ public class AutoCompleteTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void deleteAllEntitiesByIdShouldDeleteSuggestions() {
+  void deleteAllEntitiesByIdShouldDeleteSuggestions() {
     String key = String.format("sugg:%s:%s", Airport.class.getSimpleName(), "name");
     SearchOperations<String> ops = modulesOperations.opsForSearch(key);
     long sugCountBefore = ops.getSuggestionLength();
@@ -112,7 +113,7 @@ public class AutoCompleteTest extends AbstractBaseDocumentTest {
   }
   
   @Test
-  public void deleteAllEntitiesByCollectionShouldDeleteSuggestions() {
+  void deleteAllEntitiesByCollectionShouldDeleteSuggestions() {
     String key = String.format("sugg:%s:%s", Airport.class.getSimpleName(), "name");
     SearchOperations<String> ops = modulesOperations.opsForSearch(key);
     long sugCountBefore = ops.getSuggestionLength();
@@ -128,29 +129,31 @@ public class AutoCompleteTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testGetAutocompleteSuggestions() {
+  void testGetAutocompleteSuggestions() {
     List<Suggestion> suggestions = repository.autoCompleteName("col");
     List<String> suggestionsString = suggestions.stream().map(Suggestion::getString).collect(Collectors.toList());
     assertThat(suggestionsString).containsAll(List.of("Columbia", "Columbus", "Colorado Springs"));
   }
   
   @Test
-  public void testGetAutocompleteSuggestionsFuzzy() {
+  void testGetAutocompleteSuggestionsFuzzy() {
     List<Suggestion> suggestions = repository.autoCompleteName("col", AutoCompleteOptions.get().fuzzy());
     List<String> suggestionsString = suggestions.stream().map(Suggestion::getString).collect(Collectors.toList());
     assertThat(suggestionsString).containsAll(List.of("Columbia", "Columbus", "Colorado Springs","Moline","Toledo"));
   }
   
   @Test
-  public void testGetAutocompleteSuggestionsWithLimit() {
+  void testGetAutocompleteSuggestionsWithLimit() {
     List<Suggestion> suggestions = repository.autoCompleteName("col", AutoCompleteOptions.get().limit(2));
     List<String> suggestionsString = suggestions.stream().map(Suggestion::getString).collect(Collectors.toList());
-    assertThat(suggestionsString).size().isEqualTo(2);
-    assertThat(suggestionsString).containsAll(List.of("Columbia", "Columbus"));
+    assertAll(
+      () -> assertThat(suggestionsString).size().isEqualTo(2),
+      () ->assertThat(suggestionsString).containsAll(List.of("Columbia", "Columbus"))
+    );
   }
   
   @Test
-  public void testGetAutocompleteSuggestionsWithPayload() {
+  void testGetAutocompleteSuggestionsWithPayload() {
     String columbusPayload = "{\"code\":\"CMH\",\"state\":\"OH\"}";
     String columbiaPayload = "{\"code\":\"CAE\",\"state\":\"SC\"}";
     String coloradoSpringsPayload = "{\"code\":\"COS\",\"state\":\"CO\"}";
@@ -163,7 +166,7 @@ public class AutoCompleteTest extends AbstractBaseDocumentTest {
   }
   
   @Test
-  public void testGetAutocompleteSuggestionsWithScores() {    
+  void testGetAutocompleteSuggestionsWithScores() {    
     List<Suggestion> suggestions = repository.autoCompleteName("col", AutoCompleteOptions.get().withScore());
     List<String> suggestionsString = suggestions.stream().map(Suggestion::getString).collect(Collectors.toList());
     List<Double> scores = suggestions.stream().map(Suggestion::getScore).collect(Collectors.toList());

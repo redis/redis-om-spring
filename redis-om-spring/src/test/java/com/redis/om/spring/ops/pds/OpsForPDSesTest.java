@@ -8,33 +8,33 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.ops.RedisModulesOperations;
 
-public class OpsForPDSesTest extends AbstractBaseDocumentTest {
+class OpsForPDSesTest extends AbstractBaseDocumentTest {
   @Autowired
   RedisModulesOperations<String> modulesOperations;
   
   @Test
-  public void testBasicBloomOperations() {
+  void testBasicBloomOperations() {
     BloomOperations<String> bloom = modulesOperations.opsForBloom();
 
     assertNotNull(bloom);
   }
   
   @Test
-  public void testBasicCMSOperations() {
+  void testBasicCMSOperations() {
     CountMinSketchOperations<String> cms = modulesOperations.opsForCountMinSketch();
 
     assertNotNull(cms);
   }
   
   @Test
-  public void testTopKOperations() {
+  void testTopKOperations() {
     TopKOperations<String> topk = modulesOperations.opsForTopK();
     
     assertNotNull(topk);
   }
   
   @Test
-  public void testCuckooKOperations() {
+  void testCuckooKOperations() {
     CuckooFilterOperations<String> cuckoo = modulesOperations.opsForCuckoFilter();
     
     assertNotNull(cuckoo);

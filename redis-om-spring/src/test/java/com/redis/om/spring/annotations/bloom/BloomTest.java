@@ -13,13 +13,13 @@ import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
 import com.redis.om.spring.annotations.hash.fixtures.Person;
 import com.redis.om.spring.annotations.hash.fixtures.PersonRepository;
 
-public class BloomTest extends AbstractBaseEnhancedRedisTest {
+class BloomTest extends AbstractBaseEnhancedRedisTest {
 
   @Autowired
   PersonRepository repository;
   
   @BeforeEach
-  public void loadPersons() {
+  void loadPersons() {
     Person guyr = Person.of("Guy Royse", "guy.royse@redis.com", "guy");
     Person guyk = Person.of("Guy Korland", "guy.korland@redis.com", "korland");
     Person simon = Person.of("Simon Prickett", "simon@redis.com", "simon");
@@ -40,19 +40,19 @@ public class BloomTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testCustomBloomRepositoryMethod() {
+  void testCustomBloomRepositoryMethod() {
     assertTrue(repository.isEmailTaken("kyle.owen@redis.com"));
     assertFalse(repository.isEmailTaken("bsb@redis.com"));
   }
 
   @Test
-  public void testDynamicBloomRepositoryMethod() {
+  void testDynamicBloomRepositoryMethod() {
     assertTrue(repository.existsByEmail("kyle.owen@redis.com"));
     assertFalse(repository.existsByEmail("bsb@redis.com"));
   }
   
   @Test
-  public void testDynamicBloomRepositoryMethodForDefaultNamedFilter() {
+  void testDynamicBloomRepositoryMethodForDefaultNamedFilter() {
     assertTrue(repository.existsByNickname("floridaman"));
     assertFalse(repository.existsByNickname("bsb"));
   }

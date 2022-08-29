@@ -13,11 +13,11 @@ public class BooleanToBytesConverter implements Converter<Boolean, byte[]> {
     return source.getBytes(StandardCharsets.UTF_8);
   }
 
-  byte[] _true = fromString("true");
-  byte[] _false = fromString("false");
+  private final byte[] trueAsBytes = fromString("true");
+  private final byte[] falseAsBytes = fromString("false");
 
   @Override
   public byte[] convert(Boolean source) {
-    return source.booleanValue() ? _true : _false;
+    return source.booleanValue() ? trueAsBytes : falseAsBytes;
   }
 }

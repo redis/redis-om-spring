@@ -22,7 +22,7 @@ import com.redis.om.spring.annotations.document.fixtures.CompanyRepository;
     classes = DocRepositoryBasePackageClassesTest.Config.class, //
     properties = { "spring.main.allow-bean-definition-overriding=true" } //
 )
-public class DocRepositoryBasePackageClassesTest extends AbstractBaseOMTest {
+class DocRepositoryBasePackageClassesTest extends AbstractBaseOMTest {
   @SpringBootApplication
   @Configuration
   @EnableRedisDocumentRepositories(basePackageClasses = {Company.class, CompanyRepository.class})
@@ -33,7 +33,7 @@ public class DocRepositoryBasePackageClassesTest extends AbstractBaseOMTest {
   CompanyRepository repository;
   
   @Test
-  public void testBasePackageClassesAreFound() {
+  void testBasePackageClassesAreFound() {
     Company redis = repository.save(
         Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
 

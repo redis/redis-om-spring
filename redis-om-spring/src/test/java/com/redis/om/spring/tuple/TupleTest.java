@@ -2415,7 +2415,7 @@ final class TupleTest {
   //
 
   @Test
-  public void testTuplesStream() {
+  void testTuplesStream() {
     final Vigintuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer, String, Integer, String, Integer> vigintuple = Tuples
         .of(0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L, 1, "grault", 2, "garply",
             3, "waldo", 4, "fred", 5);
@@ -2426,7 +2426,7 @@ final class TupleTest {
   }
 
   @Test
-  public void testTuplesStreamOf() {
+  void testTuplesStreamOf() {
     final Triple<Integer, Integer, Integer> triple = Tuples.of(0, 1, 42);
     List<Integer> parts = triple.streamOf(Integer.class).collect(Collectors.toList());
 
@@ -2434,7 +2434,7 @@ final class TupleTest {
   }
 
   @Test
-  public void testTuplesEqualsAndHashcode() {
+  void testTuplesEqualsAndHashcode() {
     final Triple<Integer, Integer, Integer> oneTriple = Tuples.of(0, 1, 42);
     final Triple<Integer, Integer, Integer> anotherTriple = Tuples.of(0, 1, 42);
 
@@ -2444,7 +2444,7 @@ final class TupleTest {
 
   @SuppressWarnings("unlikely-arg-type")
   @Test
-  public void testTuplesEqualsWithBasicTuple() {
+  void testTuplesEqualsWithBasicTuple() {
     final Triple<Integer, Integer, Integer> oneTriple = Tuples.of(0, 1, 42);
     assertThat(oneTriple.equals(null)).isFalse();
     assertThat(oneTriple.equals(oneTriple)).isTrue();
@@ -2452,13 +2452,13 @@ final class TupleTest {
   }
 
   @Test
-  public void testTupleToString() {
+  void testTupleToString() {
     final Triple<Integer, Integer, String> triple = Tuples.of(0, 1, "Foobar");
     assertThat(triple.toString()).isEqualTo("TripleImpl (0, 1, Foobar)");
   }
 
   @Test
-  public void testEntityWithoutIdThrowsException() {
+  void testEntityWithoutIdThrowsException() {
     NullPointerException exception = Assertions.assertThrows(NullPointerException.class, () -> {
       Tuples.of(0, 1, null);
     });

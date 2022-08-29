@@ -38,7 +38,7 @@ public class ObjectUtils {
         .filter(f -> f.isAnnotationPresent(annotationClass)) //
         .collect(Collectors.toList());
   }
-  
+
   public static Unit getDistanceUnit(Distance distance) {
     if (distance.getUnit().equals(DistanceUnit.MILES.getAbbreviation())) {
       return GeoValue.Unit.MILES;
@@ -50,22 +50,22 @@ public class ObjectUtils {
       return GeoValue.Unit.METERS;
     }
   }
-  
+
   public static String getTargetClassName(String fullTypeClassName) {
     String[] splitted = fullTypeClassName.split(" ");
-    String cls = splitted[splitted.length-1];
+    String cls = splitted[splitted.length - 1];
     if (cls.contains("<")) {
       cls = cls.substring(0, cls.indexOf("<"));
     }
     return cls;
   }
-  
+
   public static String firstToLowercase(String string) {
-    char c[] = string.toCharArray();
+    char[] c = string.toCharArray();
     c[0] = Character.toLowerCase(c[0]);
     return new String(c);
   }
-  
+
   public static Optional<Class<?>> getCollectionElementType(Field field) {
     if (Collection.class.isAssignableFrom(field.getType()) || Iterable.class.isAssignableFrom(field.getType())) {
       ResolvableType collectionType = ResolvableType.forField(field);
@@ -75,43 +75,40 @@ public class ObjectUtils {
 
     return Optional.empty();
   }
-  
+
   public static Optional<Field> getIdFieldForEntityClass(Class<?> cl) {
     return Arrays.stream(cl.getDeclaredFields()).filter(f -> f.isAnnotationPresent(Id.class)).findFirst();
   }
-  
+
   public static Optional<?> getIdFieldForEntity(Object entity) {
     Optional<Field> maybeIdField = getIdFieldForEntityClass(entity.getClass());
-    if (maybeIdField.isPresent()) { 
+    if (maybeIdField.isPresent()) {
       Field idField = maybeIdField.get();
-      
+
       String getterName = "get" + ObjectUtils.ucfirst(idField.getName());
       Method getter = ReflectionUtils.findMethod(entity.getClass(), getterName);
       Object id = ReflectionUtils.invokeMethod(getter, entity);
-      
+
       return Optional.of(id);
     } else {
       return Optional.empty();
     }
   }
-  
+
   public static Object getIdFieldForEntity(Field idField, Object entity) {
     String getterName = "get" + ObjectUtils.ucfirst(idField.getName());
     Method getter = ReflectionUtils.findMethod(entity.getClass(), getterName);
-    Object id = ReflectionUtils.invokeMethod(getter, entity);
-    return id;
+    return ReflectionUtils.invokeMethod(getter, entity);
   }
-  
+
   public static Method getGetterForField(Class<?> cls, Field field) {
     String getterName = "get" + ucfirst(field.getName());
-    Method getter = ReflectionUtils.findMethod(cls, getterName);
-    return getter;
+    return ReflectionUtils.findMethod(cls, getterName);
   }
-  
+
   public static Method getSetterForField(Class<?> cls, Field field) {
     String setterName = "set" + ucfirst(field.getName());
-    Method setter = ReflectionUtils.findMethod(cls, setterName, field.getType());
-    return setter;
+    return ReflectionUtils.findMethod(cls, setterName, field.getType());
   }
 
   /**
@@ -217,8 +214,9 @@ public class ObjectUtils {
     }
     return temp + parameters;
   }
-  
-  public static boolean isPropertyAnnotatedWith(Class<?> cls, String property, Class<? extends Annotation> annotationClass) {
+
+  public static boolean isPropertyAnnotatedWith(Class<?> cls, String property,
+      Class<? extends Annotation> annotationClass) {
     Field field;
     try {
       field = cls.getDeclaredField(property);
@@ -226,27 +224,26 @@ public class ObjectUtils {
     } catch (NoSuchFieldException | SecurityException e) {
       return false;
     }
-   
+
   }
-  
-  public static Object documentToObject(Document document, Class<?> returnedObjectType, MappingRedisOMConverter mappingConverter) {
+
+  public static Object documentToObject(Document document, Class<?> returnedObjectType,
+      MappingRedisOMConverter mappingConverter) {
     Bucket b = new Bucket();
-    document.getProperties().forEach(p -> {
-      b.put(p.getKey(), StringRedisSerializer.UTF_8.serialize(p.getValue().toString()));
-    });
+    document.getProperties()
+        .forEach(p -> b.put(p.getKey(), StringRedisSerializer.UTF_8.serialize(p.getValue().toString())));
 
     return mappingConverter.read(returnedObjectType, new RedisData(b));
   }
-  
+
   public static <T> T documentToEntity(Document document, Class<T> classOfT, MappingRedisOMConverter mappingConverter) {
     Bucket b = new Bucket();
-    document.getProperties().forEach(p -> {
-      b.put(p.getKey(), StringRedisSerializer.UTF_8.serialize(p.getValue().toString()));
-    });
+    document.getProperties()
+        .forEach(p -> b.put(p.getKey(), StringRedisSerializer.UTF_8.serialize(p.getValue().toString())));
 
     return mappingConverter.read(classOfT, new RedisData(b));
   }
-  
+
   public static String asString(Object value, MappingRedisOMConverter mappingConverter) {
     return value instanceof String ? (String) value
         : mappingConverter.getConversionService().convert(value, String.class);

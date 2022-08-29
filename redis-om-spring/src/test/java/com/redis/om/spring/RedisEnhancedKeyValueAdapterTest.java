@@ -11,7 +11,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.convert.Bucket;
 import org.springframework.data.redis.core.convert.RedisData;
 
-public class RedisEnhancedKeyValueAdapterTest extends AbstractBaseEnhancedRedisTest {
+class RedisEnhancedKeyValueAdapterTest extends AbstractBaseEnhancedRedisTest {
 
   @Autowired
   @Qualifier("redisCustomKeyValueTemplate")
@@ -21,7 +21,7 @@ public class RedisEnhancedKeyValueAdapterTest extends AbstractBaseEnhancedRedisT
   RedisTemplate<String, String> template;
 
   @Test
-  public void testPutRedisData() {
+  void testPutRedisData() {
     RedisData rdo = new RedisData(Bucket.newBucketFromStringMap(Collections.singletonMap("firstname", "rand")));
     rdo.setId("abc");
     rdo.setKeyspace("redisdata");

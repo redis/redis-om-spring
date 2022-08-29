@@ -1,6 +1,7 @@
 package com.redis.om.spring.search.stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -59,7 +60,7 @@ import com.redis.om.spring.tuple.Triple;
 
 import io.redisearch.aggregation.SortedField.SortOrder;
 
-public class EntityStreamTest extends AbstractBaseDocumentTest {
+class EntityStreamTest extends AbstractBaseDocumentTest {
   @Autowired
   CompanyRepository repository;
 
@@ -74,7 +75,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   EntityStream entityStream;
 
   @BeforeEach
-  public void cleanUp() {
+  void cleanUp() {
     // companies
     repository.deleteAll();
     // partially non-indexed companies
@@ -124,7 +125,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testStreamSelectAll() {
+  void testStreamSelectAll() {
     SearchStream<Company> stream = entityStream.of(Company.class);
     List<Company> allCompanies = stream.collect(Collectors.toList());
 
@@ -137,7 +138,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByOnePropertyEquals() {
+  void testFindByOnePropertyEquals() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -151,7 +152,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByOnePropertyNotEquals() {
+  void testFindByOnePropertyNotEquals() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -166,7 +167,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByTwoPropertiesOredEquals() {
+  void testFindByTwoPropertiesOredEquals() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -184,7 +185,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByThreePropertiesOredEquals() {
+  void testFindByThreePropertiesOredEquals() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -204,7 +205,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByThreePropertiesOrList() {
+  void testFindByThreePropertiesOrList() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -219,7 +220,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByThreePropertiesOrList2() {
+  void testFindByThreePropertiesOrList2() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -233,7 +234,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByThreeNumericPropertiesOrList() {
+  void testFindByThreeNumericPropertiesOrList() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -248,7 +249,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByTwoPropertiesAndedNotEquals() {
+  void testFindByTwoPropertiesAndedNotEquals() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -265,7 +266,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByNumericPropertyEquals() {
+  void testFindByNumericPropertyEquals() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -279,7 +280,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByNumericPropertyNotEquals() {
+  void testFindByNumericPropertyNotEquals() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -293,7 +294,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByNumericPropertyGreaterThan() {
+  void testFindByNumericPropertyGreaterThan() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -308,7 +309,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByNumericPropertyGreaterThanOrEqual() {
+  void testFindByNumericPropertyGreaterThanOrEqual() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -322,7 +323,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByNumericPropertyLessThan() {
+  void testFindByNumericPropertyLessThan() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -336,7 +337,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByNumericPropertyLessThanOrEqual() {
+  void testFindByNumericPropertyLessThanOrEqual() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -350,7 +351,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByNumericPropertyBetween() {
+  void testFindByNumericPropertyBetween() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -364,7 +365,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testCount() {
+  void testCount() {
     long count = entityStream //
         .of(Company.class) //
         .filter( //
@@ -376,7 +377,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testLimit() {
+  void testLimit() {
     List<Company> companies = entityStream //
         .of(Company.class) //
         .limit(2).collect(Collectors.toList());
@@ -385,7 +386,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testSkip() {
+  void testSkip() {
     List<Company> companies = entityStream //
         .of(Company.class) //
         .skip(1).collect(Collectors.toList());
@@ -394,7 +395,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testSortDefaultAscending() {
+  void testSortDefaultAscending() {
     List<Company> companies = entityStream //
         .of(Company.class) //
         .sorted(Company$.NAME) //
@@ -409,7 +410,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testSortAscending() {
+  void testSortAscending() {
     List<Company> companies = entityStream //
         .of(Company.class) //
         .sorted(Company$.NAME, SortOrder.ASC) //
@@ -424,7 +425,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testSortDescending() {
+  void testSortDescending() {
     List<Company> companies = entityStream //
         .of(Company.class) //
         .sorted(Company$.NAME, SortOrder.DESC) //
@@ -440,7 +441,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testForEachOrdered() {
+  void testForEachOrdered() {
     List<Company> companies = new ArrayList<Company>();
     Consumer<? super Company> testConsumer = (Company c) -> companies.add(c);
     entityStream //
@@ -457,7 +458,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testMapToOneProperty() {
+  void testMapToOneProperty() {
     List<String> names = entityStream //
         .of(Company.class) //
         .sorted(Company$.NAME, SortOrder.DESC) //
@@ -472,7 +473,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testMapToTwoProperties() {
+  void testMapToTwoProperties() {
     List<Pair<String, Integer>> results = entityStream //
         .of(Company.class) //
         .sorted(Company$.NAME, SortOrder.DESC) //
@@ -491,7 +492,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testMapToThreeProperties() {
+  void testMapToThreeProperties() {
     List<Triple<String, Integer, Point>> results = entityStream //
         .of(Company.class) //
         .sorted(Company$.NAME, SortOrder.DESC) //
@@ -514,7 +515,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testMapToFourPropertiesOneNotIndexed() {
+  void testMapToFourPropertiesOneNotIndexed() {
     List<Quad<String, Integer, Point, Date>> results = entityStream //
         .of(Company.class) //
         .sorted(Company$.NAME, SortOrder.DESC) //
@@ -541,7 +542,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testGeoNearPredicate() {
+  void testGeoNearPredicate() {
     List<String> names = entityStream //
         .of(Company.class) //
         .filter(Company$.LOCATION.near(new Point(-122.064, 37.384), new Distance(30, Metrics.MILES))) //
@@ -555,7 +556,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testGeoOutsideOfPredicate() {
+  void testGeoOutsideOfPredicate() {
     List<String> names = entityStream //
         .of(Company.class) //
         .filter(Company$.LOCATION.outsideOf(new Point(-122.064, 37.384), new Distance(30, Metrics.MILES))) //
@@ -570,7 +571,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testGeoEqPredicateUsingPoint() {
+  void testGeoEqPredicateUsingPoint() {
     List<String> names = entityStream //
         .of(Company.class) //
         .filter(Company$.LOCATION.eq(new Point(-122.066540, 37.377690))) //
@@ -584,7 +585,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testGeoEqPredicateUsingCSV() {
+  void testGeoEqPredicateUsingCSV() {
     List<String> names = entityStream //
         .of(Company.class) //
         .filter(Company$.LOCATION.eq("-122.066540, 37.377690")) //
@@ -598,7 +599,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testGeoEqPredicateUsingDoubles() {
+  void testGeoEqPredicateUsingDoubles() {
     List<String> names = entityStream //
         .of(Company.class) //
         .filter(Company$.LOCATION.eq(-122.066540, 37.377690)) //
@@ -612,7 +613,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testGeoNotEqPredicateUsingPoint() {
+  void testGeoNotEqPredicateUsingPoint() {
     List<String> names = entityStream //
         .of(Company.class) //
         .filter(Company$.LOCATION.notEq(new Point(-122.066540, 37.377690))) //
@@ -627,7 +628,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testGeoNotEqPredicateUsingCSV() {
+  void testGeoNotEqPredicateUsingCSV() {
     List<String> names = entityStream //
         .of(Company.class) //
         .filter(Company$.LOCATION.notEq("-122.066540, 37.377690")) //
@@ -642,7 +643,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testGeoNotEqPredicateUsingDoubles() {
+  void testGeoNotEqPredicateUsingDoubles() {
     List<String> names = entityStream //
         .of(Company.class) //
         .filter(Company$.LOCATION.notEq(-122.066540, 37.377690)) //
@@ -657,7 +658,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByTextLike() {
+  void testFindByTextLike() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -674,7 +675,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByTextNotLike() {
+  void testFindByTextNotLike() {
     List<String> names = entityStream //
         .of(Company.class) //
         .filter(Company$.NAME.notLike("Micros")) //
@@ -688,7 +689,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByTextContaining() {
+  void testFindByTextContaining() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -705,7 +706,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByTextNotContaining() {
+  void testFindByTextNotContaining() {
     List<String> names = entityStream //
         .of(Company.class) //
         .filter(Company$.NAME.notContaining("Micros")) //
@@ -719,7 +720,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByTextThatStartsWith() {
+  void testFindByTextThatStartsWith() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -736,7 +737,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByTagsIn() {
+  void testFindByTagsIn() {
     List<String> names = entityStream //
         .of(Company.class) //
         .filter(Company$.TAGS.in("reliable")) //
@@ -750,7 +751,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByTagsIn2() {
+  void testFindByTagsIn2() {
     List<String> names = entityStream //
         .of(Company.class) //
         .filter(Company$.TAGS.in("reliable", "ai")) //
@@ -765,7 +766,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByTagsContainingAll() {
+  void testFindByTagsContainingAll() {
     List<String> names = entityStream //
         .of(Company.class) //
         .filter(Company$.TAGS.containsAll("fast", "scalable", "reliable", "database", "nosql")) //
@@ -778,7 +779,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByTagsEquals() {
+  void testFindByTagsEquals() {
     Set<String> tags = Set.of("fast", "scalable", "reliable", "database", "nosql");
     List<String> names = entityStream //
         .of(Company.class) //
@@ -792,7 +793,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByTagsNotEqualsSingleValue() {
+  void testFindByTagsNotEqualsSingleValue() {
     List<String> names = entityStream //
         .of(Company.class) //
         .filter(Company$.TAGS.notEq("ai")) //
@@ -804,7 +805,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByTagsNotEquals() {
+  void testFindByTagsNotEquals() {
     Set<String> tags = Set.of("fast", "scalable", "reliable", "database", "nosql");
     List<String> names = entityStream //
         .of(Company.class) //
@@ -817,7 +818,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByTagsContainsNone() {
+  void testFindByTagsContainsNone() {
     Set<String> tags = Set.of("innovative");
     List<String> names = entityStream //
         .of(Company.class) //
@@ -831,7 +832,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindFirst() {
+  void testFindFirst() {
     Optional<Company> maybeCompany = entityStream.of(Company.class) //
         .filter(Company$.NAME.eq("RedisInc")) //
         .findFirst();
@@ -841,7 +842,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindAny() {
+  void testFindAny() {
     Optional<Company> maybeCompany = entityStream.of(Company.class) //
         .filter(Company$.NAME.eq("RedisInc")) //
         .findAny();
@@ -851,7 +852,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testToggleBooleanFieldInDocuments() {
+  void testToggleBooleanFieldInDocuments() {
     Optional<Company> maybeRedisBefore = repository.findFirstByName("RedisInc");
     assertTrue(maybeRedisBefore.isPresent());
     assertEquals(false, maybeRedisBefore.get().isPubliclyListed());
@@ -866,7 +867,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testNumIncrByNumericFieldInDocuments() {
+  void testNumIncrByNumericFieldInDocuments() {
     Optional<Company> maybeRedisBefore = repository.findFirstByName("RedisInc");
     assertTrue(maybeRedisBefore.isPresent());
     assertEquals(2011, maybeRedisBefore.get().getYearFounded());
@@ -881,7 +882,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testNumDecrByNumericFieldInDocuments() {
+  void testNumDecrByNumericFieldInDocuments() {
     Optional<Company> maybeRedisBefore = repository.findFirstByName("RedisInc");
     assertTrue(maybeRedisBefore.isPresent());
     assertEquals(2011, maybeRedisBefore.get().getYearFounded());
@@ -896,7 +897,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testStrAppendToIndexedTextFieldInDocuments() {
+  void testStrAppendToIndexedTextFieldInDocuments() {
     entityStream.of(Company.class) //
         .filter(Company$.NAME.eq("Microsoft")) //
         .forEach(Company$.NAME.append(" Corp"));
@@ -907,16 +908,18 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testStrLenToIndexedTextFieldInDocuments() {
+  void testStrLenToIndexedTextFieldInDocuments() {
     List<Long> emailLengths = entityStream.of(Company.class) //
         .map(Company$.NAME.length()) //
         .collect(Collectors.toList());
-    assertThat(emailLengths).hasSize(3);
-    assertThat(emailLengths).containsExactly(8L, 9L, 5L);
+    assertAll( //
+        () -> assertThat(emailLengths).hasSize(3), //
+        () -> assertThat(emailLengths).containsExactly(8L, 9L, 5L) //
+    );
   }
 
   @Test
-  public void testFindByTagEscapesChars() {
+  void testFindByTagEscapesChars() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -930,7 +933,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayAppendToSimpleIndexedTagFieldInDocuments() {
+  void testArrayAppendToSimpleIndexedTagFieldInDocuments() {
     entityStream.of(Company.class) //
         .filter(Company$.NAME.eq("Microsoft")) //
         .forEach(Company$.TAGS.add("gaming"));
@@ -942,7 +945,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayAppendToComplexIndexedTagFieldInDocuments() {
+  void testArrayAppendToComplexIndexedTagFieldInDocuments() {
     entityStream.of(Company.class) //
         .filter(Company$.NAME.eq("RedisInc")) //
         .forEach(Company$.EMPLOYEES.add(Employee.of("Simon Prickett")));
@@ -956,7 +959,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayInsertToSimpleIndexedTagFieldInDocuments() {
+  void testArrayInsertToSimpleIndexedTagFieldInDocuments() {
     entityStream.of(User.class) //
         .filter(User$.NAME.eq("Steve Lorello")) //
         .forEach(User$.ROLES.insert("dotnet", 0L));
@@ -968,7 +971,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayPrependToSimpleIndexedTagFieldInDocuments() {
+  void testArrayPrependToSimpleIndexedTagFieldInDocuments() {
     entityStream.of(User.class) //
         .filter(User$.NAME.eq("Steve Lorello")) //
         .forEach(User$.ROLES.prepend("dotnet"));
@@ -980,7 +983,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayInsertToSimpleIndexedTagFieldInDocuments2() {
+  void testArrayInsertToSimpleIndexedTagFieldInDocuments2() {
     entityStream.of(User.class) //
         .filter(User$.NAME.eq("Steve Lorello")) //
         .forEach(User$.ROLES.insert("dotnet", 1L));
@@ -992,26 +995,30 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayLenToSimpleIndexedTagFieldInDocuments() {
+  void testArrayLenToSimpleIndexedTagFieldInDocuments() {
     List<Long> rolesLengths = entityStream.of(User.class) //
         .map(User$.ROLES.length()) //
         .collect(Collectors.toList());
-    assertThat(rolesLengths).hasSize(4);
-    assertThat(rolesLengths).containsExactly(3L, 3L, 3L, 3L);
+    assertAll( //
+        () -> assertThat(rolesLengths).hasSize(4), //
+        () -> assertThat(rolesLengths).containsExactly(3L, 3L, 3L, 3L) //
+    );
   }
 
   @Test
-  public void testArrayIndexOfOnSimpleIndexedTagFieldInDocuments() {
+  void testArrayIndexOfOnSimpleIndexedTagFieldInDocuments() {
     List<Long> rolesLengths = entityStream.of(User.class) //
         .filter(User$.NAME.eq("Steve Lorello")) //
         .map(User$.ROLES.indexOf("guru")) //
         .collect(Collectors.toList());
-    assertThat(rolesLengths).hasSize(1);
-    assertThat(rolesLengths).containsExactly(2L);
+    assertAll( //
+        () -> assertThat(rolesLengths).hasSize(1), //
+        () -> assertThat(rolesLengths).containsExactly(2L) //
+    );
   }
 
   @Test
-  public void testArrayPopOnSimpleIndexedTagFieldInDocuments() {
+  void testArrayPopOnSimpleIndexedTagFieldInDocuments() {
     List<Object> roles = entityStream.of(User.class) //
         .filter(User$.NAME.eq("Steve Lorello")) //
         .map(User$.ROLES.pop()) //
@@ -1029,7 +1036,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayRemoveLastOnSimpleIndexedTagFieldInDocuments() {
+  void testArrayRemoveLastOnSimpleIndexedTagFieldInDocuments() {
     List<Object> roles = entityStream.of(User.class) //
         .filter(User$.NAME.eq("Steve Lorello")) //
         .map(User$.ROLES.removeLast()) //
@@ -1047,7 +1054,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayPopFirstOnSimpleIndexedTagFieldInDocuments() {
+  void testArrayPopFirstOnSimpleIndexedTagFieldInDocuments() {
     List<Object> roles = entityStream.of(User.class) //
         .filter(User$.NAME.eq("Steve Lorello")) //
         .map(User$.ROLES.pop(0L)) //
@@ -1065,7 +1072,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayRemoveFirstOnSimpleIndexedTagFieldInDocuments() {
+  void testArrayRemoveFirstOnSimpleIndexedTagFieldInDocuments() {
     List<Object> roles = entityStream.of(User.class) //
         .filter(User$.NAME.eq("Steve Lorello")) //
         .map(User$.ROLES.removeFirst()) //
@@ -1083,7 +1090,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayRemoveByIndexOnSimpleIndexedTagFieldInDocuments() {
+  void testArrayRemoveByIndexOnSimpleIndexedTagFieldInDocuments() {
     List<Object> roles = entityStream.of(User.class) //
         .filter(User$.NAME.eq("Steve Lorello")) //
         .map(User$.ROLES.remove(0L)) //
@@ -1101,7 +1108,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayTrimToRangeOnSimpleIndexedTagFieldInDocuments() {
+  void testArrayTrimToRangeOnSimpleIndexedTagFieldInDocuments() {
     entityStream.of(User.class) //
         .filter(User$.NAME.eq("Steve Lorello")) //
         .forEach(User$.ROLES.trimToRange(1L, 1L));
@@ -1113,7 +1120,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayTrimToRangeOnSimpleIndexedTagFieldInDocuments2() {
+  void testArrayTrimToRangeOnSimpleIndexedTagFieldInDocuments2() {
     entityStream.of(User.class) //
         .filter(User$.NAME.eq("Steve Lorello")) //
         .forEach(User$.ROLES.trimToRange(0L, 0L));
@@ -1125,7 +1132,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayTrimToRangeOnSimpleIndexedTagFieldInDocuments3() {
+  void testArrayTrimToRangeOnSimpleIndexedTagFieldInDocuments3() {
     entityStream.of(User.class) //
         .filter(User$.NAME.eq("Steve Lorello")) //
         .forEach(User$.ROLES.trimToRange(1L, 2L));
@@ -1137,7 +1144,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayTrimToRangeOnSimpleIndexedTagFieldInDocuments4() {
+  void testArrayTrimToRangeOnSimpleIndexedTagFieldInDocuments4() {
     // "devrel", "educator", "guru"
     entityStream.of(User.class) //
         .filter(User$.NAME.eq("Steve Lorello")) //
@@ -1150,7 +1157,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByDatePropertyEquals() {
+  void testFindByDatePropertyEquals() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -1164,7 +1171,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByDatePropertyNotEquals() {
+  void testFindByDatePropertyNotEquals() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -1178,7 +1185,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByDatePropertyIsAfter() {
+  void testFindByDatePropertyIsAfter() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -1193,7 +1200,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByDatePropertyIsOnOrAfter() {
+  void testFindByDatePropertyIsOnOrAfter() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -1208,7 +1215,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByDatePropertyBefore() {
+  void testFindByDatePropertyBefore() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -1222,7 +1229,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByDatePropertyIsOnOrBefore() {
+  void testFindByDatePropertyIsOnOrBefore() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -1237,7 +1244,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByDatePropertyIsBetween() {
+  void testFindByDatePropertyIsBetween() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -1253,7 +1260,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByDoubleNumericPropertyEquals() {
+  void testFindByDoubleNumericPropertyEquals() {
     SearchStream<User> stream = entityStream.of(User.class);
 
     List<User> users = stream //
@@ -1267,7 +1274,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByDoubleNumericPropertyNotEquals() {
+  void testFindByDoubleNumericPropertyNotEquals() {
     SearchStream<User> stream = entityStream.of(User.class);
 
     List<User> users = stream //
@@ -1283,7 +1290,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByDoubleNumericPropertyIn() {
+  void testFindByDoubleNumericPropertyIn() {
     SearchStream<User> stream = entityStream.of(User.class);
 
     List<User> users = stream //
@@ -1298,7 +1305,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByDoubleNumericPropertyBetween() {
+  void testFindByDoubleNumericPropertyBetween() {
     SearchStream<User> stream = entityStream.of(User.class);
 
     List<User> users = stream //
@@ -1312,7 +1319,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByDoubleNumericPropertyGreaterThan() {
+  void testFindByDoubleNumericPropertyGreaterThan() {
     SearchStream<User> stream = entityStream.of(User.class);
 
     List<User> users = stream //
@@ -1327,7 +1334,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByDoubleNumericPropertyGreaterThanOrEqual() {
+  void testFindByDoubleNumericPropertyGreaterThanOrEqual() {
     SearchStream<User> stream = entityStream.of(User.class);
 
     List<User> users = stream //
@@ -1343,7 +1350,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByDoubleNumericPropertyLessThan() {
+  void testFindByDoubleNumericPropertyLessThan() {
     SearchStream<User> stream = entityStream.of(User.class);
 
     List<User> users = stream //
@@ -1357,7 +1364,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByDoubleNumericPropertyLessThanOrEqual() {
+  void testFindByDoubleNumericPropertyLessThanOrEqual() {
     SearchStream<User> stream = entityStream.of(User.class);
 
     List<User> users = stream //
@@ -1372,7 +1379,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testEntityWithoutIdThrowsException() {
+  void testEntityWithoutIdThrowsException() {
     IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> {
       entityStream.of(DocWithoutId.class);
     });
@@ -1382,7 +1389,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFilterWithNonSearchFieldPredicateIsNoop() {
+  void testFilterWithNonSearchFieldPredicateIsNoop() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
     List<Company> companies = stream //
@@ -1393,7 +1400,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testMapToIntOnReturnFields() {
+  void testMapToIntOnReturnFields() {
     IntStream intStream = entityStream //
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
@@ -1403,7 +1410,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testMapToInt() {
+  void testMapToInt() {
     IntStream intStream = entityStream //
         .of(Company.class) //
         .mapToInt(c -> c.getYearFounded());
@@ -1412,7 +1419,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testMapToLongOnReturnFields() {
+  void testMapToLongOnReturnFields() {
     LongStream longStream = entityStream //
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
@@ -1422,7 +1429,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testMapToLong() {
+  void testMapToLong() {
     LongStream longStream = entityStream //
         .of(Company.class) //
         .mapToLong(c -> c.getYearFounded());
@@ -1431,7 +1438,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testMapToDoubleOnReturnFields() {
+  void testMapToDoubleOnReturnFields() {
     DoubleStream doubleStream = entityStream //
         .of(User.class) //
         .map(User$.LOTTERY_WINNINGS) //
@@ -1441,7 +1448,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testMapToDouble() {
+  void testMapToDouble() {
     DoubleStream doubleStream = entityStream //
         .of(User.class) //
         .mapToDouble(u -> u.getLotteryWinnings());
@@ -1450,7 +1457,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFlatMapToInt() {
+  void testFlatMapToInt() {
     // expected
     List<Integer> expected = new ArrayList<Integer>();
     for (Company company : entityStream.of(Company.class).collect(Collectors.toList())) {
@@ -1470,7 +1477,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFlatMapToLong() {
+  void testFlatMapToLong() {
     // expected
     List<Long> expected = new ArrayList<Long>();
     for (Company company : entityStream.of(Company.class).collect(Collectors.toList())) {
@@ -1490,7 +1497,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFlatMapToDouble() {
+  void testFlatMapToDouble() {
     // expected
     List<Double> expected = new ArrayList<Double>();
     for (Company company : entityStream.of(Company.class).collect(Collectors.toList())) {
@@ -1510,7 +1517,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testPeek() {
+  void testPeek() {
     final List<String> peekedEmails = new ArrayList<>();
     List<Company> companies = entityStream //
         .of(Company.class) //
@@ -1527,7 +1534,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testToArray() {
+  void testToArray() {
     Object[] allCompanies = entityStream //
         .of(Company.class) //
         .toArray();
@@ -1542,7 +1549,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testToArrayTyped() {
+  void testToArrayTyped() {
     Company[] allCompanies = entityStream //
         .of(Company.class) //
         .toArray(Company[]::new);
@@ -1556,7 +1563,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testReduceWithIdentityBifunctionAndBinaryOperator() {
+  void testReduceWithIdentityBifunctionAndBinaryOperator() {
     Integer firstEstablish = entityStream //
         .of(Company.class) //
         .reduce(Integer.MAX_VALUE, (minimum, company) -> Integer.min(minimum, company.getYearFounded()), Integer::min);
@@ -1564,7 +1571,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testReduceWithMethodReferenceAndCombiner() {
+  void testReduceWithMethodReferenceAndCombiner() {
     int result = entityStream //
         .of(Company.class) //
         .reduce(0, (acc, company) -> acc + company.getYearFounded(), Integer::sum);
@@ -1573,7 +1580,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testReduceWithCombiner() {
+  void testReduceWithCombiner() {
     BinaryOperator<Company> establishedFirst = (c1, c2) -> c1.getYearFounded() < c2.getYearFounded() ? c1 : c2;
 
     Optional<Company> firstEstablish = entityStream //
@@ -1585,7 +1592,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testReduceWithIdAndCombiner() {
+  void testReduceWithIdAndCombiner() {
     BinaryOperator<Company> establishedFirst = (c1, c2) -> c1.getYearFounded() < c2.getYearFounded() ? c1 : c2;
 
     Company c = new Company();
@@ -1599,7 +1606,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testReduceWithMethodReferenceOnMappedField() {
+  void testReduceWithMethodReferenceOnMappedField() {
     int result = entityStream //
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
@@ -1609,7 +1616,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testReduceWithLambdaOnMappedField() {
+  void testReduceWithLambdaOnMappedField() {
     int result = entityStream //
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
@@ -1619,7 +1626,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testReduceWithCombinerOnMappedField() {
+  void testReduceWithCombinerOnMappedField() {
     BinaryOperator<Integer> establishedFirst = (c1, c2) -> c1 < c2 ? c1 : c2;
 
     Optional<Integer> firstEstablish = entityStream //
@@ -1632,7 +1639,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testReduceWithIdentityBifunctionAndBinaryOperatorOnMappedField() {
+  void testReduceWithIdentityBifunctionAndBinaryOperatorOnMappedField() {
     Integer firstEstablish = entityStream //
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
@@ -1641,7 +1648,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testCollectWithSupplierAccumulatorAndCombinerOnMappedField() {
+  void testCollectWithSupplierAccumulatorAndCombinerOnMappedField() {
     Supplier<AtomicInteger> supplier = AtomicInteger::new;
     BiConsumer<AtomicInteger, Integer> accumulator = (AtomicInteger a, Integer i) -> {
       a.set(a.get() + i);
@@ -1660,7 +1667,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testCollectWithIdAndCombiner() {
+  void testCollectWithIdAndCombiner() {
     Supplier<AtomicInteger> supplier = AtomicInteger::new;
     BiConsumer<AtomicInteger, Company> accumulator = (AtomicInteger a, Company c) -> {
       a.set(a.get() + c.getYearFounded());
@@ -1678,7 +1685,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testMinOnMappedField() {
+  void testMinOnMappedField() {
     Optional<Integer> firstEstablish = entityStream //
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
@@ -1688,7 +1695,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testMaxOnMappedField() {
+  void testMaxOnMappedField() {
     Optional<Integer> lastEstablish = entityStream //
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
@@ -1698,7 +1705,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testAnyMatchOnMappedField() {
+  void testAnyMatchOnMappedField() {
     boolean c1975 = entityStream //
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
@@ -1714,7 +1721,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testAllMatchOnMappedField() {
+  void testAllMatchOnMappedField() {
     boolean allEstablishedBefore1970 = entityStream //
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
@@ -1730,7 +1737,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testNoneMatchOnMappedField() {
+  void testNoneMatchOnMappedField() {
     boolean noneIn1975 = entityStream //
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
@@ -1746,7 +1753,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testMin() {
+  void testMin() {
     Optional<Company> firstEstablish = entityStream //
         .of(Company.class) //
         .min((c1, c2) -> c1.getYearFounded().compareTo(c2.getYearFounded()));
@@ -1755,7 +1762,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testMax() {
+  void testMax() {
     Optional<Company> lastEstablish = entityStream //
         .of(Company.class) //
         .max((c1, c2) -> c1.getYearFounded().compareTo(c2.getYearFounded()));
@@ -1764,7 +1771,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testAnyMatch() {
+  void testAnyMatch() {
     boolean c1975 = entityStream //
         .of(Company.class) //
         .anyMatch(c -> c.getYearFounded().intValue() == 1975);
@@ -1778,7 +1785,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testAllMatch() {
+  void testAllMatch() {
     boolean allEstablishedBefore1970 = entityStream //
         .of(Company.class) //
         .allMatch(c -> c.getYearFounded().intValue() < 1970);
@@ -1792,7 +1799,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testNoneMatch() {
+  void testNoneMatch() {
     boolean noneIn1975 = entityStream //
         .of(Company.class) //
         .noneMatch(c -> c.getYearFounded().intValue() == 1975);
@@ -1806,7 +1813,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testIterator() {
+  void testIterator() {
     List<Company> allCompanies = new ArrayList<>();
     for (Iterator<Company> iterator = entityStream.of(Company.class).iterator(); iterator.hasNext();) {
       allCompanies.add(iterator.next());
@@ -1821,7 +1828,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testSplitIterator() {
+  void testSplitIterator() {
     ArrayList<Company> allCompanies = new ArrayList<>();
     Spliterator<Company> iter1 = entityStream.of(Company.class).spliterator();
     Spliterator<Company> iter2 = iter1.trySplit();
@@ -1842,7 +1849,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testNoops() {
+  void testNoops() {
     SearchStream<Company> stream = entityStream.of(Company.class);
     assertThat(stream.isParallel()).isFalse();
     assertThat(stream.parallel()).isEqualTo(stream);
@@ -1851,7 +1858,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testCloseHandler() {
+  void testCloseHandler() {
     SearchStream<Company> stream = entityStream.of(Company.class);
     AtomicBoolean wasClosed = new AtomicBoolean(false);
     stream.onClose(() -> wasClosed.set(true));
@@ -1860,7 +1867,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testCloseHandlerIsNull() {
+  void testCloseHandlerIsNull() {
     SearchStream<Company> stream = entityStream.of(Company.class);
     stream.close();
     IllegalStateException exception = Assertions.assertThrows(IllegalStateException.class, () -> {
@@ -1872,7 +1879,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testIteratorOnMappedField() {
+  void testIteratorOnMappedField() {
     List<String> allCompanies = new ArrayList<>();
     for (Iterator<String> iterator = entityStream.of(Company.class).map(Company$.NAME).iterator(); iterator
         .hasNext();) {
@@ -1888,7 +1895,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testSplitIteratorOnMappedField() {
+  void testSplitIteratorOnMappedField() {
     List<String> allCompanies = new ArrayList<>();
     Spliterator<String> iter1 = entityStream.of(Company.class).map(Company$.NAME).spliterator();
     Spliterator<String> iter2 = iter1.trySplit();
@@ -1909,13 +1916,13 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testStreamOnMappedFieldIsNotParallel() {
+  void testStreamOnMappedFieldIsNotParallel() {
     SearchStream<String> stream = entityStream.of(Company.class).map(Company$.NAME);
     assertThat(stream.isParallel()).isFalse();
   }
 
   @Test
-  public void testCloseHandlerOnMappedField() {
+  void testCloseHandlerOnMappedField() {
     SearchStream<String> stream = entityStream.of(Company.class).map(Company$.NAME);
     AtomicBoolean wasClosed = new AtomicBoolean(false);
     stream.onClose(() -> wasClosed.set(true));
@@ -1924,7 +1931,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testCloseHandlerIsNullOnMappedField() {
+  void testCloseHandlerIsNullOnMappedField() {
     SearchStream<String> stream = entityStream.of(Company.class).map(Company$.NAME);
     stream.close();
     IllegalStateException exception = Assertions.assertThrows(IllegalStateException.class, () -> {
@@ -1936,7 +1943,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFilterOnMappedField() {
+  void testFilterOnMappedField() {
     Predicate<Integer> predicate = i -> (i > 2000);
     List<Integer> foundedAfter2000 = entityStream //
         .of(Company.class) //
@@ -1948,7 +1955,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFlatMapToIntOnMappedField() {
+  void testFlatMapToIntOnMappedField() {
     // expected
     List<Integer> expected = new ArrayList<Integer>();
     for (Company company : entityStream.of(Company.class).collect(Collectors.toList())) {
@@ -1969,7 +1976,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFlatMapToLongOnMappedField() {
+  void testFlatMapToLongOnMappedField() {
     // expected
     List<Long> expected = new ArrayList<Long>();
     for (Company company : entityStream.of(Company.class).collect(Collectors.toList())) {
@@ -1990,7 +1997,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFlatMapToDoubleOnMappedField() {
+  void testFlatMapToDoubleOnMappedField() {
     // expected
     List<Double> expected = new ArrayList<Double>();
     for (Company company : entityStream.of(Company.class).collect(Collectors.toList())) {
@@ -2011,7 +2018,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testCollectionRetrievalOnMappedField() {
+  void testCollectionRetrievalOnMappedField() {
     List<Set<String>> expected = new ArrayList<>();
     for (Company company : entityStream.of(Company.class).collect(Collectors.toList())) {
       expected.add(company.getTags());
@@ -2026,7 +2033,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testMapWithFunctionAgainstMappedField() {
+  void testMapWithFunctionAgainstMappedField() {
     Function<Set<String>, String> mapper = (Set<String> tags) -> {
       return String.join("-", new TreeSet<String>(tags));
     };
@@ -2044,7 +2051,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFlatMap() {
+  void testFlatMap() {
     Function<Set<String>, Stream<String>> mapper = (Set<String> tags) -> {
       return Stream.of(String.join("-", new TreeSet<String>(tags)));
     };
@@ -2063,7 +2070,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFlatMapOnMappedField() {
+  void testFlatMapOnMappedField() {
     Function<Company, Stream<String>> mapper = (Company company) -> {
       return Stream.of(String.join("-", new TreeSet<String>(company.getTags())));
     };
@@ -2081,7 +2088,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testForEachOrderedOnMappedField() {
+  void testForEachOrderedOnMappedField() {
     List<String> names = new ArrayList<String>();
     Consumer<? super String> testConsumer = (String companyName) -> names.add(companyName);
     entityStream //
@@ -2097,7 +2104,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testForEachOnMappedField() {
+  void testForEachOnMappedField() {
     List<String> names = new ArrayList<String>();
     Consumer<? super String> testConsumer = (String companyName) -> names.add(companyName);
     entityStream //
@@ -2113,7 +2120,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testToArrayOnMappedField() {
+  void testToArrayOnMappedField() {
     Object[] allCompanies = entityStream //
         .of(Company.class) //
         .map(Company$.NAME) //
@@ -2129,7 +2136,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testToArrayTypedOnMappedField() {
+  void testToArrayTypedOnMappedField() {
     String[] namesArray = entityStream //
         .of(Company.class) //
         .map(Company$.NAME) //
@@ -2144,7 +2151,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testCountOnMappedField() {
+  void testCountOnMappedField() {
     long count = entityStream //
         .of(Company.class) //
         .filter( //
@@ -2158,7 +2165,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testLimitOnMappedField() {
+  void testLimitOnMappedField() {
     List<String> companies = entityStream //
         .of(Company.class) //
         .map(Company$.NAME) //
@@ -2168,7 +2175,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testSkipOnMappedField() {
+  void testSkipOnMappedField() {
     List<String> companies = entityStream //
         .of(Company.class) //
         .map(Company$.NAME) //
@@ -2179,7 +2186,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testSortOnMappedField() {
+  void testSortOnMappedField() {
     List<String> names = entityStream //
         .of(Company.class) //
         .map(Company$.NAME) //
@@ -2194,7 +2201,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testPeekOnMappedField() {
+  void testPeekOnMappedField() {
     final List<String> peekedEmails = new ArrayList<>();
     List<String> emails = entityStream //
         .of(Company.class) //
@@ -2209,7 +2216,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindFirstOnMappedField() {
+  void testFindFirstOnMappedField() {
     Optional<String> maybeEmail = entityStream.of(Company.class) //
         .filter(Company$.NAME.eq("RedisInc")) //
         .map(Company$.EMAIL) //
@@ -2220,7 +2227,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindAnyOnMappedField() {
+  void testFindAnyOnMappedField() {
     Optional<String> maybeEmail = entityStream.of(Company.class) //
         .filter(Company$.NAME.eq("RedisInc")) //
         .map(Company$.EMAIL) //
@@ -2231,7 +2238,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testNoopsOnMappedField() {
+  void testNoopsOnMappedField() {
     Iterator<String> iter1 = entityStream.of(Company.class).map(Company$.NAME).iterator();
     Iterator<String> iter2 = entityStream.of(Company.class).map(Company$.NAME).iterator();
     Iterator<String> iter3 = entityStream.of(Company.class).map(Company$.NAME).iterator();
@@ -2244,7 +2251,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testMapOnMappedField() {
+  void testMapOnMappedField() {
     ToLongFunction<Integer> func = y -> y - 1;
 
     List<Long> yearsMinusOne = entityStream.of(Company.class) //
@@ -2252,12 +2259,14 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
         .map(func) //
         .collect(Collectors.toList());
 
-    assertThat(yearsMinusOne).hasSize(3);
-    assertThat(yearsMinusOne).containsExactly(2010L, 1974L, 2002L);
+    assertAll( //
+        () -> assertThat(yearsMinusOne).hasSize(3), //
+        () -> assertThat(yearsMinusOne).containsExactly(2010L, 1974L, 2002L) //
+    );
   }
 
   @Test
-  public void testSplitIteratorOnMappedFieldParallelStream() {
+  void testSplitIteratorOnMappedFieldParallelStream() {
     List<String> allCompanies = new ArrayList<>();
     Spliterator<String> iter1 = entityStream.of(Company.class).map(Company$.NAME).parallel().spliterator();
     Spliterator<String> iter2 = iter1.trySplit();
@@ -2278,7 +2287,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testSplitIteratorOnMappedFieldSequentialStream() {
+  void testSplitIteratorOnMappedFieldSequentialStream() {
     List<String> allCompanies = new ArrayList<>();
     Spliterator<String> iter1 = entityStream.of(Company.class).map(Company$.NAME).sequential().spliterator();
     Spliterator<String> iter2 = iter1.trySplit();
@@ -2303,7 +2312,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   //
 
   @Test
-  public void testStrAppendToNonIndexedTextFieldInDocuments() {
+  void testStrAppendToNonIndexedTextFieldInDocuments() {
     entityStream.of(NiCompany.class) //
         .filter(NiCompany$.NAME.eq("Microsoft")) //
         .forEach(NiCompany$.EMAIL.append("zzz"));
@@ -2314,16 +2323,18 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testStrLenToNonIndexedTagFieldInDocuments() {
+  void testStrLenToNonIndexedTagFieldInDocuments() {
     List<Long> emailLengths = entityStream.of(NiCompany.class) //
         .map(NiCompany$.EMAIL.length()) //
         .collect(Collectors.toList());
-    assertThat(emailLengths).hasSize(3);
-    assertThat(emailLengths).containsExactly(15L, 22L, 14L);
+    assertAll( //
+        () -> assertThat(emailLengths).hasSize(3), //
+        () -> assertThat(emailLengths).containsExactly(15L, 22L, 14L) //
+    );
   }
 
   @Test
-  public void testToggleToNonIndexedBooleanFieldInDocuments() {
+  void testToggleToNonIndexedBooleanFieldInDocuments() {
     Optional<NiCompany> maybeRedisBefore = nicRepository.findFirstByName("RedisInc");
     assertTrue(maybeRedisBefore.isPresent());
     assertEquals(false, maybeRedisBefore.get().isPubliclyListed());
@@ -2338,7 +2349,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testNumIncrByToNonIndexedNumericFieldInDocuments() {
+  void testNumIncrByToNonIndexedNumericFieldInDocuments() {
     Optional<NiCompany> maybeRedisBefore = nicRepository.findFirstByName("RedisInc");
     assertTrue(maybeRedisBefore.isPresent());
     assertEquals(2011, maybeRedisBefore.get().getYearFounded());
@@ -2353,7 +2364,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testNumDecrByToNonIndexedNumericFieldInDocuments() {
+  void testNumDecrByToNonIndexedNumericFieldInDocuments() {
     Optional<NiCompany> maybeRedisBefore = nicRepository.findFirstByName("RedisInc");
     assertTrue(maybeRedisBefore.isPresent());
     assertEquals(2011, maybeRedisBefore.get().getYearFounded());
@@ -2368,7 +2379,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayAppendToNonIndexedTagFieldInDocuments() {
+  void testArrayAppendToNonIndexedTagFieldInDocuments() {
     entityStream.of(NiCompany.class) //
         .filter(NiCompany$.NAME.eq("Microsoft")) //
         .forEach(NiCompany$.TAGS.add("gaming"));
@@ -2380,7 +2391,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayInsertToNonIndexedTagFieldInDocuments() {
+  void testArrayInsertToNonIndexedTagFieldInDocuments() {
     entityStream.of(NiCompany.class) //
         .filter(NiCompany$.NAME.eq("Microsoft")) //
         .forEach(NiCompany$.TAGS.insert("gaming", 2L));
@@ -2392,7 +2403,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayPrependToNonIndexedTagFieldInDocuments() {
+  void testArrayPrependToNonIndexedTagFieldInDocuments() {
     entityStream.of(NiCompany.class) //
         .filter(NiCompany$.NAME.eq("Microsoft")) //
         .forEach(NiCompany$.TAGS.prepend("gaming"));
@@ -2404,26 +2415,30 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testStrLenToNonIndexedTextFieldInDocuments() {
+  void testStrLenToNonIndexedTextFieldInDocuments() {
     List<Long> emailLengths = entityStream.of(NiCompany.class) //
         .map(NiCompany$.NAME.length()) //
         .collect(Collectors.toList());
-    assertThat(emailLengths).hasSize(3);
-    assertThat(emailLengths).containsExactly(8L, 9L, 5L);
+    assertAll( //
+        () -> assertThat(emailLengths).hasSize(3), //
+        () -> assertThat(emailLengths).containsExactly(8L, 9L, 5L) //
+    );
   }
 
   @Test
-  public void testArrayIndexOfOnNonIndexedTagFieldInDocuments() {
+  void testArrayIndexOfOnNonIndexedTagFieldInDocuments() {
     List<Long> tagsLengths = entityStream.of(NiCompany.class) //
         .filter(NiCompany$.NAME.eq("Microsoft")) //
         .map(NiCompany$.TAGS.indexOf("os")) //
         .collect(Collectors.toList());
-    assertThat(tagsLengths).hasSize(1);
-    assertThat(tagsLengths).containsExactly(2L);
+    assertAll( //
+        () -> assertThat(tagsLengths).hasSize(1), //
+        () -> assertThat(tagsLengths).containsExactly(2L) //
+    );
   }
 
   @Test
-  public void testArrayPopOnNonIndexedTagFieldInDocuments() {
+  void testArrayPopOnNonIndexedTagFieldInDocuments() {
     List<Object> tags = entityStream.of(NiCompany.class) //
         .filter(NiCompany$.NAME.eq("Microsoft")) //
         .map(NiCompany$.TAGS.pop()) //
@@ -2441,7 +2456,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayRemoveLastOnNonIndexedTagFieldInDocuments() {
+  void testArrayRemoveLastOnNonIndexedTagFieldInDocuments() {
     List<Object> tags = entityStream.of(NiCompany.class) //
         .filter(NiCompany$.NAME.eq("Microsoft")) //
         .map(NiCompany$.TAGS.removeLast()) //
@@ -2459,7 +2474,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayPopFirstOnNonIndexedTagFieldInDocuments() {
+  void testArrayPopFirstOnNonIndexedTagFieldInDocuments() {
     List<Object> tags = entityStream.of(NiCompany.class) //
         .filter(NiCompany$.NAME.eq("Microsoft")) //
         .map(NiCompany$.TAGS.pop(0L)) //
@@ -2477,7 +2492,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayRemoveFirstOnNonIndexedTagFieldInDocuments() {
+  void testArrayRemoveFirstOnNonIndexedTagFieldInDocuments() {
     List<Object> tags = entityStream.of(NiCompany.class) //
         .filter(NiCompany$.NAME.eq("Microsoft")) //
         .map(NiCompany$.TAGS.removeFirst()) //
@@ -2495,7 +2510,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayRemoveByIndexOnNonIndexedTagFieldInDocuments() {
+  void testArrayRemoveByIndexOnNonIndexedTagFieldInDocuments() {
     List<Object> tags = entityStream.of(NiCompany.class) //
         .filter(NiCompany$.NAME.eq("Microsoft")) //
         .map(NiCompany$.TAGS.remove(0L)) //
@@ -2513,7 +2528,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayTrimToRangeOnNonIndexedTagFieldInDocuments() {
+  void testArrayTrimToRangeOnNonIndexedTagFieldInDocuments() {
     entityStream.of(NiCompany.class) //
         .filter(NiCompany$.NAME.eq("Microsoft")) //
         .forEach(NiCompany$.TAGS.trimToRange(1L, 1L));
@@ -2526,7 +2541,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayTrimToRangeOnNonIndexedTagFieldInDocuments2() {
+  void testArrayTrimToRangeOnNonIndexedTagFieldInDocuments2() {
     entityStream.of(NiCompany.class) //
         .filter(NiCompany$.NAME.eq("Microsoft")) //
         .forEach(NiCompany$.TAGS.trimToRange(0L, 0L));
@@ -2539,7 +2554,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayTrimToRangeOnNonIndexedTagFieldInDocuments3() {
+  void testArrayTrimToRangeOnNonIndexedTagFieldInDocuments3() {
     entityStream.of(NiCompany.class) //
         .filter(NiCompany$.NAME.eq("Microsoft")) //
         .forEach(NiCompany$.TAGS.trimToRange(1L, 2L));
@@ -2552,7 +2567,7 @@ public class EntityStreamTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testArrayTrimToRangeOnNonIndexedTagFieldInDocuments4() {
+  void testArrayTrimToRangeOnNonIndexedTagFieldInDocuments4() {
     entityStream.of(NiCompany.class) //
         .filter(NiCompany$.NAME.eq("Microsoft")) //
         .forEach(NiCompany$.TAGS.trimToRange(1L, -1L));

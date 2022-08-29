@@ -27,7 +27,7 @@ import com.redis.om.spring.annotations.document.fixtures.KitchenSinkRepository;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 
-public class SerializationTest extends AbstractBaseDocumentTest {
+class SerializationTest extends AbstractBaseDocumentTest {
   @Autowired
   KitchenSinkRepository repository;
 
@@ -49,7 +49,7 @@ public class SerializationTest extends AbstractBaseDocumentTest {
 
 
   @BeforeEach
-  public void cleanUp() {
+  void cleanUp() {
     repository.deleteAll();
 
     localDate = LocalDate.now();

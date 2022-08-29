@@ -34,7 +34,7 @@ import com.redis.om.spring.annotations.document.fixtures.DocWithCustomNameIdRepo
 import io.redisearch.querybuilder.GeoValue;
 import io.redisearch.querybuilder.GeoValue.Unit;
 
-public class ObjectUtilsTest extends AbstractBaseDocumentTest {
+class ObjectUtilsTest extends AbstractBaseDocumentTest {
   
   @Autowired
   CompanyRepository companyRepository;
@@ -43,7 +43,7 @@ public class ObjectUtilsTest extends AbstractBaseDocumentTest {
   DocWithCustomNameIdRepository docWithCustomNameIdRepository;
   
   @AfterEach
-  public void cleanUp() {
+  void cleanUp() {
     companyRepository.deleteAll();
     docWithCustomNameIdRepository.deleteAll();
   }

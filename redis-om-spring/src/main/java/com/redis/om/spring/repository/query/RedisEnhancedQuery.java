@@ -356,7 +356,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     if (queryMethod.getReturnedObjectType() == AggregationResult.class) {
       result = aggregationResult;
     } else if (queryMethod.isCollectionQuery()) {
-      result = Collections.EMPTY_LIST;
+      result = Collections.emptyList();
     }
 
     return result;
@@ -365,9 +365,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   private Object executeFtTagVals() {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
 
-    List<String> result = ops.tagVals(this.value);
-
-    return result;
+    return ops.tagVals(this.value);
   }
 
   private String prepareQuery(final Object[] parameters) {

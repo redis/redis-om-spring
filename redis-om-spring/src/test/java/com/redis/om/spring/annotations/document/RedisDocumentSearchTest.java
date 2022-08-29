@@ -38,7 +38,7 @@ import io.redisearch.Document;
 import io.redisearch.SearchResult;
 import io.redisearch.aggregation.Row;
 
-public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
+class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   @Autowired
   MyDocRepository repository;
 
@@ -49,7 +49,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   String id2;
 
   @BeforeEach
-  public void loadTestData() {
+  void loadTestData() {
     Point point1 = new Point(-122.124500, 47.640160);
     MyDoc doc1 = MyDoc.of("hello world", point1, point1, 1);
 
@@ -76,12 +76,12 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   @AfterEach
-  public void cleanUp() {
+  void cleanUp() {
     repository.deleteAll();
   }
 
   @Test
-  public void testBasicCrudOperations() {
+  void testBasicCrudOperations() {
     assertEquals(2, repository.count());
 
     Optional<MyDoc> maybeDoc1 = repository.findById(id1);
@@ -91,7 +91,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testCustomFinder() {
+  void testCustomFinder() {
     Optional<MyDoc> maybeDoc1 = repository.findByTitle("hello world");
     assertTrue(maybeDoc1.isPresent());
   }
@@ -109,7 +109,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
    * </pre>
    */
   @Test
-  public void testQueryAnnotation01() {
+  void testQueryAnnotation01() {
     SearchResult result = repository.getFirstTag();
     assertEquals(2, result.totalResults);
     Document doc = result.docs.get(0);
@@ -131,7 +131,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
    * </pre>
    */
   @Test
-  public void testQueryAnnotation02() {
+  void testQueryAnnotation02() {
     Iterable<MyDoc> results = repository.findByTitleAndTags("hello", Set.of("news"));
     assertEquals(1, ((Collection<MyDoc>) results).size());
     MyDoc doc = results.iterator().next();
@@ -149,7 +149,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
    * </pre>
    */
   @Test
-  public void testAggregationAnnotation01() {
+  void testAggregationAnnotation01() {
     AggregationResult result = repository.getSecondTagWithAggregation();
     assertEquals(1, result.totalResults);
     Row row = result.getRow(0);
@@ -159,7 +159,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testBasicPagination() {
+  void testBasicPagination() {
     Pageable pageRequest = PageRequest.of(0, 1);
 
     Page<MyDoc> result = repository.findAllByTitleStartingWith("hel", pageRequest);
@@ -173,7 +173,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testUnpagedPagination() {
+  void testUnpagedPagination() {
     Page<MyDoc> result = repository.findAllByTitleStartingWith("hel", Pageable.unpaged());
 
     assertEquals(1, result.getTotalPages());
@@ -185,7 +185,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testQueryAnnotationWithLimitAndOffset() {
+  void testQueryAnnotationWithLimitAndOffset() {
     Pageable pageRequest = PageRequest.of(0, 1);
     Page<MyDoc> result = repository.customFindAllByTitleStartingWith("hel", pageRequest);
 
@@ -199,7 +199,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testBasicPagination2() {
+  void testBasicPagination2() {
     Pageable pageRequest = PageRequest.of(1, 1);
 
     Page<MyDoc> result = repository.findAllByTitleStartingWith("hel", pageRequest);
@@ -213,7 +213,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testBasicPaginationWithSorting() {
+  void testBasicPaginationWithSorting() {
     Pageable pageRequest = PageRequest.of(0, 2, Sort.by("title").ascending());
 
     Page<MyDoc> result = repository.findAllByTitleStartingWith("hel", pageRequest);
@@ -227,19 +227,19 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testTagValsQuery() {
+  void testTagValsQuery() {
     Iterable<String> values = repository.getAllTag();
     assertThat(values).hasSize(4).contains("news", "article", "noticias", "articulo");
   }
 
   @Test
-  public void testGetIds() {
+  void testGetIds() {
     Iterable<String> ids = repository.getIds();
     assertThat(ids).hasSize(2).contains(id1, id2);
   }
 
   @Test
-  public void testGetIdsWithPaging() {
+  void testGetIdsWithPaging() {
     Pageable pageRequest = PageRequest.of(0, 1);
 
     Page<String> ids = repository.getIds(pageRequest);
@@ -250,7 +250,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testDeleteByIdWithPath() {
+  void testDeleteByIdWithPath() {
     repository.deleteById(id1, Path.of("$.tag"));
 
     Optional<MyDoc> maybeDoc1 = repository.findById(id1);
@@ -264,7 +264,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByFieldWithExplicitTagIndexedAnnotation() {
+  void testFindByFieldWithExplicitTagIndexedAnnotation() {
     Iterable<MyDoc> results = repository.findByTag(Set.of("news"));
     assertEquals(1, ((Collection<MyDoc>) results).size());
     MyDoc doc = results.iterator().next();
@@ -273,7 +273,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByFieldWithExplicitGeoIndexedAnnotation() {
+  void testFindByFieldWithExplicitGeoIndexedAnnotation() {
     Point point = new Point(-122.064, 37.384);
     var distance = new Distance(30.0, DistanceUnit.MILES);
     Iterable<MyDoc> results = repository.findByLocationNear(point, distance);
@@ -288,7 +288,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByFieldWithIndexedGeoAnnotation() {
+  void testFindByFieldWithIndexedGeoAnnotation() {
     Point point = new Point(-122.064, 37.384);
     var distance = new Distance(30.0, DistanceUnit.MILES);
     Iterable<MyDoc> results = repository.findByLocation2Near(point, distance);
@@ -303,7 +303,7 @@ public class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testFindByFieldWithExplicitNumericIndexedAnnotation() {
+  void testFindByFieldWithExplicitNumericIndexedAnnotation() {
     Iterable<MyDoc> results = repository.findByaNumber(1);
     assertEquals(1, ((Collection<MyDoc>) results).size());
     MyDoc doc = results.iterator().next();
