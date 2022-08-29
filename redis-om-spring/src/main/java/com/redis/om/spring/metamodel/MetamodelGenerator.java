@@ -37,6 +37,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
@@ -60,6 +61,7 @@ import com.redis.om.spring.metamodel.nonindexed.NonIndexedBooleanField;
 import com.redis.om.spring.metamodel.nonindexed.NonIndexedNumericField;
 import com.redis.om.spring.metamodel.nonindexed.NonIndexedTagField;
 import com.redis.om.spring.metamodel.nonindexed.NonIndexedTextField;
+import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.Triple;
 import com.redis.om.spring.tuple.Tuples;
 import com.redis.om.spring.util.ObjectUtils;
@@ -110,8 +112,8 @@ public final class MetamodelGenerator extends AbstractProcessor {
     metamodelCandidates.stream().filter(ae -> ae.getKind() == ElementKind.CLASS).forEach(ae -> {
       try {
         generateMetaModelClass(ae);
-      } catch (IOException e) {
-        e.printStackTrace();
+      } catch (IOException ioe) {
+        messager.printMessage(Diagnostic.Kind.ERROR, "Cannot generate metamodel calss for " + ae.getClass().getName() + " because " + ioe.getMessage());
       }
     });
 
@@ -155,11 +157,14 @@ public final class MetamodelGenerator extends AbstractProcessor {
     List<FieldSpec> interceptors = new ArrayList<FieldSpec>();
     List<FieldSpec> fields = new ArrayList<FieldSpec>();
     List<CodeBlock> initCodeBlocks = new ArrayList<CodeBlock>();
+    List<FieldSpec> nestedFieldsConstants = new ArrayList<FieldSpec>();
+    List<CodeBlock> nestedFieldsConstantsInitCodeBlocks = new ArrayList<CodeBlock>();
     enclosedFields.forEach((field, getter) -> {
       boolean fieldIsIndexed = (field.getAnnotation(Searchable.class) != null)
           || (field.getAnnotation(Indexed.class) != null);
 
       String fieldName = field.getSimpleName().toString();
+      messager.printMessage(Diagnostic.Kind.NOTE, "Processing " + entityName + "." + fieldName);
       TypeName entityField = TypeName.get(field.asType());
 
       TypeMirror fieldType = field.asType();
@@ -179,10 +184,19 @@ public final class MetamodelGenerator extends AbstractProcessor {
       if (field.getAnnotation(Searchable.class) != null) {
         targetInterceptor = TextField.class;
       } else if (field.getAnnotation(Indexed.class) != null) {
-        Class<?> targetCls;
+        Class<?> targetCls = null;
         try {
           targetCls = ClassUtils.forName(cls, MetamodelGenerator.class.getClassLoader());
-
+        } catch (ClassNotFoundException cnfe) {
+          messager.printMessage(Diagnostic.Kind.WARNING,
+              "Processing class " + entityName + " could not resolve " + cls + " checking for nested indexables");
+          List<Pair<FieldSpec, CodeBlock>> nestedFieldContants = extractNestedConstants(field);
+          for (Pair<FieldSpec, CodeBlock> fieldConstants : nestedFieldContants) {
+            nestedFieldsConstants.add(fieldConstants.getFirst());
+            nestedFieldsConstantsInitCodeBlocks.add(fieldConstants.getSecond());
+          }
+        }
+        if (targetCls != null) {
           //
           // Any Character class -> Tag Search Field
           //
@@ -219,9 +233,6 @@ public final class MetamodelGenerator extends AbstractProcessor {
           else if (targetCls == Boolean.class) {
             targetInterceptor = BooleanField.class;
           }
-        } catch (ClassNotFoundException cnfe) {
-          messager.printMessage(Diagnostic.Kind.WARNING,
-              "Processing class " + entityName + " could not resolve " + cls);
         }
       } else {
         Class<?> targetCls;
@@ -275,6 +286,9 @@ public final class MetamodelGenerator extends AbstractProcessor {
     for (CodeBlock initCodeBlock : initCodeBlocks) {
       blockBuilder.add(initCodeBlock);
     }
+    for (CodeBlock nestedFieldsConstantsInitCodeBlock : nestedFieldsConstantsInitCodeBlocks) {
+      blockBuilder.add(nestedFieldsConstantsInitCodeBlock);
+    }
     blockBuilder.nextControlFlow("catch($T | $T e)", NoSuchFieldException.class, SecurityException.class);
     blockBuilder.addStatement("System.err.println(e.getMessage())");
     blockBuilder.endControlFlow();
@@ -283,6 +297,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
     TypeSpec metaclass = TypeSpec.classBuilder(genEntityName).addModifiers(Modifier.PUBLIC, Modifier.FINAL) //
         .addFields(fields) //
+        .addFields(nestedFieldsConstants) //
         .addStaticBlock(staticBlock) //
         .addFields(interceptors) //
         // .addJavadoc(filename, null)
@@ -295,6 +310,61 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
     writer.close();
   }
+
+  private List<Pair<FieldSpec, CodeBlock>> extractNestedConstants(Element fieldElement) {
+    TypeMirror typeMirror = fieldElement.asType();
+    DeclaredType asDeclaredType = (DeclaredType)typeMirror;
+    Element entityField = asDeclaredType.asElement();
+
+    messager.printMessage(Diagnostic.Kind.NOTE, "Processing constants for " + fieldElement + " of type " + entityField);
+
+    final String entityFieldName = fieldElement.toString();
+    messager.printMessage(Diagnostic.Kind.NOTE, "entityFieldName => " + entityFieldName);
+
+    List<? extends Element> enclosed = entityField.getEnclosedElements();
+    messager.printMessage(Diagnostic.Kind.NOTE, "enclosed size() ==> " + enclosed.size());
+
+
+    final Map<String, Element> getters = entityField.getEnclosedElements().stream()
+        .filter(ee -> ee.getKind() == ElementKind.METHOD)
+        // Only consider methods with no parameters
+        .filter(ee -> ee.getEnclosedElements().stream().noneMatch(eee -> eee.getKind() == ElementKind.PARAMETER))
+        // Todo: Filter out methods that returns void or Void
+        .collect(Collectors.toMap(e -> e.getSimpleName().toString(), Function.identity()));
+
+    messager.printMessage(Diagnostic.Kind.NOTE, "getters size() ==> " + getters.size());
+
+    final Set<String> isGetters = getters.values().stream()
+        // todo: Filter out methods only returning boolean or Boolean
+        .map(Element::getSimpleName).map(Object::toString).filter(n -> n.startsWith(IS_PREFIX)).map(n -> n.substring(2))
+        .map(ObjectUtils::lcfirst).collect(Collectors.toSet());
+
+    // Retrieve all declared non-final instance fields of the annotated class
+    Map<? extends Element, String> enclosedFields = entityField.getEnclosedElements().stream()
+        .filter(ee -> ee.getKind().isField() && !ee.getModifiers().contains(Modifier.STATIC) // Ignore static fields
+            && !ee.getModifiers().contains(Modifier.FINAL)) // Ignore final fields
+        .collect(Collectors.toMap(Function.identity(),
+            ee -> findGetter(ee, getters, isGetters, entityFieldName, lombokGetterAvailable(entityField, ee))));
+
+    messager.printMessage(Diagnostic.Kind.NOTE, "Enclosed subfield size() ==> " + enclosedFields.size());
+
+    List<Pair<FieldSpec, CodeBlock>> nestedFieldsConstants = new ArrayList<Pair<FieldSpec, CodeBlock>>();
+    enclosedFields.forEach((field, getter) -> {
+
+      boolean fieldIsIndexed = (field.getAnnotation(Searchable.class) != null)
+          || (field.getAnnotation(Indexed.class) != null);
+
+      if (fieldIsIndexed) {
+        messager.printMessage(Diagnostic.Kind.NOTE, "Processing subfield ==> " + entityFieldName + "." + field.getSimpleName().toString());
+        String subFieldName = field.getSimpleName().toString();
+
+        Pair<FieldSpec, CodeBlock> nestedIndexedFieldDef = generateNestedIndexedFieldConstants(entityFieldName, subFieldName);
+        nestedFieldsConstants.add(nestedIndexedFieldDef);
+      }
+    });
+    return nestedFieldsConstants;
+  }
+
 
   private static final Set<String> DISALLOWED_ACCESS_LEVELS = Stream.of("PROTECTED", "PRIVATE", "NONE")
       .collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableSet));
@@ -367,10 +437,8 @@ public final class MetamodelGenerator extends AbstractProcessor {
     }
 
 // default to thrower
-
-// Todo: This should be an error in the future
-    messager.printMessage(Diagnostic.Kind.WARNING, "Class " + entityName + " is not a proper JavaBean because "
-        + field.getSimpleName().toString() + " has no standard getter. Fix the issue to ensure stability.");
+    messager.printMessage(Diagnostic.Kind.ERROR, "Class " + entityName + " is not a proper JavaBean because "
+        + field.getSimpleName().toString() + " has no standard getter.");
     return lambdaName + " -> {throw new " + IllegalJavaBeanException.class.getSimpleName() + "(" + entityName
         + ".class, \"" + fieldName + "\");}";
 
@@ -436,6 +504,18 @@ public final class MetamodelGenerator extends AbstractProcessor {
         .addStatement("$L = new $T($L,$L)", fieldAccessor, interceptor, fieldName, fieldIsIndexed).build();
 
     return Tuples.of(objectField, aField, aFieldInit);
+  }
+
+  private Pair<FieldSpec, CodeBlock> generateNestedIndexedFieldConstants(String fieldName, String subFieldName) {
+    String staticConstantName = staticField(fieldName) + "_" + staticField(subFieldName);
+
+    FieldSpec staticStringField = FieldSpec.builder(String.class, staticConstantName).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+        .build();
+
+    CodeBlock staticStringFieldInit = CodeBlock.builder()
+        .addStatement("$L = new $T($L)", staticConstantName, String.class, String.format("\"%s_%s\"", fieldName, subFieldName)).build();
+
+    return Tuples.of(staticStringField, staticStringFieldInit);
   }
 
   public static String replaceIfIllegalJavaIdentifierCharacter(final String word) {
