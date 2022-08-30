@@ -189,7 +189,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
           targetCls = ClassUtils.forName(cls, MetamodelGenerator.class.getClassLoader());
         } catch (ClassNotFoundException cnfe) {
           messager.printMessage(Diagnostic.Kind.WARNING,
-              "Processing class " + entityName + " could not resolve " + cls + " checking for nested indexables");
+              "Processing class " + entityName + " could not resolve " + cls + ".  Checking for nested indexables");
           List<Pair<FieldSpec, CodeBlock>> nestedFieldContants = extractNestedConstants(field);
           for (Pair<FieldSpec, CodeBlock> fieldConstants : nestedFieldContants) {
             nestedFieldsConstants.add(fieldConstants.getFirst());
