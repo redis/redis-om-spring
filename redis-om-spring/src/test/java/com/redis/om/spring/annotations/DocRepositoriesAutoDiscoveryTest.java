@@ -18,7 +18,7 @@ import com.redis.om.spring.TestConfig;
     classes = DocRepositoriesAutoDiscoveryTest.Config.class, //
     properties = { "spring.main.allow-bean-definition-overriding=true" } //
 )
-public class DocRepositoriesAutoDiscoveryTest extends AbstractBaseOMTest {
+class DocRepositoriesAutoDiscoveryTest extends AbstractBaseOMTest {
   @SpringBootApplication
   @Configuration
   @EnableRedisDocumentRepositories(basePackageClasses = {})
@@ -29,7 +29,7 @@ public class DocRepositoriesAutoDiscoveryTest extends AbstractBaseOMTest {
   DocRepository repository;
 
   @Test
-  public void testBasePackageClassesAreFound() {
+  void testBasePackageClassesAreFound() {
     Doc doc = repository.save(Doc.of("A Doc"));
 
     assertEquals(1, repository.count());

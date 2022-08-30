@@ -16,7 +16,7 @@ import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
 
 import io.redisearch.SearchResult;
 
-public class DocumentLanguageTest extends AbstractBaseDocumentTest {
+class DocumentLanguageTest extends AbstractBaseDocumentTest {
   private static final Gson gson = GsonBuidlerFactory.getBuilder().create();
   private static final String QUIJOTE = //
       "En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo " + //
@@ -29,14 +29,14 @@ public class DocumentLanguageTest extends AbstractBaseDocumentTest {
   SpanishDocRepository repo;
 
   @BeforeEach
-  public void createDocs() {
+  void createDocs() {
     SpanishDoc quijote = SpanishDoc.of("Don Quijote", QUIJOTE);
     SpanishDoc soledad = SpanishDoc.of("Cien Años de Soledad", SOLEDAD);
     repo.saveAll(List.of(quijote, soledad));
   }
 
   @Test
-  public void testLanguage() {
+  void testLanguage() {
     SearchResult result = repo.findByBody("fusil");
     assertThat(result.totalResults).isEqualTo(1);
     SpanishDoc doc = gson.fromJson(result.docs.get(0).get("$").toString(), SpanishDoc.class);

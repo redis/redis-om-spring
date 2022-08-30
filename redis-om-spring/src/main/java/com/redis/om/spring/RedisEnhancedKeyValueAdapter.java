@@ -166,9 +166,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     }
 
     byte[] objectKey = createKey(rdo.getKeyspace(), rdo.getId());
-    boolean isNew = redisOperations.execute((RedisCallback<Boolean>) connection -> {
-      return connection.del(objectKey) == 0;
-    });
+    boolean isNew = redisOperations.execute((RedisCallback<Boolean>) connection -> connection.del(objectKey) == 0);
 
     redisOperations.executePipelined((RedisCallback<Object>) connection -> {
 
@@ -543,9 +541,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   }
 
   private void processAuditAnnotations(byte[] redisKey, Object item) {
-    boolean isNew = (boolean) redisOperations.execute((RedisCallback<Object>) connection -> {
-      return !connection.exists(redisKey);
-    });
+    boolean isNew = (boolean) redisOperations
+        .execute((RedisCallback<Object>) connection -> !connection.exists(redisKey));
 
     var auditClass = isNew ? CreatedDate.class : LastModifiedDate.class;
 

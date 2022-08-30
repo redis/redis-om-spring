@@ -25,7 +25,7 @@ import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
 import com.redis.om.spring.annotations.hash.fixtures.KitchenSink;
 import com.redis.om.spring.annotations.hash.fixtures.KitchenSinkRepository;
 
-public class SerializationTest extends AbstractBaseEnhancedRedisTest {
+class SerializationTest extends AbstractBaseEnhancedRedisTest {
 
   @Autowired
   RedisTemplate<String, String> template;

@@ -9,6 +9,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -39,7 +40,7 @@ import io.redisearch.client.IndexDefinition;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.util.SafeEncoder;
 
-public class OpsForSearchTest extends AbstractBaseDocumentTest {
+class OpsForSearchTest extends AbstractBaseDocumentTest {
   public static String searchIndex = "student_pupil";
   static String HASH_PREFIX = "Article";
 
@@ -50,7 +51,7 @@ public class OpsForSearchTest extends AbstractBaseDocumentTest {
   RedisTemplate<String, String> template;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     HashOperations<String, String, String> hashOps = template.opsForHash();
     hashOps.putAll("profesor:5555", toMap("first", "Albert", "last", "Blue", "age", "55"));
     hashOps.putAll("student:1111", toMap("first", "Joe", "last", "Dod", "age", "18"));
@@ -77,7 +78,7 @@ public class OpsForSearchTest extends AbstractBaseDocumentTest {
   }
 
   @AfterEach
-  public void cleanUp() {
+  void cleanUp() {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
     try {
       ops.dropIndex();
@@ -95,7 +96,7 @@ public class OpsForSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testBasicSearch() {
+  void testBasicSearch() {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
     SearchResult res1 = ops.search(new Query("@first:Jo*"));
     assertEquals(2, res1.totalResults);
@@ -105,7 +106,7 @@ public class OpsForSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testComplexSearch() throws Exception {
+  void testComplexSearch() throws Exception {
     SearchOperations<String> ops = modulesOperations.opsForSearch("testComplexSearch");
 
     Schema sc = new Schema().addTextField("title", 1.0).addTextField("body", 1.0);
@@ -151,7 +152,7 @@ public class OpsForSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void searchBatch() throws Exception {
+  void searchBatch() throws Exception {
     SearchOperations<String> ops = modulesOperations.opsForSearch("batch");
 
     Schema sc = new Schema().addTextField("title", 1.0).addTextField("body", 1.0);
@@ -188,7 +189,7 @@ public class OpsForSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testExplain() {
+  void testExplain() {
     SearchOperations<String> ops = modulesOperations.opsForSearch("explain");
 
     Schema sc = new Schema().addTextField("f1", 1.0).addTextField("f2", 1.0).addTextField("f3", 1.0);
@@ -201,7 +202,7 @@ public class OpsForSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testLanguage() throws Exception {
+  void testLanguage() throws Exception {
     SearchOperations<String> ops = modulesOperations.opsForSearch("language");
     Schema sc = new Schema().addTextField("text", 1.0);
     ops.createIndex(sc, Client.IndexOptions.defaultOptions());
@@ -224,7 +225,7 @@ public class OpsForSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testMultiDocuments() {
+  void testMultiDocuments() {
     SearchOperations<String> ops = modulesOperations.opsForSearch("multi");
     Schema sc = new Schema().addTextField("title", 1.0).addTextField("body", 1.0);
 
@@ -251,7 +252,7 @@ public class OpsForSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testReplacePartial() throws Exception {
+  void testReplacePartial() throws Exception {
     SearchOperations<String> ops = modulesOperations.opsForSearch("replace_partial");
 
     Schema sc = new Schema().addTextField("f1", 1.0).addTextField("f2", 1.0).addTextField("f3", 1.0);
@@ -280,7 +281,7 @@ public class OpsForSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testInfo() throws Exception {
+  void testInfo() throws Exception {
     SearchOperations<String> ops = modulesOperations.opsForSearch("movies");
 
     String TITLE = "title";
@@ -305,7 +306,7 @@ public class OpsForSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testGet() throws Exception {
+  void testGet() throws Exception {
     SearchOperations<String> ops = modulesOperations.opsForSearch("testGet");
     ops.createIndex(new Schema().addTextField("txt1", 1.0), Client.IndexOptions.defaultOptions());
     ops.addDocument(new Document("doc1").set("txt1", "Hello World!"), new AddOptions());
@@ -325,7 +326,7 @@ public class OpsForSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testAlias() throws Exception {
+  void testAlias() throws Exception {
     SearchOperations<String> ops = modulesOperations.opsForSearch("testAlias");
 
     Schema sc = new Schema().addTextField("field1", 1.0);
@@ -367,7 +368,7 @@ public class OpsForSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testAlterAdd() throws Exception {
+  void testAlterAdd() throws Exception {
     SearchOperations<String> ops = modulesOperations.opsForSearch("testAlterAdd");
 
     Schema sc = new Schema().addTextField("title", 1.0);
@@ -403,7 +404,7 @@ public class OpsForSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testConfig() throws Exception {
+  void testConfig() throws Exception {
     SearchOperations<String> ops = modulesOperations.opsForSearch("testConfig");
 
     boolean result = ops.setConfig(ConfigOption.TIMEOUT, "100");
@@ -423,28 +424,31 @@ public class OpsForSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testSyn() throws Exception {
+  void testSyn() throws Exception {
     SearchOperations<String> ops = modulesOperations.opsForSearch("testSyn");
 
     Schema sc = new Schema().addTextField("name", 1.0).addTextField("addr", 1.0);
-    assertTrue(ops.createIndex(sc, Client.IndexOptions.defaultOptions()));
+    assertAll( //
+        () -> assertTrue(ops.createIndex(sc, Client.IndexOptions.defaultOptions())), //
 
-    assertTrue(ops.updateSynonym("Wisenheimer", "Smarty Pants"));
-    assertTrue(ops.updateSynonym("Knuckle Sandwich", "Punch"));
-    assertTrue(ops.updateSynonym("Ducky Shincracker", "Good Dancer"));
-    assertTrue(ops.updateSynonym("Zozzled", "Drunk", "Inebriated"));
-
+        () -> assertTrue(ops.updateSynonym("Wisenheimer", "Smarty Pants")), //
+        () -> assertTrue(ops.updateSynonym("Knuckle Sandwich", "Punch")), //
+        () -> assertTrue(ops.updateSynonym("Ducky Shincracker", "Good Dancer")), //
+        () -> assertTrue(ops.updateSynonym("Zozzled", "Drunk", "Inebriated")) //
+    );
     Map<String, List<String>> dump = ops.dumpSynonym();
 
-    assertThat(dump).contains(entry("drunk", List.of("Zozzled")));
-    assertThat(dump).contains(entry("smarty pants", List.of("Wisenheimer")));
-    assertThat(dump).contains(entry("inebriated", List.of("Zozzled")));
-    assertThat(dump).contains(entry("good dancer", List.of("Ducky Shincracker")));
-    assertThat(dump).contains(entry("punch", List.of("Knuckle Sandwich")));
+    assertAll( //
+        () -> assertThat(dump).contains(entry("drunk", List.of("Zozzled"))), //
+        () -> assertThat(dump).contains(entry("smarty pants", List.of("Wisenheimer"))), //
+        () -> assertThat(dump).contains(entry("inebriated", List.of("Zozzled"))), //
+        () -> assertThat(dump).contains(entry("good dancer", List.of("Ducky Shincracker"))), //
+        () -> assertThat(dump).contains(entry("punch", List.of("Knuckle Sandwich"))) //
+    );
   }
 
   @Test
-  public void testNumericFilter() throws Exception {
+  void testNumericFilter() throws Exception {
     SearchOperations<String> ops = modulesOperations.opsForSearch("testNumericFilter");
 
     Schema sc = new Schema().addTextField("title", 1.0).addNumericField("price");

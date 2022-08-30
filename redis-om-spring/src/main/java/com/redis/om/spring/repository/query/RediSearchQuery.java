@@ -353,7 +353,7 @@ public class RediSearchQuery implements RepositoryQuery {
     if (queryMethod.getReturnedObjectType() == AggregationResult.class) {
       result = aggregationResult;
     } else if (queryMethod.isCollectionQuery()) {
-      result = Collections.EMPTY_LIST; // TODO: Handle custom return values, see https://github.com/redis/redis-om-spring/issues/88
+      result = Collections.emptyList(); // TODO: Handle custom return values, see https://github.com/redis/redis-om-spring/issues/88
     }
 
     return result;
@@ -362,9 +362,7 @@ public class RediSearchQuery implements RepositoryQuery {
   private Object executeFtTagVals() {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
 
-    List<String> result = ops.tagVals(this.value);
-
-    return result;
+    return ops.tagVals(this.value);
   }
 
   private String prepareQuery(final Object[] parameters) {

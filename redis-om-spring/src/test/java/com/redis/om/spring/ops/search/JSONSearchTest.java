@@ -34,7 +34,7 @@ import io.redisearch.client.Client;
 import io.redisearch.client.IndexDefinition;
 import redis.clients.jedis.exceptions.JedisDataException;
 
-public class JSONSearchTest extends AbstractBaseDocumentTest {
+class JSONSearchTest extends AbstractBaseDocumentTest {
   public static String searchIndex = "idx";
 
   /* A simple class that represents an object in real life */
@@ -58,7 +58,7 @@ public class JSONSearchTest extends AbstractBaseDocumentTest {
   private StringRedisTemplate template;
 
   @BeforeEach
-  public void setup() {
+  void setup() {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
 
     try {
@@ -82,7 +82,7 @@ public class JSONSearchTest extends AbstractBaseDocumentTest {
   }
 
   @AfterEach
-  public void cleanUp() {
+  void cleanUp() {
     template.delete("doc1");
   }
 
@@ -92,7 +92,7 @@ public class JSONSearchTest extends AbstractBaseDocumentTest {
    * 2) "{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}"
    */
   @Test
-  public void testBasicSearchOverJSON() {
+  void testBasicSearchOverJSON() {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
 
     SearchResult result = ops.search(new Query("@title:hello @tag:{news}"));
@@ -111,7 +111,7 @@ public class JSONSearchTest extends AbstractBaseDocumentTest {
    *    2) "news"
    */
   @Test
-  public void testSearchOverJSONWithPathProjection() {
+  void testSearchOverJSONWithPathProjection() {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
     SearchResult result = ops.search(new Query("*").returnFields("$.tag[0]", "AS", "first_tag"));
     assertEquals(1, result.totalResults);
@@ -130,7 +130,7 @@ public class JSONSearchTest extends AbstractBaseDocumentTest {
    *      2) "article"
    */
   @Test
-  public void testAggregateLoadUsingJSONPath() {
+  void testAggregateLoadUsingJSONPath() {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
 
     AggregationBuilder aggregation = new AggregationBuilder().load("$.tag[1]", "AS", "tag2");

@@ -17,19 +17,19 @@ import com.redis.om.spring.ops.RedisModulesOperations;
 import io.rebloom.client.InsertOptions;
 import redis.clients.jedis.exceptions.JedisDataException;
 
-public class OpsForBloomTest extends AbstractBaseDocumentTest {
+class OpsForBloomTest extends AbstractBaseDocumentTest {
   @Autowired
   RedisModulesOperations<String> modulesOperations;
 
   BloomOperations<String> bloom;
 
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
     bloom = modulesOperations.opsForBloom();
   }
 
   @Test
-  public void testExample() {
+  void testExample() {
     // Simple bloom filter using default module settings
     bloom.add("simpleBloom", "Mark");
     // Does "Mark" now exist?
@@ -50,7 +50,7 @@ public class OpsForBloomTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testExampleBytesApi() {
+  void testExampleBytesApi() {
     // Simple bloom filter using default module settings
     bloom.add("simpleBloom", "Mark".getBytes());
     // Does "Mark" now exist?
@@ -73,7 +73,7 @@ public class OpsForBloomTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void reserveExpansionNoCreate() {
+  void reserveExpansionNoCreate() {
     JedisDataException exception = Assertions.assertThrows(JedisDataException.class, () -> {
       bloom.insert("bfexpansion", InsertOptions.insertOptions().nocreate(), "a", "b", "c");
     });
@@ -83,14 +83,14 @@ public class OpsForBloomTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void reserveExpansion() {
+  void reserveExpansion() {
     assertThat(bloom.insert("bfexpansion2", InsertOptions.insertOptions().capacity(1000), "a", "b", "c"))
         .isEqualTo(new boolean[] { true, true, true });
     bloom.delete("bfexpansion2");
   }
 
   @Test
-  public void testInfo() {
+  void testInfo() {
     bloom.insert("test_info", new InsertOptions().capacity(1L), "1");
     Map<String, Object> info = bloom.info("test_info");
     assertEquals("1", info.get("Number of items inserted").toString());

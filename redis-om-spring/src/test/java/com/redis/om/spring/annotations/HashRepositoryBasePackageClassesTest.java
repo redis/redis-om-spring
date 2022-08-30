@@ -22,7 +22,7 @@ import com.redis.om.spring.annotations.hash.fixtures.CompanyRepository;
     classes = HashRepositoryBasePackageClassesTest.Config.class, //
     properties = { "spring.main.allow-bean-definition-overriding=true" } //
 )
-public class HashRepositoryBasePackageClassesTest extends AbstractBaseOMTest {
+class HashRepositoryBasePackageClassesTest extends AbstractBaseOMTest {
   @SpringBootApplication
   @Configuration
   @EnableRedisEnhancedRepositories(basePackageClasses = {Company.class, CompanyRepository.class})
@@ -33,7 +33,7 @@ public class HashRepositoryBasePackageClassesTest extends AbstractBaseOMTest {
   CompanyRepository repository;
   
   @Test
-  public void testBasePackageClassesAreFound() {
+  void testBasePackageClassesAreFound() {
     Company redis = repository.save(
         Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
 

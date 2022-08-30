@@ -1,6 +1,7 @@
 package com.redis.om.spring.annotations.hash;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -42,7 +43,7 @@ import com.redis.om.spring.repository.query.QueryUtils;
 
 import io.redisearch.AggregationResult;
 
-public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
+class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   static Person john;
   static Person gray;
   static Person terryg;
@@ -131,7 +132,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testAggregationAnnotation01() {
+  void testAggregationAnnotation01() {
     AggregationResult results = personRepo.allNamesInUppercase();
     List<String> upcasedNames = results.getResults().stream().map(m -> m.get("upcasedName"))
         .map(o -> new String((byte[]) o)).collect(Collectors.toList());
@@ -149,7 +150,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   //
 
   @Test
-  public void testBasicCrudOperations() {
+  void testBasicCrudOperations() {
     Company redis = companyRepo.save(
         Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
     Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
@@ -178,7 +179,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testFindAllById() {
+  void testFindAllById() {
     Company redis = companyRepo.save(
         Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
     Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
@@ -188,12 +189,14 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
     Iterable<Company> companies = companyRepo.findAllById(List.of(redis.getId(), microsoft.getId()));
 
-    assertThat(companies).hasSize(2);
-    assertThat(companies).containsExactly(redis, microsoft);
+    assertAll( //
+        () -> assertThat(companies).hasSize(2), //
+        () -> assertThat(companies).containsExactly(redis, microsoft) //
+    );
   }
 
   @Test
-  public void testAuditAnnotations() {
+  void testAuditAnnotations() {
     Company redis = companyRepo.save(
         Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
     Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
@@ -216,7 +219,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testTagEscapeChars() {
+  void testTagEscapeChars() {
     Company redis = companyRepo.save(
         Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
     Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
@@ -235,7 +238,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testQueriesAgainstNoData() {
+  void testQueriesAgainstNoData() {
     Iterable<Company> all = companyRepo.findAll();
     assertFalse(all.iterator().hasNext());
 
@@ -250,7 +253,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testMaxQueryReturnDefaultsTo10() {
+  void testMaxQueryReturnDefaultsTo10() {
     final List<Company> bunchOfCompanies = new ArrayList<>();
     IntStream.range(1, 100).forEach(i -> {
       Company c = Company.of("Company" + i, 2022, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
@@ -263,12 +266,14 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
     List<Company> publiclyListed = companyRepo.findByPubliclyListed(true);
 
-    assertThat(publiclyListed).hasSize(10);
-    assertThat(publiclyListed).allSatisfy(Company::isPubliclyListed);
+    assertAll( //
+        () -> assertThat(publiclyListed).hasSize(10), //
+        () -> assertThat(publiclyListed).allSatisfy(Company::isPubliclyListed) //
+    );
   }
 
   @Test
-  public void testFindByTagsIn() {
+  void testFindByTagsIn() {
     Company redis = companyRepo.save(
         Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
     redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
@@ -293,7 +298,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testBasicPagination() {
+  void testBasicPagination() {
     final List<Company> bunchOfCompanies = new ArrayList<>();
     IntStream.range(1, 25).forEach(i -> {
       Company c = Company.of("Company" + i, 2022, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
@@ -312,7 +317,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testBasicPaginationWithSorting() {
+  void testBasicPaginationWithSorting() {
     final List<Company> bunchOfCompanies = new ArrayList<>();
     IntStream.range(1, 25).forEach(i -> {
       Company c = Company.of("Company" + i, 2022, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
@@ -334,7 +339,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testFindAllWithSorting() {
+  void testFindAllWithSorting() {
     final List<Company> bunchOfCompanies = new ArrayList<>();
     IntStream.range(1, 25).forEach(i -> {
       Company c = Company.of("Company" + i, 2022, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
@@ -351,7 +356,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testBasicPaginationForNonIndexedEntity() {
+  void testBasicPaginationForNonIndexedEntity() {
     final List<NonIndexedHash> bunchOfNihs = new ArrayList<>();
     IntStream.range(1, 25).forEach(i -> {
       NonIndexedHash nih = NonIndexedHash.of("Nih" + i);
@@ -369,7 +374,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testTagValsQuery() {
+  void testTagValsQuery() {
     Company redis = companyRepo.save(
         Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
     redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
@@ -413,7 +418,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testFindByFieldWithExplicitGeoIndexedAnnotation() {
+  void testFindByFieldWithExplicitGeoIndexedAnnotation() {
     Company redis = companyRepo.save(
         Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
     redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
@@ -436,7 +441,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testFindAllUnpages() {
+  void testFindAllUnpages() {
     final List<Company> bunchOfCompanies = new ArrayList<>();
     IntStream.range(1, 5).forEach(i -> {
       Company c = Company.of("Company" + i, 2022, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
@@ -453,7 +458,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testUpdateSingleField() {
+  void testUpdateSingleField() {
     Company redisInc = companyRepo.save(
         Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
     companyRepo.updateField(redisInc, Company$.NAME, "Redis");
@@ -466,7 +471,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testGetFieldsByIds() {
+  void testGetFieldsByIds() {
     Company redis = companyRepo.save(
         Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
     Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
@@ -478,7 +483,7 @@ public class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testPersistingEntityMustNotBeNull() {
+  void testPersistingEntityMustNotBeNull() {
     IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> {
       companyRepo.save(null);
     });

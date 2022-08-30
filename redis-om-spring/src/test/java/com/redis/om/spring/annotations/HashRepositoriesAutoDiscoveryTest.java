@@ -18,7 +18,7 @@ import com.redis.om.spring.TestConfig;
     classes = HashRepositoriesAutoDiscoveryTest.Config.class, //
     properties = { "spring.main.allow-bean-definition-overriding=true" } //
 )
-public class HashRepositoriesAutoDiscoveryTest extends AbstractBaseOMTest {
+class HashRepositoriesAutoDiscoveryTest extends AbstractBaseOMTest {
   @SpringBootApplication
   @Configuration
   @EnableRedisEnhancedRepositories(basePackageClasses = {})
@@ -29,7 +29,7 @@ public class HashRepositoriesAutoDiscoveryTest extends AbstractBaseOMTest {
   AHashRepository repository;
 
   @Test
-  public void testBasePackageClassesAreFound() {
+  void testBasePackageClassesAreFound() {
     AHash aHash = repository.save(AHash.of("A Doc"));
 
     assertEquals(1, repository.count());

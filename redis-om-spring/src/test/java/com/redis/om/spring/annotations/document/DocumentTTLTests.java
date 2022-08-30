@@ -14,7 +14,7 @@ import com.redis.om.spring.annotations.document.fixtures.ExpiringPersonRepositor
 import com.redis.om.spring.annotations.document.fixtures.ExpiringPersonWithDefault;
 import com.redis.om.spring.annotations.document.fixtures.ExpiringPersonWithDefaultRepository;
 
-public class DocumentTTLTests extends AbstractBaseDocumentTest {
+class DocumentTTLTests extends AbstractBaseDocumentTest {
   @Autowired
   ExpiringPersonWithDefaultRepository withDefaultrepository;
   
@@ -25,7 +25,7 @@ public class DocumentTTLTests extends AbstractBaseDocumentTest {
   ExpiringPersonDifferentTimeUnitRepository withTTLwTimeUnitAnnotationRepository;
   
   @BeforeEach
-  public void cleanUp() {
+  void cleanUp() {
     withDefaultrepository.deleteAll();
     withTTLAnnotationRepository.deleteAll();
     withTTLwTimeUnitAnnotationRepository.deleteAll();

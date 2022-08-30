@@ -27,7 +27,7 @@ import com.redis.om.spring.annotations.hash.fixtures.PersonRepository;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 
-public class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
+class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
   
   private ULIDIdentifierGenerator generator = ULIDIdentifierGenerator.INSTANCE;
 
@@ -47,7 +47,7 @@ public class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
   RedisModulesOperations<String> modulesOperations;
   
   @Test
-  public void testMonotonicallyIncreasingUlidAssignment() {
+  void testMonotonicallyIncreasingUlidAssignment() {
     Person ofer = Person.of("Ofer Bengal", "ofer@redis.com", "ofer");
     String oferId = repository.save(ofer).getId();
     Person yiftach = Person.of("Yiftach Shoolman", "yiftach@redis.com", "yiftach");
@@ -59,7 +59,7 @@ public class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
   }
   
   @Test
-  public void testUnsupportedIdTypesThrowException() {
+  void testUnsupportedIdTypesThrowException() {
     BadDoc badDoc = new BadDoc();
     InvalidDataAccessApiUsageException exception = Assertions.assertThrows(InvalidDataAccessApiUsageException.class, () -> {
       badDocRepo.save(badDoc);
@@ -70,7 +70,7 @@ public class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
   }
   
   @Test
-  public void testExplicitUlid() {
+  void testExplicitUlid() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     
     DocWithExplicitUlidId ulidDoc = new DocWithExplicitUlidId();
@@ -98,7 +98,7 @@ public class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
   }
   
   @Test
-  public void testIntegerId() {
+  void testIntegerId() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     
     DocWithIntegerId intDoc = new DocWithIntegerId();

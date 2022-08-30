@@ -81,7 +81,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     int fromIndex = Long.valueOf(pageable.getOffset()).intValue();
     int toIndex = fromIndex + pageable.getPageSize();
     
-    return new PageImpl<ID>((List<ID>) ids.subList(fromIndex, toIndex), pageable, ids.size());
+    return new PageImpl<>(ids.subList(fromIndex, toIndex), pageable, ids.size());
   }
 
   @Override

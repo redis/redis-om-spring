@@ -29,7 +29,7 @@ import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
 import com.redis.om.spring.annotations.hash.fixtures.MyHash;
 import com.redis.om.spring.annotations.hash.fixtures.MyHashRepository;
 
-public class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
+class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
   @Autowired
   MyHashRepository repository;
 
@@ -40,7 +40,7 @@ public class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
   String id2;
 
   @BeforeEach
-  public void loadTestData() {
+  void loadTestData() {
     Point point1 = new Point(-122.124500, 47.640160);
     MyHash doc1 = MyHash.of("hello world", point1, point1, 1);
 
@@ -67,13 +67,13 @@ public class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @AfterEach
-  public void cleanUp() {
+  void cleanUp() {
     repository.deleteAll();
     flushSearchIndexFor(MyHash.class);
   }
 
   @Test
-  public void testBasicCrudOperations() {
+  void testBasicCrudOperations() {
     assertEquals(2, repository.count());
 
     Optional<MyHash> maybeDoc1 = repository.findById(id1);
@@ -83,7 +83,7 @@ public class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testCustomFinder() {
+  void testCustomFinder() {
     Optional<MyHash> maybeDoc1 = repository.findByTitle("hello world");
     assertTrue(maybeDoc1.isPresent());
   }
@@ -99,7 +99,7 @@ public class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
    * </pre>
    */
   @Test
-  public void testQueryAnnotation02() {
+  void testQueryAnnotation02() {
     Iterable<MyHash> results = repository.findByTitleAndTags("hello", Set.of("news"));
     assertEquals(1, ((Collection<MyHash>) results).size());
     MyHash doc = results.iterator().next();
@@ -108,7 +108,7 @@ public class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testBasicPagination() {
+  void testBasicPagination() {
     Pageable pageRequest = PageRequest.of(0, 1);
 
     Page<MyHash> result = repository.findAllByTitleStartingWith("hel", pageRequest);
@@ -122,7 +122,7 @@ public class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testUnpagedPagination() {
+  void testUnpagedPagination() {
     Page<MyHash> result = repository.findAllByTitleStartingWith("hel", Pageable.unpaged());
 
     assertEquals(1, result.getTotalPages());
@@ -134,7 +134,7 @@ public class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testQueryAnnotationWithLimitAndOffset() {
+  void testQueryAnnotationWithLimitAndOffset() {
     Pageable pageRequest = PageRequest.of(0, 1);
     Page<MyHash> result = repository.customFindAllByTitleStartingWith("hel", pageRequest);
 
@@ -148,7 +148,7 @@ public class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testBasicPagination2() {
+  void testBasicPagination2() {
     Pageable pageRequest = PageRequest.of(1, 1);
 
     Page<MyHash> result = repository.findAllByTitleStartingWith("hel", pageRequest);
@@ -162,7 +162,7 @@ public class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testBasicPaginationWithSorting() {
+  void testBasicPaginationWithSorting() {
     Pageable pageRequest = PageRequest.of(0, 2, Sort.by("title").ascending());
 
     Page<MyHash> result = repository.findAllByTitleStartingWith("hel", pageRequest);
@@ -176,19 +176,19 @@ public class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testTagValsQuery() {
+  void testTagValsQuery() {
     Iterable<String> values = repository.getAllTag();
     assertThat(values).hasSize(4).contains("news", "article", "noticias", "articulo");
   }
 
   @Test
-  public void testGetIds() {
+  void testGetIds() {
     Iterable<String> ids = repository.getIds();
     assertThat(ids).hasSize(2).contains(id1, id2);
   }
 
   @Test
-  public void testGetIdsWithPaging() {
+  void testGetIdsWithPaging() {
     Pageable pageRequest = PageRequest.of(0, 1);
 
     Page<String> ids = repository.getIds(pageRequest);
@@ -199,7 +199,7 @@ public class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testFindByFieldWithExplicitTagIndexedAnnotation() {
+  void testFindByFieldWithExplicitTagIndexedAnnotation() {
     Iterable<MyHash> results = repository.findByTag(Set.of("news"));
     assertEquals(1, ((Collection<MyHash>) results).size());
     MyHash doc = results.iterator().next();
@@ -208,7 +208,7 @@ public class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testFindByFieldWithExplicitGeoIndexedAnnotation() {
+  void testFindByFieldWithExplicitGeoIndexedAnnotation() {
     Point point = new Point(-122.064, 37.384);
     var distance = new Distance(30.0, DistanceUnit.MILES);
     Iterable<MyHash> results = repository.findByLocationNear(point, distance);
@@ -223,7 +223,7 @@ public class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testFindByFieldWithIndexedGeoAnnotation() {
+  void testFindByFieldWithIndexedGeoAnnotation() {
     Point point = new Point(-122.064, 37.384);
     var distance = new Distance(30.0, DistanceUnit.MILES);
     Iterable<MyHash> results = repository.findByLocation2Near(point, distance);
@@ -238,7 +238,7 @@ public class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  public void testFindByFieldWithExplicitNumericIndexedAnnotation() {
+  void testFindByFieldWithExplicitNumericIndexedAnnotation() {
     Iterable<MyHash> results = repository.findByaNumber(1);
     assertEquals(1, ((Collection<MyHash>) results).size());
     MyHash doc = results.iterator().next();

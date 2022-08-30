@@ -23,7 +23,7 @@ import com.redislabs.modules.rejson.Path;
 
 import redis.clients.jedis.exceptions.JedisDataException;
 
-public class OpsForJSONTest extends AbstractBaseDocumentTest {
+class OpsForJSONTest extends AbstractBaseDocumentTest {
 
   /* A simple class that represents an object in real life */
   private static class IRLObject {
@@ -120,7 +120,7 @@ public class OpsForJSONTest extends AbstractBaseDocumentTest {
   RedisModulesOperations<String> modulesOperations;
 
   @Test
-  public void testJSONClient() {
+  void testJSONClient() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
 
     IRLObject obj = new IRLObject();
@@ -130,7 +130,7 @@ public class OpsForJSONTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void basicSetGetShouldSucceed() {
+  void basicSetGetShouldSucceed() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     GsonBuilder gsonBuilder = GsonBuidlerFactory.getBuilder();
     Gson gson = gsonBuilder.create();
@@ -155,7 +155,7 @@ public class OpsForJSONTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testSetWithPath() {
+  void testSetWithPath() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
 
     IRLObject obj = new IRLObject();
@@ -172,7 +172,7 @@ public class OpsForJSONTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void setExistingPathOnlyIfExistsShouldSucceed() {
+  void setExistingPathOnlyIfExistsShouldSucceed() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     ops.set("obj", new IRLObject());
     Path p = Path.of(".str");
@@ -181,7 +181,7 @@ public class OpsForJSONTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void setWithoutAPathDefaultsToRootPath() {
+  void setWithoutAPathDefaultsToRootPath() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     ops.set("obj1", new IRLObject());
     ops.set("obj1", "strangle", ExistenceModifier.MUST_EXIST);
@@ -189,7 +189,7 @@ public class OpsForJSONTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testMultipleGetAtRootPathAllKeysExist() {
+  void testMultipleGetAtRootPathAllKeysExist() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     Baz baz1 = new Baz("quuz1", "grault1", "waldo1");
     Baz baz2 = new Baz("quuz2", "grault2", "waldo2");
@@ -221,7 +221,7 @@ public class OpsForJSONTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testToggle() {
+  void testToggle() {
 
     JSONOperations<String> ops = modulesOperations.opsForJSON();
 
@@ -252,14 +252,14 @@ public class OpsForJSONTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testStringLen() {
+  void testStringLen() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     ops.set("str", "foo", Path.ROOT_PATH);
     assertEquals(Long.valueOf(3L), ops.strLen("str", Path.ROOT_PATH));
   }
 
   @Test
-  public void testArrayPop() {
+  void testArrayPop() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     ops.set("arr", new int[] { 0, 1, 2, 3, 4 }, Path.ROOT_PATH);
     assertEquals(Long.valueOf(4L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, 4L));
@@ -270,7 +270,7 @@ public class OpsForJSONTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void typeChecksShouldSucceed() {
+  void typeChecksShouldSucceed() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     ops.set("foobar", new FooBarObject(), Path.ROOT_PATH);
     assertSame(Object.class, ops.type("foobar"));

@@ -14,19 +14,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.ops.RedisModulesOperations;
 
-public class OpsForCountMinSketchTest extends AbstractBaseDocumentTest {
+class OpsForCountMinSketchTest extends AbstractBaseDocumentTest {
   @Autowired
   RedisModulesOperations<String> modulesOperations;
 
   CountMinSketchOperations<String> cms;
 
   @BeforeEach
-  public void beforeEach() {
+  void beforeEach() {
     cms = modulesOperations.opsForCountMinSketch();
   }
 
   @Test
-  public void testMerge() {
+  void testMerge() {
     cms.cmsInitByDim("A", 1000L, 5L);
     cms.cmsInitByDim("B", 1000L, 5L);
     cms.cmsInitByDim("C", 1000L, 5L);
@@ -76,7 +76,7 @@ public class OpsForCountMinSketchTest extends AbstractBaseDocumentTest {
   }
   
   @Test
-  public void testInitByProb() {
+  void testInitByProb() {
     cms.cmsInitByProb("cms2", 0.01, 0.01);
     Map<String, Long> info = cms.cmsInfo("cms2");
     assertEquals(200L, info.get("width").longValue());
@@ -85,7 +85,7 @@ public class OpsForCountMinSketchTest extends AbstractBaseDocumentTest {
   }
   
   @Test
-  public void testIncrBy() {
+  void testIncrBy() {
     cms.cmsInitByDim("cms3", 1000L, 5L);
     long resp = cms.cmsIncrBy("cms3", "foo", 5L);
     assertEquals(5L, resp);

@@ -12,7 +12,7 @@ import com.redislabs.modules.rejson.JReJSON;
 
 import io.redisearch.Client;
 
-public class RedisModulesClientTest extends AbstractBaseDocumentTest {
+class RedisModulesClientTest extends AbstractBaseDocumentTest {
 
   private final Gson g = new Gson();
 
@@ -32,7 +32,7 @@ public class RedisModulesClientTest extends AbstractBaseDocumentTest {
   RedisModulesClient client;
 
   @Test
-  public void testJSONClient() {
+  void testJSONClient() {
     JReJSON jsonClient = client.clientForJSON();
 
     IRLObject obj = new IRLObject();
@@ -42,13 +42,13 @@ public class RedisModulesClientTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  public void testSearchClient() {
+  void testSearchClient() {
     Client searchClient = client.clientForSearch("index");
     assertNotNull(searchClient);
   }
 
   @Test
-  public void testBloomClient() {
+  void testBloomClient() {
     io.rebloom.client.Client bloomClient = client.clientForBloom();
     assertNotNull(bloomClient);
   }
