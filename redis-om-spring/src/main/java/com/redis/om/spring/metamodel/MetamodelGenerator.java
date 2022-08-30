@@ -113,7 +113,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
       try {
         generateMetaModelClass(ae);
       } catch (IOException ioe) {
-        messager.printMessage(Diagnostic.Kind.ERROR, "Cannot generate metamodel calss for " + ae.getClass().getName() + " because " + ioe.getMessage());
+        messager.printMessage(Diagnostic.Kind.ERROR, "Cannot generate metamodel class for " + ae.getClass().getName() + " because " + ioe.getMessage());
       }
     });
 
