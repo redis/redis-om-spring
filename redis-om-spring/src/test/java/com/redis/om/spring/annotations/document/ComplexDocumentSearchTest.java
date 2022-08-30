@@ -249,7 +249,7 @@ class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
 
     assertThat(result.getTotalPages()).isEqualTo(1);
     assertThat(result.getTotalElements()).isEqualTo(2);
-    assertThat(result.getContent()).containsExactly(permit1,permit2);
+    assertThat(result.getContent()).containsExactly(permit1, permit2);
   }
 
   /**
