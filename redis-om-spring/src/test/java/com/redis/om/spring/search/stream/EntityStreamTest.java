@@ -1635,7 +1635,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
         .reduce(establishedFirst);
 
     assertThat(firstEstablish).isPresent();
-    assertThat(firstEstablish.get()).isEqualTo(1975);
+    assertThat(firstEstablish).contains(1975);
   }
 
   @Test
@@ -1691,7 +1691,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
         .map(Company$.YEAR_FOUNDED) //
         .min(Integer::compareTo);
     assertThat(firstEstablish).isPresent();
-    assertThat(firstEstablish.get()).isEqualTo(1975);
+    assertThat(firstEstablish).contains(1975);
   }
 
   @Test
@@ -1701,7 +1701,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
         .map(Company$.YEAR_FOUNDED) //
         .max(Integer::compareTo);
     assertThat(lastEstablish).isPresent();
-    assertThat(lastEstablish.get()).isEqualTo(2011);
+    assertThat(lastEstablish).contains(2011);
   }
 
   @Test

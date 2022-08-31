@@ -140,13 +140,13 @@ class ObjectUtilsTest extends AbstractBaseDocumentTest {
     Optional<Class<?>> maybeContentsOfIoc = ObjectUtils.getCollectionElementType(iocField);
     
     assertThat(maybeContentsOfLofs).isPresent();
-    assertThat(maybeContentsOfLofs.get()).isEqualTo(String.class);
+    assertThat(maybeContentsOfLofs).contains(String.class);
     
     assertThat(maybeContentsOfSois).isPresent();
-    assertThat(maybeContentsOfSois.get()).isEqualTo(Integer.class);
+    assertThat(maybeContentsOfSois).contains(Integer.class);
     
     assertThat(maybeContentsOfIoc).isPresent();
-    assertThat(maybeContentsOfIoc.get()).isEqualTo(Company.class);
+    assertThat(maybeContentsOfIoc).contains(Company.class);
   }
   
   @Test
@@ -170,7 +170,7 @@ class ObjectUtilsTest extends AbstractBaseDocumentTest {
     Optional<?> maybeId = ObjectUtils.getIdFieldForEntity(redis);
     
     assertThat(maybeId).isPresent();
-    assertThat(maybeId.get()).isEqualTo(actualCompanyId);
+    assertThat(maybeId.get()).hasToString(actualCompanyId);
     
     DocWithCustomNameId doc = docWithCustomNameIdRepository.save(new DocWithCustomNameId());
     String actualDocId = doc.getIdentidad();
@@ -178,7 +178,7 @@ class ObjectUtilsTest extends AbstractBaseDocumentTest {
     Optional<?> maybeDocId = ObjectUtils.getIdFieldForEntity(doc);
     
     assertThat(maybeDocId).isPresent();
-    assertThat(maybeDocId.get()).isEqualTo(actualDocId);
+    assertThat(maybeDocId.get()).hasToString(actualDocId);
     
     Optional<?> noEntityId = ObjectUtils.getIdFieldForEntity(new String());
     assertThat(noEntityId).isEmpty();
@@ -233,8 +233,8 @@ class ObjectUtilsTest extends AbstractBaseDocumentTest {
     assertThat(toUpper).isEqualTo("Spam");
     assertThat(toLower).isEqualTo("spam");
     assertThat(toX).isEqualTo("Xpam");
-    assertThat(nullToX).isEqualTo(null);
-    assertThat(emptyToX).isEqualTo("");
+    assertThat(nullToX).isNull();
+    assertThat(emptyToX).isEmpty();
   }
   
   @Test

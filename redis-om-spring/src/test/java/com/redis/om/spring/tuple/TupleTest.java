@@ -2438,7 +2438,7 @@ final class TupleTest {
     final Triple<Integer, Integer, Integer> oneTriple = Tuples.of(0, 1, 42);
     final Triple<Integer, Integer, Integer> anotherTriple = Tuples.of(0, 1, 42);
 
-    assertThat(oneTriple.hashCode()).isEqualTo(anotherTriple.hashCode());
+    assertThat(oneTriple).hasSameHashCodeAs(anotherTriple);
     assertThat(oneTriple).isEqualTo(anotherTriple);
   }
 
@@ -2454,7 +2454,7 @@ final class TupleTest {
   @Test
   void testTupleToString() {
     final Triple<Integer, Integer, String> triple = Tuples.of(0, 1, "Foobar");
-    assertThat(triple.toString()).isEqualTo("TripleImpl (0, 1, Foobar)");
+    assertThat(triple).hasToString("TripleImpl (0, 1, Foobar)");
   }
 
   @Test

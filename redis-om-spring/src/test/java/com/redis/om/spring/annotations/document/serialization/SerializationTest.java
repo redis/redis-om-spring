@@ -140,12 +140,12 @@ class SerializationTest extends AbstractBaseDocumentTest {
   @Test
   void testEmptySetToStringDeserialization() {
     Optional<KitchenSink> fromDb1 = repository.findById(ks1.getId());
-    assertThat(fromDb1.get().getSetThings()).isEqualTo(null);
-    assertThat(fromDb1.get().getListThings()).isEqualTo(null);
+    assertThat(fromDb1.get().getSetThings()).isNull();
+    assertThat(fromDb1.get().getListThings()).isNull();
 
     Optional<KitchenSink> fromDb2 = repository.findById(ks2.getId());
-    assertThat(fromDb2.get().getSetThings()).isEqualTo(null);
-    assertThat(fromDb2.get().getListThings()).isEqualTo(null);
+    assertThat(fromDb2.get().getSetThings()).isNull();
+    assertThat(fromDb2.get().getListThings()).isNull();
   }
 
   @Test

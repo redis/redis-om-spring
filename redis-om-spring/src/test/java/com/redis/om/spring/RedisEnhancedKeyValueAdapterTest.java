@@ -28,6 +28,6 @@ class RedisEnhancedKeyValueAdapterTest extends AbstractBaseEnhancedRedisTest {
     kvTemplate.getAdapter().put("abc", rdo, "redisdata");
     
     Object firstName = template.opsForHash().get("redisdata:abc", "firstname");
-    assertThat(firstName.toString()).isEqualTo("rand");
+    assertThat(firstName).hasToString("rand");
   }
 }
