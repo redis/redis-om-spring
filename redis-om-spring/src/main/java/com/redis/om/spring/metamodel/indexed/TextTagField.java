@@ -16,7 +16,8 @@ public class TextTagField<E, T> extends TagField<E, T> {
   public Consumer<? super E> append(String value) {
     return new StringAppendAction<>(field, value);
   }
-  
+
+  @Override
   public ToLongFunction<? super E> length() {
     return new StrLengthAction<>(field);
   }
