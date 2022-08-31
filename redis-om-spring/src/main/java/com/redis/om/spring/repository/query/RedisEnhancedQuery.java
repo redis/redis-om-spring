@@ -121,7 +121,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
     Class<?> repoClass = metadata.getRepositoryInterface();
     @SuppressWarnings("rawtypes")
-    Class[] params = queryMethod.getParameters().stream().map(p -> p.getType()).toArray(Class[]::new);
+    Class[] params = queryMethod.getParameters().stream().map(Parameter::getType).toArray(Class[]::new);
     try {
       java.lang.reflect.Method method = repoClass.getDeclaredMethod(queryMethod.getName(), params);
       if (method.isAnnotationPresent(com.redis.om.spring.annotations.Query.class)) {
@@ -293,7 +293,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     Optional<Pageable> maybePageable = Optional.empty();
 
     if (queryMethod.isPageQuery()) {
-      maybePageable = Arrays.stream(parameters).filter(o -> o instanceof Pageable).map(o -> (Pageable) o).findFirst();
+      maybePageable = Arrays.stream(parameters).filter(Pageable.class::isInstance).map(Pageable.class::cast).findFirst();
 
       if (maybePageable.isPresent()) {
         Pageable pageable = maybePageable.get();
@@ -313,9 +313,9 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     // aggregation
     if (queryMethod.isCollectionQuery() && !queryMethod.getParameters().isEmpty()) {
       List<Collection<?>> emptyCollectionParams = Arrays.asList(parameters).stream() //
-          .filter(p -> p instanceof Collection) //
+          .filter(Collection.class::isInstance) //
           .map(p -> (Collection<?>) p) //
-          .filter(c -> c.isEmpty()) //
+          .filter(Collection::isEmpty) //
           .collect(Collectors.toList());
       if (!emptyCollectionParams.isEmpty()) {
         return Collections.emptyList();

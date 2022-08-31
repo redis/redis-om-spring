@@ -107,7 +107,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
     Set<? extends Element> documentEntities = roundEnv.getElementsAnnotatedWith(Document.class);
     Set<? extends Element> hashEntities = roundEnv.getElementsAnnotatedWith(RedisHash.class);
     Set<? extends Element> metamodelCandidates = Stream.of(documentEntities, hashEntities) //
-        .flatMap(x -> x.stream()).collect(Collectors.toSet());
+        .flatMap(Collection::stream).collect(Collectors.toSet());
 
     metamodelCandidates.stream().filter(ae -> ae.getKind() == ElementKind.CLASS).forEach(ae -> {
       try {

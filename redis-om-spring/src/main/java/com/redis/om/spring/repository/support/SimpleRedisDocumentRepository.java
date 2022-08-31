@@ -104,7 +104,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   @SuppressWarnings("unchecked")
   @Override
   public <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field) {
-    String[] keys = StreamSupport.stream(ids.spliterator(), false).map(id -> getKey(id)).toArray(String[]::new);
+    String[] keys = StreamSupport.stream(ids.spliterator(), false).map(this::getKey).toArray(String[]::new);
     return (Iterable<F>) modulesOperations.opsForJSON().mget(Path.of("$." + field.getField().getName()), List.class, keys).stream().flatMap(List::stream).collect(Collectors.toList());
   }
 

@@ -104,7 +104,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   public <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field) {
     RedisTemplate<String, String> template = (RedisTemplate<String, String>) modulesOperations.getTemplate();
     List<String> keys = StreamSupport.stream(ids.spliterator(), false) //
-        .map(id -> getKey(id)).collect(Collectors.toList());
+        .map(this::getKey).collect(Collectors.toList());
 
     return (Iterable<F>) keys.stream() //
         .map(key -> template.opsForHash().get(key, field.getField().getName())) //
