@@ -39,11 +39,11 @@ public class AutoCompleteOptions {
 
   public SuggestionOptions toSuggestionOptions() {
     SuggestionOptions.Builder builder = SuggestionOptions.builder();
-    if (fuzzy)
+    if (Boolean.TRUE.equals(fuzzy))
       builder = builder.fuzzy();
-    if (withPayload)
+    if (Boolean.TRUE.equals(withPayload))
       builder = builder.with(With.PAYLOAD);
-    if (withScore)
+    if (Boolean.TRUE.equals(withScore))
       builder = builder.with(With.SCORES);
     if (limit != null)
       builder = builder.max(limit);
