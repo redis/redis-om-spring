@@ -64,8 +64,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private Class<E> entityClass;
   private Node rootNode = QueryBuilder.union();
   private static final Gson gson = GsonBuidlerFactory.getBuilder().create();
-  private Optional<Integer> limit = Optional.empty();
-  private Optional<Integer> skip = Optional.empty();
+  private Optional<Long> limit = Optional.empty();
+  private Optional<Long> skip = Optional.empty();
   private Optional<SortedField> sortBy = Optional.empty();
   private boolean onlyIds = false;
   private Field idField;
@@ -204,13 +204,13 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public SearchStream<E> limit(long maxSize) {
-    limit = Optional.of(Long.valueOf(maxSize).intValue());
+    limit = Optional.of(maxSize);
     return this;
   }
 
   @Override
   public SearchStream<E> skip(long s) {
-    skip = Optional.of(Long.valueOf(s).intValue());
+    skip = Optional.of(s);
     return this;
   }
 
@@ -302,7 +302,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public Optional<E> findFirst() {
-    limit = Optional.of(1);
+    limit = Optional.of(1L);
     return resolveStream().findFirst();
   }
 
@@ -364,7 +364,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   Query prepareQuery() {
     Query query = (rootNode.toString().isBlank()) ? new Query() : new Query(rootNode.toString());
 
-    query.limit(skip.isPresent() ? skip.get() : 0, limit.isPresent() ? limit.get() : MAX_LIMIT);
+    query.limit(skip.isPresent() ? skip.get().intValue() : 0, limit.isPresent() ? limit.get().intValue() : MAX_LIMIT);
 
     if (sortBy.isPresent()) {
       SortedField sortField = sortBy.get();

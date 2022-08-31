@@ -78,7 +78,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     SetOperations<String, ID> setOps = template.opsForSet();
     List<ID> ids = new ArrayList<>(setOps.members(metadata.getJavaType().getName()));
 
-    int fromIndex = Long.valueOf(pageable.getOffset()).intValue();
+    int fromIndex = Math.toIntExact(pageable.getOffset());
     int toIndex = fromIndex + pageable.getPageSize();
     
     return new PageImpl<>(ids.subList(fromIndex, toIndex), pageable, ids.size());

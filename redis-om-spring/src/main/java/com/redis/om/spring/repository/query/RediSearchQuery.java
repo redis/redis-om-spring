@@ -294,7 +294,7 @@ public class RediSearchQuery implements RepositoryQuery {
       if (maybePageable.isPresent()) {
         Pageable pageable = maybePageable.get();
         if (!pageable.isUnpaged()) {
-          query.limit(Long.valueOf(pageable.getOffset()).intValue(), pageable.getPageSize());
+          query.limit(Math.toIntExact(pageable.getOffset()), pageable.getPageSize());
 
           if (pageable.getSort() != null) {
             for (Order order : pageable.getSort()) {

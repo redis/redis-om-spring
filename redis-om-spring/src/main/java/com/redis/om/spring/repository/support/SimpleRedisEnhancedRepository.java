@@ -85,7 +85,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     SetOperations<String, ID> setOps = template.opsForSet();
     List<ID> ids = new ArrayList<>(setOps.members(metadata.getJavaType().getName()));
 
-    int fromIndex = Long.valueOf(pageable.getOffset()).intValue();
+    int fromIndex = Math.toIntExact(pageable.getOffset());
     int toIndex = fromIndex + pageable.getPageSize();
 
     return new PageImpl<>(ids.subList(fromIndex, toIndex), pageable, ids.size());
@@ -163,7 +163,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
       String searchIndex = keyspaceToIndexMap.getIndexName(metadata.getJavaType()).get();
       SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
       Query query = new Query("*");
-      query.limit(Long.valueOf(pageable.getOffset()).intValue(), pageable.getPageSize());
+      query.limit(Math.toIntExact(pageable.getOffset()), pageable.getPageSize());
 
       if (pageable.getSort() != null) {
         for (Order order : pageable.getSort()) {
