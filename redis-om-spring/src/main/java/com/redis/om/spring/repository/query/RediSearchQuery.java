@@ -269,7 +269,9 @@ public class RediSearchQuery implements RepositoryQuery {
       return executeFtTagVals();
     } else if (type == RediSearchQueryType.AUTOCOMPLETE) {
       Optional<String> maybeAutoCompleteDictionaryKey = autoCompleteQueryExecutor.getAutoCompleteDictionaryKey();
-      return autoCompleteQueryExecutor.executeAutoCompleteQuery(parameters, maybeAutoCompleteDictionaryKey.get());
+      return maybeAutoCompleteDictionaryKey.isPresent()
+          ? autoCompleteQueryExecutor.executeAutoCompleteQuery(parameters, maybeAutoCompleteDictionaryKey.get())
+          : null;
     } else {
       return null;
     }
@@ -289,7 +291,8 @@ public class RediSearchQuery implements RepositoryQuery {
     Optional<Pageable> maybePageable = Optional.empty();
 
     if (queryMethod.isPageQuery()) {
-      maybePageable = Arrays.stream(parameters).filter(Pageable.class::isInstance).map(Pageable.class::cast).findFirst();
+      maybePageable = Arrays.stream(parameters).filter(Pageable.class::isInstance).map(Pageable.class::cast)
+          .findFirst();
 
       if (maybePageable.isPresent()) {
         Pageable pageable = maybePageable.get();
@@ -363,7 +366,8 @@ public class RediSearchQuery implements RepositoryQuery {
     if (queryMethod.getReturnedObjectType() == AggregationResult.class) {
       result = aggregationResult;
     } else if (queryMethod.isCollectionQuery()) {
-      result = Collections.emptyList(); // TODO: Handle custom return values, see https://github.com/redis/redis-om-spring/issues/88
+      result = Collections.emptyList(); // TODO: Handle custom return values, see
+                                        // https://github.com/redis/redis-om-spring/issues/88
     }
 
     return result;
@@ -409,8 +413,8 @@ public class RediSearchQuery implements RepositoryQuery {
 
       while (iterator.hasNext()) {
         Parameter p = iterator.next();
-        String key = (p.getName().isPresent() ? p.getName().get()
-            : (paramNames.size() > index ? paramNames.get(index) : ""));
+        Optional<String> maybeKey = p.getName();
+        String key = (maybeKey.isPresent() ? maybeKey.get() : (paramNames.size() > index ? paramNames.get(index) : ""));
         if (!key.isBlank()) {
           String v = "";
 
@@ -421,7 +425,6 @@ public class RediSearchQuery implements RepositoryQuery {
           } else {
             v = parameters[index].toString();
           }
-
 
           preparedQuery = new StringBuilder(preparedQuery.toString().replace("$" + key, v));
         }

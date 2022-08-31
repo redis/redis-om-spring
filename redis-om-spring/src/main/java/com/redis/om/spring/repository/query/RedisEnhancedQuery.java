@@ -273,7 +273,9 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       return executeFtTagVals();
     } else if (type == RediSearchQueryType.AUTOCOMPLETE) {
       Optional<String> maybeAutoCompleteDictionaryKey = autoCompleteQueryExecutor.getAutoCompleteDictionaryKey();
-      return autoCompleteQueryExecutor.executeAutoCompleteQuery(parameters, maybeAutoCompleteDictionaryKey.get());
+      return maybeAutoCompleteDictionaryKey.isPresent()
+          ? autoCompleteQueryExecutor.executeAutoCompleteQuery(parameters, maybeAutoCompleteDictionaryKey.get())
+          : null;
     } else {
       return null;
     }
@@ -415,7 +417,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
       while (iterator.hasNext()) {
         Parameter p = iterator.next();
-        String key = (p.getName().isPresent() ? p.getName().get()
+        Optional<String> maybeKey = p.getName();
+        String key = (maybeKey.isPresent() ? maybeKey.get()
             : (paramNames.size() > index ? paramNames.get(index) : ""));
         if (!key.isBlank()) {
           String v = "";

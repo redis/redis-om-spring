@@ -2,6 +2,7 @@ package com.redis.om.spring.repository.support;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -160,25 +161,31 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     }
 
     if (keyspaceToIndexMap.indexExistsFor(metadata.getJavaType())) {
-      String searchIndex = keyspaceToIndexMap.getIndexName(metadata.getJavaType()).get();
-      SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
-      Query query = new Query("*");
-      query.limit(Math.toIntExact(pageable.getOffset()), pageable.getPageSize());
+      Optional<String> maybeSearchIndex = keyspaceToIndexMap.getIndexName(metadata.getJavaType());
+      if (maybeSearchIndex.isPresent()) {
+        String searchIndex = maybeSearchIndex.get();
+        SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
+        Query query = new Query("*");
+        query.limit(Math.toIntExact(pageable.getOffset()), pageable.getPageSize());
 
-      if (pageable.getSort() != null) {
-        for (Order order : pageable.getSort()) {
-          query.setSortBy(order.getProperty(), order.isAscending());
+        if (pageable.getSort() != null) {
+          for (Order order : pageable.getSort()) {
+            query.setSortBy(order.getProperty(), order.isAscending());
+          }
         }
+
+        SearchResult searchResult = searchOps.search(query);
+
+        @SuppressWarnings("unchecked")
+        List<T> content = (List<T>) searchResult.docs.stream() //
+            .map(d -> ObjectUtils.documentToObject(d, metadata.getJavaType(), mappingConverter)) //
+            .collect(Collectors.toList());
+
+        return new PageImpl<>(content, pageable, searchResult.totalResults);
+      } else {
+        return Page.empty();
       }
-
-      SearchResult searchResult = searchOps.search(query);
-
-      @SuppressWarnings("unchecked")
-      List<T> content = (List<T>) searchResult.docs.stream() //
-          .map(d -> ObjectUtils.documentToObject(d, metadata.getJavaType(), mappingConverter)) //
-          .collect(Collectors.toList());
-
-      return new PageImpl<>(content, pageable, searchResult.totalResults);
+      
     } else {
       Iterable<T> content = operations.findInRange(pageable.getOffset(), pageable.getPageSize(), pageable.getSort(),
           metadata.getJavaType());

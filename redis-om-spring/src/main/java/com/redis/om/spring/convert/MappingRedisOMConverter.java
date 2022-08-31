@@ -696,7 +696,8 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     TagIndexed tagIndexed = null;
     try {
       field = entityClass.getDeclaredField(path);
-      collectionElementType = com.redis.om.spring.util.ObjectUtils.getCollectionElementType(field).get();
+      Optional<Class<?>> maybeCollectionElementType = com.redis.om.spring.util.ObjectUtils.getCollectionElementType(field);
+      collectionElementType = maybeCollectionElementType.isPresent() ? maybeCollectionElementType.get() : null;
       if (field.isAnnotationPresent(Indexed.class)) {
         indexed = entityClass.getDeclaredField(path).getAnnotation(Indexed.class);
       } else if (field.isAnnotationPresent(TagIndexed.class)) {
@@ -782,7 +783,8 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     TagIndexed tagIndexed = null;
     try {
       field = entityClass.getDeclaredField(path);
-      collectionElementType = com.redis.om.spring.util.ObjectUtils.getCollectionElementType(field).get();
+      Optional<Class<?>> maybeCollectionElementType = com.redis.om.spring.util.ObjectUtils.getCollectionElementType(field);
+      collectionElementType = maybeCollectionElementType.isPresent() ? maybeCollectionElementType.get() : null;
       if (field.isAnnotationPresent(Indexed.class)) {
         indexed = entityClass.getDeclaredField(path).getAnnotation(Indexed.class);
       } else if (field.isAnnotationPresent(TagIndexed.class)) {
