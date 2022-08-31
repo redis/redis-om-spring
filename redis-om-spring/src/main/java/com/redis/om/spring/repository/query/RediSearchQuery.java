@@ -314,7 +314,7 @@ public class RediSearchQuery implements RepositoryQuery {
           .filter(c -> c.isEmpty()) //
           .collect(Collectors.toList());
       if (!emptyCollectionParams.isEmpty()) {
-        return Collections.EMPTY_LIST;
+        return Collections.emptyList();
       }
     }
 
