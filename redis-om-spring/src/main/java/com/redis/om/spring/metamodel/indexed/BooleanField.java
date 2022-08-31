@@ -11,6 +11,6 @@ public class BooleanField<E, T> extends TagField<E, T> {
   }
 
   public Consumer<? super E> toggle() {
-    return new ToggleAction<E>(field);
+    return new ToggleAction<>(field);
   }
 }

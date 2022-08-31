@@ -10,7 +10,7 @@ import io.redisearch.querybuilder.QueryBuilder;
 
 public class AndPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
-  private List<Predicate<T>> predicates = new ArrayList<Predicate<T>>();
+  private List<Predicate<T>> predicates = new ArrayList<>();
 
   public AndPredicate(SearchFieldPredicate<E, T> root) {
     predicates.add(root);

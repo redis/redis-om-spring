@@ -13,11 +13,11 @@ public class NonIndexedNumericField<E, T> extends MetamodelField<E, T> {
   }
 
   public Consumer<? super E> incrBy(Long value) {
-    return new NumIncrByAction<E>(field, value);
+    return new NumIncrByAction<>(field, value);
   }
   
   public Consumer<? super E> decrBy(Long value) {
-    return new NumIncrByAction<E>(field, -value);
+    return new NumIncrByAction<>(field, -value);
   }
 
 }

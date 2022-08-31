@@ -15,7 +15,7 @@ public interface SearchFieldPredicate<E, T> extends Predicate<T> {
   @SuppressWarnings("unchecked")
   default Predicate<T> or(Predicate<? super T> other) {
     Objects.requireNonNull(other);
-    OrPredicate<E, T> orPredicate = new OrPredicate<E, T>(this);
+    OrPredicate<E, T> orPredicate = new OrPredicate<>(this);
     orPredicate.addPredicate((Predicate<T>) other);
 
     return orPredicate;
@@ -24,7 +24,7 @@ public interface SearchFieldPredicate<E, T> extends Predicate<T> {
   @SuppressWarnings("unchecked")
   default Predicate<T> and(Predicate<? super T> other) {
     Objects.requireNonNull(other);
-    AndPredicate<E, T> andPredicate = new AndPredicate<E, T>(this);
+    AndPredicate<E, T> andPredicate = new AndPredicate<>(this);
     andPredicate.addPredicate((Predicate<T>) other);
 
     return andPredicate;

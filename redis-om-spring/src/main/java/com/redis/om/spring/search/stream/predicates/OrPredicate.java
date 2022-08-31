@@ -10,7 +10,7 @@ import io.redisearch.querybuilder.QueryBuilder;
 
 public class OrPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
-  private List<Predicate<T>> predicates = new ArrayList<Predicate<T>>();
+  private List<Predicate<T>> predicates = new ArrayList<>();
 
   public OrPredicate(SearchFieldPredicate<E, T> root) {
     predicates.add(root);

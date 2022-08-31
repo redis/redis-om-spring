@@ -115,7 +115,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public <T> SearchStream<T> map(Function<? super E, ? extends T> mapper) {
-    List<MetamodelField<E, ?>> returning = new ArrayList<MetamodelField<E, ?>>();
+    List<MetamodelField<E, ?>> returning = new ArrayList<>();
 
     if (MetamodelField.class.isAssignableFrom(mapper.getClass())) {
       @SuppressWarnings("unchecked")
@@ -136,10 +136,10 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
         TakesJSONOperations tjo = (TakesJSONOperations) mapper;
         tjo.setJSONOperations(json);
       }
-      return new WrapperSearchStream<T>(resolveStream().map(mapper));
+      return new WrapperSearchStream<>(resolveStream().map(mapper));
     }
 
-    return new ReturnFieldsSearchStreamImpl<E, T>(this, returning);
+    return new ReturnFieldsSearchStreamImpl<>(this, returning);
   }
 
   @Override
@@ -159,7 +159,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public <R> SearchStream<R> flatMap(Function<? super E, ? extends Stream<? extends R>> mapper) {
-    return new WrapperSearchStream<R>(resolveStream().flatMap(mapper));
+    return new WrapperSearchStream<>(resolveStream().flatMap(mapper));
   }
 
   @Override
@@ -199,7 +199,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public SearchStream<E> peek(Consumer<? super E> action) {
-    return new WrapperSearchStream<E>(resolveStream().peek(action));
+    return new WrapperSearchStream<>(resolveStream().peek(action));
   }
 
   @Override

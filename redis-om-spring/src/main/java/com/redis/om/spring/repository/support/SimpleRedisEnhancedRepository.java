@@ -75,7 +75,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     @SuppressWarnings("unchecked")
     RedisTemplate<String, ID> template = (RedisTemplate<String, ID>) modulesOperations.getTemplate();
     SetOperations<String, ID> setOps = template.opsForSet();
-    return new ArrayList<ID>(setOps.members(metadata.getJavaType().getName()));
+    return new ArrayList<>(setOps.members(metadata.getJavaType().getName()));
   }
 
   @Override

@@ -80,10 +80,10 @@ public class RediSearchQuery implements RepositoryQuery {
   private String[] load;
   private Map<String, String> apply;
 
-  private List<List<Pair<String, QueryClause>>> queryOrParts = new ArrayList<List<Pair<String, QueryClause>>>();
+  private List<List<Pair<String, QueryClause>>> queryOrParts = new ArrayList<>();
 
   // for non @Param annotated dynamic names
-  private List<String> paramNames = new ArrayList<String>();
+  private List<String> paramNames = new ArrayList<>();
   private Class<?> domainType;
 
   private RedisModulesOperations<String> modulesOperations;
@@ -135,7 +135,7 @@ public class RediSearchQuery implements RepositoryQuery {
         this.apply = splitApplyArguments(aggregation.apply());
       } else if (queryMethod.getName().equalsIgnoreCase("search")) {
         this.type = RediSearchQueryType.QUERY;
-        List<Pair<String, QueryClause>> orPartParts = new ArrayList<Pair<String, QueryClause>>();
+        List<Pair<String, QueryClause>> orPartParts = new ArrayList<>();
         orPartParts.add(Pair.of("__ALL__", QueryClause.FullText_ALL));
         queryOrParts.add(orPartParts);
         this.returnFields = new String[] {};
@@ -164,7 +164,7 @@ public class RediSearchQuery implements RepositoryQuery {
 
   private void processPartTree(PartTree pt) {
     pt.stream().forEach(orPart -> {
-      List<Pair<String, QueryClause>> orPartParts = new ArrayList<Pair<String, QueryClause>>();
+      List<Pair<String, QueryClause>> orPartParts = new ArrayList<>();
       orPart.iterator().forEachRemaining(part -> {
         PropertyPath propertyPath = part.getProperty();
 
@@ -181,7 +181,7 @@ public class RediSearchQuery implements RepositoryQuery {
 
   private List<Pair<String, QueryClause>> extractQueryFields(Class<?> type, Part part, List<PropertyPath> path,
       int level) {
-    List<Pair<String, QueryClause>> qf = new ArrayList<Pair<String, QueryClause>>();
+    List<Pair<String, QueryClause>> qf = new ArrayList<>();
     String property = path.get(level).getSegment();
     String key = part.getProperty().toDotPath().replace(".", "_");
 
@@ -377,7 +377,7 @@ public class RediSearchQuery implements RepositoryQuery {
 
   private String prepareQuery(final Object[] parameters) {
     logger.debug(String.format("parameters: %s", Arrays.toString(parameters)));
-    List<Object> params = new ArrayList<Object>(Arrays.asList(parameters));
+    List<Object> params = new ArrayList<>(Arrays.asList(parameters));
     StringBuilder preparedQuery = new StringBuilder();
     boolean multipleOrParts = queryOrParts.size() > 1;
     logger.debug(String.format("queryOrParts: %s", queryOrParts.size()));
