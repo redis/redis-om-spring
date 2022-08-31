@@ -249,4 +249,5 @@ public class ObjectUtils {
         : mappingConverter.getConversionService().convert(value, String.class);
   }
 
+  private ObjectUtils() {}
 }
