@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -1236,6 +1237,11 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
         }
 
         return this.rawValue.equals(part.rawValue);
+      }
+      
+      @Override
+      public int hashCode() {
+        return Objects.hash(longValue);
       }
     }
   }
