@@ -1260,18 +1260,11 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     public static final String DELIMITER = ":";
     public static final String PHANTOM_SUFFIX = DELIMITER + PHANTOM;
 
-    /**
-     * @deprecated since 2.6. Please use {@link #DELIMITER} instead.
-     */
-    @Deprecated(/* since="2.6" */)
-    public static final String DELIMITTER = DELIMITER;
-
     private final String keyspace;
     private final String id;
     private final boolean phantomKey;
 
     private KeyspaceIdentifier(String keyspace, String id, boolean phantomKey) {
-
       this.keyspace = keyspace;
       this.id = id;
       this.phantomKey = phantomKey;
