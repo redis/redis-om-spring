@@ -23,11 +23,11 @@ public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicat
   private FieldType fieldType;
   private Field field;
 
-  public BaseAbstractPredicate() {
+  protected BaseAbstractPredicate() {
 
   }
 
-  public BaseAbstractPredicate(Field field) {
+  protected BaseAbstractPredicate(Field field) {
     this.field = field;
     this.fieldType = getFieldTypeFor(field);
   }

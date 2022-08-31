@@ -11,7 +11,7 @@ public abstract class BaseAbstractAction implements TakesJSONOperations {
   protected JSONOperations<String> json;
   private Field idField;
   
-  public BaseAbstractAction(Field field) {
+  protected BaseAbstractAction(Field field) {
     this.field = field;
     Class<?> entityClass = field.getDeclaringClass();
     Optional<Field> maybeId = ObjectUtils.getIdFieldForEntityClass(entityClass);
