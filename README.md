@@ -16,9 +16,9 @@
 
 **Redis OM Spring** extends [Spring Data Redis](https://spring.io/projects/spring-data-redis) to take full advantage of the power of Redis.
 
-| Project Stage | Release | Snapshot | Issues | Resolution | Code QL | License |
-| --- | --- | --- | --- | --- | --- | --- |
-| [![Project stage][badge-Stage]][badge-stage-page] | [![Releases][badge-releases]][link-releases] | [![Snapshots][badge-snapshots]][link-snapshots] | [![Percentage of issues still open][badge-open-issues]][open-issues] | [![Average time to resolve an issue][badge-issue-resolution]][issue-resolution] | [![CodeQL][badge-codeql]][badge-codeql-page] | [![License][license-image]][license-url] |
+| Project Stage | Release | Snapshot | Issues | Resolution | Code QL | License | SDR Version
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| [![Project stage][badge-Stage]][badge-stage-page] | [![Releases][badge-releases]][link-releases] | [![Snapshots][badge-snapshots]][link-snapshots] | [![Percentage of issues still open][badge-open-issues]][open-issues] | [![Average time to resolve an issue][badge-issue-resolution]][issue-resolution] | [![CodeQL][badge-codeql]][badge-codeql-page] | [![License][license-image]][license-url] | [![SDR Version][sdr-badge-releases]][sdr-link-releases] |
 
 <details>
   <summary><strong>Table of contents</strong></summary>
@@ -400,6 +400,7 @@ Redis OM uses the [MIT license][license-url].
 [badge-codeql-page]: https://github.com/redis/redis-om-spring/actions/workflows/codeql-analysis.yml
 [license-image]: https://img.shields.io/github/license/redis/redis-om-spring
 [license-url]: LICENSE
+[sdr-badge-releases]: https://img.shields.io/maven-central/v/org.springframework.data/spring-data-redis/2.7.2
 
 <!-- Links -->
 
@@ -416,6 +417,7 @@ Redis OM uses the [MIT license][license-url].
 [open-issues]: http://isitmaintained.com/project/redis/redis-om-spring
 [issue-resolution]: http://isitmaintained.com/project/redis/redis-om-spring
 [redisearch-wjson]: https://github.com/redislabs-training/mod-devcap-redisjson-getting-started/blob/master/articles/QuickStart-RediSearchWithJSON.md
+[sdr-link-releases]: https://repo1.maven.org/maven2/org/springframework/data/spring-data-redis/2.7.2/
 
 
 
