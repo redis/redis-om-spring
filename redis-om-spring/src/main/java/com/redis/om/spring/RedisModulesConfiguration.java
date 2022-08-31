@@ -600,8 +600,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
             continue;
           }
         }
-        fieldPrefix += tempPrefix;
-        getNestedField(fieldPrefix, subField, prefix, fieldList);
+        getNestedField(fieldPrefix+tempPrefix, subField, prefix, fieldList);
       }
     }
     return fieldList;
