@@ -428,8 +428,10 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
         .sequential() //
         .reduce(establishedFirst);
 
-    assertThat(firstEstablish).isPresent();
-    assertThat(firstEstablish).contains(1975);
+    assertAll( //
+        () -> assertThat(firstEstablish).isPresent(), //
+        () -> assertThat(firstEstablish).contains(1975) //
+    );
   }
 
   @Test
@@ -469,8 +471,10 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
         .map(Company$.YEAR_FOUNDED) //
         .sequential() //
         .min(Integer::compareTo);
-    assertThat(firstEstablish).isPresent();
-    assertThat(firstEstablish).contains(1975);
+    assertAll( //
+        () -> assertThat(firstEstablish).isPresent(), //
+        () -> assertThat(firstEstablish).contains(1975) //
+    );
   }
 
   @Test
@@ -480,8 +484,10 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
         .map(Company$.YEAR_FOUNDED) //
         .sequential() //
         .max(Integer::compareTo);
-    assertThat(lastEstablish).isPresent();
-    assertThat(lastEstablish).contains(2011);
+    assertAll( //
+        () -> assertThat(lastEstablish).isPresent(), //
+        () -> assertThat(lastEstablish).contains(2011) //
+    );
   }
 
   @Test

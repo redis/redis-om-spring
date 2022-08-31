@@ -1,6 +1,7 @@
 package com.redis.om.spring.tuple;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -2438,8 +2439,10 @@ final class TupleTest {
     final Triple<Integer, Integer, Integer> oneTriple = Tuples.of(0, 1, 42);
     final Triple<Integer, Integer, Integer> anotherTriple = Tuples.of(0, 1, 42);
 
-    assertThat(oneTriple).hasSameHashCodeAs(anotherTriple);
-    assertThat(oneTriple).isEqualTo(anotherTriple);
+    assertAll( //
+        () -> assertThat(oneTriple).hasSameHashCodeAs(anotherTriple), //
+        () -> assertThat(oneTriple).isEqualTo(anotherTriple) //
+    );
   }
 
   @SuppressWarnings("unlikely-arg-type")
