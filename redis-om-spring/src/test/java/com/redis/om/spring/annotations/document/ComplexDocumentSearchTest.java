@@ -2,6 +2,7 @@ package com.redis.om.spring.annotations.document;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
@@ -11,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.geo.Point;
 
@@ -23,6 +23,7 @@ import com.redis.om.spring.annotations.document.fixtures.Order;
 import com.redis.om.spring.annotations.document.fixtures.Permit;
 import com.redis.om.spring.annotations.document.fixtures.Permit$;
 import com.redis.om.spring.annotations.document.fixtures.PermitRepository;
+import com.redis.om.spring.repository.query.Sort;
 
 class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
   Permit permit1;
@@ -53,6 +54,7 @@ class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
             List.of("started", "in_progress", "approved"), //
             attrList1
     );
+    permit1.setPermitTimestamp(LocalDateTime.of(2022, 8, 1, 10, 0));
 
     // # Document 2
     Address address2 = Address.of("Porto", "Av. da Liberdade");
@@ -71,6 +73,7 @@ class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
             List.of("started", "in_progress", "rejected"), //
             attrList2
     );
+    permit2.setPermitTimestamp(LocalDateTime.of(2022, 8, 2, 0, 0));
 
     // # Document 3
     Address address3 = Address.of("Lagos", "D. João");
@@ -91,6 +94,7 @@ class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
             List.of("started", "in_progress", "postponed"), //
             attrList3
     );
+    permit3.setPermitTimestamp(LocalDateTime.of(2022, 8, 25, 0, 0));
 
     repository.saveAll(List.of(permit1, permit2, permit3));
   }
@@ -135,7 +139,7 @@ class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
   @Test
   void testByTagsWithNullParams() {
     // # Document 4
-    List<Attribute> attrs = List.of(); 
+    List<Attribute> attrs = List.of();
     Address address4 = Address.of("Coimbra", "R. Serra 14");
     Permit permit4 = Permit.of( //
             address4, //
@@ -205,32 +209,116 @@ class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
     Iterable<Permit> permits = repository.search(q);
     assertThat(permits).containsExactly(permit1,permit2);
   }
-  
+
+  /**
+   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "To construct*" "SORTBY" "constructionValue" "DESC"
+   */
   @Test
-  void testFullTextSearchWithPaginationDesc() {
+  void testFullTextSearchWithSortByNumericFieldDesc() {
     String q = "To construct*";
-    Pageable pageRequest = PageRequest.of(0, 10).withSort(Sort.by(Direction.DESC, Permit$.CONSTRUCTION_VALUE.getField().getName()));
-    
+    Pageable pageRequest = PageRequest.of(0, 10).withSort(Sort.by(Direction.DESC, Permit$.CONSTRUCTION_VALUE));
     Page<Permit> result = repository.search(q, pageRequest);
-    
-    System.out.println(result.getContent());
-    
+
     assertThat(result.getTotalPages()).isEqualTo(1);
     assertThat(result.getTotalElements()).isEqualTo(2);
     assertThat(result.getContent()).containsExactly(permit2,permit1);
   }
-  
+
+  /**
+   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "To construct*" "SORTBY" "constructionValue" "ASC"
+   */
   @Test
-  void testFullTextSearchWithPaginationAsc() {
+  void testFullTextSearchWithSortByNumericFieldAsc() {
     String q = "To construct*";
-    Pageable pageRequest = PageRequest.of(0, 10).withSort(Sort.by(Direction.ASC, Permit$.CONSTRUCTION_VALUE.getField().getName()));
-    
+    Pageable pageRequest = PageRequest.of(0, 10).withSort(Sort.by(Direction.ASC, Permit$.CONSTRUCTION_VALUE));
     Page<Permit> result = repository.search(q, pageRequest);
-    
-    System.out.println(result.getContent());
-    
+
     assertThat(result.getTotalPages()).isEqualTo(1);
     assertThat(result.getTotalElements()).isEqualTo(2);
     assertThat(result.getContent()).containsExactly(permit1,permit2);
+  }
+
+  /**
+   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "To construct*" "SORTBY" "buildingType" "DESC"
+   */
+  @Test
+  void testFullTextSearchWithSortByTextFieldDesc() {
+    String q = "To construct*";
+    Pageable pageRequest = PageRequest.of(0, 10).withSort(Sort.by(Direction.DESC, Permit$.BUILDING_TYPE));
+    Page<Permit> result = repository.search(q, pageRequest);
+
+    assertThat(result.getTotalPages()).isEqualTo(1);
+    assertThat(result.getTotalElements()).isEqualTo(2);
+    assertThat(result.getContent()).containsExactly(permit1, permit2);
+  }
+
+  /**
+   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "To construct*" "SORTBY" "buildingType" "ASC"
+   */
+  @Test
+  void testFullTextSearchWithSortByTextFieldAsc() {
+    String q = "To construct*";
+    Pageable pageRequest = PageRequest.of(0, 10).withSort(Sort.by(Direction.ASC, Permit$.BUILDING_TYPE));
+    Page<Permit> result = repository.search(q, pageRequest);
+
+    assertThat(result.getTotalPages()).isEqualTo(1);
+    assertThat(result.getTotalElements()).isEqualTo(2);
+    assertThat(result.getContent()).containsExactly(permit2, permit1);
+  }
+
+  /**
+   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "house|loft" "SORTBY" "permitTimestamp" "DESC"
+   */
+  @Test
+  void testFullTextSearchWithSortByDateFieldDesc() {
+    String q = "house|loft";
+    Pageable pageRequest = PageRequest.of(0, 10).withSort(Sort.by(Direction.DESC, Permit$.PERMIT_TIMESTAMP));
+    Page<Permit> result = repository.search(q, pageRequest);
+
+    assertThat(result.getTotalPages()).isEqualTo(1);
+    assertThat(result.getTotalElements()).isEqualTo(3);
+    assertThat(result.getContent()).containsExactly(permit3,permit2,permit1);
+  }
+
+  /**
+   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "house|loft" "SORTBY" "permitTimestamp" "ASC"
+   */
+  @Test
+  void testFullTextSearchWithSortByDateFieldAsc() {
+    String q = "house|loft";
+    Pageable pageRequest = PageRequest.of(0, 10).withSort(Sort.by(Direction.ASC, Permit$.PERMIT_TIMESTAMP));
+    Page<Permit> result = repository.search(q, pageRequest);
+
+    assertThat(result.getTotalPages()).isEqualTo(1);
+    assertThat(result.getTotalElements()).isEqualTo(3);
+    assertThat(result.getContent()).containsExactly(permit1,permit2,permit3);
+  }
+
+  /**
+   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "house|loft" "SORTBY" "address_city" "DESC"
+   */
+  @Test
+  void testFullTextSearchWithSortByNestedTextTagFieldDesc() {
+    String q = "house|loft";
+    Pageable pageRequest = PageRequest.of(0, 10).withSort(Sort.by(Direction.DESC, Permit$.ADDRESS_CITY));
+    Page<Permit> result = repository.search(q, pageRequest);
+
+    assertThat(result.getTotalPages()).isEqualTo(1);
+    assertThat(result.getTotalElements()).isEqualTo(3);
+    assertThat(result.getContent()).containsExactly(permit2,permit1,permit3);
+  }
+
+  /**
+   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "house|loft" "SORTBY" "address_city" "ASC"
+   */
+  @Test
+  void testFullTextSearchWithSortByNestedTextTagAsc() {
+    String q = "house|loft";
+    Pageable pageRequest = PageRequest.of(0, 10).withSort(Sort.by(Direction.ASC, Permit$.ADDRESS_CITY));
+    Page<Permit> result = repository.search(q, pageRequest);
+
+    assertThat(result.getTotalPages()).isEqualTo(1);
+    assertThat(result.getTotalElements()).isEqualTo(3);
+    assertThat(result.getContent()).containsExactly(permit3,permit1,permit2);
   }
 }

@@ -219,8 +219,8 @@ class MetamodelGeneratorTest {
   void testValidDocumentIndexedNested(Results results) throws IOException {
     List<String> warnings = getWarningStrings(results);
     assertThat(warnings).hasSize(1);
-//    assertThat(warnings).containsOnly(
-//        "Processing class ValidDocumentIndexedNested could not resolve valid.Address checking for nested indexables");
+    assertThat(warnings).containsOnly(
+        "Processing class ValidDocumentIndexedNested could not resolve valid.Address checking for nested indexables");
 
     List<String> errors = getErrorStrings(results);
     assertAll( //
@@ -259,9 +259,9 @@ class MetamodelGeneratorTest {
         () -> assertThat(fileContents)
             .contains("ID = new NonIndexedTextField<ValidDocumentIndexedNested, String>(id,false);"), //
         () -> assertThat(fileContents)
-            .contains("ADDRESS = new MetamodelField<ValidDocumentIndexedNested, Address>(address,true);") //
-//    assertThat(fileContents).contains("ADDRESS_STREET = new String(\"address_street\");");
-//    assertThat(fileContents).contains("ADDRESS_CITY = new String(\"address_city\");");
+            .contains("ADDRESS = new MetamodelField<ValidDocumentIndexedNested, Address>(address,true);"), //
+        () -> assertThat(fileContents).contains("ADDRESS_STREET = new String(\"address_street\");"), //
+        () -> assertThat(fileContents).contains("ADDRESS_CITY = new String(\"address_city\");") //
     );
   }
 
@@ -287,12 +287,12 @@ class MetamodelGeneratorTest {
   void testValidDocumentInBadJavaBean(Results results) throws IOException {
     assertThat(results.generated).hasSize(1);
 
-    final String NO_PROPER_JAVABEAN_MSG = "Class BadBean is not a proper JavaBean because id has no standard getter. Fix the issue to ensure stability.";
+    final String NO_PROPER_JAVABEAN_MSG = "Class BadBean is not a proper JavaBean because id has no standard getter.";
 
-    List<String> warnings = getWarningStrings(results);
+    List<String> errors = getErrorStrings(results);
     assertAll( //
-        () -> assertThat(warnings).hasSize(3), //
-        () -> assertThat(warnings).contains(NO_PROPER_JAVABEAN_MSG) //
+        () -> assertThat(errors).hasSize(3), //
+        () -> assertThat(errors).contains(NO_PROPER_JAVABEAN_MSG) //
     );
   }
 
