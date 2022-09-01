@@ -27,9 +27,10 @@ jobs:
         java-version: 11
     - run: mvn dependency:go-offline
     - name: Build
-      run: mvn integration-test
-    - name: cobertura
-      run: mvn cobertura:cobertura
+      run: mvn clean process-test-classes verify
+    # TODO: needs to be replaced with Jacoco (Cobertura does not work with JDK 11+)
+    # - name: cobertura
+    #   run: mvn cobertura:cobertura
     - name: codecov
       run: |
         curl -s https://raw.githubusercontent.com/codecov/codecov-bash/master/codecov
