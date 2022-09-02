@@ -258,6 +258,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * @return never {@literal null}.
    * @since 2.5
    */
+  @Override
   public <T> List<T> getAllOf(String keyspace, Class<T> type, long offset, int rows) {
     byte[] binKeyspace = toBytes(keyspace);
 
@@ -282,6 +283,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     return result;
   }
 
+  @Override
   public void update(PartialUpdate<?> update) {
 
     RedisPersistentEntity<?> entity = this.converter.getMappingContext()

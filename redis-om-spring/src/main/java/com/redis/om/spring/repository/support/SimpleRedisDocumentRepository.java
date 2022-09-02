@@ -68,7 +68,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     @SuppressWarnings("unchecked")
     RedisTemplate<String,ID> template = (RedisTemplate<String,ID>)modulesOperations.getTemplate();
     SetOperations<String, ID> setOps = template.opsForSet();
-    return new ArrayList<ID>(setOps.members(metadata.getJavaType().getName()));
+    return new ArrayList<>(setOps.members(metadata.getJavaType().getName()));
   }
 
   @Override
@@ -76,9 +76,9 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     @SuppressWarnings("unchecked")
     RedisTemplate<String,ID> template = (RedisTemplate<String,ID>)modulesOperations.getTemplate();
     SetOperations<String, ID> setOps = template.opsForSet();
-    List<ID> ids = new ArrayList<ID>(setOps.members(metadata.getJavaType().getName()));
+    List<ID> ids = new ArrayList<>(setOps.members(metadata.getJavaType().getName()));
 
-    int fromIndex = Long.valueOf(pageable.getOffset()).intValue();
+    int fromIndex = Math.toIntExact(pageable.getOffset());
     int toIndex = fromIndex + pageable.getPageSize();
     
     return new PageImpl<>(ids.subList(fromIndex, toIndex), pageable, ids.size());
@@ -104,7 +104,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   @SuppressWarnings("unchecked")
   @Override
   public <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field) {
-    String[] keys = StreamSupport.stream(ids.spliterator(), false).map(id -> getKey(id)).toArray(String[]::new);
+    String[] keys = StreamSupport.stream(ids.spliterator(), false).map(this::getKey).toArray(String[]::new);
     return (Iterable<F>) modulesOperations.opsForJSON().mget(Path.of("$." + field.getField().getName()), List.class, keys).stream().flatMap(List::stream).collect(Collectors.toList());
   }
 
@@ -118,7 +118,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   @Override
   public <S extends T> Iterable<S> saveAll(Iterable<S> entities) {
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
-    List<S> saved = new ArrayList<S>();
+    List<S> saved = new ArrayList<>();
 
     try (Jedis jedis = modulesOperations.getClient().getJedis()) {
       Pipeline pipeline = jedis.pipelined();
@@ -134,7 +134,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
         pipeline.sadd(rdo.getKeyspace(), id.toString());
 
-        List<byte[]> args = new ArrayList<byte[]>(4);
+        List<byte[]> args = new ArrayList<>(4);
         args.add(objectKey);
         args.add(SafeEncoder.encode(Path.ROOT_PATH.toString()));
         args.add(SafeEncoder.encode(this.gson.toJson(entity)));

@@ -11,10 +11,15 @@ public abstract class BaseAbstractAction implements TakesJSONOperations {
   protected JSONOperations<String> json;
   private Field idField;
   
-  public BaseAbstractAction(Field field) {
+  protected BaseAbstractAction(Field field) {
     this.field = field;
-    Optional<Field> maybeId = ObjectUtils.getIdFieldForEntityClass(field.getDeclaringClass());
-    this.idField = maybeId.get();
+    Class<?> entityClass = field.getDeclaringClass();
+    Optional<Field> maybeId = ObjectUtils.getIdFieldForEntityClass(entityClass);
+    if (maybeId.isPresent()) {
+      this.idField = maybeId.get();
+    } else {
+      throw new NullPointerException(String.format("Entity Class %s does not have an ID field", entityClass.getSimpleName()));
+    }
   }
 
   @Override

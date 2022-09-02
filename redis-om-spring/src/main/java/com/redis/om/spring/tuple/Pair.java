@@ -26,7 +26,7 @@ public interface Pair<E1, E2> extends Tuple {
     }
   }
 
-  static <E1, E2> FirstAccessor<Pair<E1, E1>, E1> getFirstGetter() {
+  static <E1, E2> FirstAccessor<Pair<E1, E2>, E1> getFirstGetter() {
     return Pair::getFirst;
   }
 

@@ -203,7 +203,7 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
   void testCantPersistCollectionWithNulls() {
     Optional<KitchenSink> fromDb = repository.findById(ks4.getId());
     assertThat(fromDb.isPresent());
-    assertThat(fromDb.get().getListOfStringArrays()).isEqualTo(null);
+    assertThat(fromDb.get().getListOfStringArrays()).isNull();
   }
 
 }

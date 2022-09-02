@@ -107,7 +107,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
     Set<? extends Element> documentEntities = roundEnv.getElementsAnnotatedWith(Document.class);
     Set<? extends Element> hashEntities = roundEnv.getElementsAnnotatedWith(RedisHash.class);
     Set<? extends Element> metamodelCandidates = Stream.of(documentEntities, hashEntities) //
-        .flatMap(x -> x.stream()).collect(Collectors.toSet());
+        .flatMap(Collection::stream).collect(Collectors.toSet());
 
     metamodelCandidates.stream().filter(ae -> ae.getKind() == ElementKind.CLASS).forEach(ae -> {
       try {
@@ -154,11 +154,11 @@ public final class MetamodelGenerator extends AbstractProcessor {
       packageName = packageElement.getQualifiedName().toString();
     }
 
-    List<FieldSpec> interceptors = new ArrayList<FieldSpec>();
-    List<FieldSpec> fields = new ArrayList<FieldSpec>();
-    List<CodeBlock> initCodeBlocks = new ArrayList<CodeBlock>();
-    List<FieldSpec> nestedFieldsConstants = new ArrayList<FieldSpec>();
-    List<CodeBlock> nestedFieldsConstantsInitCodeBlocks = new ArrayList<CodeBlock>();
+    List<FieldSpec> interceptors = new ArrayList<>();
+    List<FieldSpec> fields = new ArrayList<>();
+    List<CodeBlock> initCodeBlocks = new ArrayList<>();
+    List<FieldSpec> nestedFieldsConstants = new ArrayList<>();
+    List<CodeBlock> nestedFieldsConstantsInitCodeBlocks = new ArrayList<>();
     enclosedFields.forEach((field, getter) -> {
       boolean fieldIsIndexed = (field.getAnnotation(Searchable.class) != null)
           || (field.getAnnotation(Indexed.class) != null);
@@ -189,7 +189,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
           targetCls = ClassUtils.forName(cls, MetamodelGenerator.class.getClassLoader());
         } catch (ClassNotFoundException cnfe) {
           messager.printMessage(Diagnostic.Kind.WARNING,
-              "Processing class " + entityName + " could not resolve " + cls + ".  Checking for nested indexables");
+              "Processing class " + entityName + " could not resolve " + cls + " while checking for nested indexables");
           List<Pair<FieldSpec, CodeBlock>> nestedFieldContants = extractNestedConstants(field);
           for (Pair<FieldSpec, CodeBlock> fieldConstants : nestedFieldContants) {
             nestedFieldsConstants.add(fieldConstants.getFirst());
@@ -348,7 +348,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
     messager.printMessage(Diagnostic.Kind.NOTE, "Enclosed subfield size() ==> " + enclosedFields.size());
 
-    List<Pair<FieldSpec, CodeBlock>> nestedFieldsConstants = new ArrayList<Pair<FieldSpec, CodeBlock>>();
+    List<Pair<FieldSpec, CodeBlock>> nestedFieldsConstants = new ArrayList<>();
     enclosedFields.forEach((field, getter) -> {
 
       boolean fieldIsIndexed = (field.getAnnotation(Searchable.class) != null)

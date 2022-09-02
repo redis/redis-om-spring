@@ -50,7 +50,7 @@ class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
   void testGetByName() {
     assertEquals(3, repository.count());
     List<Custom> customs = repository.searchByName("barbar");
-    assertThat(customs.size()).isEqualTo(1);
+    assertThat(customs).hasSize(1);
     Custom barbar = customs.get(0);
     assertThat(barbar.getName()).isEqualTo("barbar");
   }

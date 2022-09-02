@@ -1,6 +1,7 @@
 package com.redis.om.spring.tuple;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -2438,8 +2439,10 @@ final class TupleTest {
     final Triple<Integer, Integer, Integer> oneTriple = Tuples.of(0, 1, 42);
     final Triple<Integer, Integer, Integer> anotherTriple = Tuples.of(0, 1, 42);
 
-    assertThat(oneTriple.hashCode()).isEqualTo(anotherTriple.hashCode());
-    assertThat(oneTriple).isEqualTo(anotherTriple);
+    assertAll( //
+        () -> assertThat(oneTriple).hasSameHashCodeAs(anotherTriple), //
+        () -> assertThat(oneTriple).isEqualTo(anotherTriple) //
+    );
   }
 
   @SuppressWarnings("unlikely-arg-type")
@@ -2454,7 +2457,7 @@ final class TupleTest {
   @Test
   void testTupleToString() {
     final Triple<Integer, Integer, String> triple = Tuples.of(0, 1, "Foobar");
-    assertThat(triple.toString()).isEqualTo("TripleImpl (0, 1, Foobar)");
+    assertThat(triple).hasToString("TripleImpl (0, 1, Foobar)");
   }
 
   @Test

@@ -17,7 +17,7 @@ import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.testcontainers.RedisModulesContainer;
 
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @DirtiesContext
 public class AbstractBaseOMTest {
   @Container
@@ -33,7 +33,7 @@ public class AbstractBaseOMTest {
 
   @Autowired
   protected RedisModulesOperations<String> modulesOperations;
-  
+
   @Autowired
   @Qualifier("redisCustomKeyValueTemplate")
   protected CustomRedisKeyValueTemplate kvTemplate;

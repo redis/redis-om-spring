@@ -18,35 +18,35 @@ public class GeoField<E, T> extends MetamodelField<E, T> {
   }
   
   public EqualPredicate<? super E,T> eq(T value) {
-    return new EqualPredicate<E,T>(field,value);
+    return new EqualPredicate<>(field,value);
   }
   
   public EqualPredicate<? super E,T> eq(String xy) {
-    return new EqualPredicate<E,T>(field,xy);
+    return new EqualPredicate<>(field,xy);
   }
   
   public EqualPredicate<? super E,T> eq(double x, double y) {
-    return new EqualPredicate<E,T>(field, x, y);
+    return new EqualPredicate<>(field, x, y);
   }
   
   public NotEqualPredicate<E,T> notEq(T value) {
-    return new NotEqualPredicate<E,T>(field,value);
+    return new NotEqualPredicate<>(field,value);
   }
   
   public NotEqualPredicate<? super E,T> notEq(String xy) {
-    return new NotEqualPredicate<E,T>(field,xy);
+    return new NotEqualPredicate<>(field,xy);
   }
   
   public NotEqualPredicate<? super E,T> notEq(double x, double y) {
-    return new NotEqualPredicate<E,T>(field, x, y);
+    return new NotEqualPredicate<>(field, x, y);
   }
   
   public NearPredicate<? super E,T> near(Point point, Distance distance) {
-    return new NearPredicate<E,T>(field,point,distance);
+    return new NearPredicate<>(field,point,distance);
   }
   
   public OutsideOfPredicate<? super E,T> outsideOf(Point point, Distance distance) {
-    return new OutsideOfPredicate<E,T>(field,point,distance);
+    return new OutsideOfPredicate<>(field,point,distance);
   }
 
 }

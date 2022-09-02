@@ -18,8 +18,10 @@ public class GsonBuidlerFactory {
     builder.registerTypeAdapter(LocalDateTime.class, LocalDateTimeTypeAdapter.getInstance());
     builder.registerTypeAdapter(Ulid.class, UlidTypeAdapter.getInstance());
   }
-  
+
   public static GsonBuilder getBuilder() {
     return builder;
   }
+
+  private GsonBuidlerFactory() {}
 }

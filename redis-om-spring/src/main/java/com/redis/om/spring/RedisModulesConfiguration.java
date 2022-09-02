@@ -192,7 +192,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
     RedisMappingContext mappingContext = (RedisMappingContext) ac.getBean("keyValueMappingContext");
     KeyspaceToIndexMap keyspaceToIndexMap = (KeyspaceToIndexMap) ac.getBean("keyspaceToIndexMap");
 
-    Set<BeanDefinition> beanDefs = new HashSet<BeanDefinition>();
+    Set<BeanDefinition> beanDefs = new HashSet<>();
     beanDefs.addAll(getBeanDefinitionsFor(ac, cls));
 
     logger.info(String.format("Found %s @%s annotated Beans...", beanDefs.size(), cls.getSimpleName()));
@@ -205,7 +205,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
         indexName = cl.getName() + "Idx";
         logger.info(String.format("Found @%s annotated class: %s", cls.getSimpleName(), cl.getName()));
 
-        List<Field> fields = new ArrayList<Field>();
+        List<Field> fields = new ArrayList<>();
 
         for (java.lang.reflect.Field field : cl.getDeclaredFields()) {
           fields.addAll(findIndexFields(field, null, cls == Document.class));
@@ -289,7 +289,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   }
 
   private List<Field> findIndexFields(java.lang.reflect.Field field, String prefix, boolean isDocument) {
-    List<Field> fields = new ArrayList<Field>();
+    List<Field> fields = new ArrayList<>();
 
     if (field.isAnnotationPresent(Indexed.class)) {
       logger.info(String.format("FOUND @Indexed annotation on field of type: %s", field.getType()));
@@ -600,8 +600,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
             continue;
           }
         }
-        fieldPrefix += tempPrefix;
-        getNestedField(fieldPrefix, subField, prefix, fieldList);
+        getNestedField(fieldPrefix+tempPrefix, subField, prefix, fieldList);
       }
     }
     return fieldList;

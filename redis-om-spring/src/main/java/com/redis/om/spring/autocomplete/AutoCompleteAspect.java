@@ -183,7 +183,7 @@ public class AutoCompleteAspect implements Ordered {
             if (inPayload) {
               try {
                 if (payload == null) {
-                  payload = new HashMap<String,Object>();
+                  payload = new HashMap<>();
                 }
                 PropertyDescriptor pd = new PropertyDescriptor(field2.getName(), entity.getClass());
                 payload.put(field2.getName(), pd.getReadMethod().invoke(entity));

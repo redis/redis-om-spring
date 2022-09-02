@@ -1280,7 +1280,7 @@ final class TuplesTest {
   @Test
   void testEmptyTuple() {
     final EmptyTuple empty = Tuples.of();
-    assertThat(empty.size()).isEqualTo(0);
+    assertThat(empty.size()).isZero();
     
     IndexOutOfBoundsException exception = Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
       empty.get(0);

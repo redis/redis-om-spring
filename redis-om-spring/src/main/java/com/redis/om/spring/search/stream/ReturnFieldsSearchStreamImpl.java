@@ -55,7 +55,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   private static final Gson gson = GsonBuidlerFactory.getBuilder().create();
 
   private SearchStreamImpl<E> entitySearchStream;
-  private List<MetamodelField<E, ?>> returning = new ArrayList<MetamodelField<E, ?>>();
+  private List<MetamodelField<E, ?>> returning = new ArrayList<>();
   private Stream<T> resolvedStream;
   private Runnable closeHandler;
 
@@ -81,17 +81,17 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
 
   @Override
   public SearchStream<T> sequential() {
-    return new WrapperSearchStream<T>(resolveStream().sequential());
+    return new WrapperSearchStream<>(resolveStream().sequential());
   }
 
   @Override
   public SearchStream<T> parallel() {
-    return new WrapperSearchStream<T>(resolveStream().parallel());
+    return new WrapperSearchStream<>(resolveStream().parallel());
   }
 
   @Override
   public SearchStream<T> unordered() {
-    return new WrapperSearchStream<T>(resolveStream().unordered());
+    return new WrapperSearchStream<>(resolveStream().unordered());
   }
 
   @Override
@@ -118,13 +118,13 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   @SuppressWarnings("unchecked")
   @Override
   public SearchStream<T> filter(Predicate<?> predicate) {
-    return new WrapperSearchStream<T>(resolveStream().filter((Predicate<? super T>) predicate));
+    return new WrapperSearchStream<>(resolveStream().filter((Predicate<? super T>) predicate));
   }
 
   @SuppressWarnings("resource")
   @Override
   public <R> SearchStream<R> map(Function<? super T, ? extends R> mapper) {
-    return new WrapperSearchStream<T>(resolveStream()).map(mapper);
+    return new WrapperSearchStream<>(resolveStream()).map(mapper);
   }
 
   @Override
@@ -145,30 +145,30 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   @SuppressWarnings("resource")
   @Override
   public <R> SearchStream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper) {
-    return new WrapperSearchStream<T>(resolveStream()).flatMap(mapper);
+    return new WrapperSearchStream<>(resolveStream()).flatMap(mapper);
   }
 
   @SuppressWarnings("resource")
   @Override
   public IntStream flatMapToInt(Function<? super T, ? extends IntStream> mapper) {
-    return new WrapperSearchStream<T>(resolveStream()).flatMapToInt(mapper);
+    return new WrapperSearchStream<>(resolveStream()).flatMapToInt(mapper);
   }
 
   @SuppressWarnings("resource")
   @Override
   public LongStream flatMapToLong(Function<? super T, ? extends LongStream> mapper) {
-    return new WrapperSearchStream<T>(resolveStream()).flatMapToLong(mapper);
+    return new WrapperSearchStream<>(resolveStream()).flatMapToLong(mapper);
   }
 
   @SuppressWarnings("resource")
   @Override
   public DoubleStream flatMapToDouble(Function<? super T, ? extends DoubleStream> mapper) {
-    return new WrapperSearchStream<T>(resolveStream()).flatMapToDouble(mapper);
+    return new WrapperSearchStream<>(resolveStream()).flatMapToDouble(mapper);
   }
 
   @Override
   public SearchStream<T> sorted(Comparator<? super T> comparator) {
-    return new WrapperSearchStream<T>(resolveStream().sorted(comparator));
+    return new WrapperSearchStream<>(resolveStream().sorted(comparator));
   }
 
   @Override
@@ -178,17 +178,17 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
 
   @Override
   public SearchStream<T> peek(Consumer<? super T> action) {
-    return new WrapperSearchStream<T>(resolveStream().peek(action));
+    return new WrapperSearchStream<>(resolveStream().peek(action));
   }
 
   @Override
   public SearchStream<T> limit(long maxSize) {
-    return new WrapperSearchStream<T>(resolveStream().limit(maxSize));
+    return new WrapperSearchStream<>(resolveStream().limit(maxSize));
   }
 
   @Override
   public SearchStream<T> skip(long n) {
-    return new WrapperSearchStream<T>(resolveStream().skip(n));
+    return new WrapperSearchStream<>(resolveStream().skip(n));
   }
 
   @Override
@@ -304,12 +304,12 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
 
   @SuppressWarnings("unchecked")
   private List<T> toResultTuple(SearchResult searchResult) {
-    List<T> results = new ArrayList<T>();
+    List<T> results = new ArrayList<>();
     searchResult.docs.stream().forEach(doc -> {
       Map<String, Object> props = StreamSupport.stream(doc.getProperties().spliterator(), false)
           .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
 
-      List<Object> mappedResults = new ArrayList<Object>();
+      List<Object> mappedResults = new ArrayList<>();
       returning.stream().forEach(foi -> {
         String field = foi.getField().getName();
         Object value = props.get("$." + field);
@@ -339,10 +339,10 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
 
   @SuppressWarnings("unchecked")
   private List<T> toResultTuple(List<E> entities) {
-    List<T> results = new ArrayList<T>();
+    List<T> results = new ArrayList<>();
 
     entities.stream().forEach(entity -> {
-      List<Object> mappedResults = new ArrayList<Object>();
+      List<Object> mappedResults = new ArrayList<>();
       returning.stream().forEach(foi -> {
         String getterName = "get" + ObjectUtils.ucfirst(foi.getField().getName());
         Method getter = ReflectionUtils.findMethod(entitySearchStream.getEntityClass(), getterName);

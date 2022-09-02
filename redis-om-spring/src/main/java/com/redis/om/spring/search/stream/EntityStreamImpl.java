@@ -13,7 +13,7 @@ public class EntityStreamImpl implements EntityStream {
 
   @Override
   public <E> SearchStream<E> of(Class<E> entityClass) {
-    return new SearchStreamImpl<E>(entityClass, modulesOperations);
+    return new SearchStreamImpl<>(entityClass, modulesOperations);
   }
 
 }

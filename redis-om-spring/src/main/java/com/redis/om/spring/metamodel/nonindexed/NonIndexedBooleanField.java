@@ -12,6 +12,6 @@ public class NonIndexedBooleanField<E, T> extends MetamodelField<E, T> {
   }
 
   public Consumer<? super E> toggle() {
-    return new ToggleAction<E>(field);
+    return new ToggleAction<>(field);
   }
 }

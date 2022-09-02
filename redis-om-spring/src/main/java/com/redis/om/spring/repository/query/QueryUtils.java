@@ -56,4 +56,5 @@ public class QueryUtils {
     return searchIndexFieldAliasFor(field, null);
   }
   
+  private QueryUtils() {}
 }

@@ -220,7 +220,7 @@ class MetamodelGeneratorTest {
     List<String> warnings = getWarningStrings(results);
     assertThat(warnings).hasSize(1);
     assertThat(warnings).containsOnly(
-        "Processing class ValidDocumentIndexedNested could not resolve valid.Address checking for nested indexables");
+        "Processing class ValidDocumentIndexedNested could not resolve valid.Address while checking for nested indexables");
 
     List<String> errors = getErrorStrings(results);
     assertAll( //

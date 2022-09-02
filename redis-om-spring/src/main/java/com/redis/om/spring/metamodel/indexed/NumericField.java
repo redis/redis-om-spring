@@ -22,44 +22,44 @@ public class NumericField<E, T> extends MetamodelField<E, T> {
   }
   
   public EqualPredicate<? super E,T> eq(T value) {
-    return new EqualPredicate<E,T>(field,value);
+    return new EqualPredicate<>(field,value);
   }
   
   public NotEqualPredicate<? super E,T> notEq(T value) {
-    return new NotEqualPredicate<E,T>(field,value);
+    return new NotEqualPredicate<>(field,value);
   }
   
   public GreaterThanPredicate<? super E,T> gt(T value) {
-    return new GreaterThanPredicate<E,T>(field,value);
+    return new GreaterThanPredicate<>(field,value);
   }
   
   public GreaterThanOrEqualPredicate<? super E,T> ge(T value) {
-    return new GreaterThanOrEqualPredicate<E,T>(field,value);
+    return new GreaterThanOrEqualPredicate<>(field,value);
   }
   
   public LessThanPredicate<? super E,T> lt(T value) {
-    return new LessThanPredicate<E,T>(field,value);
+    return new LessThanPredicate<>(field,value);
   }
   
   public LessThanOrEqualPredicate<? super E,T> le(T value) {
-    return new LessThanOrEqualPredicate<E,T>(field,value);
+    return new LessThanOrEqualPredicate<>(field,value);
   }
   
   public BetweenPredicate<? super E,T> between(T min, T max) {
-    return new BetweenPredicate<E,T>(field,min,max);
+    return new BetweenPredicate<>(field,min,max);
   }
   
   @SuppressWarnings("unchecked")
   public InPredicate<? super E, ?> in(T... values) {
-    return new InPredicate<E,T>(field, Arrays.asList(values));
+    return new InPredicate<>(field, Arrays.asList(values));
   }
 
   public Consumer<? super E> incrBy(Long value) {
-    return new NumIncrByAction<E>(field, value);
+    return new NumIncrByAction<>(field, value);
   }
   
   public Consumer<? super E> decrBy(Long value) {
-    return new NumIncrByAction<E>(field, -value);
+    return new NumIncrByAction<>(field, -value);
   }
 
 }

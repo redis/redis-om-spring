@@ -24,51 +24,51 @@ public class TagField<E, T> extends MetamodelField<E, T> {
   }
   
   public EqualPredicate<? super E,T> eq(T value) {
-    return new EqualPredicate<E,T>(field,value);
+    return new EqualPredicate<>(field,value);
   }
   
   public NotEqualPredicate<? super E,T> notEq(T value) {
-    return new NotEqualPredicate<E,T>(field,value);
+    return new NotEqualPredicate<>(field,value);
   }
   
   public NotEqualPredicate<? super E,T> notEq(String... values) {
-    return new NotEqualPredicate<E,T>(field, Arrays.asList(values));
+    return new NotEqualPredicate<>(field, Arrays.asList(values));
   }
   
   public InPredicate<? super E, ?> in(String... values) {
-    return new InPredicate<E, T>(field, Arrays.asList(values));
+    return new InPredicate<>(field, Arrays.asList(values));
   }
   
   public ContainsAllPredicate<? super E, ?> containsAll(String... values) {
-    return new ContainsAllPredicate<E, T>(field, Arrays.asList(values));
+    return new ContainsAllPredicate<>(field, Arrays.asList(values));
   }
   
   public NotEqualPredicate<? super E,T> containsNone(T value) {
-    return new NotEqualPredicate<E,T>(field,value);
+    return new NotEqualPredicate<>(field,value);
   }
   
   public Consumer<? super E> add(Object value) {
-    return new ArrayAppendAction<E>(field, value);
+    return new ArrayAppendAction<>(field, value);
   }
 
   public Consumer<? super E> insert(Object value, Long index) {
-    return new ArrayInsertAction<E>(field, value, index);
+    return new ArrayInsertAction<>(field, value, index);
   }
   
   public Consumer<? super E> prepend(Object value) {
-    return new ArrayInsertAction<E>(field, value, 0L);
+    return new ArrayInsertAction<>(field, value, 0L);
   }
   
   public ToLongFunction<? super E> length() {
-    return new ArrayLengthAction<E>(field);
+    return new ArrayLengthAction<>(field);
   }
 
   public ToLongFunction<? super E> indexOf(Object element) {
-    return new ArrayIndexOfAction<E>(field, element);
+    return new ArrayIndexOfAction<>(field, element);
   }
   
   public <R> ArrayPopAction<? super E,R> pop(Long index) {
-    return new ArrayPopAction<E,R>(field, index);
+    return new ArrayPopAction<>(field, index);
   }
   
   public <R> ArrayPopAction<? super E,R> pop() {
@@ -88,7 +88,7 @@ public class TagField<E, T> extends MetamodelField<E, T> {
   }
 
   public Consumer<? super E> trimToRange(Long begin, Long end) {
-    return new ArrayTrimAction<E>(field, begin, end);
+    return new ArrayTrimAction<>(field, begin, end);
   }
 
 }

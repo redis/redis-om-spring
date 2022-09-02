@@ -22,44 +22,44 @@ public class TextField<E, T> extends MetamodelField<E, T> {
   }
   
   public EqualPredicate<? super E,T> eq(T value) {
-    return new EqualPredicate<E,T>(field,value);
+    return new EqualPredicate<>(field,value);
   }
   
   public NotEqualPredicate<? super E,T> notEq(T value) {
-    return new NotEqualPredicate<E,T>(field,value);
+    return new NotEqualPredicate<>(field,value);
   }
   
   public StartsWithPredicate<? super E,T> startsWith(T value) {
-    return new StartsWithPredicate<E,T>(field,value);
+    return new StartsWithPredicate<>(field,value);
   }
   
   public LikePredicate<? super E,T> like(T value) {
-    return new LikePredicate<E,T>(field,value);
+    return new LikePredicate<>(field,value);
   }
   
   public NotLikePredicate<? super E,T> notLike(T value) {
-    return new NotLikePredicate<E,T>(field,value);
+    return new NotLikePredicate<>(field,value);
   }
   
   public LikePredicate<? super E,T> containing(T value) {
-    return new LikePredicate<E,T>(field,value);
+    return new LikePredicate<>(field,value);
   }
   
   public NotLikePredicate<? super E,T> notContaining(T value) {
-    return new NotLikePredicate<E,T>(field,value);
+    return new NotLikePredicate<>(field,value);
   }
 
   @SuppressWarnings("unchecked")
   public InPredicate<? super E, ?> in(T... values) {
-    return new InPredicate<E,T>(field, Arrays.asList(values));
+    return new InPredicate<>(field, Arrays.asList(values));
   }
   
   public Consumer<? super E> append(String value) {
-    return new StringAppendAction<E>(field, value);
+    return new StringAppendAction<>(field, value);
   }
   
   public ToLongFunction<? super E> length() {
-    return new StrLengthAction<E>(field);
+    return new StrLengthAction<>(field);
   }
 
 }

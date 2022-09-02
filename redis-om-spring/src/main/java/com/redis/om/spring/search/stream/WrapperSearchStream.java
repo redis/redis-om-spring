@@ -51,17 +51,17 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
 
   @Override
   public SearchStream<E> sequential() {
-    return new WrapperSearchStream<E>(backingStream.sequential());
+    return new WrapperSearchStream<>(backingStream.sequential());
   }
 
   @Override
   public SearchStream<E> parallel() {
-    return new WrapperSearchStream<E>(backingStream.parallel());
+    return new WrapperSearchStream<>(backingStream.parallel());
   }
 
   @Override
   public SearchStream<E> unordered() {
-    return new WrapperSearchStream<E>(backingStream.unordered());
+    return new WrapperSearchStream<>(backingStream.unordered());
   }
 
   @Override
@@ -90,12 +90,12 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
   @Override
   public SearchStream<E> filter(Predicate<?> predicate) {
     // TODO: need to test this cast!
-    return new WrapperSearchStream<E>(backingStream.filter((Predicate<? super E>) predicate));
+    return new WrapperSearchStream<>(backingStream.filter((Predicate<? super E>) predicate));
   }
 
   @Override
   public <R> SearchStream<R> map(Function<? super E, ? extends R> mapper) {
-    return new WrapperSearchStream<R>(backingStream.map(mapper));
+    return new WrapperSearchStream<>(backingStream.map(mapper));
   }
 
   @Override
@@ -115,7 +115,7 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
 
   @Override
   public <R> SearchStream<R> flatMap(Function<? super E, ? extends Stream<? extends R>> mapper) {
-    return new WrapperSearchStream<R>(backingStream.flatMap(mapper));
+    return new WrapperSearchStream<>(backingStream.flatMap(mapper));
   }
 
   @Override
@@ -135,27 +135,27 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
 
   @Override
   public SearchStream<E> sorted(Comparator<? super E> comparator) {
-    return new WrapperSearchStream<E>(backingStream.sorted(comparator));
+    return new WrapperSearchStream<>(backingStream.sorted(comparator));
   }
 
   @Override
   public SearchStream<E> sorted(Comparator<? super E> comparator, SortOrder order) {
-    return new WrapperSearchStream<E>(backingStream.sorted(comparator));
+    return new WrapperSearchStream<>(backingStream.sorted(comparator));
   }
 
   @Override
   public SearchStream<E> peek(Consumer<? super E> action) {
-    return new WrapperSearchStream<E>(backingStream.peek(action));
+    return new WrapperSearchStream<>(backingStream.peek(action));
   }
 
   @Override
   public SearchStream<E> limit(long maxSize) {
-    return new WrapperSearchStream<E>(backingStream.limit(maxSize));
+    return new WrapperSearchStream<>(backingStream.limit(maxSize));
   }
 
   @Override
   public SearchStream<E> skip(long n) {
-    return new WrapperSearchStream<E>(backingStream.skip(n));
+    return new WrapperSearchStream<>(backingStream.skip(n));
   }
 
   @Override
