@@ -222,6 +222,10 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
         pipeline.sadd(rdo.getKeyspace(), id.toString());
         pipeline.hmset(objectKey, rdo.getBucket().rawMap());
 
+        if (expires(rdo)) {
+          pipeline.expire(objectKey, rdo.getTimeToLive());
+        }
+
         saved.add(entity);
       }
       pipeline.sync();
@@ -234,4 +238,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     return this.mappingConverter.toBytes(keyspace + ":" + id);
   }
 
+  private boolean expires(RedisData data) {
+    return data.getTimeToLive() != null && data.getTimeToLive() > 0L;
+  }
 }

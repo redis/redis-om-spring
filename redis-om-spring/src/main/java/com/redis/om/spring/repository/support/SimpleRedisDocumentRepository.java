@@ -140,6 +140,10 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
         args.add(SafeEncoder.encode(this.gson.toJson(entity)));
         pipeline.sendCommand(Command.SET, args.toArray(new byte[args.size()][]));
 
+        if (expires(rdo)) {
+          pipeline.expire(objectKey, rdo.getTimeToLive());
+        }
+
         saved.add(entity);
       }
       pipeline.sync();
@@ -158,6 +162,10 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
   public byte[] createKey(String keyspace, String id) {
     return this.mappingConverter.toBytes(keyspace + ":" + id);
+  }
+
+  private boolean expires(RedisData data) {
+    return data.getTimeToLive() != null && data.getTimeToLive() > 0L;
   }
 
   private enum Command implements ProtocolCommand {
