@@ -58,7 +58,7 @@ import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.Quad;
 import com.redis.om.spring.tuple.Triple;
 
-import io.redisearch.aggregation.SortedField.SortOrder;
+import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
 class EntityStreamTest extends AbstractBaseDocumentTest {
   @Autowired
@@ -962,7 +962,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
   void testArrayInsertToSimpleIndexedTagFieldInDocuments() {
     entityStream.of(User.class) //
         .filter(User$.NAME.eq("Steve Lorello")) //
-        .forEach(User$.ROLES.insert("dotnet", 0L));
+        .forEach(User$.ROLES.insert("dotnet", 0));
 
     Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
     assertTrue(maybeSteve.isPresent());
@@ -986,7 +986,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
   void testArrayInsertToSimpleIndexedTagFieldInDocuments2() {
     entityStream.of(User.class) //
         .filter(User$.NAME.eq("Steve Lorello")) //
-        .forEach(User$.ROLES.insert("dotnet", 1L));
+        .forEach(User$.ROLES.insert("dotnet", 1));
 
     Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
     assertTrue(maybeSteve.isPresent());
@@ -1111,7 +1111,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
   void testArrayTrimToRangeOnSimpleIndexedTagFieldInDocuments() {
     entityStream.of(User.class) //
         .filter(User$.NAME.eq("Steve Lorello")) //
-        .forEach(User$.ROLES.trimToRange(1L, 1L));
+        .forEach(User$.ROLES.trimToRange(1, 1));
 
     Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
     assertTrue(maybeSteve.isPresent());
@@ -1123,7 +1123,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
   void testArrayTrimToRangeOnSimpleIndexedTagFieldInDocuments2() {
     entityStream.of(User.class) //
         .filter(User$.NAME.eq("Steve Lorello")) //
-        .forEach(User$.ROLES.trimToRange(0L, 0L));
+        .forEach(User$.ROLES.trimToRange(0, 0));
 
     Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
     assertTrue(maybeSteve.isPresent());
@@ -1135,7 +1135,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
   void testArrayTrimToRangeOnSimpleIndexedTagFieldInDocuments3() {
     entityStream.of(User.class) //
         .filter(User$.NAME.eq("Steve Lorello")) //
-        .forEach(User$.ROLES.trimToRange(1L, 2L));
+        .forEach(User$.ROLES.trimToRange(1, 2));
 
     Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
     assertTrue(maybeSteve.isPresent());
@@ -1148,7 +1148,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
     // "devrel", "educator", "guru"
     entityStream.of(User.class) //
         .filter(User$.NAME.eq("Steve Lorello")) //
-        .forEach(User$.ROLES.trimToRange(1L, -1L));
+        .forEach(User$.ROLES.trimToRange(1, -1));
 
     Optional<User> maybeSteve = userRepository.findFirstByName("Steve Lorello");
     assertTrue(maybeSteve.isPresent());
@@ -2400,7 +2400,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
   void testArrayInsertToNonIndexedTagFieldInDocuments() {
     entityStream.of(NiCompany.class) //
         .filter(NiCompany$.NAME.eq("Microsoft")) //
-        .forEach(NiCompany$.TAGS.insert("gaming", 2L));
+        .forEach(NiCompany$.TAGS.insert("gaming", 2));
 
     Optional<NiCompany> maybeMicrosoft = nicRepository.findFirstByName("Microsoft");
     assertTrue(maybeMicrosoft.isPresent());
@@ -2537,7 +2537,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
   void testArrayTrimToRangeOnNonIndexedTagFieldInDocuments() {
     entityStream.of(NiCompany.class) //
         .filter(NiCompany$.NAME.eq("Microsoft")) //
-        .forEach(NiCompany$.TAGS.trimToRange(1L, 1L));
+        .forEach(NiCompany$.TAGS.trimToRange(1, 1));
 
     Optional<NiCompany> maybeMicrosoft = nicRepository.findFirstByName("Microsoft");
     assertTrue(maybeMicrosoft.isPresent());
@@ -2550,7 +2550,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
   void testArrayTrimToRangeOnNonIndexedTagFieldInDocuments2() {
     entityStream.of(NiCompany.class) //
         .filter(NiCompany$.NAME.eq("Microsoft")) //
-        .forEach(NiCompany$.TAGS.trimToRange(0L, 0L));
+        .forEach(NiCompany$.TAGS.trimToRange(0, 0));
 
     Optional<NiCompany> maybeMicrosoft = nicRepository.findFirstByName("Microsoft");
     assertTrue(maybeMicrosoft.isPresent());
@@ -2563,7 +2563,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
   void testArrayTrimToRangeOnNonIndexedTagFieldInDocuments3() {
     entityStream.of(NiCompany.class) //
         .filter(NiCompany$.NAME.eq("Microsoft")) //
-        .forEach(NiCompany$.TAGS.trimToRange(1L, 2L));
+        .forEach(NiCompany$.TAGS.trimToRange(1, 2));
 
     Optional<NiCompany> maybeMicrosoft = nicRepository.findFirstByName("Microsoft");
     assertTrue(maybeMicrosoft.isPresent());
@@ -2576,7 +2576,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
   void testArrayTrimToRangeOnNonIndexedTagFieldInDocuments4() {
     entityStream.of(NiCompany.class) //
         .filter(NiCompany$.NAME.eq("Microsoft")) //
-        .forEach(NiCompany$.TAGS.trimToRange(1L, -1L));
+        .forEach(NiCompany$.TAGS.trimToRange(1, -1));
 
     Optional<NiCompany> maybeMicrosoft = nicRepository.findFirstByName("Microsoft");
     assertTrue(maybeMicrosoft.isPresent());

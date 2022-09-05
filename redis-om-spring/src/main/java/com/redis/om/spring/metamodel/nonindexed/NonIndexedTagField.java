@@ -22,12 +22,12 @@ public class NonIndexedTagField<E, T> extends MetamodelField<E, T> {
     return new ArrayAppendAction<>(field, value);
   }
 
-  public Consumer<? super E> insert(Object value, Long index) {
+  public Consumer<? super E> insert(Object value, int index) {
     return new ArrayInsertAction<>(field, value, index);
   }
 
   public Consumer<? super E> prepend(Object value) {
-    return new ArrayInsertAction<>(field, value, 0L);
+    return new ArrayInsertAction<>(field, value, 0);
   }
 
   public ToLongFunction<? super E> length() {
@@ -58,7 +58,7 @@ public class NonIndexedTagField<E, T> extends MetamodelField<E, T> {
     return pop(index);
   }
 
-  public Consumer<? super E> trimToRange(Long begin, Long end) {
+  public Consumer<? super E> trimToRange(int begin, int end) {
     return new ArrayTrimAction<>(field, begin, end);
   }
 

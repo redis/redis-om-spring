@@ -64,15 +64,11 @@ import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.EntityStreamImpl;
 
-import io.redisearch.FieldName;
-import io.redisearch.Schema;
-import io.redisearch.Schema.Field;
-import io.redisearch.Schema.FieldType;
-import io.redisearch.Schema.TagField;
-import io.redisearch.Schema.TextField;
-import io.redisearch.client.Client;
-import io.redisearch.client.Client.IndexOptions;
-import io.redisearch.client.IndexDefinition;
+import redis.clients.jedis.search.FieldName;
+import redis.clients.jedis.search.IndexDefinition;
+import redis.clients.jedis.search.IndexOptions;
+import redis.clients.jedis.search.Schema;
+import redis.clients.jedis.search.Schema.*;
 
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(RedisProperties.class)
@@ -256,7 +252,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
           }
 
           index.setPrefixes(entityPrefix);
-          IndexOptions ops = Client.IndexOptions.defaultOptions().setDefinition(index);
+          IndexOptions ops = IndexOptions.defaultOptions().setDefinition(index);
           opsForSearch.createIndex(schema, ops);
           keyspaceToIndexMap.addKeySpaceMapping(entityPrefix, cl, true);
         } else {
@@ -506,7 +502,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
       fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
     }
 
-    return new Field(fieldName, FieldType.Geo);
+    return new Field(fieldName, FieldType.GEO);
   }
 
   private Field indexAsNumericFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix,
@@ -521,18 +517,18 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
       fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
     }
 
-    return new Field(fieldName, FieldType.Numeric);
+    return new Field(fieldName, FieldType.NUMERIC);
   }
 
   private Field indexAsNumericFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix,
-      boolean sortable, boolean noIndex) {
+                                              boolean sortable, boolean noIndex) {
     String chain = (prefix == null || prefix.isBlank()) ? "" : prefix + ".";
     String fieldPrefix = isDocument ? "$." + chain : chain;
     FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
 
     fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
 
-    return new Field(fieldName, FieldType.Numeric, sortable, noIndex);
+    return new Field(fieldName, FieldType.NUMERIC, sortable, noIndex);
   }
 
   private Field indexAsGeoFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, boolean sortable,
@@ -543,7 +539,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
     fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
 
-    return new Field(fieldName, FieldType.Geo);
+    return new Field(fieldName, FieldType.GEO);
   }
 
   private List<Field> indexAsNestedFieldFor(java.lang.reflect.Field field, String prefix) {

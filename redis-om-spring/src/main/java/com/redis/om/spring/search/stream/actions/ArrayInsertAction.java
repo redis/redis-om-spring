@@ -3,14 +3,14 @@ package com.redis.om.spring.search.stream.actions;
 import java.lang.reflect.Field;
 import java.util.function.Consumer;
 
-import com.redislabs.modules.rejson.Path;
+import redis.clients.jedis.json.Path;
 
 public class ArrayInsertAction<E> extends BaseAbstractAction implements Consumer<E> {
   
   private Object value;
-  private Long index;
+  private int index;
 
-  public ArrayInsertAction(Field field, Object value, Long index) {
+  public ArrayInsertAction(Field field, Object value, int index) {
     super(field);
     this.value = value;
     this.index = index;

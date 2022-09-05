@@ -21,8 +21,7 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
-
-import io.redisearch.aggregation.SortedField.SortOrder;
+import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
 public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
 

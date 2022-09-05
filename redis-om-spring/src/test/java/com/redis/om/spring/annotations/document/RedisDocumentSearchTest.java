@@ -31,7 +31,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.MyDoc;
 import com.redis.om.spring.annotations.document.fixtures.MyDocRepository;
-import com.redislabs.modules.rejson.Path;
+import redis.clients.jedis.json.Path;
 
 import io.redisearch.AggregationResult;
 import io.redisearch.Document;

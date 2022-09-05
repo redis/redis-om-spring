@@ -3,9 +3,12 @@ package com.redis.om.spring.client;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 
 import com.google.gson.GsonBuilder;
-import com.redislabs.modules.rejson.JReJSON;
 
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.UnifiedJedis;
+import redis.clients.jedis.bloom.RedisBloomCommands;
+import redis.clients.jedis.json.RedisJsonCommands;
+import redis.clients.jedis.search.RediSearchCommands;
 
 public class RedisModulesClient {
 
@@ -13,22 +16,27 @@ public class RedisModulesClient {
     this.jedisConnectionFactory = jedisConnectionFactory;
   }
 
-  public JReJSON clientForJSON() {
-    return new JReJSON(getJedis());
-  }
+  public RedisJsonCommands clientForJSON() {
+    return getUnifiedJedis();
+  };
   
-  public JReJSON clientForJSON(GsonBuilder builder) {
-    JReJSON client = new JReJSON(getJedis());
-    client.setGsonBuilder(builder);
-    return client;
+  public RedisJsonCommands clientForJSON(GsonBuilder builder) {
+//    JReJSON client = new JReJSON(getJedis());
+//    client.setGsonBuilder(builder);
+//    return client;
+    return getUnifiedJedis(); // TODO: set Gson
+  };
+
+  public RediSearchCommands clientForSearch() {
+    return getUnifiedJedis();
   }
 
-  public io.redisearch.Client clientForSearch(String index) {
-    return new io.redisearch.client.Client(index, getJedis());
+  public RedisBloomCommands clientForBloom() {
+    return getUnifiedJedis();
   }
 
-  public io.rebloom.client.Client clientForBloom() {
-    return new io.rebloom.client.Client(getJedis());
+  public UnifiedJedis getUnifiedJedis() {
+    return new UnifiedJedis(getJedis().getConnection());
   }
 
   public Jedis getJedis() {

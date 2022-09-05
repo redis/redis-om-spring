@@ -18,10 +18,10 @@ import com.google.gson.GsonBuilder;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
-import com.redislabs.modules.rejson.JReJSON.ExistenceModifier;
-import com.redislabs.modules.rejson.Path;
 
 import redis.clients.jedis.exceptions.JedisDataException;
+import redis.clients.jedis.json.JsonSetParams;
+import redis.clients.jedis.json.Path;
 
 class OpsForJSONTest extends AbstractBaseDocumentTest {
 
@@ -176,7 +176,7 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     ops.set("obj", new IRLObject());
     Path p = Path.of(".str");
-    ops.set("obj", "strangle", ExistenceModifier.MUST_EXIST, p);
+    ops.set("obj", "strangle", JsonSetParams.jsonSetParams().xx(), p);
     assertEquals("strangle", ops.get("obj", String.class, p));
   }
 
@@ -184,7 +184,7 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
   void setWithoutAPathDefaultsToRootPath() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     ops.set("obj1", new IRLObject());
-    ops.set("obj1", "strangle", ExistenceModifier.MUST_EXIST);
+    ops.set("obj1", "strangle", JsonSetParams.jsonSetParams().xx());
     assertEquals("strangle", ops.get("obj1", String.class, Path.ROOT_PATH));
   }
 
@@ -262,10 +262,10 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
   void testArrayPop() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     ops.set("arr", new int[] { 0, 1, 2, 3, 4 }, Path.ROOT_PATH);
-    assertEquals(Long.valueOf(4L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, 4L));
-    assertEquals(Long.valueOf(3L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, -1L));
+    assertEquals(Long.valueOf(4L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, 4));
+    assertEquals(Long.valueOf(3L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, -1));
     assertEquals(Long.valueOf(2L), ops.arrPop("arr", Long.class, Path.ROOT_PATH));
-    assertEquals(Long.valueOf(0L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, 0L));
+    assertEquals(Long.valueOf(0L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, 0));
     assertEquals(Long.valueOf(1L), ops.arrPop("arr", Long.class));
   }
 

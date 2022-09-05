@@ -42,12 +42,10 @@ import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.TupleMapper;
 import com.redis.om.spring.util.ObjectUtils;
 
-import io.redisearch.Query;
-import io.redisearch.SearchResult;
-import io.redisearch.aggregation.SortedField;
-import io.redisearch.aggregation.SortedField.SortOrder;
-import io.redisearch.querybuilder.Node;
-import io.redisearch.querybuilder.QueryBuilder;
+import redis.clients.jedis.search.Query;
+import redis.clients.jedis.search.SearchResult;
+import redis.clients.jedis.search.aggr.SortedField;
+import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
 public class SearchStreamImpl<E> implements SearchStream<E> {
 
@@ -62,7 +60,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private JSONOperations<String> json;
   private String searchIndex;
   private Class<E> entityClass;
-  private Node rootNode = QueryBuilder.union();
+//  private Node rootNode = QueryBuilder.union();
   private static final Gson gson = GsonBuidlerFactory.getBuilder().create();
   private Optional<Long> limit = Optional.empty();
   private Optional<Long> skip = Optional.empty();
@@ -88,15 +86,15 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public SearchStream<E> filter(SearchFieldPredicate<? super E, ?> predicate) {
-    Node node = processPredicate(predicate);
-    rootNode = node;
+//    Node node = processPredicate(predicate);
+//    rootNode = node;
     return this;
   }
 
   @Override
   public SearchStream<E> filter(Predicate<?> predicate) {
-    Node node = processPredicate(predicate);
-    rootNode = node;
+//    Node node = processPredicate(predicate);
+//    rootNode = node;
     return this;
   }
 

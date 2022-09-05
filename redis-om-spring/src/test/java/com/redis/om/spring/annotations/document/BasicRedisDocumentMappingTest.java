@@ -29,7 +29,7 @@ import com.redis.om.spring.annotations.document.fixtures.CompanyRepository;
 import com.redis.om.spring.annotations.document.fixtures.Employee;
 import com.redis.om.spring.annotations.document.fixtures.Metadata;
 import com.redis.om.spring.annotations.document.fixtures.MetadataRepository;
-import com.redislabs.modules.rejson.Path;
+import redis.clients.jedis.json.Path;
 
 class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   @Autowired

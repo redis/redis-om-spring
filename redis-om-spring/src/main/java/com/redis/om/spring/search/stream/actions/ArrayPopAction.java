@@ -5,7 +5,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import com.redis.om.spring.util.ObjectUtils;
-import com.redislabs.modules.rejson.Path;
+import redis.clients.jedis.json.Path;
 
 public class ArrayPopAction<E, R> extends BaseAbstractAction implements Function<E, R> {
 

@@ -3,7 +3,7 @@ package com.redis.om.spring.search.stream.actions;
 import java.lang.reflect.Field;
 import java.util.function.Consumer;
 
-import com.redislabs.modules.rejson.Path;
+import redis.clients.jedis.json.Path;
 
 public class ArrayAppendAction<E> extends BaseAbstractAction implements Consumer<E> {
 

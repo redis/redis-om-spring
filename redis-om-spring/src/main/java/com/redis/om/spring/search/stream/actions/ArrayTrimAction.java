@@ -3,14 +3,14 @@ package com.redis.om.spring.search.stream.actions;
 import java.lang.reflect.Field;
 import java.util.function.Consumer;
 
-import com.redislabs.modules.rejson.Path;
+import redis.clients.jedis.json.Path;
 
 public class ArrayTrimAction<E> extends BaseAbstractAction implements Consumer<E> {
 
-  private Long begin;
-  private Long end;
+  private int begin;
+  private int end;
 
-  public ArrayTrimAction(Field field, Long begin, Long end) {
+  public ArrayTrimAction(Field field, int begin, int end) {
     super(field);
     this.begin = begin;
     this.end = end;
