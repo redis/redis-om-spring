@@ -14,6 +14,8 @@ import com.redis.om.spring.annotations.document.fixtures.ExpiringPersonRepositor
 import com.redis.om.spring.annotations.document.fixtures.ExpiringPersonWithDefault;
 import com.redis.om.spring.annotations.document.fixtures.ExpiringPersonWithDefaultRepository;
 
+import java.util.List;
+
 class DocumentTTLTests extends AbstractBaseDocumentTest {
   @Autowired
   ExpiringPersonWithDefaultRepository withDefaultrepository;
@@ -59,5 +61,51 @@ class DocumentTTLTests extends AbstractBaseDocumentTest {
     Long expire = withTTLwTimeUnitAnnotationRepository.getExpiration(jWilkinson.getId());
 
     assertThat(expire).isEqualTo(7L*24*60*60);
+  }
+
+  @Test
+  void testClassLevelDefaultTTLOnSaveAll() {
+    ExpiringPersonWithDefault gordon = ExpiringPersonWithDefault.of("Gordon Welchman");
+    ExpiringPersonWithDefault irineu = ExpiringPersonWithDefault.of("Irineu Evangelista de Sousa");
+
+    List<ExpiringPersonWithDefault> people = List.of(gordon, irineu);
+
+    withDefaultrepository.saveAll(people);
+
+    Long gordonExpiration = withDefaultrepository.getExpiration(gordon.getId());
+    Long irineuExpiration = withDefaultrepository.getExpiration(irineu.getId());
+
+    assertThat(gordonExpiration).isEqualTo(5L);
+    assertThat(irineuExpiration).isEqualTo(5L);
+  }
+
+  @Test
+  void testTimeToLiveAnnotationOnSaveAll() {
+    ExpiringPerson mWoodger = ExpiringPerson.of("Mike Woodger", 15L);
+    ExpiringPerson mPontes = ExpiringPerson.of("Marcos Pontes", 15L);
+    List<ExpiringPerson> people = List.of(mWoodger, mPontes);
+
+    withTTLAnnotationRepository.saveAll(people);
+
+    Long mWoodgerExpiration = withTTLAnnotationRepository.getExpiration(mWoodger.getId());
+    Long mPontesExpiration = withTTLAnnotationRepository.getExpiration(mPontes.getId());
+
+    assertThat(mWoodgerExpiration).isEqualTo(15L);
+    assertThat(mPontesExpiration).isEqualTo(15L);
+  }
+
+  @Test
+  void testTimeToLiveAnnotationWithDifferentTimeUnitOnSaveAll() {
+    ExpiringPersonDifferentTimeUnit jWilkinson = ExpiringPersonDifferentTimeUnit.of("Jim Wilkinson", 7L);
+    ExpiringPersonDifferentTimeUnit sDummont = ExpiringPersonDifferentTimeUnit.of("Santos Dummont", 7L);
+    List<ExpiringPersonDifferentTimeUnit> people = List.of(jWilkinson, sDummont);
+
+    withTTLwTimeUnitAnnotationRepository.saveAll(people);
+
+    Long jWilkinsonExpiration = withTTLwTimeUnitAnnotationRepository.getExpiration(jWilkinson.getId());
+    Long sDummontExpiration = withTTLwTimeUnitAnnotationRepository.getExpiration(sDummont.getId());
+
+    assertThat(jWilkinsonExpiration).isEqualTo(7L*24*60*60);
+    assertThat(sDummontExpiration).isEqualTo(7L*24*60*60);
   }
 }

@@ -1,17 +1,29 @@
 package com.redis.om.spring.repository.support;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import com.google.common.base.Optional;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.id.ULIDIdentifierGenerator;
 import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
+import com.redis.om.spring.util.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.PropertyAccessor;
+import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -20,8 +32,11 @@ import org.springframework.data.keyvalue.core.mapping.KeyValuePersistentEntity;
 import org.springframework.data.keyvalue.repository.support.SimpleKeyValueRepository;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SetOperations;
+import org.springframework.data.redis.core.TimeToLive;
+import org.springframework.data.redis.core.convert.KeyspaceConfiguration;
 import org.springframework.data.redis.core.convert.RedisData;
 import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
+import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.repository.core.EntityInformation;
 
 import com.redis.om.spring.KeyspaceToIndexMap;
@@ -31,6 +46,7 @@ import com.redis.om.spring.repository.RedisDocumentRepository;
 import com.redislabs.modules.rejson.Path;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.ReflectionUtils;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.commands.ProtocolCommand;
@@ -47,11 +63,14 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   protected MappingRedisOMConverter mappingConverter;
   private final ULIDIdentifierGenerator generator;
 
+  private RedisMappingContext mappingContext;
+
   @SuppressWarnings("unchecked")
   public SimpleRedisDocumentRepository(EntityInformation<T, ID> metadata, //
       KeyValueOperations operations, //
       @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo, //
-      KeyspaceToIndexMap keyspaceToIndexMap) {
+      KeyspaceToIndexMap keyspaceToIndexMap, //
+      RedisMappingContext mappingContext) {
     super(metadata, operations);
     this.modulesOperations = (RedisModulesOperations<String>)rmo;
     this.metadata = metadata;
@@ -61,6 +80,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
             new ReferenceResolverImpl(modulesOperations.getTemplate()));
     this.generator = ULIDIdentifierGenerator.INSTANCE;
     this.gson = this.gsonBuilder.create();
+    this.mappingContext = mappingContext;
   }
 
   @Override
@@ -124,13 +144,20 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       Pipeline pipeline = jedis.pipelined();
 
       for (S entity : entities) {
+        boolean isNew = metadata.isNew(entity);
+
         KeyValuePersistentEntity<?, ?> keyValueEntity = mappingConverter.getMappingContext().getRequiredPersistentEntity(ClassUtils.getUserClass(entity));
-        Object id = metadata.isNew(entity) ? generator.generateIdentifierOfType(keyValueEntity.getIdProperty().getTypeInformation()) : (String) keyValueEntity.getPropertyAccessor(entity).getProperty(keyValueEntity.getIdProperty());
+        Object id = isNew ? generator.generateIdentifierOfType(keyValueEntity.getIdProperty().getTypeInformation()) : (String) keyValueEntity.getPropertyAccessor(entity).getProperty(keyValueEntity.getIdProperty());
         keyValueEntity.getPropertyAccessor(entity).setProperty(keyValueEntity.getIdProperty(), id);
+
+        String keyspace = keyValueEntity.getKeySpace();
+        byte[] objectKey = createKey(keyspace, id.toString());
+
+        processAuditAnnotations(objectKey, entity, isNew);
+        Optional<Long> maybeTtl = getTTLForEntity(entity);
 
         RedisData rdo = new RedisData();
         mappingConverter.write(entity, rdo);
-        byte[] objectKey = createKey(rdo.getKeyspace(), id.toString());
 
         pipeline.sadd(rdo.getKeyspace(), id.toString());
 
@@ -139,6 +166,10 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
         args.add(SafeEncoder.encode(Path.ROOT_PATH.toString()));
         args.add(SafeEncoder.encode(this.gson.toJson(entity)));
         pipeline.sendCommand(Command.SET, args.toArray(new byte[args.size()][]));
+
+        if (maybeTtl.isPresent()) {
+          pipeline.expire(objectKey, maybeTtl.get());
+        }
 
         saved.add(entity);
       }
@@ -158,6 +189,60 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
   public byte[] createKey(String keyspace, String id) {
     return this.mappingConverter.toBytes(keyspace + ":" + id);
+  }
+
+  private boolean expires(RedisData data) {
+    return data.getTimeToLive() != null && data.getTimeToLive() > 0L;
+  }
+
+  private void processAuditAnnotations(byte[] redisKey, Object item, boolean isNew) {
+    var auditClass = isNew ? CreatedDate.class : LastModifiedDate.class;
+
+    List<Field> fields = com.redis.om.spring.util.ObjectUtils.getFieldsWithAnnotation(item.getClass(), auditClass);
+    if (!fields.isEmpty()) {
+      PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(item);
+      fields.forEach(f -> {
+        if (f.getType() == Date.class) {
+          accessor.setPropertyValue(f.getName(), new Date(System.currentTimeMillis()));
+        } else if (f.getType() == LocalDateTime.class) {
+          accessor.setPropertyValue(f.getName(), LocalDateTime.now());
+        } else if (f.getType() == LocalDate.class) {
+          accessor.setPropertyValue(f.getName(), LocalDate.now());
+        }
+      });
+    }
+  }
+
+  private Optional<Long> getTTLForEntity(Object entity) {
+    KeyspaceConfiguration keyspaceConfig = mappingContext.getMappingConfiguration().getKeyspaceConfiguration();
+    if (keyspaceConfig.hasSettingsFor(entity.getClass())) {
+      var settings = keyspaceConfig.getKeyspaceSettings(entity.getClass());
+
+      if (org.springframework.util.StringUtils.hasText(settings.getTimeToLivePropertyName())) {
+        Method ttlGetter;
+        try {
+          Field fld = ReflectionUtils.findField(entity.getClass(), settings.getTimeToLivePropertyName());
+          ttlGetter = ObjectUtils.getGetterForField(entity.getClass(), fld);
+          Long ttlPropertyValue = ((Number) ReflectionUtils.invokeMethod(ttlGetter, entity)).longValue();
+
+          ReflectionUtils.invokeMethod(ttlGetter, entity);
+
+          if (ttlPropertyValue != null) {
+            TimeToLive ttl = fld.getAnnotation(TimeToLive.class);
+            if (!ttl.unit().equals(TimeUnit.SECONDS)) {
+              return Optional.of(TimeUnit.SECONDS.convert(ttlPropertyValue, ttl.unit()));
+            } else {
+              return Optional.of(ttlPropertyValue);
+            }
+          }
+        } catch (SecurityException | IllegalArgumentException e) {
+          return Optional.absent();
+        }
+      } else if (settings != null && settings.getTimeToLive() != null && settings.getTimeToLive() > 0) {
+        return Optional.of(settings.getTimeToLive());
+      }
+    }
+    return Optional.absent();
   }
 
   private enum Command implements ProtocolCommand {

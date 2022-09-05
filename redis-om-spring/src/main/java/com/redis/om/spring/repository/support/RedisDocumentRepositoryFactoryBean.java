@@ -5,6 +5,7 @@ import com.redis.om.spring.ops.RedisModulesOperations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.repository.support.KeyValueRepositoryFactoryBean;
+import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
@@ -18,6 +19,8 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
   private @Nullable RedisModulesOperations<String> rmo;
   @Autowired
   private @Nullable KeyspaceToIndexMap keyspaceToIndexMap;
+  @Autowired
+  private @Nullable RedisMappingContext mappingContext;
 
   /**
    * Creates a new {@link RedisDocumentRepositoryFactoryBean} for the given repository
@@ -30,10 +33,11 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
   }
 
   @Override
-  protected final RedisDocumentRepositoryFactory createRepositoryFactory(KeyValueOperations operations,
-      Class<? extends AbstractQueryCreator<?, ?>> queryCreator, Class<? extends RepositoryQuery> repositoryQueryType) {
-
-    return new RedisDocumentRepositoryFactory(operations, rmo, keyspaceToIndexMap, queryCreator, repositoryQueryType);
+  protected final RedisDocumentRepositoryFactory createRepositoryFactory(
+          KeyValueOperations operations,
+          Class<? extends AbstractQueryCreator<?, ?>> queryCreator, Class<? extends RepositoryQuery> repositoryQueryType
+  ) {
+    return new RedisDocumentRepositoryFactory(operations, rmo, keyspaceToIndexMap, queryCreator, repositoryQueryType, this.mappingContext);
   }
 
   @Override
