@@ -218,8 +218,7 @@ class MetamodelGeneratorTest {
   @Classpath("data.metamodel.Address")
   void testValidDocumentIndexedNested(Results results) throws IOException {
     List<String> warnings = getWarningStrings(results);
-    assertThat(warnings).hasSize(1);
-    assertThat(warnings).containsOnly(
+    assertThat(warnings).hasSize(1).containsOnly(
         "Processing class ValidDocumentIndexedNested could not resolve valid.Address while checking for nested indexables");
 
     List<String> errors = getErrorStrings(results);
