@@ -7,11 +7,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import com.google.common.base.Optional;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
@@ -232,13 +232,13 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
             }
           }
         } catch (SecurityException | IllegalArgumentException e) {
-          return Optional.absent();
+          return Optional.empty();
         }
       } else if (settings != null && settings.getTimeToLive() != null && settings.getTimeToLive() > 0) {
         return Optional.of(settings.getTimeToLive());
       }
     }
-    return Optional.absent();
+    return Optional.empty();
   }
 
   private enum Command implements ProtocolCommand {
