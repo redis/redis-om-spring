@@ -9,6 +9,7 @@ import org.springframework.data.keyvalue.repository.query.KeyValuePartTreeQuery;
 import org.springframework.data.keyvalue.repository.query.SpelQueryCreator;
 import org.springframework.data.keyvalue.repository.support.KeyValueRepositoryFactory;
 import org.springframework.data.projection.ProjectionFactory;
+import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.repository.core.EntityInformation;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.RepositoryInformation;
@@ -37,6 +38,8 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
   private final RedisModulesOperations<?> rmo;
   private final KeyspaceToIndexMap keyspaceToIndexMap;
 
+  private RedisMappingContext mappingContext;
+
   /**
    * Creates a new {@link KeyValueRepositoryFactory} for the given
    * {@link KeyValueOperations} and {@link RedisModulesOperations}.
@@ -47,8 +50,9 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
   public RedisDocumentRepositoryFactory( //
       KeyValueOperations keyValueOperations, //
       RedisModulesOperations<?> rmo, //
-      KeyspaceToIndexMap keyspaceToIndexMap) {
-    this(keyValueOperations, rmo, keyspaceToIndexMap, DEFAULT_QUERY_CREATOR);
+      KeyspaceToIndexMap keyspaceToIndexMap, //
+      RedisMappingContext mappingContext) {
+    this(keyValueOperations, rmo, keyspaceToIndexMap, DEFAULT_QUERY_CREATOR, mappingContext);
   }
 
   /**
@@ -62,9 +66,10 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
       KeyValueOperations keyValueOperations, //
       RedisModulesOperations<?> rmo, //
       KeyspaceToIndexMap keyspaceToIndexMap, //
-      Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
+      Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
+      RedisMappingContext mappingContext) {
 
-    this(keyValueOperations, rmo, keyspaceToIndexMap, queryCreator, RediSearchQuery.class);
+    this(keyValueOperations, rmo, keyspaceToIndexMap, queryCreator, RediSearchQuery.class, mappingContext);
   }
 
   /**
@@ -80,7 +85,8 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
       RedisModulesOperations<?> rmo, //
       KeyspaceToIndexMap keyspaceToIndexMap, //
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
-      Class<? extends RepositoryQuery> repositoryQueryType) {
+      Class<? extends RepositoryQuery> repositoryQueryType, //
+      RedisMappingContext mappingContext ) {
 
     super(keyValueOperations, queryCreator, repositoryQueryType);
 
@@ -91,13 +97,15 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
     this.keyspaceToIndexMap = keyspaceToIndexMap;
     this.queryCreator = queryCreator;
     this.repositoryQueryType = repositoryQueryType;
+    this.mappingContext = mappingContext;
   }
 
   @Override
   protected Object getTargetRepository(RepositoryInformation repositoryInformation) {
-
     EntityInformation<?, ?> entityInformation = getEntityInformation(repositoryInformation.getDomainType());
-    return super.getTargetRepositoryViaReflection(repositoryInformation, entityInformation, keyValueOperations, rmo, keyspaceToIndexMap);
+    return super.getTargetRepositoryViaReflection(
+            repositoryInformation, entityInformation, keyValueOperations, rmo, keyspaceToIndexMap, mappingContext
+    );
   }
 
   @Override
