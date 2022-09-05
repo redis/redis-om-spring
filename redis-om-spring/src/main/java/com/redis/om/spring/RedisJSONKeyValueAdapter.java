@@ -121,6 +121,10 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     byte[] binKeyspace = toBytes(keyspace);
     Set<byte[]> ids = redisOperations
         .execute((RedisCallback<Set<byte[]>>) connection -> connection.sMembers(binKeyspace));
+    
+    if (ids == null || ids.isEmpty()) {
+      return Collections.emptyList();
+    }
 
     String[] keys = ids.stream().map(b -> getKey(keyspace, new String(b, StandardCharsets.UTF_8)))
         .toArray(String[]::new);
