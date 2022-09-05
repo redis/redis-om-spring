@@ -191,10 +191,6 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     return this.mappingConverter.toBytes(keyspace + ":" + id);
   }
 
-  private boolean expires(RedisData data) {
-    return data.getTimeToLive() != null && data.getTimeToLive() > 0L;
-  }
-
   private void processAuditAnnotations(byte[] redisKey, Object item, boolean isNew) {
     var auditClass = isNew ? CreatedDate.class : LastModifiedDate.class;
 
