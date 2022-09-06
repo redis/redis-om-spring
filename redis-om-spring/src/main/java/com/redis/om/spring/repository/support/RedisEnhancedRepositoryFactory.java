@@ -50,6 +50,9 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
    * {@link KeyValueOperations}.
    *
    * @param keyValueOperations must not be {@literal null}.
+   * @param redisOperations  must not be {@literal null}.
+   * @param rmo must not be {@literal null}.
+   * @param keyspaceToIndexMap must not be {@literal null}.
    */
   public RedisEnhancedRepositoryFactory( //
       KeyValueOperations keyValueOperations, //
@@ -64,7 +67,10 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
    * {@link KeyValueOperations} and {@link AbstractQueryCreator}-type.
    *
    * @param keyValueOperations must not be {@literal null}.
-   * @param queryCreator       must not be {@literal null}.
+   * @param redisOperations must not be {@literal null}.
+   * @param rmo must not be {@literal null}.
+   * @param keyspaceToIndexMap must not be {@literal null}.
+   * @param queryCreator must not be {@literal null}.
    */
   public RedisEnhancedRepositoryFactory( //
                                          KeyValueOperations keyValueOperations, //
@@ -80,10 +86,12 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
    * Creates a new {@link KeyValueRepositoryFactory} for the given
    * {@link KeyValueOperations} and {@link AbstractQueryCreator}-type.
    *
-   * @param keyValueOperations  must not be {@literal null}.
-   * @param queryCreator        must not be {@literal null}.
+   * @param keyValueOperations must not be {@literal null}.
+   * @param redisOperations must not be {@literal null}.
+   * @param rmo must not be {@literal null}.
+   * @param keyspaceToIndexMap must not be {@literal null}.
+   * @param queryCreator must not be {@literal null}.
    * @param repositoryQueryType must not be {@literal null}.
-   * @since 1.1
    */
   public RedisEnhancedRepositoryFactory( //
                                          KeyValueOperations keyValueOperations, //

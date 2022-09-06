@@ -163,7 +163,7 @@ public @interface EnableRedisDocumentRepositories {
    * used for keyspace event subscriptions. Defaults to use an anonymous managed instance by
    * {@link org.springframework.data.redis.core.RedisKeyValueAdapter}.
    *
-   * @return
+   * @return the messageListenerContainerRef
    * @since 2.7.2
    */
   String messageListenerContainerRef() default "";

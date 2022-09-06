@@ -162,8 +162,7 @@ public @interface EnableRedisEnhancedRepositories {
    * used for keyspace event subscriptions. Defaults to use an anonymous managed instance by
    * {@link org.springframework.data.redis.core.RedisKeyValueAdapter}.
    *
-   * @return
-   * @since 2.7.2
+   * @return the messageListenerContainerRef
    */
   String messageListenerContainerRef() default "";
 

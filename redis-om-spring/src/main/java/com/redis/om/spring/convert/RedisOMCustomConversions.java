@@ -38,7 +38,7 @@ public class RedisOMCustomConversions extends RedisCustomConversions {
   /**
    * Creates a new {@link RedisCustomConversions} instance registering the given converters.
    *
-   * @param converters
+   * @param converters a list of converted to be added to the base list
    */
   public RedisOMCustomConversions(List<?> converters) {
     super(omConverters);

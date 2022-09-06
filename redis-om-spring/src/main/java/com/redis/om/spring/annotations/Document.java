@@ -29,7 +29,7 @@ public @interface Document {
   double score() default 1.0; 
   
   /**
-   * Time before expire in seconds. Superseded by {@link TimeToLive}.
+   * Time before expire in seconds.
    *
    * @return positive number when expiration should be applied.
    */

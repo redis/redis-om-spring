@@ -17,7 +17,7 @@ public class Sort extends org.springframework.data.domain.Sort {
    *
    * @param direction must not be {@literal null}.
    * @param fields must not be {@literal null}.
-   * @return
+   * @return a Spring Sort object
    */
   public static org.springframework.data.domain.Sort by(Direction direction, MetamodelField<?, ?>... fields) {
     String[] properties = Arrays.asList(fields).stream().map(metamodel ->  metamodel.getField().getName()).toArray(String[]::new);
