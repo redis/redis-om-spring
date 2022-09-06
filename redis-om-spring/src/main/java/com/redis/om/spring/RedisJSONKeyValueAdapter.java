@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -29,7 +30,6 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
-import com.google.common.base.Optional;
 import com.redis.om.spring.convert.RedisOMCustomConversions;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.util.ObjectUtils;
@@ -57,7 +57,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   }
 
   /* (non-Javadoc)
-   * 
+   *
    * @see
    * org.springframework.data.keyvalue.core.KeyValueAdapter#put(java.lang.Object,
    * java.lang.Object, java.lang.String) */
@@ -87,7 +87,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   }
 
   /* (non-Javadoc)
-   * 
+   *
    * @see
    * org.springframework.data.keyvalue.core.KeyValueAdapter#get(java.lang.Object,
    * java.lang.String, java.lang.Class) */
@@ -121,6 +121,10 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     byte[] binKeyspace = toBytes(keyspace);
     Set<byte[]> ids = redisOperations
         .execute((RedisCallback<Set<byte[]>>) connection -> connection.sMembers(binKeyspace));
+    
+    if (ids == null || ids.isEmpty()) {
+      return Collections.emptyList();
+    }
 
     String[] keys = ids.stream().map(b -> getKey(keyspace, new String(b, StandardCharsets.UTF_8)))
         .toArray(String[]::new);
@@ -185,12 +189,12 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
             }
           }
         } catch (SecurityException | IllegalArgumentException e) {
-          return Optional.absent();
+          return Optional.empty();
         }
       } else if (settings != null && settings.getTimeToLive() != null && settings.getTimeToLive() > 0) {
         return Optional.of(settings.getTimeToLive());
       }
     }
-    return Optional.absent();
+    return Optional.empty();
   }
 }
