@@ -46,6 +46,8 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
    *
    * @param keyValueOperations must not be {@literal null}.
    * @param rmo                must not be {@literal null}.
+   * @param keyspaceToIndexMap must not be {@literal null}.
+   * @param mappingContext     must not be {@literal null}.
    */
   public RedisDocumentRepositoryFactory( //
       KeyValueOperations keyValueOperations, //
@@ -60,7 +62,10 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
    * {@link KeyValueOperations} and {@link AbstractQueryCreator}-type.
    *
    * @param keyValueOperations must not be {@literal null}.
-   * @param queryCreator       must not be {@literal null}.
+   * @param rmo must not be {@literal null}.
+   * @param keyspaceToIndexMap must not be {@literal null}.
+   * @param queryCreator must not be {@literal null}.
+   * @param mappingContext must not be {@literal null}.
    */
   public RedisDocumentRepositoryFactory( //
       KeyValueOperations keyValueOperations, //
@@ -76,9 +81,12 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
    * Creates a new {@link KeyValueRepositoryFactory} for the given
    * {@link KeyValueOperations} and {@link AbstractQueryCreator}-type.
    *
-   * @param keyValueOperations  must not be {@literal null}.
-   * @param queryCreator        must not be {@literal null}.
+   * @param keyValueOperations must not be {@literal null}.
+   * @param rmo must not be {@literal null}.
+   * @param keyspaceToIndexMap must not be {@literal null}.
+   * @param queryCreator must not be {@literal null}.
    * @param repositoryQueryType must not be {@literal null}.
+   * @param mappingContext must not be {@literal null}.
    */
   public RedisDocumentRepositoryFactory( //
       KeyValueOperations keyValueOperations, // 

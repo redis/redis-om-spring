@@ -16,7 +16,7 @@ public interface RedisDocumentRepository<T, ID> extends KeyValueRepository<T, ID
   /**
    * Returns a {@link Page} of entities meeting the paging restriction provided in the {@code Pageable} object.
    *
-   * @param pageable
+   * @param pageable encapsulates pagination information
    * @return a page of entities
    */
   Page<ID> getIds(Pageable pageable);

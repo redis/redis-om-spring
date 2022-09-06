@@ -32,6 +32,9 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
    * interface.
    *
    * @param repositoryInterface must not be {@literal null}.
+   * @param redisOperations must not be {@literal null}.
+   * @param rmo must not be {@literal null}.
+   * @param keyspaceToIndexMap must not be {@literal null}.
    */
   public RedisEnhancedRepositoryFactoryBean(Class<? extends T> repositoryInterface,
       RedisOperations<?, ?> redisOperations, RedisModulesOperations<?> rmo, KeyspaceToIndexMap keyspaceToIndexMap) {

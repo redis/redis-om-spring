@@ -99,7 +99,6 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
    * {@link RedisMappingContext} when {@literal null}.
    *
    * @param mappingContext    can be {@literal null}.
-   * @param indexResolver     can be {@literal null}.
    * @param referenceResolver can be not be {@literal null}.
    */
   public MappingRedisOMConverter(@Nullable RedisMappingContext mappingContext,
@@ -112,7 +111,6 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
    * {@link RedisMappingContext} when {@literal null}.
    *
    * @param mappingContext    can be {@literal null}.
-   * @param indexResolver     can be {@literal null}.
    * @param referenceResolver can be {@literal null}.
    * @param typeMapper        can be {@literal null}.
    */
@@ -987,9 +985,9 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
    * Convert given source to binary representation using the underlying
    * {@link ConversionService}.
    *
-   * @param source
-   * @return
-   * @throws ConverterNotFoundException
+   * @param source the source object
+   * @return a byte array representation
+   * @throws ConverterNotFoundException if a specific converter cannot be found
    */
   public byte[] toBytes(Object source) {
 
@@ -1004,10 +1002,11 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
    * Convert given binary representation to desired target type using the
    * underlying {@link ConversionService}.
    *
-   * @param source
-   * @param type
-   * @return
-   * @throws ConverterNotFoundException
+   * @param <T> expected type of the source object
+   * @param source  the source object
+   * @param type the class to cast the object to
+   * @return the target object
+   * @throws ConverterNotFoundException if a specific converter cannot be found
    */
   public <T> T fromBytes(byte[] source, Class<T> type) {
 
@@ -1055,7 +1054,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
   /**
    * Set {@link CustomConversions} to be applied.
    *
-   * @param customConversions
+   * @param customConversions custom convertions to be added to the pipeline
    */
   public void setCustomConversions(@Nullable CustomConversions customConversions) {
     this.customConversions = customConversions != null ? customConversions : new RedisCustomConversions();

@@ -86,6 +86,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * {@link RedisMappingContext} and default {@link RedisCustomConversions}.
    *
    * @param redisOps must not be {@literal null}.
+   * @param rmo must not be {@literal null}.
+   * @param keyspaceToIndexMap must not be {@literal null}.
    */
   public RedisEnhancedKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisModulesOperations<?> rmo,
       KeyspaceToIndexMap keyspaceToIndexMap) {
@@ -96,8 +98,10 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * Creates new {@link RedisKeyValueAdapter} with default
    * {@link RedisCustomConversions}.
    *
-   * @param redisOps       must not be {@literal null}.
+   * @param redisOps must not be {@literal null}.
+   * @param rmo must not be {@literal null}.
    * @param mappingContext must not be {@literal null}.
+   * @param keyspaceToIndexMap must not be {@literal null}.
    */
   public RedisEnhancedKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisModulesOperations<?> rmo,
       RedisMappingContext mappingContext, KeyspaceToIndexMap keyspaceToIndexMap) {
@@ -107,10 +111,11 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   /**
    * Creates new {@link RedisKeyValueAdapter}.
    *
-   * @param redisOps          must not be {@literal null}.
-   * @param mappingContext    must not be {@literal null}.
+   * @param redisOps  must not be {@literal null}.
+   * @param rmo must not be {@literal null}.
+   * @param mappingContext  must not be {@literal null}.
    * @param customConversions can be {@literal null}.
-   * @since 2.0
+   * @param keyspaceToIndexMap must not be {@literal null}.
    */
   @SuppressWarnings("unchecked")
   public RedisEnhancedKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisModulesOperations<?> rmo,
@@ -254,9 +259,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * @param type     the desired target type.
    * @param offset   index value to start reading.
    * @param rows     maximum number or entities to return.
-   * @param <T>
+   * @param <T>      type of entity
    * @return never {@literal null}.
-   * @since 2.5
    */
   @Override
   public <T> List<T> getAllOf(String keyspace, Class<T> type, long offset, int rows) {
