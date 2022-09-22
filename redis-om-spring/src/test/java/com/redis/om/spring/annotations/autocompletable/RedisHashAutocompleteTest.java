@@ -13,8 +13,6 @@ import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
 import com.redis.om.spring.annotations.hash.fixtures.Person;
 import com.redis.om.spring.annotations.hash.fixtures.PersonRepository;
 
-import io.redisearch.Suggestion;
-
 class RedisHashAutocompleteTest extends AbstractBaseEnhancedRedisTest {
   @Autowired
   PersonRepository repository;
@@ -42,8 +40,9 @@ class RedisHashAutocompleteTest extends AbstractBaseEnhancedRedisTest {
   
   @Test
   void testBasicAutocomplete() {
-    List<Suggestion> suggestions = repository.autoCompleteEmail("gu");
-    List<String> suggestionsString = suggestions.stream().map(Suggestion::getString).collect(Collectors.toList());
+//    List<Suggestion> suggestions = repository.autoCompleteEmail("gu");
+//    List<String> suggestionsString = suggestions.stream().map(Suggestion::getString).collect(Collectors.toList());
+    List<String> suggestionsString = repository.autoCompleteEmail("gu");
     assertThat(suggestionsString).containsAll(List.of("guy.royse@redis.com", "guy.korland@redis.com"));
   }
 }

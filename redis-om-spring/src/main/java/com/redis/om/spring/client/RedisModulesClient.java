@@ -6,7 +6,7 @@ import com.google.gson.GsonBuilder;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.UnifiedJedis;
-import redis.clients.jedis.bloom.RedisBloomCommands;
+import redis.clients.jedis.bloom.commands.RedisBloomCommands;
 import redis.clients.jedis.json.RedisJsonCommands;
 import redis.clients.jedis.search.RediSearchCommands;
 

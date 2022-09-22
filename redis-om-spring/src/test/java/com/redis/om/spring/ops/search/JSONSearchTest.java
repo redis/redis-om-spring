@@ -19,19 +19,13 @@ import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 
-import io.redisearch.AggregationResult;
-import io.redisearch.Document;
-import io.redisearch.FieldName;
-import io.redisearch.Query;
-import io.redisearch.Schema;
-import io.redisearch.Schema.Field;
-import io.redisearch.Schema.FieldType;
-import io.redisearch.Schema.TextField;
-import io.redisearch.SearchResult;
-import io.redisearch.aggregation.AggregationBuilder;
-import io.redisearch.aggregation.Row;
-import io.redisearch.client.Client;
-import io.redisearch.client.IndexDefinition;
+import redis.clients.jedis.search.*;
+import redis.clients.jedis.search.Schema.Field;
+import redis.clients.jedis.search.Schema.FieldType;
+import redis.clients.jedis.search.Schema.TextField;
+import redis.clients.jedis.search.aggr.AggregationBuilder;
+import redis.clients.jedis.search.aggr.AggregationResult;
+import redis.clients.jedis.search.aggr.Row;
 import redis.clients.jedis.exceptions.JedisDataException;
 
 class JSONSearchTest extends AbstractBaseDocumentTest {
@@ -70,10 +64,10 @@ class JSONSearchTest extends AbstractBaseDocumentTest {
     // FT.CREATE idx ON JSON SCHEMA $.title AS title TEXT $.tag[*] AS tag TAG
     Schema sc = new Schema() //
         .addField(new TextField(FieldName.of("$.title").as("title"))) //
-        .addField(new Field(FieldName.of("$.tag[*]").as("tag"), FieldType.Tag));
+        .addField(new Field(FieldName.of("$.tag[*]").as("tag"), FieldType.TAG));
 
     IndexDefinition def = new IndexDefinition(IndexDefinition.Type.JSON);
-    ops.createIndex(sc, Client.IndexOptions.defaultOptions().setDefinition(def));
+    ops.createIndex(sc, IndexOptions.defaultOptions().setDefinition(def));
 
     if (!template.hasKey("doc1")) {
       JSONOperations<String> json = modulesOperations.opsForJSON();
@@ -96,8 +90,8 @@ class JSONSearchTest extends AbstractBaseDocumentTest {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
 
     SearchResult result = ops.search(new Query("@title:hello @tag:{news}"));
-    assertEquals(1, result.totalResults);
-    Document doc = result.docs.get(0);
+    assertEquals(1, result.getTotalResults());
+    Document doc = result.getDocuments().get(0);
     assertEquals(1.0, doc.getScore(), 0);
     assertNull(doc.getPayload());
     assertEquals("{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}", doc.get("$"));
@@ -114,8 +108,8 @@ class JSONSearchTest extends AbstractBaseDocumentTest {
   void testSearchOverJSONWithPathProjection() {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
     SearchResult result = ops.search(new Query("*").returnFields("$.tag[0]", "AS", "first_tag"));
-    assertEquals(1, result.totalResults);
-    Document doc = result.docs.get(0);
+    assertEquals(1, result.getTotalResults());
+    Document doc = result.getDocuments().get(0);
     assertEquals(1.0, doc.getScore(), 0);
     assertNull(doc.getPayload());
     assertTrue(StreamSupport //
@@ -137,7 +131,7 @@ class JSONSearchTest extends AbstractBaseDocumentTest {
 
     // actual search
     AggregationResult result = ops.aggregate(aggregation);
-    assertEquals(1, result.totalResults);
+    assertEquals(1, result.getTotalResults());
     Row row = result.getRow(0);
     assertNotNull(row);
     assertTrue(row.containsKey("tag2"));

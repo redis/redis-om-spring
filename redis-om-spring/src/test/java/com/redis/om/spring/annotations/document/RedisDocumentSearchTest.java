@@ -33,10 +33,10 @@ import com.redis.om.spring.annotations.document.fixtures.MyDoc;
 import com.redis.om.spring.annotations.document.fixtures.MyDocRepository;
 import redis.clients.jedis.json.Path;
 
-import io.redisearch.AggregationResult;
-import io.redisearch.Document;
-import io.redisearch.SearchResult;
-import io.redisearch.aggregation.Row;
+import redis.clients.jedis.search.aggr.AggregationResult;
+import redis.clients.jedis.search.Document;
+import redis.clients.jedis.search.SearchResult;
+import redis.clients.jedis.search.aggr.Row;
 
 class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   @Autowired
@@ -111,8 +111,8 @@ class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   @Test
   void testQueryAnnotation01() {
     SearchResult result = repository.getFirstTag();
-    assertEquals(2, result.totalResults);
-    Document doc = result.docs.get(0);
+    assertEquals(2, result.getTotalResults());
+    Document doc = result.getDocuments().get(0);
     assertEquals(1.0, doc.getScore(), 0);
     assertNull(doc.getPayload());
     assertTrue(StreamSupport //
@@ -151,7 +151,7 @@ class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   @Test
   void testAggregationAnnotation01() {
     AggregationResult result = repository.getSecondTagWithAggregation();
-    assertEquals(1, result.totalResults);
+    assertEquals(1, result.getTotalResults());
     Row row = result.getRow(0);
     assertNotNull(row);
     assertTrue(row.containsKey("tag2"));

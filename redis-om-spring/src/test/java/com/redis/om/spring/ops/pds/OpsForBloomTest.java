@@ -14,12 +14,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.ops.RedisModulesOperations;
 
+import org.springframework.data.redis.core.RedisTemplate;
 import redis.clients.jedis.bloom.BFInsertParams;
 import redis.clients.jedis.exceptions.JedisDataException;
 
 class OpsForBloomTest extends AbstractBaseDocumentTest {
   @Autowired
   RedisModulesOperations<String> modulesOperations;
+
+  @Autowired
+  RedisTemplate<String, String> template;
 
   BloomOperations<String> bloom;
 
@@ -46,7 +50,8 @@ class OpsForBloomTest extends AbstractBaseDocumentTest {
 //    // All items except the last one will be 'true'
 //    assertThat(Arrays.toString(new boolean[] { true, true, true, true, true, false })).isEqualTo(Arrays.toString(rv));
 
-    bloom.delete("simpleBloom");
+//    bloom.delete("simpleBloom");
+    template.delete("simpleBloom");
   }
 
 //  @Test
@@ -79,14 +84,16 @@ class OpsForBloomTest extends AbstractBaseDocumentTest {
     });
 
     Assertions.assertEquals("ERR not found", exception.getMessage());
-    bloom.delete("bfexpansion");
+//    bloom.delete("bfexpansion");
+    template.delete("bfexpansion");
   }
 
   @Test
   void reserveExpansion() {
     assertThat(bloom.insert("bfexpansion2", BFInsertParams.insertParams().capacity(1000), "a", "b", "c"))
         .isEqualTo(new boolean[] { true, true, true });
-    bloom.delete("bfexpansion2");
+//    bloom.delete("bfexpansion2");
+    template.delete("bfexpansion2");
   }
 
   @Test

@@ -12,8 +12,8 @@ import com.redis.om.spring.annotations.Aggregation;
 import com.redis.om.spring.annotations.Query;
 import com.redis.om.spring.repository.RedisDocumentRepository;
 
-import io.redisearch.AggregationResult;
-import io.redisearch.SearchResult;
+import redis.clients.jedis.search.aggr.AggregationResult;
+import redis.clients.jedis.search.SearchResult;
 
 public interface MyDocRepository extends RedisDocumentRepository<MyDoc, String>, MyDocQueries {
   /**

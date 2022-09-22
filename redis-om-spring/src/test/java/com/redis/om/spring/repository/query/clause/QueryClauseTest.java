@@ -9,17 +9,17 @@ import org.springframework.data.geo.Metrics;
 import org.springframework.data.geo.Point;
 import org.springframework.data.repository.query.parser.Part;
 
-import io.redisearch.Schema.FieldType;
+import redis.clients.jedis.search.Schema.FieldType;
 
 class QueryClauseTest {
 
   @Test
   void testItShouldFindTheClauseByFieldTypeandPartType() {
-    assertEquals(QueryClause.get(FieldType.FullText, Part.Type.SIMPLE_PROPERTY), QueryClause.FullText_SIMPLE_PROPERTY);
-    assertEquals(QueryClause.get(FieldType.Numeric, Part.Type.SIMPLE_PROPERTY), QueryClause.Numeric_SIMPLE_PROPERTY);
-    assertEquals(QueryClause.get(FieldType.Numeric, Part.Type.BETWEEN), QueryClause.Numeric_BETWEEN);
-    assertEquals(QueryClause.get(FieldType.Geo, Part.Type.NEAR), QueryClause.Geo_NEAR);
-    assertEquals(QueryClause.get(FieldType.Tag, Part.Type.SIMPLE_PROPERTY), QueryClause.Tag_SIMPLE_PROPERTY);
+    assertEquals(QueryClause.get(FieldType.TEXT, Part.Type.SIMPLE_PROPERTY), QueryClause.FullText_SIMPLE_PROPERTY);
+    assertEquals(QueryClause.get(FieldType.NUMERIC, Part.Type.SIMPLE_PROPERTY), QueryClause.Numeric_SIMPLE_PROPERTY);
+    assertEquals(QueryClause.get(FieldType.NUMERIC, Part.Type.BETWEEN), QueryClause.Numeric_BETWEEN);
+    assertEquals(QueryClause.get(FieldType.GEO, Part.Type.NEAR), QueryClause.Geo_NEAR);
+    assertEquals(QueryClause.get(FieldType.TAG, Part.Type.SIMPLE_PROPERTY), QueryClause.Tag_SIMPLE_PROPERTY);
   }
 
   @Test

@@ -5,10 +5,10 @@ import java.util.List;
 
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 
-import io.redisearch.querybuilder.Node;
-import io.redisearch.querybuilder.QueryBuilder;
-import io.redisearch.querybuilder.QueryNode;
-import io.redisearch.querybuilder.Values;
+import redis.clients.jedis.search.querybuilder.Node;
+import redis.clients.jedis.search.querybuilder.QueryBuilders;
+import redis.clients.jedis.search.querybuilder.QueryNode;
+import redis.clients.jedis.search.querybuilder.Values;
 
 public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
@@ -25,7 +25,7 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
-    QueryNode or = QueryBuilder.union();
+    QueryNode or = QueryBuilders.union();
 
     Class<?> cls = values.get(0).getClass();
 
@@ -37,7 +37,7 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
       }
     }
 
-    return QueryBuilder.intersect(root, or);
+    return QueryBuilders.intersect(root, or);
   }
 
 }

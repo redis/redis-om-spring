@@ -3,6 +3,7 @@ package com.redis.om.spring.ops.search;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.redis.om.spring.client.RedisModulesClient;
@@ -112,50 +113,33 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
   }
 
   @Override
-  public boolean addAlias(String name) {
-    return client.addAlias(name);
+  public String addAlias(String name) {
+    return client.ftAliasAdd(indexName, name);
   }
 
   @Override
-  public boolean updateAlias(String name) {
-    return client.updateAlias(name);
+  public String updateAlias(String name) {
+    return client.ftAliasUpdate(indexName, name);
   }
 
   @Override
-  public boolean deleteAlias(String name) {
-    return client.deleteAlias(name);
+  public String deleteAlias(String name) {
+    return client.ftAliasDel(name);
   }
 
   @Override
-  public boolean updateSynonym(String synonymGroupId, String... terms) {
-    return client.updateSynonym(synonymGroupId, terms);
+  public String updateSynonym(String synonymGroupId, String... terms) {
+    return client.ftSynUpdate(indexName, synonymGroupId, terms);
   }
 
   @Override
   public Map<String, List<String>> dumpSynonym() {
-    return client.dumpSynonym();
+    return client.ftSynDump(indexName);
   }
 
   @Override
-  public List<String> tagVals(String field) {
-    ArrayList<byte[]> args = new ArrayList<>();
-    args.add(SafeEncoder.encode(index.toString()));
-    args.add(SafeEncoder.encode(field));
-
-    List<String> result = List.of();
-
-    try (Jedis conn = client.connection()) {
-      BinaryClient bc = conn.getClient();
-      bc.sendCommand(Command.FT_TAGVALS, args.toArray(new byte[args.size()][]));
-      List<Object> resp = bc.getObjectMultiBulkReply();
-
-      result = resp.stream() //
-          .map(x -> x instanceof Long ? String.valueOf(x) : SafeEncoder.encode((byte[]) x)) //
-          .collect(Collectors.toList());
-    }
-
-    return result;
-
+  public Set<String> tagVals(String field) {
+    return client.ftTagVals(indexName, field);
   }
 
 }

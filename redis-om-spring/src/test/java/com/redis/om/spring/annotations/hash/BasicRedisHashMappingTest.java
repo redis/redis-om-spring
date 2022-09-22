@@ -41,7 +41,7 @@ import com.redis.om.spring.annotations.hash.fixtures.Person;
 import com.redis.om.spring.annotations.hash.fixtures.PersonRepository;
 import com.redis.om.spring.repository.query.QueryUtils;
 
-import io.redisearch.AggregationResult;
+import redis.clients.jedis.search.aggr.AggregationResult;
 
 class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   static Person john;

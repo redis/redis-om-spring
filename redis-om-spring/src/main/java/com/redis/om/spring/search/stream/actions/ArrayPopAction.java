@@ -9,9 +9,9 @@ import redis.clients.jedis.json.Path;
 
 public class ArrayPopAction<E, R> extends BaseAbstractAction implements Function<E, R> {
 
-  private Long index;
+  private Integer index;
 
-  public ArrayPopAction(Field field, Long index) {
+  public ArrayPopAction(Field field, Integer index) {
     super(field);
     this.index = index;
   }

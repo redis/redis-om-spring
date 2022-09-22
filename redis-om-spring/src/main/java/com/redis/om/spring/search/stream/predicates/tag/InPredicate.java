@@ -8,8 +8,8 @@ import java.util.stream.Collectors;
 import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 
-import io.redisearch.querybuilder.Node;
-import io.redisearch.querybuilder.QueryBuilder;
+import redis.clients.jedis.search.querybuilder.Node;
+import redis.clients.jedis.search.querybuilder.QueryBuilders;
 
 public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
@@ -31,6 +31,6 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
       sj.add(value.toString());
     }
 
-    return QueryBuilder.intersect(root).add(getField().getName(), "{" + sj.toString() + "}");
+    return QueryBuilders.intersect(root).add(getField().getName(), "{" + sj.toString() + "}");
   }
 }

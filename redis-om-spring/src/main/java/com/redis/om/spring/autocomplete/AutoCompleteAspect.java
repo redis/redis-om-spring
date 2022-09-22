@@ -31,8 +31,6 @@ import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
 
-import io.redisearch.Suggestion;
-
 @Aspect
 @Component
 public class AutoCompleteAspect implements Ordered {
@@ -162,7 +160,8 @@ public class AutoCompleteAspect implements Ordered {
     
     for (Field field : entity.getClass().getDeclaredFields()) {
       if (field.isAnnotationPresent(AutoComplete.class)) {
-        Suggestion.Builder builder = Suggestion.builder();
+        // Suggestion.Builder builder = Suggestion.builder();
+        String suggestionString = null;
         Map<String,Object> payload = null;
         
         AutoComplete suggestable = field.getAnnotation(AutoComplete.class);
@@ -170,7 +169,8 @@ public class AutoCompleteAspect implements Ordered {
         SearchOperations<String> ops = rmo.opsForSearch(key);
         try {
           PropertyDescriptor pd = new PropertyDescriptor(field.getName(), entity.getClass());
-          builder.str(pd.getReadMethod().invoke(entity).toString());
+          // builder.str(pd.getReadMethod().invoke(entity).toString());
+          suggestionString = pd.getReadMethod().invoke(entity).toString();
         } catch (IllegalArgumentException | IntrospectionException | IllegalAccessException | InvocationTargetException e) {
           e.printStackTrace();
         }
@@ -193,11 +193,9 @@ public class AutoCompleteAspect implements Ordered {
             }
           }
         }
-        if (payload != null && !payload.isEmpty()) {   
-          builder.payload(gson.toJson(payload));
-        }
         
-        ops.addSuggestion(builder.build(), false);
+        // ops.addSuggestion(builder.build(), false);
+        ops.addSuggestion(suggestionString);
       } 
     }
   }

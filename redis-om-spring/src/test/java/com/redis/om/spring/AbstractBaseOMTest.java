@@ -45,9 +45,10 @@ public class AbstractBaseOMTest {
   }
 
   protected void flushSearchIndexFor(Class<?> entityClass) {
-    SearchOperations<String> searchOps = modulesOperations.opsForSearch(entityClass.getName() + "Idx");
-    Set<String> docKeys = template.keys(String.format("%s:*", entityClass.getName()));
-    searchOps.deleteDocuments(false, docKeys.toArray(String[]::new));
+//    SearchOperations<String> searchOps = modulesOperations.opsForSearch(entityClass.getName() + "Idx");
+//    Set<String> docKeys = template.keys(String.format("%s:*", entityClass.getName()));
+//    searchOps.deleteDocuments(false, docKeys.toArray(String[]::new));
+    modulesOperations.getClient().getUnifiedJedis().ftDropIndexDD(entityClass.getName() + "Idx");
   }
 
 }

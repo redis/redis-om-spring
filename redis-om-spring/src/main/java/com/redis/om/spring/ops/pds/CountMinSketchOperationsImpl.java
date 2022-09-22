@@ -58,7 +58,7 @@ public class CountMinSketchOperationsImpl<K> implements CountMinSketchOperations
   }
 
   @Override
-  public Map<String, Long> cmsInfo(K key) {
+  public Map<String, Object> cmsInfo(K key) {
     return client.clientForBloom().cmsInfo(key.toString());
   }
 }

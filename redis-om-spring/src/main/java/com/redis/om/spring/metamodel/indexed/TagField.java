@@ -67,23 +67,23 @@ public class TagField<E, T> extends MetamodelField<E, T> {
     return new ArrayIndexOfAction<>(field, element);
   }
   
-  public <R> ArrayPopAction<? super E,R> pop(Long index) {
+  public <R> ArrayPopAction<? super E,R> pop(Integer index) {
     return new ArrayPopAction<>(field, index);
   }
   
   public <R> ArrayPopAction<? super E,R> pop() {
-    return pop(-1L);
+    return pop(-1);
   }
   
   public <R> ArrayPopAction<? super E,R> removeFirst() {
-    return pop(0L);
+    return pop(0);
   }
   
   public <R> ArrayPopAction<? super E,R> removeLast() {
-    return pop(-1L);
+    return pop(-1);
   }
   
-  public <R> ArrayPopAction<? super E,R> remove(Long index) {
+  public <R> ArrayPopAction<? super E,R> remove(Integer index) {
     return pop(index);
   }
 

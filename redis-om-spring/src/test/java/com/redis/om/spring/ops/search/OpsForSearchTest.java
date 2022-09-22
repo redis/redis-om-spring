@@ -10,6 +10,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static redis.clients.jedis.search.RediSearchUtil.toStringMap;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -26,17 +27,9 @@ import org.springframework.data.redis.core.RedisTemplate;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.ops.RedisModulesOperations;
 
-import io.redisearch.Document;
-import io.redisearch.Query;
-import io.redisearch.Schema;
-import io.redisearch.Schema.TagField;
-import io.redisearch.Schema.TextField;
-import io.redisearch.SearchResult;
-import io.redisearch.client.AddOptions;
-import io.redisearch.client.Client;
-import io.redisearch.client.Client.IndexOptions;
-import io.redisearch.client.ConfigOption;
-import io.redisearch.client.IndexDefinition;
+import redis.clients.jedis.search.*;
+import redis.clients.jedis.search.Schema.TagField;
+import redis.clients.jedis.search.Schema.TextField;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.util.SafeEncoder;
 
@@ -71,7 +64,7 @@ class OpsForSearchTest extends AbstractBaseDocumentTest {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
 
     try {
-      ops.createIndex(sc, Client.IndexOptions.defaultOptions().setDefinition(def));
+      ops.createIndex(sc, IndexOptions.defaultOptions().setDefinition(def));
     } catch (JedisDataException jdee) {
       // IGNORE: Unknown Index name
     }
@@ -99,10 +92,10 @@ class OpsForSearchTest extends AbstractBaseDocumentTest {
   void testBasicSearch() {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
     SearchResult res1 = ops.search(new Query("@first:Jo*"));
-    assertEquals(2, res1.totalResults);
+    assertEquals(2, res1.getTotalResults());
 
     SearchResult res2 = ops.search(new Query("@first:Pat"));
-    assertEquals(1, res2.totalResults);
+    assertEquals(1, res2.getTotalResults());
   }
 
   @Test
@@ -113,20 +106,21 @@ class OpsForSearchTest extends AbstractBaseDocumentTest {
 
     IndexDefinition index = new IndexDefinition();
     index.setPrefixes("testComplexSearch:");
-    IndexOptions options = Client.IndexOptions.defaultOptions().setDefinition(index);
-    assertTrue(ops.createIndex(sc, options));
+    IndexOptions options = IndexOptions.defaultOptions().setDefinition(index);
+    assertEquals("OK", ops.createIndex(sc, options));
 
     Map<String, Object> fields = new HashMap<>();
     fields.put("title", "hello world");
     fields.put("body", "lorem ipsum");
     for (int i = 0; i < 100; i++) {
-      assertTrue(ops.addDocument(String.format("testComplexSearch:doc%d", i), (double) i / 100.0, fields));
+//      assertTrue(ops.addDocument(String.format("testComplexSearch:doc%d", i), (double) i / 100.0, fields));
+      template.opsForHash().putAll(String.format("testComplexSearch:doc%d", i), toStringMap(fields));
     }
 
     SearchResult res = ops.search(new Query("hello world").limit(0, 5).setWithScores());
-    assertEquals(100, res.totalResults);
-    assertEquals(5, res.docs.size());
-    for (Document d : res.docs) {
+    assertEquals(100, res.getTotalResults());
+    assertEquals(5, res.getDocuments().size());
+    for (Document d : res.getDocuments()) {
       assertTrue(d.getId().startsWith("testComplexSearch:doc"));
       assertTrue(d.getScore() < 100);
       assertEquals(String.format(
@@ -134,13 +128,14 @@ class OpsForSearchTest extends AbstractBaseDocumentTest {
           Double.toString(d.getScore())), d.toString());
     }
 
-    assertTrue(ops.deleteDocument("testComplexSearch:doc0", true));
-    assertFalse(ops.deleteDocument("testComplexSearch:doc0"));
+//    assertTrue(ops.deleteDocument("testComplexSearch:doc0", true));
+//    assertFalse(ops.deleteDocument("testComplexSearch:doc0"));
+    assertTrue(template.delete("testComplexSearch:doc0"));
 
     res = ops.search(new Query("hello world"));
-    assertEquals(99, res.totalResults);
+    assertEquals(99, res.getTotalResults());
 
-    assertTrue(ops.dropIndex());
+    assertEquals("OK", ops.dropIndex());
     boolean threw = false;
     try {
       res = ops.search(new Query("hello world"));
@@ -151,49 +146,51 @@ class OpsForSearchTest extends AbstractBaseDocumentTest {
     assertTrue(threw);
   }
 
-  @Test
-  void searchBatch() throws Exception {
-    SearchOperations<String> ops = modulesOperations.opsForSearch("batch");
-
-    Schema sc = new Schema().addTextField("title", 1.0).addTextField("body", 1.0);
-
-    assertTrue(ops.createIndex(sc, Client.IndexOptions.defaultOptions()));
-    Map<String, Object> fields = new HashMap<>();
-    fields.put("title", "hello world");
-    fields.put("body", "lorem ipsum");
-    for (int i = 0; i < 50; i++) {
-      fields.put("title", "hello world");
-      assertTrue(ops.addDocument(String.format("doc%d", i), (double) i / 100.0, fields));
-    }
-
-    for (int i = 50; i < 100; i++) {
-      fields.put("title", "good night");
-      assertTrue(ops.addDocument(String.format("doc%d", i), (double) i / 100.0, fields));
-    }
-
-    SearchResult[] res = ops.searchBatch(new Query("hello world").limit(0, 5).setWithScores(),
-        new Query("good night").limit(0, 5).setWithScores());
-
-    assertEquals(2, res.length);
-    assertEquals(50, res[0].totalResults);
-    assertEquals(50, res[1].totalResults);
-    assertEquals(5, res[0].docs.size());
-    for (Document d : res[0].docs) {
-      assertTrue(d.getId().startsWith("doc"));
-      assertTrue(d.getScore() < 100);
-      assertEquals(String.format(
-          "{\"id\":\"%s\",\"score\":%s,\"properties\":{\"title\":\"hello world\",\"body\":\"lorem ipsum\"}}", d.getId(),
-          Double.toString(d.getScore())), d.toString());
-    }
-    dropIndex("batch");
-  }
+//  @Test
+//  void searchBatch() throws Exception {
+//    SearchOperations<String> ops = modulesOperations.opsForSearch("batch");
+//
+//    Schema sc = new Schema().addTextField("title", 1.0).addTextField("body", 1.0);
+//
+//    assertEquals("OK", ops.createIndex(sc, IndexOptions.defaultOptions()));
+//    Map<String, Object> fields = new HashMap<>();
+//    fields.put("title", "hello world");
+//    fields.put("body", "lorem ipsum");
+//    for (int i = 0; i < 50; i++) {
+//      fields.put("title", "hello world");
+////      assertTrue(ops.addDocument(String.format("doc%d", i), (double) i / 100.0, fields));
+//      template.opsForHash().putAll(String.format("doc%d", i), toStringMap(fields));
+//    }
+//
+//    for (int i = 50; i < 100; i++) {
+//      fields.put("title", "good night");
+////      assertTrue(ops.addDocument(String.format("doc%d", i), (double) i / 100.0, fields));
+//      template.opsForHash().putAll(String.format("doc%d", i), toStringMap(fields));
+//    }
+//
+//    SearchResult[] res = ops.searchBatch(new Query("hello world").limit(0, 5).setWithScores(),
+//        new Query("good night").limit(0, 5).setWithScores());
+//
+//    assertEquals(2, res.length);
+//    assertEquals(50, res[0].getTotalResults());
+//    assertEquals(50, res[1].getTotalResults());
+//    assertEquals(5, res[0].getDocuments().size());
+//    for (Document d : res[0].getDocuments()) {
+//      assertTrue(d.getId().startsWith("doc"));
+//      assertTrue(d.getScore() < 100);
+//      assertEquals(String.format(
+//          "{\"id\":\"%s\",\"score\":%s,\"properties\":{\"title\":\"hello world\",\"body\":\"lorem ipsum\"}}", d.getId(),
+//          Double.toString(d.getScore())), d.toString());
+//    }
+//    dropIndex("batch");
+//  }
 
   @Test
   void testExplain() {
     SearchOperations<String> ops = modulesOperations.opsForSearch("explain");
 
     Schema sc = new Schema().addTextField("f1", 1.0).addTextField("f2", 1.0).addTextField("f3", 1.0);
-    ops.createIndex(sc, Client.IndexOptions.defaultOptions());
+    ops.createIndex(sc, IndexOptions.defaultOptions());
 
     String res = ops.explain(new Query("@f3:f3_val @f2:f2_val @f1:f1_val"));
     assertNotNull(res);
@@ -201,84 +198,84 @@ class OpsForSearchTest extends AbstractBaseDocumentTest {
     dropIndex("explain");
   }
 
-  @Test
-  void testLanguage() throws Exception {
-    SearchOperations<String> ops = modulesOperations.opsForSearch("language");
-    Schema sc = new Schema().addTextField("text", 1.0);
-    ops.createIndex(sc, Client.IndexOptions.defaultOptions());
+//  @Test
+//  void testLanguage() throws Exception {
+//    SearchOperations<String> ops = modulesOperations.opsForSearch("language");
+//    Schema sc = new Schema().addTextField("text", 1.0);
+//    ops.createIndex(sc, IndexOptions.defaultOptions());
+//
+//    Document d = new Document("doc1").set("text", "hello");
+//    AddOptions options = new AddOptions().setLanguage("spanish");
+//    assertTrue(ops.addDocument(d, options));
+//    boolean caught = false;
+//
+//    options.setLanguage("ybreski");
+//    ops.deleteDocument(d.getId());
+//
+//    try {
+//      ops.addDocument(d, options);
+//    } catch (JedisDataException t) {
+//      caught = true;
+//    }
+//    assertTrue(caught);
+//    dropIndex("language");
+//  }
 
-    Document d = new Document("doc1").set("text", "hello");
-    AddOptions options = new AddOptions().setLanguage("spanish");
-    assertTrue(ops.addDocument(d, options));
-    boolean caught = false;
+//  @Test
+//  void testMultiDocuments() {
+//    SearchOperations<String> ops = modulesOperations.opsForSearch("multi");
+//    Schema sc = new Schema().addTextField("title", 1.0).addTextField("body", 1.0);
+//
+//    assertEquals("OK", ops.createIndex(sc, IndexOptions.defaultOptions()));
+//
+//    Map<String, Object> fields = new HashMap<>();
+//    fields.put("title", "hello world");
+//    fields.put("body", "lorem ipsum");
+//
+//    boolean[] results = ops.addDocuments(new Document("doc1", fields), new Document("doc2", fields),
+//        new Document("doc3", fields));
+//
+//    assertArrayEquals(new boolean[] { true, true, true }, results);
+//
+//    assertEquals(3, ops.search(new Query("hello world")).getTotalResults());
+//
+//    results = ops.addDocuments(new Document("doc4", fields), new Document("doc2", fields),
+//        new Document("doc5", fields));
+//    assertArrayEquals(new boolean[] { true, false, true }, results);
+//
+//    results = ops.deleteDocuments(true, "doc1", "doc2", "doc36");
+//    assertArrayEquals(new boolean[] { true, true, false }, results);
+//    dropIndex("multi");
+//  }
 
-    options.setLanguage("ybreski");
-    ops.deleteDocument(d.getId());
-
-    try {
-      ops.addDocument(d, options);
-    } catch (JedisDataException t) {
-      caught = true;
-    }
-    assertTrue(caught);
-    dropIndex("language");
-  }
-
-  @Test
-  void testMultiDocuments() {
-    SearchOperations<String> ops = modulesOperations.opsForSearch("multi");
-    Schema sc = new Schema().addTextField("title", 1.0).addTextField("body", 1.0);
-
-    assertTrue(ops.createIndex(sc, Client.IndexOptions.defaultOptions()));
-
-    Map<String, Object> fields = new HashMap<>();
-    fields.put("title", "hello world");
-    fields.put("body", "lorem ipsum");
-
-    boolean[] results = ops.addDocuments(new Document("doc1", fields), new Document("doc2", fields),
-        new Document("doc3", fields));
-
-    assertArrayEquals(new boolean[] { true, true, true }, results);
-
-    assertEquals(3, ops.search(new Query("hello world")).totalResults);
-
-    results = ops.addDocuments(new Document("doc4", fields), new Document("doc2", fields),
-        new Document("doc5", fields));
-    assertArrayEquals(new boolean[] { true, false, true }, results);
-
-    results = ops.deleteDocuments(true, "doc1", "doc2", "doc36");
-    assertArrayEquals(new boolean[] { true, true, false }, results);
-    dropIndex("multi");
-  }
-
-  @Test
-  void testReplacePartial() throws Exception {
-    SearchOperations<String> ops = modulesOperations.opsForSearch("replace_partial");
-
-    Schema sc = new Schema().addTextField("f1", 1.0).addTextField("f2", 1.0).addTextField("f3", 1.0);
-    assertTrue(ops.createIndex(sc, Client.IndexOptions.defaultOptions()));
-
-    Map<String, Object> mm = new HashMap<>();
-    mm.put("f1", "f1_val");
-    mm.put("f2", "f2_val");
-
-    assertTrue(ops.addDocument("doc1", mm));
-    assertTrue(ops.addDocument("doc2", mm));
-
-    mm.clear();
-    mm.put("f3", "f3_val");
-
-    assertTrue(ops.updateDocument("doc1", 1.0, mm));
-    assertTrue(ops.replaceDocument("doc2", 1.0, mm));
-
-    // Search for f3 value. All documents should have it.
-    SearchResult res = ops.search(new Query(("@f3:f3_Val")));
-    assertEquals(2, res.totalResults);
-
-    res = ops.search(new Query("@f3:f3_val @f2:f2_val @f1:f1_val"));
-    assertEquals(1, res.totalResults);
-    dropIndex("replace_partial");
-  }
+//  @Test
+//  void testReplacePartial() throws Exception {
+//    SearchOperations<String> ops = modulesOperations.opsForSearch("replace_partial");
+//
+//    Schema sc = new Schema().addTextField("f1", 1.0).addTextField("f2", 1.0).addTextField("f3", 1.0);
+//    assertEquals("OK", ops.createIndex(sc, IndexOptions.defaultOptions()));
+//
+//    Map<String, Object> mm = new HashMap<>();
+//    mm.put("f1", "f1_val");
+//    mm.put("f2", "f2_val");
+//
+//    assertTrue(ops.addDocument("doc1", mm));
+//    assertTrue(ops.addDocument("doc2", mm));
+//
+//    mm.clear();
+//    mm.put("f3", "f3_val");
+//
+//    assertTrue(ops.updateDocument("doc1", 1.0, mm));
+//    assertTrue(ops.replaceDocument("doc2", 1.0, mm));
+//
+//    // Search for f3 value. All documents should have it.
+//    SearchResult res = ops.search(new Query(("@f3:f3_Val")));
+//    assertEquals(2, res.getTotalResults());
+//
+//    res = ops.search(new Query("@f3:f3_val @f2:f2_val @f1:f1_val"));
+//    assertEquals(1, res.getTotalResults());
+//    dropIndex("replace_partial");
+//  }
 
   @Test
   void testInfo() throws Exception {
@@ -294,7 +291,7 @@ class OpsForSearchTest extends AbstractBaseDocumentTest {
     Schema sc = new Schema().addTextField(TITLE, 5.0).addSortableTextField(PLOT, 1.0).addSortableTagField(GENRE, ",")
         .addSortableNumericField(RELEASE_YEAR).addSortableNumericField(RATING).addSortableNumericField(VOTES);
 
-    assertTrue(ops.createIndex(sc, Client.IndexOptions.defaultOptions()));
+    assertEquals("OK", ops.createIndex(sc, IndexOptions.defaultOptions()));
 
     Map<String, Object> info = ops.getInfo();
     assertEquals("movies", info.get("index_name"));
@@ -305,25 +302,25 @@ class OpsForSearchTest extends AbstractBaseDocumentTest {
     dropIndex("movies");
   }
 
-  @Test
-  void testGet() throws Exception {
-    SearchOperations<String> ops = modulesOperations.opsForSearch("testGet");
-    ops.createIndex(new Schema().addTextField("txt1", 1.0), Client.IndexOptions.defaultOptions());
-    ops.addDocument(new Document("doc1").set("txt1", "Hello World!"), new AddOptions());
-    Document d = ops.getDocument("doc1");
-    assertNotNull(d);
-    assertEquals("Hello World!", d.get("txt1"));
-
-    // Get something that does not exist. Shouldn't explode
-    assertNull(ops.getDocument("nonexist"));
-
-    // Test decode=false mode
-    d = ops.getDocument("doc1", false);
-    assertNotNull(d);
-    assertTrue(Arrays.equals(SafeEncoder.encode("Hello World!"), (byte[]) d.get("txt1")));
-    ops.deleteDocument("doc1");
-    dropIndex("testGet");
-  }
+//  @Test
+//  void testGet() throws Exception {
+//    SearchOperations<String> ops = modulesOperations.opsForSearch("testGet");
+//    ops.createIndex(new Schema().addTextField("txt1", 1.0), IndexOptions.defaultOptions());
+//    ops.addDocument(new Document("doc1").set("txt1", "Hello World!"), new AddOptions());
+//    Document d = ops.getDocument("doc1");
+//    assertNotNull(d);
+//    assertEquals("Hello World!", d.get("txt1"));
+//
+//    // Get something that does not exist. Shouldn't explode
+//    assertNull(ops.getDocument("nonexist"));
+//
+//    // Test decode=false mode
+//    d = ops.getDocument("doc1", false);
+//    assertNotNull(d);
+//    assertTrue(Arrays.equals(SafeEncoder.encode("Hello World!"), (byte[]) d.get("txt1")));
+//    ops.deleteDocument("doc1");
+//    dropIndex("testGet");
+//  }
 
   @Test
   void testAlias() throws Exception {
@@ -333,23 +330,24 @@ class OpsForSearchTest extends AbstractBaseDocumentTest {
 
     IndexDefinition index = new IndexDefinition();
     index.setPrefixes("testAlias:");
-    IndexOptions options = Client.IndexOptions.defaultOptions().setDefinition(index);
-    assertTrue(ops.createIndex(sc, options));
+    IndexOptions options = IndexOptions.defaultOptions().setDefinition(index);
+    assertEquals("OK", ops.createIndex(sc, options));
     Map<String, Object> doc = new HashMap<>();
     doc.put("field1", "value");
-    assertTrue(ops.addDocument("testAlias:doc1", doc));
+//    assertTrue(ops.addDocument("testAlias:doc1", doc));
+    template.opsForHash().putAll("testAlias:doc1", toStringMap(doc));
 
-    assertTrue(ops.addAlias("ALIAS1"));
+    assertEquals("OK", ops.addAlias("ALIAS1"));
     SearchOperations<String> alias1 = modulesOperations.opsForSearch("ALIAS1");
     SearchResult res1 = alias1.search(new Query("*").returnFields("field1"));
-    assertEquals(1, res1.totalResults);
-    assertEquals("value", res1.docs.get(0).get("field1"));
+    assertEquals(1, res1.getTotalResults());
+    assertEquals("value", res1.getDocuments().get(0).get("field1"));
 
-    assertTrue(ops.updateAlias("ALIAS2"));
+    assertEquals("OK", ops.updateAlias("ALIAS2"));
     SearchOperations<String> alias2 = modulesOperations.opsForSearch("ALIAS2");
     SearchResult res2 = alias2.search(new Query("*").returnFields("field1"));
-    assertEquals(1, res2.totalResults);
-    assertEquals("value", res2.docs.get(0).get("field1"));
+    assertEquals(1, res2.getTotalResults());
+    assertEquals("value", res2.getDocuments().get(0).get("field1"));
 
     try {
       ops.deleteAlias("ALIAS3");
@@ -357,7 +355,7 @@ class OpsForSearchTest extends AbstractBaseDocumentTest {
     } catch (JedisDataException e) {
       // Alias does not exist
     }
-    assertTrue(ops.deleteAlias("ALIAS2"));
+    assertEquals("OK", ops.deleteAlias("ALIAS2"));
     try {
       ops.deleteAlias("ALIAS2");
       fail("Should throw JedisDataException");
@@ -375,27 +373,29 @@ class OpsForSearchTest extends AbstractBaseDocumentTest {
 
     IndexDefinition index = new IndexDefinition();
     index.setPrefixes("testAlterAdd:");
-    IndexOptions options = Client.IndexOptions.defaultOptions().setDefinition(index);
-    assertTrue(ops.createIndex(sc, options));
+    IndexOptions options = IndexOptions.defaultOptions().setDefinition(index);
+    assertEquals("OK", ops.createIndex(sc, options));
 
     Map<String, Object> fields = new HashMap<>();
     fields.put("title", "hello world");
     for (int i = 0; i < 100; i++) {
-      assertTrue(ops.addDocument(String.format("testAlterAdd:doc%d", i), fields));
+//      assertTrue(ops.addDocument(String.format("testAlterAdd:doc%d", i), fields));
+      template.opsForHash().putAll(String.format("testAlterAdd:doc%d", i), toStringMap(fields));
     }
 
     SearchResult res = ops.search(new Query("hello world"));
-    assertEquals(100, res.totalResults);
+    assertEquals(100, res.getTotalResults());
 
-    assertTrue(ops.alterIndex(new TagField("tags", ","), new TextField("name", 0.5)));
+    assertEquals("OK", ops.alterIndex(new TagField("tags", ","), new TextField("name", 0.5)));
     for (int i = 0; i < 100; i++) {
       Map<String, Object> fields2 = new HashMap<>();
       fields2.put("name", "name" + i);
       fields2.put("tags", String.format("tagA,tagB,tag%d", i));
-      assertTrue(ops.updateDocument(String.format("testAlterAdd:doc%d", i), 1.0, fields2));
+//      assertTrue(ops.updateDocument(String.format("testAlterAdd:doc%d", i), 1.0, fields2));
+      template.opsForHash().putAll(String.format("testAlterAdd:doc%d", i), toStringMap(fields2));
     }
     SearchResult res2 = ops.search(new Query("@tags:{tagA}"));
-    assertEquals(100, res2.totalResults);
+    assertEquals(100, res2.getTotalResults());
 
     Map<String, Object> info = ops.getInfo();
     assertEquals("testAlterAdd", info.get("index_name"));
@@ -407,17 +407,17 @@ class OpsForSearchTest extends AbstractBaseDocumentTest {
   void testConfig() throws Exception {
     SearchOperations<String> ops = modulesOperations.opsForSearch("testConfig");
 
-    boolean result = ops.setConfig(ConfigOption.TIMEOUT, "100");
-    assertTrue(result);
+    assertEquals("OK", ops.setConfig("TIMEOUT", "100"));
     Map<String, String> configMap = ops.getAllConfig();
-    assertEquals("100", configMap.get(ConfigOption.TIMEOUT.name()));
-    assertEquals("100", ops.getConfig(ConfigOption.TIMEOUT));
+    assertEquals("100", configMap.get("TIMEOUT"));
+    assertEquals("100", ops.getConfig("TIMEOUT").get("TIMEOUT"));
 
-    ops.setConfig(ConfigOption.ON_TIMEOUT, "fail");
-    assertEquals("fail", ops.getConfig(ConfigOption.ON_TIMEOUT));
+    ops.setConfig("ON_TIMEOUT", "fail");
+    assertEquals("fail", ops.getConfig("ON_TIMEOUT").get("ON_TIMEOUT"));
 
     try {
-      assertFalse(ops.setConfig(ConfigOption.ON_TIMEOUT, "null"));
+      ops.setConfig("ON_TIMEOUT", "null");
+      fail();
     } catch (JedisDataException e) {
       // Should throw an exception after RediSearch 2.2
     }
@@ -429,12 +429,12 @@ class OpsForSearchTest extends AbstractBaseDocumentTest {
 
     Schema sc = new Schema().addTextField("name", 1.0).addTextField("addr", 1.0);
     assertAll( //
-        () -> assertTrue(ops.createIndex(sc, Client.IndexOptions.defaultOptions())), //
+        () -> assertEquals("OK", ops.createIndex(sc, IndexOptions.defaultOptions())), //
 
-        () -> assertTrue(ops.updateSynonym("Wisenheimer", "Smarty Pants")), //
-        () -> assertTrue(ops.updateSynonym("Knuckle Sandwich", "Punch")), //
-        () -> assertTrue(ops.updateSynonym("Ducky Shincracker", "Good Dancer")), //
-        () -> assertTrue(ops.updateSynonym("Zozzled", "Drunk", "Inebriated")) //
+        () -> assertEquals("OK", ops.updateSynonym("Wisenheimer", "Smarty Pants")), //
+        () -> assertEquals("OK", ops.updateSynonym("Knuckle Sandwich", "Punch")), //
+        () -> assertEquals("OK", ops.updateSynonym("Ducky Shincracker", "Good Dancer")), //
+        () -> assertEquals("OK", ops.updateSynonym("Zozzled", "Drunk", "Inebriated")) //
     );
     Map<String, List<String>> dump = ops.dumpSynonym();
 
@@ -455,38 +455,39 @@ class OpsForSearchTest extends AbstractBaseDocumentTest {
 
     IndexDefinition index = new IndexDefinition();
     index.setPrefixes("testNumericFilter:");
-    IndexOptions options = Client.IndexOptions.defaultOptions().setDefinition(index);
+    IndexOptions options = IndexOptions.defaultOptions().setDefinition(index);
 
-    assertTrue(ops.createIndex(sc, options));
+    assertEquals("OK", ops.createIndex(sc, options));
     Map<String, Object> fields = new HashMap<>();
     fields.put("title", "hello world");
 
     for (int i = 0; i < 100; i++) {
       fields.put("price", i);
-      assertTrue(ops.addDocument(String.format("testNumericFilter:doc%d", i), fields));
+//      assertTrue(ops.addDocument(String.format("testNumericFilter:doc%d", i), fields));
+      template.opsForHash().putAll(String.format("testNumericFilter:doc%d", i), toStringMap(fields));
     }
 
     SearchResult res = ops.search(new Query("hello world").addFilter(new Query.NumericFilter("price", 0, 49)));
-    assertEquals(50, res.totalResults);
-    assertEquals(10, res.docs.size());
-    for (Document d : res.docs) {
+    assertEquals(50, res.getTotalResults());
+    assertEquals(10, res.getDocuments().size());
+    for (Document d : res.getDocuments()) {
       long price = Long.valueOf((String) d.get("price"));
       assertTrue(price >= 0);
       assertTrue(price <= 49);
     }
 
     res = ops.search(new Query("hello world").addFilter(new Query.NumericFilter("price", 0, true, 49, true)));
-    assertEquals(48, res.totalResults);
-    assertEquals(10, res.docs.size());
-    for (Document d : res.docs) {
+    assertEquals(48, res.getTotalResults());
+    assertEquals(10, res.getDocuments().size());
+    for (Document d : res.getDocuments()) {
       long price = Long.valueOf((String) d.get("price"));
       assertTrue(price > 0);
       assertTrue(price < 49);
     }
     res = ops.search(new Query("hello world").addFilter(new Query.NumericFilter("price", 50, 100)));
-    assertEquals(50, res.totalResults);
-    assertEquals(10, res.docs.size());
-    for (Document d : res.docs) {
+    assertEquals(50, res.getTotalResults());
+    assertEquals(10, res.getDocuments().size());
+    for (Document d : res.getDocuments()) {
       long price = Long.valueOf((String) d.get("price"));
       assertTrue(price >= 50);
       assertTrue(price <= 100);
@@ -494,13 +495,13 @@ class OpsForSearchTest extends AbstractBaseDocumentTest {
 
     res = ops
         .search(new Query("hello world").addFilter(new Query.NumericFilter("price", 20, Double.POSITIVE_INFINITY)));
-    assertEquals(80, res.totalResults);
-    assertEquals(10, res.docs.size());
+    assertEquals(80, res.getTotalResults());
+    assertEquals(10, res.getDocuments().size());
 
     res = ops
         .search(new Query("hello world").addFilter(new Query.NumericFilter("price", Double.NEGATIVE_INFINITY, 10)));
-    assertEquals(11, res.totalResults);
-    assertEquals(10, res.docs.size());
+    assertEquals(11, res.getTotalResults());
+    assertEquals(10, res.getDocuments().size());
     dropIndex("testNumericFilter");
   }
 

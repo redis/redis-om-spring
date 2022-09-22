@@ -8,9 +8,9 @@ import org.springframework.data.geo.Point;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 import com.redis.om.spring.util.ObjectUtils;
 
-import io.redisearch.querybuilder.GeoValue;
-import io.redisearch.querybuilder.Node;
-import io.redisearch.querybuilder.QueryBuilder;
+import redis.clients.jedis.search.querybuilder.GeoValue;
+import redis.clients.jedis.search.querybuilder.Node;
+import redis.clients.jedis.search.querybuilder.QueryBuilders;
 
 public class NearPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
@@ -36,7 +36,7 @@ public class NearPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     GeoValue geoValue = new GeoValue(getPoint().getX(), getPoint().getY(), getDistance().getValue(),
         ObjectUtils.getDistanceUnit(getDistance()));
 
-    return QueryBuilder.intersect(root).add(getField().getName(), geoValue);
+    return QueryBuilders.intersect(root).add(getField().getName(), geoValue);
   }
 
 }

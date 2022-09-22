@@ -10,8 +10,7 @@ import com.redis.om.spring.annotations.Aggregation;
 import com.redis.om.spring.annotations.Query;
 import com.redis.om.spring.repository.RedisEnhancedRepository;
 
-import io.redisearch.AggregationResult;
-import io.redisearch.Suggestion;
+import redis.clients.jedis.search.aggr.AggregationResult;
 
 @Repository
 public interface PersonRepository extends RedisEnhancedRepository<Person, String>, EmailTaken {
@@ -19,7 +18,7 @@ public interface PersonRepository extends RedisEnhancedRepository<Person, String
 
   boolean existsByNickname(String nickname);
 
-  List<Suggestion> autoCompleteEmail(String string);
+  List<String> autoCompleteEmail(String string);
 
   // find by tag field, using RediSearch "native" annotation
   @Query("@roles:{$roles}")

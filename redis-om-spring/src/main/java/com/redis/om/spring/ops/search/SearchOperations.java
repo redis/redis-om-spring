@@ -2,6 +2,7 @@ package com.redis.om.spring.ops.search;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import redis.clients.jedis.search.*;
 import redis.clients.jedis.search.aggr.AggregationBuilder;
@@ -17,6 +18,9 @@ public interface SearchOperations<K> {
   String explain(Query q);
   Map<String, Object> getInfo();
   String dropIndex();
+  default long addSuggestion(String string) {
+    return addSuggestion(string, 1.0);
+  }
   long addSuggestion(String string, double score);
   long incrSuggestion(String string, double score);
   List<String> getSuggestion(String prefix);
@@ -27,10 +31,10 @@ public interface SearchOperations<K> {
   String setConfig(String option, String value);
   Map<String, String> getConfig(String option);
   default Map<String, String> getAllConfig() {return getConfig("*");}
-  boolean addAlias(String name);
-  boolean updateAlias(String name);
-  boolean deleteAlias(String name);
-  boolean updateSynonym(String synonymGroupId, String ...terms);
+  String addAlias(String name);
+  String updateAlias(String name);
+  String deleteAlias(String name);
+  String updateSynonym(String synonymGroupId, String ...terms);
   Map<String, List<String>> dumpSynonym();
-  List<String> tagVals(String value);
+  Set<String> tagVals(String value);
 }

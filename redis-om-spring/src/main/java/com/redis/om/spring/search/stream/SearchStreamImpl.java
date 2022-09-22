@@ -46,6 +46,8 @@ import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.SortedField;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
+import redis.clients.jedis.search.querybuilder.Node;
+import redis.clients.jedis.search.querybuilder.QueryBuilders;
 
 public class SearchStreamImpl<E> implements SearchStream<E> {
 
@@ -60,7 +62,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private JSONOperations<String> json;
   private String searchIndex;
   private Class<E> entityClass;
-//  private Node rootNode = QueryBuilder.union();
+  private Node rootNode = QueryBuilders.union();
   private static final Gson gson = GsonBuidlerFactory.getBuilder().create();
   private Optional<Long> limit = Optional.empty();
   private Optional<Long> skip = Optional.empty();
@@ -86,15 +88,15 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public SearchStream<E> filter(SearchFieldPredicate<? super E, ?> predicate) {
-//    Node node = processPredicate(predicate);
-//    rootNode = node;
+    Node node = processPredicate(predicate);
+    rootNode = node;
     return this;
   }
 
   @Override
   public SearchStream<E> filter(Predicate<?> predicate) {
-//    Node node = processPredicate(predicate);
-//    rootNode = node;
+    Node node = processPredicate(predicate);
+    rootNode = node;
     return this;
   }
 
@@ -280,7 +282,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     query.limit(0, 0);
     SearchResult searchResult = search.search(query);
 
-    return searchResult.totalResults;
+    return searchResult.getTotalResults();
   }
 
   @Override
@@ -381,7 +383,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   private List<E> toEntityList(SearchResult searchResult) {
-    return searchResult.docs.stream().map(d -> gson.fromJson(d.get("$").toString(), entityClass))
+    return searchResult.getDocuments().stream().map(d -> gson.fromJson(d.get("$").toString(), entityClass))
         .collect(Collectors.toList());
   }
 
@@ -408,7 +410,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       onlyIds = true;
 
       Method idSetter = ObjectUtils.getSetterForField(entityClass, idField);
-      Stream<E> wrappedIds = (Stream<E>) executeQuery().docs //
+      Stream<E> wrappedIds = (Stream<E>) executeQuery().getDocuments() //
           .stream() //
           .map(d -> {
             try {

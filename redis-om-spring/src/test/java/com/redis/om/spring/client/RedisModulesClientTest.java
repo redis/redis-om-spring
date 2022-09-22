@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.google.gson.Gson;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 
-import redis.clients.jedis.bloom.RedisBloomCommands;
+import redis.clients.jedis.bloom.commands.RedisBloomCommands;
 import redis.clients.jedis.json.RedisJsonCommands;
 import redis.clients.jedis.search.RediSearchCommands;
 

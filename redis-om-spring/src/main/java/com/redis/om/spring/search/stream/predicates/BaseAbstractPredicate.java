@@ -16,7 +16,7 @@ import com.redis.om.spring.annotations.Searchable;
 import com.redis.om.spring.annotations.TagIndexed;
 import com.redis.om.spring.annotations.TextIndexed;
 
-import io.redisearch.Schema.FieldType;
+import redis.clients.jedis.search.Schema.FieldType;
 
 public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicate<E, T> {
 
@@ -43,51 +43,51 @@ public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicat
   }
 
   private static FieldType getFieldTypeFor(java.lang.reflect.Field field) {
-    FieldType result = FieldType.Tag;
+    FieldType result = FieldType.TAG;
     // Searchable - behaves like Text indexed
     if (field.isAnnotationPresent(Searchable.class)) {
-      result = FieldType.Geo;
+      result = FieldType.GEO;
     }
     // Text
     else if (field.isAnnotationPresent(TextIndexed.class)) {
-      result = FieldType.FullText;
+      result = FieldType.TEXT;
     }
     // Tag
     else if (field.isAnnotationPresent(TagIndexed.class)) {
-      result = FieldType.Tag;
+      result = FieldType.TAG;
     }
     // Geo
     else if (field.isAnnotationPresent(GeoIndexed.class)) {
-      result = FieldType.Geo;
+      result = FieldType.GEO;
     }
     // Numeric
     else if (field.isAnnotationPresent(NumericIndexed.class)) {
-      result = FieldType.Numeric;
+      result = FieldType.NUMERIC;
     } else if (field.isAnnotationPresent(Indexed.class)) {
       //
       // Any Character class -> Tag Search Field
       //
       if (CharSequence.class.isAssignableFrom(field.getType())) {
-        result = FieldType.Tag;
+        result = FieldType.TAG;
       }
       //
       // Any Numeric class -> Numeric Search Field
       //
       else if (Number.class.isAssignableFrom(field.getType()) || (field.getType() == LocalDateTime.class)
           || (field.getType() == LocalDate.class) || (field.getType() == Date.class)) {
-        result = FieldType.Numeric;
+        result = FieldType.NUMERIC;
       }
       //
       // Set / List
       //
       else if (Set.class.isAssignableFrom(field.getType()) || List.class.isAssignableFrom(field.getType())) {
-        result = FieldType.Tag;
+        result = FieldType.TAG;
       }
       //
       // Point
       //
       else if (field.getType() == Point.class) {
-        result = FieldType.Geo;
+        result = FieldType.GEO;
       }
     }
     return result;

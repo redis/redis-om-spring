@@ -8,9 +8,9 @@ import com.google.gson.Gson;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 
-import io.redisearch.Document;
-import io.redisearch.Query;
-import io.redisearch.SearchResult;
+import redis.clients.jedis.search.Document;
+import redis.clients.jedis.search.Query;
+import redis.clients.jedis.search.SearchResult;
 
 public class MyDocQueriesImpl implements MyDocQueries {
 
@@ -24,8 +24,8 @@ public class MyDocQueriesImpl implements MyDocQueries {
     SearchOperations<String> ops = modulesOperations
         .opsForSearch("com.redis.om.spring.annotations.document.fixtures.MyDocIdx");
     SearchResult result = ops.search(new Query("@title:'" + title + "'"));
-    if (result.totalResults > 0) {
-      Document doc = result.docs.get(0);
+    if (result.getTotalResults() > 0) {
+      Document doc = result.getDocuments().get(0);
       return Optional.of(gson.fromJson(doc.toString(), MyDoc.class));
     } else {
       return Optional.empty();

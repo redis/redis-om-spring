@@ -271,11 +271,11 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       return executeAggregation(parameters);
     } else if (type == RediSearchQueryType.TAGVALS) {
       return executeFtTagVals();
-    } else if (type == RediSearchQueryType.AUTOCOMPLETE) {
-      Optional<String> maybeAutoCompleteDictionaryKey = autoCompleteQueryExecutor.getAutoCompleteDictionaryKey();
-      return maybeAutoCompleteDictionaryKey.isPresent()
-          ? autoCompleteQueryExecutor.executeAutoCompleteQuery(parameters, maybeAutoCompleteDictionaryKey.get())
-          : null;
+//    } else if (type == RediSearchQueryType.AUTOCOMPLETE) { // TODO:
+//      Optional<String> maybeAutoCompleteDictionaryKey = autoCompleteQueryExecutor.getAutoCompleteDictionaryKey();
+//      return maybeAutoCompleteDictionaryKey.isPresent()
+//          ? autoCompleteQueryExecutor.executeAutoCompleteQuery(parameters, maybeAutoCompleteDictionaryKey.get())
+//          : null;
     } else {
       return null;
     }

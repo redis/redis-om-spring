@@ -1057,7 +1057,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
   void testArrayPopFirstOnSimpleIndexedTagFieldInDocuments() {
     List<Object> roles = entityStream.of(User.class) //
         .filter(User$.NAME.eq("Steve Lorello")) //
-        .map(User$.ROLES.pop(0L)) //
+        .map(User$.ROLES.pop(0)) //
         .collect(Collectors.toList());
 
     // contains the last
@@ -1093,7 +1093,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
   void testArrayRemoveByIndexOnSimpleIndexedTagFieldInDocuments() {
     List<Object> roles = entityStream.of(User.class) //
         .filter(User$.NAME.eq("Steve Lorello")) //
-        .map(User$.ROLES.remove(0L)) //
+        .map(User$.ROLES.remove(0)) //
         .collect(Collectors.toList());
 
     // contains the first
@@ -2483,7 +2483,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
   void testArrayPopFirstOnNonIndexedTagFieldInDocuments() {
     List<Object> tags = entityStream.of(NiCompany.class) //
         .filter(NiCompany$.NAME.eq("Microsoft")) //
-        .map(NiCompany$.TAGS.pop(0L)) //
+        .map(NiCompany$.TAGS.pop(0)) //
         .collect(Collectors.toList());
 
     // contains the last
@@ -2519,7 +2519,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
   void testArrayRemoveByIndexOnNonIndexedTagFieldInDocuments() {
     List<Object> tags = entityStream.of(NiCompany.class) //
         .filter(NiCompany$.NAME.eq("Microsoft")) //
-        .map(NiCompany$.TAGS.remove(0L)) //
+        .map(NiCompany$.TAGS.remove(0)) //
         .collect(Collectors.toList());
 
     // contains the last
