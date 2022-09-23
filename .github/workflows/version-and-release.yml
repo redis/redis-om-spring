@@ -21,7 +21,7 @@ jobs:
       - name: Set up publishing to maven central
         uses: actions/setup-java@v2
         with:
-          java-version: '11'
+          java-version: '17'
           distribution: 'adopt'
           server-id: ossrh
           server-username: MAVEN_USERNAME
