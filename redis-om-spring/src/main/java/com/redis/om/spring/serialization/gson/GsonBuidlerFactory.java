@@ -1,5 +1,6 @@
 package com.redis.om.spring.serialization.gson;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -17,6 +18,7 @@ public class GsonBuidlerFactory {
     builder.registerTypeAdapter(LocalDate.class, LocalDateTypeAdapter.getInstance());
     builder.registerTypeAdapter(LocalDateTime.class, LocalDateTimeTypeAdapter.getInstance());
     builder.registerTypeAdapter(Ulid.class, UlidTypeAdapter.getInstance());
+    builder.registerTypeAdapter(Instant.class, InstantTypeAdapter.getInstance());
   }
 
   public static GsonBuilder getBuilder() {

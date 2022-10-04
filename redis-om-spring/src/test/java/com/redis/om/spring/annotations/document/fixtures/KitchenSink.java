@@ -1,5 +1,6 @@
 package com.redis.om.spring.annotations.document.fixtures;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -43,6 +44,8 @@ public class KitchenSink {
   private Point point;
   @NonNull
   private Ulid ulid;
+  @NonNull
+  private Instant instant;
 
   @Singular
   @JsonAdapter(SetToStringAdapter.class)

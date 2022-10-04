@@ -43,6 +43,7 @@ class SerializationTest extends AbstractBaseDocumentTest {
   private Date date;
   private Point point;
   private Ulid ulid;
+  private Instant instant;
 
   private Set<String> setThings;
   private List<String> listThings;
@@ -59,6 +60,7 @@ class SerializationTest extends AbstractBaseDocumentTest {
     ulid = UlidCreator.getMonotonicUlid();
     setThings = Set.of("thingOne", "thingTwo", "thingThree");
     listThings = List.of("redFish", "blueFish");
+    instant = Instant.now();
 
     ks = KitchenSink.builder() //
         .localDate(localDate) //
@@ -68,6 +70,7 @@ class SerializationTest extends AbstractBaseDocumentTest {
         .ulid(ulid) //
         .setThings(setThings) //
         .listThings(listThings) //
+        .instant(instant) //
         .build();
 
     ks1 = KitchenSink.builder() //
@@ -78,6 +81,7 @@ class SerializationTest extends AbstractBaseDocumentTest {
         .ulid(ulid) //
         .setThings(Set.of()) //
         .listThings(List.of()) //
+        .instant(instant) //
         .build();
 
     ks2 = KitchenSink.builder() //
@@ -86,6 +90,7 @@ class SerializationTest extends AbstractBaseDocumentTest {
         .date(date) //
         .point(point) //
         .ulid(ulid) //
+        .instant(instant) //
         .build();
 
     ks2.setSetThings(null);
@@ -111,6 +116,9 @@ class SerializationTest extends AbstractBaseDocumentTest {
 
     // Point
     String redisGeo = "33.62826024782707,-111.83592170193586";
+    
+    // Instant
+    long instantInMillis = instant.getEpochSecond();
 
     JsonObject rawJSON = ops.get(KitchenSink.class.getName() + ":" + ks.getId(), JsonObject.class);
 
@@ -119,6 +127,7 @@ class SerializationTest extends AbstractBaseDocumentTest {
     assertThat(rawJSON.get("date").getAsLong()).isEqualTo(dateInMillis);
     assertThat(rawJSON.get("point").getAsString()).isEqualTo(redisGeo);
     assertThat(rawJSON.get("ulid").getAsString()).isEqualTo(ulid.toString());
+    assertThat(rawJSON.get("instant").getAsLong()).isEqualTo(instantInMillis);
     assertThat(Arrays.asList(rawJSON.get("setThings").getAsString().split("\\|"))).containsExactlyInAnyOrder("thingOne", "thingTwo", "thingThree");
     assertThat(rawJSON.get("listThings").getAsString()).isEqualTo("redFish|blueFish");
   }
@@ -126,15 +135,17 @@ class SerializationTest extends AbstractBaseDocumentTest {
   @Test
   void testJSONDeserialization() {
     Optional<KitchenSink> fromDb = repository.findById(ks.getId());
-    assertThat(fromDb.isPresent());
+    assertThat(fromDb).isPresent();
     assertThat(fromDb.get().getLocalDate()).isEqualTo(localDate);
     assertThat(fromDb.get().getDate()).isEqualTo(date);
     assertThat(fromDb.get().getPoint()).isEqualTo(point);
     assertThat(fromDb.get().getUlid()).isEqualTo(ulid);
-    // NOTE: We lose nanosecond precision in order to store LocalDateTime as long in order to allow for RediSearch range queries
-    assertThat(fromDb.get().getLocalDateTime()).isEqualToIgnoringNanos(localDateTime);
+
     assertThat(fromDb.get().getSetThings()).isEqualTo(setThings);
     assertThat(fromDb.get().getListThings()).isEqualTo(listThings);
+    // NOTE: We lose nanosecond precision in order to store LocalDateTime as long in order to allow for RediSearch range queries
+    assertThat(fromDb.get().getLocalDateTime()).isEqualToIgnoringNanos(localDateTime);
+    assertThat(fromDb.get().getInstant().getEpochSecond()).isEqualTo(instant.getEpochSecond());
   }
 
   @Test
