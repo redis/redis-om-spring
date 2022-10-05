@@ -1,5 +1,6 @@
 package com.redis.om.spring.repository.support;
 
+import com.google.gson.Gson;
 import com.redis.om.spring.KeyspaceToIndexMap;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,8 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
   private @Nullable KeyspaceToIndexMap keyspaceToIndexMap;
   @Autowired
   private @Nullable RedisMappingContext mappingContext;
+  @Autowired
+  private Gson gson;
 
   /**
    * Creates a new {@link RedisDocumentRepositoryFactoryBean} for the given repository
@@ -37,7 +40,7 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
           KeyValueOperations operations,
           Class<? extends AbstractQueryCreator<?, ?>> queryCreator, Class<? extends RepositoryQuery> repositoryQueryType
   ) {
-    return new RedisDocumentRepositoryFactory(operations, rmo, keyspaceToIndexMap, queryCreator, repositoryQueryType, this.mappingContext);
+    return new RedisDocumentRepositoryFactory(operations, rmo, keyspaceToIndexMap, queryCreator, repositoryQueryType, this.mappingContext, this.gson);
   }
 
   @Override

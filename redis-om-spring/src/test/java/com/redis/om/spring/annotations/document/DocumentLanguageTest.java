@@ -12,12 +12,12 @@ import com.google.gson.Gson;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.SpanishDoc;
 import com.redis.om.spring.annotations.document.fixtures.SpanishDocRepository;
-import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
 
 import io.redisearch.SearchResult;
 
 class DocumentLanguageTest extends AbstractBaseDocumentTest {
-  private static final Gson gson = GsonBuidlerFactory.getBuilder().create();
+  @Autowired
+  private Gson gson;
   private static final String QUIJOTE = //
       "En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo " + //
           "que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor.";
@@ -41,7 +41,7 @@ class DocumentLanguageTest extends AbstractBaseDocumentTest {
     assertThat(result.totalResults).isEqualTo(1);
     SpanishDoc doc = gson.fromJson(result.docs.get(0).get("$").toString(), SpanishDoc.class);
     assertThat(doc.getTitle()).isEqualTo("Cien Años de Soledad");
-    
+
     SearchResult result2 = repo.findByBody("manchas");
     assertThat(result2.totalResults).isEqualTo(1);
     SpanishDoc doc2 = gson.fromJson(result2.docs.get(0).get("$").toString(), SpanishDoc.class);

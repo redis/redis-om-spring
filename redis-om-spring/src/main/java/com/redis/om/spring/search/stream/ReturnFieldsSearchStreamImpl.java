@@ -39,7 +39,6 @@ import org.springframework.util.ReflectionUtils;
 import com.google.gson.Gson;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
-import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
 import com.redis.om.spring.tuple.Tuples;
 import com.redis.om.spring.util.ObjectUtils;
 
@@ -52,16 +51,18 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   @SuppressWarnings("unused")
   private static final Log logger = LogFactory.getLog(ReturnFieldsSearchStreamImpl.class);
 
-  private static final Gson gson = GsonBuidlerFactory.getBuilder().create();
+  private final Gson gson;
 
   private SearchStreamImpl<E> entitySearchStream;
   private List<MetamodelField<E, ?>> returning = new ArrayList<>();
   private Stream<T> resolvedStream;
   private Runnable closeHandler;
 
-  public ReturnFieldsSearchStreamImpl(SearchStreamImpl<E> entitySearchStream, List<MetamodelField<E, ?>> returning) {
+  public ReturnFieldsSearchStreamImpl(SearchStreamImpl<E> entitySearchStream, List<MetamodelField<E, ?>> returning,
+      Gson gson) {
     this.entitySearchStream = entitySearchStream;
     this.returning = returning;
+    this.gson = gson;
   }
 
   @Override

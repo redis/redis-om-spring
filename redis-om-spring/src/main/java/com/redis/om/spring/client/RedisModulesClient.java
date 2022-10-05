@@ -9,15 +9,14 @@ import redis.clients.jedis.Jedis;
 
 public class RedisModulesClient {
 
-  public RedisModulesClient(JedisConnectionFactory jedisConnectionFactory) {
+  private GsonBuilder builder;
+
+  public RedisModulesClient(JedisConnectionFactory jedisConnectionFactory, GsonBuilder builder) {
     this.jedisConnectionFactory = jedisConnectionFactory;
+    this.builder = builder;
   }
 
   public JReJSON clientForJSON() {
-    return new JReJSON(getJedis());
-  }
-  
-  public JReJSON clientForJSON(GsonBuilder builder) {
     JReJSON client = new JReJSON(getJedis());
     client.setGsonBuilder(builder);
     return client;

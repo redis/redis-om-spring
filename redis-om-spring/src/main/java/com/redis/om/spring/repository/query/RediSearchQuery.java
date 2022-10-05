@@ -50,7 +50,6 @@ import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.query.autocomplete.AutoCompleteQueryExecutor;
 import com.redis.om.spring.repository.query.bloom.BloomQueryExecutor;
 import com.redis.om.spring.repository.query.clause.QueryClause;
-import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
 import com.redis.om.spring.util.ObjectUtils;
 
 import io.redisearch.AggregationResult;
@@ -67,7 +66,6 @@ public class RediSearchQuery implements RepositoryQuery {
   private final String searchIndex;
 
   private RediSearchQueryType type;
-  private static final Gson gson = GsonBuidlerFactory.getBuilder().create();
   private String value;
 
   @SuppressWarnings("unused")
@@ -94,6 +92,7 @@ public class RediSearchQuery implements RepositoryQuery {
 
   private BloomQueryExecutor bloomQueryExecutor;
   private AutoCompleteQueryExecutor autoCompleteQueryExecutor;
+  private Gson gson;
 
   @SuppressWarnings("unchecked")
   public RediSearchQuery(//
@@ -102,7 +101,9 @@ public class RediSearchQuery implements RepositoryQuery {
       QueryMethodEvaluationContextProvider evaluationContextProvider, //
       KeyValueOperations keyValueOperations, //
       RedisModulesOperations<?> rmo, //
-      Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
+      Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
+      Gson gson //
+  ) {
     logger.info(String.format("Creating %s query method", queryMethod.getName()));
 
     this.keyValueOperations = keyValueOperations;
@@ -111,6 +112,7 @@ public class RediSearchQuery implements RepositoryQuery {
     this.searchIndex = this.queryMethod.getEntityInformation().getJavaType().getName() + "Idx";
     this.metadata = metadata;
     this.domainType = this.queryMethod.getEntityInformation().getJavaType();
+    this.gson = gson;
 
     bloomQueryExecutor = new BloomQueryExecutor(this, modulesOperations);
     autoCompleteQueryExecutor = new AutoCompleteQueryExecutor(this, modulesOperations);
