@@ -2,6 +2,7 @@ package com.redis.om.spring;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
+import org.springframework.boot.autoconfigure.gson.GsonBuilderCustomizer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.annotation.CachingConfigurerSupport;
 import org.springframework.context.ApplicationContext;
@@ -43,6 +45,9 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.util.ClassUtils;
 
+import com.github.f4b6a3.ulid.Ulid;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.JsonAdapter;
 import com.redis.om.spring.annotations.Bloom;
 import com.redis.om.spring.annotations.Document;
@@ -63,6 +68,12 @@ import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.EntityStreamImpl;
+import com.redis.om.spring.serialization.gson.DateTypeAdapter;
+import com.redis.om.spring.serialization.gson.InstantTypeAdapter;
+import com.redis.om.spring.serialization.gson.LocalDateTimeTypeAdapter;
+import com.redis.om.spring.serialization.gson.LocalDateTypeAdapter;
+import com.redis.om.spring.serialization.gson.PointTypeAdapter;
+import com.redis.om.spring.serialization.gson.UlidTypeAdapter;
 
 import io.redisearch.FieldName;
 import io.redisearch.Schema;
@@ -84,9 +95,26 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
   private static final Log logger = LogFactory.getLog(RedisModulesConfiguration.class);
 
+  @Bean
+  public GsonBuilder gsonBuilder(List<GsonBuilderCustomizer> customizers) {
+
+    GsonBuilder builder = new GsonBuilder();
+    // Enable the spring.gson.* configuration in the configuration file
+    customizers.forEach((c) -> c.customize(builder));
+
+    builder.registerTypeAdapter(Point.class, PointTypeAdapter.getInstance());
+    builder.registerTypeAdapter(Date.class, DateTypeAdapter.getInstance());
+    builder.registerTypeAdapter(LocalDate.class, LocalDateTypeAdapter.getInstance());
+    builder.registerTypeAdapter(LocalDateTime.class, LocalDateTimeTypeAdapter.getInstance());
+    builder.registerTypeAdapter(Ulid.class, UlidTypeAdapter.getInstance());
+    builder.registerTypeAdapter(Instant.class, InstantTypeAdapter.getInstance());
+
+    return builder;
+  }
+
   @Bean(name = "redisModulesClient")
-  RedisModulesClient redisModulesClient(JedisConnectionFactory jedisConnectionFactory) {
-    return new RedisModulesClient(jedisConnectionFactory);
+  RedisModulesClient redisModulesClient(JedisConnectionFactory jedisConnectionFactory, GsonBuilder builder) {
+    return new RedisModulesClient(jedisConnectionFactory, builder);
   }
 
   @Bean(name = "redisModulesOperations")
@@ -145,8 +173,8 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   }
 
   @Bean(name = "streamingQueryBuilder")
-  EntityStream streamingQueryBuilder(RedisModulesOperations<?> redisModulesOperations) {
-    return new EntityStreamImpl(redisModulesOperations);
+  EntityStream streamingQueryBuilder(RedisModulesOperations<?> redisModulesOperations, Gson gson) {
+    return new EntityStreamImpl(redisModulesOperations, gson);
   }
 
   @EventListener(ContextRefreshedEvent.class)
@@ -600,7 +628,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
             continue;
           }
         }
-        getNestedField(fieldPrefix+tempPrefix, subField, prefix, fieldList);
+        getNestedField(fieldPrefix + tempPrefix, subField, prefix, fieldList);
       }
     }
     return fieldList;

@@ -14,16 +14,17 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
 import com.redislabs.modules.rejson.JReJSON.ExistenceModifier;
 import com.redislabs.modules.rejson.Path;
 
 import redis.clients.jedis.exceptions.JedisDataException;
 
 class OpsForJSONTest extends AbstractBaseDocumentTest {
+  
+  @Autowired
+  Gson gson;
 
   /* A simple class that represents an object in real life */
   private static class IRLObject {
@@ -132,8 +133,6 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
   @Test
   void basicSetGetShouldSucceed() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
-    GsonBuilder gsonBuilder = GsonBuidlerFactory.getBuilder();
-    Gson gson = gsonBuilder.create();
     // naive set with a path
     ops.set("null", null, Path.ROOT_PATH);
     assertNull(ops.get("null", String.class, Path.ROOT_PATH));

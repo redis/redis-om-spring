@@ -12,12 +12,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.redis.om.spring.convert.MappingRedisOMConverter;
-import com.redis.om.spring.id.ULIDIdentifierGenerator;
-import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
-import com.redis.om.spring.util.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
@@ -38,15 +32,20 @@ import org.springframework.data.redis.core.convert.RedisData;
 import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.repository.core.EntityInformation;
-
-import com.redis.om.spring.KeyspaceToIndexMap;
-import com.redis.om.spring.metamodel.MetamodelField;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.repository.RedisDocumentRepository;
-import com.redislabs.modules.rejson.Path;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
+
+import com.google.gson.Gson;
+import com.redis.om.spring.KeyspaceToIndexMap;
+import com.redis.om.spring.convert.MappingRedisOMConverter;
+import com.redis.om.spring.id.ULIDIdentifierGenerator;
+import com.redis.om.spring.metamodel.MetamodelField;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.repository.RedisDocumentRepository;
+import com.redis.om.spring.util.ObjectUtils;
+import com.redislabs.modules.rejson.Path;
+
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.commands.ProtocolCommand;
@@ -54,7 +53,6 @@ import redis.clients.jedis.util.SafeEncoder;
 
 public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueRepository<T, ID> implements RedisDocumentRepository<T, ID> {
 
-  GsonBuilder gsonBuilder = GsonBuidlerFactory.getBuilder();
   private final Gson gson;
   protected RedisModulesOperations<String> modulesOperations;
   protected EntityInformation<T, ID> metadata;
@@ -70,7 +68,8 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       KeyValueOperations operations, //
       @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo, //
       KeyspaceToIndexMap keyspaceToIndexMap, //
-      RedisMappingContext mappingContext) {
+      RedisMappingContext mappingContext,
+      Gson gson) {
     super(metadata, operations);
     this.modulesOperations = (RedisModulesOperations<String>)rmo;
     this.metadata = metadata;
@@ -79,7 +78,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     this.mappingConverter = new MappingRedisOMConverter(null,
             new ReferenceResolverImpl(modulesOperations.getTemplate()));
     this.generator = ULIDIdentifierGenerator.INSTANCE;
-    this.gson = this.gsonBuilder.create();
+    this.gson = gson;
     this.mappingContext = mappingContext;
   }
 

@@ -37,7 +37,6 @@ import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.search.stream.actions.TakesJSONOperations;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
-import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.TupleMapper;
 import com.redis.om.spring.util.ObjectUtils;
@@ -63,7 +62,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private String searchIndex;
   private Class<E> entityClass;
   private Node rootNode = QueryBuilder.union();
-  private static final Gson gson = GsonBuidlerFactory.getBuilder().create();
+  private final Gson gson;
   private Optional<Long> limit = Optional.empty();
   private Optional<Long> skip = Optional.empty();
   private Optional<SortedField> sortBy = Optional.empty();
@@ -72,12 +71,13 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private Runnable closeHandler;
   private Stream<E> resolvedStream;
 
-  public SearchStreamImpl(Class<E> entityClass, RedisModulesOperations<String> modulesOperations) {
+  public SearchStreamImpl(Class<E> entityClass, RedisModulesOperations<String> modulesOperations, Gson gson) {
     this.modulesOperations = modulesOperations;
     this.entityClass = entityClass;
     searchIndex = entityClass.getName() + "Idx";
     search = modulesOperations.opsForSearch(searchIndex);
     json = modulesOperations.opsForJSON();
+    this.gson = gson;
     Optional<Field> maybeIdField = ObjectUtils.getIdFieldForEntityClass(entityClass);
     if (maybeIdField.isPresent()) {
       idField = maybeIdField.get();
@@ -139,7 +139,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       return new WrapperSearchStream<>(resolveStream().map(mapper));
     }
 
-    return new ReturnFieldsSearchStreamImpl<>(this, returning);
+    return new ReturnFieldsSearchStreamImpl<>(this, returning, gson);
   }
 
   @Override

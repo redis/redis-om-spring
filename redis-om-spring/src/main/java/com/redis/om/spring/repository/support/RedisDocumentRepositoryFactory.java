@@ -1,5 +1,6 @@
 package com.redis.om.spring.repository.support;
 
+import com.google.gson.Gson;
 import com.redis.om.spring.KeyspaceToIndexMap;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.query.RediSearchQuery;
@@ -37,6 +38,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
   private final Class<? extends RepositoryQuery> repositoryQueryType;
   private final RedisModulesOperations<?> rmo;
   private final KeyspaceToIndexMap keyspaceToIndexMap;
+  private final Gson gson;
 
   private RedisMappingContext mappingContext;
 
@@ -53,8 +55,10 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
       KeyValueOperations keyValueOperations, //
       RedisModulesOperations<?> rmo, //
       KeyspaceToIndexMap keyspaceToIndexMap, //
-      RedisMappingContext mappingContext) {
-    this(keyValueOperations, rmo, keyspaceToIndexMap, DEFAULT_QUERY_CREATOR, mappingContext);
+      RedisMappingContext mappingContext, //
+      Gson gson //
+  ) {
+    this(keyValueOperations, rmo, keyspaceToIndexMap, DEFAULT_QUERY_CREATOR, mappingContext, gson);
   }
 
   /**
@@ -62,39 +66,43 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
    * {@link KeyValueOperations} and {@link AbstractQueryCreator}-type.
    *
    * @param keyValueOperations must not be {@literal null}.
-   * @param rmo must not be {@literal null}.
+   * @param rmo                must not be {@literal null}.
    * @param keyspaceToIndexMap must not be {@literal null}.
-   * @param queryCreator must not be {@literal null}.
-   * @param mappingContext must not be {@literal null}.
+   * @param queryCreator       must not be {@literal null}.
+   * @param mappingContext     must not be {@literal null}.
    */
   public RedisDocumentRepositoryFactory( //
       KeyValueOperations keyValueOperations, //
       RedisModulesOperations<?> rmo, //
       KeyspaceToIndexMap keyspaceToIndexMap, //
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
-      RedisMappingContext mappingContext) {
+      RedisMappingContext mappingContext, //
+      Gson gson //
+  ) {
 
-    this(keyValueOperations, rmo, keyspaceToIndexMap, queryCreator, RediSearchQuery.class, mappingContext);
+    this(keyValueOperations, rmo, keyspaceToIndexMap, queryCreator, RediSearchQuery.class, mappingContext, gson);
   }
 
   /**
    * Creates a new {@link KeyValueRepositoryFactory} for the given
    * {@link KeyValueOperations} and {@link AbstractQueryCreator}-type.
    *
-   * @param keyValueOperations must not be {@literal null}.
-   * @param rmo must not be {@literal null}.
-   * @param keyspaceToIndexMap must not be {@literal null}.
-   * @param queryCreator must not be {@literal null}.
+   * @param keyValueOperations  must not be {@literal null}.
+   * @param rmo                 must not be {@literal null}.
+   * @param keyspaceToIndexMap  must not be {@literal null}.
+   * @param queryCreator        must not be {@literal null}.
    * @param repositoryQueryType must not be {@literal null}.
-   * @param mappingContext must not be {@literal null}.
+   * @param mappingContext      must not be {@literal null}.
    */
   public RedisDocumentRepositoryFactory( //
-      KeyValueOperations keyValueOperations, // 
+      KeyValueOperations keyValueOperations, //
       RedisModulesOperations<?> rmo, //
       KeyspaceToIndexMap keyspaceToIndexMap, //
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
       Class<? extends RepositoryQuery> repositoryQueryType, //
-      RedisMappingContext mappingContext ) {
+      RedisMappingContext mappingContext, //
+      Gson gson //
+  ) {
 
     super(keyValueOperations, queryCreator, repositoryQueryType);
 
@@ -106,14 +114,14 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
     this.queryCreator = queryCreator;
     this.repositoryQueryType = repositoryQueryType;
     this.mappingContext = mappingContext;
+    this.gson = gson;
   }
 
   @Override
   protected Object getTargetRepository(RepositoryInformation repositoryInformation) {
     EntityInformation<?, ?> entityInformation = getEntityInformation(repositoryInformation.getDomainType());
     return super.getTargetRepositoryViaReflection(
-            repositoryInformation, entityInformation, keyValueOperations, rmo, keyspaceToIndexMap, mappingContext
-    );
+        repositoryInformation, entityInformation, keyValueOperations, rmo, keyspaceToIndexMap, mappingContext, gson);
   }
 
   @Override
@@ -125,7 +133,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
   protected Optional<QueryLookupStrategy> getQueryLookupStrategy(@Nullable Key key,
       QueryMethodEvaluationContextProvider evaluationContextProvider) {
     return Optional.of(new RediSearchQueryLookupStrategy(key, evaluationContextProvider, this.keyValueOperations,
-        this.rmo, this.queryCreator, this.repositoryQueryType));
+        this.rmo, this.queryCreator, this.repositoryQueryType, this.gson));
   }
 
   private static class RediSearchQueryLookupStrategy implements QueryLookupStrategy {
@@ -133,6 +141,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
     private QueryMethodEvaluationContextProvider evaluationContextProvider;
     private KeyValueOperations keyValueOperations;
     private RedisModulesOperations<?> rmo;
+    private Gson gson;
 
     private Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
     private Class<? extends RepositoryQuery> repositoryQueryType;
@@ -144,9 +153,10 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
      * @param queryCreator
      */
     public RediSearchQueryLookupStrategy(@Nullable Key key,
-                                         QueryMethodEvaluationContextProvider evaluationContextProvider, KeyValueOperations keyValueOperations,
-                                         RedisModulesOperations<?> rmo, Class<? extends AbstractQueryCreator<?, ?>> queryCreator,
-                                         Class<? extends RepositoryQuery> repositoryQueryType) {
+        QueryMethodEvaluationContextProvider evaluationContextProvider, KeyValueOperations keyValueOperations,
+        RedisModulesOperations<?> rmo, Class<? extends AbstractQueryCreator<?, ?>> queryCreator,
+        Class<? extends RepositoryQuery> repositoryQueryType,
+        Gson gson) {
 
       Assert.notNull(evaluationContextProvider, "EvaluationContextProvider must not be null!");
       Assert.notNull(keyValueOperations, "KeyValueOperations must not be null!");
@@ -159,16 +169,19 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
       this.rmo = rmo;
       this.queryCreator = queryCreator;
       this.repositoryQueryType = repositoryQueryType;
+      this.gson = gson;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
      *
      * @see
      * org.springframework.data.repository.query.QueryLookupStrategy#resolveQuery(
      * java.lang.reflect.Method,
      * org.springframework.data.repository.core.RepositoryMetadata,
      * org.springframework.data.projection.ProjectionFactory,
-     * org.springframework.data.repository.core.NamedQueries) */
+     * org.springframework.data.repository.core.NamedQueries)
+     */
     @Override
     @SuppressWarnings("unchecked")
     public RepositoryQuery resolveQuery(Method method, RepositoryMetadata metadata, ProjectionFactory factory,
@@ -179,14 +192,14 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
       Constructor<? extends KeyValuePartTreeQuery> constructor = (Constructor<? extends KeyValuePartTreeQuery>) ClassUtils
           .getConstructorIfAvailable(this.repositoryQueryType, QueryMethod.class, RepositoryMetadata.class,
               QueryMethodEvaluationContextProvider.class, KeyValueOperations.class, RedisModulesOperations.class,
-              Class.class);
+              Class.class, Gson.class);
 
       Assert.state(constructor != null, String.format(
           "Constructor %s(QueryMethod, EvaluationContextProvider, KeyValueOperations, RedisModulesOperations, Class) not available!",
           ClassUtils.getShortName(this.repositoryQueryType)));
 
       return BeanUtils.instantiateClass(constructor, queryMethod, metadata, evaluationContextProvider,
-          this.keyValueOperations, this.rmo, this.queryCreator);
+          this.keyValueOperations, this.rmo, this.queryCreator, this.gson);
     }
   }
 }

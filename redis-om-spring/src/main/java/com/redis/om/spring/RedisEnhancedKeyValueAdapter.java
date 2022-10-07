@@ -47,13 +47,11 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 
-import com.google.gson.Gson;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.convert.MappingRedisOMConverter.BinaryKeyspaceIdentifier;
 import com.redis.om.spring.convert.MappingRedisOMConverter.KeyspaceIdentifier;
 import com.redis.om.spring.convert.RedisOMCustomConversions;
 import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
 
 public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
@@ -78,15 +76,12 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   @SuppressWarnings("unused")
   private KeyspaceToIndexMap keyspaceToIndexMap;
 
-  @SuppressWarnings("unused")
-  private static final Gson gson = GsonBuidlerFactory.getBuilder().create();
-
   /**
    * Creates new {@link RedisKeyValueAdapter} with default
    * {@link RedisMappingContext} and default {@link RedisCustomConversions}.
    *
-   * @param redisOps must not be {@literal null}.
-   * @param rmo must not be {@literal null}.
+   * @param redisOps           must not be {@literal null}.
+   * @param rmo                must not be {@literal null}.
    * @param keyspaceToIndexMap must not be {@literal null}.
    */
   public RedisEnhancedKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisModulesOperations<?> rmo,
@@ -98,9 +93,9 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * Creates new {@link RedisKeyValueAdapter} with default
    * {@link RedisCustomConversions}.
    *
-   * @param redisOps must not be {@literal null}.
-   * @param rmo must not be {@literal null}.
-   * @param mappingContext must not be {@literal null}.
+   * @param redisOps           must not be {@literal null}.
+   * @param rmo                must not be {@literal null}.
+   * @param mappingContext     must not be {@literal null}.
    * @param keyspaceToIndexMap must not be {@literal null}.
    */
   public RedisEnhancedKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisModulesOperations<?> rmo,
@@ -111,10 +106,10 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   /**
    * Creates new {@link RedisKeyValueAdapter}.
    *
-   * @param redisOps  must not be {@literal null}.
-   * @param rmo must not be {@literal null}.
-   * @param mappingContext  must not be {@literal null}.
-   * @param customConversions can be {@literal null}.
+   * @param redisOps           must not be {@literal null}.
+   * @param rmo                must not be {@literal null}.
+   * @param mappingContext     must not be {@literal null}.
+   * @param customConversions  can be {@literal null}.
    * @param keyspaceToIndexMap must not be {@literal null}.
    */
   @SuppressWarnings("unchecked")
@@ -127,7 +122,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     Assert.notNull(redisOps, "RedisOperations must not be null!");
     Assert.notNull(mappingContext, "RedisMappingContext must not be null!");
 
-    MappingRedisOMConverter mappingConverter = new MappingRedisOMConverter(mappingContext, new ReferenceResolverImpl(redisOps));
+    MappingRedisOMConverter mappingConverter = new MappingRedisOMConverter(mappingContext,
+        new ReferenceResolverImpl(redisOps));
     mappingConverter
         .setCustomConversions(customConversions == null ? new RedisOMCustomConversions() : customConversions);
     mappingConverter.afterPropertiesSet();
@@ -139,11 +135,13 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     initMessageListenerContainer();
   }
 
-  /* (non-Javadoc)
+  /*
+   * (non-Javadoc)
    *
    * @see
    * org.springframework.data.keyvalue.core.KeyValueAdapter#put(java.lang.Object,
-   * java.lang.Object, java.lang.String) */
+   * java.lang.Object, java.lang.String)
+   */
   @Override
   public Object put(Object id, Object item, String keyspace) {
 
@@ -208,11 +206,13 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     return item;
   }
 
-  /* (non-Javadoc)
+  /*
+   * (non-Javadoc)
    *
    * @see
    * org.springframework.data.keyvalue.core.KeyValueAdapter#get(java.lang.Object,
-   * java.lang.String, java.lang.Class) */
+   * java.lang.String, java.lang.Class)
+   */
   @Nullable
   @Override
   public <T> T get(Object id, String keyspace, Class<T> type) {
@@ -236,11 +236,13 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     return readBackTimeToLiveIfSet(binId, converter.read(type, data));
   }
 
-  /* (non-Javadoc)
+  /*
+   * (non-Javadoc)
    *
    * @see
    * org.springframework.data.keyvalue.core.KeyValueAdapter#deleteAllOf(java.lang.
-   * String) */
+   * String)
+   */
   @Override
   public void deleteAllOf(String keyspace) {
 
@@ -495,10 +497,12 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       this.converter = converter;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
      *
      * @see org.springframework.data.redis.listener.KeyspaceEventMessageListener#
-     * onMessage(org.springframework.data.redis.connection.Message, byte[]) */
+     * onMessage(org.springframework.data.redis.connection.Message, byte[])
+     */
     @Override
     public void onMessage(Message message, @Nullable byte[] pattern) {
 
