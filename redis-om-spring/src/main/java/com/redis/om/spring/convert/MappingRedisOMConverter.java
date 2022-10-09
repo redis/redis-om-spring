@@ -707,6 +707,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
 
     if ((field != null) && (collectionElementType != null) && (indexed != null || tagIndexed != null)
         && CharSequence.class.isAssignableFrom(collectionElementType)) {
+      @SuppressWarnings("null")
       String separator = indexed != null ? indexed.separator() : tagIndexed.separator();
       String value = StreamSupport.stream(values.spliterator(), false).map(Object::toString).map(QueryUtils::escape)
           .collect(Collectors.joining(separator));
@@ -797,6 +798,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
 
     if ((field != null) && (indexed != null || tagIndexed != null)
         && CharSequence.class.isAssignableFrom(collectionElementType)) {
+      @SuppressWarnings("null")
       String separator = indexed != null ? indexed.separator() : tagIndexed.separator();
       Bucket elementData = bucket.extract(path);
       TypeInformation<?> typeInformation = typeMapper.readType(elementData.getPropertyPath(path),
