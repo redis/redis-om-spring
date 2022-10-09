@@ -4,11 +4,9 @@ import java.util.function.Function;
 
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.Triple;
-import com.redis.om.spring.tuple.TupleMapper;
 import com.redis.om.spring.tuple.Tuples;
 
-public final class TripleMapperImpl<T, T0, T1, T2> extends AbstractTupleMapper<T, Triple<T0, T1, T2>>
-    implements TupleMapper<T, Triple<T0, T1, T2>> {
+public final class TripleMapperImpl<T, T0, T1, T2> extends AbstractTupleMapper<T, Triple<T0, T1, T2>> {
 
   public TripleMapperImpl(Function<T, T0> m0, Function<T, T1> m1, Function<T, T2> m2) {
     super(3);

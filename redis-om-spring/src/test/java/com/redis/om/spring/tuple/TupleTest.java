@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Assertions;
@@ -2468,6 +2469,16 @@ final class TupleTest {
 
     String expectedErrorMessage = "com.redis.om.spring.tuple.impl.TripleImpl cannot hold null values.";
     Assertions.assertEquals(expectedErrorMessage, exception.getMessage());
+  }
+
+  @Test
+  void testTupleLabels() {
+    final Pair<String, Integer> pair = Tuples.of(new String[] { "lastName", "number" }, "Jordan", 23);
+    Map<String, Object> labelledMap = pair.labelledMap();
+
+    assertThat(labelledMap) //
+        .containsEntry("lastName", "Jordan") //
+        .containsEntry("number", 23);
   }
 
 }

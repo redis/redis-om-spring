@@ -1,20 +1,31 @@
-package com.redis.om.spring.tuple;
+package com.redis.om.spring.tuple.impl;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import com.google.common.collect.Maps;
+import com.google.common.collect.Streams;
+import com.redis.om.spring.tuple.GenericTuple;
+
+import org.apache.commons.lang3.StringUtils;
 
 public abstract class BasicAbstractTuple<T extends GenericTuple<R>, R> implements GenericTuple<R> {
 
   protected final Object[] values;
+  protected final String[] labels;
   protected final Class<? extends T> baseClass;
 
-  BasicAbstractTuple(Class<? extends T> baseClass, Object... values) {
+  BasicAbstractTuple(Class<? extends T> baseClass, String[] labels, Object... values) {
     requireNonNull(values);
     this.baseClass = requireNonNull(baseClass);
+    this.labels = labels;
+    
     if (!isNullable()) {
       for (Object v : values) {
         requireNonNull(v, () -> getClass().getName() + " cannot hold null values.");
@@ -62,6 +73,13 @@ public abstract class BasicAbstractTuple<T extends GenericTuple<R>, R> implement
   public <C> Stream<C> streamOf(Class<C> clazz) {
     requireNonNull(clazz);
     return Stream.of(values).filter(clazz::isInstance).map(clazz::cast);
+  }
+  
+  @Override
+  public Map<String,Object> labelledMap() {
+    Stream<String> objectLabels = Arrays.stream(labels).map(s -> StringUtils.removeStart(s, "$."));
+    return Streams.zip(objectLabels, Arrays.stream(values), Maps::immutableEntry)
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
 }

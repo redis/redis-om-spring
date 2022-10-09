@@ -1,5 +1,7 @@
 package com.redis.om.spring.tuple;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -12,5 +14,10 @@ public interface Tuple extends GenericTuple<Object> {
   @Override
   default <T> Stream<T> streamOf(Class<T> clazz) {
     return stream().filter(clazz::isInstance).map(clazz::cast);
+  }
+  
+  @Override
+  default Map<String,Object> labelledMap() {
+    return Collections.emptyMap();
   }
 }

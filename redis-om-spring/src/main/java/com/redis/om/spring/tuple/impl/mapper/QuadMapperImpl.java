@@ -4,11 +4,9 @@ import java.util.function.Function;
 
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.Quad;
-import com.redis.om.spring.tuple.TupleMapper;
 import com.redis.om.spring.tuple.Tuples;
 
-public final class QuadMapperImpl<T, T0, T1, T2, T3> extends AbstractTupleMapper<T, Quad<T0, T1, T2, T3>>
-    implements TupleMapper<T, Quad<T0, T1, T2, T3>> {
+public final class QuadMapperImpl<T, T0, T1, T2, T3> extends AbstractTupleMapper<T, Quad<T0, T1, T2, T3>> {
 
   public QuadMapperImpl(Function<T, T0> m0, Function<T, T1> m1, Function<T, T2> m2, Function<T, T3> m3) {
     super(4);

@@ -1266,7 +1266,7 @@ final class TuplesTest {
 
     Map<Integer, Tuple> tuplesFromArrays = new HashMap<>();
     tupleData.forEach((k, v) -> {
-      tuplesFromArrays.put(k, Tuples.ofArray(v));
+      tuplesFromArrays.put(k, Tuples.ofArray(new String[] {}, v));
     });
 
     tuplesFromArrays.forEach((k, tuple) -> {

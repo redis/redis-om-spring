@@ -1,11 +1,13 @@
-package com.redis.om.spring.tuple;
+package com.redis.om.spring.tuple.impl;
 
 import java.util.stream.Stream;
 
+import com.redis.om.spring.tuple.Tuple;
+
 public abstract class AbstractTuple extends BasicAbstractTuple<AbstractTuple, Object> implements Tuple {
 
-  protected AbstractTuple(Class<? extends AbstractTuple> baseClass, Object... values) {
-    super(baseClass, values);
+  protected AbstractTuple(Class<? extends AbstractTuple> baseClass, String[] labels, Object... values) {
+    super(baseClass, labels, values);
   }
 
   @Override

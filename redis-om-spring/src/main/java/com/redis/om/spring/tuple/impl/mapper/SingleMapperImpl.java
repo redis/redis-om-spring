@@ -4,12 +4,10 @@ import java.util.function.Function;
 
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.Single;
-import com.redis.om.spring.tuple.TupleMapper;
 import com.redis.om.spring.tuple.Tuples;
 
 public final class SingleMapperImpl<T, T0>
-extends AbstractTupleMapper<T, Single<T0>>
-implements TupleMapper<T, Single<T0>> {
+extends AbstractTupleMapper<T, Single<T0>> {
 
     public SingleMapperImpl(Function<T, T0> m0) {
         super(1);
