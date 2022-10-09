@@ -1567,7 +1567,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
   void testReduceWithIdentityBifunctionAndBinaryOperator() {
     Integer firstEstablish = entityStream //
         .of(Company.class) //
-        .reduce(Integer.MAX_VALUE, (minimum, company) -> Integer.min(minimum, company.getYearFounded()), Integer::min);
+        .reduce(Integer.MAX_VALUE, (minimum, company) -> Integer.min(minimum, company.getYearFounded()), (t, u) -> Integer.min(t, u));
     assertThat(firstEstablish).isEqualTo(1975);
   }
 
@@ -1575,7 +1575,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
   void testReduceWithMethodReferenceAndCombiner() {
     int result = entityStream //
         .of(Company.class) //
-        .reduce(0, (acc, company) -> acc + company.getYearFounded(), Integer::sum);
+        .reduce(0, (acc, company) -> acc + company.getYearFounded(), (t, u) -> Integer.sum(t, u));
 
     assertThat(result).isEqualTo(2011 + 1975 + 2003);
   }
@@ -1611,7 +1611,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
     int result = entityStream //
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
-        .reduce(0, Integer::sum);
+        .reduce(0, (t, u) -> Integer.sum(t, u));
 
     assertThat(result).isEqualTo(2011 + 1975 + 2003);
   }
@@ -1646,7 +1646,7 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
     Integer firstEstablish = entityStream //
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
-        .reduce(Integer.MAX_VALUE, (minimum, yearFounded) -> Integer.min(minimum, yearFounded), Integer::min);
+        .reduce(Integer.MAX_VALUE, (minimum, yearFounded) -> Integer.min(minimum, yearFounded), (t, u) -> Integer.min(t, u));
     assertThat(firstEstablish).isEqualTo(1975);
   }
 
