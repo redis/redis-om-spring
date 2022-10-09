@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterator;
@@ -2585,4 +2586,30 @@ class EntityStreamTest extends AbstractBaseDocumentTest {
     assertThat(microsoft.getTags()).containsExactly("reliable", "os", "ai");
   }
 
+  @Test
+  void testTupleResultWithLabels() {
+    List<Map<String, Object>> results = entityStream //
+        .of(Company.class) //
+        .sorted(Company$.NAME, SortOrder.DESC) //
+        .map(Fields.of(Company$.NAME, Company$.YEAR_FOUNDED, Company$.LOCATION)) //
+        .mapToLabelledMaps() //
+        .collect(Collectors.toList());
+
+    assertEquals(3, results.size());
+
+    assertThat(results.get(0)) //
+        .containsEntry("name", "Tesla") //
+        .containsEntry("yearFounded", 2003) //
+        .containsEntry("location", new Point(-97.6208903, 30.2210767));
+
+    assertThat(results.get(1)) //
+        .containsEntry("name", "RedisInc") //
+        .containsEntry("yearFounded", 2011) //
+        .containsEntry("location", new Point(-122.066540, 37.377690));
+
+    assertThat(results.get(2)) //
+        .containsEntry("name", "Microsoft") //
+        .containsEntry("yearFounded", 1975) //
+        .containsEntry("location", new Point(-122.124500, 47.640160));
+  }
 }

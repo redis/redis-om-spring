@@ -39,6 +39,7 @@ import org.springframework.util.ReflectionUtils;
 import com.google.gson.Gson;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
+import com.redis.om.spring.tuple.Tuple;
 import com.redis.om.spring.tuple.Tuples;
 import com.redis.om.spring.util.ObjectUtils;
 
@@ -281,6 +282,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     if (resolvedStream == null) {
       List<T> results = Collections.emptyList();
       Query query = entitySearchStream.prepareQuery();
+      String[] returnFields = returning.stream().map(foi -> "$." + foi.getField().getName()).toArray(String[]::new);
 
       boolean resultSetHasNonIndexedFields = returning.stream().anyMatch(foi -> !foi.isIndexed());
 
@@ -291,12 +293,12 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
             .map(d -> gson.fromJson(d.get("$").toString(), entitySearchStream.getEntityClass()))
             .collect(Collectors.toList());
 
-        results = toResultTuple(entities);
+        results = toResultTuple(entities, returnFields);
 
       } else {
-        String[] returnFields = returning.stream().map(foi -> "$." + foi.getField().getName()).toArray(String[]::new);
+        
         query.returnFields(returnFields);
-        results = toResultTuple(entitySearchStream.getOps().search(query));
+        results = toResultTuple(entitySearchStream.getOps().search(query), returnFields);
       }
       resolvedStream = results.stream();
     }
@@ -304,7 +306,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   }
 
   @SuppressWarnings("unchecked")
-  private List<T> toResultTuple(SearchResult searchResult) {
+  private List<T> toResultTuple(SearchResult searchResult, String[] returnFields) {
     List<T> results = new ArrayList<>();
     searchResult.docs.stream().forEach(doc -> {
       Map<String, Object> props = StreamSupport.stream(doc.getProperties().spliterator(), false)
@@ -329,7 +331,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
       });
 
       if (returning.size() > 1) {
-        results.add((T) Tuples.ofArray(mappedResults.toArray()));
+        results.add((T) Tuples.ofArray(returnFields, mappedResults.toArray()));
       } else {
         results.add((T) mappedResults.get(0));
       }
@@ -339,7 +341,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   }
 
   @SuppressWarnings("unchecked")
-  private List<T> toResultTuple(List<E> entities) {
+  private List<T> toResultTuple(List<E> entities, String[] returnFields) {
     List<T> results = new ArrayList<>();
 
     entities.stream().forEach(entity -> {
@@ -351,7 +353,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
       });
 
       if (returning.size() > 1) {
-        results.add((T) Tuples.ofArray(mappedResults.toArray()));
+        results.add((T) Tuples.ofArray(returnFields, mappedResults.toArray()));
       } else {
         results.add((T) mappedResults.get(0));
       }
@@ -363,6 +365,11 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   @Override
   public Stream<Long> map(ToLongFunction<? super T> mapper) {
     return resolveStream().mapToLong(mapper).boxed();
+  }
+
+  @Override
+  public Stream<Map<String, Object>> mapToLabelledMaps() {
+     return resolveStream().map(Tuple.class::cast).map(Tuple::labelledMap);
   }
 
 }

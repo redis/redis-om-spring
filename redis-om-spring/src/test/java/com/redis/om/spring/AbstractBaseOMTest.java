@@ -19,7 +19,7 @@ import com.redis.testcontainers.RedisModulesContainer;
 
 @Testcontainers(disabledWithoutDocker = true)
 @DirtiesContext
-public class AbstractBaseOMTest {
+public abstract class AbstractBaseOMTest {
   @Container
   static final RedisModulesContainer REDIS;
 

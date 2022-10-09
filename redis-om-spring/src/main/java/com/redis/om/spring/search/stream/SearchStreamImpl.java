@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Spliterator;
@@ -435,6 +436,11 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       result = wrappedIds.mapToLong(mapper).boxed();
     }
     return result;
+  }
+
+  @Override
+  public Stream<Map<String, Object>> mapToLabelledMaps() {
+    throw new UnsupportedOperationException("mapToLabelledMaps is not supported on a SearchStream");
   }
 
 }

@@ -2,6 +2,7 @@ package com.redis.om.spring.search.stream;
 
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.function.BiConsumer;
@@ -246,6 +247,11 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
   @Override
   public Stream<Long> map(ToLongFunction<? super E> mapper) {
     return backingStream.mapToLong(mapper).boxed();
+  }
+
+  @Override
+  public Stream<Map<String, Object>> mapToLabelledMaps() {
+    throw new UnsupportedOperationException("mapToLabelledMaps is not supported on a WrappedSearchStream");
   }
 
 }
