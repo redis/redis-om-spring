@@ -402,7 +402,7 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
         .sequential() //
-        .reduce(0, Integer::sum);
+        .reduce(0, (t, u) -> Integer.sum(t, u));
 
     assertThat(result).isEqualTo(2011 + 1975 + 2003);
   }
@@ -440,7 +440,7 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
         .sequential() //
-        .reduce(Integer.MAX_VALUE, (minimum, yearFounded) -> Integer.min(minimum, yearFounded), Integer::min);
+        .reduce(Integer.MAX_VALUE, (minimum, yearFounded) -> Integer.min(minimum, yearFounded), (t, u) -> Integer.min(t, u));
     assertThat(firstEstablish).isEqualTo(1975);
   }
 

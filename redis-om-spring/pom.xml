@@ -7,7 +7,7 @@
 
   <groupId>com.redis.om</groupId>
   <artifactId>redis-om-spring</artifactId>
-  <version>0.6.0</version>
+  <version>0.6.1</version>
   <packaging>jar</packaging>
 
   <name>redis-om-spring</name>
@@ -57,8 +57,8 @@
     <maven.test.source>11</maven.test.source>
     <maven.test.target>11</maven.test.target>
     <java.version>11</java.version>
-    <spring.version>2.7.3</spring.version>
-    <sdr.version>2.7.2</sdr.version>
+    <spring.version>2.7.4</spring.version>
+    <sdr.version>2.7.3</sdr.version>
     <jredisjson.version>1.5.0</jredisjson.version>
     <jredisearch.version>2.2.0</jredisearch.version>
     <jredisbloom.version>2.2.0</jredisbloom.version>
@@ -74,6 +74,7 @@
     <javapoet.version>1.13.0</javapoet.version>
     <assertj.version>3.23.1</assertj.version>
     <elementary.version>1.1.2</elementary.version>
+    <gson.version>2.9.1</gson.version>
   </properties>
 
   <dependencyManagement>
@@ -145,6 +146,11 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>${guava.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>${gson.version}</version>
     </dependency>
     <dependency>
       <groupId>com.github.f4b6a3</groupId>
@@ -327,7 +333,7 @@
             </executions>
           </plugin>
 
-          <!--Sign the components - this is required by maven central for
+          <!--Sign the components - this is required by maven central for 
             releases -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>

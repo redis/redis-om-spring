@@ -6,8 +6,8 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.6.6</version>
-    <relativePath/> <!-- lookup parent from repository -->
+    <version>2.7.4</version>
+    <relativePath /> <!-- lookup parent from repository -->
   </parent>
 
   <groupId>com.redis.om</groupId>
@@ -31,7 +31,7 @@
     <dependency>
       <groupId>com.redis.om</groupId>
       <artifactId>redis-om-spring</artifactId>
-      <version>0.6.0</version>
+      <version>0.6.1</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
