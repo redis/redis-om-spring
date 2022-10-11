@@ -2,12 +2,10 @@ package com.redis.om.spring.tuple.impl.mapper;
 
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.EmptyTuple;
-import com.redis.om.spring.tuple.TupleMapper;
 import com.redis.om.spring.tuple.Tuples;
 
 public final class EmptyTupleMapperImpl<T>
-extends AbstractTupleMapper<T, EmptyTuple>
-implements TupleMapper<T, EmptyTuple> {
+extends AbstractTupleMapper<T, EmptyTuple> {
 
     public static final EmptyTupleMapperImpl<?> EMPTY_MAPPER = new EmptyTupleMapperImpl<>();
 

@@ -2,14 +2,12 @@ package com.redis.om.spring.tuple.impl.mapper;
 
 import java.util.function.Function;
 
-import com.redis.om.spring.tuple.Undecuple;
 import com.redis.om.spring.tuple.AbstractTupleMapper;
-import com.redis.om.spring.tuple.TupleMapper;
 import com.redis.om.spring.tuple.Tuples;
+import com.redis.om.spring.tuple.Undecuple;
 
 public final class UndecupleMapperImpl<T, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>
-extends AbstractTupleMapper<T, Undecuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>>
-implements TupleMapper<T, Undecuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>> {
+extends AbstractTupleMapper<T, Undecuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>> {
 
     public UndecupleMapperImpl(
             Function<T, T0> m0,

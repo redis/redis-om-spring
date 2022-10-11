@@ -1,13 +1,12 @@
 
 package com.redis.om.spring.tuple.impl;
 
-import com.redis.om.spring.tuple.AbstractTuple;
 import com.redis.om.spring.tuple.Triple;
 
 public final class TripleImpl<T0, T1, T2> extends AbstractTuple implements Triple<T0, T1, T2> {
 
-  public TripleImpl(T0 e0, T1 e1, T2 e2) {
-    super(TripleImpl.class, e0, e1, e2);
+  public TripleImpl(String[] labels, T0 e0, T1 e1, T2 e2) {
+    super(TripleImpl.class, labels, e0, e1, e2);
   }
 
   @SuppressWarnings("unchecked")

@@ -1,6 +1,7 @@
 package com.redis.om.spring.search.stream;
 
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -91,4 +92,6 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
   Optional<E> findFirst();
 
   Optional<E> findAny();
+  
+  Stream<Map<String,Object>> mapToLabelledMaps();
 }

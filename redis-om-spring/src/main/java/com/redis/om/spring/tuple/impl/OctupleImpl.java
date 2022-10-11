@@ -1,13 +1,12 @@
 package com.redis.om.spring.tuple.impl;
 
-import com.redis.om.spring.tuple.AbstractTuple;
 import com.redis.om.spring.tuple.Octuple;
 
 public final class OctupleImpl<T0, T1, T2, T3, T4, T5, T6, T7> extends AbstractTuple
     implements Octuple<T0, T1, T2, T3, T4, T5, T6, T7> {
 
-  public OctupleImpl(T0 e0, T1 e1, T2 e2, T3 e3, T4 e4, T5 e5, T6 e6, T7 e7) {
-    super(OctupleImpl.class, e0, e1, e2, e3, e4, e5, e6, e7);
+  public OctupleImpl(String[] labels, T0 e0, T1 e1, T2 e2, T3 e3, T4 e4, T5 e5, T6 e6, T7 e7) {
+    super(OctupleImpl.class, labels, e0, e1, e2, e3, e4, e5, e6, e7);
   }
 
   @SuppressWarnings("unchecked")

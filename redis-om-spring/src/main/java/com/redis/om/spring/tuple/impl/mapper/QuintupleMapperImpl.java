@@ -4,11 +4,9 @@ import java.util.function.Function;
 
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.Quintuple;
-import com.redis.om.spring.tuple.TupleMapper;
 import com.redis.om.spring.tuple.Tuples;
 
-public final class QuintupleMapperImpl<T, T0, T1, T2, T3, T4> extends AbstractTupleMapper<T, Quintuple<T0, T1, T2, T3, T4>>
-    implements TupleMapper<T, Quintuple<T0, T1, T2, T3, T4>> {
+public final class QuintupleMapperImpl<T, T0, T1, T2, T3, T4> extends AbstractTupleMapper<T, Quintuple<T0, T1, T2, T3, T4>> {
 
   public QuintupleMapperImpl(Function<T, T0> m0, Function<T, T1> m1, Function<T, T2> m2, Function<T, T3> m3,
       Function<T, T4> m4) {

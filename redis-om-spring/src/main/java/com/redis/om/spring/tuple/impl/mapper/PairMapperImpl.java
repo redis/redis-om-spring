@@ -4,11 +4,9 @@ import java.util.function.Function;
 
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.Pair;
-import com.redis.om.spring.tuple.TupleMapper;
 import com.redis.om.spring.tuple.Tuples;
 
-public final class PairMapperImpl<T, T0, T1> extends AbstractTupleMapper<T, Pair<T0, T1>>
-    implements TupleMapper<T, Pair<T0, T1>> {
+public final class PairMapperImpl<T, T0, T1> extends AbstractTupleMapper<T, Pair<T0, T1>> {
 
   public PairMapperImpl(Function<T, T0> m0, Function<T, T1> m1) {
     super(2);

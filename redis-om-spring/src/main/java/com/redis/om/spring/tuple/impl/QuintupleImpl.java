@@ -1,12 +1,11 @@
 package com.redis.om.spring.tuple.impl;
 
-import com.redis.om.spring.tuple.AbstractTuple;
 import com.redis.om.spring.tuple.Quintuple;
 
 public final class QuintupleImpl<T0, T1, T2, T3, T4> extends AbstractTuple implements Quintuple<T0, T1, T2, T3, T4> {
 
-  public QuintupleImpl(T0 e0, T1 e1, T2 e2, T3 e3, T4 e4) {
-    super(QuintupleImpl.class, e0, e1, e2, e3, e4);
+  public QuintupleImpl(String[] labels, T0 e0, T1 e1, T2 e2, T3 e3, T4 e4) {
+    super(QuintupleImpl.class, labels, e0, e1, e2, e3, e4);
   }
 
   @SuppressWarnings("unchecked")
