@@ -23,6 +23,7 @@
     <maven.compiler.target>11</maven.compiler.target>
     <maven.test.source>11</maven.test.source>
     <maven.test.target>11</maven.test.target>
+    <maven.deploy.skip>true</maven.deploy.skip>
   </properties>
 
   <dependencies>
