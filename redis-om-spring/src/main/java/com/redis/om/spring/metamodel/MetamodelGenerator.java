@@ -39,7 +39,7 @@ import java.util.stream.Stream;
 import static java.util.Objects.requireNonNull;
 
 @SupportedAnnotationTypes("com.redis.om.spring.annotations.Document")
-@SupportedSourceVersion(SourceVersion.RELEASE_11)
+@SupportedSourceVersion(SourceVersion.RELEASE_17)
 @AutoService(Processor.class)
 public final class MetamodelGenerator extends AbstractProcessor {
 
