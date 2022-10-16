@@ -51,12 +51,12 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.release>11</maven.compiler.release>
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
-    <maven.test.source>11</maven.test.source>
-    <maven.test.target>11</maven.test.target>
-    <java.version>11</java.version>
+    <maven.compiler.release>17</maven.compiler.release>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <maven.test.source>17</maven.test.source>
+    <maven.test.target>17</maven.test.target>
+    <java.version>17</java.version>
     <spring.version>2.7.4</spring.version>
     <sdr.version>2.7.3</sdr.version>
     <jredisjson.version>1.5.0</jredisjson.version>
