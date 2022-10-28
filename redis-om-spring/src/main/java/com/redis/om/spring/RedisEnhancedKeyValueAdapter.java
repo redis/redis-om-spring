@@ -1,18 +1,22 @@
 package com.redis.om.spring;
 
+import static com.redis.om.spring.util.ObjectUtils.documentToObject;
+import static com.redis.om.spring.util.ObjectUtils.getIdFieldForEntity;
+
 import java.lang.reflect.Field;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
@@ -52,6 +56,14 @@ import com.redis.om.spring.convert.MappingRedisOMConverter.BinaryKeyspaceIdentif
 import com.redis.om.spring.convert.MappingRedisOMConverter.KeyspaceIdentifier;
 import com.redis.om.spring.convert.RedisOMCustomConversions;
 import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.search.SearchOperations;
+
+import io.redisearch.AggregationResult;
+import io.redisearch.Query;
+import io.redisearch.SearchResult;
+import io.redisearch.aggregation.AggregationBuilder;
+import io.redisearch.aggregation.Group;
+import io.redisearch.aggregation.reducers.Reducers;
 
 public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
@@ -71,9 +83,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   private @Nullable String keyspaceNotificationsConfigParameter = null;
   private ShadowCopy shadowCopy = ShadowCopy.DEFAULT;
 
-  @SuppressWarnings("unused")
   private RedisModulesOperations<String> modulesOperations;
-  @SuppressWarnings("unused")
   private KeyspaceToIndexMap keyspaceToIndexMap;
 
   /**
@@ -172,15 +182,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     boolean isNew = redisOperations.execute((RedisCallback<Boolean>) connection -> connection.del(objectKey) == 0);
 
     redisOperations.executePipelined((RedisCallback<Object>) connection -> {
-
-      byte[] key = toBytes(rdo.getId());
-
       Map<byte[], byte[]> rawMap = rdo.getBucket().rawMap();
       connection.hMSet(objectKey, rawMap);
-
-      if (isNew) {
-        connection.sAdd(toBytes(rdo.getKeyspace()), key);
-      }
 
       if (expires(rdo)) {
         connection.expire(objectKey, rdo.getTimeToLive());
@@ -238,6 +241,39 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
   /*
    * (non-Javadoc)
+   * 
+   * @see
+   * org.springframework.data.keyvalue.core.AbstractKeyValueAdapter#delete(java.
+   * lang.Object, java.lang.String, java.lang.Class)
+   */
+  @Override
+  public <T> T delete(Object id, String keyspace, Class<T> type) {
+    T o = get(id, keyspace, type);
+
+    if (o != null) {
+
+      byte[] keyToDelete = createKey(asString(keyspace), asString(id));
+
+      redisOperations.execute((RedisCallback<Void>) connection -> {
+
+        connection.del(keyToDelete);
+
+        if (keepShadowCopy()) {
+          RedisPersistentEntity<?> persistentEntity = converter.getMappingContext().getPersistentEntity(type);
+          if (persistentEntity != null && persistentEntity.isExpiring()) {
+            byte[] phantomKey = ByteUtils.concat(keyToDelete, BinaryKeyspaceIdentifier.PHANTOM_SUFFIX);
+            connection.del(phantomKey);
+          }
+        }
+        return null;
+      });
+    }
+
+    return o;
+  }
+
+  /*
+   * (non-Javadoc)
    *
    * @see
    * org.springframework.data.keyvalue.core.KeyValueAdapter#deleteAllOf(java.lang.
@@ -245,13 +281,37 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public void deleteAllOf(String keyspace) {
+    Class<?> type = keyspaceToIndexMap.getEntityClassForKeyspace(keyspace);
+    List<byte[]> keys = getAllIds(keyspace, type).stream().map(id -> getKey(keyspace, id)).map(k -> toBytes(k))
+        .collect(Collectors.toList());
+    if (keys.size() > 0) {
+      redisOperations.execute((RedisCallback<Void>) connection -> {
+        connection.del(keys.toArray(new byte[0][]));
+        return null;
+      });
+    }
+  }
 
-    redisOperations.execute((RedisCallback<Void>) connection -> {
+  public <T> List<String> getAllIds(String keyspace, Class<T> type) {
+    Optional<String> maybeSearchIndex = keyspaceToIndexMap.getIndexName(keyspace);
+    List<String> keys = List.of();
+    if (maybeSearchIndex.isPresent()) {
+      SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
+      Optional<Field> maybeIdField = com.redis.om.spring.util.ObjectUtils.getIdFieldForEntityClass(type);
+      String idField = maybeIdField.isPresent() ? maybeIdField.get().getName() : "id";
 
-      connection.del(toBytes(keyspace));
+      Query query = new Query("*");
+      query.returnFields(idField);
+      SearchResult searchResult = searchOps.search(query);
 
-      return null;
-    });
+      keys = searchResult.docs.stream()
+          .map(d -> documentToObject(d, type, (MappingRedisOMConverter) converter)) //
+          .map(e -> getIdFieldForEntity(maybeIdField.get(), e)) //
+          .map(Object::toString)
+          .collect(Collectors.toList());
+    }
+
+    return keys;
   }
 
   /**
@@ -261,32 +321,24 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * @param type     the desired target type.
    * @param offset   index value to start reading.
    * @param rows     maximum number or entities to return.
-   * @param <T>      type of entity
+   * @param <T>
    * @return never {@literal null}.
+   * @since 2.5
    */
   @Override
   public <T> List<T> getAllOf(String keyspace, Class<T> type, long offset, int rows) {
-    byte[] binKeyspace = toBytes(keyspace);
-
-    Set<byte[]> ids = redisOperations
-        .execute((RedisCallback<Set<byte[]>>) connection -> connection.sMembers(binKeyspace));
-
-    List<T> result = new ArrayList<>();
-    List<byte[]> keys = new ArrayList<>(ids);
-
-    if (keys.isEmpty() || keys.size() < offset) {
-      return Collections.emptyList();
+    List<String> keys = getAllIds(keyspace, type);
+    if (!keys.isEmpty()) {
+      offset = Math.max(0, offset);
+      if (rows > 0) {
+        keys = keys.subList((int) offset, Math.min((int) offset + rows, keys.size()));
+      }
+      List<T> result = new ArrayList<>();
+      keys.forEach(key -> result.add(get(key, keyspace, type)));
+      return result;
+    } else {
+      return List.of();
     }
-
-    offset = Math.max(0, offset);
-    if (rows > 0) {
-      keys = keys.subList((int) offset, Math.min((int) offset + rows, keys.size()));
-    }
-
-    for (byte[] key : keys) {
-      result.add(get(key, keyspace, type));
-    }
-    return result;
   }
 
   @Override
@@ -357,6 +409,45 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
       return null;
     });
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see org.springframework.data.keyvalue.core.KeyValueAdapter#count(java.lang.
+   * String)
+   */
+  @Override
+  public long count(String keyspace) {
+    Long count = 0L;
+    Optional<String> maybeIndexName = keyspaceToIndexMap.getIndexName(keyspace);
+    if (maybeIndexName.isPresent()) {
+      SearchOperations<String> search = modulesOperations.opsForSearch(maybeIndexName.get());
+      AggregationBuilder countAggregation = new AggregationBuilder()
+          .groupBy(new Group().reduce(Reducers.count()));
+      AggregationResult result = search.aggregate(countAggregation);
+      count = result.totalResults > 0 ? result.getRow(0).getLong("__generated_aliascount") : 0L;
+    }
+    return count;
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.springframework.data.keyvalue.core.KeyValueAdapter#contains(java.lang.
+   * Object, java.lang.String)
+   */
+  @Override
+  public boolean contains(Object id, String keyspace) {
+    Boolean exists = redisOperations
+        .execute((RedisCallback<Boolean>) connection -> connection.exists(toBytes(getKey(keyspace, id))));
+
+    return exists != null ? exists : false;
+  }
+
+  protected String getKey(String keyspace, Object id) {
+    return String.format("%s:%s", keyspace, id);
   }
 
   private RedisUpdateObject fetchDeletePathsFromHash(RedisUpdateObject redisUpdateObject, String path,

@@ -27,13 +27,13 @@ import org.springframework.data.keyvalue.core.mapping.KeyValuePersistentEntity;
 import org.springframework.data.keyvalue.repository.support.SimpleKeyValueRepository;
 import org.springframework.data.redis.core.PartialUpdate;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.core.convert.RedisData;
 import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
 import org.springframework.data.repository.core.EntityInformation;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
+import com.google.common.collect.Lists;
 import com.redis.om.spring.KeyspaceToIndexMap;
 import com.redis.om.spring.RedisEnhancedKeyValueAdapter;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
@@ -79,25 +79,38 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     this.generator = ULIDIdentifierGenerator.INSTANCE;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public Iterable<ID> getIds() {
-    @SuppressWarnings("unchecked")
-    RedisTemplate<String, ID> template = (RedisTemplate<String, ID>) modulesOperations.getTemplate();
-    SetOperations<String, ID> setOps = template.opsForSet();
-    return new ArrayList<>(setOps.members(metadata.getJavaType().getName()));
+    String keyspace = keyspaceToIndexMap.getKeyspaceForEntityClass(metadata.getJavaType());
+    Optional<String> maybeSearchIndex = keyspaceToIndexMap.getIndexName(keyspace);
+    List<ID> result = List.of();
+    if (maybeSearchIndex.isPresent()) {
+      SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
+      Optional<Field> maybeIdField = ObjectUtils.getIdFieldForEntityClass(metadata.getJavaType());
+      String idField = maybeIdField.isPresent() ? maybeIdField.get().getName() : "id";
+      
+      Query query = new Query("*");
+      query.returnFields(idField);
+      SearchResult searchResult = searchOps.search(query);
+  
+      result = (List<ID>) searchResult.docs.stream()
+          .map(d -> ObjectUtils.documentToObject(d, metadata.getJavaType(), mappingConverter)) //
+          .map(e -> ObjectUtils.getIdFieldForEntity(maybeIdField.get(), e)) //
+          .collect(Collectors.toList());
+    }
+
+    return result;
   }
 
   @Override
   public Page<ID> getIds(Pageable pageable) {
-    @SuppressWarnings("unchecked")
-    RedisTemplate<String, ID> template = (RedisTemplate<String, ID>) modulesOperations.getTemplate();
-    SetOperations<String, ID> setOps = template.opsForSet();
-    List<ID> ids = new ArrayList<>(setOps.members(metadata.getJavaType().getName()));
+    List<ID> ids = Lists.newArrayList(getIds());
 
-    int fromIndex = Math.toIntExact(pageable.getOffset());
+    int fromIndex = Long.valueOf(pageable.getOffset()).intValue();
     int toIndex = fromIndex + pageable.getPageSize();
-
-    return new PageImpl<>(ids.subList(fromIndex, toIndex), pageable, ids.size());
+    
+    return new PageImpl<ID>((List<ID>) ids.subList(fromIndex, toIndex), pageable, ids.size());
   }
 
   @Override
@@ -233,7 +246,6 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
         RedisData rdo = new RedisData();
         mappingConverter.write(entity, rdo);
 
-        pipeline.sadd(rdo.getKeyspace(), id.toString());
         pipeline.hmset(objectKey, rdo.getBucket().rawMap());
 
         if (expires(rdo)) {
