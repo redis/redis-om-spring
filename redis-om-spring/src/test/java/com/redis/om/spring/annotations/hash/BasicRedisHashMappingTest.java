@@ -93,6 +93,21 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
       personRepo.saveAll(List.of(john, gray, terryg, eric, terryj, michael));
     }
   }
+  
+  @Test
+  void testDeleteAll() {
+    assertThat(personRepo.count()).isEqualTo(6);
+    personRepo.deleteAll();
+    assertThat(personRepo.count()).isZero();
+  }
+  
+  @Test
+  void testDeleteOne() {
+    assertThat(personRepo.count()).isEqualTo(6);
+    personRepo.delete(eric);
+    assertThat(personRepo.count()).isEqualTo(5);
+    personRepo.deleteAll();
+  }
 
   @Test
   void testThatIndexedSimpleCollectionsAreSerializedAsCSV() {
@@ -441,7 +456,7 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
-  void testFindAllUnpages() {
+  void testFindAllUnpaged() {
     final List<Company> bunchOfCompanies = new ArrayList<>();
     IntStream.range(1, 5).forEach(i -> {
       Company c = Company.of("Company" + i, 2022, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
