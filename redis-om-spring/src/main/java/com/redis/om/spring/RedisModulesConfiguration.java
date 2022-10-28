@@ -74,6 +74,7 @@ import com.redis.om.spring.serialization.gson.LocalDateTimeTypeAdapter;
 import com.redis.om.spring.serialization.gson.LocalDateTypeAdapter;
 import com.redis.om.spring.serialization.gson.PointTypeAdapter;
 import com.redis.om.spring.serialization.gson.UlidTypeAdapter;
+import static com.redis.om.spring.util.ObjectUtils.getIdFieldForEntityClass;
 
 import io.redisearch.FieldName;
 import io.redisearch.Schema;
@@ -242,6 +243,18 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
           if (field.isAnnotationPresent(DocumentScore.class)) {
             String fieldPrefix = cls == Document.class ? "$." : "";
             scoreField = fieldPrefix + field.getName();
+          }
+        }
+        
+        Optional<java.lang.reflect.Field> maybeIdField = getIdFieldForEntityClass(cl);
+        if (maybeIdField.isPresent()) {
+          java.lang.reflect.Field idField = maybeIdField.get();
+          if (!fields.stream().anyMatch(f -> f.name.equals(idField.getName()))) {
+            if (Number.class.isAssignableFrom(idField.getType())) {
+              fields.add(indexAsNumericFieldFor(maybeIdField.get(), cls == Document.class, "", true, false));
+            } else {
+              fields.add(indexAsTagFieldFor(maybeIdField.get(), cls == Document.class, "", false, ",", Integer.MIN_VALUE));
+            }
           }
         }
 
