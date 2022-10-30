@@ -18,7 +18,8 @@ import com.redis.om.spring.annotations.document.fixtures.Custom;
 import com.redis.om.spring.annotations.document.fixtures.CustomRepository;
 
 class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
-  @Autowired CustomRepository repository;
+  @Autowired
+  CustomRepository repository;
 
   @Autowired
   RedisTemplate<String, String> template;
@@ -74,6 +75,13 @@ class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
     repository.deleteById(id2);
 
     assertEquals(1, repository.count());
+  }
+
+  @Test
+  void testDeleteAll() {
+    assertThat(repository.count()).isEqualTo(3L);
+    repository.deleteAll();
+    assertThat(repository.count()).isZero();
   }
 
 }
