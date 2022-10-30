@@ -41,6 +41,7 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   @BeforeEach
   void cleanUp() {
     repository.deleteAll();
+    flushSearchIndexFor(Company.class);
   }
 
   @Test
