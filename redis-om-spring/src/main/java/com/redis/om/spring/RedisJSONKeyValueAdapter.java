@@ -2,21 +2,19 @@ package com.redis.om.spring;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.redis.core.RedisCallback;
@@ -30,15 +28,36 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
+import com.google.common.collect.Lists;
+import com.google.gson.Gson;
 import com.redis.om.spring.convert.RedisOMCustomConversions;
+import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
+import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.util.ObjectUtils;
+import com.redislabs.modules.rejson.Path;
+
+import io.redisearch.AggregationResult;
+import io.redisearch.Document;
+import io.redisearch.Query;
+import io.redisearch.SearchResult;
+import io.redisearch.aggregation.AggregationBuilder;
+import io.redisearch.aggregation.Group;
+import io.redisearch.aggregation.reducers.Reducers;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Pipeline;
 
 public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private static final Log logger = LogFactory.getLog(RedisJSONKeyValueAdapter.class);
   private JSONOperations<?> redisJSONOperations;
   private RedisOperations<?, ?> redisOperations;
   private RedisMappingContext mappingContext;
+  private @Nullable String keyspaceNotificationsConfigParameter = null;
+  private RedisModulesOperations<String> modulesOperations;
+  private KeyspaceToIndexMap keyspaceToIndexMap;
+
+  @Autowired
+  private Gson gson;
 
   /**
    * Creates new {@link RedisKeyValueAdapter} with default
@@ -48,19 +67,24 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    * @param mappingContext      must not be {@literal null}.
    * @param redisJSONOperations must not be {@literal null}.
    */
-  public RedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps, JSONOperations<?> redisJSONOperations,
-      RedisMappingContext mappingContext) {
+  @SuppressWarnings("unchecked")
+  public RedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisModulesOperations<?> rmo,
+      RedisMappingContext mappingContext, KeyspaceToIndexMap keyspaceToIndexMap) {
     super(redisOps, mappingContext, new RedisOMCustomConversions());
-    this.redisJSONOperations = redisJSONOperations;
+    this.modulesOperations = (RedisModulesOperations<String>) rmo;
+    this.redisJSONOperations = modulesOperations.opsForJSON();
     this.redisOperations = redisOps;
     this.mappingContext = mappingContext;
+    this.keyspaceToIndexMap = keyspaceToIndexMap;
   }
 
-  /* (non-Javadoc)
+  /*
+   * (non-Javadoc)
    *
    * @see
    * org.springframework.data.keyvalue.core.KeyValueAdapter#put(java.lang.Object,
-   * java.lang.Object, java.lang.String) */
+   * java.lang.Object, java.lang.String)
+   */
   @Override
   public Object put(Object id, Object item, String keyspace) {
     logger.debug(String.format("%s, %s, %s", id, item, keyspace));
@@ -79,18 +103,20 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       if (maybeTtl.isPresent()) {
         connection.expire(toBytes(key), maybeTtl.get());
       }
-      connection.sAdd(toBytes(keyspace), toBytes(id));
+
       return null;
     });
 
     return item;
   }
 
-  /* (non-Javadoc)
+  /*
+   * (non-Javadoc)
    *
    * @see
    * org.springframework.data.keyvalue.core.KeyValueAdapter#get(java.lang.Object,
-   * java.lang.String, java.lang.Class) */
+   * java.lang.String, java.lang.Class)
+   */
   @Nullable
   @Override
   public <T> T get(Object id, String keyspace, Class<T> type) {
@@ -115,30 +141,122 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public <T> List<T> getAllOf(String keyspace, Class<T> type, long offset, int rows) {
+    Optional<String> maybeSearchIndex = keyspaceToIndexMap.getIndexName(keyspace);
+
+    List<T> result = List.of();
+    if (maybeSearchIndex.isPresent()) {
+      SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
+      Query query = new Query("*");
+      offset = Math.max(0, offset);
+      if (rows > 0) {
+        query.limit(Math.toIntExact(offset), rows);
+      }
+      SearchResult searchResult = searchOps.search(query);
+
+      result = searchResult.docs.stream()
+          .map(d -> gson.fromJson(d.get("$").toString(), type)) //
+          .collect(Collectors.toList());
+    }
+
+    return result;
+  }
+
+  public <T> List<String> getAllKeys(String keyspace, Class<T> type) {
+    Optional<String> maybeSearchIndex = keyspaceToIndexMap.getIndexName(keyspace);
+
+    List<String> keys = List.of();
+    if (maybeSearchIndex.isPresent()) {
+      SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
+      Optional<Field> maybeIdField = ObjectUtils.getIdFieldForEntityClass(type);
+      String idField = maybeIdField.isPresent() ? maybeIdField.get().getName() : "id";
+
+      Query query = new Query("*");
+      query.returnFields(idField);
+      SearchResult searchResult = searchOps.search(query);
+      
+      keys = searchResult.docs.stream()
+          .map(Document::getId) //
+          .collect(Collectors.toList());
+    }
+
+    return keys;
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.springframework.data.keyvalue.core.AbstractKeyValueAdapter#delete(java.
+   * lang.Object, java.lang.String, java.lang.Class)
+   */
+  @Override
+  public <T> T delete(Object id, String keyspace, Class<T> type) {
     @SuppressWarnings("unchecked")
     JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
-
-    byte[] binKeyspace = toBytes(keyspace);
-    Set<byte[]> ids = redisOperations
-        .execute((RedisCallback<Set<byte[]>>) connection -> connection.sMembers(binKeyspace));
-    
-    if (ids == null || ids.isEmpty()) {
-      return Collections.emptyList();
+    T entity = get(id, keyspace, type);
+    if (entity != null) {
+      ops.del(getKey(keyspace, id), Path.ROOT_PATH);
     }
 
-    String[] keys = ids.stream().map(b -> getKey(keyspace, new String(b, StandardCharsets.UTF_8)))
-        .toArray(String[]::new);
+    return entity;
+  }
 
-    if ((keys.length == 0) || (keys.length < offset)) {
-      return Collections.emptyList();
+  /*
+   * (non-Javadoc)
+   *
+   * @see
+   * org.springframework.data.keyvalue.core.KeyValueAdapter#deleteAllOf(java.lang.
+   * String)
+   */
+  @Override
+  public void deleteAllOf(String keyspace) {
+    Class<?> type = keyspaceToIndexMap.getEntityClassForKeyspace(keyspace);
+    List<String> keys = getAllKeys(keyspace, type);
+    if (!keys.isEmpty()) {
+      List<List<String>> keysSubsets = Lists.partition(keys, 25);
+      try (Jedis jedis = modulesOperations.getClient().getJedis()) {
+        Pipeline pipeline = jedis.pipelined();
+        for (List<String> subset : keysSubsets) {
+          pipeline.unlink(subset.toArray(new String[0]));
+        }
+        pipeline.sync();
+      }
     }
+  }
 
-    offset = Math.max(0, offset);
-    if (rows > 0) {
-      keys = Arrays.copyOfRange(keys, (int) offset, Math.min((int) offset + rows, keys.length));
+  /*
+   * (non-Javadoc)
+   * 
+   * @see org.springframework.data.keyvalue.core.KeyValueAdapter#count(java.lang.
+   * String)
+   */
+  @Override
+  public long count(String keyspace) {
+    Long count = 0L;
+    Optional<String> maybeIndexName = keyspaceToIndexMap.getIndexName(keyspace);
+    if (maybeIndexName.isPresent()) {
+      SearchOperations<String> search = modulesOperations.opsForSearch(maybeIndexName.get());
+      AggregationBuilder countAggregation = new AggregationBuilder()
+          .groupBy(new Group().reduce(Reducers.count()));
+      AggregationResult result = search.aggregate(countAggregation);
+      count = result.totalResults > 0 ? result.getRow(0).getLong("__generated_aliascount") : 0L;
     }
+    return count;
+  }
 
-    return ops.mget(type, keys);
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.springframework.data.keyvalue.core.KeyValueAdapter#contains(java.lang.
+   * Object, java.lang.String)
+   */
+  @Override
+  public boolean contains(Object id, String keyspace) {
+    Boolean exists = redisOperations
+        .execute((RedisCallback<Boolean>) connection -> connection.exists(toBytes(getKey(keyspace, id))));
+
+    return exists != null ? exists : false;
   }
 
   private void processAuditAnnotations(String key, Object item) {

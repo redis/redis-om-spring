@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -25,7 +24,6 @@ import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.core.mapping.KeyValuePersistentEntity;
 import org.springframework.data.keyvalue.repository.support.SimpleKeyValueRepository;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.core.TimeToLive;
 import org.springframework.data.redis.core.convert.KeyspaceConfiguration;
 import org.springframework.data.redis.core.convert.RedisData;
@@ -36,22 +34,27 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.redis.om.spring.KeyspaceToIndexMap;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.id.ULIDIdentifierGenerator;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.RedisDocumentRepository;
 import com.redis.om.spring.util.ObjectUtils;
 import com.redislabs.modules.rejson.Path;
 
+import io.redisearch.Query;
+import io.redisearch.SearchResult;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.commands.ProtocolCommand;
 import redis.clients.jedis.util.SafeEncoder;
 
-public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueRepository<T, ID> implements RedisDocumentRepository<T, ID> {
+public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueRepository<T, ID>
+    implements RedisDocumentRepository<T, ID> {
 
   private final Gson gson;
   protected RedisModulesOperations<String> modulesOperations;
@@ -71,12 +74,12 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       RedisMappingContext mappingContext,
       Gson gson) {
     super(metadata, operations);
-    this.modulesOperations = (RedisModulesOperations<String>)rmo;
+    this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.metadata = metadata;
     this.operations = operations;
     this.keyspaceToIndexMap = keyspaceToIndexMap;
     this.mappingConverter = new MappingRedisOMConverter(null,
-            new ReferenceResolverImpl(modulesOperations.getTemplate()));
+        new ReferenceResolverImpl(modulesOperations.getTemplate()));
     this.generator = ULIDIdentifierGenerator.INSTANCE;
     this.gson = gson;
     this.mappingContext = mappingContext;
@@ -84,47 +87,54 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
   @Override
   public Iterable<ID> getIds() {
-    @SuppressWarnings("unchecked")
-    RedisTemplate<String,ID> template = (RedisTemplate<String,ID>)modulesOperations.getTemplate();
-    SetOperations<String, ID> setOps = template.opsForSet();
-    return new ArrayList<>(setOps.members(metadata.getJavaType().getName()));
+    String keyspace = keyspaceToIndexMap.getKeyspaceForEntityClass(metadata.getJavaType());
+    Optional<String> maybeSearchIndex = keyspaceToIndexMap.getIndexName(keyspace);
+    List<ID> result = List.of();
+    if (maybeSearchIndex.isPresent()) {
+      SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
+      Optional<Field> maybeIdField = ObjectUtils.getIdFieldForEntityClass(metadata.getJavaType());
+      String idField = maybeIdField.isPresent() ? maybeIdField.get().getName() : "id";
+
+      Query query = new Query("*");
+      query.returnFields(idField);
+      SearchResult searchResult = searchOps.search(query);
+
+      result = searchResult.docs.stream()
+          .map(d -> gson.fromJson(d.get(idField).toString(), metadata.getIdType()))
+          .collect(Collectors.toList());
+    }
+
+    return result;
   }
 
   @Override
   public Page<ID> getIds(Pageable pageable) {
-    @SuppressWarnings("unchecked")
-    RedisTemplate<String,ID> template = (RedisTemplate<String,ID>)modulesOperations.getTemplate();
-    SetOperations<String, ID> setOps = template.opsForSet();
-    List<ID> ids = new ArrayList<>(setOps.members(metadata.getJavaType().getName()));
+    List<ID> ids = Lists.newArrayList(getIds());
 
-    int fromIndex = Math.toIntExact(pageable.getOffset());
+    int fromIndex = Long.valueOf(pageable.getOffset()).intValue();
     int toIndex = fromIndex + pageable.getPageSize();
-    
-    return new PageImpl<>(ids.subList(fromIndex, toIndex), pageable, ids.size());
+
+    return new PageImpl<ID>((List<ID>) ids.subList(fromIndex, toIndex), pageable, ids.size());
   }
 
   @Override
   public void deleteById(ID id, Path path) {
-    Long deletedCount = modulesOperations.opsForJSON().del(getKey(id), path);
-    
-    if ((deletedCount > 0) && path.equals(Path.ROOT_PATH)) {
-      @SuppressWarnings("unchecked")
-      RedisTemplate<String,ID> template = (RedisTemplate<String,ID>)modulesOperations.getTemplate();
-      SetOperations<String, ID> setOps = template.opsForSet();
-      setOps.remove(StringUtils.chop(getKeyspace()), id);
-    }
+    modulesOperations.opsForJSON().del(metadata.getJavaType().getName() + ":" + id.toString(), path);
   }
 
   @Override
   public void updateField(T entity, MetamodelField<T, ?> field, Object value) {
-    modulesOperations.opsForJSON().set(getKey(metadata.getId(entity)), value, Path.of("$." + field.getField().getName()));
+    modulesOperations.opsForJSON().set(getKey(metadata.getId(entity)), value,
+        Path.of("$." + field.getField().getName()));
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field) {
     String[] keys = StreamSupport.stream(ids.spliterator(), false).map(this::getKey).toArray(String[]::new);
-    return (Iterable<F>) modulesOperations.opsForJSON().mget(Path.of("$." + field.getField().getName()), List.class, keys).stream().flatMap(List::stream).collect(Collectors.toList());
+    return (Iterable<F>) modulesOperations.opsForJSON()
+        .mget(Path.of("$." + field.getField().getName()), List.class, keys).stream().flatMap(List::stream)
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -145,8 +155,10 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       for (S entity : entities) {
         boolean isNew = metadata.isNew(entity);
 
-        KeyValuePersistentEntity<?, ?> keyValueEntity = mappingConverter.getMappingContext().getRequiredPersistentEntity(ClassUtils.getUserClass(entity));
-        Object id = isNew ? generator.generateIdentifierOfType(keyValueEntity.getIdProperty().getTypeInformation()) : (String) keyValueEntity.getPropertyAccessor(entity).getProperty(keyValueEntity.getIdProperty());
+        KeyValuePersistentEntity<?, ?> keyValueEntity = mappingConverter.getMappingContext()
+            .getRequiredPersistentEntity(ClassUtils.getUserClass(entity));
+        Object id = isNew ? generator.generateIdentifierOfType(keyValueEntity.getIdProperty().getTypeInformation())
+            : (String) keyValueEntity.getPropertyAccessor(entity).getProperty(keyValueEntity.getIdProperty());
         keyValueEntity.getPropertyAccessor(entity).setProperty(keyValueEntity.getIdProperty(), id);
 
         String keyspace = keyValueEntity.getKeySpace();
@@ -157,8 +169,6 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
         RedisData rdo = new RedisData();
         mappingConverter.write(entity, rdo);
-
-        pipeline.sadd(rdo.getKeyspace(), id.toString());
 
         List<byte[]> args = new ArrayList<>(4);
         args.add(objectKey);
@@ -177,11 +187,11 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
     return saved;
   }
-  
+
   private String getKeyspace() {
     return keyspaceToIndexMap.getKeyspaceForEntityClass(metadata.getJavaType());
   }
-  
+
   private String getKey(Object id) {
     return getKeyspace() + id.toString();
   }
