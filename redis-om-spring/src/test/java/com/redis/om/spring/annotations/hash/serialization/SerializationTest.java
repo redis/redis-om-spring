@@ -167,7 +167,7 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
   @Test
   void testHashDeserialization() {
     Optional<KitchenSink> fromDb = repository.findById(ks.getId());
-    assertThat(fromDb.isPresent());
+    assertThat(fromDb).isPresent();
     assertThat(fromDb.get().getLocalDate()).isEqualTo(localDate);
     assertThat(fromDb.get().getDate()).isEqualTo(date);
     assertThat(fromDb.get().getPoint()).isEqualTo(point);
@@ -188,21 +188,21 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
   @Test
   void testEmptyUlidReturnsAsNull() {
     Optional<KitchenSink> fromDb = repository.findById(ks3.getId());
-    assertThat(fromDb.isPresent());
+    assertThat(fromDb).isPresent();
     assertThat(fromDb.get().getUlid()).isNull();
   }
   
   @Test
   void testArraySerialization() {
     Optional<KitchenSink> fromDb = repository.findById(ks3.getId());
-    assertThat(fromDb.isPresent());
+    assertThat(fromDb).isPresent();
     assertThat(fromDb.get().getByteArray()).isEqualTo(byteArray);
   }
   
   @Test
   void testCantPersistCollectionWithNulls() {
     Optional<KitchenSink> fromDb = repository.findById(ks4.getId());
-    assertThat(fromDb.isPresent());
+    assertThat(fromDb).isPresent();
     assertThat(fromDb.get().getListOfStringArrays()).isNull();
   }
 
