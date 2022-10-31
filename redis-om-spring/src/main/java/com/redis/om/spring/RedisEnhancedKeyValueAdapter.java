@@ -15,26 +15,20 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
-import org.springframework.data.redis.connection.Message;
-import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.PartialUpdate;
 import org.springframework.data.redis.core.PartialUpdate.PropertyUpdate;
 import org.springframework.data.redis.core.PartialUpdate.UpdateCommand;
 import org.springframework.data.redis.core.RedisCallback;
-import org.springframework.data.redis.core.RedisKeyExpiredEvent;
 import org.springframework.data.redis.core.RedisKeyValueAdapter;
 import org.springframework.data.redis.core.RedisOperations;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.TimeToLive;
 import org.springframework.data.redis.core.convert.RedisConverter;
 import org.springframework.data.redis.core.convert.RedisCustomConversions;
@@ -43,17 +37,12 @@ import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.redis.core.mapping.RedisPersistentEntity;
 import org.springframework.data.redis.core.mapping.RedisPersistentProperty;
-import org.springframework.data.redis.listener.KeyExpirationEventMessageListener;
-import org.springframework.data.redis.listener.RedisMessageListenerContainer;
-import org.springframework.data.redis.util.ByteUtils;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
 
 import com.redis.om.spring.convert.MappingRedisOMConverter;
-import com.redis.om.spring.convert.MappingRedisOMConverter.BinaryKeyspaceIdentifier;
-import com.redis.om.spring.convert.MappingRedisOMConverter.KeyspaceIdentifier;
 import com.redis.om.spring.convert.RedisOMCustomConversions;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
@@ -67,22 +56,9 @@ import io.redisearch.aggregation.reducers.Reducers;
 
 public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
-  /**
-   * Time To Live in seconds that phantom keys should live longer than the actual
-   * key.
-   */
-  private static final int PHANTOM_KEY_TTL = 300;
-
   private RedisOperations<?, ?> redisOperations;
   private RedisConverter converter;
-  private @Nullable RedisMessageListenerContainer messageListenerContainer;
-  private final AtomicReference<KeyExpirationEventMessageListener> expirationListener = new AtomicReference<>(null);
-  private @Nullable ApplicationEventPublisher eventPublisher;
-
-  private EnableKeyspaceEvents enableKeyspaceEvents = EnableKeyspaceEvents.OFF;
   private @Nullable String keyspaceNotificationsConfigParameter = null;
-  private ShadowCopy shadowCopy = ShadowCopy.DEFAULT;
-
   private RedisModulesOperations<String> modulesOperations;
   private KeyspaceToIndexMap keyspaceToIndexMap;
 
@@ -142,7 +118,6 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     this.redisOperations = redisOps;
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.keyspaceToIndexMap = keyspaceToIndexMap;
-    initMessageListenerContainer();
   }
 
   /*
@@ -166,20 +141,12 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       converter.write(item, rdo);
     }
 
-    if (ObjectUtils.nullSafeEquals(EnableKeyspaceEvents.ON_DEMAND, enableKeyspaceEvents)
-        && this.expirationListener.get() == null) {
-
-      if (rdo.getTimeToLive() != null && rdo.getTimeToLive() > 0) {
-        initKeyExpirationListener();
-      }
-    }
-
     if (rdo.getId() == null) {
       rdo.setId(converter.getConversionService().convert(id, String.class));
     }
 
     byte[] objectKey = createKey(rdo.getKeyspace(), rdo.getId());
-    boolean isNew = redisOperations.execute((RedisCallback<Boolean>) connection -> connection.del(objectKey) == 0);
+    redisOperations.execute((RedisCallback<Boolean>) connection -> connection.del(objectKey) == 0);
 
     redisOperations.executePipelined((RedisCallback<Object>) connection -> {
       Map<byte[], byte[]> rawMap = rdo.getBucket().rawMap();
@@ -187,20 +154,6 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
       if (expires(rdo)) {
         connection.expire(objectKey, rdo.getTimeToLive());
-      }
-
-      if (keepShadowCopy()) { // add phantom key so values can be restored
-
-        byte[] phantomKey = ByteUtils.concat(objectKey, BinaryKeyspaceIdentifier.PHANTOM_SUFFIX);
-
-        if (expires(rdo)) {
-
-          connection.del(phantomKey);
-          connection.hMSet(phantomKey, rawMap);
-          connection.expire(phantomKey, rdo.getTimeToLive() + PHANTOM_KEY_TTL);
-        } else if (!isNew) {
-          connection.del(phantomKey);
-        }
       }
 
       return null;
@@ -255,16 +208,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       byte[] keyToDelete = createKey(asString(keyspace), asString(id));
 
       redisOperations.execute((RedisCallback<Void>) connection -> {
-
         connection.del(keyToDelete);
-
-        if (keepShadowCopy()) {
-          RedisPersistentEntity<?> persistentEntity = converter.getMappingContext().getPersistentEntity(type);
-          if (persistentEntity != null && persistentEntity.isExpiring()) {
-            byte[] phantomKey = ByteUtils.concat(keyToDelete, BinaryKeyspaceIdentifier.PHANTOM_SUFFIX);
-            connection.del(phantomKey);
-          }
-        }
         return null;
       });
     }
@@ -387,23 +331,9 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       if (update.isRefreshTtl()) {
 
         if (expires(rdo)) {
-
           connection.expire(redisKey, rdo.getTimeToLive());
-
-          if (keepShadowCopy()) { // add phantom key so values can be restored
-
-            byte[] phantomKey = ByteUtils.concat(redisKey, BinaryKeyspaceIdentifier.PHANTOM_SUFFIX);
-            connection.hMSet(phantomKey, rdo.getBucket().rawMap());
-            connection.expire(phantomKey, rdo.getTimeToLive() + PHANTOM_KEY_TTL);
-          }
-
         } else {
-
           connection.persist(redisKey);
-
-          if (keepShadowCopy()) {
-            connection.del(ByteUtils.concat(redisKey, BinaryKeyspaceIdentifier.PHANTOM_SUFFIX));
-          }
         }
       }
 
@@ -536,111 +466,6 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     return data.getTimeToLive() != null && data.getTimeToLive() > 0;
   }
 
-  private void initMessageListenerContainer() {
-
-    this.messageListenerContainer = new RedisMessageListenerContainer();
-    this.messageListenerContainer.setConnectionFactory(((RedisTemplate<?, ?>) redisOperations).getConnectionFactory());
-    this.messageListenerContainer.afterPropertiesSet();
-    this.messageListenerContainer.start();
-  }
-
-  private void initKeyExpirationListener() {
-
-    if (this.expirationListener.get() == null) {
-
-      MappingExpirationListener listener = new MappingExpirationListener(this.messageListenerContainer,
-          this.redisOperations, this.converter);
-      listener.setKeyspaceNotificationsConfigParameter(keyspaceNotificationsConfigParameter);
-
-      if (this.eventPublisher != null) {
-        listener.setApplicationEventPublisher(this.eventPublisher);
-      }
-
-      if (this.expirationListener.compareAndSet(null, listener)) {
-        listener.init();
-      }
-    }
-  }
-
-  /**
-   * {@link MessageListener} implementation used to capture Redis keyspace
-   * notifications. Tries to read a previously created phantom key
-   * {@code keyspace:id:phantom} to provide the expired object as part of the
-   * published {@link RedisKeyExpiredEvent}.
-   */
-  static class MappingExpirationListener extends KeyExpirationEventMessageListener {
-
-    private final RedisOperations<?, ?> ops;
-    private final RedisConverter converter;
-
-    /**
-     * Creates new {@link MappingExpirationListener}.
-     *
-     * @param listenerContainer
-     * @param ops
-     * @param converter
-     */
-    MappingExpirationListener(RedisMessageListenerContainer listenerContainer, RedisOperations<?, ?> ops,
-        RedisConverter converter) {
-
-      super(listenerContainer);
-      this.ops = ops;
-      this.converter = converter;
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.springframework.data.redis.listener.KeyspaceEventMessageListener#
-     * onMessage(org.springframework.data.redis.connection.Message, byte[])
-     */
-    @Override
-    public void onMessage(Message message, @Nullable byte[] pattern) {
-
-      if (!isKeyExpirationMessage(message)) {
-        return;
-      }
-
-      byte[] key = message.getBody();
-
-      byte[] phantomKey = ByteUtils.concat(key,
-          converter.getConversionService().convert(KeyspaceIdentifier.PHANTOM_SUFFIX, byte[].class));
-
-      Map<byte[], byte[]> hash = ops.execute((RedisCallback<Map<byte[], byte[]>>) connection -> {
-
-        Map<byte[], byte[]> hash1 = connection.hGetAll(phantomKey);
-
-        if (!CollectionUtils.isEmpty(hash1)) {
-          connection.del(phantomKey);
-        }
-
-        return hash1;
-      });
-
-      Object value = CollectionUtils.isEmpty(hash) ? null : converter.read(Object.class, new RedisData(hash));
-
-      byte[] channelAsBytes = message.getChannel();
-      String channel = !ObjectUtils.isEmpty(channelAsBytes)
-          ? converter.getConversionService().convert(channelAsBytes, String.class)
-          : null;
-
-      @SuppressWarnings("rawtypes")
-      RedisKeyExpiredEvent event = new RedisKeyExpiredEvent(channel, key, value);
-
-      ops.execute((RedisCallback<Void>) connection -> {
-
-        connection.sRem(converter.getConversionService().convert(event.getKeyspace(), byte[].class), event.getId());
-        return null;
-      });
-
-      publishEvent(event);
-    }
-
-    private boolean isKeyExpirationMessage(Message message) {
-      return BinaryKeyspaceIdentifier.isValid(message.getBody());
-    }
-  }
-
   private void processAuditAnnotations(byte[] redisKey, Object item) {
     boolean isNew = (boolean) redisOperations
         .execute((RedisCallback<Object>) connection -> !connection.exists(redisKey));
@@ -659,18 +484,6 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
           accessor.setPropertyValue(f.getName(), LocalDate.now());
         }
       });
-    }
-  }
-
-  private boolean keepShadowCopy() {
-
-    switch (shadowCopy) {
-      case OFF:
-        return false;
-      case ON:
-        return true;
-      default:
-        return this.expirationListener.get() != null;
     }
   }
 
