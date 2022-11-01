@@ -6,7 +6,6 @@ import static com.redis.om.spring.util.ObjectUtils.getIdFieldForEntity;
 import java.lang.reflect.Field;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedHashSet;
@@ -267,20 +266,27 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * @return never {@literal null}.
    * @since 2.5
    */
+  @SuppressWarnings("unchecked")
   @Override
   public <T> List<T> getAllOf(String keyspace, Class<T> type, long offset, int rows) {
-    List<String> keys = getAllIds(keyspace, type);
-    if (!keys.isEmpty()) {
+    Optional<String> maybeSearchIndex = indexer.getIndexName(keyspace);
+
+    List<T> result = List.of();
+    if (maybeSearchIndex.isPresent()) {
+      SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
+      Query query = new Query("*");
       offset = Math.max(0, offset);
       if (rows > 0) {
-        keys = keys.subList((int) offset, Math.min((int) offset + rows, keys.size()));
+        query.limit(Math.toIntExact(offset), rows);
       }
-      List<T> result = new ArrayList<>();
-      keys.forEach(key -> result.add(get(key, keyspace, type)));
-      return result;
-    } else {
-      return List.of();
+      SearchResult searchResult = searchOps.search(query);
+
+      result = (List<T>) searchResult.docs.stream() //
+          .map(d -> documentToObject(d, type, (MappingRedisOMConverter)converter)) //
+          .collect(Collectors.toList());
     }
+
+    return result;
   }
 
   @Override
