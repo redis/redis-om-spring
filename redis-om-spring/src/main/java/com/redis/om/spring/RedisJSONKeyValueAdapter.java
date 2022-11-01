@@ -28,7 +28,6 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
-import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.redis.om.spring.convert.RedisOMCustomConversions;
 import com.redis.om.spring.ops.RedisModulesOperations;
@@ -44,8 +43,6 @@ import io.redisearch.SearchResult;
 import io.redisearch.aggregation.AggregationBuilder;
 import io.redisearch.aggregation.Group;
 import io.redisearch.aggregation.reducers.Reducers;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.Pipeline;
 
 public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private static final Log logger = LogFactory.getLog(RedisJSONKeyValueAdapter.class);
@@ -54,7 +51,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private RedisMappingContext mappingContext;
   private @Nullable String keyspaceNotificationsConfigParameter = null;
   private RedisModulesOperations<String> modulesOperations;
-  private KeyspaceToIndexMap keyspaceToIndexMap;
+  private RediSearchIndexer indexer;
 
   @Autowired
   private Gson gson;
@@ -69,13 +66,13 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @SuppressWarnings("unchecked")
   public RedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisModulesOperations<?> rmo,
-      RedisMappingContext mappingContext, KeyspaceToIndexMap keyspaceToIndexMap) {
+      RedisMappingContext mappingContext, RediSearchIndexer keyspaceToIndexMap) {
     super(redisOps, mappingContext, new RedisOMCustomConversions());
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.redisJSONOperations = modulesOperations.opsForJSON();
     this.redisOperations = redisOps;
     this.mappingContext = mappingContext;
-    this.keyspaceToIndexMap = keyspaceToIndexMap;
+    this.indexer = keyspaceToIndexMap;
   }
 
   /*
@@ -141,7 +138,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public <T> List<T> getAllOf(String keyspace, Class<T> type, long offset, int rows) {
-    Optional<String> maybeSearchIndex = keyspaceToIndexMap.getIndexName(keyspace);
+    Optional<String> maybeSearchIndex = indexer.getIndexName(keyspace);
 
     List<T> result = List.of();
     if (maybeSearchIndex.isPresent()) {
@@ -162,7 +159,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   }
 
   public <T> List<String> getAllKeys(String keyspace, Class<T> type) {
-    Optional<String> maybeSearchIndex = keyspaceToIndexMap.getIndexName(keyspace);
+    Optional<String> maybeSearchIndex = indexer.getIndexName(keyspace);
 
     List<String> keys = List.of();
     if (maybeSearchIndex.isPresent()) {
@@ -210,17 +207,12 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public void deleteAllOf(String keyspace) {
-    Class<?> type = keyspaceToIndexMap.getEntityClassForKeyspace(keyspace);
-    List<String> keys = getAllKeys(keyspace, type);
-    if (!keys.isEmpty()) {
-      List<List<String>> keysSubsets = Lists.partition(keys, 25);
-      try (Jedis jedis = modulesOperations.getClient().getJedis()) {
-        Pipeline pipeline = jedis.pipelined();
-        for (List<String> subset : keysSubsets) {
-          pipeline.unlink(subset.toArray(new String[0]));
-        }
-        pipeline.sync();
-      }
+    Class<?> type = indexer.getEntityClassForKeyspace(keyspace);
+    Optional<String> maybeSearchIndex = indexer.getIndexName(keyspace);
+    if (maybeSearchIndex.isPresent()) {
+      SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
+      searchOps.dropIndex();
+      indexer.createIndexFor(type);
     }
   }
 
@@ -233,7 +225,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   @Override
   public long count(String keyspace) {
     Long count = 0L;
-    Optional<String> maybeIndexName = keyspaceToIndexMap.getIndexName(keyspace);
+    Optional<String> maybeIndexName = indexer.getIndexName(keyspace);
     if (maybeIndexName.isPresent()) {
       SearchOperations<String> search = modulesOperations.opsForSearch(maybeIndexName.get());
       AggregationBuilder countAggregation = new AggregationBuilder()
