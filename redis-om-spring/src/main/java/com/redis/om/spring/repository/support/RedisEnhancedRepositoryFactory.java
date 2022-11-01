@@ -29,7 +29,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
-import com.redis.om.spring.KeyspaceToIndexMap;
+import com.redis.om.spring.RediSearchIndexer;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.query.RedisEnhancedQuery;
 
@@ -40,7 +40,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
   private final KeyValueOperations keyValueOperations;
   private final RedisOperations<?, ?> redisOperations;
   private final RedisModulesOperations<?> rmo;
-  private final KeyspaceToIndexMap keyspaceToIndexMap;
+  private final RediSearchIndexer indexer;
   private final MappingContext<?, ?> context;
   private final Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
   private final Class<? extends RepositoryQuery> repositoryQueryType;
@@ -58,7 +58,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
       KeyValueOperations keyValueOperations, //
       RedisOperations<?, ?> redisOperations, //
       RedisModulesOperations<?> rmo, //
-      KeyspaceToIndexMap keyspaceToIndexMap) {
+      RediSearchIndexer keyspaceToIndexMap) {
     this(keyValueOperations, redisOperations, rmo, keyspaceToIndexMap, DEFAULT_QUERY_CREATOR);
   }
 
@@ -76,7 +76,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
                                          KeyValueOperations keyValueOperations, //
                                          RedisOperations<?, ?> redisOperations, //
                                          RedisModulesOperations<?> rmo, //
-                                         KeyspaceToIndexMap keyspaceToIndexMap, //
+                                         RediSearchIndexer keyspaceToIndexMap, //
                                          Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
 
     this(keyValueOperations, redisOperations, rmo, keyspaceToIndexMap, queryCreator, RedisEnhancedQuery.class);
@@ -97,7 +97,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
                                          KeyValueOperations keyValueOperations, //
                                          RedisOperations<?, ?> redisOperations, //
                                          RedisModulesOperations<?> rmo, //
-                                         KeyspaceToIndexMap keyspaceToIndexMap, //
+                                         RediSearchIndexer keyspaceToIndexMap, //
                                          Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
                                          Class<? extends RepositoryQuery> repositoryQueryType) {
 
@@ -110,7 +110,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
     this.keyValueOperations = keyValueOperations;
     this.redisOperations = redisOperations;
     this.rmo = rmo;
-    this.keyspaceToIndexMap = keyspaceToIndexMap;
+    this.indexer = keyspaceToIndexMap;
     this.context = keyValueOperations.getMappingContext();
     this.queryCreator = queryCreator;
     this.repositoryQueryType = repositoryQueryType;
@@ -139,7 +139,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
   @Override
   protected Object getTargetRepository(RepositoryInformation repositoryInformation) {    
     EntityInformation<?, ?> entityInformation = getEntityInformation(repositoryInformation.getDomainType());
-    return super.getTargetRepositoryViaReflection(repositoryInformation, entityInformation, keyValueOperations, rmo, keyspaceToIndexMap);
+    return super.getTargetRepositoryViaReflection(repositoryInformation, entityInformation, keyValueOperations, rmo, indexer);
   }
 
   /* (non-Javadoc)

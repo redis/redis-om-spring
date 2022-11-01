@@ -36,7 +36,7 @@ import org.springframework.util.ReflectionUtils;
 
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
-import com.redis.om.spring.KeyspaceToIndexMap;
+import com.redis.om.spring.RediSearchIndexer;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.id.ULIDIdentifierGenerator;
 import com.redis.om.spring.metamodel.MetamodelField;
@@ -60,7 +60,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   protected RedisModulesOperations<String> modulesOperations;
   protected EntityInformation<T, ID> metadata;
   protected KeyValueOperations operations;
-  protected KeyspaceToIndexMap keyspaceToIndexMap;
+  protected RediSearchIndexer indexer;
   protected MappingRedisOMConverter mappingConverter;
   private final ULIDIdentifierGenerator generator;
 
@@ -70,14 +70,14 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   public SimpleRedisDocumentRepository(EntityInformation<T, ID> metadata, //
       KeyValueOperations operations, //
       @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo, //
-      KeyspaceToIndexMap keyspaceToIndexMap, //
+      RediSearchIndexer keyspaceToIndexMap, //
       RedisMappingContext mappingContext,
       Gson gson) {
     super(metadata, operations);
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.metadata = metadata;
     this.operations = operations;
-    this.keyspaceToIndexMap = keyspaceToIndexMap;
+    this.indexer = keyspaceToIndexMap;
     this.mappingConverter = new MappingRedisOMConverter(null,
         new ReferenceResolverImpl(modulesOperations.getTemplate()));
     this.generator = ULIDIdentifierGenerator.INSTANCE;
@@ -87,8 +87,8 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
   @Override
   public Iterable<ID> getIds() {
-    String keyspace = keyspaceToIndexMap.getKeyspaceForEntityClass(metadata.getJavaType());
-    Optional<String> maybeSearchIndex = keyspaceToIndexMap.getIndexName(keyspace);
+    String keyspace = indexer.getKeyspaceForEntityClass(metadata.getJavaType());
+    Optional<String> maybeSearchIndex = indexer.getIndexName(keyspace);
     List<ID> result = List.of();
     if (maybeSearchIndex.isPresent()) {
       SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
@@ -189,7 +189,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   }
 
   private String getKeyspace() {
-    return keyspaceToIndexMap.getKeyspaceForEntityClass(metadata.getJavaType());
+    return indexer.getKeyspaceForEntityClass(metadata.getJavaType());
   }
 
   private String getKey(Object id) {

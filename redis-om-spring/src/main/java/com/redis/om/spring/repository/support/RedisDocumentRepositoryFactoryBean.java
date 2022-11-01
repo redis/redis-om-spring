@@ -1,7 +1,7 @@
 package com.redis.om.spring.repository.support;
 
 import com.google.gson.Gson;
-import com.redis.om.spring.KeyspaceToIndexMap;
+import com.redis.om.spring.RediSearchIndexer;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
@@ -19,7 +19,7 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
   @Autowired
   private @Nullable RedisModulesOperations<String> rmo;
   @Autowired
-  private @Nullable KeyspaceToIndexMap keyspaceToIndexMap;
+  private @Nullable RediSearchIndexer indexer;
   @Autowired
   private @Nullable RedisMappingContext mappingContext;
   @Autowired
@@ -40,7 +40,7 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
           KeyValueOperations operations,
           Class<? extends AbstractQueryCreator<?, ?>> queryCreator, Class<? extends RepositoryQuery> repositoryQueryType
   ) {
-    return new RedisDocumentRepositoryFactory(operations, rmo, keyspaceToIndexMap, queryCreator, repositoryQueryType, this.mappingContext, this.gson);
+    return new RedisDocumentRepositoryFactory(operations, rmo, indexer, queryCreator, repositoryQueryType, this.mappingContext, this.gson);
   }
 
   @Override
