@@ -60,7 +60,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   private RedisConverter converter;
   private @Nullable String keyspaceNotificationsConfigParameter = null;
   private RedisModulesOperations<String> modulesOperations;
-  private KeyspaceToIndexMap keyspaceToIndexMap;
+  private RediSearchIndexer indexer;
 
   /**
    * Creates new {@link RedisKeyValueAdapter} with default
@@ -71,7 +71,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * @param keyspaceToIndexMap must not be {@literal null}.
    */
   public RedisEnhancedKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisModulesOperations<?> rmo,
-      KeyspaceToIndexMap keyspaceToIndexMap) {
+      RediSearchIndexer keyspaceToIndexMap) {
     this(redisOps, rmo, new RedisMappingContext(), keyspaceToIndexMap);
   }
 
@@ -85,7 +85,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * @param keyspaceToIndexMap must not be {@literal null}.
    */
   public RedisEnhancedKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisModulesOperations<?> rmo,
-      RedisMappingContext mappingContext, KeyspaceToIndexMap keyspaceToIndexMap) {
+      RedisMappingContext mappingContext, RediSearchIndexer keyspaceToIndexMap) {
     this(redisOps, rmo, mappingContext, new RedisOMCustomConversions(), keyspaceToIndexMap);
   }
 
@@ -102,7 +102,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   public RedisEnhancedKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisModulesOperations<?> rmo,
       RedisMappingContext mappingContext,
       @Nullable org.springframework.data.convert.CustomConversions customConversions,
-      KeyspaceToIndexMap keyspaceToIndexMap) {
+      RediSearchIndexer keyspaceToIndexMap) {
     super(redisOps, mappingContext, customConversions);
 
     Assert.notNull(redisOps, "RedisOperations must not be null!");
@@ -117,7 +117,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     this.converter = mappingConverter;
     this.redisOperations = redisOps;
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
-    this.keyspaceToIndexMap = keyspaceToIndexMap;
+    this.indexer = keyspaceToIndexMap;
   }
 
   /*
@@ -225,19 +225,17 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public void deleteAllOf(String keyspace) {
-    Class<?> type = keyspaceToIndexMap.getEntityClassForKeyspace(keyspace);
-    List<byte[]> keys = getAllIds(keyspace, type).stream().map(id -> getKey(keyspace, id)).map(k -> toBytes(k))
-        .collect(Collectors.toList());
-    if (keys.size() > 0) {
-      redisOperations.execute((RedisCallback<Void>) connection -> {
-        connection.del(keys.toArray(new byte[0][]));
-        return null;
-      });
+    Class<?> type = indexer.getEntityClassForKeyspace(keyspace);
+    Optional<String> maybeSearchIndex = indexer.getIndexName(keyspace);
+    if (maybeSearchIndex.isPresent()) {
+      SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
+      searchOps.dropIndex();
+      indexer.createIndexFor(type);
     }
   }
 
   public <T> List<String> getAllIds(String keyspace, Class<T> type) {
-    Optional<String> maybeSearchIndex = keyspaceToIndexMap.getIndexName(keyspace);
+    Optional<String> maybeSearchIndex = indexer.getIndexName(keyspace);
     List<String> keys = List.of();
     if (maybeSearchIndex.isPresent()) {
       SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
@@ -350,7 +348,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   @Override
   public long count(String keyspace) {
     Long count = 0L;
-    Optional<String> maybeIndexName = keyspaceToIndexMap.getIndexName(keyspace);
+    Optional<String> maybeIndexName = indexer.getIndexName(keyspace);
     if (maybeIndexName.isPresent()) {
       SearchOperations<String> search = modulesOperations.opsForSearch(maybeIndexName.get());
       AggregationBuilder countAggregation = new AggregationBuilder()
