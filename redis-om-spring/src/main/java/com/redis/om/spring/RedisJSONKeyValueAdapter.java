@@ -36,13 +36,9 @@ import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.util.ObjectUtils;
 import com.redislabs.modules.rejson.Path;
 
-import io.redisearch.AggregationResult;
 import io.redisearch.Document;
 import io.redisearch.Query;
 import io.redisearch.SearchResult;
-import io.redisearch.aggregation.AggregationBuilder;
-import io.redisearch.aggregation.Group;
-import io.redisearch.aggregation.reducers.Reducers;
 
 public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private static final Log logger = LogFactory.getLog(RedisJSONKeyValueAdapter.class);
@@ -228,10 +224,13 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     Optional<String> maybeIndexName = indexer.getIndexName(keyspace);
     if (maybeIndexName.isPresent()) {
       SearchOperations<String> search = modulesOperations.opsForSearch(maybeIndexName.get());
-      AggregationBuilder countAggregation = new AggregationBuilder()
-          .groupBy(new Group().reduce(Reducers.count()));
-      AggregationResult result = search.aggregate(countAggregation);
-      count = result.totalResults > 0 ? result.getRow(0).getLong("__generated_aliascount") : 0L;
+      // FT.SEARCH index * LIMIT 0 0
+      Query query = new Query("*");
+      query.limit(0, 0);
+      
+      SearchResult result = search.search(query);
+      
+      count = result.totalResults;
     }
     return count;
   }
