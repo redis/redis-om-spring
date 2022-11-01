@@ -262,8 +262,12 @@ public class ObjectUtils {
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public static Set<BeanDefinition> getBeanDefinitionsFor(ApplicationContext ac, Class... classes) {
     Map<String, Object> annotatedBeans = ac.getBeansWithAnnotation(SpringBootApplication.class);
-    Class<?> app = annotatedBeans.values().toArray()[0].getClass();
+    Class<?> app = annotatedBeans.isEmpty() ? null : annotatedBeans.values().toArray()[0].getClass();
     Set<BeanDefinition> beanDefs = new HashSet<>();
+
+    if (app == null) {
+      return beanDefs;
+    }
 
     ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(false);
     for (Class cls : classes) {
