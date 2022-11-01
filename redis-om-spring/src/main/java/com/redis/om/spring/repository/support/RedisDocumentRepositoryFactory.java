@@ -1,7 +1,7 @@
 package com.redis.om.spring.repository.support;
 
 import com.google.gson.Gson;
-import com.redis.om.spring.KeyspaceToIndexMap;
+import com.redis.om.spring.RediSearchIndexer;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.query.RediSearchQuery;
 import org.springframework.beans.BeanUtils;
@@ -37,7 +37,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
   private final Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
   private final Class<? extends RepositoryQuery> repositoryQueryType;
   private final RedisModulesOperations<?> rmo;
-  private final KeyspaceToIndexMap keyspaceToIndexMap;
+  private final RediSearchIndexer indexer;
   private final Gson gson;
 
   private RedisMappingContext mappingContext;
@@ -54,7 +54,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
   public RedisDocumentRepositoryFactory( //
       KeyValueOperations keyValueOperations, //
       RedisModulesOperations<?> rmo, //
-      KeyspaceToIndexMap keyspaceToIndexMap, //
+      RediSearchIndexer keyspaceToIndexMap, //
       RedisMappingContext mappingContext, //
       Gson gson //
   ) {
@@ -74,7 +74,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
   public RedisDocumentRepositoryFactory( //
       KeyValueOperations keyValueOperations, //
       RedisModulesOperations<?> rmo, //
-      KeyspaceToIndexMap keyspaceToIndexMap, //
+      RediSearchIndexer keyspaceToIndexMap, //
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
       RedisMappingContext mappingContext, //
       Gson gson //
@@ -97,7 +97,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
   public RedisDocumentRepositoryFactory( //
       KeyValueOperations keyValueOperations, //
       RedisModulesOperations<?> rmo, //
-      KeyspaceToIndexMap keyspaceToIndexMap, //
+      RediSearchIndexer keyspaceToIndexMap, //
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
       Class<? extends RepositoryQuery> repositoryQueryType, //
       RedisMappingContext mappingContext, //
@@ -110,7 +110,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
 
     this.keyValueOperations = keyValueOperations;
     this.rmo = rmo;
-    this.keyspaceToIndexMap = keyspaceToIndexMap;
+    this.indexer = keyspaceToIndexMap;
     this.queryCreator = queryCreator;
     this.repositoryQueryType = repositoryQueryType;
     this.mappingContext = mappingContext;
@@ -121,7 +121,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
   protected Object getTargetRepository(RepositoryInformation repositoryInformation) {
     EntityInformation<?, ?> entityInformation = getEntityInformation(repositoryInformation.getDomainType());
     return super.getTargetRepositoryViaReflection(
-        repositoryInformation, entityInformation, keyValueOperations, rmo, keyspaceToIndexMap, mappingContext, gson);
+        repositoryInformation, entityInformation, keyValueOperations, rmo, indexer, mappingContext, gson);
   }
 
   @Override
