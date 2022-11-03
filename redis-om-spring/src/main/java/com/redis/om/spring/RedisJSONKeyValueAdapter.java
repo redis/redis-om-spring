@@ -57,8 +57,9 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    * {@link RedisCustomConversions}.
    *
    * @param redisOps            must not be {@literal null}.
+   * @param rmo                 must not be {@literal null}.
    * @param mappingContext      must not be {@literal null}.
-   * @param redisJSONOperations must not be {@literal null}.
+   * @param keyspaceToIndexMap  must not be {@literal null}.
    */
   @SuppressWarnings("unchecked")
   public RedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisModulesOperations<?> rmo,

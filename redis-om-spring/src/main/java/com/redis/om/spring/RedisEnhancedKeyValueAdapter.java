@@ -258,7 +258,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * @param type     the desired target type.
    * @param offset   index value to start reading.
    * @param rows     maximum number or entities to return.
-   * @param <T>
+   * @param <T>      the target type
    * @return never {@literal null}.
    * @since 2.5
    */

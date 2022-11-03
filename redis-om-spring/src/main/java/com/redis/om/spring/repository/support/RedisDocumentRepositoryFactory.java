@@ -50,6 +50,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
    * @param rmo                must not be {@literal null}.
    * @param keyspaceToIndexMap must not be {@literal null}.
    * @param mappingContext     must not be {@literal null}.
+   * @param gson               must not be {@literal null}.
    */
   public RedisDocumentRepositoryFactory( //
       KeyValueOperations keyValueOperations, //
@@ -70,6 +71,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
    * @param keyspaceToIndexMap must not be {@literal null}.
    * @param queryCreator       must not be {@literal null}.
    * @param mappingContext     must not be {@literal null}.
+   * @param gson               must not be {@literal null}.
    */
   public RedisDocumentRepositoryFactory( //
       KeyValueOperations keyValueOperations, //
@@ -93,6 +95,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
    * @param queryCreator        must not be {@literal null}.
    * @param repositoryQueryType must not be {@literal null}.
    * @param mappingContext      must not be {@literal null}.
+   * @param gson                must not be {@literal null}. 
    */
   public RedisDocumentRepositoryFactory( //
       KeyValueOperations keyValueOperations, //
