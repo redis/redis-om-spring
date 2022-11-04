@@ -171,8 +171,9 @@ public class RediSearchIndexer {
 
       index.setPrefixes(entityPrefix);
       IndexOptions ops = Client.IndexOptions.defaultOptions().setDefinition(index);
-      opsForSearch.createIndex(schema, ops);
       addKeySpaceMapping(entityPrefix, cl);
+      opsForSearch.createIndex(schema, ops);
+      
 
       // TTL
       if (cl.isAnnotationPresent(Document.class)) {
