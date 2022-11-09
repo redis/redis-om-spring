@@ -172,9 +172,7 @@ public class RediSearchIndexer {
       index.setPrefixes(entityPrefix);
       IndexOptions ops = Client.IndexOptions.defaultOptions().setDefinition(index);
       addKeySpaceMapping(entityPrefix, cl);
-      opsForSearch.createIndex(schema, ops);
       
-
       // TTL
       if (cl.isAnnotationPresent(Document.class)) {
         KeyspaceSettings setting = new KeyspaceSettings(cl, cl.getName() + ":");
@@ -194,6 +192,8 @@ public class RediSearchIndexer {
 
         mappingContext.getMappingConfiguration().getKeyspaceConfiguration().addKeyspaceSettings(setting);
       }
+      
+      opsForSearch.createIndex(schema, ops);
     } catch (Exception e) {
       logger.warn(String.format("Skipping index creation for %s because %s", indexName, e.getMessage()));
     }
