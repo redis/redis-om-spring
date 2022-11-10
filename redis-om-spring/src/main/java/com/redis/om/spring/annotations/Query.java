@@ -12,21 +12,8 @@ import java.lang.annotation.Target;
 public @interface Query {
   String value() default "*";
   String[] returnFields() default {};
-  
-  //returnFields(returnFields);
-  //limit(null, null)
-  //addFilter(null)
-  //highlightFields(null)
-  //limitFields(String...)
-  //limitKeys()
-  //returnFields()
-  //setLanguage()
-  //setNoContent()
-  //setNoStopwords()
-  //setPayload()
-  //setScorer()
-  //setSortBy(, )
-  //setVerbatim()
-  //setWithPayload()
-  //setWithScores()
+  int offset() default Integer.MIN_VALUE;
+  int limit() default Integer.MIN_VALUE;
+  String sortBy() default "";
+  boolean sortAscending() default true;
 }

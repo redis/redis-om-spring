@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
@@ -196,6 +197,48 @@ class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
 
     MyDoc doc1 = result.getContent().get(0);
     assertEquals("hello world", doc1.getTitle());
+  }
+
+  @Test
+  void testQueryAnnotationWithReturnFieldsAndLimitAndOffset() {
+    repository.deleteAll();
+    Point point = new Point(-122.066540, 37.377690);
+    repository.saveAll(List.of(
+        MyDoc.of("predisposition", point, point, 4), //
+        MyDoc.of("predestination", point, point, 8), //
+        MyDoc.of("prepublication", point, point, 15), //
+        MyDoc.of("predestinarian", point, point, 16), //
+        MyDoc.of("preadolescence", point, point, 23), //
+        MyDoc.of("premillenarian", point, point, 42), //
+        MyDoc.of("precipitinogen", point, point, 4), //
+        MyDoc.of("precipitations", point, point, 8), //
+        MyDoc.of("precociousness", point, point, 15), //
+        MyDoc.of("precombustions", point, point, 16), //
+        MyDoc.of("preconditioned", point, point, 23), //
+        MyDoc.of("preconceptions", point, point, 42), //
+        MyDoc.of("precipitancies", point, point, 4), //
+        MyDoc.of("preciousnesses", point, point, 8), //
+        MyDoc.of("precentorships", point, point, 15), //
+        MyDoc.of("preceptorships", point, point, 16) //
+    ));
+
+    SearchResult result = repository.customFindAllByTitleStartingWithReturnFieldsAndLimit("pre");
+
+    assertEquals(16, result.totalResults);
+    assertThat(result.totalResults).isEqualTo(16);
+    assertThat(result.docs).hasSize(12);
+    assertThat(result.docs.get(0).get("title")).isEqualTo("precentorships");
+    assertThat(result.docs.get(1).get("title")).isEqualTo("preceptorships");
+    assertThat(result.docs.get(2).get("title")).isEqualTo("preciousnesses");
+    assertThat(result.docs.get(3).get("title")).isEqualTo("precipitancies");
+    assertThat(result.docs.get(4).get("title")).isEqualTo("precipitations");
+    assertThat(result.docs.get(5).get("title")).isEqualTo("precipitinogen");
+    assertThat(result.docs.get(6).get("title")).isEqualTo("precociousness");
+    assertThat(result.docs.get(7).get("title")).isEqualTo("precombustions");
+    assertThat(result.docs.get(8).get("title")).isEqualTo("preconceptions");
+    assertThat(result.docs.get(9).get("title")).isEqualTo("preconditioned");
+    assertThat(result.docs.get(10).get("title")).isEqualTo("predestinarian");
+    assertThat(result.docs.get(11).get("title")).isEqualTo("predestination");
   }
 
   @Test

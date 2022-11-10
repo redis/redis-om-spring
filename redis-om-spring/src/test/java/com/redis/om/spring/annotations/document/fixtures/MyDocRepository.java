@@ -66,6 +66,14 @@ public interface MyDocRepository extends RedisDocumentRepository<MyDoc, String>,
   
   /**
    * <pre>
+   * > FT.SEARCH idx @title:pre* SORTBY title ASC LIMIT 1 12 RETURN 2 title aNumber
+   * </pre>
+   */
+  @Query(value="@title:$prefix*", returnFields={"title", "aNumber"}, limit = 12, offset = 1, sortBy = "title")
+  SearchResult customFindAllByTitleStartingWithReturnFieldsAndLimit(@Param("prefix") String prefix);
+  
+  /**
+   * <pre>
    * > FT.TAGVALS idx tags
    * </pre>
    */
