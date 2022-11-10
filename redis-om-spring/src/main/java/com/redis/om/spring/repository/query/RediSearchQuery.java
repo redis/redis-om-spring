@@ -53,6 +53,7 @@ import com.redis.om.spring.repository.query.clause.QueryClause;
 import com.redis.om.spring.util.ObjectUtils;
 
 import io.redisearch.AggregationResult;
+import io.redisearch.Document;
 import io.redisearch.Query;
 import io.redisearch.Schema.FieldType;
 import io.redisearch.SearchResult;
@@ -341,7 +342,8 @@ public class RediSearchQuery implements RepositoryQuery {
 
     } else if (queryMethod.isQueryForEntity() && !queryMethod.isCollectionQuery()) {
       if (!searchResult.docs.isEmpty()) {
-        String jsonResult = searchResult.docs.get(0).get("$").toString();
+        Document doc = searchResult.docs.get(0);
+        String jsonResult = doc != null ? doc.get("$").toString() : "";
         result = gson.fromJson(jsonResult, queryMethod.getReturnedObjectType());
       } else {
         result = null;
