@@ -11,6 +11,8 @@ import org.springframework.data.repository.query.Param;
 import com.redis.om.spring.annotations.Query;
 import com.redis.om.spring.repository.RedisEnhancedRepository;
 
+import io.redisearch.SearchResult;
+
 public interface MyHashRepository extends RedisEnhancedRepository<MyHash, String>, MyHashQueries {
   /**
    * <pre>
@@ -38,6 +40,14 @@ public interface MyHashRepository extends RedisEnhancedRepository<MyHash, String
    */
   @Query("@title:$prefix*")
   Page<MyHash> customFindAllByTitleStartingWith(@Param("prefix") String prefix, Pageable pageable);
+  
+  /**
+   * <pre>
+   * > FT.SEARCH idx @title:pre* SORTBY title ASC LIMIT 1 12 RETURN 2 title aNumber
+   * </pre>
+   */
+  @Query(value="@title:$prefix*", returnFields={"title", "aNumber"}, limit = 12, offset = 1, sortBy = "title")
+  SearchResult customFindAllByTitleStartingWithReturnFieldsAndLimit(@Param("prefix") String prefix);
   
   /**
    * <pre>

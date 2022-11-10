@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
@@ -28,6 +29,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
 import com.redis.om.spring.annotations.hash.fixtures.MyHash;
 import com.redis.om.spring.annotations.hash.fixtures.MyHashRepository;
+
+import io.redisearch.SearchResult;
 
 class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
   @Autowired
@@ -244,6 +247,48 @@ class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
     MyHash doc = results.iterator().next();
     assertEquals("hello world", doc.getTitle());
     assertThat(doc.getTag()).containsExactlyInAnyOrder("news", "article");
+  }
+  
+  @Test
+  void testQueryAnnotationWithReturnFieldsAndLimitAndOffset() {
+    repository.deleteAll();
+    Point point = new Point(-122.066540, 37.377690);
+    repository.saveAll(List.of(
+        MyHash.of("predisposition", point, point, 4), //
+        MyHash.of("predestination", point, point, 8), //
+        MyHash.of("prepublication", point, point, 15), //
+        MyHash.of("predestinarian", point, point, 16), //
+        MyHash.of("preadolescence", point, point, 23), //
+        MyHash.of("premillenarian", point, point, 42), //
+        MyHash.of("precipitinogen", point, point, 4), //
+        MyHash.of("precipitations", point, point, 8), //
+        MyHash.of("precociousness", point, point, 15), //
+        MyHash.of("precombustions", point, point, 16), //
+        MyHash.of("preconditioned", point, point, 23), //
+        MyHash.of("preconceptions", point, point, 42), //
+        MyHash.of("precipitancies", point, point, 4), //
+        MyHash.of("preciousnesses", point, point, 8), //
+        MyHash.of("precentorships", point, point, 15), //
+        MyHash.of("preceptorships", point, point, 16) //
+    ));
+
+    SearchResult result = repository.customFindAllByTitleStartingWithReturnFieldsAndLimit("pre");
+
+    assertEquals(16, result.totalResults);
+    assertThat(result.totalResults).isEqualTo(16);
+    assertThat(result.docs).hasSize(12);
+    assertThat(result.docs.get(0).get("title")).isEqualTo("precentorships");
+    assertThat(result.docs.get(1).get("title")).isEqualTo("preceptorships");
+    assertThat(result.docs.get(2).get("title")).isEqualTo("preciousnesses");
+    assertThat(result.docs.get(3).get("title")).isEqualTo("precipitancies");
+    assertThat(result.docs.get(4).get("title")).isEqualTo("precipitations");
+    assertThat(result.docs.get(5).get("title")).isEqualTo("precipitinogen");
+    assertThat(result.docs.get(6).get("title")).isEqualTo("precociousness");
+    assertThat(result.docs.get(7).get("title")).isEqualTo("precombustions");
+    assertThat(result.docs.get(8).get("title")).isEqualTo("preconceptions");
+    assertThat(result.docs.get(9).get("title")).isEqualTo("preconditioned");
+    assertThat(result.docs.get(10).get("title")).isEqualTo("predestinarian");
+    assertThat(result.docs.get(11).get("title")).isEqualTo("predestination");
   }
 
 }

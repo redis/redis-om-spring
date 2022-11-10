@@ -74,6 +74,10 @@ public class RediSearchQuery implements RepositoryQuery {
 
   // query fields
   private String[] returnFields;
+  private Integer offset;
+  private Integer limit;
+  private String sortBy;
+  private Boolean sortAscending;
 
   // aggregation fields
   private String[] load;
@@ -130,6 +134,10 @@ public class RediSearchQuery implements RepositoryQuery {
         this.type = RediSearchQueryType.QUERY;
         this.value = queryAnnotation.value();
         this.returnFields = queryAnnotation.returnFields();
+        this.offset = queryAnnotation.offset();
+        this.limit = queryAnnotation.limit();
+        this.sortBy = queryAnnotation.sortBy();
+        this.sortAscending = queryAnnotation.sortAscending();
       } else if (method.isAnnotationPresent(Aggregation.class)) {
         Aggregation aggregation = method.getAnnotation(Aggregation.class);
         this.type = RediSearchQueryType.AGGREGATION;
@@ -309,6 +317,14 @@ public class RediSearchQuery implements RepositoryQuery {
           }
         }
       }
+    }
+    
+    if ((limit != null && limit != Integer.MIN_VALUE) || (offset != null && offset != Integer.MIN_VALUE)) {
+      query.limit(offset != null ? offset : 10, limit != null ? limit : 0);
+    }
+    
+    if ((sortBy != null && !sortBy.isBlank())) {
+      query.setSortBy(sortBy, sortAscending);
     }
 
     // Intercept TAG collection queries with empty parameters and use an

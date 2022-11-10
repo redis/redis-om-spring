@@ -29,7 +29,7 @@ public class MyDoc {
   @Id
   private String id;
   @NonNull
-  @TextIndexed(alias = "title")
+  @TextIndexed(alias = "title", sortable = true)
   private String title;
   
   @NonNull
