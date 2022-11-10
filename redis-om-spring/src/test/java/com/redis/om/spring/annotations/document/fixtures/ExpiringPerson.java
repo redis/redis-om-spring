@@ -4,6 +4,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.TimeToLive;
 
 import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.annotations.Indexed;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 @Document(timeToLive = 5)
 public class ExpiringPerson {
   @Id String id;
-  @NonNull
+  @NonNull @Indexed
   String name;
   
   @NonNull

@@ -15,6 +15,8 @@ import com.redis.om.spring.annotations.document.fixtures.ExpiringPersonWithDefau
 import com.redis.om.spring.annotations.document.fixtures.ExpiringPersonWithDefaultRepository;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 class DocumentTTLTests extends AbstractBaseDocumentTest {
   @Autowired
@@ -107,5 +109,19 @@ class DocumentTTLTests extends AbstractBaseDocumentTest {
 
     assertThat(jWilkinsonExpiration).isEqualTo(7L*24*60*60);
     assertThat(sDummontExpiration).isEqualTo(7L*24*60*60);
+  }
+  
+  private final CountDownLatch waiter = new CountDownLatch(1);
+  
+  @Test
+  void testExpiredEntitiesAreNotFound() throws InterruptedException {
+    ExpiringPerson kZuse = ExpiringPerson.of("Konrad Zuse", 1L);
+    ExpiringPerson woz = ExpiringPerson.of("Steve Wozniak", 1L);
+    withTTLAnnotationRepository.saveAll(List.of(kZuse, woz));
+    waiter.await(3, TimeUnit.SECONDS);
+    assertThat(withTTLAnnotationRepository.count()).isZero();
+    assertThat(withTTLAnnotationRepository.findAll()).isEmpty();
+    assertThat(withTTLAnnotationRepository.findOneByName("Konrad Zuse")).isNotPresent();
+    assertThat(withTTLAnnotationRepository.findOneByName("Steve Wozniak")).isNotPresent();
   }
 }
