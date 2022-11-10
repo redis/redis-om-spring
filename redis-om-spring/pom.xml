@@ -7,7 +7,7 @@
 
   <groupId>com.redis.om</groupId>
   <artifactId>redis-om-spring</artifactId>
-  <version>0.6.2</version>
+  <version>0.6.3</version>
   <packaging>jar</packaging>
 
   <name>redis-om-spring</name>
@@ -285,7 +285,7 @@
         <configuration>
           <argLine>
             --illegal-access=permit
-          </argLine>
+</argLine>
         </configuration>
       </plugin>
       <plugin>
@@ -295,7 +295,7 @@
         <configuration>
           <argLine>
             --illegal-access=permit
-          </argLine>
+</argLine>
         </configuration>
       </plugin>
     </plugins>
@@ -333,7 +333,7 @@
             </executions>
           </plugin>
 
-          <!--Sign the components - this is required by maven central for 
+          <!--Sign the components - this is required by maven central for
             releases -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
