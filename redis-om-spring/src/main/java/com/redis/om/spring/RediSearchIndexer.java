@@ -121,14 +121,17 @@ public class RediSearchIndexer {
       Optional<java.lang.reflect.Field> maybeIdField = getIdFieldForEntityClass(cl);
       if (maybeIdField.isPresent()) {
         java.lang.reflect.Field idField = maybeIdField.get();
-        if (!fields.stream().anyMatch(f -> f.name.equals(idField.getName()))) {
-          if (Number.class.isAssignableFrom(idField.getType())) {
-            fields
-                .add(indexAsNumericFieldFor(maybeIdField.get(), idxType == IndexDefinition.Type.JSON, "", true, false));
-          } else {
-            fields.add(
-                indexAsTagFieldFor(maybeIdField.get(), idxType == IndexDefinition.Type.JSON, "", false, ",",
-                    Integer.MIN_VALUE));
+        // Only auto-index the @Id if not already indexed by the user (gh-135)
+        if (!idField.isAnnotationPresent(Indexed.class) && !idField.isAnnotationPresent(Searchable.class)) {
+          if (!fields.stream().anyMatch(f -> f.name.equals(idField.getName()))) {
+            if (Number.class.isAssignableFrom(idField.getType())) {
+              fields
+                  .add(indexAsNumericFieldFor(maybeIdField.get(), idxType == IndexDefinition.Type.JSON, "", true, false));
+            } else {
+              fields.add(
+                  indexAsTagFieldFor(maybeIdField.get(), idxType == IndexDefinition.Type.JSON, "", false, ",",
+                      Integer.MIN_VALUE));
+            }
           }
         }
       }
