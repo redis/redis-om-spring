@@ -14,7 +14,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.redis.core.RedisCallback;
@@ -29,6 +28,7 @@ import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.redis.om.spring.convert.RedisOMCustomConversions;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
@@ -48,8 +48,6 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private @Nullable String keyspaceNotificationsConfigParameter = null;
   private RedisModulesOperations<String> modulesOperations;
   private RediSearchIndexer indexer;
-
-  @Autowired
   private Gson gson;
 
   /**
@@ -63,13 +61,14 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @SuppressWarnings("unchecked")
   public RedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisModulesOperations<?> rmo,
-      RedisMappingContext mappingContext, RediSearchIndexer keyspaceToIndexMap) {
+      RedisMappingContext mappingContext, RediSearchIndexer keyspaceToIndexMap, GsonBuilder gsonBuilder) {
     super(redisOps, mappingContext, new RedisOMCustomConversions());
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.redisJSONOperations = modulesOperations.opsForJSON();
     this.redisOperations = redisOps;
     this.mappingContext = mappingContext;
     this.indexer = keyspaceToIndexMap;
+    this.gson = gsonBuilder.create();
   }
 
   /*

@@ -120,16 +120,18 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   @Bean(name = "redisJSONKeyValueAdapter")
   RedisJSONKeyValueAdapter getRedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps,
       RedisModulesOperations<?> redisModulesOperations, RedisMappingContext mappingContext,
-      RediSearchIndexer keyspaceToIndexMap) {
-    return new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap);
+      RediSearchIndexer keyspaceToIndexMap,
+      GsonBuilder gsonBuilder) {
+    return new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap, gsonBuilder);
   }
 
   @Bean(name = "redisJSONKeyValueTemplate")
   public CustomRedisKeyValueTemplate getRedisJSONKeyValueTemplate(RedisOperations<?, ?> redisOps,
       RedisModulesOperations<?> redisModulesOperations, RedisMappingContext mappingContext,
-      RediSearchIndexer keyspaceToIndexMap) {
+      RediSearchIndexer keyspaceToIndexMap,
+      GsonBuilder gsonBuilder) {
     return new CustomRedisKeyValueTemplate(
-        getRedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap),
+        getRedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap, gsonBuilder),
         mappingContext);
   }
 
