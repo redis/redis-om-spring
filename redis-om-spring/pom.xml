@@ -7,7 +7,7 @@
 
   <groupId>com.redis.om</groupId>
   <artifactId>redis-om-spring</artifactId>
-  <version>0.6.3</version>
+  <version>0.6.4</version>
   <packaging>jar</packaging>
 
   <name>redis-om-spring</name>
@@ -242,6 +242,10 @@
       <id>ossrh</id>
       <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
     </snapshotRepository>
+    <repository>
+      <id>ossrh</id>
+      <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
   </distributionManagement>
 
   <build>
