@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.redis.om</groupId>
   <artifactId>redis-om-spring-parent</artifactId>
-  <version>0.6.3</version>
+  <version>0.6.4</version>
   <name>redis-om-spring-parent</name>
   <packaging>pom</packaging>
 
@@ -18,6 +18,17 @@
     <maven.test.target>11</maven.test.target>
     <java.version>11</java.version>
   </properties>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+    <repository>
+      <id>ossrh</id>
+      <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
 
   <modules>
     <!-- Main Project -->
