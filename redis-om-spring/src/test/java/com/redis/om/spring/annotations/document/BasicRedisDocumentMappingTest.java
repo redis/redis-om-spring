@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import com.redis.om.spring.annotations.document.fixtures.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,12 +24,6 @@ import org.springframework.data.geo.Point;
 
 import com.google.common.collect.Sets;
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.Company;
-import com.redis.om.spring.annotations.document.fixtures.Company$;
-import com.redis.om.spring.annotations.document.fixtures.CompanyRepository;
-import com.redis.om.spring.annotations.document.fixtures.Employee;
-import com.redis.om.spring.annotations.document.fixtures.Metadata;
-import com.redis.om.spring.annotations.document.fixtures.MetadataRepository;
 import com.redislabs.modules.rejson.Path;
 
 class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
@@ -38,9 +33,13 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   @Autowired
   MetadataRepository metadataRepo;
 
+  @Autowired
+  DocWithSetOfIntegerRepository withSetOfIntegerRepository;
+
   @BeforeEach
   void cleanUp() {
     repository.deleteAll();
+    withSetOfIntegerRepository.deleteAll();
     flushSearchIndexFor(Company.class);
   }
 
@@ -325,5 +324,63 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
             () -> assertThat(microsoft.getCreatedDate()).isNotNull(), //
             () -> assertThat(microsoft.getLastModifiedDate()).isNotNull()
     );
+  }
+
+  @Test
+  void testSetOfIntegersIndexed() {
+    DocWithSetOfInteger dwsoi = DocWithSetOfInteger.of(Set.of(8, 6, 7, 5, 3, 0, 9));
+    withSetOfIntegerRepository.save(dwsoi);
+    // if count() works we know the index was created
+    assertThat(withSetOfIntegerRepository.count()).isEqualTo(1);
+  }
+
+  @Test
+  void testSearchBySetOfInteger() {
+    DocWithSetOfInteger doc1 = DocWithSetOfInteger.of(Set.of(8, 6, 7, 5, 3, 0, 9));
+    DocWithSetOfInteger doc2 = DocWithSetOfInteger.of(Set.of(7, 8, 0, 6, 3, 5, 9));
+    DocWithSetOfInteger doc3 = DocWithSetOfInteger.of(Set.of(1, 2, 3, 4));
+    DocWithSetOfInteger doc4 = DocWithSetOfInteger.of(Set.of(1, 3, 5));
+    withSetOfIntegerRepository.saveAll(List.of(doc1, doc2, doc3, doc4));
+    assertThat(withSetOfIntegerRepository.count()).isEqualTo(4);
+
+    var docs = withSetOfIntegerRepository.findByTheNumbersContaining(Set.of(3));
+    assertThat(docs).containsOnly(doc1, doc2, doc3, doc4);
+
+    docs = withSetOfIntegerRepository.findByTheNumbersContaining(Set.of(5, 1));
+    assertThat(docs).containsOnly(doc1, doc2, doc3, doc4);
+
+    docs = withSetOfIntegerRepository.findByTheNumbersContaining(Set.of(4));
+    assertThat(docs).containsOnly(doc3);
+
+    docs = withSetOfIntegerRepository.findByTheNumbersContaining(Set.of(11));
+    assertThat(docs).isEmpty();
+
+    docs = withSetOfIntegerRepository.findByTheNumbersContaining(Set.of(8, 6, 7));
+    assertThat(docs).containsOnly(doc1, doc2);
+  }
+
+  @Test
+  void testSearchBySetOfAllInteger() {
+    DocWithSetOfInteger doc1 = DocWithSetOfInteger.of(Set.of(1, 2, 3, 4));
+    DocWithSetOfInteger doc2 = DocWithSetOfInteger.of(Set.of(1, 2, 3));
+    DocWithSetOfInteger doc3 = DocWithSetOfInteger.of(Set.of(1, 2));
+    DocWithSetOfInteger doc4 = DocWithSetOfInteger.of(Set.of(1));
+    withSetOfIntegerRepository.saveAll(List.of(doc1, doc2, doc3, doc4));
+    assertThat(withSetOfIntegerRepository.count()).isEqualTo(4);
+
+    var docs = withSetOfIntegerRepository.findByTheNumbersContainingAll(Set.of(5));
+    assertThat(docs).isEmpty();
+
+    docs = withSetOfIntegerRepository.findByTheNumbersContainingAll(Set.of(1));
+    assertThat(docs).containsOnly(doc1, doc2, doc3, doc4);
+
+    docs = withSetOfIntegerRepository.findByTheNumbersContainingAll(Set.of(1, 2));
+    assertThat(docs).containsOnly(doc1, doc2, doc3);
+
+    docs = withSetOfIntegerRepository.findByTheNumbersContainingAll(Set.of(1, 2, 3));
+    assertThat(docs).containsOnly(doc1, doc2);
+
+    docs = withSetOfIntegerRepository.findByTheNumbersContainingAll(Set.of(1, 2, 3, 4));
+    assertThat(docs).containsOnly(doc1);
   }
 }

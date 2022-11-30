@@ -129,7 +129,7 @@ public class RediSearchIndexer {
                   .add(indexAsNumericFieldFor(maybeIdField.get(), idxType == IndexDefinition.Type.JSON, "", true, false));
             } else {
               fields.add(
-                  indexAsTagFieldFor(maybeIdField.get(), idxType == IndexDefinition.Type.JSON, "", false, ",",
+                  indexAsTagFieldFor(maybeIdField.get(), idxType == IndexDefinition.Type.JSON, "", false, "|",
                       Integer.MIN_VALUE));
             }
           }
@@ -232,10 +232,14 @@ public class RediSearchIndexer {
       else if (Set.class.isAssignableFrom(fieldType) || List.class.isAssignableFrom(fieldType)) {
         Optional<Class<?>> maybeCollectionType = com.redis.om.spring.util.ObjectUtils.getCollectionElementType(field);
 
-        // It is only possible to index an array of strings or booleans in a TAG
-        // identifier.
-        // https://redis.io/docs/stack/json/indexing_json/#json-arrays-can-only-be-indexed-in-tag-identifiers
+
         if (maybeCollectionType.isPresent()) {
+          // https://redis.io/docs/stack/search/indexing_json/#index-limitations
+          // JSON array:
+          // - Array of strings as TAG or TEXT.
+          // - Array of numbers as NUMERIC or VECTOR.
+          // - Array of geo coordinates as GEO.
+          // - null values in such arrays are ignored.
           Class<?> collectionType = maybeCollectionType.get();
 
           if (CharSequence.class.isAssignableFrom(collectionType) || (collectionType == Boolean.class)) {
@@ -243,11 +247,16 @@ public class RediSearchIndexer {
                 indexed.arrayIndex()));
             // Index nested fields
           } else if (isDocument) {
-            // Index nested JSON Array field. But the current implementation of RediSearch
-            // supports array only for TAG fields, not TEXT fields.
-            // https://github.com/RediSearch/RediSearch/issues/2293
-            logger.debug(String.format("FOUND nested field on field of type: %s", field.getType()));
-            fields.addAll(indexAsNestedFieldFor(field, prefix));
+            if (Number.class.isAssignableFrom(collectionType)) {
+              fields
+                  .add(indexAsNumericFieldFor(field, true, prefix, indexed.sortable(), indexed.noindex()));
+            } else if (collectionType == Point.class) {
+              fields.add(indexAsGeoFieldFor(field, true, prefix, indexed.sortable(), indexed.noindex()));
+            } else {
+              // Index nested JSON fields
+              logger.debug(String.format("FOUND nested field on field of type: %s", field.getType()));
+              fields.addAll(indexAsNestedFieldFor(field, prefix));
+            }
           }
         } else {
           logger.debug(String.format("Could not determine the type of elements in the collection %s in entity %s",
