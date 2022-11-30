@@ -240,10 +240,24 @@ public class RediSearchQuery implements RepositoryQuery {
         // Set / List
         //
         else if (Set.class.isAssignableFrom(fieldType) || List.class.isAssignableFrom(fieldType)) {
-          if (isANDQuery) {
-            qf.add(Pair.of(actualKey, QueryClause.Tag_CONTAINING_ALL));
-          } else {
-            qf.add(Pair.of(actualKey, QueryClause.get(FieldType.Tag, part.getType())));
+          Optional<Class<?>> maybeCollectionType = ObjectUtils.getCollectionElementType(field);
+          if (maybeCollectionType.isPresent()) {
+            Class<?> collectionType = maybeCollectionType.get();
+            if (Number.class.isAssignableFrom(collectionType)) {
+              if (isANDQuery) {
+                qf.add(Pair.of(actualKey, QueryClause.Numeric_CONTAINING_ALL));
+              } else {
+                qf.add(Pair.of(actualKey, QueryClause.get(FieldType.Numeric, part.getType())));
+              }
+            } else if (collectionType == Point.class) {
+
+            } else { // String or Boolean
+              if (isANDQuery) {
+                qf.add(Pair.of(actualKey, QueryClause.Tag_CONTAINING_ALL));
+              } else {
+                qf.add(Pair.of(actualKey, QueryClause.get(FieldType.Tag, part.getType())));
+              }
+            }
           }
         }
         //

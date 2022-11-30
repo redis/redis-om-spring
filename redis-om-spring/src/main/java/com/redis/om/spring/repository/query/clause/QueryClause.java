@@ -76,6 +76,12 @@ public enum QueryClause {
   Numeric_AFTER( //
       QueryClauseTemplate.of(FieldType.Numeric, Part.Type.AFTER, "@$field:[($param_0 inf]", 1) //
   ),
+  Numeric_CONTAINING( // '@aFewGoodNums:[3 3] @aFewGoodNums:[4 4]'
+      QueryClauseTemplate.of(FieldType.Numeric, Part.Type.CONTAINING, "$param_0", 1) //
+  ),
+  Numeric_CONTAINING_ALL( //
+      QueryClauseTemplate.of(FieldType.Numeric, Part.Type.CONTAINING, "$param_0", 1) //
+  ),
   // GEO
   Geo_NEAR( //
       QueryClauseTemplate.of(FieldType.Geo, Part.Type.NEAR, "@$field:[$param_0 $param_1 $param_2]", 2) //
@@ -134,7 +140,11 @@ public enum QueryClause {
             Collection<?> c = (Collection) param;
             String value = "";
             if (this == QueryClause.Tag_CONTAINING_ALL) {
-              value = c.stream().map(n -> "@"+field+":{"+QueryUtils.escape(ObjectUtils.asString(n, converter))+"}").collect(Collectors.joining(" "));
+              value = c.stream().map(n -> "@" + field + ":{" + QueryUtils.escape(ObjectUtils.asString(n, converter)) + "}").collect(Collectors.joining(" "));
+            } else if (this == QueryClause.Numeric_CONTAINING) {
+              value = c.stream().map(n -> "@" + field + ":[" + QueryUtils.escape(ObjectUtils.asString(n, converter)) + " " + QueryUtils.escape(ObjectUtils.asString(n, converter)) + "]").collect(Collectors.joining("|"));
+            } else if (this == QueryClause.Numeric_CONTAINING_ALL) {
+              value = c.stream().map(n -> "@" + field + ":[" + QueryUtils.escape(ObjectUtils.asString(n, converter)) + " " + QueryUtils.escape(ObjectUtils.asString(n, converter)) + "]").collect(Collectors.joining(" "));
             } else {
               value = c.stream().map(n -> QueryUtils.escape(ObjectUtils.asString(n, converter), true)).collect(Collectors.joining("|"));
             }
