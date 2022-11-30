@@ -250,7 +250,11 @@ public class RediSearchQuery implements RepositoryQuery {
                 qf.add(Pair.of(actualKey, QueryClause.get(FieldType.Numeric, part.getType())));
               }
             } else if (collectionType == Point.class) {
-
+              if (isANDQuery) {
+                qf.add(Pair.of(actualKey, QueryClause.Geo_CONTAINING_ALL));
+              } else {
+                qf.add(Pair.of(actualKey, QueryClause.get(FieldType.Geo, part.getType())));
+              }
             } else { // String or Boolean
               if (isANDQuery) {
                 qf.add(Pair.of(actualKey, QueryClause.Tag_CONTAINING_ALL));
