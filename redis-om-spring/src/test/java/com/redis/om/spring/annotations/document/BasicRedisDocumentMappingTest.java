@@ -20,11 +20,13 @@ import com.redis.om.spring.annotations.document.fixtures.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 
 import com.google.common.collect.Sets;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redislabs.modules.rejson.Path;
+import org.springframework.data.redis.connection.RedisGeoCommands;
 
 class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   @Autowired
@@ -34,12 +36,12 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   MetadataRepository metadataRepo;
 
   @Autowired
-  DocWithSetOfIntegerRepository withSetOfIntegerRepository;
+  DocWithSetsRepository docWithSetsRepository;
 
   @BeforeEach
   void cleanUp() {
     repository.deleteAll();
-    withSetOfIntegerRepository.deleteAll();
+    docWithSetsRepository.deleteAll();
     flushSearchIndexFor(Company.class);
   }
 
@@ -328,59 +330,126 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
 
   @Test
   void testSetOfIntegersIndexed() {
-    DocWithSetOfInteger dwsoi = DocWithSetOfInteger.of(Set.of(8, 6, 7, 5, 3, 0, 9));
-    withSetOfIntegerRepository.save(dwsoi);
+    DocWithSets dwsoi = DocWithSets.of(Set.of(8, 6, 7, 5, 3, 0, 9), Set.of());
+    docWithSetsRepository.save(dwsoi);
     // if count() works we know the index was created
-    assertThat(withSetOfIntegerRepository.count()).isEqualTo(1);
+    assertThat(docWithSetsRepository.count()).isEqualTo(1);
   }
 
   @Test
-  void testSearchBySetOfInteger() {
-    DocWithSetOfInteger doc1 = DocWithSetOfInteger.of(Set.of(8, 6, 7, 5, 3, 0, 9));
-    DocWithSetOfInteger doc2 = DocWithSetOfInteger.of(Set.of(7, 8, 0, 6, 3, 5, 9));
-    DocWithSetOfInteger doc3 = DocWithSetOfInteger.of(Set.of(1, 2, 3, 4));
-    DocWithSetOfInteger doc4 = DocWithSetOfInteger.of(Set.of(1, 3, 5));
-    withSetOfIntegerRepository.saveAll(List.of(doc1, doc2, doc3, doc4));
-    assertThat(withSetOfIntegerRepository.count()).isEqualTo(4);
+  void testSearchContainingAnyInSetOfInteger() {
+    DocWithSets doc1 = DocWithSets.of(Set.of(8, 6, 7, 5, 3, 0, 9), Set.of());
+    DocWithSets doc2 = DocWithSets.of(Set.of(7, 8, 0, 6, 3, 5, 9), Set.of());
+    DocWithSets doc3 = DocWithSets.of(Set.of(1, 2, 3, 4), Set.of());
+    DocWithSets doc4 = DocWithSets.of(Set.of(1, 3, 5), Set.of());
+    docWithSetsRepository.saveAll(List.of(doc1, doc2, doc3, doc4));
+    assertThat(docWithSetsRepository.count()).isEqualTo(4);
 
-    var docs = withSetOfIntegerRepository.findByTheNumbersContaining(Set.of(3));
+    var docs = docWithSetsRepository.findByTheNumbersContaining(Set.of(3));
     assertThat(docs).containsOnly(doc1, doc2, doc3, doc4);
 
-    docs = withSetOfIntegerRepository.findByTheNumbersContaining(Set.of(5, 1));
+    docs = docWithSetsRepository.findByTheNumbersContaining(Set.of(5, 1));
     assertThat(docs).containsOnly(doc1, doc2, doc3, doc4);
 
-    docs = withSetOfIntegerRepository.findByTheNumbersContaining(Set.of(4));
+    docs = docWithSetsRepository.findByTheNumbersContaining(Set.of(4));
     assertThat(docs).containsOnly(doc3);
 
-    docs = withSetOfIntegerRepository.findByTheNumbersContaining(Set.of(11));
+    docs = docWithSetsRepository.findByTheNumbersContaining(Set.of(11));
     assertThat(docs).isEmpty();
 
-    docs = withSetOfIntegerRepository.findByTheNumbersContaining(Set.of(8, 6, 7));
+    docs = docWithSetsRepository.findByTheNumbersContaining(Set.of(8, 6, 7));
     assertThat(docs).containsOnly(doc1, doc2);
   }
 
   @Test
-  void testSearchBySetOfAllInteger() {
-    DocWithSetOfInteger doc1 = DocWithSetOfInteger.of(Set.of(1, 2, 3, 4));
-    DocWithSetOfInteger doc2 = DocWithSetOfInteger.of(Set.of(1, 2, 3));
-    DocWithSetOfInteger doc3 = DocWithSetOfInteger.of(Set.of(1, 2));
-    DocWithSetOfInteger doc4 = DocWithSetOfInteger.of(Set.of(1));
-    withSetOfIntegerRepository.saveAll(List.of(doc1, doc2, doc3, doc4));
-    assertThat(withSetOfIntegerRepository.count()).isEqualTo(4);
+  void testSearchContainingAllInSetOfInteger() {
+    DocWithSets doc1 = DocWithSets.of(Set.of(1, 2, 3, 4), Set.of());
+    DocWithSets doc2 = DocWithSets.of(Set.of(1, 2, 3), Set.of());
+    DocWithSets doc3 = DocWithSets.of(Set.of(1, 2), Set.of());
+    DocWithSets doc4 = DocWithSets.of(Set.of(1), Set.of());
+    docWithSetsRepository.saveAll(List.of(doc1, doc2, doc3, doc4));
+    assertThat(docWithSetsRepository.count()).isEqualTo(4);
 
-    var docs = withSetOfIntegerRepository.findByTheNumbersContainingAll(Set.of(5));
+    var docs = docWithSetsRepository.findByTheNumbersContainingAll(Set.of(5));
     assertThat(docs).isEmpty();
 
-    docs = withSetOfIntegerRepository.findByTheNumbersContainingAll(Set.of(1));
+    docs = docWithSetsRepository.findByTheNumbersContainingAll(Set.of(1));
     assertThat(docs).containsOnly(doc1, doc2, doc3, doc4);
 
-    docs = withSetOfIntegerRepository.findByTheNumbersContainingAll(Set.of(1, 2));
+    docs = docWithSetsRepository.findByTheNumbersContainingAll(Set.of(1, 2));
     assertThat(docs).containsOnly(doc1, doc2, doc3);
 
-    docs = withSetOfIntegerRepository.findByTheNumbersContainingAll(Set.of(1, 2, 3));
+    docs = docWithSetsRepository.findByTheNumbersContainingAll(Set.of(1, 2, 3));
     assertThat(docs).containsOnly(doc1, doc2);
 
-    docs = withSetOfIntegerRepository.findByTheNumbersContainingAll(Set.of(1, 2, 3, 4));
+    docs = docWithSetsRepository.findByTheNumbersContainingAll(Set.of(1, 2, 3, 4));
     assertThat(docs).containsOnly(doc1);
+  }
+
+  @Test
+  void testSearchByLocationsNearAgainstLocationsArray() {
+    Point point1 = new Point(31.785, 35.213);
+    Point point2 = new Point(31.768,35.178);
+    Point point3 = new Point(31.984,35.827);
+    Point point4 = new Point(31.79,34.638);
+    Point point5 = new Point(31.793,34.639);
+    Point point6 = new Point(31.817,34.648);
+    Point point7 = new Point(31.806,34.638);
+    Point point8 = new Point(31.785,34.65);
+
+    DocWithSets doc1 = DocWithSets.of(Set.of(), Set.of(point1, point2, point3));
+    DocWithSets doc2 = DocWithSets.of(Set.of(), Set.of(point4, point5));
+    DocWithSets doc3 = DocWithSets.of(Set.of(), Set.of(point6, point7, point8));
+    docWithSetsRepository.saveAll(List.of(doc1, doc2, doc3));
+    assertThat(docWithSetsRepository.count()).isEqualTo(3);
+
+    Point point = new Point(31.5, 34.5);
+    var distance = new Distance(40.0, RedisGeoCommands.DistanceUnit.KILOMETERS);
+
+    var docs = docWithSetsRepository.findByTheLocationsNear(point, distance);
+    assertThat(docs).containsOnly(doc2, doc3);
+  }
+
+  @Test
+  void testSearchContainingAnyInSetOfLocations() {
+    Point point1 = new Point(31.785, 35.213);
+    Point point2 = new Point(31.768,35.178);
+    Point point3 = new Point(31.984,35.827);
+    Point point4 = new Point(31.79,34.638);
+    Point point5 = new Point(31.793,34.639);
+    Point point6 = new Point(31.817,34.648);
+    Point point7 = new Point(31.806,34.638);
+    Point point8 = new Point(31.785,34.65);
+
+    DocWithSets doc1 = DocWithSets.of(Set.of(), Set.of(point1, point2, point3));
+    DocWithSets doc2 = DocWithSets.of(Set.of(), Set.of(point4, point5));
+    DocWithSets doc3 = DocWithSets.of(Set.of(), Set.of(point6, point7, point8));
+    docWithSetsRepository.saveAll(List.of(doc1, doc2, doc3));
+    assertThat(docWithSetsRepository.count()).isEqualTo(3);
+
+    var docs = docWithSetsRepository.findByTheLocationsContaining(Set.of(point1, point3, point7));
+    assertThat(docs).containsOnly(doc1, doc3);
+  }
+
+  @Test
+  void testSearchContainingAllInSetOfLocations() {
+    Point point1 = new Point(-122.064, 37.384);
+    Point point2 = new Point(38.7635877,-9.2018309);
+    Point point3 = new Point(31.984,35.827);
+    Point point4 = new Point(31.79,34.638);
+    Point point5 = new Point(31.793,34.639);
+    Point point6 = new Point(31.817,34.648);
+    Point point7 = new Point(31.806,34.638);
+    Point point8 = new Point(31.785,34.65);
+
+    DocWithSets doc1 = DocWithSets.of(Set.of(), Set.of(point1, point2, point3));
+    DocWithSets doc2 = DocWithSets.of(Set.of(), Set.of(point1, point2, point4));
+    DocWithSets doc3 = DocWithSets.of(Set.of(), Set.of(point1, point5, point6, point7, point8));
+    DocWithSets doc4 = DocWithSets.of(Set.of(), Set.of(point2, point5, point6, point7, point8));
+    docWithSetsRepository.saveAll(List.of(doc1, doc2, doc3, doc4));
+    assertThat(docWithSetsRepository.count()).isEqualTo(4);
+
+    var docs = docWithSetsRepository.findByTheLocationsContainingAll(Set.of(point1, point2));
+    assertThat(docs).containsOnly(doc1, doc2);
   }
 }

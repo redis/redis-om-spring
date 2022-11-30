@@ -76,7 +76,7 @@ public enum QueryClause {
   Numeric_AFTER( //
       QueryClauseTemplate.of(FieldType.Numeric, Part.Type.AFTER, "@$field:[($param_0 inf]", 1) //
   ),
-  Numeric_CONTAINING( // '@aFewGoodNums:[3 3] @aFewGoodNums:[4 4]'
+  Numeric_CONTAINING( //
       QueryClauseTemplate.of(FieldType.Numeric, Part.Type.CONTAINING, "$param_0", 1) //
   ),
   Numeric_CONTAINING_ALL( //
@@ -85,6 +85,12 @@ public enum QueryClause {
   // GEO
   Geo_NEAR( //
       QueryClauseTemplate.of(FieldType.Geo, Part.Type.NEAR, "@$field:[$param_0 $param_1 $param_2]", 2) //
+  ),
+  Geo_CONTAINING( //
+      QueryClauseTemplate.of(FieldType.Geo, Part.Type.CONTAINING, "$param_0", 1) //
+  ),
+  Geo_CONTAINING_ALL( //
+      QueryClauseTemplate.of(FieldType.Geo, Part.Type.CONTAINING, "$param_0", 1) //
   ),
   // TAG
   Tag_SIMPLE_PROPERTY( //
@@ -145,6 +151,16 @@ public enum QueryClause {
               value = c.stream().map(n -> "@" + field + ":[" + QueryUtils.escape(ObjectUtils.asString(n, converter)) + " " + QueryUtils.escape(ObjectUtils.asString(n, converter)) + "]").collect(Collectors.joining("|"));
             } else if (this == QueryClause.Numeric_CONTAINING_ALL) {
               value = c.stream().map(n -> "@" + field + ":[" + QueryUtils.escape(ObjectUtils.asString(n, converter)) + " " + QueryUtils.escape(ObjectUtils.asString(n, converter)) + "]").collect(Collectors.joining(" "));
+            } else if (this == QueryClause.Geo_CONTAINING) {
+              value = c.stream().map(n -> {
+                Point p = (Point) n;
+                return "@" + field + ":[" + p.getX() + " " + p.getY() + " .000001 ft]";
+              }).collect(Collectors.joining("|"));
+            } else if (this == QueryClause.Geo_CONTAINING_ALL) {
+              value = c.stream().map(n -> {
+                Point p = (Point) n;
+                return "@" + field + ":[" + p.getX() + " " + p.getY() + " .000001 ft]";
+              }).collect(Collectors.joining(" "));
             } else {
               value = c.stream().map(n -> QueryUtils.escape(ObjectUtils.asString(n, converter), true)).collect(Collectors.joining("|"));
             }
