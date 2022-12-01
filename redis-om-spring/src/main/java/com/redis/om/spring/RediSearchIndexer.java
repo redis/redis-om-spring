@@ -58,13 +58,13 @@ public class RediSearchIndexer {
   private Map<String, Class<?>> keyspaceToEntityClass = new ConcurrentHashMap<>();
   private Map<Class<?>, String> entityClassToKeySpace = new ConcurrentHashMap<>();
   private List<Class<?>> indexedEntityClasses = new ArrayList<>();
-  
+
   private static final Log logger = LogFactory.getLog(RediSearchIndexer.class);
 
   private ApplicationContext ac;
   private RedisModulesOperations<String> rmo;
   private RedisMappingContext mappingContext;
-  
+
   @SuppressWarnings("unchecked")
   public RediSearchIndexer(ApplicationContext ac) {
     this.ac = ac;
@@ -126,7 +126,8 @@ public class RediSearchIndexer {
           if (!fields.stream().anyMatch(f -> f.name.equals(idField.getName()))) {
             if (Number.class.isAssignableFrom(idField.getType())) {
               fields
-                  .add(indexAsNumericFieldFor(maybeIdField.get(), idxType == IndexDefinition.Type.JSON, "", true, false));
+                  .add(indexAsNumericFieldFor(maybeIdField.get(), idxType == IndexDefinition.Type.JSON, "", true,
+                      false));
             } else {
               fields.add(
                   indexAsTagFieldFor(maybeIdField.get(), idxType == IndexDefinition.Type.JSON, "", false, "|",
@@ -175,7 +176,7 @@ public class RediSearchIndexer {
       index.setPrefixes(entityPrefix);
       IndexOptions ops = Client.IndexOptions.defaultOptions().setDefinition(index);
       addKeySpaceMapping(entityPrefix, cl);
-      
+
       // TTL
       if (cl.isAnnotationPresent(Document.class)) {
         KeyspaceSettings setting = new KeyspaceSettings(cl, cl.getName() + ":");
@@ -195,7 +196,7 @@ public class RediSearchIndexer {
 
         mappingContext.getMappingConfiguration().getKeyspaceConfiguration().addKeyspaceSettings(setting);
       }
-      
+
       opsForSearch.createIndex(schema, ops);
     } catch (Exception e) {
       logger.warn(String.format("Skipping index creation for %s because %s", indexName, e.getMessage()));
@@ -232,7 +233,6 @@ public class RediSearchIndexer {
       else if (Set.class.isAssignableFrom(fieldType) || List.class.isAssignableFrom(fieldType)) {
         Optional<Class<?>> maybeCollectionType = com.redis.om.spring.util.ObjectUtils.getCollectionElementType(field);
 
-
         if (maybeCollectionType.isPresent()) {
           // https://redis.io/docs/stack/search/indexing_json/#index-limitations
           // JSON array:
@@ -248,8 +248,7 @@ public class RediSearchIndexer {
             // Index nested fields
           } else if (isDocument) {
             if (Number.class.isAssignableFrom(collectionType)) {
-              fields
-                  .add(indexAsNumericFieldFor(field, true, prefix, indexed.sortable(), indexed.noindex()));
+              fields.add(indexAsNumericFieldFor(field, true, prefix, indexed.sortable(), indexed.noindex()));
             } else if (collectionType == Point.class) {
               fields.add(indexAsGeoFieldFor(field, true, prefix, indexed.sortable(), indexed.noindex()));
             } else {
@@ -493,7 +492,7 @@ public class RediSearchIndexer {
       return Optional.empty();
     }
   }
-  
+
   public Optional<String> getIndexName(Class<?> entityClass) {
     if (entityClassToKeySpace.containsKey(entityClass)) {
       return Optional.of(entityClass.getName() + "Idx");
@@ -516,7 +515,7 @@ public class RediSearchIndexer {
   public String getKeyspaceForEntityClass(Class<?> entityClass) {
     return entityClassToKeySpace.get(entityClass);
   }
-  
+
   public boolean indexExistsFor(Class<?> entityClass) {
     return indexedEntityClasses.contains(entityClass);
   }
