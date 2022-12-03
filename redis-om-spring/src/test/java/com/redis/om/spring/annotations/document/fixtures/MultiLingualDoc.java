@@ -1,11 +1,11 @@
 package com.redis.om.spring.annotations.document.fixtures;
 
+import lombok.Builder.Default;
 import org.springframework.data.annotation.Id;
 
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.Searchable;
-import com.redis.om.spring.repository.query.SearchLanguage;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -18,14 +18,14 @@ import lombok.RequiredArgsConstructor;
 @NoArgsConstructor
 @RequiredArgsConstructor(staticName = "of")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-@Document(language = SearchLanguage.SPANISH)
-public class SpanishDoc {
+@Document(languageField = "language")
+public class MultiLingualDoc {
   @Id
   private String id;
 
   @NonNull
   @Indexed
-  private String title;
+  private String language;
 
   @NonNull
   @Searchable

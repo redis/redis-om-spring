@@ -157,7 +157,7 @@ public class RediSearchIndexer {
           index.setFilter(document.filter());
         }
         if (ObjectUtils.isNotEmpty(document.language())) {
-          index.setLanguage(document.language());
+          index.setLanguage(document.language().getValue());
         }
         if (ObjectUtils.isNotEmpty(document.languageField())) {
           index.setLanguageField(document.languageField());

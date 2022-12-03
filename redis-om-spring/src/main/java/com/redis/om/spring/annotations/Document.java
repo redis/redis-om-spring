@@ -7,6 +7,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import com.redis.om.spring.repository.query.SearchLanguage;
+
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.keyvalue.annotation.KeySpace;
@@ -25,7 +27,7 @@ public @interface Document {
   String[] prefixes() default {};
   String filter() default "";
   String languageField() default "";
-  String language() default "";
+  SearchLanguage language() default SearchLanguage.ENGLISH;
   double score() default 1.0; 
   
   /**

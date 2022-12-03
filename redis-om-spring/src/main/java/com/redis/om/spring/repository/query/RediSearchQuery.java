@@ -78,6 +78,7 @@ public class RediSearchQuery implements RepositoryQuery {
   private Integer limit;
   private String sortBy;
   private Boolean sortAscending;
+  private boolean hasLanguageParameter;
 
   // aggregation fields
   private String[] load;
@@ -125,6 +126,7 @@ public class RediSearchQuery implements RepositoryQuery {
     Class<?> repoClass = metadata.getRepositoryInterface();
     @SuppressWarnings("rawtypes")
     Class[] params = queryMethod.getParameters().stream().map(Parameter::getType).toArray(Class[]::new);
+    hasLanguageParameter = Arrays.asList(params).stream().anyMatch(c -> c.isAssignableFrom(SearchLanguage.class));
 
     try {
       java.lang.reflect.Method method = repoClass.getMethod(queryMethod.getName(), params);
@@ -343,6 +345,14 @@ public class RediSearchQuery implements RepositoryQuery {
     
     if ((sortBy != null && !sortBy.isBlank())) {
       query.setSortBy(sortBy, sortAscending);
+    }
+
+    if (hasLanguageParameter) {
+      Optional<SearchLanguage> maybeSearchLanguage = Arrays.stream(parameters).filter(SearchLanguage.class::isInstance).map(SearchLanguage.class::cast)
+          .findFirst();
+      if (maybeSearchLanguage.isPresent()) {
+        query.setLanguage(maybeSearchLanguage.get().getValue());
+      }
     }
 
     // Intercept TAG collection queries with empty parameters and use an
