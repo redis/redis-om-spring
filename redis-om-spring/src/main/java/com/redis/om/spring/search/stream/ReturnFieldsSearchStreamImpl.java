@@ -325,6 +325,8 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
           String lat = st.nextToken();
 
           mappedResults.add(new Point(Double.parseDouble(lon), Double.parseDouble(lat)));
+        } else if (targetClass == String.class) {
+          mappedResults.add(value.toString());
         } else {
           mappedResults.add(gson.fromJson(value.toString(), targetClass));
         }
