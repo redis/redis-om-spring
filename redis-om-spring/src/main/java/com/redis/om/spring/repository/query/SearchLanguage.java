@@ -29,7 +29,7 @@ public enum SearchLanguage {
   RUSSIAN("russian"),
   SERBIAN("serbian"),
   SPANISH("spanish"),
-  SWEDISH("spanish"),
+  SWEDISH("swedish"),
   TAMIL("tamil"),
   TURKISH("turkish"),
   YIDDISH("yiddish"),

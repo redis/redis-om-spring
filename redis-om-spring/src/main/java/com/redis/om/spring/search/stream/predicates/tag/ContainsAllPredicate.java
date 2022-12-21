@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 
@@ -15,7 +16,7 @@ public class ContainsAllPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   private List<String> values;
 
-  public ContainsAllPredicate(Field field, List<String> list) {
+  public ContainsAllPredicate(SearchFieldAccessor field, List<String> list) {
     super(field);
     this.values = list.stream().map(QueryUtils::escape).collect(Collectors.toList());
   }
@@ -28,7 +29,7 @@ public class ContainsAllPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   public Node apply(Node root) {
     QueryNode and = QueryBuilder.intersect();
     for (String value : getValues()) {
-      and.add(getField().getName(), "{" + value + "}");
+      and.add(getSearchAlias(), "{" + value + "}");
     }
 
     return QueryBuilder.intersect(root, and);

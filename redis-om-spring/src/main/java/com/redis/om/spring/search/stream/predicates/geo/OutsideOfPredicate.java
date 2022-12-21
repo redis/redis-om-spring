@@ -2,6 +2,7 @@ package com.redis.om.spring.search.stream.predicates.geo;
 
 import java.lang.reflect.Field;
 
+import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 
@@ -17,7 +18,7 @@ public class OutsideOfPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   private Point point;
   private Distance distance;
 
-  public OutsideOfPredicate(Field field, Point point, Distance distance) {
+  public OutsideOfPredicate(SearchFieldAccessor field, Point point, Distance distance) {
     super(field);
     this.point = point;
     this.distance = distance;
@@ -37,7 +38,7 @@ public class OutsideOfPredicate<E, T> extends BaseAbstractPredicate<E, T> {
         ObjectUtils.getDistanceUnit(getDistance()));
 
     return QueryBuilder.intersect(root)
-        .add(QueryBuilder.disjunct(getField().getName(), geoValue));
+        .add(QueryBuilder.disjunct(getSearchAlias(), geoValue));
   }
 
 }

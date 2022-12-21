@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 
+import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 
 import io.redisearch.querybuilder.Node;
@@ -15,7 +16,7 @@ public class LessThanOrEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> 
 
   private T value;
 
-  public LessThanOrEqualPredicate(Field field, T value) {
+  public LessThanOrEqualPredicate(SearchFieldAccessor field, T value) {
     super(field);
     this.value = value;
   }
@@ -31,11 +32,11 @@ public class LessThanOrEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> 
       LocalDate localDate = (LocalDate) getValue();
       Instant instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
       Long unixTime = instant.getEpochSecond();
-      return QueryBuilder.intersect(root).add(getField().getName(), Values.le(unixTime));
+      return QueryBuilder.intersect(root).add(getSearchAlias(), Values.le(unixTime));
     } else if (cls == Integer.class) {
-      return QueryBuilder.intersect(root).add(getField().getName(), Values.le(Integer.valueOf(getValue().toString())));
+      return QueryBuilder.intersect(root).add(getSearchAlias(), Values.le(Integer.valueOf(getValue().toString())));
     } else if (cls == Double.class) {
-      return QueryBuilder.intersect(root).add(getField().getName(), Values.le(Double.valueOf(getValue().toString())));
+      return QueryBuilder.intersect(root).add(getSearchAlias(), Values.le(Double.valueOf(getValue().toString())));
     } else {
       return root;
     }

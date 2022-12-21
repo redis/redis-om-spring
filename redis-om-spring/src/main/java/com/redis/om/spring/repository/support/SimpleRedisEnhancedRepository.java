@@ -116,7 +116,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   @Override
   public void updateField(T entity, MetamodelField<T, ?> field, Object value) {
     PartialUpdate<?> update = new PartialUpdate<>(metadata.getId(entity).toString(), metadata.getJavaType())
-        .set(field.getField().getName(), value);
+        .set(field.getSearchAlias(), value);
 
     enhancedKeyValueAdapter.update(update);
   }
@@ -129,7 +129,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
         .map(this::getKey).collect(Collectors.toList());
 
     return (Iterable<F>) keys.stream() //
-        .map(key -> template.opsForHash().get(key, field.getField().getName())) //
+        .map(key -> template.opsForHash().get(key, field.getSearchAlias())) //
         .collect(Collectors.toList());
   }
 

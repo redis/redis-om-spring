@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 import java.util.Optional;
 import java.util.function.Function;
 
+import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.util.ObjectUtils;
 import com.redislabs.modules.rejson.Path;
 
@@ -11,7 +12,7 @@ public class ArrayPopAction<E, R> extends BaseAbstractAction implements Function
 
   private Long index;
 
-  public ArrayPopAction(Field field, Long index) {
+  public ArrayPopAction(SearchFieldAccessor field, Long index) {
     super(field);
     this.index = index;
   }
@@ -19,11 +20,12 @@ public class ArrayPopAction<E, R> extends BaseAbstractAction implements Function
   @SuppressWarnings("unchecked")
   @Override
   public R apply(E entity) {
-    Optional<Class<?>> maybeClass = ObjectUtils.getCollectionElementType(field);
+    Field f = field.getField();
+    Optional<Class<?>> maybeClass = ObjectUtils.getCollectionElementType(f);
     if (maybeClass.isPresent()) {
-      return (R) json.arrPop(getKey(entity), maybeClass.get(), Path.of("." + field.getName()), index);
+      return (R) json.arrPop(getKey(entity), maybeClass.get(), Path.of("." + f.getName()), index);
     } else {
-      throw new RuntimeException("Cannot determine contained element type for collection " + field.getName());
+      throw new RuntimeException("Cannot determine contained element type for collection " + f.getName());
     }
   }
 }

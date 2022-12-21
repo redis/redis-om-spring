@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 
+import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 
 import io.redisearch.querybuilder.Node;
@@ -16,7 +17,7 @@ public class BetweenPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   private T min;
   private T max;
 
-  public BetweenPredicate(Field field, T min, T max) {
+  public BetweenPredicate(SearchFieldAccessor field, T min, T max) {
     super(field);
     this.min = min;
     this.max = max;
@@ -40,13 +41,13 @@ public class BetweenPredicate<E, T> extends BaseAbstractPredicate<E, T> {
       Instant maxInstant = maxLocalDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
       Long minUnixTime = minInstant.getEpochSecond();
       Long maxUnixTime = maxInstant.getEpochSecond();
-      return QueryBuilder.intersect(root).add(getField().getName(),
+      return QueryBuilder.intersect(root).add(getSearchAlias(),
           Values.between(Double.valueOf(minUnixTime.toString()), Double.valueOf(maxUnixTime.toString())));
     } else if (cls == Integer.class) {
-      return QueryBuilder.intersect(root).add(getField().getName(),
+      return QueryBuilder.intersect(root).add(getSearchAlias(),
           Values.between(Integer.valueOf(getMin().toString()), Integer.valueOf(getMax().toString())));
     } else if (cls == Double.class) {
-      return QueryBuilder.intersect(root).add(getField().getName(),
+      return QueryBuilder.intersect(root).add(getSearchAlias(),
           Values.between(Double.valueOf(getMin().toString()), Double.valueOf(getMax().toString())));
     } else {
       return root;

@@ -1,21 +1,20 @@
 package com.redis.om.spring.metamodel;
 
-import java.lang.reflect.Field;
 import java.util.Comparator;
 import java.util.function.Function;
 
 public class MetamodelField<E, T> implements Comparator<E>, Function<E,T> {
 
-  protected final Field field;
+  protected final SearchFieldAccessor searchFieldAccessor;
   protected final boolean indexed;
   
-  public MetamodelField(Field field, boolean indexed) {
-    this.field = field;
+  public MetamodelField(SearchFieldAccessor searchFieldAccessor, boolean indexed) {
+    this.searchFieldAccessor = searchFieldAccessor;
     this.indexed = indexed;
   }
   
-  public Field getField() {
-    return field;
+  public SearchFieldAccessor getSearchFieldAccessor() {
+    return searchFieldAccessor;
   }
 
   @Override
@@ -30,5 +29,9 @@ public class MetamodelField<E, T> implements Comparator<E>, Function<E,T> {
   
   public boolean isIndexed() {
     return indexed;
+  }
+
+  public String getSearchAlias() {
+    return searchFieldAccessor.getSearchAlias();
   }
 }

@@ -282,7 +282,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     if (resolvedStream == null) {
       List<T> results = Collections.emptyList();
       Query query = entitySearchStream.prepareQuery();
-      String[] returnFields = returning.stream().map(foi -> "$." + foi.getField().getName()).toArray(String[]::new);
+      String[] returnFields = returning.stream().map(foi -> "$." + foi.getSearchAlias()).toArray(String[]::new);
 
       boolean resultSetHasNonIndexedFields = returning.stream().anyMatch(foi -> !foi.isIndexed());
 
@@ -314,9 +314,9 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
 
       List<Object> mappedResults = new ArrayList<>();
       returning.stream().forEach(foi -> {
-        String field = foi.getField().getName();
+        String field = foi.getSearchAlias();
         Object value = props.get("$." + field);
-        Class<?> targetClass = foi.getField().getType();
+        Class<?> targetClass = foi.getSearchFieldAccessor().getTargetClass();
         if (targetClass == Date.class) {
           mappedResults.add(new Date(Long.valueOf(value.toString())));
         } else if (targetClass == Point.class) {
@@ -349,7 +349,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     entities.stream().forEach(entity -> {
       List<Object> mappedResults = new ArrayList<>();
       returning.stream().forEach(foi -> {
-        String getterName = "get" + ObjectUtils.ucfirst(foi.getField().getName());
+        String getterName = "get" + ObjectUtils.ucfirst(foi.getSearchAlias());
         Method getter = ReflectionUtils.findMethod(entitySearchStream.getEntityClass(), getterName);
         mappedResults.add(ReflectionUtils.invokeMethod(getter, entity));
       });
