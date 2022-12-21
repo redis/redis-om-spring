@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import org.springframework.data.geo.Point;
 
 import com.redis.om.spring.annotations.GeoIndexed;
@@ -21,20 +22,23 @@ import io.redisearch.Schema.FieldType;
 public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicate<E, T> {
 
   private FieldType fieldType;
-  private Field field;
+  private SearchFieldAccessor field;
 
   protected BaseAbstractPredicate() {
 
   }
 
-  protected BaseAbstractPredicate(Field field) {
+  protected BaseAbstractPredicate(SearchFieldAccessor field) {
     this.field = field;
-    this.fieldType = getFieldTypeFor(field);
+    this.fieldType = getFieldTypeFor(field.getField());
   }
 
   @Override
+  public String getSearchAlias() { return field.getSearchAlias(); }
+
+  @Override
   public Field getField() {
-    return field;
+    return field.getField();
   }
 
   @Override

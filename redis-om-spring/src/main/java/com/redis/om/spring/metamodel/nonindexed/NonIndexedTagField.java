@@ -1,10 +1,10 @@
 package com.redis.om.spring.metamodel.nonindexed;
 
-import java.lang.reflect.Field;
 import java.util.function.Consumer;
 import java.util.function.ToLongFunction;
 
 import com.redis.om.spring.metamodel.MetamodelField;
+import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.actions.ArrayAppendAction;
 import com.redis.om.spring.search.stream.actions.ArrayIndexOfAction;
 import com.redis.om.spring.search.stream.actions.ArrayInsertAction;
@@ -14,32 +14,32 @@ import com.redis.om.spring.search.stream.actions.ArrayTrimAction;
 
 public class NonIndexedTagField<E, T> extends MetamodelField<E, T> {
 
-  public NonIndexedTagField(Field field, boolean indexed) {
+  public NonIndexedTagField(SearchFieldAccessor field, boolean indexed) {
     super(field, indexed);
   }
 
   public Consumer<? super E> add(Object value) {
-    return new ArrayAppendAction<>(field, value);
+    return new ArrayAppendAction<>(searchFieldAccessor, value);
   }
 
   public Consumer<? super E> insert(Object value, Long index) {
-    return new ArrayInsertAction<>(field, value, index);
+    return new ArrayInsertAction<>(searchFieldAccessor, value, index);
   }
 
   public Consumer<? super E> prepend(Object value) {
-    return new ArrayInsertAction<>(field, value, 0L);
+    return new ArrayInsertAction<>(searchFieldAccessor, value, 0L);
   }
 
   public ToLongFunction<? super E> length() {
-    return new ArrayLengthAction<>(field);
+    return new ArrayLengthAction<>(searchFieldAccessor);
   }
 
   public ToLongFunction<? super E> indexOf(Object element) {
-    return new ArrayIndexOfAction<>(field, element);
+    return new ArrayIndexOfAction<>(searchFieldAccessor, element);
   }
 
   public <R> ArrayPopAction<? super E,R> pop(Long index) {
-    return new ArrayPopAction<>(field, index);
+    return new ArrayPopAction<>(searchFieldAccessor, index);
   }
 
   public <R> ArrayPopAction<? super E,R> pop() {
@@ -59,7 +59,7 @@ public class NonIndexedTagField<E, T> extends MetamodelField<E, T> {
   }
 
   public Consumer<? super E> trimToRange(Long begin, Long end) {
-    return new ArrayTrimAction<>(field, begin, end);
+    return new ArrayTrimAction<>(searchFieldAccessor, begin, end);
   }
 
 }

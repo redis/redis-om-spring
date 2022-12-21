@@ -1,7 +1,28 @@
 package com.redis.om.spring.metamodel;
 
-import static java.util.Objects.requireNonNull;
+import com.github.f4b6a3.ulid.Ulid;
+import com.google.auto.service.AutoService;
+import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.annotations.Indexed;
+import com.redis.om.spring.annotations.Searchable;
+import com.redis.om.spring.metamodel.indexed.*;
+import com.redis.om.spring.metamodel.nonindexed.*;
+import com.redis.om.spring.tuple.Triple;
+import com.redis.om.spring.tuple.Tuples;
+import com.redis.om.spring.util.ObjectUtils;
+import com.squareup.javapoet.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.geo.Point;
+import org.springframework.data.redis.core.RedisHash;
+import org.springframework.util.ClassUtils;
 
+import javax.annotation.processing.*;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.*;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
+import javax.tools.Diagnostic;
+import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Field;
@@ -9,69 +30,12 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.Messager;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.annotation.processing.Processor;
-import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
-import javax.lang.model.SourceVersion;
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.AnnotationValue;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.PackageElement;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeMirror;
-import javax.tools.Diagnostic;
-import javax.tools.JavaFileObject;
-
-import org.springframework.data.geo.Point;
-import org.springframework.data.redis.core.RedisHash;
-import org.springframework.util.ClassUtils;
-
-import com.google.auto.service.AutoService;
-import com.redis.om.spring.annotations.Document;
-import com.redis.om.spring.annotations.Indexed;
-import com.redis.om.spring.annotations.Searchable;
-import com.redis.om.spring.metamodel.indexed.BooleanField;
-import com.redis.om.spring.metamodel.indexed.DateField;
-import com.redis.om.spring.metamodel.indexed.GeoField;
-import com.redis.om.spring.metamodel.indexed.NumericField;
-import com.redis.om.spring.metamodel.indexed.TagField;
-import com.redis.om.spring.metamodel.indexed.TextField;
-import com.redis.om.spring.metamodel.indexed.TextTagField;
-import com.redis.om.spring.metamodel.nonindexed.NonIndexedBooleanField;
-import com.redis.om.spring.metamodel.nonindexed.NonIndexedNumericField;
-import com.redis.om.spring.metamodel.nonindexed.NonIndexedTagField;
-import com.redis.om.spring.metamodel.nonindexed.NonIndexedTextField;
-import com.redis.om.spring.tuple.Pair;
-import com.redis.om.spring.tuple.Triple;
-import com.redis.om.spring.tuple.Tuples;
-import com.redis.om.spring.util.ObjectUtils;
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.CodeBlock;
-import com.squareup.javapoet.FieldSpec;
-import com.squareup.javapoet.JavaFile;
-import com.squareup.javapoet.ParameterizedTypeName;
-import com.squareup.javapoet.TypeName;
-import com.squareup.javapoet.TypeSpec;
+import static java.util.Objects.requireNonNull;
 
 @SupportedAnnotationTypes("com.redis.om.spring.annotations.Document")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
@@ -126,24 +90,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
     final String genEntityName = entityName + "$";
     TypeName entity = TypeName.get(annotatedElement.asType());
 
-    final Map<String, Element> getters = annotatedElement.getEnclosedElements().stream()
-        .filter(ee -> ee.getKind() == ElementKind.METHOD)
-        // Only consider methods with no parameters
-        .filter(ee -> ee.getEnclosedElements().stream().noneMatch(eee -> eee.getKind() == ElementKind.PARAMETER))
-        // Todo: Filter out methods that returns void or Void
-        .collect(Collectors.toMap(e -> e.getSimpleName().toString(), Function.identity()));
-
-    final Set<String> isGetters = getters.values().stream()
-        // todo: Filter out methods only returning boolean or Boolean
-        .map(Element::getSimpleName).map(Object::toString).filter(n -> n.startsWith(IS_PREFIX)).map(n -> n.substring(2))
-        .map(ObjectUtils::lcfirst).collect(Collectors.toSet());
-
-    // Retrieve all declared non-final instance fields of the annotated class
-    Map<? extends Element, String> enclosedFields = annotatedElement.getEnclosedElements().stream()
-        .filter(ee -> ee.getKind().isField() && !ee.getModifiers().contains(Modifier.STATIC) // Ignore static fields
-            && !ee.getModifiers().contains(Modifier.FINAL)) // Ignore final fields
-        .collect(Collectors.toMap(Function.identity(),
-            ee -> findGetter(ee, getters, isGetters, entityName, lombokGetterAvailable(annotatedElement, ee))));
+    Map<? extends Element, String> enclosedFields = getDeclaredInstanceFields(annotatedElement);
 
     final PackageElement packageElement = processingEnvironment.getElementUtils().getPackageOf(annotatedElement);
     String packageName;
@@ -155,155 +102,53 @@ public final class MetamodelGenerator extends AbstractProcessor {
     }
 
     List<FieldSpec> interceptors = new ArrayList<>();
-    List<FieldSpec> fields = new ArrayList<>();
+    List<ObjectGraphFieldSpec> fields = new ArrayList<>();
     List<CodeBlock> initCodeBlocks = new ArrayList<>();
     List<FieldSpec> nestedFieldsConstants = new ArrayList<>();
-    List<CodeBlock> nestedFieldsConstantsInitCodeBlocks = new ArrayList<>();
+
     enclosedFields.forEach((field, getter) -> {
-      boolean fieldIsIndexed = (field.getAnnotation(Searchable.class) != null)
-          || (field.getAnnotation(Indexed.class) != null);
-
-      String fieldName = field.getSimpleName().toString();
-      messager.printMessage(Diagnostic.Kind.NOTE, "Processing " + entityName + "." + fieldName);
-      TypeName entityField = TypeName.get(field.asType());
-
-      TypeMirror fieldType = field.asType();
-      String fullTypeClassName = fieldType.toString();
-      String cls = ObjectUtils.getTargetClassName(fullTypeClassName);
-
-      if (field.asType().getKind().isPrimitive()) {
-        Class<?> primitive = ClassUtils.resolvePrimitiveClassName(cls);
-        Class<?> primitiveWrapper = ClassUtils.resolvePrimitiveIfNecessary(primitive);
-        entityField = TypeName.get(primitiveWrapper);
-        fullTypeClassName = entityField.toString();
-        cls = ObjectUtils.getTargetClassName(fullTypeClassName);
+      List<Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock>> fieldMetamodels = processFieldMetamodel(entity, entityName, List.of(field));
+      for (Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> fieldMetamodel: fieldMetamodels) {
+        fields.add(fieldMetamodel.getFirst());
+        interceptors.add(fieldMetamodel.getSecond());
+        initCodeBlocks.add(fieldMetamodel.getThird());
       }
-
-      Class<?> targetInterceptor = MetamodelField.class;
-
-      if (field.getAnnotation(Searchable.class) != null) {
-        targetInterceptor = TextField.class;
-      } else if (field.getAnnotation(Indexed.class) != null) {
-        Class<?> targetCls = null;
-        try {
-          targetCls = ClassUtils.forName(cls, MetamodelGenerator.class.getClassLoader());
-        } catch (ClassNotFoundException cnfe) {
-          messager.printMessage(Diagnostic.Kind.WARNING,
-              "Processing class " + entityName + " could not resolve " + cls + " while checking for nested indexables");
-          List<Pair<FieldSpec, CodeBlock>> nestedFieldContants = extractNestedConstants(field);
-          for (Pair<FieldSpec, CodeBlock> fieldConstants : nestedFieldContants) {
-            nestedFieldsConstants.add(fieldConstants.getFirst());
-            nestedFieldsConstantsInitCodeBlocks.add(fieldConstants.getSecond());
-          }
-        }
-        if (targetCls != null) {
-          //
-          // Any Character class -> Tag Search Field
-          //
-          if (CharSequence.class.isAssignableFrom(targetCls)) {
-            targetInterceptor = TextTagField.class;
-          }
-          //
-          // Any Numeric class -> Numeric Search Field
-          //
-          else if (Number.class.isAssignableFrom(targetCls)) {
-            targetInterceptor = NumericField.class;
-          }
-          //
-          // Any Date/Time Types
-          //
-          else if ((targetCls == LocalDateTime.class) || (targetCls == LocalDate.class) || (targetCls == Date.class)) {
-            targetInterceptor = DateField.class;
-          }
-          //
-          // Set / List
-          //
-          else if (Set.class.isAssignableFrom(targetCls) || List.class.isAssignableFrom(targetCls)) {
-            targetInterceptor = TagField.class;
-          }
-          //
-          // Point
-          //
-          else if (targetCls == Point.class) {
-            targetInterceptor = GeoField.class;
-          }
-          //
-          // Boolean
-          //
-          else if (targetCls == Boolean.class) {
-            targetInterceptor = BooleanField.class;
-          }
-        }
-      } else {
-        Class<?> targetCls;
-        try {
-          targetCls = ClassUtils.forName(cls, MetamodelGenerator.class.getClassLoader());
-          //
-          // Any Character class
-          //
-          if (CharSequence.class.isAssignableFrom(targetCls)) {
-            targetInterceptor = NonIndexedTextField.class;
-          }
-          //
-          // Non-indexed Boolean
-          //
-          else if (targetCls == Boolean.class) {
-            targetInterceptor = NonIndexedBooleanField.class;
-          }
-          //
-          // Numeric class AND Any Date/Time Types
-          //
-          else if (Number.class.isAssignableFrom(targetCls) || (targetCls == LocalDateTime.class)
-              || (targetCls == LocalDate.class) || (targetCls == Date.class)) {
-            targetInterceptor = NonIndexedNumericField.class;
-          }
-          //
-          // Set / List
-          //
-          else if (Set.class.isAssignableFrom(targetCls) || List.class.isAssignableFrom(targetCls)) {
-            targetInterceptor = NonIndexedTagField.class;
-          }
-        } catch (ClassNotFoundException cnfe) {
-          messager.printMessage(Diagnostic.Kind.WARNING,
-              "Processing class " + entityName + " could not resolve " + cls);
-        }
-      }
-
-      Triple<FieldSpec, FieldSpec, CodeBlock> fieldMetamodel = generateFieldMetamodel(entity, fieldName, entityField,
-          targetInterceptor, fieldIsIndexed);
-
-      fields.add(fieldMetamodel.getFirst());
-      interceptors.add(fieldMetamodel.getSecond());
-      initCodeBlocks.add(fieldMetamodel.getThird());
     });
 
     CodeBlock.Builder blockBuilder = CodeBlock.builder();
 
     blockBuilder.beginControlFlow("try");
-    for (FieldSpec fieldSpec : fields) {
-      blockBuilder.addStatement("$L = $T.class.getDeclaredField(\"$L\")", fieldSpec.name, entity, fieldSpec.name);
+    for (ObjectGraphFieldSpec ogfs : fields) {
+      String sb = "$L = $T.class";
+      sb = sb + ogfs.getChain().stream().map(e -> String.format(".getDeclaredField(\"%s\")", e.getSimpleName().toString())).collect(
+          Collectors.joining(".getType()"));
+      FieldSpec fieldSpec = ogfs.getFieldSpec();
+      blockBuilder.addStatement(sb, fieldSpec.name, entity);
     }
+
     for (CodeBlock initCodeBlock : initCodeBlocks) {
       blockBuilder.add(initCodeBlock);
     }
-    for (CodeBlock nestedFieldsConstantsInitCodeBlock : nestedFieldsConstantsInitCodeBlocks) {
-      blockBuilder.add(nestedFieldsConstantsInitCodeBlock);
-    }
+
     blockBuilder.nextControlFlow("catch($T | $T e)", NoSuchFieldException.class, SecurityException.class);
     blockBuilder.addStatement("System.err.println(e.getMessage())");
     blockBuilder.endControlFlow();
 
     CodeBlock staticBlock = blockBuilder.build();
 
-    TypeSpec metaclass = TypeSpec.classBuilder(genEntityName).addModifiers(Modifier.PUBLIC, Modifier.FINAL) //
-        .addFields(fields) //
+    TypeSpec metaClass = TypeSpec.classBuilder(genEntityName) //
+        .addModifiers(Modifier.PUBLIC, Modifier.FINAL) //
+        .addFields(fields.stream().map(ObjectGraphFieldSpec::getFieldSpec).collect(Collectors.toList())) //
         .addFields(nestedFieldsConstants) //
         .addStaticBlock(staticBlock) //
         .addFields(interceptors) //
         // .addJavadoc(filename, null)
         .build();
 
-    JavaFile javaFile = JavaFile.builder(packageName, metaclass).build();
+    JavaFile javaFile = JavaFile //
+        .builder(packageName, metaClass) //
+        .build();
+
     JavaFileObject builderFile = processingEnv.getFiler().createSourceFile(qualifiedGenEntityName);
     Writer writer = builderFile.openWriter();
     javaFile.writeTo(writer);
@@ -311,21 +156,162 @@ public final class MetamodelGenerator extends AbstractProcessor {
     writer.close();
   }
 
-  private List<Pair<FieldSpec, CodeBlock>> extractNestedConstants(Element fieldElement) {
+  private List<Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock>> processFieldMetamodel(TypeName entity, String entityName, List<Element> chain) {
+    List<Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock>> fieldMetamodelSpec = new ArrayList<>();
+
+    Element field = chain.get(chain.size() - 1);
+    String fieldName = field.getSimpleName().toString();
+
+    boolean fieldIsIndexed = (field.getAnnotation(Searchable.class) != null)
+        || (field.getAnnotation(Indexed.class) != null)
+        || (field.getAnnotation(Id.class) != null);
+
+    String chainedFieldName = chain.stream().map(Element::getSimpleName).collect(Collectors.joining("_"));
+    messager.printMessage(Diagnostic.Kind.NOTE, "Processing " + chainedFieldName);
+    TypeName entityField = TypeName.get(field.asType());
+
+    TypeMirror fieldType = field.asType();
+    String fullTypeClassName = fieldType.toString();
+    String cls = ObjectUtils.getTargetClassName(fullTypeClassName);
+
+    if (field.asType().getKind().isPrimitive()) {
+      Class<?> primitive = ClassUtils.resolvePrimitiveClassName(cls);
+      Class<?> primitiveWrapper = ClassUtils.resolvePrimitiveIfNecessary(primitive);
+      entityField = TypeName.get(primitiveWrapper);
+      fullTypeClassName = entityField.toString();
+      cls = ObjectUtils.getTargetClassName(fullTypeClassName);
+    }
+
+    Class<?> targetInterceptor = null;
+    Class<?> targetCls = null;
+    if (field.getAnnotation(Searchable.class) != null) {
+      targetInterceptor = TextField.class;
+    } else if (field.getAnnotation(Indexed.class) != null || field.getAnnotation(Id.class) != null) {
+      try {
+        targetCls = ClassUtils.forName(cls, MetamodelGenerator.class.getClassLoader());
+      } catch (ClassNotFoundException cnfe) {
+        messager.printMessage(Diagnostic.Kind.WARNING,
+            "Processing class " + entityName + " could not resolve " + cls + " while checking for nested indexables");
+        fieldMetamodelSpec.addAll(processNestedIndexableFields(entity, chain));
+      }
+      if (targetCls != null) {
+        //
+        // Any Character class -> Tag Search Field
+        //
+        if (CharSequence.class.isAssignableFrom(targetCls) || (targetCls == Ulid.class)) {
+          targetInterceptor = TextTagField.class;
+        }
+        //
+        // Any Numeric class -> Numeric Search Field
+        //
+        else if (Number.class.isAssignableFrom(targetCls)) {
+          targetInterceptor = NumericField.class;
+        }
+        //
+        // Any Date/Time Types
+        //
+        else if ((targetCls == LocalDateTime.class) || (targetCls == LocalDate.class) || (targetCls == Date.class)) {
+          targetInterceptor = DateField.class;
+        }
+        //
+        // Set / List
+        //
+        else if (Set.class.isAssignableFrom(targetCls) || List.class.isAssignableFrom(targetCls)) {
+          targetInterceptor = TagField.class;
+        }
+        //
+        // Point
+        //
+        else if (targetCls == Point.class) {
+          targetInterceptor = GeoField.class;
+        }
+        //
+        // Boolean
+        //
+        else if (targetCls == Boolean.class) {
+          targetInterceptor = BooleanField.class;
+        }
+      }
+    } else {
+      try {
+        targetCls = ClassUtils.forName(cls, MetamodelGenerator.class.getClassLoader());
+        //
+        // Any Character class
+        //
+        if (CharSequence.class.isAssignableFrom(targetCls) || (targetCls == Ulid.class)) {
+          targetInterceptor = NonIndexedTextField.class;
+        }
+        //
+        // Non-indexed Boolean
+        //
+        else if (targetCls == Boolean.class) {
+          targetInterceptor = NonIndexedBooleanField.class;
+        }
+        //
+        // Numeric class AND Any Date/Time Types
+        //
+        else if (Number.class.isAssignableFrom(targetCls) || (targetCls == LocalDateTime.class)
+            || (targetCls == LocalDate.class) || (targetCls == Date.class)) {
+          targetInterceptor = NonIndexedNumericField.class;
+        }
+        //
+        // Set / List
+        //
+        else if (Set.class.isAssignableFrom(targetCls) || List.class.isAssignableFrom(targetCls)) {
+          targetInterceptor = NonIndexedTagField.class;
+        }
+        //
+        // Point
+        //
+        else if (targetCls == Point.class) {
+          targetInterceptor = NonIndexedGeoField.class;
+        }
+      } catch (ClassNotFoundException cnfe) {
+        messager.printMessage(Diagnostic.Kind.WARNING,
+            "Processing class " + entityName + " could not resolve " + cls);
+      }
+    }
+
+    if (targetInterceptor != null) {
+      fieldMetamodelSpec.add(generateFieldMetamodel(entity, fieldName, chain, chainedFieldName, entityField, targetInterceptor, fieldIsIndexed));
+    }
+    return fieldMetamodelSpec;
+  }
+
+  private List<Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock>> processNestedIndexableFields(TypeName entity,
+      List<Element> chain) {
+    Element fieldElement = chain.get(chain.size() - 1);
     TypeMirror typeMirror = fieldElement.asType();
     DeclaredType asDeclaredType = (DeclaredType)typeMirror;
     Element entityField = asDeclaredType.asElement();
+
+    List<Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock>> fieldMetamodels = new ArrayList<>();
 
     messager.printMessage(Diagnostic.Kind.NOTE, "Processing constants for " + fieldElement + " of type " + entityField);
 
     final String entityFieldName = fieldElement.toString();
     messager.printMessage(Diagnostic.Kind.NOTE, "entityFieldName => " + entityFieldName);
 
-    List<? extends Element> enclosed = entityField.getEnclosedElements();
-    messager.printMessage(Diagnostic.Kind.NOTE, "enclosed size() ==> " + enclosed.size());
+    Map<? extends Element, String> enclosedFields = getDeclaredInstanceFields(entityField);
 
+    messager.printMessage(Diagnostic.Kind.NOTE, "Enclosed subfield size() ==> " + enclosedFields.size());
 
-    final Map<String, Element> getters = entityField.getEnclosedElements().stream()
+    enclosedFields.forEach((field, getter) -> {
+      boolean fieldIsIndexed = (field.getAnnotation(Indexed.class) != null) || (field.getAnnotation(Searchable.class) != null);
+
+      if (fieldIsIndexed) {
+        List<Element> newChain = new ArrayList<>();
+        newChain.addAll(chain);
+        newChain.add(field);
+        fieldMetamodels.addAll(processFieldMetamodel(entity, entityFieldName, newChain));
+      }
+    });
+
+    return fieldMetamodels;
+  }
+
+  private Map<? extends Element, String> getDeclaredInstanceFields(Element element) {
+    final Map<String, Element> getters = element.getEnclosedElements().stream()
         .filter(ee -> ee.getKind() == ElementKind.METHOD)
         // Only consider methods with no parameters
         .filter(ee -> ee.getEnclosedElements().stream().noneMatch(eee -> eee.getKind() == ElementKind.PARAMETER))
@@ -340,29 +326,11 @@ public final class MetamodelGenerator extends AbstractProcessor {
         .map(ObjectUtils::lcfirst).collect(Collectors.toSet());
 
     // Retrieve all declared non-final instance fields of the annotated class
-    Map<? extends Element, String> enclosedFields = entityField.getEnclosedElements().stream()
+    return element.getEnclosedElements().stream()
         .filter(ee -> ee.getKind().isField() && !ee.getModifiers().contains(Modifier.STATIC) // Ignore static fields
             && !ee.getModifiers().contains(Modifier.FINAL)) // Ignore final fields
         .collect(Collectors.toMap(Function.identity(),
-            ee -> findGetter(ee, getters, isGetters, entityFieldName, lombokGetterAvailable(entityField, ee))));
-
-    messager.printMessage(Diagnostic.Kind.NOTE, "Enclosed subfield size() ==> " + enclosedFields.size());
-
-    List<Pair<FieldSpec, CodeBlock>> nestedFieldsConstants = new ArrayList<>();
-    enclosedFields.forEach((field, getter) -> {
-
-      boolean fieldIsIndexed = (field.getAnnotation(Searchable.class) != null)
-          || (field.getAnnotation(Indexed.class) != null);
-
-      if (fieldIsIndexed) {
-        messager.printMessage(Diagnostic.Kind.NOTE, "Processing subfield ==> " + entityFieldName + "." + field.getSimpleName().toString());
-        String subFieldName = field.getSimpleName().toString();
-
-        Pair<FieldSpec, CodeBlock> nestedIndexedFieldDef = generateNestedIndexedFieldConstants(entityFieldName, subFieldName);
-        nestedFieldsConstants.add(nestedIndexedFieldDef);
-      }
-    });
-    return nestedFieldsConstants;
+            ee -> findGetter(ee, getters, isGetters, element.toString(), lombokGetterAvailable(element, ee))));
   }
 
 
@@ -424,24 +392,23 @@ public final class MetamodelGenerator extends AbstractProcessor {
     final Element standardGetter = getters.get(standardGetterName);
 
     if (standardGetter != null || lombokGetterAvailable) {
-// We got lucky because the user elected to conform
-// to the standard JavaBean notation.
+      // We got lucky because the user elected to conform
+      // to the standard JavaBean notation.
       return entityName + "::" + standardGetterName;
     }
 
     final String lambdaName = ObjectUtils.lcfirst(entityName);
 
     if (!field.getModifiers().contains(Modifier.PROTECTED) && !field.getModifiers().contains(Modifier.PRIVATE)) {
-// We can use a lambda. Great escape hatch!
+      // We can use a lambda. Great escape hatch!
       return lambdaName + " -> " + lambdaName + "." + fieldName;
     }
 
-// default to thrower
+    // default to thrower
     messager.printMessage(Diagnostic.Kind.ERROR, "Class " + entityName + " is not a proper JavaBean because "
         + field.getSimpleName().toString() + " has no standard getter.");
     return lambdaName + " -> {throw new " + IllegalJavaBeanException.class.getSimpleName() + "(" + entityName
         + ".class, \"" + fieldName + "\");}";
-
   }
 
   /**
@@ -488,34 +455,25 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
   public static final Character REPLACEMENT_CHARACTER = '_';
 
-  private Triple<FieldSpec, FieldSpec, CodeBlock> generateFieldMetamodel(TypeName entity, String fieldName,
+  private Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> generateFieldMetamodel(TypeName entity, String fieldName, List<Element> chain, String chainFieldName,
       TypeName entityField, Class<?> interceptorClass, boolean fieldIsIndexed) {
-    String fieldAccessor = staticField(fieldName);
+    String fieldAccessor = staticField(chainFieldName);
 
-    FieldSpec objectField = FieldSpec.builder(Field.class, fieldName).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+    FieldSpec objectField = FieldSpec.builder(Field.class, chainFieldName).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
         .build();
+    ObjectGraphFieldSpec ogf = new ObjectGraphFieldSpec(objectField, chain);
 
     TypeName interceptor = ParameterizedTypeName.get(ClassName.get(interceptorClass), entity, entityField);
 
     FieldSpec aField = FieldSpec.builder(interceptor, fieldAccessor).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
         .build();
 
+    String searchSchemaAlias = chain.stream().map(e -> e.getSimpleName().toString()).collect(Collectors.joining("_"));
+
     CodeBlock aFieldInit = CodeBlock.builder()
-        .addStatement("$L = new $T($L,$L)", fieldAccessor, interceptor, fieldName, fieldIsIndexed).build();
+        .addStatement("$L = new $T(new $T(\"$L\", $L),$L)", fieldAccessor, interceptor, SearchFieldAccessor.class, searchSchemaAlias, chainFieldName, fieldIsIndexed).build();
 
-    return Tuples.of(objectField, aField, aFieldInit);
-  }
-
-  private Pair<FieldSpec, CodeBlock> generateNestedIndexedFieldConstants(String fieldName, String subFieldName) {
-    String staticConstantName = staticField(fieldName) + "_" + staticField(subFieldName);
-
-    FieldSpec staticStringField = FieldSpec.builder(String.class, staticConstantName).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-        .build();
-
-    CodeBlock staticStringFieldInit = CodeBlock.builder()
-        .addStatement("$L = new $T($L)", staticConstantName, String.class, String.format("\"%s_%s\"", fieldName, subFieldName)).build();
-
-    return Tuples.of(staticStringField, staticStringFieldInit);
+    return Tuples.of(ogf, aField, aFieldInit);
   }
 
   public static String replaceIfIllegalJavaIdentifierCharacter(final String word) {

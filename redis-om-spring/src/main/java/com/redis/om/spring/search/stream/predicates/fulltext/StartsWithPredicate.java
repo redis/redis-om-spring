@@ -2,6 +2,7 @@ package com.redis.om.spring.search.stream.predicates.fulltext;
 
 import java.lang.reflect.Field;
 
+import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 
 import io.redisearch.querybuilder.Node;
@@ -11,7 +12,7 @@ public class StartsWithPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   private T value;
 
-  public StartsWithPredicate(Field field, T value) {
+  public StartsWithPredicate(SearchFieldAccessor field, T value) {
     super(field);
     this.value = value;
   }
@@ -22,7 +23,7 @@ public class StartsWithPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
-    return QueryBuilder.intersect(root).add(getField().getName(), getValue().toString() + "*");
+    return QueryBuilder.intersect(root).add(getSearchAlias(), getValue().toString() + "*");
   }
 
 }

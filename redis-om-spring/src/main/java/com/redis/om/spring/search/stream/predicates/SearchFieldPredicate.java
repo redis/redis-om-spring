@@ -12,6 +12,8 @@ public interface SearchFieldPredicate<E, T> extends Predicate<T> {
 
   Field getField();
 
+  String getSearchAlias();
+
   @SuppressWarnings("unchecked")
   @Override
   default Predicate<T> or(Predicate<? super T> other) {

@@ -183,7 +183,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     if (MetamodelField.class.isAssignableFrom(comparator.getClass())) {
       @SuppressWarnings("unchecked")
       MetamodelField<E, ?> foi = (MetamodelField<E, ?>) comparator;
-      sortBy = Optional.of(SortedField.asc(foi.getField().getName()));
+      sortBy = Optional.of(SortedField.asc(foi.getSearchAlias()));
     }
     return this;
   }
@@ -193,7 +193,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     if (MetamodelField.class.isAssignableFrom(comparator.getClass())) {
       @SuppressWarnings("unchecked")
       MetamodelField<E, ?> foi = (MetamodelField<E, ?>) comparator;
-      sortBy = Optional.of(new SortedField(foi.getField().getName(), order));
+      sortBy = Optional.of(new SortedField(foi.getSearchAlias(), order));
     }
     return this;
   }

@@ -2,6 +2,7 @@ package com.redis.om.spring.search.stream.predicates.geo;
 
 import java.lang.reflect.Field;
 
+import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 
@@ -17,7 +18,7 @@ public class NearPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   private Point point;
   private Distance distance;
 
-  public NearPredicate(Field field, Point point, Distance distance) {
+  public NearPredicate(SearchFieldAccessor field, Point point, Distance distance) {
     super(field);
     this.point = point;
     this.distance = distance;
@@ -36,7 +37,7 @@ public class NearPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     GeoValue geoValue = new GeoValue(getPoint().getX(), getPoint().getY(), getDistance().getValue(),
         ObjectUtils.getDistanceUnit(getDistance()));
 
-    return QueryBuilder.intersect(root).add(getField().getName(), geoValue);
+    return QueryBuilder.intersect(root).add(getSearchAlias(), geoValue);
   }
 
 }

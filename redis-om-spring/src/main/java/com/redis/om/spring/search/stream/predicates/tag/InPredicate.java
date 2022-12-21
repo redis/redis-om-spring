@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
+import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 
@@ -15,7 +16,7 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   private List<String> values;
 
-  public InPredicate(Field field, List<String> list) {
+  public InPredicate(SearchFieldAccessor field, List<String> list) {
     super(field);
     this.values = list.stream().map(QueryUtils::escape).collect(Collectors.toList());
   }
@@ -31,6 +32,6 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
       sj.add(value.toString());
     }
 
-    return QueryBuilder.intersect(root).add(getField().getName(), "{" + sj.toString() + "}");
+    return QueryBuilder.intersect(root).add(getSearchAlias(), "{" + sj.toString() + "}");
   }
 }

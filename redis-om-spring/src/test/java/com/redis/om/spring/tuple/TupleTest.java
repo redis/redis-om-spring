@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import com.redis.om.spring.tuple.Tuples;
 import com.redis.om.spring.tuple.accessor.EighteenthAccessor;
 import com.redis.om.spring.tuple.accessor.EighthAccessor;
 import com.redis.om.spring.tuple.accessor.EleventhAccessor;

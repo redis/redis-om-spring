@@ -8,6 +8,8 @@ import org.springframework.data.repository.NoRepositoryBean;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redislabs.modules.rejson.Path;
 
+import java.io.IOException;
+
 @NoRepositoryBean
 public interface RedisDocumentRepository<T, ID> extends KeyValueRepository<T, ID> {
 
@@ -29,4 +31,6 @@ public interface RedisDocumentRepository<T, ID> extends KeyValueRepository<T, ID
   <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field);
 
   Long getExpiration(ID id);
+
+  Iterable<T> bulkLoad(String file) throws IOException;
 }

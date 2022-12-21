@@ -10,6 +10,8 @@ import java.util.stream.Collectors;
 
 import javax.tools.JavaFileObject;
 
+import com.redis.om.spring.metamodel.indexed.TextField;
+import com.redis.om.spring.metamodel.indexed.TextTagField;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -37,6 +39,7 @@ class MetamodelGeneratorTest {
     assertThat(metamodel.getName()).isEqualTo("/SOURCE_OUTPUT/valid/ValidDocumentIndexed$.java");
 
     var fileContents = metamodel.getCharContent(true);
+
     assertAll( //
 
         // test package matches source package
@@ -82,7 +85,7 @@ class MetamodelGeneratorTest {
             .contains("public static BooleanField<ValidDocumentIndexed, Boolean> PUBLICLY_LISTED;"), //
         () -> assertThat(fileContents)
             .contains("public static DateField<ValidDocumentIndexed, LocalDate> LAST_VALUATION;"), //
-        () -> assertThat(fileContents).contains("public static NonIndexedTextField<ValidDocumentIndexed, String> ID;"), //
+        () -> assertThat(fileContents).contains("public static TextTagField<ValidDocumentIndexed, String> ID;"), //
         () -> assertThat(fileContents)
             .contains("public static NumericField<ValidDocumentIndexed, Integer> YEAR_FOUNDED;"), //
         () -> assertThat(fileContents).contains("public static TextField<ValidDocumentIndexed, String> NAME;"), //
@@ -91,21 +94,21 @@ class MetamodelGeneratorTest {
 
         // test Metamodel Field initialization
         () -> assertThat(fileContents)
-            .contains("CREATED_DATE = new NonIndexedNumericField<ValidDocumentIndexed, Date>(createdDate,false);"), //
+            .contains("CREATED_DATE = new NonIndexedNumericField<ValidDocumentIndexed, Date>(new SearchFieldAccessor(\"createdDate\", createdDate),false);"), //
         () -> assertThat(fileContents).contains(
-            "LAST_MODIFIED_DATE = new NonIndexedNumericField<ValidDocumentIndexed, Date>(lastModifiedDate,false);"), //
-        () -> assertThat(fileContents).contains("EMAIL = new TextTagField<ValidDocumentIndexed, String>(email,true);"), //
+            "LAST_MODIFIED_DATE = new NonIndexedNumericField<ValidDocumentIndexed, Date>(new SearchFieldAccessor(\"lastModifiedDate\", lastModifiedDate),false);"), //
+        () -> assertThat(fileContents).contains("EMAIL = new TextTagField<ValidDocumentIndexed, String>(new SearchFieldAccessor(\"email\", email),true);"), //
         () -> assertThat(fileContents)
-            .contains("PUBLICLY_LISTED = new BooleanField<ValidDocumentIndexed, Boolean>(publiclyListed,true);"), //
+            .contains("PUBLICLY_LISTED = new BooleanField<ValidDocumentIndexed, Boolean>(new SearchFieldAccessor(\"publiclyListed\", publiclyListed),true);"), //
         () -> assertThat(fileContents)
-            .contains("LAST_VALUATION = new DateField<ValidDocumentIndexed, LocalDate>(lastValuation,true);"), //
+            .contains("LAST_VALUATION = new DateField<ValidDocumentIndexed, LocalDate>(new SearchFieldAccessor(\"lastValuation\", lastValuation),true);"), //
         () -> assertThat(fileContents)
-            .contains("ID = new NonIndexedTextField<ValidDocumentIndexed, String>(id,false);"), //
+            .contains("ID = new TextTagField<ValidDocumentIndexed, String>(new SearchFieldAccessor(\"id\", id),true);"), //
         () -> assertThat(fileContents)
-            .contains("YEAR_FOUNDED = new NumericField<ValidDocumentIndexed, Integer>(yearFounded,true);"), //
-        () -> assertThat(fileContents).contains("NAME = new TextField<ValidDocumentIndexed, String>(name,true);"), //
-        () -> assertThat(fileContents).contains("LOCATION = new GeoField<ValidDocumentIndexed, Point>(location,true);"), //
-        () -> assertThat(fileContents).contains("TAGS = new TagField<ValidDocumentIndexed, Set<String>>(tags,true);") //
+            .contains("YEAR_FOUNDED = new NumericField<ValidDocumentIndexed, Integer>(new SearchFieldAccessor(\"yearFounded\", yearFounded),true);"), //
+        () -> assertThat(fileContents).contains("NAME = new TextField<ValidDocumentIndexed, String>(new SearchFieldAccessor(\"name\", name),true);"), //
+        () -> assertThat(fileContents).contains("LOCATION = new GeoField<ValidDocumentIndexed, Point>(new SearchFieldAccessor(\"location\", location),true);"), //
+        () -> assertThat(fileContents).contains("TAGS = new TagField<ValidDocumentIndexed, Set<String>>(new SearchFieldAccessor(\"tags\", tags),true);") //
     );
   }
 
@@ -165,18 +168,18 @@ class MetamodelGeneratorTest {
 
         // test Metamodel Field generation
         () -> assertThat(fileContents)
-            .contains("public static NonIndexedTextField<ValidDocumentUnindexed, String> ID;"), //
+            .contains("public static TextTagField<ValidDocumentUnindexed, String> ID;"), //
         () -> assertThat(fileContents)
             .contains("public static NonIndexedTagField<ValidDocumentUnindexed, Set<String>> SET_THINGS;"), //
         () -> assertThat(fileContents)
             .contains("public static NonIndexedNumericField<ValidDocumentUnindexed, LocalDateTime> LOCAL_DATE_TIME;"), //
-        () -> assertThat(fileContents).contains(" static MetamodelField<ValidDocumentUnindexed, Point> POINT;"), //
+        () -> assertThat(fileContents).contains("public static NonIndexedGeoField<ValidDocumentUnindexed, Point> POINT;"), //
         () -> assertThat(fileContents)
             .contains("public static NonIndexedTagField<ValidDocumentUnindexed, List<String>> LIST_THINGS;"), //
         () -> assertThat(fileContents).contains(" static NonIndexedNumericField<ValidDocumentUnindexed, Date> DATE;"), //
         () -> assertThat(fileContents)
             .contains("public static NonIndexedNumericField<ValidDocumentUnindexed, LocalDate> LOCAL_DATE;"), //
-        () -> assertThat(fileContents).contains("public static MetamodelField<ValidDocumentUnindexed, Ulid> ULID;"), //
+        () -> assertThat(fileContents).contains("public static NonIndexedTextField<ValidDocumentUnindexed, Ulid> ULID;"), //
         () -> assertThat(fileContents)
             .contains("public static NonIndexedNumericField<ValidDocumentUnindexed, Integer> INTEGER_WRAPPER;"), //
         () -> assertThat(fileContents)
@@ -188,28 +191,28 @@ class MetamodelGeneratorTest {
 
         // test Metamodel Field initialization
         () -> assertThat(fileContents)
-            .contains("ID = new NonIndexedTextField<ValidDocumentUnindexed, String>(id,false);"), //
+            .contains("ID = new TextTagField<ValidDocumentUnindexed, String>(new SearchFieldAccessor(\"id\", id),true);"), //
         () -> assertThat(fileContents)
-            .contains("SET_THINGS = new NonIndexedTagField<ValidDocumentUnindexed, Set<String>>(setThings,false);"), //
+            .contains("SET_THINGS = new NonIndexedTagField<ValidDocumentUnindexed, Set<String>>(new SearchFieldAccessor(\"setThings\", setThings),false);"), //
         () -> assertThat(fileContents).contains(
-            "LOCAL_DATE_TIME = new NonIndexedNumericField<ValidDocumentUnindexed, LocalDateTime>(localDateTime,false);"), //
+            "LOCAL_DATE_TIME = new NonIndexedNumericField<ValidDocumentUnindexed, LocalDateTime>(new SearchFieldAccessor(\"localDateTime\", localDateTime),false);"), //
         () -> assertThat(fileContents)
-            .contains("POINT = new MetamodelField<ValidDocumentUnindexed, Point>(point,false);"), //
+            .contains("POINT = new NonIndexedGeoField<ValidDocumentUnindexed, Point>(new SearchFieldAccessor(\"point\", point),false);"), //
         () -> assertThat(fileContents)
-            .contains("LIST_THINGS = new NonIndexedTagField<ValidDocumentUnindexed, List<String>>(listThings,false);"), //
+            .contains("LIST_THINGS = new NonIndexedTagField<ValidDocumentUnindexed, List<String>>(new SearchFieldAccessor(\"listThings\", listThings),false);"), //
         () -> assertThat(fileContents)
-            .contains("DATE = new NonIndexedNumericField<ValidDocumentUnindexed, Date>(date,false);"), //
+            .contains("DATE = new NonIndexedNumericField<ValidDocumentUnindexed, Date>(new SearchFieldAccessor(\"date\", date),false);"), //
         () -> assertThat(fileContents)
-            .contains("LOCAL_DATE = new NonIndexedNumericField<ValidDocumentUnindexed, LocalDate>(localDate,false);"), //
-        () -> assertThat(fileContents).contains("ULID = new MetamodelField<ValidDocumentUnindexed, Ulid>(ulid,false);"), //
+            .contains("LOCAL_DATE = new NonIndexedNumericField<ValidDocumentUnindexed, LocalDate>(new SearchFieldAccessor(\"localDate\", localDate),false);"), //
+        () -> assertThat(fileContents).contains("ULID = new NonIndexedTextField<ValidDocumentUnindexed, Ulid>(new SearchFieldAccessor(\"ulid\", ulid),false);"), //
         () -> assertThat(fileContents).contains(
-            "INTEGER_WRAPPER = new NonIndexedNumericField<ValidDocumentUnindexed, Integer>(integerWrapper,false);"), //
+            "INTEGER_WRAPPER = new NonIndexedNumericField<ValidDocumentUnindexed, Integer>(new SearchFieldAccessor(\"integerWrapper\", integerWrapper),false);"), //
         () -> assertThat(fileContents).contains(
-            "INTEGER_PRIMITIVE = new NonIndexedNumericField<ValidDocumentUnindexed, Integer>(integerPrimitive,false);"), //
+            "INTEGER_PRIMITIVE = new NonIndexedNumericField<ValidDocumentUnindexed, Integer>(new SearchFieldAccessor(\"integerPrimitive\", integerPrimitive),false);"), //
         () -> assertThat(fileContents)
-            .contains("STRING_ = new NonIndexedTextField<ValidDocumentUnindexed, String>(string,false);"), //
+            .contains("STRING_ = new NonIndexedTextField<ValidDocumentUnindexed, String>(new SearchFieldAccessor(\"string\", string),false);"), //
         () -> assertThat(fileContents)
-            .contains("BOOL = new NonIndexedBooleanField<ValidDocumentUnindexed, Boolean>(bool,false);") //
+            .contains("BOOL = new NonIndexedBooleanField<ValidDocumentUnindexed, Boolean>(new SearchFieldAccessor(\"bool\", bool),false);") //
     );
   }
 
@@ -241,26 +244,31 @@ class MetamodelGeneratorTest {
         // test Fields generation
         () -> assertThat(fileContents).contains("public final class ValidDocumentIndexedNested$ {"), //
         () -> assertThat(fileContents).contains("public static Field id;"), //
-        () -> assertThat(fileContents).contains("public static Field address;"), //
+        () -> assertThat(fileContents).contains("public static Field address_street;"), //
+        () -> assertThat(fileContents).contains("public static Field address_city;"), //
 
         // test fields initialization
         () -> assertThat(fileContents).contains("id = ValidDocumentIndexedNested.class.getDeclaredField(\"id\");"), //
         () -> assertThat(fileContents)
-            .contains("address = ValidDocumentIndexedNested.class.getDeclaredField(\"address\");"), //
+            .contains("address_street = ValidDocumentIndexedNested.class.getDeclaredField(\"address\").getType().getDeclaredField(\"street\");"), //
+        () -> assertThat(fileContents)
+            .contains("address_city = ValidDocumentIndexedNested.class.getDeclaredField(\"address\").getType().getDeclaredField(\"city\");"), //
 
         // test Metamodel Field generation
         () -> assertThat(fileContents)
-            .contains("public static NonIndexedTextField<ValidDocumentIndexedNested, String> ID;"), //
+            .contains("public static TextTagField<ValidDocumentIndexedNested, String> ID;"), //
         () -> assertThat(fileContents)
-            .contains("public static MetamodelField<ValidDocumentIndexedNested, Address> ADDRESS;"), //
+            .contains("public static TextField<ValidDocumentIndexedNested, String> ADDRESS_STREET;"), //
+        () -> assertThat(fileContents)
+            .contains("public static TextTagField<ValidDocumentIndexedNested, String> ADDRESS_CITY;"), //
 
         // test Metamodel Field initialization
         () -> assertThat(fileContents)
-            .contains("ID = new NonIndexedTextField<ValidDocumentIndexedNested, String>(id,false);"), //
+            .contains("ID = new TextTagField<ValidDocumentIndexedNested, String>(new SearchFieldAccessor(\"id\", id),true);"), //
         () -> assertThat(fileContents)
-            .contains("ADDRESS = new MetamodelField<ValidDocumentIndexedNested, Address>(address,true);"), //
-        () -> assertThat(fileContents).contains("ADDRESS_STREET = new String(\"address_street\");"), //
-        () -> assertThat(fileContents).contains("ADDRESS_CITY = new String(\"address_city\");") //
+            .contains("ADDRESS_STREET = new TextField<ValidDocumentIndexedNested, String>(new SearchFieldAccessor(\"address_street\", address_street),true);"), //
+        () -> assertThat(fileContents)
+            .contains("ADDRESS_CITY = new TextTagField<ValidDocumentIndexedNested, String>(new SearchFieldAccessor(\"address_city\", address_city),true);") //
     );
   }
 
@@ -286,12 +294,12 @@ class MetamodelGeneratorTest {
   void testValidDocumentInBadJavaBean(Results results) throws IOException {
     assertThat(results.generated).hasSize(1);
 
-    final String NO_PROPER_JAVABEAN_MSG = "Class BadBean is not a proper JavaBean because id has no standard getter.";
-
     List<String> errors = getErrorStrings(results);
     assertAll( //
         () -> assertThat(errors).hasSize(3), //
-        () -> assertThat(errors).contains(NO_PROPER_JAVABEAN_MSG) //
+        () -> assertThat(errors).contains("Class valid.BadBean is not a proper JavaBean because id has no standard getter."), //
+        () -> assertThat(errors).contains("Class valid.BadBean is not a proper JavaBean because name has no standard getter."), //
+        () -> assertThat(errors).contains("Class valid.BadBean is not a proper JavaBean because age has no standard getter.") //
     );
   }
 

@@ -1,7 +1,11 @@
 package com.redis.om.spring.repository.support;
 
+import java.io.IOException;
+import java.io.Reader;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -12,6 +16,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import com.google.gson.reflect.TypeToken;
+import com.redis.om.spring.serialization.gson.GsonListOfType;
 import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -67,7 +73,8 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   private RedisMappingContext mappingContext;
 
   @SuppressWarnings("unchecked")
-  public SimpleRedisDocumentRepository(EntityInformation<T, ID> metadata, //
+  public SimpleRedisDocumentRepository( //
+      EntityInformation<T, ID> metadata, //
       KeyValueOperations operations, //
       @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo, //
       RediSearchIndexer keyspaceToIndexMap, //
@@ -125,7 +132,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   @Override
   public void updateField(T entity, MetamodelField<T, ?> field, Object value) {
     modulesOperations.opsForJSON().set(getKey(metadata.getId(entity)), value,
-        Path.of("$." + field.getField().getName()));
+        Path.of("$." + field.getSearchAlias()));
   }
 
   @SuppressWarnings("unchecked")
@@ -133,7 +140,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   public <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field) {
     String[] keys = StreamSupport.stream(ids.spliterator(), false).map(this::getKey).toArray(String[]::new);
     return (Iterable<F>) modulesOperations.opsForJSON()
-        .mget(Path.of("$." + field.getField().getName()), List.class, keys).stream().flatMap(List::stream)
+        .mget(Path.of("$." + field.getSearchAlias()), List.class, keys).stream().flatMap(List::stream)
         .collect(Collectors.toList());
   }
 
@@ -186,6 +193,17 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     }
 
     return saved;
+  }
+
+  @Override public Iterable<T> bulkLoad(String file) throws IOException {
+    Reader reader = null;
+    try {
+      reader = Files.newBufferedReader(Paths.get(file));
+      List<T> entities = gson.fromJson(reader, new GsonListOfType<T>(metadata.getJavaType()));
+      return saveAll(entities);
+    } finally {
+      reader.close();
+    }
   }
 
   private String getKeyspace() {

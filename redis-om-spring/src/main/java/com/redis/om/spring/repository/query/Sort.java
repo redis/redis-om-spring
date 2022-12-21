@@ -20,7 +20,7 @@ public class Sort extends org.springframework.data.domain.Sort {
    * @return a Spring Sort object
    */
   public static org.springframework.data.domain.Sort by(Direction direction, MetamodelField<?, ?>... fields) {
-    String[] properties = Arrays.asList(fields).stream().map(metamodel ->  metamodel.getField().getName()).toArray(String[]::new);
+    String[] properties = Arrays.asList(fields).stream().map(metamodel ->  metamodel.getSearchAlias()).toArray(String[]::new);
     return org.springframework.data.domain.Sort.by(direction, properties);
   }
 
