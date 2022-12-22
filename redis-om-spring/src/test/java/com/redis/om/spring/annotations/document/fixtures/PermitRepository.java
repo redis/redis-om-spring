@@ -1,12 +1,12 @@
 package com.redis.om.spring.annotations.document.fixtures;
-import java.util.Set;
 
+import com.redis.om.spring.repository.RedisDocumentRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import com.redis.om.spring.repository.RedisDocumentRepository;
+import java.util.Set;
 
-public interface PermitRepository extends RedisDocumentRepository<Permit, String> {
+@SuppressWarnings({ "unused", "SpellCheckingInspection", "SpringDataMethodInconsistencyInspection" }) public interface PermitRepository extends RedisDocumentRepository<Permit, String> {
 
   // Numeric range queries:
   // FT.SEARCH permits "@construction_value:[42000,42000]"
@@ -38,7 +38,7 @@ public interface PermitRepository extends RedisDocumentRepository<Permit, String
   // FT.SEARCH permits "@work_type:{construction|design}"
   Iterable<Permit> findByWorkType(Set<String> workTypes);
   
-  // Search documents that have all of the tags (AND condition):
+  // Search documents that have all the tags (AND condition):
   // FT.SEARCH permits "@work_type:{construction} @work_type:{design}"
   Iterable<Permit> findByWorkTypeContainingAll(Set<String> workTypes);
   

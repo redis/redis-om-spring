@@ -2,6 +2,6 @@ package com.redis.om.spring.annotations.hash.fixtures;
 
 import com.redis.om.spring.repository.RedisEnhancedRepository;
 
-public interface ExpiringPersonWithDefaultRepository
+@SuppressWarnings("unused") public interface ExpiringPersonWithDefaultRepository
     extends RedisEnhancedRepository<ExpiringPersonWithDefault, String> {
 }

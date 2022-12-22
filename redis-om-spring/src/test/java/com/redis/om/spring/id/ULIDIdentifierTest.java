@@ -1,35 +1,30 @@
 package com.redis.om.spring.id;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.math.BigInteger;
-import java.util.Date;
-
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.InvalidDataAccessApiUsageException;
-import org.springframework.data.util.ClassTypeInformation;
-
 import com.github.f4b6a3.ulid.Ulid;
 import com.google.gson.JsonObject;
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.document.fixtures.BadDoc;
-import com.redis.om.spring.annotations.document.fixtures.BadDocRepository;
-import com.redis.om.spring.annotations.document.fixtures.DocWithExplicitUlidId;
-import com.redis.om.spring.annotations.document.fixtures.DocWithExplicitUlidIdRepository;
-import com.redis.om.spring.annotations.document.fixtures.DocWithIntegerId;
-import com.redis.om.spring.annotations.document.fixtures.DocWithIntegerIdRepository;
+import com.redis.om.spring.annotations.document.fixtures.*;
 import com.redis.om.spring.annotations.hash.fixtures.Person;
 import com.redis.om.spring.annotations.hash.fixtures.PersonRepository;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.data.util.TypeInformation;
 
-class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
+import java.math.BigInteger;
+import java.util.Date;
+import java.util.Objects;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@SuppressWarnings("SpellCheckingInspection") class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
   
-  private ULIDIdentifierGenerator generator = ULIDIdentifierGenerator.INSTANCE;
+  private final ULIDIdentifierGenerator generator = ULIDIdentifierGenerator.INSTANCE;
 
   @Autowired
   PersonRepository repository;
@@ -61,9 +56,7 @@ class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
   @Test
   void testUnsupportedIdTypesThrowException() {
     BadDoc badDoc = new BadDoc();
-    InvalidDataAccessApiUsageException exception = Assertions.assertThrows(InvalidDataAccessApiUsageException.class, () -> {
-      badDocRepo.save(badDoc);
-    });
+    InvalidDataAccessApiUsageException exception = Assertions.assertThrows(InvalidDataAccessApiUsageException.class, () -> badDocRepo.save(badDoc));
 
     String expectedErrorMessage = String.format("Identifier cannot be generated for %s. Supported types are: ULID, String, Integer, and Long.", BigInteger.class.getName());
     Assertions.assertEquals(expectedErrorMessage, exception.getMessage());
@@ -77,7 +70,7 @@ class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
     Ulid generatedId = docWithUlidRepo.save(ulidDoc).getId();
     
     JsonObject rawJSON = ops.get(DocWithExplicitUlidId.class.getName() + ":" + generatedId.toString(), JsonObject.class);
-    String ulidAsString = rawJSON.get("id").getAsString();
+    String ulidAsString = Objects.requireNonNull(rawJSON).get("id").getAsString();
     Ulid ulidFromRawJSON = Ulid.from(ulidAsString);
     
     assertThat(ulidFromRawJSON).isEqualByComparingTo(generatedId);
@@ -86,13 +79,13 @@ class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
   @Test
   void shouldThrowExceptionForUnsupportedType() {
     assertThatExceptionOfType(InvalidDataAccessApiUsageException.class)
-        .isThrownBy(() -> generator.generateIdentifierOfType(ClassTypeInformation.from(Date.class)));
+        .isThrownBy(() -> generator.generateIdentifierOfType(TypeInformation.of(Date.class)));
   }
 
   @Test
   void shouldGenerateUlidValueCorrectly() {
 
-    Object value = generator.generateIdentifierOfType(ClassTypeInformation.from(Ulid.class));
+    Object value = generator.generateIdentifierOfType(TypeInformation.of(Ulid.class));
 
     assertThat(value).isNotNull().isInstanceOf(Ulid.class);
   }
@@ -106,7 +99,7 @@ class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
     
     JsonObject rawJSON = ops.get(DocWithIntegerId.class.getName() + ":" + generatedId.toString(), JsonObject.class);
     
-    assertThat(rawJSON.get("id").getAsInt()).isEqualByComparingTo(generatedId);
+    assertThat(Objects.requireNonNull(rawJSON).get("id").getAsInt()).isEqualByComparingTo(generatedId);
   }
 
 }

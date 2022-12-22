@@ -8,7 +8,7 @@ import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.util.ObjectUtils;
 
 public abstract class BaseAbstractAction implements TakesJSONOperations {
-  protected SearchFieldAccessor field;
+  protected final SearchFieldAccessor field;
   protected JSONOperations<String> json;
   protected Field idField;
 

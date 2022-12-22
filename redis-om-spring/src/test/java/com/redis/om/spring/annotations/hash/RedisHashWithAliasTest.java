@@ -1,34 +1,33 @@
 package com.redis.om.spring.annotations.hash;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.annotations.hash.fixtures.Direccion;
+import com.redis.om.spring.annotations.hash.fixtures.WithAlias;
+import com.redis.om.spring.annotations.hash.fixtures.WithAliasRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.Point;
 
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.hash.fixtures.Direccion;
-import com.redis.om.spring.annotations.hash.fixtures.WithAlias;
-import com.redis.om.spring.annotations.hash.fixtures.WithAliasRepository;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 
-class RedisHashWithAliasTest extends AbstractBaseEnhancedRedisTest {
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@SuppressWarnings("SpellCheckingInspection") class RedisHashWithAliasTest extends AbstractBaseEnhancedRedisTest {
   @Autowired
   WithAliasRepository repository;
 
   String id1;
-  String id2;
+  @SuppressWarnings("unused") String id2;
 
   @BeforeEach
   void loadTestData() {
     Point point1 = new Point(-122.124500, 47.640160);
-    Set<String> tags = new HashSet<String>();
+    Set<String> tags = new HashSet<>();
     tags.add("news");
     tags.add("article");
 
@@ -38,7 +37,7 @@ class RedisHashWithAliasTest extends AbstractBaseEnhancedRedisTest {
     id1 = doc1.getId();
 
     Point point2 = new Point(-122.066540, 37.377690);
-    Set<String> tags2 = new HashSet<String>();
+    Set<String> tags2 = new HashSet<>();
     tags2.add("noticias");
     tags2.add("articulo");
 

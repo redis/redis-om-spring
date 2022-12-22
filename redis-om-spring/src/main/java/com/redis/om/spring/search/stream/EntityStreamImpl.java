@@ -5,8 +5,8 @@ import com.redis.om.spring.ops.RedisModulesOperations;
 
 public class EntityStreamImpl implements EntityStream {
 
-  RedisModulesOperations<String> modulesOperations;
-  Gson gson;
+  final RedisModulesOperations<String> modulesOperations;
+  final Gson gson;
 
   @SuppressWarnings("unchecked")
   public EntityStreamImpl(RedisModulesOperations<?> rmo, Gson gson) {

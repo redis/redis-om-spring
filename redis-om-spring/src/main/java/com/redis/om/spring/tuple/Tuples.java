@@ -260,58 +260,45 @@ public final class Tuples {
 
   @SafeVarargs
   public static Tuple ofArray(String[] returnFields, Object... el) {
-    switch (el.length) {
-      case 0:
-        return of();
-      case 1:
-        return of(returnFields, el[0]);
-      case 2:
-        return of(returnFields, el[0], el[1]);
-      case 3:
-        return of(returnFields, el[0], el[1], el[2]);
-      case 4:
-        return of(returnFields, el[0], el[1], el[2], el[3]);
-      case 5:
-        return of(returnFields, el[0], el[1], el[2], el[3], el[4]);
-      case 6:
-        return of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5]);
-      case 7:
-        return of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6]);
-      case 8:
-        return of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7]);
-      case 9:
-        return of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8]);
-      case 10:
-        return of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9]);
-      case 11:
-        return of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10]);
-      case 12:
-        return of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11]);
-      case 13:
-        return of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12]);
-      case 14:
-        return of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12], el[13]);
-      case 15:
-        return of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12], el[13],
-            el[14]);
-      case 16:
-        return of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12], el[13],
-            el[14], el[15]);
-      case 17:
-        return of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12], el[13],
-            el[14], el[15], el[16]);
-      case 18:
-        return of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12], el[13],
-            el[14], el[15], el[16], el[17]);
-      case 19:
-        return of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12], el[13],
-            el[14], el[15], el[16], el[17], el[18]);
-      case 20:
-        return of(el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12], el[13],
-            el[14], el[15], el[16], el[17], el[18], el[19]);
-      default:
-        return new TupleInfiniteDegreeImpl(el);
-    }
+    return switch (el.length) {
+      case 0 -> of();
+      case 1 -> of(returnFields, el[0]);
+      case 2 -> of(returnFields, el[0], el[1]);
+      case 3 -> of(returnFields, el[0], el[1], el[2]);
+      case 4 -> of(returnFields, el[0], el[1], el[2], el[3]);
+      case 5 -> of(returnFields, el[0], el[1], el[2], el[3], el[4]);
+      case 6 -> of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5]);
+      case 7 -> of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6]);
+      case 8 -> of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7]);
+      case 9 -> of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8]);
+      case 10 -> of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9]);
+      case 11 -> of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10]);
+      case 12 -> of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11]);
+      case 13 -> of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11],
+          el[12]);
+      case 14 ->
+          of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12],
+              el[13]);
+      case 15 ->
+          of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12],
+              el[13], el[14]);
+      case 16 ->
+          of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12],
+              el[13], el[14], el[15]);
+      case 17 ->
+          of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12],
+              el[13], el[14], el[15], el[16]);
+      case 18 ->
+          of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12],
+              el[13], el[14], el[15], el[16], el[17]);
+      case 19 ->
+          of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12],
+              el[13], el[14], el[15], el[16], el[17], el[18]);
+      case 20 ->
+          of(el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12], el[13],
+              el[14], el[15], el[16], el[17], el[18], el[19]);
+      default -> new TupleInfiniteDegreeImpl(el);
+    };
   }
 
   @SuppressWarnings("unchecked")

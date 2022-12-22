@@ -1,16 +1,10 @@
 package com.redis.om.spring.annotations.document.fixtures;
 
-import org.springframework.data.annotation.Id;
-
-import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.AutoComplete;
 import com.redis.om.spring.annotations.AutoCompletePayload;
-
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import com.redis.om.spring.annotations.Document;
+import lombok.*;
+import org.springframework.data.annotation.Id;
 
 @Data
 @RequiredArgsConstructor(staticName = "of")

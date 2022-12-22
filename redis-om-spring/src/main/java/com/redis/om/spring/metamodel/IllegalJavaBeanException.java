@@ -1,8 +1,10 @@
 package com.redis.om.spring.metamodel;
 
+import java.io.Serial;
+
 public class IllegalJavaBeanException extends RuntimeException {
 
-  private static final long serialVersionUID = 92362727623423324L;
+  @Serial private static final long serialVersionUID = 92362727623423324L;
 
   public IllegalJavaBeanException(final Class<?> clazz, final String fieldName) {
     super(String.format(

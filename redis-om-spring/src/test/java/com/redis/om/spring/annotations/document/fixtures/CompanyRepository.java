@@ -1,12 +1,12 @@
 package com.redis.om.spring.annotations.document.fixtures;
 
+import com.redis.om.spring.repository.RedisDocumentRepository;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import com.redis.om.spring.repository.RedisDocumentRepository;
-
-public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+@SuppressWarnings("unused") public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
   List<Company> findByName(String companyName);
 
   boolean existsByEmail(String email);

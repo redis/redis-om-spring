@@ -1,38 +1,82 @@
 package com.redis.om.spring.client;
 
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
-
-import com.google.gson.GsonBuilder;
-import com.redislabs.modules.rejson.JReJSON;
-
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisCluster;
+import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
+import redis.clients.jedis.bloom.commands.BloomFilterCommands;
+import redis.clients.jedis.bloom.commands.CountMinSketchCommands;
+import redis.clients.jedis.bloom.commands.CuckooFilterCommands;
+import redis.clients.jedis.bloom.commands.TopKFilterCommands;
+import redis.clients.jedis.json.RedisJsonCommands;
+import redis.clients.jedis.search.RediSearchCommands;
+import com.google.gson.GsonBuilder;
+
+import java.util.Objects;
+import java.util.Optional;
 
 public class RedisModulesClient {
 
-  private GsonBuilder builder;
+  private final GsonBuilder builder;
+  private final UnifiedJedis unifiedJedis;
 
   public RedisModulesClient(JedisConnectionFactory jedisConnectionFactory, GsonBuilder builder) {
     this.jedisConnectionFactory = jedisConnectionFactory;
     this.builder = builder;
+    this.unifiedJedis = getUnifiedJedis();
   }
 
-  public JReJSON clientForJSON() {
-    JReJSON client = new JReJSON(getJedis());
-    client.setGsonBuilder(builder);
-    return client;
+  public RedisJsonCommands clientForJSON() {
+    return unifiedJedis;
   }
 
-  public io.redisearch.Client clientForSearch(String index) {
-    return new io.redisearch.client.Client(index, getJedis());
+  public RediSearchCommands clientForSearch() {
+    return unifiedJedis;
   }
 
-  public io.rebloom.client.Client clientForBloom() {
-    return new io.rebloom.client.Client(getJedis());
+  public BloomFilterCommands clientForBloom() {
+    return unifiedJedis;
   }
 
-  public Jedis getJedis() {
-    return (Jedis) jedisConnectionFactory.getConnection().getNativeConnection();
+  public CountMinSketchCommands clientForCMS() {
+    return unifiedJedis;
   }
 
-  private JedisConnectionFactory jedisConnectionFactory;
+  public CuckooFilterCommands clientForCuckoo() {
+    return unifiedJedis;
+  }
+
+  public TopKFilterCommands clientForTopK() {
+    return unifiedJedis;
+  }
+
+  public UnifiedJedis getUnifiedJedis() {
+    return new JedisPooled(Objects.requireNonNull(jedisConnectionFactory.getPoolConfig()),
+        jedisConnectionFactory.getHostName(), jedisConnectionFactory.getPort());
+  }
+
+  public Optional<Jedis> getJedis() {
+    Object nativeConnection = jedisConnectionFactory.getConnection().getNativeConnection();
+    if (nativeConnection instanceof Jedis jedis) {
+      return Optional.of(jedis);
+    } else {
+      return Optional.empty();
+    }
+  }
+  
+  public Optional<JedisCluster> getJedisCluster() {
+    Object nativeConnection = jedisConnectionFactory.getConnection().getNativeConnection();
+    if (nativeConnection instanceof JedisCluster jedisCluster) {
+      return Optional.of(jedisCluster);
+    } else {
+      return Optional.empty();
+    }
+  }
+
+  public GsonBuilder gsonBuilder() {
+    return builder;
+  }
+
+  private final JedisConnectionFactory jedisConnectionFactory;
 }

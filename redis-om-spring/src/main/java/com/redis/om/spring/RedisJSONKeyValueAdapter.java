@@ -8,7 +8,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -34,21 +33,19 @@ import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.util.ObjectUtils;
-import com.redislabs.modules.rejson.Path;
-
-import io.redisearch.Document;
-import io.redisearch.Query;
-import io.redisearch.SearchResult;
+import redis.clients.jedis.json.Path;
+import redis.clients.jedis.search.Document;
+import redis.clients.jedis.search.Query;
+import redis.clients.jedis.search.SearchResult;
 
 public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private static final Log logger = LogFactory.getLog(RedisJSONKeyValueAdapter.class);
-  private JSONOperations<?> redisJSONOperations;
-  private RedisOperations<?, ?> redisOperations;
-  private RedisMappingContext mappingContext;
-  private @Nullable String keyspaceNotificationsConfigParameter = null;
-  private RedisModulesOperations<String> modulesOperations;
-  private RediSearchIndexer indexer;
-  private Gson gson;
+  private final JSONOperations<?> redisJSONOperations;
+  private final RedisOperations<?, ?> redisOperations;
+  private final RedisMappingContext mappingContext;
+  private final RedisModulesOperations<String> modulesOperations;
+  private final RediSearchIndexer indexer;
+  private final Gson gson;
 
   /**
    * Creates new {@link RedisKeyValueAdapter} with default
@@ -93,9 +90,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
 
     redisOperations.execute((RedisCallback<Object>) connection -> {
 
-      if (maybeTtl.isPresent()) {
-        connection.expire(toBytes(key), maybeTtl.get());
-      }
+      maybeTtl.ifPresent(aLong -> connection.keyCommands().expire(toBytes(key), aLong));
 
       return null;
     });
@@ -129,7 +124,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    * @param keyspace the keyspace to fetch entities from.
    * @param type     the desired target type.
    * @param offset   index value to start reading.
-   * @param rows     maximum number or entities to return.
+   * @param rows     maximum number of entities to return.
    * @return never {@literal null}.
    */
   @Override
@@ -146,9 +141,9 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       }
       SearchResult searchResult = searchOps.search(query);
 
-      result = searchResult.docs.stream()
+      result = searchResult.getDocuments().stream()
           .map(d -> gson.fromJson(d.get("$").toString(), type)) //
-          .collect(Collectors.toList());
+          .toList();
     }
 
     return result;
@@ -161,15 +156,15 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     if (maybeSearchIndex.isPresent()) {
       SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
       Optional<Field> maybeIdField = ObjectUtils.getIdFieldForEntityClass(type);
-      String idField = maybeIdField.isPresent() ? maybeIdField.get().getName() : "id";
+      String idField = maybeIdField.map(Field::getName).orElse("id");
 
       Query query = new Query("*");
       query.returnFields(idField);
       SearchResult searchResult = searchOps.search(query);
       
-      keys = searchResult.docs.stream()
+      keys = searchResult.getDocuments().stream()
           .map(Document::getId) //
-          .collect(Collectors.toList());
+          .toList();
     }
 
     return keys;
@@ -207,7 +202,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     Optional<String> maybeSearchIndex = indexer.getIndexName(keyspace);
     if (maybeSearchIndex.isPresent()) {
       SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
-      searchOps.dropIndex();
+      searchOps.dropIndexAndDocuments();
       indexer.createIndexFor(type);
     }
   }
@@ -220,7 +215,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public long count(String keyspace) {
-    Long count = 0L;
+    long count = 0L;
     Optional<String> maybeIndexName = indexer.getIndexName(keyspace);
     if (maybeIndexName.isPresent()) {
       SearchOperations<String> search = modulesOperations.opsForSearch(maybeIndexName.get());
@@ -230,7 +225,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       
       SearchResult result = search.search(query);
       
-      count = result.totalResults;
+      count = result.getTotalResults();
     }
     return count;
   }
@@ -245,14 +240,14 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   @Override
   public boolean contains(Object id, String keyspace) {
     Boolean exists = redisOperations
-        .execute((RedisCallback<Boolean>) connection -> connection.exists(toBytes(getKey(keyspace, id))));
+        .execute((RedisCallback<Boolean>) connection -> connection.keyCommands().exists(toBytes(getKey(keyspace, id))));
 
-    return exists != null ? exists : false;
+    return exists != null && exists;
   }
 
   private void processAuditAnnotations(String key, Object item) {
     boolean isNew = (boolean) redisOperations
-        .execute((RedisCallback<Object>) connection -> !connection.exists(toBytes(key)));
+        .execute((RedisCallback<Object>) connection -> !connection.keyCommands().exists(toBytes(key)));
 
     var auditClass = isNew ? CreatedDate.class : LastModifiedDate.class;
 

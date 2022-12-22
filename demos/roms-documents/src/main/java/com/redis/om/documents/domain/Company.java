@@ -34,7 +34,7 @@ public class Company {
   private String name;
 
   @Indexed
-  private Set<String> tags = new HashSet<String>();
+  private Set<String> tags = new HashSet<>();
 
   @NonNull
   private String url;

@@ -1,12 +1,12 @@
 package com.redis.om.spring.tuple;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 
 import java.util.function.Function;
 
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
-class FieldsTest {
+@SuppressWarnings("SpellCheckingInspection") class FieldsTest {
   @Test
   void testFieldsOf() {
     Function<Integer, Integer> f = (Integer i) -> i * 2;

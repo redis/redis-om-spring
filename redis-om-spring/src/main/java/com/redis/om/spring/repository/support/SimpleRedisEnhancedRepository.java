@@ -44,8 +44,8 @@ import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.RedisEnhancedRepository;
 import com.redis.om.spring.util.ObjectUtils;
 
-import io.redisearch.Query;
-import io.redisearch.SearchResult;
+import redis.clients.jedis.search.Query;
+import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
 
@@ -54,12 +54,12 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   
   private static final Integer MAX_LIMIT = 10000;
 
-  protected RedisModulesOperations<String> modulesOperations;
-  protected EntityInformation<T, ID> metadata;
-  protected KeyValueOperations operations;
-  protected RediSearchIndexer indexer;
-  protected MappingRedisOMConverter mappingConverter;
-  protected RedisEnhancedKeyValueAdapter enhancedKeyValueAdapter;
+  protected final RedisModulesOperations<String> modulesOperations;
+  protected final EntityInformation<T, ID> metadata;
+  protected final KeyValueOperations operations;
+  protected final RediSearchIndexer indexer;
+  protected final MappingRedisOMConverter mappingConverter;
+  protected final RedisEnhancedKeyValueAdapter enhancedKeyValueAdapter;
 
   private final ULIDIdentifierGenerator generator;
 
@@ -88,13 +88,13 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     if (maybeSearchIndex.isPresent()) {
       SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
       Optional<Field> maybeIdField = ObjectUtils.getIdFieldForEntityClass(metadata.getJavaType());
-      String idField = maybeIdField.isPresent() ? maybeIdField.get().getName() : "id";
+      String idField = maybeIdField.map(Field::getName).orElse("id");
       
       Query query = new Query("*");
       query.returnFields(idField);
       SearchResult searchResult = searchOps.search(query);
   
-      result = (List<ID>) searchResult.docs.stream()
+      result = (List<ID>) searchResult.getDocuments().stream()
           .map(d -> ObjectUtils.documentToObject(d, metadata.getJavaType(), mappingConverter)) //
           .map(e -> ObjectUtils.getIdFieldForEntity(maybeIdField.get(), e)) //
           .collect(Collectors.toList());
@@ -110,7 +110,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     int fromIndex = Long.valueOf(pageable.getOffset()).intValue();
     int toIndex = fromIndex + pageable.getPageSize();
     
-    return new PageImpl<ID>((List<ID>) ids.subList(fromIndex, toIndex), pageable, ids.size());
+    return new PageImpl<>(ids.subList(fromIndex, toIndex), pageable, ids.size());
   }
 
   @Override
@@ -124,9 +124,9 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   @SuppressWarnings("unchecked")
   @Override
   public <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field) {
-    RedisTemplate<String, String> template = (RedisTemplate<String, String>) modulesOperations.getTemplate();
+    RedisTemplate<String, String> template = modulesOperations.getTemplate();
     List<String> keys = StreamSupport.stream(ids.spliterator(), false) //
-        .map(this::getKey).collect(Collectors.toList());
+        .map(this::getKey).toList();
 
     return (Iterable<F>) keys.stream() //
         .map(key -> template.opsForHash().get(key, field.getSearchAlias())) //
@@ -135,8 +135,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
 
   @Override
   public Long getExpiration(ID id) {
-    @SuppressWarnings("unchecked")
-    RedisTemplate<String, String> template = (RedisTemplate<String, String>) modulesOperations.getTemplate();
+    RedisTemplate<String, String> template = modulesOperations.getTemplate();
     return template.getExpire(getKey(id));
   }
 
@@ -158,13 +157,13 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
    * org.springframework.data.repository.PagingAndSortingRepository#findAll(org.
    * springframework.data.domain.Sort) */
   @Override
-  public Iterable<T> findAll(Sort sort) {
+  public List<T> findAll(Sort sort) {
 
     Assert.notNull(sort, "Sort must not be null!");
     
     Pageable pageRequest = PageRequest.of(0, MAX_LIMIT, sort);
 
-    return findAll(pageRequest);
+    return findAll(pageRequest).toList();
   }
 
   /* (non-Javadoc)
@@ -198,11 +197,11 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
         SearchResult searchResult = searchOps.search(query);
 
         @SuppressWarnings("unchecked")
-        List<T> content = (List<T>) searchResult.docs.stream() //
+        List<T> content = (List<T>) searchResult.getDocuments().stream() //
             .map(d -> ObjectUtils.documentToObject(d, metadata.getJavaType(), mappingConverter)) //
             .collect(Collectors.toList());
 
-        return new PageImpl<>(content, pageable, searchResult.totalResults);
+        return new PageImpl<>(content, pageable, searchResult.getTotalResults());
       } else {
         return Page.empty();
       }
@@ -224,11 +223,11 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   }
 
   @Override
-  public <S extends T> Iterable<S> saveAll(Iterable<S> entities) {
+  public <S extends T> List<S> saveAll(Iterable<S> entities) {
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
     List<S> saved = new ArrayList<>();
 
-    try (Jedis jedis = modulesOperations.getClient().getJedis()) {
+    try (Jedis jedis = modulesOperations.getClient().getJedis().get()) {
       Pipeline pipeline = jedis.pipelined();
 
       for (S entity : entities) {

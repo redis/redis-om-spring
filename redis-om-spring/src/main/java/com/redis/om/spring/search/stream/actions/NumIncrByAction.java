@@ -1,13 +1,12 @@
 package com.redis.om.spring.search.stream.actions;
 
-import java.lang.reflect.Field;
 import java.util.function.Consumer;
 
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
-import com.redislabs.modules.rejson.Path;
+import redis.clients.jedis.json.Path;
 
 public class NumIncrByAction<E> extends BaseAbstractAction implements Consumer<E> {
-  private Long value;
+  private final Long value;
 
   public NumIncrByAction(SearchFieldAccessor field, Long value) {
     super(field);

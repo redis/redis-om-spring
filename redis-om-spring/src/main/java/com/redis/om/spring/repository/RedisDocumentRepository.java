@@ -6,7 +6,8 @@ import org.springframework.data.keyvalue.repository.KeyValueRepository;
 import org.springframework.data.repository.NoRepositoryBean;
 
 import com.redis.om.spring.metamodel.MetamodelField;
-import com.redislabs.modules.rejson.Path;
+
+import redis.clients.jedis.json.Path;
 
 import java.io.IOException;
 

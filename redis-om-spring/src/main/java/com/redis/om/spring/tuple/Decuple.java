@@ -39,31 +39,20 @@ public interface Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> extends Tuple {
   }
 
   default Object get(int index) {
-    switch (index) {
-      case 0:
-        return getFirst();
-      case 1:
-        return getSecond();
-      case 2:
-        return getThird();
-      case 3:
-        return getFourth();
-      case 4:
-        return getFifth();
-      case 5:
-        return getSixth();
-      case 6:
-        return getSeventh();
-      case 7:
-        return getEighth();
-      case 8:
-        return getNinth();
-      case 9:
-        return getTenth();
-      default:
-        throw new IndexOutOfBoundsException(
-            String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
-    }
+    return switch (index) {
+      case 0 -> getFirst();
+      case 1 -> getSecond();
+      case 2 -> getThird();
+      case 3 -> getFourth();
+      case 4 -> getFifth();
+      case 5 -> getSixth();
+      case 6 -> getSeventh();
+      case 7 -> getEighth();
+      case 8 -> getNinth();
+      case 9 -> getTenth();
+      default -> throw new IndexOutOfBoundsException(
+          String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
+    };
   }
 
   static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> FirstAccessor<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T0> getFirstGetter() {

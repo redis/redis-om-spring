@@ -1,5 +1,12 @@
 package com.redis.om.spring.search.stream;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.data.domain.Sort.Order;
+
 import com.google.gson.Gson;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.indexed.NumericField;
@@ -12,18 +19,14 @@ import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.TupleMapper;
 import com.redis.om.spring.util.ObjectUtils;
-import io.redisearch.Query;
-import io.redisearch.SearchResult;
-import io.redisearch.aggregation.SortedField;
-import io.redisearch.aggregation.SortedField.SortOrder;
-import io.redisearch.querybuilder.Node;
-import io.redisearch.querybuilder.QueryBuilder;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.data.domain.Sort.Order;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+import redis.clients.jedis.search.Query;
+import redis.clients.jedis.search.SearchResult;
+import redis.clients.jedis.search.aggr.SortedField;
+import redis.clients.jedis.search.aggr.SortedField.SortOrder;
+import redis.clients.jedis.search.querybuilder.Node;
+import redis.clients.jedis.search.querybuilder.QueryBuilders;
+
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
@@ -41,11 +44,11 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private final JSONOperations<String> json;
   private final String searchIndex;
   private final Class<E> entityClass;
-  private Node rootNode = QueryBuilder.union();
+  private Node rootNode = QueryBuilders.union();
   private final Gson gson;
-  private Optional<Long> limit = Optional.empty();
-  private Optional<Long> skip = Optional.empty();
-  private Optional<SortedField> sortBy = Optional.empty();
+  private Long limit;
+  private Long skip;
+  private SortedField sortBy;
   private boolean onlyIds = false;
   private final Field idField;
   private Runnable closeHandler;
@@ -81,10 +84,13 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @Override
   public SearchStream<E> filter(String freeText) {
     rootNode = new Node() {
-      @Override public String toString(ParenMode mode) {
+      @Override
+      public String toString() {
         return freeText;
       }
-      @Override public String toString() {
+
+      @Override
+      public String toString(Parenthesize mode) {
         return freeText;
       }
     };
@@ -173,7 +179,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     if (MetamodelField.class.isAssignableFrom(comparator.getClass())) {
       @SuppressWarnings("unchecked")
       MetamodelField<E, ?> foi = (MetamodelField<E, ?>) comparator;
-      sortBy = Optional.of(SortedField.asc(foi.getSearchAlias()));
+      sortBy = SortedField.asc(foi.getSearchAlias());
     }
     return this;
   }
@@ -183,7 +189,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     if (MetamodelField.class.isAssignableFrom(comparator.getClass())) {
       @SuppressWarnings("unchecked")
       MetamodelField<E, ?> foi = (MetamodelField<E, ?>) comparator;
-      sortBy = Optional.of(new SortedField(foi.getSearchAlias(), order));
+      sortBy = new SortedField(foi.getSearchAlias(), order);
     }
     return this;
   }
@@ -195,13 +201,13 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public SearchStream<E> limit(long maxSize) {
-    limit = Optional.of(maxSize);
+    limit = maxSize;
     return this;
   }
 
   @Override
   public SearchStream<E> skip(long s) {
-    skip = Optional.of(s);
+    skip = s;
     return this;
   }
 
@@ -271,7 +277,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     query.limit(0, 0);
     SearchResult searchResult = search.search(query);
 
-    return searchResult.totalResults;
+    return searchResult.getTotalResults();
   }
 
   @Override
@@ -291,7 +297,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public Optional<E> findFirst() {
-    limit = Optional.of(1L);
+    limit = 1L;
     return resolveStream().findFirst();
   }
 
@@ -336,7 +342,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     return this;
   }
 
-  @Override public void close() {
+  @Override
+  public void close() {
     if (closeHandler == null) {
       resolveStream().close();
     } else {
@@ -351,10 +358,10 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   Query prepareQuery() {
     Query query = (rootNode.toString().isBlank()) ? new Query() : new Query(rootNode.toString());
 
-    query.limit(skip.map(Long::intValue).orElse(0), limit.map(Long::intValue).orElse(MAX_LIMIT));
+    query.limit(skip != null ? skip.intValue() : 0, limit != null ? limit.intValue() : MAX_LIMIT);
 
-    if (sortBy.isPresent()) {
-      SortedField sortField = sortBy.get();
+    if (sortBy != null) {
+      SortedField sortField = sortBy;
       query.setSortBy(sortField.getField(), sortField.getOrder().equals("ASC"));
     }
 
@@ -370,8 +377,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   private List<E> toEntityList(SearchResult searchResult) {
-    return searchResult.docs.stream().map(d -> gson.fromJson(d.get("$").toString(), entityClass))
-        .collect(Collectors.toList());
+    return searchResult.getDocuments().stream().map(d -> gson.fromJson(d.get("$").toString(), entityClass))
+        .toList();
   }
 
   private Stream<E> resolveStream() {
@@ -397,7 +404,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       onlyIds = true;
 
       Method idSetter = ObjectUtils.getSetterForField(entityClass, idField);
-      Stream<E> wrappedIds = (Stream<E>) executeQuery().docs //
+      Stream<E> wrappedIds = (Stream<E>) executeQuery().getDocuments() //
           .stream() //
           .map(d -> {
             try {
@@ -429,13 +436,15 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     throw new UnsupportedOperationException("mapToLabelledMaps is not supported on a SearchStream");
   }
 
-  @Override public <R> AggregationStream<R> groupBy(MetamodelField<E, ?>... fields) {
+  @SafeVarargs @Override
+  public final <R> AggregationStream<R> groupBy(MetamodelField<E, ?>... fields) {
     this.close();
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
     return new AggregationStreamImpl<>(searchIndex, modulesOperations, query, fields);
   }
 
-  @Override public <R> AggregationStream<R> apply(String expression, String alias) {
+  @Override
+  public <R> AggregationStream<R> apply(String expression, String alias) {
     this.close();
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
     AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, query);
@@ -443,7 +452,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     return aggregationStream;
   }
 
-  @Override public <R> AggregationStream<R> load(MetamodelField<E, ?>... fields) {
+  @SafeVarargs @Override
+  public final <R> AggregationStream<R> load(MetamodelField<E, ?>... fields) {
     this.close();
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
     AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, query);
@@ -451,20 +461,22 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     return aggregationStream;
   }
 
-  @Override public Optional<E> min(NumericField<E, ?> field) {
+  @Override
+  public Optional<E> min(NumericField<E, ?> field) {
     List<Pair<String, ?>> minByField = this //
         .load(new MetamodelField<E, String>("__key")) //
-        .sorted(Order.asc("@"+field.getSearchAlias()))
+        .sorted(Order.asc("@" + field.getSearchAlias()))
         .limit(1) //
         .toList(String.class, Double.class);
 
     return minByField.isEmpty() ? Optional.empty() : Optional.of(json.get(minByField.get(0).getFirst(), entityClass));
   }
 
-  @Override public Optional<E> max(NumericField<E, ?> field) {
+  @Override
+  public Optional<E> max(NumericField<E, ?> field) {
     List<Pair<String, ?>> maxByField = this //
         .load(new MetamodelField<E, String>("__key")) //
-        .sorted(1, Order.desc("@"+field.getSearchAlias()))
+        .sorted(1, Order.desc("@" + field.getSearchAlias()))
         .limit(1) //
         .toList(String.class, Double.class);
 

@@ -22,12 +22,12 @@ public class NonIndexedTagField<E, T> extends MetamodelField<E, T> {
     return new ArrayAppendAction<>(searchFieldAccessor, value);
   }
 
-  public Consumer<? super E> insert(Object value, Long index) {
+  public Consumer<? super E> insert(Object value, Integer index) {
     return new ArrayInsertAction<>(searchFieldAccessor, value, index);
   }
 
   public Consumer<? super E> prepend(Object value) {
-    return new ArrayInsertAction<>(searchFieldAccessor, value, 0L);
+    return new ArrayInsertAction<>(searchFieldAccessor, value, 0);
   }
 
   public ToLongFunction<? super E> length() {
@@ -38,27 +38,27 @@ public class NonIndexedTagField<E, T> extends MetamodelField<E, T> {
     return new ArrayIndexOfAction<>(searchFieldAccessor, element);
   }
 
-  public <R> ArrayPopAction<? super E,R> pop(Long index) {
+  public <R> ArrayPopAction<? super E, R> pop(Integer index) {
     return new ArrayPopAction<>(searchFieldAccessor, index);
   }
 
-  public <R> ArrayPopAction<? super E,R> pop() {
-    return pop(-1L);
+  public <R> ArrayPopAction<? super E, R> pop() {
+    return pop(-1);
   }
 
-  public <R> ArrayPopAction<? super E,R> removeFirst() {
-    return pop(0L);
+  public <R> ArrayPopAction<? super E, R> removeFirst() {
+    return pop(0);
   }
 
-  public <R> ArrayPopAction<? super E,R> removeLast() {
-    return pop(-1L);
+  public <R> ArrayPopAction<? super E, R> removeLast() {
+    return pop(-1);
   }
 
-  public <R> ArrayPopAction<? super E,R> remove(Long index) {
+  public <R> ArrayPopAction<? super E, R> remove(Integer index) {
     return pop(index);
   }
 
-  public Consumer<? super E> trimToRange(Long begin, Long end) {
+  public Consumer<? super E> trimToRange(Integer begin, Integer end) {
     return new ArrayTrimAction<>(searchFieldAccessor, begin, end);
   }
 

@@ -14,7 +14,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -36,31 +35,30 @@ import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
 import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 
-import io.redisearch.Document;
-import io.redisearch.querybuilder.GeoValue;
-import io.redisearch.querybuilder.GeoValue.Unit;
+import redis.clients.jedis.args.GeoUnit;
+import redis.clients.jedis.search.Document;
 
 public class ObjectUtils {
   public static String getDistanceAsRedisString(Distance distance) {
-    return String.format("%s %s", Double.toString(distance.getValue()), distance.getUnit());
+    return String.format("%s %s", distance.getValue(), distance.getUnit());
   }
 
   public static List<Field> getFieldsWithAnnotation(Class<?> clazz, Class<? extends Annotation> annotationClass) {
     return Arrays //
         .stream(clazz.getDeclaredFields()) //
         .filter(f -> f.isAnnotationPresent(annotationClass)) //
-        .collect(Collectors.toList());
+        .toList();
   }
 
-  public static Unit getDistanceUnit(Distance distance) {
+  public static GeoUnit getDistanceUnit(Distance distance) {
     if (distance.getUnit().equals(DistanceUnit.MILES.getAbbreviation())) {
-      return GeoValue.Unit.MILES;
+      return GeoUnit.MI;
     } else if (distance.getUnit().equals(DistanceUnit.FEET.getAbbreviation())) {
-      return GeoValue.Unit.FEET;
+      return GeoUnit.FT;
     } else if (distance.getUnit().equals(DistanceUnit.KILOMETERS.getAbbreviation())) {
-      return GeoValue.Unit.KILOMETERS;
+      return GeoUnit.KM;
     } else {
-      return GeoValue.Unit.METERS;
+      return GeoUnit.M;
     }
   }
 

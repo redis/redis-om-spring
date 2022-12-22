@@ -125,9 +125,9 @@ public final class MetamodelGenerator extends AbstractProcessor {
     blockBuilder.beginControlFlow("try");
     for (ObjectGraphFieldSpec ogfs : fields) {
       String sb = "$L = $T.class";
-      sb = sb + ogfs.getChain().stream().map(e -> String.format(".getDeclaredField(\"%s\")", e.getSimpleName().toString())).collect(
+      sb = sb + ogfs.chain().stream().map(e -> String.format(".getDeclaredField(\"%s\")", e.getSimpleName().toString())).collect(
           Collectors.joining(".getType()"));
-      FieldSpec fieldSpec = ogfs.getFieldSpec();
+      FieldSpec fieldSpec = ogfs.fieldSpec();
       blockBuilder.addStatement(sb, fieldSpec.name, entity);
     }
 
@@ -143,7 +143,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
     TypeSpec metaClass = TypeSpec.classBuilder(genEntityName) //
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL) //
-        .addFields(fields.stream().map(ObjectGraphFieldSpec::getFieldSpec).collect(Collectors.toList())) //
+        .addFields(fields.stream().map(ObjectGraphFieldSpec::fieldSpec).toList()) //
         .addFields(nestedFieldsConstants) //
         .addStaticBlock(staticBlock) //
         .addFields(interceptors) //

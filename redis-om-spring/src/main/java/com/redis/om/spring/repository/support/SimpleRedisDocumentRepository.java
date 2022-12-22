@@ -1,23 +1,16 @@
 package com.redis.om.spring.repository.support;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import com.google.gson.reflect.TypeToken;
+import com.google.common.collect.Lists;
+import com.google.gson.Gson;
+import com.redis.om.spring.RediSearchIndexer;
+import com.redis.om.spring.convert.MappingRedisOMConverter;
+import com.redis.om.spring.id.ULIDIdentifierGenerator;
+import com.redis.om.spring.metamodel.MetamodelField;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.search.SearchOperations;
+import com.redis.om.spring.repository.RedisDocumentRepository;
 import com.redis.om.spring.serialization.gson.GsonListOfType;
+import com.redis.om.spring.util.ObjectUtils;
 import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -39,38 +32,42 @@ import org.springframework.data.repository.core.EntityInformation;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
-
-import com.google.common.collect.Lists;
-import com.google.gson.Gson;
-import com.redis.om.spring.RediSearchIndexer;
-import com.redis.om.spring.convert.MappingRedisOMConverter;
-import com.redis.om.spring.id.ULIDIdentifierGenerator;
-import com.redis.om.spring.metamodel.MetamodelField;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.ops.search.SearchOperations;
-import com.redis.om.spring.repository.RedisDocumentRepository;
-import com.redis.om.spring.util.ObjectUtils;
-import com.redislabs.modules.rejson.Path;
-
-import io.redisearch.Query;
-import io.redisearch.SearchResult;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
-import redis.clients.jedis.commands.ProtocolCommand;
+import redis.clients.jedis.json.Path;
+import redis.clients.jedis.search.Query;
+import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.util.SafeEncoder;
+import static redis.clients.jedis.json.JsonProtocol.JsonCommand;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueRepository<T, ID>
     implements RedisDocumentRepository<T, ID> {
 
   private final Gson gson;
-  protected RedisModulesOperations<String> modulesOperations;
-  protected EntityInformation<T, ID> metadata;
-  protected KeyValueOperations operations;
-  protected RediSearchIndexer indexer;
-  protected MappingRedisOMConverter mappingConverter;
+  protected final RedisModulesOperations<String> modulesOperations;
+  protected final EntityInformation<T, ID> metadata;
+  protected final KeyValueOperations operations;
+  protected final RediSearchIndexer indexer;
+  protected final MappingRedisOMConverter mappingConverter;
   private final ULIDIdentifierGenerator generator;
 
-  private RedisMappingContext mappingContext;
+  private final RedisMappingContext mappingContext;
 
   @SuppressWarnings("unchecked")
   public SimpleRedisDocumentRepository( //
@@ -100,13 +97,13 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     if (maybeSearchIndex.isPresent()) {
       SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
       Optional<Field> maybeIdField = ObjectUtils.getIdFieldForEntityClass(metadata.getJavaType());
-      String idField = maybeIdField.isPresent() ? maybeIdField.get().getName() : "id";
+      String idField = maybeIdField.map(Field::getName).orElse("id");
 
       Query query = new Query("*");
       query.returnFields(idField);
       SearchResult searchResult = searchOps.search(query);
 
-      result = searchResult.docs.stream()
+      result = searchResult.getDocuments().stream()
           .map(d -> gson.fromJson(d.get(idField).toString(), metadata.getIdType()))
           .collect(Collectors.toList());
     }
@@ -121,7 +118,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     int fromIndex = Long.valueOf(pageable.getOffset()).intValue();
     int toIndex = fromIndex + pageable.getPageSize();
 
-    return new PageImpl<ID>((List<ID>) ids.subList(fromIndex, toIndex), pageable, ids.size());
+    return new PageImpl<>(ids.subList(fromIndex, toIndex), pageable, ids.size());
   }
 
   @Override
@@ -146,17 +143,16 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
   @Override
   public Long getExpiration(ID id) {
-    @SuppressWarnings("unchecked")
-    RedisTemplate<String, String> template = (RedisTemplate<String, String>) modulesOperations.getTemplate();
+    RedisTemplate<String, String> template = modulesOperations.getTemplate();
     return template.getExpire(getKey(id));
   }
 
   @Override
-  public <S extends T> Iterable<S> saveAll(Iterable<S> entities) {
+  public <S extends T> List<S> saveAll(Iterable<S> entities) {
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
     List<S> saved = new ArrayList<>();
 
-    try (Jedis jedis = modulesOperations.getClient().getJedis()) {
+    try (Jedis jedis = modulesOperations.getClient().getJedis().get()) {
       Pipeline pipeline = jedis.pipelined();
 
       for (S entity : entities) {
@@ -181,11 +177,9 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
         args.add(objectKey);
         args.add(SafeEncoder.encode(Path.ROOT_PATH.toString()));
         args.add(SafeEncoder.encode(this.gson.toJson(entity)));
-        pipeline.sendCommand(Command.SET, args.toArray(new byte[args.size()][]));
+        pipeline.sendCommand(JsonCommand.SET, args.toArray(new byte[args.size()][]));
 
-        if (maybeTtl.isPresent()) {
-          pipeline.expire(objectKey, maybeTtl.get());
-        }
+        maybeTtl.ifPresent(aLong -> pipeline.expire(objectKey, aLong));
 
         saved.add(entity);
       }
@@ -196,13 +190,9 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   }
 
   @Override public Iterable<T> bulkLoad(String file) throws IOException {
-    Reader reader = null;
-    try {
-      reader = Files.newBufferedReader(Paths.get(file));
-      List<T> entities = gson.fromJson(reader, new GsonListOfType<T>(metadata.getJavaType()));
+    try (Reader reader = Files.newBufferedReader(Paths.get(file))) {
+      List<T> entities = gson.fromJson(reader, new GsonListOfType<>(metadata.getJavaType()));
       return saveAll(entities);
-    } finally {
-      reader.close();
     }
   }
 
@@ -268,17 +258,4 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     return Optional.empty();
   }
 
-  private enum Command implements ProtocolCommand {
-    SET("JSON.SET");
-
-    private final byte[] raw;
-
-    Command(String alt) {
-      this.raw = SafeEncoder.encode(alt);
-    }
-
-    public byte[] getRaw() {
-      return this.raw;
-    }
-  }
 }

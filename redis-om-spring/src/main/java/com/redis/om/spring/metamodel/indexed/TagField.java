@@ -22,43 +22,43 @@ public class TagField<E, T> extends MetamodelField<E, T> {
   public TagField(SearchFieldAccessor field, boolean indexed) {
     super(field, indexed);
   }
-  
-  public EqualPredicate<? super E,T> eq(T value) {
-    return new EqualPredicate<>(searchFieldAccessor,value);
+
+  public EqualPredicate<? super E, T> eq(T value) {
+    return new EqualPredicate<>(searchFieldAccessor, value);
   }
-  
-  public NotEqualPredicate<? super E,T> notEq(T value) {
-    return new NotEqualPredicate<>(searchFieldAccessor,value);
+
+  public NotEqualPredicate<? super E, T> notEq(T value) {
+    return new NotEqualPredicate<>(searchFieldAccessor, value);
   }
-  
-  public NotEqualPredicate<? super E,T> notEq(String... values) {
+
+  public NotEqualPredicate<? super E, T> notEq(String... values) {
     return new NotEqualPredicate<>(searchFieldAccessor, Arrays.asList(values));
   }
-  
+
   public InPredicate<? super E, ?> in(String... values) {
     return new InPredicate<>(searchFieldAccessor, Arrays.asList(values));
   }
-  
+
   public ContainsAllPredicate<? super E, ?> containsAll(String... values) {
     return new ContainsAllPredicate<>(searchFieldAccessor, Arrays.asList(values));
   }
-  
-  public NotEqualPredicate<? super E,T> containsNone(T value) {
-    return new NotEqualPredicate<>(searchFieldAccessor,value);
+
+  public NotEqualPredicate<? super E, T> containsNone(T value) {
+    return new NotEqualPredicate<>(searchFieldAccessor, value);
   }
-  
+
   public Consumer<? super E> add(Object value) {
     return new ArrayAppendAction<>(searchFieldAccessor, value);
   }
 
-  public Consumer<? super E> insert(Object value, Long index) {
+  public Consumer<? super E> insert(Object value, Integer index) {
     return new ArrayInsertAction<>(searchFieldAccessor, value, index);
   }
-  
+
   public Consumer<? super E> prepend(Object value) {
-    return new ArrayInsertAction<>(searchFieldAccessor, value, 0L);
+    return new ArrayInsertAction<>(searchFieldAccessor, value, 0);
   }
-  
+
   public ToLongFunction<? super E> length() {
     return new ArrayLengthAction<>(searchFieldAccessor);
   }
@@ -66,28 +66,28 @@ public class TagField<E, T> extends MetamodelField<E, T> {
   public ToLongFunction<? super E> indexOf(Object element) {
     return new ArrayIndexOfAction<>(searchFieldAccessor, element);
   }
-  
-  public <R> ArrayPopAction<? super E,R> pop(Long index) {
+
+  public <R> ArrayPopAction<? super E, R> pop(Integer index) {
     return new ArrayPopAction<>(searchFieldAccessor, index);
   }
-  
-  public <R> ArrayPopAction<? super E,R> pop() {
-    return pop(-1L);
+
+  public <R> ArrayPopAction<? super E, R> pop() {
+    return pop(-1);
   }
-  
-  public <R> ArrayPopAction<? super E,R> removeFirst() {
-    return pop(0L);
+
+  public <R> ArrayPopAction<? super E, R> removeFirst() {
+    return pop(0);
   }
-  
-  public <R> ArrayPopAction<? super E,R> removeLast() {
-    return pop(-1L);
+
+  public <R> ArrayPopAction<? super E, R> removeLast() {
+    return pop(-1);
   }
-  
-  public <R> ArrayPopAction<? super E,R> remove(Long index) {
+
+  public <R> ArrayPopAction<? super E, R> remove(Integer index) {
     return pop(index);
   }
 
-  public Consumer<? super E> trimToRange(Long begin, Long end) {
+  public Consumer<? super E> trimToRange(Integer begin, Integer end) {
     return new ArrayTrimAction<>(searchFieldAccessor, begin, end);
   }
 

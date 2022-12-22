@@ -12,13 +12,10 @@ public class QueryUtils {
   );
   
   public static String escape(String text) {
-    return escape(text, false, false);
-  }
-  public static String escape(String text, boolean querying) {
-    return escape(text, querying, false);
+    return escape(text, false);
   }
 
-  public static String escape(String text, boolean querying, boolean isCsv) {
+  public static String escape(String text, boolean querying) {
     var sb = new StringBuilder();
     char[] chars = text.toCharArray();
 
@@ -51,10 +48,6 @@ public class QueryUtils {
     } 
     return alias;
   }
-  
-  public static String searchIndexFieldAliasFor(Field field) {
-    return searchIndexFieldAliasFor(field, null);
-  }
-  
+
   private QueryUtils() {}
 }

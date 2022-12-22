@@ -1,16 +1,13 @@
 package com.redis.om.spring.autocomplete;
 
-import java.beans.IntrospectionException;
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
+import com.google.gson.Gson;
+import com.redis.om.spring.annotations.AutoComplete;
+import com.redis.om.spring.annotations.AutoCompletePayload;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.search.SearchOperations;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
@@ -19,27 +16,28 @@ import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.GenericTypeResolver;
 import org.springframework.core.Ordered;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.Repository;
 import org.springframework.stereotype.Component;
 
-import com.google.gson.Gson;
-import com.redis.om.spring.annotations.AutoComplete;
-import com.redis.om.spring.annotations.AutoCompletePayload;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.ops.search.SearchOperations;
-// import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
-
-import io.redisearch.Suggestion;
+import java.beans.IntrospectionException;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
 
 @Aspect
 @Component
 public class AutoCompleteAspect implements Ordered {
+  private static final Log logger = LogFactory.getLog(AutoCompleteAspect.class);
+
   @Autowired
   private Gson gson;
-  
-  private RedisModulesOperations<String> rmo;
+
+  @Autowired StringRedisTemplate template;
+
+  private final RedisModulesOperations<String> rmo;
 
   public AutoCompleteAspect(RedisModulesOperations<String> rmo) {
     this.rmo = rmo;
@@ -100,9 +98,7 @@ public class AutoCompleteAspect implements Ordered {
     Class<?> entityClass = GenericTypeResolver.resolveTypeArguments(repository.getClass(), Repository.class)[0];
     for (Field field : entityClass.getDeclaredFields()) {
       if (field.isAnnotationPresent(AutoComplete.class)) {
-        String key = String.format("sugg:%s:%s", entityClass.getSimpleName(), field.getName());
-        @SuppressWarnings("unchecked")
-        RedisTemplate<String, String> template = (RedisTemplate<String, String>) rmo.getTemplate();
+        String key = String.format(Suggestion.KEY_FORMAT_STRING, entityClass.getSimpleName(), field.getName());
         template.delete(key);
       }
     }
@@ -117,17 +113,22 @@ public class AutoCompleteAspect implements Ordered {
     for (Object entity : entities) {
       for (Field field : entity.getClass().getDeclaredFields()) {
         if (field.isAnnotationPresent(AutoComplete.class)) {
-          AutoComplete suggestable = field.getAnnotation(AutoComplete.class);
-          String key = !ObjectUtils.isEmpty(suggestable.name()) ? suggestable.name()
-              : String.format("sugg:%s:%s", entity.getClass().getSimpleName(), field.getName());
+          AutoComplete suggestible = field.getAnnotation(AutoComplete.class);
+          String key = !ObjectUtils.isEmpty(suggestible.name()) ? suggestible.name()
+              : String.format(Suggestion.KEY_FORMAT_STRING, entity.getClass().getSimpleName(), field.getName());
+
+          String payLoadKey = !ObjectUtils.isEmpty(suggestible.name()) ? suggestible.name()
+              : String.format(Suggestion.PAYLOAD_KEY_FORMAT_STRING, entity.getClass().getSimpleName(), field.getName());
+
           try {
             PropertyDescriptor pd = new PropertyDescriptor(field.getName(), entity.getClass());
             SearchOperations<String> ops = rmo.opsForSearch(key);
-
-            ops.deleteSuggestion(pd.getReadMethod().invoke(entity).toString());
+            String suggestion = pd.getReadMethod().invoke(entity).toString();
+            ops.deleteSuggestion(key, suggestion);
+            template.opsForHash().delete(payLoadKey, suggestion);
           } catch (IllegalArgumentException | IntrospectionException | IllegalAccessException
               | InvocationTargetException e) {
-            e.printStackTrace();
+            logger.error("Error while deleting suggestions...", e);
           }
         }
       }
@@ -175,46 +176,46 @@ public class AutoCompleteAspect implements Ordered {
   private void processSuggestionsForEntity(Object entity) {
     for (Field field : entity.getClass().getDeclaredFields()) {
       if (field.isAnnotationPresent(AutoComplete.class)) {
-        Suggestion.Builder builder = Suggestion.builder();
+        String suggestion = "";
         Map<String, Object> payload = null;
 
-        AutoComplete suggestable = field.getAnnotation(AutoComplete.class);
-        String key = !ObjectUtils.isEmpty(suggestable.name()) ? suggestable.name()
-            : String.format("sugg:%s:%s", entity.getClass().getSimpleName(), field.getName());
+        AutoComplete suggestible = field.getAnnotation(AutoComplete.class);
+        String key = !ObjectUtils.isEmpty(suggestible.name()) ? suggestible.name()
+            : String.format(Suggestion.KEY_FORMAT_STRING, entity.getClass().getSimpleName(), field.getName());
         SearchOperations<String> ops = rmo.opsForSearch(key);
         try {
           PropertyDescriptor pd = new PropertyDescriptor(field.getName(), entity.getClass());
-          builder.str(pd.getReadMethod().invoke(entity).toString());
+          suggestion = pd.getReadMethod().invoke(entity).toString();
         } catch (IllegalArgumentException | IntrospectionException | IllegalAccessException
             | InvocationTargetException e) {
-          e.printStackTrace();
+          logger.error("Error while processing suggestions...", e);
         }
 
         for (Field field2 : entity.getClass().getDeclaredFields()) {
           if (field2.isAnnotationPresent(AutoCompletePayload.class)) {
-            AutoCompletePayload suggestablePayload = field2.getAnnotation(AutoCompletePayload.class);
-            boolean inPayload = (!suggestablePayload.value().isBlank()
-                && suggestablePayload.value().equalsIgnoreCase(field.getName()))
-                || (Arrays.asList(suggestablePayload.fields()).contains(field.getName()));
+            AutoCompletePayload suggestiblePayload = field2.getAnnotation(AutoCompletePayload.class);
+            boolean inPayload = (!suggestiblePayload.value().isBlank()
+                && suggestiblePayload.value().equalsIgnoreCase(field.getName()))
+                || (Arrays.asList(suggestiblePayload.fields()).contains(field.getName()));
             if (inPayload) {
               try {
-                if (payload == null) {
-                  payload = new HashMap<>();
-                }
+                payload = payload == null ? new HashMap<>() : payload;
                 PropertyDescriptor pd = new PropertyDescriptor(field2.getName(), entity.getClass());
                 payload.put(field2.getName(), pd.getReadMethod().invoke(entity));
               } catch (IllegalArgumentException | IntrospectionException | IllegalAccessException
                   | InvocationTargetException e) {
-                e.printStackTrace();
+                logger.error("Error while processing suggestions...", e);
               }
             }
           }
         }
         if (payload != null && !payload.isEmpty()) {
-          builder.payload(gson.toJson(payload));
+          String payLoadKey = !ObjectUtils.isEmpty(suggestible.name()) ? suggestible.name()
+              : String.format(Suggestion.PAYLOAD_KEY_FORMAT_STRING, entity.getClass().getSimpleName(), field.getName());
+          template.opsForHash().put(payLoadKey, suggestion, gson.toJson(payload));
         }
 
-        ops.addSuggestion(builder.build(), false);
+        ops.addSuggestion(key, suggestion);
       }
     }
   }
@@ -222,17 +223,23 @@ public class AutoCompleteAspect implements Ordered {
   private void deleteSuggestionsForEntity(Object entity) {
     for (Field field : entity.getClass().getDeclaredFields()) {
       if (field.isAnnotationPresent(AutoComplete.class)) {
-        AutoComplete suggestable = field.getAnnotation(AutoComplete.class);
-        String key = !ObjectUtils.isEmpty(suggestable.name()) ? suggestable.name()
-            : String.format("sugg:%s:%s", entity.getClass().getSimpleName(), field.getName());
+        AutoComplete suggestible = field.getAnnotation(AutoComplete.class);
+        String key = !ObjectUtils.isEmpty(suggestible.name()) ? suggestible.name()
+            : String.format(Suggestion.KEY_FORMAT_STRING, entity.getClass().getSimpleName(), field.getName());
         try {
           PropertyDescriptor pd = new PropertyDescriptor(field.getName(), entity.getClass());
           SearchOperations<String> ops = rmo.opsForSearch(key);
 
-          ops.deleteSuggestion(pd.getReadMethod().invoke(entity).toString());
+          String suggestion = pd.getReadMethod().invoke(entity).toString();
+
+          ops.deleteSuggestion(key, suggestion);
+
+          String payLoadKey = !ObjectUtils.isEmpty(suggestible.name()) ? suggestible.name()
+              : String.format("sugg:payload:%s:%s", entity.getClass().getSimpleName(), field.getName());
+          template.opsForHash().delete(payLoadKey, suggestion);
         } catch (IllegalArgumentException | IntrospectionException | IllegalAccessException
             | InvocationTargetException e) {
-          e.printStackTrace();
+          logger.error("Error while deleting suggestions...", e);
         }
       }
     }

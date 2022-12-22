@@ -1,22 +1,9 @@
 package com.redis.om.spring.annotations.hash;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.StreamSupport;
-
+import com.google.common.collect.Ordering;
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.annotations.hash.fixtures.*;
+import com.redis.om.spring.repository.query.QueryUtils;
 import org.assertj.core.util.Arrays;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,21 +16,21 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
+import redis.clients.jedis.search.aggr.AggregationResult;
 
-import com.google.common.collect.Ordering;
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.hash.fixtures.Company;
-import com.redis.om.spring.annotations.hash.fixtures.Company$;
-import com.redis.om.spring.annotations.hash.fixtures.CompanyRepository;
-import com.redis.om.spring.annotations.hash.fixtures.NonIndexedHash;
-import com.redis.om.spring.annotations.hash.fixtures.NonIndexedHashRepository;
-import com.redis.om.spring.annotations.hash.fixtures.Person;
-import com.redis.om.spring.annotations.hash.fixtures.PersonRepository;
-import com.redis.om.spring.repository.query.QueryUtils;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
-import io.redisearch.AggregationResult;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
 
-class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
+@SuppressWarnings("SpellCheckingInspection") class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   static Person john;
   static Person gray;
   static Person terryg;
@@ -62,42 +49,44 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
   @BeforeEach
   void createTestDataIfNeeded() {
-    companyRepo.deleteAll();
     flushSearchIndexFor(Company.class);
-    if (personRepo.count() == 0) {
-      john = Person.of("John Cleese", "john.cleese@mp.com", "john");
-      john.setRoles(Set.of("Llama lecturer", "Armless Officer", "Albatross Seller"));
-      john.setFavoriteFoods(Set.of("Fish and Chips", "Bangers and Mash", "Full English Breakfast"));
+    flushSearchIndexFor(Person.class);
+    john = Person.of("John Cleese", "john.cleese@mp.com", "john");
+    john.setRoles(Set.of("Llama lecturer", "Armless Officer", "Albatross Seller"));
+    john.setFavoriteFoods(Set.of("Fish and Chips", "Bangers and Mash", "Full English Breakfast"));
 
-      gray = Person.of("Graham Chapman", "graham.chapman@mp.com", "graham");
-      gray.setRoles(Set.of("Brian", "King Arthur", "The Colonel"));
-      gray.setFavoriteFoods(Set.of("Sunday Roast", "Toad in the Hole"));
+    gray = Person.of("Graham Chapman", "graham.chapman@mp.com", "graham");
+    gray.setRoles(Set.of("Brian", "King Arthur", "The Colonel"));
+    gray.setFavoriteFoods(Set.of("Sunday Roast", "Toad in the Hole"));
 
-      terryg = Person.of("Terry Gilliam", "terry.gilliam@mp.com", "terry");
-      terryg.setRoles(Set.of("Patsy", "Green Knight", "Bridgekeeper"));
-      terryg.setFavoriteFoods(Set.of("Shepherd’s Pie", "Cottage Pie", "Steak and Kidney Pie"));
+    terryg = Person.of("Terry Gilliam", "terry.gilliam@mp.com", "terry");
+    terryg.setRoles(Set.of("Patsy", "Green Knight", "Bridgekeeper"));
+    terryg.setFavoriteFoods(Set.of("Shepherd’s Pie", "Cottage Pie", "Steak and Kidney Pie"));
 
-      eric = Person.of("Eric Idle", "eric.idle@mp.com", "eric");
-      eric.setRoles(Set.of("Sir Robin the-not-quite-so-brave-as-Sir-Lancelot", "Lancelot's squire Concorde",
-          "Roger the Shrubber"));
-      eric.setFavoriteFoods(Set.of("Cottage Pie", "Steak and Kidney Pie"));
+    eric = Person.of("Eric Idle", "eric.idle@mp.com", "eric");
+    eric.setRoles(Set.of("Sir Robin the-not-quite-so-brave-as-Sir-Lancelot", "Lancelot's squire Concorde",
+        "Roger the Shrubber"));
+    eric.setFavoriteFoods(Set.of("Cottage Pie", "Steak and Kidney Pie"));
 
-      terryj = Person.of("Terry Jones", "terry.jones@mp.com", "terry");
-      terryj.setRoles(Set.of("Mandy Cohen", "Dennis's Mother", "Bert"));
-      terryj.setFavoriteFoods(Set.of("Fish and Chips", "Toad in the Hole", "Cottage Pie"));
+    terryj = Person.of("Terry Jones", "terry.jones@mp.com", "terry");
+    terryj.setRoles(Set.of("Mandy Cohen", "Dennis's Mother", "Bert"));
+    terryj.setFavoriteFoods(Set.of("Fish and Chips", "Toad in the Hole", "Cottage Pie"));
 
-      michael = Person.of("Michael Palin", "michael.palin@mp.com", "michael");
-      michael.setRoles(Set.of("Mr. Big Nose", "Second Tramp", "First Swallow-Savvy Guard"));
-      michael.setFavoriteFoods(Set.of("Steak and Kidney Pie", "Sunday Roast", "Bangers and Mash"));
+    michael = Person.of("Michael Palin", "michael.palin@mp.com", "michael");
+    michael.setRoles(Set.of("Mr. Big Nose", "Second Tramp", "First Swallow-Savvy Guard"));
+    michael.setFavoriteFoods(Set.of("Steak and Kidney Pie", "Sunday Roast", "Bangers and Mash"));
 
-      personRepo.saveAll(List.of(john, gray, terryg, eric, terryj, michael));
-    }
+    personRepo.saveAll(List.of(john, gray, terryg, eric, terryj, michael));
   }
   
   @Test
   void testDeleteAll() {
     assertThat(personRepo.count()).isEqualTo(6);
     personRepo.deleteAll();
+    with() //
+     .pollInterval(Duration.ofMillis(100)).and() //
+         .with().pollDelay(20, MILLISECONDS) //
+        .await("repository cleared").until(() -> personRepo.count() == 0);
     assertThat(personRepo.count()).isZero();
   }
   
@@ -112,7 +101,7 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   @Test
   void testThatIndexedSimpleCollectionsAreSerializedAsCSV() {
     String hashKey = "people:" + eric.getId();
-    String ericRolesRaw = template.opsForHash().get(hashKey, "roles").toString();
+    String ericRolesRaw = Objects.requireNonNull(template.opsForHash().get(hashKey, "roles")).toString();
     Set<String> ericRoles = Arrays.asList(ericRolesRaw.split("\\|")).stream().map(Object::toString)
         .map(QueryUtils::unescape).collect(Collectors.toSet());
     assertThat(ericRoles).containsExactlyInAnyOrderElementsOf(eric.getRoles());
@@ -129,8 +118,8 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   void testThatNonIndexedCollectionsAreSerializedAsIndividualHashEntriesPerElement() {
     String hashKey = "people:" + eric.getId();
 
-    String ericFavFood0 = template.opsForHash().get(hashKey, "favoriteFoods.[0]").toString();
-    String ericFavFood1 = template.opsForHash().get(hashKey, "favoriteFoods.[1]").toString();
+    String ericFavFood0 = Objects.requireNonNull(template.opsForHash().get(hashKey, "favoriteFoods.[0]")).toString();
+    String ericFavFood1 = Objects.requireNonNull(template.opsForHash().get(hashKey, "favoriteFoods.[1]")).toString();
     String ericFavFood2 = (String) template.opsForHash().get(hashKey, "favoriteFoods.[2]");
 
     assertThat(ericFavFood0).isIn(eric.getFavoriteFoods());
@@ -225,8 +214,7 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
     assertNull(redis.getLastModifiedDate());
     assertNull(microsoft.getLastModifiedDate());
 
-    companyRepo.save(redis);
-    companyRepo.save(microsoft);
+    companyRepo.saveAll(List.of(redis,microsoft));
 
     // last modified dates should not be null after a second save
     assertNotNull(redis.getLastModifiedDate());
@@ -281,6 +269,7 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
     List<Company> publiclyListed = companyRepo.findByPubliclyListed(true);
 
+    //noinspection ResultOfMethodCallIgnored
     assertAll( //
         () -> assertThat(publiclyListed).hasSize(10), //
         () -> assertThat(publiclyListed).allSatisfy(Company::isPubliclyListed) //
@@ -304,7 +293,7 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
     companyRepo.saveAll(List.of(redis, microsoft, tesla));
 
     List<Company> companies = companyRepo.findByTags(Set.of("reliable"));
-    List<String> names = companies.stream().map(Company::getName).collect(Collectors.toList());
+    List<String> names = companies.stream().map(Company::getName).toList();
 
     assertEquals(2, names.size());
 
@@ -497,19 +486,19 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
     assertThat(companyNames).containsExactly(redis.getName(), microsoft.getName());
   }
 
-  @Test
+  @SuppressWarnings("ConstantConditions") @Test
   void testPersistingEntityMustNotBeNull() {
-    IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> {
-      companyRepo.save(null);
-    });
+    IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> companyRepo.save(null));
 
-    Assertions.assertEquals("Entity must not be null!", exception.getMessage());
+    Assertions.assertEquals("Entity must not be null", exception.getMessage());
   }
 
   @Test
   void testAuditAnnotationsOnSaveAll() {
-    Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com");
-    Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160), "research@microsoft.com");
+    Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "stack@redis.com");
+    Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
+        "research@microsoft.com");
 
     companyRepo.saveAll(List.of(redis, microsoft));
 
@@ -522,12 +511,11 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
     Iterable<Company> companies = companyRepo.findAllById(List.of(redis.getId(), microsoft.getId()));
 
     assertAll( //
-            () -> assertThat(companies).hasSize(2), //
-            () -> assertThat(companies).containsExactly(redis, microsoft), //
-            () -> assertThat(redis.getCreatedDate()).isNotNull(), //
-            () -> assertThat(redis.getLastModifiedDate()).isNull(), //
-            () -> assertThat(microsoft.getCreatedDate()).isNotNull(), //
-            () -> assertThat(microsoft.getLastModifiedDate()).isNotNull()
-    );
+        () -> assertThat(companies).hasSize(2), //
+        () -> assertThat(companies).containsExactly(redis, microsoft), //
+        () -> assertThat(redis.getCreatedDate()).isNotNull(), //
+        () -> assertThat(redis.getLastModifiedDate()).isNull(), //
+        () -> assertThat(microsoft.getCreatedDate()).isNotNull(), //
+        () -> assertThat(microsoft.getLastModifiedDate()).isNotNull());
   }
 }

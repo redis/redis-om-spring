@@ -2,12 +2,11 @@ package com.redis.om.spring.annotations.hash.fixtures;
 
 import com.redis.om.spring.annotations.TagIndexed;
 import com.redis.om.spring.annotations.TextIndexed;
-
 import lombok.Data;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-@Data
+@SuppressWarnings("SpellCheckingInspection") @Data
 @RequiredArgsConstructor(staticName = "of")
 public class Direccion {
   @NonNull

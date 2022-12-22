@@ -1,18 +1,17 @@
 package com.redis.om.spring.search.stream.predicates.fulltext;
 
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.StringJoiner;
 
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 
-import io.redisearch.querybuilder.Node;
-import io.redisearch.querybuilder.QueryBuilder;
+import redis.clients.jedis.search.querybuilder.Node;
+import redis.clients.jedis.search.querybuilder.QueryBuilders;
 
 public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
-  private List<T> values;
+  private final List<T> values;
 
   public InPredicate(SearchFieldAccessor field, List<T> values) {
     super(field);
@@ -30,7 +29,7 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
       sj.add(value.toString());
     }
 
-    return QueryBuilder.intersect(root).add(getSearchAlias(), sj.toString());
+    return QueryBuilders.intersect(root).add(getSearchAlias(), sj.toString());
   }
 
 }

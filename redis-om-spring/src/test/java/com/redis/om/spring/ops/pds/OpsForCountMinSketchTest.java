@@ -1,18 +1,17 @@
 package com.redis.om.spring.ops.pds;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.ops.RedisModulesOperations;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class OpsForCountMinSketchTest extends AbstractBaseDocumentTest {
   @Autowired
@@ -31,14 +30,14 @@ class OpsForCountMinSketchTest extends AbstractBaseDocumentTest {
     cms.cmsInitByDim("B", 1000L, 5L);
     cms.cmsInitByDim("C", 1000L, 5L);
 
-    Map<String, Long> aValues = new HashMap<String, Long>();
+    Map<String, Long> aValues = new HashMap<>();
     aValues.put("foo", 5L);
     aValues.put("bar", 3L);
     aValues.put("baz", 9L);
 
     cms.cmsIncrBy("A", aValues);
 
-    Map<String, Long> bValues = new HashMap<String, Long>();
+    Map<String, Long> bValues = new HashMap<>();
     bValues.put("foo", 2L);
     bValues.put("bar", 3L);
     bValues.put("baz", 1L);
@@ -56,7 +55,7 @@ class OpsForCountMinSketchTest extends AbstractBaseDocumentTest {
     List<Long> q3 = cms.cmsQuery("C", "foo", "bar", "baz");
     assertArrayEquals(new Long[] { 7L, 6L, 10L }, q3.toArray(new Long[0]));
 
-    Map<String, Long> keysAndWeights = new HashMap<String, Long>();
+    Map<String, Long> keysAndWeights = new HashMap<>();
     keysAndWeights.put("A", 1L);
     keysAndWeights.put("B", 2L);
 
@@ -78,10 +77,10 @@ class OpsForCountMinSketchTest extends AbstractBaseDocumentTest {
   @Test
   void testInitByProb() {
     cms.cmsInitByProb("cms2", 0.01, 0.01);
-    Map<String, Long> info = cms.cmsInfo("cms2");
-    assertEquals(200L, info.get("width").longValue());
-    assertEquals(7L, info.get("depth").longValue());
-    assertEquals(0L, info.get("count").longValue());
+    Map<String, Object> info = cms.cmsInfo("cms2");
+    assertEquals(200L, info.get("width"));
+    assertEquals(7L, info.get("depth"));
+    assertEquals(0L, info.get("count"));
   }
   
   @Test
@@ -90,10 +89,10 @@ class OpsForCountMinSketchTest extends AbstractBaseDocumentTest {
     long resp = cms.cmsIncrBy("cms3", "foo", 5L);
     assertEquals(5L, resp);
 
-    Map<String, Long> info = cms.cmsInfo("cms3");
-    assertEquals(1000L, info.get("width").longValue());
-    assertEquals(5L, info.get("depth").longValue());
-    assertEquals(5L, info.get("count").longValue());
+    Map<String, Object> info = cms.cmsInfo("cms3");
+    assertEquals(1000L, info.get("width"));
+    assertEquals(5L, info.get("depth"));
+    assertEquals(5L, info.get("count"));
   }
 
 }

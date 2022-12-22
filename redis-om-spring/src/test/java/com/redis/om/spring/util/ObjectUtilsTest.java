@@ -1,44 +1,32 @@
 package com.redis.om.spring.util;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.annotations.AutoComplete;
+import com.redis.om.spring.annotations.AutoCompletePayload;
+import com.redis.om.spring.annotations.Indexed;
+import com.redis.om.spring.annotations.Searchable;
+import com.redis.om.spring.annotations.document.fixtures.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
+import redis.clients.jedis.args.GeoUnit;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.AutoComplete;
-import com.redis.om.spring.annotations.AutoCompletePayload;
-import com.redis.om.spring.annotations.Indexed;
-import com.redis.om.spring.annotations.Searchable;
-import com.redis.om.spring.annotations.document.fixtures.Address;
-import com.redis.om.spring.annotations.document.fixtures.Airport;
-import com.redis.om.spring.annotations.document.fixtures.Company;
-import com.redis.om.spring.annotations.document.fixtures.CompanyRepository;
-import com.redis.om.spring.annotations.document.fixtures.DocWithCustomNameId;
-import com.redis.om.spring.annotations.document.fixtures.DocWithCustomNameIdRepository;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.stream.Collectors;
 
-import io.redisearch.querybuilder.GeoValue;
-import io.redisearch.querybuilder.GeoValue.Unit;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
-class ObjectUtilsTest extends AbstractBaseDocumentTest {
+@SuppressWarnings({ "ConstantConditions", "SpellCheckingInspection" }) class ObjectUtilsTest extends AbstractBaseDocumentTest {
 
   @Autowired
-  CompanyRepository companyRepository;
+  CompanyRepository companyRepository; 
 
   @Autowired
   DocWithCustomNameIdRepository docWithCustomNameIdRepository;
@@ -87,25 +75,25 @@ class ObjectUtilsTest extends AbstractBaseDocumentTest {
   @Test
   void testGetDistanceUnit() {
     Distance d30Miles = new Distance(30, DistanceUnit.MILES);
-    Unit unitFor30Miles = ObjectUtils.getDistanceUnit(d30Miles);
-    assertThat(unitFor30Miles).isEqualTo(GeoValue.Unit.MILES);
+    GeoUnit unitFor30Miles = ObjectUtils.getDistanceUnit(d30Miles);
+    assertThat(unitFor30Miles).isEqualTo(GeoUnit.MI);
 
     Distance d25Kilometers = new Distance(25, DistanceUnit.KILOMETERS);
-    Unit unitFor25Kilometers = ObjectUtils.getDistanceUnit(d25Kilometers);
-    assertThat(unitFor25Kilometers).isEqualTo(GeoValue.Unit.KILOMETERS);
+    GeoUnit unitFor25Kilometers = ObjectUtils.getDistanceUnit(d25Kilometers);
+    assertThat(unitFor25Kilometers).isEqualTo(GeoUnit.KM);
 
     Distance d20Meters = new Distance(25, DistanceUnit.METERS);
-    Unit unitFor20Meters = ObjectUtils.getDistanceUnit(d20Meters);
-    assertThat(unitFor20Meters).isEqualTo(GeoValue.Unit.METERS);
+    GeoUnit unitFor20Meters = ObjectUtils.getDistanceUnit(d20Meters);
+    assertThat(unitFor20Meters).isEqualTo(GeoUnit.M);
 
     Distance d6Feet = new Distance(6, DistanceUnit.FEET);
-    Unit unitFor6Feet = ObjectUtils.getDistanceUnit(d6Feet);
-    assertThat(unitFor6Feet).isEqualTo(GeoValue.Unit.FEET);
+    GeoUnit unitFor6Feet = ObjectUtils.getDistanceUnit(d6Feet);
+    assertThat(unitFor6Feet).isEqualTo(GeoUnit.FT);
   }
 
   @Test
-  void testGetTargetClassName() throws NoSuchFieldException, SecurityException, NoSuchMethodException {
-    List<String> lofs = new ArrayList<String>();
+  void testGetTargetClassName() throws NoSuchFieldException, SecurityException {
+    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection") List<String> lofs = new ArrayList<>();
     int[] inta = new int[] {};
     String typeName = Company.class.getDeclaredField("publiclyListed").getType().getName();
 
@@ -127,9 +115,9 @@ class ObjectUtilsTest extends AbstractBaseDocumentTest {
   }
 
   static class BunchOfCollections {
-    public List<String> lofs = new ArrayList<String>();
-    public Set<Integer> sois = new HashSet<Integer>();
-    public Iterable<Company> ioc = new ArrayList<Company>();
+    public final List<String> lofs = new ArrayList<>();
+    public final Set<Integer> sois = new HashSet<>();
+    public final Iterable<Company> ioc = new ArrayList<>();
   }
 
   @Test
@@ -186,7 +174,7 @@ class ObjectUtilsTest extends AbstractBaseDocumentTest {
     assertThat(maybeDocId).isPresent();
     assertThat(maybeDocId.get()).hasToString(actualDocId);
 
-    Optional<?> noEntityId = ObjectUtils.getIdFieldForEntity(new String());
+    Optional<?> noEntityId = ObjectUtils.getIdFieldForEntity("");
     assertThat(noEntityId).isEmpty();
   }
 

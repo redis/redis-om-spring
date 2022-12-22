@@ -36,29 +36,19 @@ public interface Nonuple<E1, E2, E3, E4, E5, E6, E7, E8, E9> extends Tuple {
   }
 
   default Object get(int index) {
-    switch (index) {
-      case 0:
-        return getFirst();
-      case 1:
-        return getSecond();
-      case 2:
-        return getThird();
-      case 3:
-        return getFourth();
-      case 4:
-        return getFifth();
-      case 5:
-        return getSixth();
-      case 6:
-        return getSeventh();
-      case 7:
-        return getEighth();
-      case 8:
-        return getNinth();
-      default:
-        throw new IndexOutOfBoundsException(
-            String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
-    }
+    return switch (index) {
+      case 0 -> getFirst();
+      case 1 -> getSecond();
+      case 2 -> getThird();
+      case 3 -> getFourth();
+      case 4 -> getFifth();
+      case 5 -> getSixth();
+      case 6 -> getSeventh();
+      case 7 -> getEighth();
+      case 8 -> getNinth();
+      default -> throw new IndexOutOfBoundsException(
+          String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
+    };
   }
 
   static <E1, E2, E3, E4, E5, E6, E7, E8, E9> FirstAccessor<Nonuple<E1, E2, E3, E4, E5, E6, E7, E8, E9>, E1> getFirstGetter() {

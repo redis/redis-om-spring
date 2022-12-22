@@ -1,12 +1,11 @@
 package com.redis.om.spring;
 
+import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.annotation.DirtiesContext;
 import org.testcontainers.junit.jupiter.Testcontainers;
-
-import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
 
 @Testcontainers
 @DirtiesContext

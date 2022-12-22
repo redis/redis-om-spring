@@ -1,34 +1,27 @@
 package com.redis.om.spring.annotations.document;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
+import com.google.common.collect.Sets;
+import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
-
-import com.google.common.collect.Sets;
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redislabs.modules.rejson.Path;
 import org.springframework.data.redis.connection.RedisGeoCommands;
+import redis.clients.jedis.json.Path;
 
-class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.IntStream;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+
+@SuppressWarnings("SpellCheckingInspection") class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   @Autowired
   CompanyRepository repository;
 
@@ -40,9 +33,8 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
 
   @BeforeEach
   void cleanUp() {
-    repository.deleteAll();
-    docWithSetsRepository.deleteAll();
     flushSearchIndexFor(Company.class);
+    flushSearchIndexFor(DocWithSets.class);
   }
 
   @Test
@@ -113,9 +105,7 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
 
     Optional<Company> maybeRedis = repository.findById(redisInc.getId());
 
-    assertAll( //
-        () -> assertTrue(maybeRedis.isPresent()), () -> assertEquals("Redis", maybeRedis.get().getName()) //
-    );
+    assertThat(maybeRedis).isPresent().map(Company::getName).contains("Redis");
   }
 
   @Test
@@ -188,7 +178,7 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
 
   @Test
   void testFindByMany() {
-    /**
+    /*
      * A 100 B 200 C 300
      */
     Metadata md1 = new Metadata();
@@ -268,6 +258,7 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
 
     List<Company> publiclyListed = repository.findByPubliclyListed(true);
 
+    //noinspection ResultOfMethodCallIgnored
     assertAll( //
         () -> assertThat(publiclyListed).hasSize(10), //
         () -> assertThat(publiclyListed).allSatisfy(Company::isPubliclyListed) //
@@ -295,7 +286,7 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
     repository.saveAll(List.of(redis, microsoft, tesla));
 
     List<Company> companies = repository.findByTags(Set.of("reliable"));
-    List<String> names = companies.stream().map(Company::getName).collect(Collectors.toList());
+    List<String> names = companies.stream().map(Company::getName).toList();
 
     assertEquals(2, names.size());
 
@@ -305,8 +296,10 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
 
   @Test
   void testAuditAnnotationsOnSaveAll() {
-    Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com");
-    Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160), "research@microsoft.com");
+    Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "stack@redis.com");
+    Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
+        "research@microsoft.com");
 
     repository.saveAll(List.of(redis, microsoft));
 
@@ -319,13 +312,12 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
     Iterable<Company> companies = repository.findAllById(List.of(redis.getId(), microsoft.getId()));
 
     assertAll( //
-            () -> assertThat(companies).hasSize(2), //
-            () -> assertThat(companies).containsExactly(redis, microsoft), //
-            () -> assertThat(redis.getCreatedDate()).isNotNull(), //
-            () -> assertThat(redis.getLastModifiedDate()).isNull(), //
-            () -> assertThat(microsoft.getCreatedDate()).isNotNull(), //
-            () -> assertThat(microsoft.getLastModifiedDate()).isNotNull()
-    );
+        () -> assertThat(companies).hasSize(2), //
+        () -> assertThat(companies).containsExactly(redis, microsoft), //
+        () -> assertThat(redis.getCreatedDate()).isNotNull(), //
+        () -> assertThat(redis.getLastModifiedDate()).isNull(), //
+        () -> assertThat(microsoft.getCreatedDate()).isNotNull(), //
+        () -> assertThat(microsoft.getLastModifiedDate()).isNotNull());
   }
 
   @Test
@@ -389,13 +381,13 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   @Test
   void testSearchByLocationsNearAgainstLocationsArray() {
     Point point1 = new Point(31.785, 35.213);
-    Point point2 = new Point(31.768,35.178);
-    Point point3 = new Point(31.984,35.827);
-    Point point4 = new Point(31.79,34.638);
-    Point point5 = new Point(31.793,34.639);
-    Point point6 = new Point(31.817,34.648);
-    Point point7 = new Point(31.806,34.638);
-    Point point8 = new Point(31.785,34.65);
+    Point point2 = new Point(31.768, 35.178);
+    Point point3 = new Point(31.984, 35.827);
+    Point point4 = new Point(31.79, 34.638);
+    Point point5 = new Point(31.793, 34.639);
+    Point point6 = new Point(31.817, 34.648);
+    Point point7 = new Point(31.806, 34.638);
+    Point point8 = new Point(31.785, 34.65);
 
     DocWithSets doc1 = DocWithSets.of(Set.of(), Set.of(point1, point2, point3));
     DocWithSets doc2 = DocWithSets.of(Set.of(), Set.of(point4, point5));
@@ -413,13 +405,13 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   @Test
   void testSearchContainingAnyInSetOfLocations() {
     Point point1 = new Point(31.785, 35.213);
-    Point point2 = new Point(31.768,35.178);
-    Point point3 = new Point(31.984,35.827);
-    Point point4 = new Point(31.79,34.638);
-    Point point5 = new Point(31.793,34.639);
-    Point point6 = new Point(31.817,34.648);
-    Point point7 = new Point(31.806,34.638);
-    Point point8 = new Point(31.785,34.65);
+    Point point2 = new Point(31.768, 35.178);
+    Point point3 = new Point(31.984, 35.827);
+    Point point4 = new Point(31.79, 34.638);
+    Point point5 = new Point(31.793, 34.639);
+    Point point6 = new Point(31.817, 34.648);
+    Point point7 = new Point(31.806, 34.638);
+    Point point8 = new Point(31.785, 34.65);
 
     DocWithSets doc1 = DocWithSets.of(Set.of(), Set.of(point1, point2, point3));
     DocWithSets doc2 = DocWithSets.of(Set.of(), Set.of(point4, point5));
@@ -434,13 +426,13 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   @Test
   void testSearchContainingAllInSetOfLocations() {
     Point point1 = new Point(-122.064, 37.384);
-    Point point2 = new Point(38.7635877,-9.2018309);
-    Point point3 = new Point(31.984,35.827);
-    Point point4 = new Point(31.79,34.638);
-    Point point5 = new Point(31.793,34.639);
-    Point point6 = new Point(31.817,34.648);
-    Point point7 = new Point(31.806,34.638);
-    Point point8 = new Point(31.785,34.65);
+    Point point2 = new Point(38.7635877, -9.2018309);
+    Point point3 = new Point(31.984, 35.827);
+    Point point4 = new Point(31.79, 34.638);
+    Point point5 = new Point(31.793, 34.639);
+    Point point6 = new Point(31.817, 34.648);
+    Point point7 = new Point(31.806, 34.638);
+    Point point8 = new Point(31.785, 34.65);
 
     DocWithSets doc1 = DocWithSets.of(Set.of(), Set.of(point1, point2, point3));
     DocWithSets doc2 = DocWithSets.of(Set.of(), Set.of(point1, point2, point4));
@@ -452,4 +444,5 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
     var docs = docWithSetsRepository.findByTheLocationsContainingAll(Set.of(point1, point2));
     assertThat(docs).containsOnly(doc1, doc2);
   }
+
 }

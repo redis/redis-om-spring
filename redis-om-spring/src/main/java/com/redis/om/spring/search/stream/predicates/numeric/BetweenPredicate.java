@@ -1,6 +1,5 @@
 package com.redis.om.spring.search.stream.predicates.numeric;
 
-import java.lang.reflect.Field;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -8,14 +7,14 @@ import java.time.ZoneId;
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 
-import io.redisearch.querybuilder.Node;
-import io.redisearch.querybuilder.QueryBuilder;
-import io.redisearch.querybuilder.Values;
+import redis.clients.jedis.search.querybuilder.Node;
+import redis.clients.jedis.search.querybuilder.QueryBuilders;
+import redis.clients.jedis.search.querybuilder.Values;
 
 public class BetweenPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
-  private T min;
-  private T max;
+  private final T min;
+  private final T max;
 
   public BetweenPredicate(SearchFieldAccessor field, T min, T max) {
     super(field);
@@ -39,16 +38,16 @@ public class BetweenPredicate<E, T> extends BaseAbstractPredicate<E, T> {
       LocalDate maxLocalDate = (LocalDate) max;
       Instant minInstant = minLocalDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
       Instant maxInstant = maxLocalDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
-      Long minUnixTime = minInstant.getEpochSecond();
-      Long maxUnixTime = maxInstant.getEpochSecond();
-      return QueryBuilder.intersect(root).add(getSearchAlias(),
-          Values.between(Double.valueOf(minUnixTime.toString()), Double.valueOf(maxUnixTime.toString())));
+      long minUnixTime = minInstant.getEpochSecond();
+      long maxUnixTime = maxInstant.getEpochSecond();
+      return QueryBuilders.intersect(root).add(getSearchAlias(),
+          Values.between(Double.parseDouble(Long.toString(minUnixTime)), Double.parseDouble(Long.toString(maxUnixTime))));
     } else if (cls == Integer.class) {
-      return QueryBuilder.intersect(root).add(getSearchAlias(),
-          Values.between(Integer.valueOf(getMin().toString()), Integer.valueOf(getMax().toString())));
+      return QueryBuilders.intersect(root).add(getSearchAlias(),
+          Values.between(Integer.parseInt(getMin().toString()), Integer.parseInt(getMax().toString())));
     } else if (cls == Double.class) {
-      return QueryBuilder.intersect(root).add(getSearchAlias(),
-          Values.between(Double.valueOf(getMin().toString()), Double.valueOf(getMax().toString())));
+      return QueryBuilders.intersect(root).add(getSearchAlias(),
+          Values.between(Double.parseDouble(getMin().toString()), Double.parseDouble(getMax().toString())));
     } else {
       return root;
     }

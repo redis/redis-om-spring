@@ -1,24 +1,18 @@
 package com.redis.om.spring.annotations.document;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.annotations.document.fixtures.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.ExpiringPerson;
-import com.redis.om.spring.annotations.document.fixtures.ExpiringPersonDifferentTimeUnit;
-import com.redis.om.spring.annotations.document.fixtures.ExpiringPersonDifferentTimeUnitRepository;
-import com.redis.om.spring.annotations.document.fixtures.ExpiringPersonRepository;
-import com.redis.om.spring.annotations.document.fixtures.ExpiringPersonWithDefault;
-import com.redis.om.spring.annotations.document.fixtures.ExpiringPersonWithDefaultRepository;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-class DocumentTTLTests extends AbstractBaseDocumentTest {
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SuppressWarnings("SpellCheckingInspection") class DocumentTTLTests extends AbstractBaseDocumentTest {
   @Autowired
   ExpiringPersonWithDefaultRepository withDefaultrepository;
   
@@ -118,6 +112,7 @@ class DocumentTTLTests extends AbstractBaseDocumentTest {
     ExpiringPerson kZuse = ExpiringPerson.of("Konrad Zuse", 1L);
     ExpiringPerson woz = ExpiringPerson.of("Steve Wozniak", 1L);
     withTTLAnnotationRepository.saveAll(List.of(kZuse, woz));
+    //noinspection ResultOfMethodCallIgnored
     waiter.await(3, TimeUnit.SECONDS);
     assertThat(withTTLAnnotationRepository.count()).isZero();
     assertThat(withTTLAnnotationRepository.findAll()).isEmpty();
