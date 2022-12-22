@@ -31,12 +31,12 @@ import org.springframework.data.redis.core.RedisTemplate;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.MyDoc;
 import com.redis.om.spring.annotations.document.fixtures.MyDocRepository;
-import com.redislabs.modules.rejson.Path;
 
-import io.redisearch.AggregationResult;
-import io.redisearch.Document;
-import io.redisearch.SearchResult;
-import io.redisearch.aggregation.Row;
+import redis.clients.jedis.search.aggr.AggregationResult;
+import redis.clients.jedis.json.Path;
+import redis.clients.jedis.search.Document;
+import redis.clients.jedis.search.SearchResult;
+import redis.clients.jedis.search.aggr.Row;
 
 class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   @Autowired
@@ -98,21 +98,21 @@ class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
 
   /**
    * <pre>
-   * > FT.SEARCH idx * RETURN 3 $.tag[0] AS first_tag 
-   * 1) (integer) 1 
-   * 2) "doc1" 
-   * 3) 1) "first_tag" 
+   * > FT.SEARCH idx * RETURN 3 $.tag[0] AS first_tag
+   * 1) (integer) 1
+   * 2) "doc1"
+   * 3) 1) "first_tag"
    *    2) "news"
    *
-   * @Query(returnFields = {"$.tag[0]", "AS", "first_tag"}) 
+   * @Query(returnFields = {"$.tag[0]", "AS", "first_tag"})
    * SearchResult getFirstTag();
    * </pre>
    */
   @Test
   void testQueryAnnotation01() {
     SearchResult result = repository.getFirstTag();
-    assertEquals(2, result.totalResults);
-    Document doc = result.docs.get(0);
+    assertEquals(2, result.getTotalResults());
+    Document doc = result.getDocuments().get(0);
     assertEquals(1.0, doc.getScore(), 0);
     assertNull(doc.getPayload());
     assertTrue(StreamSupport //
@@ -124,8 +124,8 @@ class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
    * <pre>
    * &#64;Query("@title:$title @tag:{$tags}")
    *
-   * > FT.SEARCH idx '@title:hello @tag:{news}' 
-   * 1) (integer) 1 2) "doc1" 
+   * > FT.SEARCH idx '@title:hello @tag:{news}'
+   * 1) (integer) 1 2) "doc1"
    * 3) 1) "$"
    *    2) "{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}"
    * </pre>
@@ -144,14 +144,14 @@ class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
    * @Aggregation(load = {"$.tag[1]", "AS", "tag2"})
    *
    * > FT.AGGREGATE idx * LOAD 3 $.tag[1] AS tag2 1) (integer) 1
-   * 2) 1) "tag2" 
+   * 2) 1) "tag2"
    *    2) "article"
    * </pre>
    */
   @Test
   void testAggregationAnnotation01() {
     AggregationResult result = repository.getSecondTagWithAggregation();
-    assertEquals(1, result.totalResults);
+    assertEquals(1, result.getTotalResults());
     Row row = result.getRow(0);
     assertNotNull(row);
     assertTrue(row.containsKey("tag2"));

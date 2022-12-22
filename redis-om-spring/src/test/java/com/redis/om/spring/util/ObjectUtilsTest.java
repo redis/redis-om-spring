@@ -32,13 +32,12 @@ import com.redis.om.spring.annotations.document.fixtures.CompanyRepository;
 import com.redis.om.spring.annotations.document.fixtures.DocWithCustomNameId;
 import com.redis.om.spring.annotations.document.fixtures.DocWithCustomNameIdRepository;
 
-import io.redisearch.querybuilder.GeoValue;
-import io.redisearch.querybuilder.GeoValue.Unit;
+import redis.clients.jedis.args.GeoUnit;
 
 class ObjectUtilsTest extends AbstractBaseDocumentTest {
 
   @Autowired
-  CompanyRepository companyRepository;
+  CompanyRepository companyRepository; 
 
   @Autowired
   DocWithCustomNameIdRepository docWithCustomNameIdRepository;
@@ -87,20 +86,20 @@ class ObjectUtilsTest extends AbstractBaseDocumentTest {
   @Test
   void testGetDistanceUnit() {
     Distance d30Miles = new Distance(30, DistanceUnit.MILES);
-    Unit unitFor30Miles = ObjectUtils.getDistanceUnit(d30Miles);
-    assertThat(unitFor30Miles).isEqualTo(GeoValue.Unit.MILES);
+    GeoUnit unitFor30Miles = ObjectUtils.getDistanceUnit(d30Miles);
+    assertThat(unitFor30Miles).isEqualTo(GeoUnit.M);
 
     Distance d25Kilometers = new Distance(25, DistanceUnit.KILOMETERS);
-    Unit unitFor25Kilometers = ObjectUtils.getDistanceUnit(d25Kilometers);
-    assertThat(unitFor25Kilometers).isEqualTo(GeoValue.Unit.KILOMETERS);
+    GeoUnit unitFor25Kilometers = ObjectUtils.getDistanceUnit(d25Kilometers);
+    assertThat(unitFor25Kilometers).isEqualTo(GeoUnit.KM);
 
     Distance d20Meters = new Distance(25, DistanceUnit.METERS);
-    Unit unitFor20Meters = ObjectUtils.getDistanceUnit(d20Meters);
-    assertThat(unitFor20Meters).isEqualTo(GeoValue.Unit.METERS);
+    GeoUnit unitFor20Meters = ObjectUtils.getDistanceUnit(d20Meters);
+    assertThat(unitFor20Meters).isEqualTo(GeoUnit.M);
 
     Distance d6Feet = new Distance(6, DistanceUnit.FEET);
-    Unit unitFor6Feet = ObjectUtils.getDistanceUnit(d6Feet);
-    assertThat(unitFor6Feet).isEqualTo(GeoValue.Unit.FEET);
+    GeoUnit unitFor6Feet = ObjectUtils.getDistanceUnit(d6Feet);
+    assertThat(unitFor6Feet).isEqualTo(GeoUnit.FT);
   }
 
   @Test

@@ -78,10 +78,10 @@ class OpsForCountMinSketchTest extends AbstractBaseDocumentTest {
   @Test
   void testInitByProb() {
     cms.cmsInitByProb("cms2", 0.01, 0.01);
-    Map<String, Long> info = cms.cmsInfo("cms2");
-    assertEquals(200L, info.get("width").longValue());
-    assertEquals(7L, info.get("depth").longValue());
-    assertEquals(0L, info.get("count").longValue());
+    Map<String, Object> info = cms.cmsInfo("cms2");
+    assertEquals(200L, info.get("width"));
+    assertEquals(7L, info.get("depth"));
+    assertEquals(0L, info.get("count"));
   }
   
   @Test
@@ -90,10 +90,10 @@ class OpsForCountMinSketchTest extends AbstractBaseDocumentTest {
     long resp = cms.cmsIncrBy("cms3", "foo", 5L);
     assertEquals(5L, resp);
 
-    Map<String, Long> info = cms.cmsInfo("cms3");
-    assertEquals(1000L, info.get("width").longValue());
-    assertEquals(5L, info.get("depth").longValue());
-    assertEquals(5L, info.get("count").longValue());
+    Map<String, Object> info = cms.cmsInfo("cms3");
+    assertEquals(1000L, info.get("width"));
+    assertEquals(5L, info.get("depth"));
+    assertEquals(5L, info.get("count"));
   }
 
 }

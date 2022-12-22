@@ -22,7 +22,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.autoconfigure.gson.GsonBuilderCustomizer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cache.annotation.CachingConfigurerSupport;
+import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -75,15 +75,15 @@ import com.redis.om.spring.serialization.gson.LocalDateTypeAdapter;
 import com.redis.om.spring.serialization.gson.PointTypeAdapter;
 import com.redis.om.spring.serialization.gson.UlidTypeAdapter;
 
-import io.redisearch.FieldName;
-import io.redisearch.Schema;
-import io.redisearch.Schema.Field;
-import io.redisearch.Schema.FieldType;
-import io.redisearch.Schema.TagField;
-import io.redisearch.Schema.TextField;
-import io.redisearch.client.Client;
-import io.redisearch.client.Client.IndexOptions;
-import io.redisearch.client.IndexDefinition;
+import redis.clients.jedis.search.FieldName;
+import redis.clients.jedis.search.Schema;
+import redis.clients.jedis.search.Schema.Field;
+import redis.clients.jedis.search.Schema.FieldType;
+import redis.clients.jedis.search.Schema.TagField;
+import redis.clients.jedis.search.Schema.TextField;
+//import redis.clients.jedis.search.client.Client;
+import redis.clients.jedis.search.IndexOptions;
+import redis.clients.jedis.search.IndexDefinition;
 
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(RedisProperties.class)
@@ -91,13 +91,13 @@ import io.redisearch.client.IndexDefinition;
 @ComponentScan("com.redis.om.spring.bloom")
 @ComponentScan("com.redis.om.spring.autocomplete")
 @ComponentScan("com.redis.om.spring.metamodel")
-public class RedisModulesConfiguration extends CachingConfigurerSupport {
+public class RedisModulesConfiguration implements CachingConfigurer {
 
   private static final Log logger = LogFactory.getLog(RedisModulesConfiguration.class);
 
   @Bean
   public GsonBuilder gsonBuilder(List<GsonBuilderCustomizer> customizers) {
-
+    logger.info(">>>> IN gsonBuilder...");
     GsonBuilder builder = new GsonBuilder();
     // Enable the spring.gson.* configuration in the configuration file
     customizers.forEach((c) -> c.customize(builder));
@@ -126,6 +126,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
   @Bean(name = "redisJSONOperations")
   JSONOperations<?> redisJSONOperations(RedisModulesOperations<?> redisModulesOperations) {
+    logger.info(">>>> In redisJSONOperations...");
     return redisModulesOperations.opsForJSON();
   }
 
@@ -137,6 +138,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   @Bean(name = "redisTemplate")
   @Primary
   public RedisTemplate<?, ?> redisTemplate(JedisConnectionFactory connectionFactory) {
+    logger.info(">>>> In redisTemplate...");
     RedisTemplate<?, ?> template = new RedisTemplate<>();
     template.setKeySerializer(new StringRedisSerializer());
     template.setDefaultSerializer(new StringRedisSerializer());
@@ -147,18 +149,21 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
   @Bean(name = "keyspaceToIndexMap")
   public KeyspaceToIndexMap keyspaceToIndexMap() {
+    logger.info(">>>> In keyspaceToIndexMap...");
     return new KeyspaceToIndexMap();
   }
 
   @Bean(name = "redisJSONKeyValueAdapter")
   RedisJSONKeyValueAdapter getRedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps,
       JSONOperations<?> redisJSONOperations, RedisMappingContext mappingContext) {
+    logger.info(">>>> In redisJSONKeyValueAdapter...");
     return new RedisJSONKeyValueAdapter(redisOps, redisJSONOperations, mappingContext);
   }
 
   @Bean(name = "redisJSONKeyValueTemplate")
   public CustomRedisKeyValueTemplate getRedisJSONKeyValueTemplate(RedisOperations<?, ?> redisOps,
       JSONOperations<?> redisJSONOperations, RedisMappingContext mappingContext) {
+    logger.info(">>>> IN getRedisJSONKeyValueTemplate...");
     return new CustomRedisKeyValueTemplate(getRedisJSONKeyValueAdapter(redisOps, redisJSONOperations, mappingContext),
         mappingContext);
   }
@@ -167,6 +172,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
   public CustomRedisKeyValueTemplate getKeyValueTemplate(RedisOperations<?, ?> redisOps,
       RedisModulesOperations<?> redisModulesOperations, RedisMappingContext mappingContext,
       KeyspaceToIndexMap keyspaceToIndexMap) {
+    logger.info(">>>> IN redisCustomKeyValueTemplate...");
     return new CustomRedisKeyValueTemplate(
         new RedisEnhancedKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap),
         mappingContext);
@@ -174,6 +180,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
   @Bean(name = "streamingQueryBuilder")
   EntityStream streamingQueryBuilder(RedisModulesOperations<?> redisModulesOperations, Gson gson) {
+    logger.info(">>>> IN streamingQueryBuilder...");
     return new EntityStreamImpl(redisModulesOperations, gson);
   }
 
@@ -284,7 +291,8 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
           }
 
           index.setPrefixes(entityPrefix);
-          IndexOptions ops = Client.IndexOptions.defaultOptions().setDefinition(index);
+          // TODO: do this!
+          IndexOptions ops = IndexOptions.defaultOptions().setDefinition(index);
           opsForSearch.createIndex(schema, ops);
           keyspaceToIndexMap.addKeySpaceMapping(entityPrefix, cl, true);
         } else {
@@ -534,7 +542,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
       fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
     }
 
-    return new Field(fieldName, FieldType.Geo);
+    return new Field(fieldName, FieldType.GEO);
   }
 
   private Field indexAsNumericFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix,
@@ -549,7 +557,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
       fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
     }
 
-    return new Field(fieldName, FieldType.Numeric);
+    return new Field(fieldName, FieldType.NUMERIC);
   }
 
   private Field indexAsNumericFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix,
@@ -560,7 +568,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
     fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
 
-    return new Field(fieldName, FieldType.Numeric, sortable, noIndex);
+    return new Field(fieldName, FieldType.NUMERIC, sortable, noIndex);
   }
 
   private Field indexAsGeoFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, boolean sortable,
@@ -571,7 +579,7 @@ public class RedisModulesConfiguration extends CachingConfigurerSupport {
 
     fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
 
-    return new Field(fieldName, FieldType.Geo);
+    return new Field(fieldName, FieldType.GEO);
   }
 
   private List<Field> indexAsNestedFieldFor(java.lang.reflect.Field field, String prefix) {

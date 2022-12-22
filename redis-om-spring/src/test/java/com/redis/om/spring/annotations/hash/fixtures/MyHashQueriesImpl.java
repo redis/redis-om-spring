@@ -9,9 +9,9 @@ import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.util.ObjectUtils;
 
-import io.redisearch.Document;
-import io.redisearch.Query;
-import io.redisearch.SearchResult;
+import redis.clients.jedis.search.Document;
+import redis.clients.jedis.search.Query;
+import redis.clients.jedis.search.SearchResult;
 
 public class MyHashQueriesImpl implements MyHashQueries {
 
@@ -24,8 +24,8 @@ public class MyHashQueriesImpl implements MyHashQueries {
   public Optional<MyHash> findByTitle(String title) {
     SearchOperations<String> ops = modulesOperations.opsForSearch(MyHash.class.getName() + "Idx");
     SearchResult result = ops.search(new Query("@title:'" + title + "'"));
-    if (result.totalResults > 0) {
-      Document doc = result.docs.get(0);
+    if (result.getTotalResults() > 0) {
+      Document doc = result.getDocuments().get(0);
       return Optional.of(ObjectUtils.documentToEntity(doc, MyHash.class, converter));
     } else {
       return Optional.empty();

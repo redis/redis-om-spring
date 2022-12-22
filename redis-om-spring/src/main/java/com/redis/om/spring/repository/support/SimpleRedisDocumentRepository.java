@@ -44,11 +44,12 @@ import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.RedisDocumentRepository;
 import com.redis.om.spring.util.ObjectUtils;
-import com.redislabs.modules.rejson.Path;
+//import com.redislabs.modules.rejson.Path;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.commands.ProtocolCommand;
+import redis.clients.jedis.json.Path;
 import redis.clients.jedis.util.SafeEncoder;
 
 public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueRepository<T, ID> implements RedisDocumentRepository<T, ID> {
@@ -135,11 +136,11 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   }
 
   @Override
-  public <S extends T> Iterable<S> saveAll(Iterable<S> entities) {
+  public <S extends T> List<S> saveAll(Iterable<S> entities) {
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
     List<S> saved = new ArrayList<>();
 
-    try (Jedis jedis = modulesOperations.getClient().getJedis()) {
+    try (Jedis jedis = modulesOperations.getClient().getJedis().get()) {
       Pipeline pipeline = jedis.pipelined();
 
       for (S entity : entities) {

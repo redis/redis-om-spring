@@ -7,9 +7,9 @@ import java.time.ZoneId;
 
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 
-import io.redisearch.querybuilder.Node;
-import io.redisearch.querybuilder.QueryBuilder;
-import io.redisearch.querybuilder.Values;
+import redis.clients.jedis.search.querybuilder.Node;
+import redis.clients.jedis.search.querybuilder.QueryBuilders;
+import redis.clients.jedis.search.querybuilder.Values;
 
 public class GreaterThanPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   private T value;
@@ -30,11 +30,11 @@ public class GreaterThanPredicate<E, T> extends BaseAbstractPredicate<E, T> {
       LocalDate localDate = (LocalDate) getValue();
       Instant instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
       Long unixTime = instant.getEpochSecond();
-      return QueryBuilder.intersect(root).add(getField().getName(), Values.gt(unixTime));
+      return QueryBuilders.intersect(root).add(getField().getName(), Values.gt(unixTime));
     } else if (cls == Integer.class) {
-      return QueryBuilder.intersect(root).add(getField().getName(), Values.gt(Integer.valueOf(getValue().toString())));
+      return QueryBuilders.intersect(root).add(getField().getName(), Values.gt(Integer.valueOf(getValue().toString())));
     } else if (cls == Double.class) {
-      return QueryBuilder.intersect(root).add(getField().getName(), Values.gt(Double.valueOf(getValue().toString())));
+      return QueryBuilders.intersect(root).add(getField().getName(), Values.gt(Double.valueOf(getValue().toString())));
     } else {
       return root;
     }

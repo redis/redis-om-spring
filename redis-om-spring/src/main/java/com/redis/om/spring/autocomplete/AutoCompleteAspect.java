@@ -31,14 +31,14 @@ import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 // import com.redis.om.spring.serialization.gson.GsonBuidlerFactory;
 
-import io.redisearch.Suggestion;
+//import redis.clients.jedis.search.Suggestion;
 
 @Aspect
 @Component
 public class AutoCompleteAspect implements Ordered {
   @Autowired
   private Gson gson;
-  
+
   private RedisModulesOperations<String> rmo;
 
   public AutoCompleteAspect(RedisModulesOperations<String> rmo) {
@@ -124,7 +124,7 @@ public class AutoCompleteAspect implements Ordered {
             PropertyDescriptor pd = new PropertyDescriptor(field.getName(), entity.getClass());
             SearchOperations<String> ops = rmo.opsForSearch(key);
 
-            ops.deleteSuggestion(pd.getReadMethod().invoke(entity).toString());
+            ops.deleteSuggestion(key, pd.getReadMethod().invoke(entity).toString());
           } catch (IllegalArgumentException | IntrospectionException | IllegalAccessException
               | InvocationTargetException e) {
             e.printStackTrace();
@@ -175,7 +175,8 @@ public class AutoCompleteAspect implements Ordered {
   private void processSuggestionsForEntity(Object entity) {
     for (Field field : entity.getClass().getDeclaredFields()) {
       if (field.isAnnotationPresent(AutoComplete.class)) {
-        Suggestion.Builder builder = Suggestion.builder();
+        // Suggestion.Builder builder = Suggestion.builder();
+        String suggestion = "";
         Map<String, Object> payload = null;
 
         AutoComplete suggestable = field.getAnnotation(AutoComplete.class);
@@ -184,7 +185,7 @@ public class AutoCompleteAspect implements Ordered {
         SearchOperations<String> ops = rmo.opsForSearch(key);
         try {
           PropertyDescriptor pd = new PropertyDescriptor(field.getName(), entity.getClass());
-          builder.str(pd.getReadMethod().invoke(entity).toString());
+          suggestion = pd.getReadMethod().invoke(entity).toString();
         } catch (IllegalArgumentException | IntrospectionException | IllegalAccessException
             | InvocationTargetException e) {
           e.printStackTrace();
@@ -211,10 +212,11 @@ public class AutoCompleteAspect implements Ordered {
           }
         }
         if (payload != null && !payload.isEmpty()) {
-          builder.payload(gson.toJson(payload));
+          // builder.payload(gson.toJson(payload));
         }
 
-        ops.addSuggestion(builder.build(), false);
+        // ops.addSuggestion(builder.build(), false);
+        ops.addSuggestion(key, suggestion);
       }
     }
   }
@@ -229,7 +231,7 @@ public class AutoCompleteAspect implements Ordered {
           PropertyDescriptor pd = new PropertyDescriptor(field.getName(), entity.getClass());
           SearchOperations<String> ops = rmo.opsForSearch(key);
 
-          ops.deleteSuggestion(pd.getReadMethod().invoke(entity).toString());
+          ops.deleteSuggestion(key, pd.getReadMethod().invoke(entity).toString());
         } catch (IllegalArgumentException | IntrospectionException | IllegalAccessException
             | InvocationTargetException e) {
           e.printStackTrace();

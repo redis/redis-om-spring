@@ -47,7 +47,7 @@ public abstract class AbstractBaseOMTest {
   protected void flushSearchIndexFor(Class<?> entityClass) {
     SearchOperations<String> searchOps = modulesOperations.opsForSearch(entityClass.getName() + "Idx");
     Set<String> docKeys = template.keys(String.format("%s:*", entityClass.getName()));
-    searchOps.deleteDocuments(false, docKeys.toArray(String[]::new));
+    //searchOps.deleteDocuments(false, docKeys.toArray(String[]::new));
   }
 
 }

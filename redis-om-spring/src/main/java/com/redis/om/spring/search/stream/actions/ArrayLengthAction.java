@@ -3,7 +3,7 @@ package com.redis.om.spring.search.stream.actions;
 import java.lang.reflect.Field;
 import java.util.function.ToLongFunction;
 
-import com.redislabs.modules.rejson.Path;
+import redis.clients.jedis.json.Path;
 
 public class ArrayLengthAction<E> extends BaseAbstractAction implements ToLongFunction<E> {
 

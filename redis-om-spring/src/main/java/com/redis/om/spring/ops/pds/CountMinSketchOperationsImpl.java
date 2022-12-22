@@ -16,40 +16,40 @@ public class CountMinSketchOperationsImpl<K> implements CountMinSketchOperations
 
   @Override
   public void cmsInitByDim(K key, long width, long depth) {
-    client.clientForBloom().cmsInitByDim(key.toString(), width, depth);
+    client.clientForCMS().cmsInitByDim(key.toString(), width, depth);
   }
 
   @Override
   public void cmsInitByProb(K key, double error, double probability) {
-    client.clientForBloom().cmsInitByProb(key.toString(), error, probability);
+    client.clientForCMS().cmsInitByProb(key.toString(), error, probability);
   }
 
   @Override
   public long cmsIncrBy(K key, String item, long increment) {
-    return client.clientForBloom().cmsIncrBy(key.toString(), item, increment);
+    return client.clientForCMS().cmsIncrBy(key.toString(), item, increment);
   }
 
   @Override
   public List<Long> cmsIncrBy(K key, Map<String, Long> itemIncrements) {
-    return client.clientForBloom().cmsIncrBy(key.toString(), itemIncrements);
+    return client.clientForCMS().cmsIncrBy(key.toString(), itemIncrements);
   }
 
   @Override
   public List<Long> cmsQuery(K key, String... items) {
-    return client.clientForBloom().cmsQuery(key.toString(), items);
+    return client.clientForCMS().cmsQuery(key.toString(), items);
   }
 
   @SuppressWarnings("unchecked")
   @Override
   public void cmsMerge(K destKey, K... keys) {
-    client.clientForBloom().cmsMerge( //
+    client.clientForCMS().cmsMerge( //
         destKey.toString(), //
         Arrays.asList(keys).stream().map(Object::toString).toArray(String[]::new));
   }
 
   @Override
   public void cmsMerge(K destKey, Map<K, Long> keysAndWeights) {
-    client.clientForBloom().cmsMerge( //
+    client.clientForCMS().cmsMerge( //
         destKey.toString(), //
         keysAndWeights //
             .entrySet() //
@@ -58,8 +58,8 @@ public class CountMinSketchOperationsImpl<K> implements CountMinSketchOperations
   }
 
   @Override
-  public Map<String, Long> cmsInfo(K key) {
-    return client.clientForBloom().cmsInfo(key.toString());
+  public Map<String, Object> cmsInfo(K key) {
+    return client.clientForCMS().cmsInfo(key.toString());
   }
 }
 

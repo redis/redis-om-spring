@@ -14,9 +14,6 @@ import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.util.ObjectUtils;
 
-import io.redisearch.Suggestion;
-import io.redisearch.client.SuggestionOptions;
-
 public class AutoCompleteQueryExecutor {
 
   private static final Log logger = LogFactory.getLog(AutoCompleteQueryExecutor.class);
@@ -53,15 +50,15 @@ public class AutoCompleteQueryExecutor {
     return Optional.empty();
   }
 
-  public List<Suggestion> executeAutoCompleteQuery(Object[] parameters, String autoCompleteKey) {
+  public List<String> executeAutoCompleteQuery(Object[] parameters, String autoCompleteKey) {
     logger.debug(String.format("Autocomplete Query: key:%s, params:%s", autoCompleteKey, Arrays.toString(parameters)));
     SearchOperations<String> ops = modulesOperations.opsForSearch(autoCompleteKey);
     
-    SuggestionOptions options = SuggestionOptions.builder().build();
+    //SuggestionOptions options = SuggestionOptions.builder().build();
     if ((parameters.length > 1) && (parameters[1].getClass() == AutoCompleteOptions.class)) {
-      options = ((AutoCompleteOptions)parameters[1]).toSuggestionOptions();
+      //options = ((AutoCompleteOptions)parameters[1]).toSuggestionOptions();
     }
 
-    return ops.getSuggestion(parameters[0].toString(), options);
+    return ops.getSuggestion(autoCompleteKey, parameters[0].toString()/*, options*/);
   }
 }

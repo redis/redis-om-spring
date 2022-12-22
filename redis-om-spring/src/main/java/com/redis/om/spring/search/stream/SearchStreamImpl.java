@@ -42,12 +42,12 @@ import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.TupleMapper;
 import com.redis.om.spring.util.ObjectUtils;
 
-import io.redisearch.Query;
-import io.redisearch.SearchResult;
-import io.redisearch.aggregation.SortedField;
-import io.redisearch.aggregation.SortedField.SortOrder;
-import io.redisearch.querybuilder.Node;
-import io.redisearch.querybuilder.QueryBuilder;
+import redis.clients.jedis.search.Query;
+import redis.clients.jedis.search.SearchResult;
+import redis.clients.jedis.search.aggr.SortedField;
+import redis.clients.jedis.search.aggr.SortedField.SortOrder;
+import redis.clients.jedis.search.querybuilder.Node;
+import redis.clients.jedis.search.querybuilder.QueryBuilders;
 
 public class SearchStreamImpl<E> implements SearchStream<E> {
 
@@ -62,7 +62,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private JSONOperations<String> json;
   private String searchIndex;
   private Class<E> entityClass;
-  private Node rootNode = QueryBuilder.union();
+  private Node rootNode = QueryBuilders.union();
   private final Gson gson;
   private Optional<Long> limit = Optional.empty();
   private Optional<Long> skip = Optional.empty();
@@ -283,7 +283,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     query.limit(0, 0);
     SearchResult searchResult = search.search(query);
 
-    return searchResult.totalResults;
+    return searchResult.getTotalResults();
   }
 
   @Override
@@ -384,7 +384,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   private List<E> toEntityList(SearchResult searchResult) {
-    return searchResult.docs.stream().map(d -> gson.fromJson(d.get("$").toString(), entityClass))
+    return searchResult.getDocuments().stream().map(d -> gson.fromJson(d.get("$").toString(), entityClass))
         .collect(Collectors.toList());
   }
 
@@ -411,7 +411,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       onlyIds = true;
 
       Method idSetter = ObjectUtils.getSetterForField(entityClass, idField);
-      Stream<E> wrappedIds = (Stream<E>) executeQuery().docs //
+      Stream<E> wrappedIds = (Stream<E>) executeQuery().getDocuments() //
           .stream() //
           .map(d -> {
             try {

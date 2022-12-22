@@ -1,10 +1,11 @@
 package com.redis.om.spring.ops.pds;
 
+import java.util.List;
 import java.util.Map;
 
 import com.redis.om.spring.client.RedisModulesClient;
 
-import io.rebloom.client.InsertOptions;
+import redis.clients.jedis.bloom.BFInsertParams;
 
 public class BloomOperationsImpl<K> implements BloomOperations<K> {
   RedisModulesClient client;
@@ -15,62 +16,37 @@ public class BloomOperationsImpl<K> implements BloomOperations<K> {
 
   @Override
   public void createFilter(K name, long initCapacity, double errorRate) {
-    client.clientForBloom().createFilter(name.toString(), initCapacity, errorRate);
+    client.clientForBloom().bfReserve(name.toString(), errorRate, initCapacity);
   }
 
   @Override
   public boolean add(K name, String value) {
-    return client.clientForBloom().add(name.toString(), value);
+    return client.clientForBloom().bfAdd(name.toString(), value);
   }
 
   @Override
-  public boolean add(K name, byte[] value) {
-    return client.clientForBloom().add(name.toString(), value);
+  public List<Boolean> insert(K name, BFInsertParams options, String... items) {
+    return client.clientForBloom().bfInsert(name.toString(), options, items);
   }
 
   @Override
-  public boolean[] insert(K name, InsertOptions options, String... items) {
-    return client.clientForBloom().insert(name.toString(), options, items);
-  }
-
-  @Override
-  public boolean[] addMulti(K name, byte[]... values) {
-    return client.clientForBloom().addMulti(name.toString(), values);
-  }
-
-  @Override
-  public boolean[] addMulti(K name, String... values) {
-    return client.clientForBloom().addMulti(name.toString(), values);
+  public List<Boolean> addMulti(K name, String... values) {
+    return client.clientForBloom().bfMAdd(name.toString(), values);
   }
 
   @Override
   public boolean exists(K name, String value) {
-    return client.clientForBloom().exists(name.toString(), value);
+    return client.clientForBloom().bfExists(name.toString(), value);
   }
 
   @Override
-  public boolean exists(K name, byte[] value) {
-    return client.clientForBloom().exists(name.toString(), value);
-  }
-
-  @Override
-  public boolean[] existsMulti(K name, byte[]... values) {
-    return client.clientForBloom().existsMulti(name.toString(), values);
-  }
-
-  @Override
-  public boolean[] existsMulti(K name, String... values) {
-    return client.clientForBloom().existsMulti(name.toString(), values);
-  }
-
-  @Override
-  public boolean delete(K name) {
-    return client.clientForBloom().delete(name.toString());
+  public List<Boolean> existsMulti(K name, String... values) {
+    return client.clientForBloom().bfMExists(name.toString(), values);
   }
 
   @Override
   public Map<String, Object> info(K name) {
-    return client.clientForBloom().info(name.toString());
+    return client.clientForBloom().bfInfo(name.toString());
   }
 
 }

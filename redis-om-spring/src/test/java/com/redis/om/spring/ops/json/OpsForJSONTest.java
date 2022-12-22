@@ -16,13 +16,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.google.gson.Gson;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redislabs.modules.rejson.JReJSON.ExistenceModifier;
-import com.redislabs.modules.rejson.Path;
+// import com.redislabs.modules.rejson.JReJSON.ExistenceModifier;
+// import com.redislabs.modules.rejson.Path;
 
 import redis.clients.jedis.exceptions.JedisDataException;
+import redis.clients.jedis.json.JsonSetParams;
+import redis.clients.jedis.json.Path;
 
 class OpsForJSONTest extends AbstractBaseDocumentTest {
-  
+
   @Autowired
   Gson gson;
 
@@ -139,13 +141,13 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
 
     // real scalar value and no path
     ops.set("str", "strong");
-    assertEquals("strong", ops.get("str"));
+    assertEquals("strong", ops.get("str", String.class));
 
     // a slightly more complex object
     IRLObject obj = new IRLObject();
     ops.set("obj", obj);
     Object expected = gson.fromJson(gson.toJson(obj), Object.class);
-    assertTrue(expected.equals(ops.get("obj")));
+    assertTrue(expected.equals(ops.get("obj", String.class)));
 
     // check an update
     Path p = Path.of(".str");
@@ -175,7 +177,7 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     ops.set("obj", new IRLObject());
     Path p = Path.of(".str");
-    ops.set("obj", "strangle", ExistenceModifier.MUST_EXIST, p);
+    ops.set("obj", "strangle", JsonSetParams.jsonSetParams().xx(), p);
     assertEquals("strangle", ops.get("obj", String.class, p));
   }
 
@@ -183,7 +185,7 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
   void setWithoutAPathDefaultsToRootPath() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     ops.set("obj1", new IRLObject());
-    ops.set("obj1", "strangle", ExistenceModifier.MUST_EXIST);
+    ops.set("obj1", "strangle", JsonSetParams.jsonSetParams().xx());
     assertEquals("strangle", ops.get("obj1", String.class, Path.ROOT_PATH));
   }
 
@@ -261,10 +263,10 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
   void testArrayPop() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     ops.set("arr", new int[] { 0, 1, 2, 3, 4 }, Path.ROOT_PATH);
-    assertEquals(Long.valueOf(4L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, 4L));
-    assertEquals(Long.valueOf(3L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, -1L));
+    assertEquals(Long.valueOf(4L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, 4));
+    assertEquals(Long.valueOf(3L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, -1));
     assertEquals(Long.valueOf(2L), ops.arrPop("arr", Long.class, Path.ROOT_PATH));
-    assertEquals(Long.valueOf(0L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, 0L));
+    assertEquals(Long.valueOf(0L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, 0));
     assertEquals(Long.valueOf(1L), ops.arrPop("arr", Long.class));
   }
 
@@ -283,7 +285,8 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
     try {
       ops.type("foobar", Path.of(".fooErr"));
       fail();
-    } catch (Exception e) {}
+    } catch (Exception e) {
+    }
   }
 
 }

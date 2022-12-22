@@ -4,14 +4,17 @@ import java.util.List;
 
 import org.springframework.lang.Nullable;
 
-import com.redislabs.modules.rejson.Path;
-import com.redislabs.modules.rejson.JReJSON.ExistenceModifier;
+import redis.clients.jedis.json.JsonSetParams;
+import redis.clients.jedis.json.Path;
+
+//import com.redislabs.modules.rejson.Path;
+//import com.redislabs.modules.rejson.JReJSON.ExistenceModifier;
 
 public interface JSONOperations<K> {
   Long del(K key, Path path);
 
   @Nullable
-  <T> T get(K key);
+  <T> T get(K key, Class<T> clazz);
 
   @Nullable
   <T> T get(K key, Class<T> clazz, Path... paths);
@@ -22,13 +25,13 @@ public interface JSONOperations<K> {
   @SuppressWarnings("unchecked")
   <T> List<T> mget(Path path, Class<T> clazz, K... keys);
   
-  void set(K key, Object object, ExistenceModifier flag);
+  void set(K key, Object object, JsonSetParams params);
   
   void set(K key, Object object);
   
   void set(K key, Object object, Path path);
   
-  void set(K key, Object object, ExistenceModifier flag, Path path);
+  void set(K key, Object object, JsonSetParams params, Path path);
   
   Class<?> type(K key);
   
@@ -42,12 +45,12 @@ public interface JSONOperations<K> {
   
   Long arrIndex(K key, Path path, Object scalar);
   
-  Long arrInsert(K key, Path path, Long index, Object... objects);
+  Long arrInsert(K key, Path path, Integer index, Object... objects);
   
   Long arrLen(K key, Path path);
   
   @Nullable
-  <T> T arrPop(K key, Class<T> clazz, Path path, Long index);
+  <T> T arrPop(K key, Class<T> clazz, Path path, Integer index);
   
   @Nullable
   <T> T arrPop(K key, Class<T> clazz, Path path);
@@ -55,10 +58,10 @@ public interface JSONOperations<K> {
   @Nullable
   <T> T arrPop(K key, Class<T> clazz);
   
-  Long arrTrim(K key, Path path, Long start, Long stop);
+  Long arrTrim(K key, Path path, Integer start, Integer stop);
 
   void toggle(K key, Path path);
 
-  Long numIncrBy(K key, Path path, Long value);
+  Double numIncrBy(K key, Path path, Long value);
 
 }

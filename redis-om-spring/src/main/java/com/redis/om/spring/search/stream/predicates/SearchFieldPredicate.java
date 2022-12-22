@@ -4,8 +4,8 @@ import java.lang.reflect.Field;
 import java.util.Objects;
 import java.util.function.Predicate;
 
-import io.redisearch.Schema.FieldType;
-import io.redisearch.querybuilder.Node;
+import redis.clients.jedis.search.Schema.FieldType;
+import redis.clients.jedis.search.querybuilder.Node;
 
 public interface SearchFieldPredicate<E, T> extends Predicate<T> {
   FieldType getSearchFieldType();

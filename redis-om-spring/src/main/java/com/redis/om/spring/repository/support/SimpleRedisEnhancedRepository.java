@@ -44,8 +44,8 @@ import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.RedisEnhancedRepository;
 import com.redis.om.spring.util.ObjectUtils;
 
-import io.redisearch.Query;
-import io.redisearch.SearchResult;
+import redis.clients.jedis.search.Query;
+import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
 
@@ -145,13 +145,13 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
    * org.springframework.data.repository.PagingAndSortingRepository#findAll(org.
    * springframework.data.domain.Sort) */
   @Override
-  public Iterable<T> findAll(Sort sort) {
+  public List<T> findAll(Sort sort) {
 
     Assert.notNull(sort, "Sort must not be null!");
     
     Pageable pageRequest = PageRequest.of(0, MAX_LIMIT, sort);
 
-    return findAll(pageRequest);
+    return findAll(pageRequest).toList();
   }
 
   /* (non-Javadoc)
@@ -185,11 +185,11 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
         SearchResult searchResult = searchOps.search(query);
 
         @SuppressWarnings("unchecked")
-        List<T> content = (List<T>) searchResult.docs.stream() //
+        List<T> content = (List<T>) searchResult.getDocuments().stream() //
             .map(d -> ObjectUtils.documentToObject(d, metadata.getJavaType(), mappingConverter)) //
             .collect(Collectors.toList());
 
-        return new PageImpl<>(content, pageable, searchResult.totalResults);
+        return new PageImpl<>(content, pageable, searchResult.getTotalResults());
       } else {
         return Page.empty();
       }
@@ -211,11 +211,11 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   }
 
   @Override
-  public <S extends T> Iterable<S> saveAll(Iterable<S> entities) {
+  public <S extends T> List<S> saveAll(Iterable<S> entities) {
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
     List<S> saved = new ArrayList<>();
 
-    try (Jedis jedis = modulesOperations.getClient().getJedis()) {
+    try (Jedis jedis = modulesOperations.getClient().getJedis().get()) {
       Pipeline pipeline = jedis.pipelined();
 
       for (S entity : entities) {

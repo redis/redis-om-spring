@@ -12,14 +12,14 @@ import com.redis.om.spring.annotations.Aggregation;
 import com.redis.om.spring.annotations.Query;
 import com.redis.om.spring.repository.RedisDocumentRepository;
 
-import io.redisearch.AggregationResult;
-import io.redisearch.SearchResult;
+import redis.clients.jedis.search.aggr.AggregationResult;
+import redis.clients.jedis.search.SearchResult;
 
 public interface MyDocRepository extends RedisDocumentRepository<MyDoc, String>, MyDocQueries {
   /**
    * <pre>
    * > FT.SEARCH idx * RETURN 3 $.tag[0] AS first_tag 1) (integer) 1 2) "doc1" 3)
-   * 1) "first_tag" 
+   * 1) "first_tag"
    * 2) "news"
    * </pre>
    */
@@ -28,9 +28,9 @@ public interface MyDocRepository extends RedisDocumentRepository<MyDoc, String>,
 
   /**
    * <pre>
-   * > FT.SEARCH idx '@title:hello @tag:{news}' 
-   * 1) (integer) 1 
-   * 2) "doc1" 
+   * > FT.SEARCH idx '@title:hello @tag:{news}'
+   * 1) (integer) 1
+   * 2) "doc1"
    * 3) 1) "$"
    *    2) "{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}"
    * </pre>
@@ -40,22 +40,22 @@ public interface MyDocRepository extends RedisDocumentRepository<MyDoc, String>,
 
   /**
    * <pre>
-   * > FT.AGGREGATE idx * LOAD 3 $.tag[1] AS tag2 
-   * 1) (integer) 1 
-   * 2) 1) "tag2" 
+   * > FT.AGGREGATE idx * LOAD 3 $.tag[1] AS tag2
+   * 1) (integer) 1
+   * 2) 1) "tag2"
    *    2) "article"
    * </pre>
    */
   @Aggregation(load = { "$.tag[1]", "AS", "tag2" })
   AggregationResult getSecondTagWithAggregation();
-  
+
   /**
    * <pre>
    * > FT.SEARCH idx @title:hel* SORTBY title ASC LIMIT 0 2
    * </pre>
    */
   Page<MyDoc> findAllByTitleStartingWith(String title, Pageable pageable);
-  
+
   /**
    * <pre>
    * > FT.SEARCH idx @title:hel* LIMIT 0 2
@@ -63,19 +63,19 @@ public interface MyDocRepository extends RedisDocumentRepository<MyDoc, String>,
    */
   @Query("@title:$prefix*")
   Page<MyDoc> customFindAllByTitleStartingWith(@Param("prefix") String prefix, Pageable pageable);
-  
+
   /**
    * <pre>
    * > FT.TAGVALS idx tags
    * </pre>
    */
   Iterable<String> getAllTag();
-  
+
   Iterable<MyDoc> findByTag(Set<String> tags);
 
-  Iterable<MyDoc> findByLocationNear(Point point, Distance distance); 
-  
-  Iterable<MyDoc> findByLocation2Near(Point point, Distance distance); 
-  
+  Iterable<MyDoc> findByLocationNear(Point point, Distance distance);
+
+  Iterable<MyDoc> findByLocation2Near(Point point, Distance distance);
+
   Iterable<MyDoc> findByaNumber(Integer anotherNumber);
 }

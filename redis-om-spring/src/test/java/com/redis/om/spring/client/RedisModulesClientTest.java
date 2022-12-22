@@ -8,9 +8,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.google.gson.Gson;
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redislabs.modules.rejson.JReJSON;
 
-import io.redisearch.Client;
+import redis.clients.jedis.bloom.commands.BloomFilterCommands;
+import redis.clients.jedis.json.RedisJsonCommands;
+import redis.clients.jedis.search.RediSearchCommands;
+//import com.redislabs.modules.rejson.JReJSON;
+//
+//import redis.clients.jedis.search.Client;
 
 class RedisModulesClientTest extends AbstractBaseDocumentTest {
 
@@ -33,23 +37,23 @@ class RedisModulesClientTest extends AbstractBaseDocumentTest {
 
   @Test
   void testJSONClient() {
-    JReJSON jsonClient = client.clientForJSON();
+    RedisJsonCommands jsonClient = client.clientForJSON();
 
     IRLObject obj = new IRLObject();
-    jsonClient.set("obj", obj);
+    jsonClient.jsonSet("obj", obj);
     Object expected = g.fromJson(g.toJson(obj), Object.class);
-    assertEquals(expected, jsonClient.get("obj"));
+    assertEquals(expected, jsonClient.jsonGet("obj"));
   }
 
   @Test
   void testSearchClient() {
-    Client searchClient = client.clientForSearch("index");
+    RediSearchCommands searchClient = client.clientForSearch("index");
     assertNotNull(searchClient);
   }
 
   @Test
   void testBloomClient() {
-    io.rebloom.client.Client bloomClient = client.clientForBloom();
+    BloomFilterCommands bloomClient = client.clientForBloom();
     assertNotNull(bloomClient);
   }
 

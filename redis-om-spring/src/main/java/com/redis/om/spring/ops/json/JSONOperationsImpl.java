@@ -1,17 +1,12 @@
 package com.redis.om.spring.ops.json;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import com.redis.om.spring.client.RedisModulesClient;
-import com.redis.om.spring.ops.Command;
-import com.redislabs.modules.rejson.JReJSON.ExistenceModifier;
-import com.redislabs.modules.rejson.Path;
 
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.Protocol;
-import redis.clients.jedis.util.SafeEncoder;
+import redis.clients.jedis.json.JsonSetParams;
+import redis.clients.jedis.json.Path;
 
 public class JSONOperationsImpl<K> implements JSONOperations<K> {
 
@@ -23,131 +18,119 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
 
   @Override
   public Long del(K key, Path path) {
-    return client.clientForJSON().del(key.toString(), path);
+    return client.clientForJSON().jsonDel(key.toString(), path);
   }
 
   @Override
-  public <T> T get(K key) {
-    return client.clientForJSON().get(key.toString());
+  public <T> T get(K key, Class<T> clazz) {
+    return client.clientForJSON().jsonGet(key.toString(), clazz);
   }
 
   @Override
   public <T> T get(K key, Class<T> clazz, Path... paths) {
-    return client.clientForJSON().get(key.toString(), clazz, paths);
+    return client.clientForJSON().jsonGet(key.toString(), clazz, paths);
   }
 
   @Override
   public <T> List<T> mget(Class<T> clazz, @SuppressWarnings("unchecked") K... keys) {
     String[] keysAsStrings = Arrays.asList(keys).stream().map(Object::toString).toArray(String[]::new);
-    return client.clientForJSON().mget(clazz, keysAsStrings);
+    return client.clientForJSON().jsonMGet(clazz, keysAsStrings);
   }
 
   @Override
   public <T> List<T> mget(Path path, Class<T> clazz, @SuppressWarnings("unchecked") K... keys) {
     String[] keysAsStrings = Arrays.asList(keys).stream().map(Object::toString).toArray(String[]::new);
-    return client.clientForJSON().mget(path, clazz, keysAsStrings);
+    return client.clientForJSON().jsonMGet(path, clazz, keysAsStrings);
   }
 
   @Override
-  public void set(K key, Object object, ExistenceModifier flag) {
-    client.clientForJSON().set(key.toString(), object, flag);
+  public void set(K key, Object object, JsonSetParams flag) {
+    client.clientForJSON().jsonSet(key.toString(), object, flag);
   }
 
   @Override
   public void set(K key, Object object) {
-    client.clientForJSON().set(key.toString(), object);
+    client.clientForJSON().jsonSet(key.toString(), object);
   }
 
   @Override
   public void set(K key, Object object, Path path) {
-    client.clientForJSON().set(key.toString(), object, path);
+    client.clientForJSON().jsonSet(key.toString(), path, object);
   }
 
   @Override
-  public void set(K key, Object object, ExistenceModifier flag, Path path) {
-    client.clientForJSON().set(key.toString(), object, flag, path);
+  public void set(K key, Object object, JsonSetParams params, Path path) {
+    client.clientForJSON().jsonSet(key.toString(), path, object, params);
   }
 
   @Override
   public Class<?> type(K key) {
-    return client.clientForJSON().type(key.toString());
+    return client.clientForJSON().jsonType(key.toString());
   }
 
   @Override
   public Class<?> type(K key, Path path) {
-    return client.clientForJSON().type(key.toString(), path);
+    return client.clientForJSON().jsonType(key.toString(), path);
   }
 
   @Override
   public Long strAppend(K key, Path path, Object... objects) {
-    return client.clientForJSON().strAppend(key.toString(), path, objects);
+    return client.clientForJSON().jsonStrAppend(key.toString(), path, objects);
   }
 
   @Override
   public Long strLen(K key, Path path) {
-    return client.clientForJSON().strLen(key.toString(), path);
+    return client.clientForJSON().jsonStrLen(key.toString(), path);
   }
 
   @Override
   public Long arrAppend(K key, Path path, Object... objects) {
-    return client.clientForJSON().arrAppend(key.toString(), path, objects);
+    return client.clientForJSON().jsonArrAppend(key.toString(), path, objects);
   }
 
   @Override
   public Long arrIndex(K key, Path path, Object scalar) {
-    return client.clientForJSON().arrIndex(key.toString(), path, scalar);
+    return client.clientForJSON().jsonArrIndex(key.toString(), path, scalar);
   }
 
   @Override
-  public Long arrInsert(K key, Path path, Long index, Object... objects) {
-    return client.clientForJSON().arrInsert(key.toString(), path, index, objects);
+  public Long arrInsert(K key, Path path, Integer index, Object... objects) {
+    return client.clientForJSON().jsonArrInsert(key.toString(), path, index, objects);
   }
 
   @Override
   public Long arrLen(K key, Path path) {
-    return client.clientForJSON().arrLen(key.toString(), path);
+    return client.clientForJSON().jsonArrLen(key.toString(), path);
   }
 
   @Override
-  public <T> T arrPop(K key, Class<T> clazz, Path path, Long index) {
-    return client.clientForJSON().arrPop(key.toString(), clazz, path, index);
+  public <T> T arrPop(K key, Class<T> clazz, Path path, Integer index) {
+    return client.clientForJSON().jsonArrPop(key.toString(), clazz, path, index);
   }
 
   @Override
   public <T> T arrPop(K key, Class<T> clazz, Path path) {
-    return client.clientForJSON().arrPop(key.toString(), clazz, path);
+    return client.clientForJSON().jsonArrPop(key.toString(), clazz, path);
   }
 
   @Override
   public <T> T arrPop(K key, Class<T> clazz) {
-    return client.clientForJSON().arrPop(key.toString(), clazz);
+    return client.clientForJSON().jsonArrPop(key.toString(), clazz);
   }
 
   @Override
-  public Long arrTrim(K key, Path path, Long start, Long stop) {
-    return client.clientForJSON().arrTrim(key.toString(), path, start, stop);
+  public Long arrTrim(K key, Path path, Integer start, Integer stop) {
+    return client.clientForJSON().jsonArrTrim(key.toString(), path, start, stop);
   }
 
   @Override
   public void toggle(K key, Path path) {
-    client.clientForJSON().toggle(key.toString(), path);
+    client.clientForJSON().jsonToggle(key.toString(), path);
   }
 
-  // https://redis.io/commands/json.numincrby/
   @Override
-  public Long numIncrBy(K key, Path path, Long value) {
-    List<byte[]> args = new ArrayList<>();
-    args.add(SafeEncoder.encode(key.toString()));
-    args.add(SafeEncoder.encode(path != null ? path.toString() : Path.ROOT_PATH.toString()));
-    args.add(Protocol.toByteArray(value));
-
-    Long results = -1L;
-    try (Jedis conn = client.getJedis()) {
-      conn.getClient().sendCommand(Command.JSON_NUMINCRBY, args.toArray(new byte[args.size()][]));
-      results = Long.parseLong(conn.getClient().getBulkReply());
-    }
-
-    return results;
+  public Double numIncrBy(K key, Path path, Long value) {
+    return client.clientForJSON().jsonNumIncrBy(key.toString(), path, value);
   }
 
 }

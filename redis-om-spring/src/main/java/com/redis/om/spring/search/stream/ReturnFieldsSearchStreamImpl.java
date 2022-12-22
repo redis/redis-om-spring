@@ -43,9 +43,9 @@ import com.redis.om.spring.tuple.Tuple;
 import com.redis.om.spring.tuple.Tuples;
 import com.redis.om.spring.util.ObjectUtils;
 
-import io.redisearch.Query;
-import io.redisearch.SearchResult;
-import io.redisearch.aggregation.SortedField.SortOrder;
+import redis.clients.jedis.search.Query;
+import redis.clients.jedis.search.SearchResult;
+import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
 public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
 
@@ -289,7 +289,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
       if (resultSetHasNonIndexedFields) {
         SearchResult searchResult = entitySearchStream.getOps().search(query);
 
-        List<E> entities = searchResult.docs.stream()
+        List<E> entities = searchResult.getDocuments().stream()
             .map(d -> gson.fromJson(d.get("$").toString(), entitySearchStream.getEntityClass()))
             .collect(Collectors.toList());
 
@@ -308,7 +308,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   @SuppressWarnings("unchecked")
   private List<T> toResultTuple(SearchResult searchResult, String[] returnFields) {
     List<T> results = new ArrayList<>();
-    searchResult.docs.stream().forEach(doc -> {
+    searchResult.getDocuments().stream().forEach(doc -> {
       Map<String, Object> props = StreamSupport.stream(doc.getProperties().spliterator(), false)
           .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
 

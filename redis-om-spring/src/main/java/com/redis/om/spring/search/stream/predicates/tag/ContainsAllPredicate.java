@@ -7,9 +7,9 @@ import java.util.stream.Collectors;
 import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 
-import io.redisearch.querybuilder.Node;
-import io.redisearch.querybuilder.QueryBuilder;
-import io.redisearch.querybuilder.QueryNode;
+import redis.clients.jedis.search.querybuilder.Node;
+import redis.clients.jedis.search.querybuilder.QueryBuilders;
+import redis.clients.jedis.search.querybuilder.QueryNode;
 
 public class ContainsAllPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
@@ -26,11 +26,11 @@ public class ContainsAllPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
-    QueryNode and = QueryBuilder.intersect();
+    QueryNode and = QueryBuilders.intersect();
     for (String value : getValues()) {
       and.add(getField().getName(), "{" + value + "}");
     }
 
-    return QueryBuilder.intersect(root, and);
+    return QueryBuilders.intersect(root, and);
   }
 }

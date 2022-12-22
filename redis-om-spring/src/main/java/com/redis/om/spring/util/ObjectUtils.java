@@ -23,9 +23,8 @@ import org.springframework.util.ReflectionUtils;
 
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 
-import io.redisearch.Document;
-import io.redisearch.querybuilder.GeoValue;
-import io.redisearch.querybuilder.GeoValue.Unit;
+import redis.clients.jedis.args.GeoUnit;
+import redis.clients.jedis.search.Document;
 
 public class ObjectUtils {
   public static String getDistanceAsRedisString(Distance distance) {
@@ -39,15 +38,15 @@ public class ObjectUtils {
         .collect(Collectors.toList());
   }
 
-  public static Unit getDistanceUnit(Distance distance) {
+  public static GeoUnit getDistanceUnit(Distance distance) {
     if (distance.getUnit().equals(DistanceUnit.MILES.getAbbreviation())) {
-      return GeoValue.Unit.MILES;
+      return GeoUnit.M;
     } else if (distance.getUnit().equals(DistanceUnit.FEET.getAbbreviation())) {
-      return GeoValue.Unit.FEET;
+      return GeoUnit.FT;
     } else if (distance.getUnit().equals(DistanceUnit.KILOMETERS.getAbbreviation())) {
-      return GeoValue.Unit.KILOMETERS;
+      return GeoUnit.KM;
     } else {
-      return GeoValue.Unit.METERS;
+      return GeoUnit.M;
     }
   }
 

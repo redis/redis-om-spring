@@ -52,11 +52,11 @@ import com.redis.om.spring.repository.query.bloom.BloomQueryExecutor;
 import com.redis.om.spring.repository.query.clause.QueryClause;
 import com.redis.om.spring.util.ObjectUtils;
 
-import io.redisearch.AggregationResult;
-import io.redisearch.Query;
-import io.redisearch.Schema.FieldType;
-import io.redisearch.SearchResult;
-import io.redisearch.aggregation.AggregationBuilder;
+import redis.clients.jedis.search.aggr.AggregationResult;
+import redis.clients.jedis.search.Query;
+import redis.clients.jedis.search.Schema.FieldType;
+import redis.clients.jedis.search.SearchResult;
+import redis.clients.jedis.search.aggr.AggregationBuilder;
 
 public class RediSearchQuery implements RepositoryQuery {
 
@@ -193,23 +193,23 @@ public class RediSearchQuery implements RepositoryQuery {
       if (field.isAnnotationPresent(TextIndexed.class)) {
         TextIndexed indexAnnotation = field.getAnnotation(TextIndexed.class);
         String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
-        qf.add(Pair.of(actualKey, QueryClause.get(FieldType.FullText, part.getType())));
+        qf.add(Pair.of(actualKey, QueryClause.get(FieldType.TEXT, part.getType())));
       } else if (field.isAnnotationPresent(Searchable.class)) {
         Searchable indexAnnotation = field.getAnnotation(Searchable.class);
         String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
-        qf.add(Pair.of(actualKey, QueryClause.get(FieldType.FullText, part.getType())));
+        qf.add(Pair.of(actualKey, QueryClause.get(FieldType.TEXT, part.getType())));
       } else if (field.isAnnotationPresent(TagIndexed.class)) {
         TagIndexed indexAnnotation = field.getAnnotation(TagIndexed.class);
         String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
-        qf.add(Pair.of(actualKey, QueryClause.get(FieldType.Tag, part.getType())));
+        qf.add(Pair.of(actualKey, QueryClause.get(FieldType.TAG, part.getType())));
       } else if (field.isAnnotationPresent(GeoIndexed.class)) {
         GeoIndexed indexAnnotation = field.getAnnotation(GeoIndexed.class);
         String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
-        qf.add(Pair.of(actualKey, QueryClause.get(FieldType.Geo, part.getType())));
+        qf.add(Pair.of(actualKey, QueryClause.get(FieldType.GEO, part.getType())));
       } else if (field.isAnnotationPresent(NumericIndexed.class)) {
         NumericIndexed indexAnnotation = field.getAnnotation(NumericIndexed.class);
         String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
-        qf.add(Pair.of(actualKey, QueryClause.get(FieldType.Numeric, part.getType())));
+        qf.add(Pair.of(actualKey, QueryClause.get(FieldType.NUMERIC, part.getType())));
       } else if (field.isAnnotationPresent(Indexed.class)) {
         Indexed indexAnnotation = field.getAnnotation(Indexed.class);
         String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
@@ -218,14 +218,14 @@ public class RediSearchQuery implements RepositoryQuery {
         // Any Character class or Boolean -> Tag Search Field
         //
         if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class)) {
-          qf.add(Pair.of(actualKey, QueryClause.get(FieldType.Tag, part.getType())));
+          qf.add(Pair.of(actualKey, QueryClause.get(FieldType.TAG, part.getType())));
         }
         //
         // Any Numeric class -> Numeric Search Field
         //
         else if (Number.class.isAssignableFrom(fieldType) || (fieldType == LocalDateTime.class)
             || (field.getType() == LocalDate.class) || (field.getType() == Date.class)) {
-          qf.add(Pair.of(actualKey, QueryClause.get(FieldType.Numeric, part.getType())));
+          qf.add(Pair.of(actualKey, QueryClause.get(FieldType.NUMERIC, part.getType())));
         }
         //
         // Set / List
@@ -234,14 +234,14 @@ public class RediSearchQuery implements RepositoryQuery {
           if (isANDQuery) {
             qf.add(Pair.of(actualKey, QueryClause.Tag_CONTAINING_ALL));
           } else {
-            qf.add(Pair.of(actualKey, QueryClause.get(FieldType.Tag, part.getType())));
+            qf.add(Pair.of(actualKey, QueryClause.get(FieldType.TAG, part.getType())));
           }
         }
         //
         // Point
         //
         else if (fieldType == Point.class) {
-          qf.add(Pair.of(actualKey, QueryClause.get(FieldType.Geo, part.getType())));
+          qf.add(Pair.of(actualKey, QueryClause.get(FieldType.GEO, part.getType())));
         }
         //
         // Recursively explore the fields for @Indexed annotated fields
@@ -330,24 +330,24 @@ public class RediSearchQuery implements RepositoryQuery {
     if (queryMethod.getReturnedObjectType() == SearchResult.class) {
       result = searchResult;
     } else if (queryMethod.isPageQuery()) {
-      List<Object> content = searchResult.docs.stream()
+      List<Object> content = searchResult.getDocuments().stream()
           .map(d -> gson.fromJson(d.get("$").toString(), queryMethod.getReturnedObjectType()))
           .collect(Collectors.toList());
 
       if (maybePageable.isPresent()) {
         Pageable pageable = maybePageable.get();
-        result = new PageImpl<>(content, pageable, searchResult.totalResults);
+        result = new PageImpl<>(content, pageable, searchResult.getTotalResults());
       }
 
     } else if (queryMethod.isQueryForEntity() && !queryMethod.isCollectionQuery()) {
-      if (!searchResult.docs.isEmpty()) {
-        String jsonResult = searchResult.docs.get(0).get("$").toString();
+      if (!searchResult.getDocuments().isEmpty()) {
+        String jsonResult = searchResult.getDocuments().get(0).get("$").toString();
         result = gson.fromJson(jsonResult, queryMethod.getReturnedObjectType());
       } else {
         result = null;
       }
     } else if (queryMethod.isQueryForEntity() && queryMethod.isCollectionQuery()) {
-      result = searchResult.docs.stream()
+      result = searchResult.getDocuments().stream()
           .map(d -> gson.fromJson(d.get("$").toString(), queryMethod.getReturnedObjectType()))
           .collect(Collectors.toList());
     }

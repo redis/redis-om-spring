@@ -6,9 +6,9 @@ import org.springframework.data.geo.Point;
 
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 
-import io.redisearch.querybuilder.Node;
-import io.redisearch.querybuilder.QueryBuilder;
-import io.redisearch.querybuilder.Values;
+import redis.clients.jedis.search.querybuilder.Node;
+import redis.clients.jedis.search.querybuilder.QueryBuilders;
+import redis.clients.jedis.search.querybuilder.Values;
 
 public class NotEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   private T value;
@@ -44,8 +44,8 @@ public class NotEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {     
-    return QueryBuilder.intersect(root)
-        .add(QueryBuilder.disjunct(getField().getName(), Values.value(String.format("[%s %s 0.0001 mi]", x, y))));
+    return QueryBuilders.intersect(root)
+        .add(QueryBuilders.disjunct(getField().getName(), Values.value(String.format("[%s %s 0.0001 mi]", x, y))));
   }
 
 }

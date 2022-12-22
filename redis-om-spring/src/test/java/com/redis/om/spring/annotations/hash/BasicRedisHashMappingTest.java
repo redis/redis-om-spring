@@ -41,7 +41,7 @@ import com.redis.om.spring.annotations.hash.fixtures.Person;
 import com.redis.om.spring.annotations.hash.fixtures.PersonRepository;
 import com.redis.om.spring.repository.query.QueryUtils;
 
-import io.redisearch.AggregationResult;
+import redis.clients.jedis.search.aggr.AggregationResult;
 
 class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   static Person john;
@@ -493,8 +493,10 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testAuditAnnotationsOnSaveAll() {
-    Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com");
-    Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160), "research@microsoft.com");
+    Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "stack@redis.com");
+    Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
+        "research@microsoft.com");
 
     companyRepo.saveAll(List.of(redis, microsoft));
 
@@ -507,12 +509,11 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
     Iterable<Company> companies = companyRepo.findAllById(List.of(redis.getId(), microsoft.getId()));
 
     assertAll( //
-            () -> assertThat(companies).hasSize(2), //
-            () -> assertThat(companies).containsExactly(redis, microsoft), //
-            () -> assertThat(redis.getCreatedDate()).isNotNull(), //
-            () -> assertThat(redis.getLastModifiedDate()).isNull(), //
-            () -> assertThat(microsoft.getCreatedDate()).isNotNull(), //
-            () -> assertThat(microsoft.getLastModifiedDate()).isNotNull()
-    );
+        () -> assertThat(companies).hasSize(2), //
+        () -> assertThat(companies).containsExactly(redis, microsoft), //
+        () -> assertThat(redis.getCreatedDate()).isNotNull(), //
+        () -> assertThat(redis.getLastModifiedDate()).isNull(), //
+        () -> assertThat(microsoft.getCreatedDate()).isNotNull(), //
+        () -> assertThat(microsoft.getLastModifiedDate()).isNotNull());
   }
 }

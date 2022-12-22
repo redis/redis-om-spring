@@ -26,7 +26,7 @@ import com.redis.om.spring.annotations.document.fixtures.CompanyRepository;
 import com.redis.om.spring.annotations.document.fixtures.Employee;
 import com.redis.om.spring.tuple.Fields;
 
-import io.redisearch.aggregation.SortedField.SortOrder;
+import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
 class TestTupleJsonSerialization extends AbstractBaseDocumentTest {
   @Autowired
@@ -34,17 +34,16 @@ class TestTupleJsonSerialization extends AbstractBaseDocumentTest {
 
   @Autowired
   EntityStream entityStream;
-  
+
   private JacksonTester<List<Map<String, Object>>> json;
 
   @BeforeEach
   void setupAndCleanup() {
     ObjectMapper objectMapper = new ObjectMapper();
     JacksonTester.initFields(this, objectMapper);
-    
+
     // companies
     repository.deleteAll();
-
 
     Company redis = repository.save(
         Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
@@ -64,7 +63,7 @@ class TestTupleJsonSerialization extends AbstractBaseDocumentTest {
 
     repository.saveAll(List.of(redis, microsoft, tesla));
   }
-  
+
   @Test
   void testTripleResultWithLabels() throws IOException {
     List<Map<String, Object>> results = entityStream //
@@ -75,11 +74,12 @@ class TestTupleJsonSerialization extends AbstractBaseDocumentTest {
         .collect(Collectors.toList());
 
     assertEquals(3, results.size());
-    
+
     JsonContent<List<Map<String, Object>>> asJson = json.write(results);
     System.out.println(asJson.getJson());
-    
-    // See JSON file under srr/test/resource/com/redis/om/spring/search/stream/companies.json
+
+    // See JSON file under
+    // srr/test/resource/com/redis/om/spring/search/stream/companies.json
     assertThat(asJson).isEqualToJson("companies.json");
   }
 }

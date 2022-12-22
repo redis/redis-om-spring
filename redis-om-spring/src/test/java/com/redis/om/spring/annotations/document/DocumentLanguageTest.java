@@ -13,7 +13,7 @@ import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.SpanishDoc;
 import com.redis.om.spring.annotations.document.fixtures.SpanishDocRepository;
 
-import io.redisearch.SearchResult;
+import redis.clients.jedis.search.SearchResult;
 
 class DocumentLanguageTest extends AbstractBaseDocumentTest {
   @Autowired
@@ -38,13 +38,13 @@ class DocumentLanguageTest extends AbstractBaseDocumentTest {
   @Test
   void testLanguage() {
     SearchResult result = repo.findByBody("fusil");
-    assertThat(result.totalResults).isEqualTo(1);
-    SpanishDoc doc = gson.fromJson(result.docs.get(0).get("$").toString(), SpanishDoc.class);
+    assertThat(result.getTotalResults()).isEqualTo(1);
+    SpanishDoc doc = gson.fromJson(result.getDocuments().get(0).get("$").toString(), SpanishDoc.class);
     assertThat(doc.getTitle()).isEqualTo("Cien Años de Soledad");
 
     SearchResult result2 = repo.findByBody("manchas");
-    assertThat(result2.totalResults).isEqualTo(1);
-    SpanishDoc doc2 = gson.fromJson(result2.docs.get(0).get("$").toString(), SpanishDoc.class);
+    assertThat(result2.getTotalResults()).isEqualTo(1);
+    SpanishDoc doc2 = gson.fromJson(result2.getDocuments().get(0).get("$").toString(), SpanishDoc.class);
     assertThat(doc2.getTitle()).isEqualTo("Don Quijote");
   }
 }

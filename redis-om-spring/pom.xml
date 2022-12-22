@@ -57,14 +57,15 @@
     <maven.test.source>17</maven.test.source>
     <maven.test.target>17</maven.test.target>
     <java.version>17</java.version>
-    <spring.version>2.7.4</spring.version>
-    <sdr.version>2.7.3</sdr.version>
-    <jredisjson.version>1.5.0</jredisjson.version>
-    <jredisearch.version>2.2.0</jredisearch.version>
-    <jredisbloom.version>2.2.0</jredisbloom.version>
+    <spring.version>3.0.0-SNAPSHOT</spring.version>
+    <sdr.version>3.0.0-SNAPSHOT</sdr.version>
+    <jedis.version>4.3.0</jedis.version>
+<!--     <jredisjson.version>1.5.0</jredisjson.version> -->
+<!--     <jredisearch.version>2.2.0</jredisearch.version> -->
+<!--     <jredisbloom.version>2.2.0</jredisbloom.version> -->
     <cdi>1.0</cdi>
     <auto-service.version>1.0.1</auto-service.version>
-    <spring.test.version>5.3.22</spring.test.version>
+    <spring.test.version>6.0.0-SNAPSHOT</spring.test.version>
     <testcontainers.redis.version>1.6.2</testcontainers.redis.version>
     <testcontainers.redis.junit.version>1.6.2</testcontainers.redis.junit.version>
     <guava.version>31.1-jre</guava.version>
@@ -98,6 +99,22 @@
       <id>elementary-releases</id>
       <url>https://repo.karuslabs.com/repository/elementary-releases/</url>
     </repository>
+    <repository>
+      <id>spring-milestones</id>
+      <name>Spring Milestones</name>
+      <url>https://repo.spring.io/milestone</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>spring-snapshots</id>
+      <name>Spring Snapshots</name>
+      <url>https://repo.spring.io/snapshot</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+    </repository>
   </repositories>
 
   <dependencies>
@@ -110,12 +127,12 @@
       <groupId>org.springframework.data</groupId>
       <artifactId>spring-data-redis</artifactId>
       <version>${sdr.version}</version>
-      <exclusions>
+<!--       <exclusions>
         <exclusion>
           <groupId>io.lettuce</groupId>
           <artifactId>lettuce-core</artifactId>
         </exclusion>
-      </exclusions>
+      </exclusions> -->
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -128,20 +145,26 @@
       <version>${spring.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.redislabs</groupId>
-      <artifactId>jrejson</artifactId>
-      <version>${jredisjson.version}</version>
+      <groupId>redis.clients</groupId>
+      <artifactId>jedis</artifactId>
+      <version>${jedis.version}</version>
+      <optional>true</optional>
     </dependency>
-    <dependency>
-      <groupId>com.redislabs</groupId>
-      <artifactId>jredisearch</artifactId>
-      <version>${jredisearch.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.redislabs</groupId>
-      <artifactId>jrebloom</artifactId>
-      <version>${jredisbloom.version}</version>
-    </dependency>
+<!--     <dependency> -->
+<!--       <groupId>com.redislabs</groupId> -->
+<!--       <artifactId>jrejson</artifactId> -->
+<!--       <version>${jredisjson.version}</version> -->
+<!--     </dependency> -->
+<!--     <dependency> -->
+<!--       <groupId>com.redislabs</groupId> -->
+<!--       <artifactId>jredisearch</artifactId> -->
+<!--       <version>${jredisearch.version}</version> -->
+<!--     </dependency> -->
+<!--     <dependency> -->
+<!--       <groupId>com.redislabs</groupId> -->
+<!--       <artifactId>jrebloom</artifactId> -->
+<!--       <version>${jredisbloom.version}</version> -->
+<!--     </dependency> -->
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>

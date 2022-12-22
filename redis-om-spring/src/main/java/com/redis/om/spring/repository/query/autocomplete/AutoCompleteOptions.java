@@ -1,7 +1,7 @@
 package com.redis.om.spring.repository.query.autocomplete;
 
-import io.redisearch.client.SuggestionOptions;
-import io.redisearch.client.SuggestionOptions.With;
+//import redis.clients.jedis.search.client.SuggestionOptions;
+//import redis.clients.jedis.search.client.SuggestionOptions.With;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
@@ -37,17 +37,17 @@ public class AutoCompleteOptions {
     return this;
   }
 
-  public SuggestionOptions toSuggestionOptions() {
-    SuggestionOptions.Builder builder = SuggestionOptions.builder();
-    if (Boolean.TRUE.equals(fuzzy))
-      builder = builder.fuzzy();
-    if (Boolean.TRUE.equals(withPayload))
-      builder = builder.with(With.PAYLOAD);
-    if (Boolean.TRUE.equals(withScore))
-      builder = builder.with(With.SCORES);
-    if (limit != null)
-      builder = builder.max(limit);
-
-    return builder.build();
-  }
+  // public SuggestionOptions toSuggestionOptions() {
+  // SuggestionOptions.Builder builder = SuggestionOptions.builder();
+  // if (Boolean.TRUE.equals(fuzzy))
+  // builder = builder.fuzzy();
+  // if (Boolean.TRUE.equals(withPayload))
+  // builder = builder.with(With.PAYLOAD);
+  // if (Boolean.TRUE.equals(withScore))
+  // builder = builder.with(With.SCORES);
+  // if (limit != null)
+  // builder = builder.max(limit);
+  //
+  // return builder.build();
+  // }
 }
