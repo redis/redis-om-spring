@@ -2,6 +2,7 @@ package com.redis.om.spring.annotations.document.fixtures;
 
 import java.util.Set;
 
+import com.redis.om.spring.annotations.Load;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.geo.Distance;
@@ -46,7 +47,7 @@ public interface MyDocRepository extends RedisDocumentRepository<MyDoc, String>,
    *    2) "article"
    * </pre>
    */
-  @Aggregation(load = { "$.tag[1]", "AS", "tag2" })
+  @Aggregation(load = { @Load(property = "$.tag[1]", alias = "tag2") })
   AggregationResult getSecondTagWithAggregation();
   
   /**

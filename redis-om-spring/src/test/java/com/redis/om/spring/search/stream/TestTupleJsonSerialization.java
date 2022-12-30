@@ -77,7 +77,6 @@ class TestTupleJsonSerialization extends AbstractBaseDocumentTest {
     assertEquals(3, results.size());
     
     JsonContent<List<Map<String, Object>>> asJson = json.write(results);
-    System.out.println(asJson.getJson());
     
     // See JSON file under srr/test/resource/com/redis/om/spring/search/stream/companies.json
     assertThat(asJson).isEqualToJson("companies.json");

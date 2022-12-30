@@ -3,6 +3,8 @@ package com.redis.om.spring.annotations.hash.fixtures;
 import java.util.List;
 import java.util.Set;
 
+import com.redis.om.spring.annotations.Apply;
+import com.redis.om.spring.annotations.Load;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -33,6 +35,6 @@ public interface PersonRepository extends RedisEnhancedRepository<Person, String
   // com.redis.om.spring.annotations.hash.fixtures.PersonIdx "*"
   // LOAD 1 name
   // APPLY upper(@name) AS upcasedName
-  @Aggregation(value = "*", load = { "name" }, apply = { "upper(@name)", "upcasedName" })
+  @Aggregation(value = "*", load = { @Load(property = "name") }, apply = { @Apply(expression = "upper(@name)", alias = "upcasedName") })
   AggregationResult allNamesInUppercase();
 }
