@@ -26,6 +26,7 @@ import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.TimeToLive;
 import org.springframework.data.redis.core.convert.KeyspaceConfiguration.KeyspaceSettings;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
+import org.springframework.data.redis.core.mapping.RedisPersistentEntity;
 import org.springframework.data.util.ClassTypeInformation;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
@@ -137,7 +138,7 @@ public class RediSearchIndexer {
         }
       }
 
-      String entityPrefix = cl.getName() + ":";
+      String entityPrefix = getEntityPrefix(cl);
 
       Schema schema = new Schema();
       SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
@@ -179,7 +180,7 @@ public class RediSearchIndexer {
 
       // TTL
       if (cl.isAnnotationPresent(Document.class)) {
-        KeyspaceSettings setting = new KeyspaceSettings(cl, cl.getName() + ":");
+        KeyspaceSettings setting = new KeyspaceSettings(cl, entityPrefix);
 
         // Default TTL
         Document document = cl.getAnnotation(Document.class);
@@ -494,6 +495,16 @@ public class RediSearchIndexer {
       }
     }
     return fieldList;
+  }
+
+  private String getEntityPrefix(Class<?> cl) {
+    String entityPrefix = cl.getName() + ":";
+    if (mappingContext.hasPersistentEntityFor(cl)) {
+      RedisPersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(cl);
+      entityPrefix = persistentEntity.getKeySpace() != null ? persistentEntity.getKeySpace() + ":" : entityPrefix;
+      logger.info(String.format("Using entity prefix '%s' as keyspace for type : %s", entityPrefix, cl));
+    }
+    return entityPrefix;
   }
 
   public Optional<String> getIndexName(String keyspace) {

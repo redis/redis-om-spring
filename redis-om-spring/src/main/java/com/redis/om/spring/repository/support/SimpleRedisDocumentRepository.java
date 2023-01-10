@@ -126,7 +126,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
   @Override
   public void deleteById(ID id, Path path) {
-    modulesOperations.opsForJSON().del(metadata.getJavaType().getName() + ":" + id.toString(), path);
+    modulesOperations.opsForJSON().del(getKey(id), path);
   }
 
   @Override
