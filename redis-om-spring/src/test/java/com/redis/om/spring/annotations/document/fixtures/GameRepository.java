@@ -314,15 +314,10 @@ public interface GameRepository extends RedisDocumentRepository<Game, String> {
   /**
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*"
-   *   "FILTER" "@count < 5"
-   *   "FILTER" "@count > 2 && @brand != \"\""
    *   "GROUPBY" "1" "@brand"
    *   "REDUCE" "COUNT" "0" "AS" "count"
-   *   'ft.aggregate', 'games', '*',
-   *                'GROUPBY', '1', '@brand',
-   *                'REDUCE', 'count', '0', 'AS', 'count',
-   *                'FILTER', '@count < 5',
-   *                'FILTER', '@count > 2 && @brand != ""'
+   *   "FILTER" "@count < 5"
+   *   "FILTER" "@count > 2 && @brand != \"\""
    * </pre>
    */
   @Aggregation( //

@@ -7,6 +7,7 @@ import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.Searchable;
 import com.redis.om.spring.metamodel.indexed.*;
 import com.redis.om.spring.metamodel.nonindexed.*;
+import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.Triple;
 import com.redis.om.spring.tuple.Tuples;
 import com.redis.om.spring.util.ObjectUtils;
@@ -42,8 +43,8 @@ import static java.util.Objects.requireNonNull;
 @AutoService(Processor.class)
 public final class MetamodelGenerator extends AbstractProcessor {
 
-  protected static final String GET_PREFIX = "get";
-  protected static final String IS_PREFIX = "is";
+  static final String GET_PREFIX = "get";
+  static final String IS_PREFIX = "is";
 
   private ProcessingEnvironment processingEnvironment;
   private Messager messager;
@@ -115,6 +116,10 @@ public final class MetamodelGenerator extends AbstractProcessor {
       }
     });
 
+    Pair<FieldSpec, CodeBlock> keyAccessor = generateUnboundMetamodelField(entity, "_KEY", "__key");
+    interceptors.add(keyAccessor.getFirst());
+    initCodeBlocks.add(keyAccessor.getSecond());
+
     CodeBlock.Builder blockBuilder = CodeBlock.builder();
 
     blockBuilder.beginControlFlow("try");
@@ -160,7 +165,6 @@ public final class MetamodelGenerator extends AbstractProcessor {
     List<Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock>> fieldMetamodelSpec = new ArrayList<>();
 
     Element field = chain.get(chain.size() - 1);
-    String fieldName = field.getSimpleName().toString();
 
     boolean fieldIsIndexed = (field.getAnnotation(Searchable.class) != null)
         || (field.getAnnotation(Indexed.class) != null)
@@ -273,7 +277,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
     }
 
     if (targetInterceptor != null) {
-      fieldMetamodelSpec.add(generateFieldMetamodel(entity, fieldName, chain, chainedFieldName, entityField, targetInterceptor, fieldIsIndexed));
+      fieldMetamodelSpec.add(generateFieldMetamodel(entity, chain, chainedFieldName, entityField, targetInterceptor, fieldIsIndexed));
     }
     return fieldMetamodelSpec;
   }
@@ -300,8 +304,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
       boolean fieldIsIndexed = (field.getAnnotation(Indexed.class) != null) || (field.getAnnotation(Searchable.class) != null);
 
       if (fieldIsIndexed) {
-        List<Element> newChain = new ArrayList<>();
-        newChain.addAll(chain);
+        List<Element> newChain = new ArrayList<>(chain);
         newChain.add(field);
         fieldMetamodels.addAll(processFieldMetamodel(entity, entityFieldName, newChain));
       }
@@ -436,7 +439,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
      * http://stackoverflow.com/questions/4050381/regular-expression-for-checking-if
      * -capital-letters-are-found-consecutively-in-a [A-Z] -> \p{Lu} [^A-Za-z0-9] ->
      * [^\pL0-90-9] */
-    result = Stream.of(result.replaceAll("([\\p{Lu}]+)", "_$1").split("[^\\pL0-9]")).map(String::toLowerCase)
+    result = Stream.of(result.replaceAll("(\\p{Lu}+)", "_$1").split("[^\\pL\\d]")).map(String::toLowerCase)
         .map(ObjectUtils::ucfirst).collect(Collectors.joining());
     return result;
   }
@@ -455,7 +458,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
   public static final Character REPLACEMENT_CHARACTER = '_';
 
-  private Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> generateFieldMetamodel(TypeName entity, String fieldName, List<Element> chain, String chainFieldName,
+  private Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> generateFieldMetamodel(TypeName entity, List<Element> chain, String chainFieldName,
       TypeName entityField, Class<?> interceptorClass, boolean fieldIsIndexed) {
     String fieldAccessor = staticField(chainFieldName);
 
@@ -474,6 +477,19 @@ public final class MetamodelGenerator extends AbstractProcessor {
         .addStatement("$L = new $T(new $T(\"$L\", $L),$L)", fieldAccessor, interceptor, SearchFieldAccessor.class, searchSchemaAlias, chainFieldName, fieldIsIndexed).build();
 
     return Tuples.of(ogf, aField, aFieldInit);
+  }
+
+
+  private Pair<FieldSpec, CodeBlock> generateUnboundMetamodelField(TypeName entity, String name, String alias) {
+    TypeName interceptor = ParameterizedTypeName.get(ClassName.get(MetamodelField.class), entity, TypeName.get(String.class));
+
+    FieldSpec aField = FieldSpec.builder(interceptor, name).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+        .build();
+
+    CodeBlock aFieldInit = CodeBlock.builder()
+        .addStatement("$L = new $T(\"$L\")", name, interceptor, alias).build();
+
+    return Tuples.of(aField, aFieldInit);
   }
 
   public static String replaceIfIllegalJavaIdentifierCharacter(final String word) {
@@ -507,8 +523,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
     return sb.toString();
   }
 
-  static final Set<String> JAVA_LITERAL_WORDS = Collections
-      .unmodifiableSet(Stream.of("true", "false", "null").collect(Collectors.toSet()));
+  static final Set<String> JAVA_LITERAL_WORDS = Set.of("true", "false", "null");
 
   // Java reserved keywords
   static final Set<String> JAVA_RESERVED_WORDS = Collections.unmodifiableSet(Stream.of(
@@ -521,13 +536,10 @@ public final class MetamodelGenerator extends AbstractProcessor {
       "try", "char", "final", "interface", "static", "void", "class", "finally", "long", "strictfp", "volatile",
       "const", "float", "native", "super", "while").collect(Collectors.toSet()));
 
-  static final Set<Class<?>> JAVA_BUILT_IN_CLASSES = Collections
-      .unmodifiableSet(
-          Stream
-              .of(Boolean.class, Byte.class, Character.class, Double.class, Float.class, Integer.class, Long.class,
-                  Object.class, Short.class, String.class, BigDecimal.class, BigInteger.class, boolean.class,
-                  byte.class, char.class, double.class, float.class, int.class, long.class, short.class)
-              .collect(Collectors.toSet()));
+  static final Set<Class<?>> JAVA_BUILT_IN_CLASSES = Set.of(Boolean.class, Byte.class, Character.class, Double.class,
+      Float.class, Integer.class, Long.class, Object.class, Short.class, String.class, BigDecimal.class,
+      BigInteger.class, boolean.class, byte.class, char.class, double.class, float.class, int.class, long.class,
+      short.class);
 
   private static final Set<String> JAVA_BUILT_IN_CLASS_WORDS = Collections
       .unmodifiableSet(JAVA_BUILT_IN_CLASSES.stream().map(Class::getSimpleName).collect(Collectors.toSet()));
