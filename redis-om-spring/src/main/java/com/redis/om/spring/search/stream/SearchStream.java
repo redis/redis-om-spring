@@ -1,6 +1,7 @@
 package com.redis.om.spring.search.stream;
 
 import com.redis.om.spring.metamodel.MetamodelField;
+import com.redis.om.spring.metamodel.indexed.NumericField;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
 import io.redisearch.aggregation.SortedField.SortOrder;
 
@@ -87,4 +88,8 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
   <R> AggregationStream<R> apply(String expression, String alias);
 
   <R> AggregationStream<R> load(MetamodelField<E, ?>... fields);
+
+  Optional<E> min(NumericField<E, ?> field);
+
+  Optional<E> max(NumericField<E, ?> field);
 }

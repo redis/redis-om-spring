@@ -1,6 +1,7 @@
 package com.redis.om.spring.search.stream;
 
 import com.redis.om.spring.metamodel.MetamodelField;
+import com.redis.om.spring.metamodel.indexed.NumericField;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
 import io.redisearch.aggregation.SortedField.SortOrder;
 
@@ -252,6 +253,14 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
 
   @Override public <R> AggregationStream<R> load(MetamodelField<E, ?>... fields) {
     throw new UnsupportedOperationException("load is not supported on a WrappedSearchStream");
+  }
+
+  @Override public Optional<E> min(NumericField<E, ?> field) {
+    throw new UnsupportedOperationException("min is not supported on a WrappedSearchStream");
+  }
+
+  @Override public Optional<E> max(NumericField<E, ?> field) {
+    throw new UnsupportedOperationException("max is not supported on a WrappedSearchStream");
   }
 
 }

@@ -13,6 +13,7 @@ import org.springframework.data.domain.Sort.Order;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -585,6 +586,52 @@ class EntityStreamsAggregationsTest extends AbstractBaseDocumentTest {
       assertEquals(expected.getSecond(), actual.getSecond());
       assertEquals(expected.getThird(), actual.getThird());
     });
+  }
+
+  @Test void testEntityStreamMin() {
+    // The long way...
+    List<Pair<String, Double>> minAggregation = entityStream.of(Game.class) //
+        .load(Game$._KEY) //
+        .sorted(Order.asc("@price"))
+        .limit(1) //
+        .toList(String.class, Double.class);
+
+    Pair<String,Double> expected = minAggregation.get(0);
+
+    // The short way...
+    Optional<Game> actual = entityStream.of(Game.class).min(Game$.PRICE);
+
+    assertThat(actual) //
+        .isPresent() //
+        .map(Game::getAsin) //
+        .hasValue(expected.getFirst().split(":")[1]);
+
+    assertThat(actual) //
+        .map(Game::getPrice)
+        .hasValue(expected.getSecond());
+  }
+
+  @Test void testEntityStreamMax() {
+    // The long way...
+    List<Pair<String, Double>> maxAggregation = entityStream.of(Game.class) //
+        .load(Game$._KEY) //
+        .sorted(Order.desc("@price"))
+        .limit(1) //
+        .toList(String.class, Double.class);
+
+    Pair<String,Double> expected = maxAggregation.get(0);
+
+    // The short way...
+    Optional<Game> actual = entityStream.of(Game.class).max(Game$.PRICE);
+
+    assertThat(actual) //
+        .isPresent() //
+        .map(Game::getAsin) //
+        .hasValue(expected.getFirst().split(":")[1]);
+
+    assertThat(actual) //
+        .map(Game::getPrice)
+        .hasValue(expected.getSecond());
   }
 
 
