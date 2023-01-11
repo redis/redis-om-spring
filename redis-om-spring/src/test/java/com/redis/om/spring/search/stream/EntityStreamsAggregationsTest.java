@@ -380,7 +380,8 @@ class EntityStreamsAggregationsTest extends AbstractBaseDocumentTest {
           "iConcepts THE SHOCK MASTER For Use With PC|(null)|Mark|9.99", //
           "Saitek CES432110002/06/1 Pro Flight Cessna Trim Wheel|Mad Catz|Mark|47.02", //
           "Noppoo Choc Mini 84 USB NKRO Mechanical Gaming Keyboard Cherry MX Switches (BLUE switch + Black body + POM key cap)|(null)|Mark|34.98",
-          "iiMash&reg; Ipega Universal Wireless Bluetooth 3.0 Game Controller Gamepad Joypad for Apple Ios Iphone 5 4 4s Ipad 4 3 2 New Mini Ipod Android Phone HTC One X Samsung Galaxy S3 2 Note 2 N7100 N8000 Tablet Google Nexus 7&quot; 10&quot; Pc|iiMash&reg;|Mark|35.98",
+          "iiMash&reg; Ipega Universal Wireless Bluetooth 3.0 Game Controller Gamepad Joypad for Apple Ios Iphone 5 4 4s Ipad 4 3 2 New Mini Ipod"
+              + " Android Phone HTC One X Samsung Galaxy S3 2 Note 2 N7100 N8000 Tablet Google Nexus 7&quot; 10&quot; Pc|iiMash&reg;|Mark|35.98",
           "16 in 1 Plastic Game Card Case Holder Box For Nintendo 3DS DSi DSi XL DS LITE|Meco|Mark|3.99", //
           "Apocalypse Red Design Protective Decal Skin Sticker (High Gloss Coating) for Nintendo DSi XL Game Device|(null)|Mark|14.99"
       );
