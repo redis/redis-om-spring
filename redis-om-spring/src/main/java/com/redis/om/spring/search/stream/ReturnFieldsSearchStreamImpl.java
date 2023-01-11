@@ -1,51 +1,24 @@
 package com.redis.om.spring.search.stream;
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Spliterator;
-import java.util.StringTokenizer;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.BinaryOperator;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
-import java.util.function.ToDoubleFunction;
-import java.util.function.ToIntFunction;
-import java.util.function.ToLongFunction;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.DoubleStream;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.data.geo.Point;
-import org.springframework.util.ReflectionUtils;
-
 import com.google.gson.Gson;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
 import com.redis.om.spring.tuple.Tuple;
 import com.redis.om.spring.tuple.Tuples;
 import com.redis.om.spring.util.ObjectUtils;
-
 import io.redisearch.Query;
 import io.redisearch.SearchResult;
 import io.redisearch.aggregation.SortedField.SortOrder;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.data.geo.Point;
+import org.springframework.util.ReflectionUtils;
+
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.function.*;
+import java.util.stream.*;
 
 public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
 
@@ -54,8 +27,8 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
 
   private final Gson gson;
 
-  private SearchStreamImpl<E> entitySearchStream;
-  private List<MetamodelField<E, ?>> returning = new ArrayList<>();
+  private final SearchStreamImpl<E> entitySearchStream;
+  private List<MetamodelField<E, ?>> returning;
   private Stream<T> resolvedStream;
   private Runnable closeHandler;
 
@@ -107,8 +80,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     if (closeHandler == null) {
       resolveStream().close();
     } else {
-      resolveStream().onClose(closeHandler);
-      resolveStream().close();
+      resolveStream().onClose(closeHandler).close();
     }
   }
 
@@ -123,7 +95,11 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     return new WrapperSearchStream<>(resolveStream().filter((Predicate<? super T>) predicate));
   }
 
-  @SuppressWarnings("resource")
+  @Override
+  public SearchStream<T> filter(String freeText) {
+    throw new UnsupportedOperationException("Filter on free text predicate is not supported on mapped stream");
+  }
+
   @Override
   public <R> SearchStream<R> map(Function<? super T, ? extends R> mapper) {
     return new WrapperSearchStream<>(resolveStream()).map(mapper);
@@ -144,25 +120,21 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     return resolveStream().mapToDouble(mapper);
   }
 
-  @SuppressWarnings("resource")
   @Override
   public <R> SearchStream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMap(mapper);
   }
 
-  @SuppressWarnings("resource")
   @Override
   public IntStream flatMapToInt(Function<? super T, ? extends IntStream> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMapToInt(mapper);
   }
 
-  @SuppressWarnings("resource")
   @Override
   public LongStream flatMapToLong(Function<? super T, ? extends LongStream> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMapToLong(mapper);
   }
 
-  @SuppressWarnings("resource")
   @Override
   public DoubleStream flatMapToDouble(Function<? super T, ? extends DoubleStream> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMapToDouble(mapper);
@@ -280,7 +252,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
 
   private Stream<T> resolveStream() {
     if (resolvedStream == null) {
-      List<T> results = Collections.emptyList();
+      List<T> results;
       Query query = entitySearchStream.prepareQuery();
       String[] returnFields = returning.stream().map(foi -> "$." + foi.getSearchAlias()).toArray(String[]::new);
 
@@ -296,7 +268,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
         results = toResultTuple(entities, returnFields);
 
       } else {
-        
+
         query.returnFields(returnFields);
         results = toResultTuple(entitySearchStream.getOps().search(query), returnFields);
       }
@@ -308,17 +280,17 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   @SuppressWarnings("unchecked")
   private List<T> toResultTuple(SearchResult searchResult, String[] returnFields) {
     List<T> results = new ArrayList<>();
-    searchResult.docs.stream().forEach(doc -> {
+    searchResult.docs.forEach(doc -> {
       Map<String, Object> props = StreamSupport.stream(doc.getProperties().spliterator(), false)
           .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
 
       List<Object> mappedResults = new ArrayList<>();
-      returning.stream().forEach(foi -> {
+      returning.forEach(foi -> {
         String field = foi.getSearchAlias();
         Object value = props.get("$." + field);
-        Class<?> targetClass = foi.getSearchFieldAccessor().getTargetClass();
+        Class<?> targetClass = foi.getTargetClass();
         if (targetClass == Date.class) {
-          mappedResults.add(new Date(Long.valueOf(value.toString())));
+          mappedResults.add(new Date(Long.parseLong(value.toString())));
         } else if (targetClass == Point.class) {
           StringTokenizer st = new StringTokenizer(value.toString(), ",");
           String lon = st.nextToken();
@@ -346,9 +318,9 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   private List<T> toResultTuple(List<E> entities, String[] returnFields) {
     List<T> results = new ArrayList<>();
 
-    entities.stream().forEach(entity -> {
+    entities.forEach(entity -> {
       List<Object> mappedResults = new ArrayList<>();
-      returning.stream().forEach(foi -> {
+      returning.forEach(foi -> {
         String getterName = "get" + ObjectUtils.ucfirst(foi.getSearchAlias());
         Method getter = ReflectionUtils.findMethod(entitySearchStream.getEntityClass(), getterName);
         mappedResults.add(ReflectionUtils.invokeMethod(getter, entity));
@@ -371,7 +343,20 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
 
   @Override
   public Stream<Map<String, Object>> mapToLabelledMaps() {
-     return resolveStream().map(Tuple.class::cast).map(Tuple::labelledMap);
+    return resolveStream().map(Tuple.class::cast).map(Tuple::labelledMap);
+  }
+
+  @Override
+  public <R> AggregationStream<R> groupBy(MetamodelField<T, ?>... field) {
+    throw new UnsupportedOperationException("groupBy is not supported on a ReturnFieldSearchStream");
+  }
+
+  @Override public <R> AggregationStream<R> apply(String expression, String alias) {
+    throw new UnsupportedOperationException("apply is not supported on a ReturnFieldSearchStream");
+  }
+
+  @Override public <R> AggregationStream<R> load(MetamodelField<T, ?>... fields) {
+    throw new UnsupportedOperationException("load is not supported on a ReturnFieldSearchStream");
   }
 
 }

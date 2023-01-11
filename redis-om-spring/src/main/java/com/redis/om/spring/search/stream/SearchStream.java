@@ -1,35 +1,22 @@
 package com.redis.om.spring.search.stream;
 
+import com.redis.om.spring.metamodel.MetamodelField;
+import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
+import io.redisearch.aggregation.SortedField.SortOrder;
+
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.BinaryOperator;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
-import java.util.function.ToDoubleFunction;
-import java.util.function.ToIntFunction;
-import java.util.function.ToLongFunction;
-import java.util.stream.BaseStream;
-import java.util.stream.Collector;
-import java.util.stream.DoubleStream;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
-import java.util.stream.Stream;
-
-import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
-
-import io.redisearch.aggregation.SortedField.SortOrder;
+import java.util.function.*;
+import java.util.stream.*;
 
 public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
 
   SearchStream<E> filter(SearchFieldPredicate<? super E, ?> predicate);
 
   SearchStream<E> filter(Predicate<?> predicate);
+
+  SearchStream<E> filter(String freeText);
 
   <R> SearchStream<R> map(Function<? super E, ? extends R> field);
   
@@ -94,4 +81,10 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
   Optional<E> findAny();
   
   Stream<Map<String,Object>> mapToLabelledMaps();
+
+  <R> AggregationStream<R> groupBy(MetamodelField<E, ?>... fields);
+
+  <R> AggregationStream<R> apply(String expression, String alias);
+
+  <R> AggregationStream<R> load(MetamodelField<E, ?>... fields);
 }

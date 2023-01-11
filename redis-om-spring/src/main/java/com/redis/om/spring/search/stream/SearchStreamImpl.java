@@ -1,36 +1,5 @@
 package com.redis.om.spring.search.stream;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Spliterator;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.BinaryOperator;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
-import java.util.function.ToDoubleFunction;
-import java.util.function.ToIntFunction;
-import java.util.function.ToLongFunction;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.DoubleStream;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
-import java.util.stream.Stream;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.google.gson.Gson;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.ops.RedisModulesOperations;
@@ -41,13 +10,20 @@ import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.TupleMapper;
 import com.redis.om.spring.util.ObjectUtils;
-
 import io.redisearch.Query;
 import io.redisearch.SearchResult;
 import io.redisearch.aggregation.SortedField;
 import io.redisearch.aggregation.SortedField.SortOrder;
 import io.redisearch.querybuilder.Node;
 import io.redisearch.querybuilder.QueryBuilder;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.function.*;
+import java.util.stream.*;
 
 public class SearchStreamImpl<E> implements SearchStream<E> {
 
@@ -57,18 +33,18 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private static final Integer MAX_LIMIT = 10000;
 
   @SuppressWarnings("unused")
-  private RedisModulesOperations<String> modulesOperations;
-  private SearchOperations<String> search;
-  private JSONOperations<String> json;
-  private String searchIndex;
-  private Class<E> entityClass;
+  private final RedisModulesOperations<String> modulesOperations;
+  private final SearchOperations<String> search;
+  private final JSONOperations<String> json;
+  private final String searchIndex;
+  private final Class<E> entityClass;
   private Node rootNode = QueryBuilder.union();
   private final Gson gson;
   private Optional<Long> limit = Optional.empty();
   private Optional<Long> skip = Optional.empty();
   private Optional<SortedField> sortBy = Optional.empty();
   private boolean onlyIds = false;
-  private Field idField;
+  private final Field idField;
   private Runnable closeHandler;
   private Stream<E> resolvedStream;
 
@@ -89,15 +65,26 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public SearchStream<E> filter(SearchFieldPredicate<? super E, ?> predicate) {
-    Node node = processPredicate(predicate);
-    rootNode = node;
+    rootNode = processPredicate(predicate);
     return this;
   }
 
   @Override
   public SearchStream<E> filter(Predicate<?> predicate) {
-    Node node = processPredicate(predicate);
-    rootNode = node;
+    rootNode = processPredicate(predicate);
+    return this;
+  }
+
+  @Override
+  public SearchStream<E> filter(String freeText) {
+    rootNode = new Node() {
+      @Override public String toString(ParenMode mode) {
+        return freeText;
+      }
+      @Override public String toString() {
+        return freeText;
+      }
+    };
     return this;
   }
 
@@ -348,13 +335,11 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     return this;
   }
 
-  @Override
-  public void close() {
+  @Override public void close() {
     if (closeHandler == null) {
       resolveStream().close();
     } else {
-      resolveStream().onClose(closeHandler);
-      resolveStream().close();
+      resolveStream().onClose(closeHandler).close();
     }
   }
 
@@ -365,7 +350,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   Query prepareQuery() {
     Query query = (rootNode.toString().isBlank()) ? new Query() : new Query(rootNode.toString());
 
-    query.limit(skip.isPresent() ? skip.get().intValue() : 0, limit.isPresent() ? limit.get().intValue() : MAX_LIMIT);
+    query.limit(skip.map(Long::intValue).orElse(0), limit.map(Long::intValue).orElse(MAX_LIMIT));
 
     if (sortBy.isPresent()) {
       SortedField sortField = sortBy.get();
@@ -415,7 +400,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
           .stream() //
           .map(d -> {
             try {
-              String key = idField.getType().getDeclaredConstructor((Class<?>)idField.getType())
+              String key = idField.getType().getDeclaredConstructor(idField.getType())
                   .newInstance(d.getId()).toString();
               return key.substring(key.indexOf(":") + 1);
             } catch (Exception e) {
@@ -441,6 +426,28 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @Override
   public Stream<Map<String, Object>> mapToLabelledMaps() {
     throw new UnsupportedOperationException("mapToLabelledMaps is not supported on a SearchStream");
+  }
+
+  @Override public <R> AggregationStream<R> groupBy(MetamodelField<E, ?>... fields) {
+    this.close();
+    String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
+    return new AggregationStreamImpl<>(searchIndex, modulesOperations, query, fields);
+  }
+
+  @Override public <R> AggregationStream<R> apply(String expression, String alias) {
+    this.close();
+    String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
+    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, query);
+    aggregationStream.apply(expression, alias);
+    return aggregationStream;
+  }
+
+  @Override public <R> AggregationStream<R> load(MetamodelField<E, ?>... fields) {
+    this.close();
+    String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
+    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, query);
+    aggregationStream.load(fields);
+    return aggregationStream;
   }
 
 }

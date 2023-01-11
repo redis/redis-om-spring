@@ -1,23 +1,21 @@
 package com.redis.om.spring.repository.query;
 
-import java.lang.reflect.Field;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.StreamSupport;
-
+import com.redis.om.spring.annotations.*;
+import com.redis.om.spring.convert.MappingRedisOMConverter;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.search.SearchOperations;
+import com.redis.om.spring.repository.query.autocomplete.AutoCompleteQueryExecutor;
+import com.redis.om.spring.repository.query.bloom.BloomQueryExecutor;
+import com.redis.om.spring.repository.query.clause.QueryClause;
+import com.redis.om.spring.util.ObjectUtils;
+import io.redisearch.AggregationResult;
+import io.redisearch.Query;
+import io.redisearch.Schema.FieldType;
+import io.redisearch.SearchResult;
+import io.redisearch.aggregation.AggregationBuilder;
+import io.redisearch.aggregation.Group;
+import io.redisearch.aggregation.SortedField;
+import io.redisearch.aggregation.reducers.Reducers;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.data.domain.PageImpl;
@@ -39,26 +37,13 @@ import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.data.util.Pair;
 import org.springframework.util.ClassUtils;
 
-import com.redis.om.spring.annotations.Aggregation;
-import com.redis.om.spring.annotations.GeoIndexed;
-import com.redis.om.spring.annotations.Indexed;
-import com.redis.om.spring.annotations.NumericIndexed;
-import com.redis.om.spring.annotations.Searchable;
-import com.redis.om.spring.annotations.TagIndexed;
-import com.redis.om.spring.annotations.TextIndexed;
-import com.redis.om.spring.convert.MappingRedisOMConverter;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.ops.search.SearchOperations;
-import com.redis.om.spring.repository.query.autocomplete.AutoCompleteQueryExecutor;
-import com.redis.om.spring.repository.query.bloom.BloomQueryExecutor;
-import com.redis.om.spring.repository.query.clause.QueryClause;
-import com.redis.om.spring.util.ObjectUtils;
-
-import io.redisearch.AggregationResult;
-import io.redisearch.Query;
-import io.redisearch.Schema.FieldType;
-import io.redisearch.SearchResult;
-import io.redisearch.aggregation.AggregationBuilder;
+import java.lang.reflect.Field;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class RedisEnhancedQuery implements RepositoryQuery {
 
@@ -79,10 +64,16 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   private Integer limit;
   private String sortBy;
   private Boolean sortAscending;
+  private boolean hasLanguageParameter;
 
   // aggregation fields
-  private String[] load;
-  private Map<String, String> apply;
+  private List<Entry<String, String>> aggregationLoad = new ArrayList<>();
+  private List<Entry<String, String>> aggregationApply = new ArrayList<>();
+  private Long aggregationTimeout;
+  private String[] aggregationFilter;
+  private List<Group> aggregationGroups = new ArrayList<>();
+  private List<SortedField> aggregationSortedFields = new ArrayList<>();
+  private Integer aggregationSortByMax;
 
   //
   private List<List<Pair<String, QueryClause>>> queryOrParts = new ArrayList<>();
@@ -142,8 +133,64 @@ public class RedisEnhancedQuery implements RepositoryQuery {
         Aggregation aggregation = method.getAnnotation(Aggregation.class);
         this.type = RediSearchQueryType.AGGREGATION;
         this.value = aggregation.value();
-        this.load = aggregation.load();
-        this.apply = splitApplyArguments(aggregation.apply());
+        Arrays.stream(aggregation.load()).forEach(load -> {
+          aggregationLoad.add(new AbstractMap.SimpleEntry<>(load.property(), load.alias()));
+        });
+        Arrays.stream(aggregation.apply()).forEach(apply -> {
+          aggregationApply.add(new AbstractMap.SimpleEntry<>(apply.alias(), apply.expression()));
+        });
+        this.aggregationFilter = aggregation.filter();
+        this.aggregationTimeout = aggregation.timeout() > Long.MIN_VALUE ? aggregation.timeout() : null;
+        this.aggregationSortByMax = aggregation.sortByMax() > Integer.MIN_VALUE ? aggregation.sortByMax() : null;
+        this.limit = aggregation.limit() > Integer.MIN_VALUE ? aggregation.limit() : null;
+        this.offset = aggregation.offset() > Integer.MIN_VALUE ? aggregation.offset() : null;
+        Arrays.stream(aggregation.groupBy()).forEach(groupBy -> {
+          Group group = new Group(groupBy.properties());
+          Arrays.stream(groupBy.reduce()).forEach(reducer -> {
+            String alias = reducer.alias();
+            String arg0 = reducer.args().length > 0 ? reducer.args()[0] : null;
+            io.redisearch.aggregation.reducers.Reducer r = null;
+            switch (reducer.func()) {
+              case COUNT:
+                r = Reducers.count(); break;
+              case COUNT_DISTINCT:
+                r = Reducers.count_distinct(arg0); break;
+              case COUNT_DISTINCTISH:
+                r = Reducers.count_distinctish(arg0); break;
+              case SUM:
+                r = Reducers.sum(arg0); break;
+              case MIN:
+                r = Reducers.min(arg0); break;
+              case MAX:
+                r = Reducers.max(arg0); break;
+              case AVG:
+                r = Reducers.avg(arg0); break;
+              case STDDEV:
+                r = Reducers.stddev(arg0); break;
+              case QUANTILE:
+                double percentile = Double.parseDouble(reducer.args()[1]);
+                r = Reducers.quantile(arg0, percentile); break;
+              case TOLIST:
+                r = Reducers.to_list(arg0); break;
+              case FIRST_VALUE:
+                r = Reducers.first_value(arg0); break;
+              case RANDOM_SAMPLE:
+                int sampleSize = Integer.parseInt(reducer.args()[1]);
+                r = Reducers.random_sample(arg0, sampleSize); break;
+            }
+            if (r != null && alias != null && !alias.isBlank()) {
+              r.setAlias(alias);
+            }
+            group.reduce(r);
+          });
+          aggregationGroups.add(group);
+        });
+        Arrays.stream(aggregation.sortBy()).forEach(sortBy -> {
+          SortedField sortedField = sortBy.direction().isAscending() ? SortedField.asc(sortBy.field()) : SortedField.desc(
+              sortBy.field());
+          aggregationSortedFields.add(sortedField);
+        });
+
       } else if (queryMethod.getName().equalsIgnoreCase("search")) {
         this.type = RediSearchQueryType.QUERY;
         List<Pair<String, QueryClause>> orPartParts = new ArrayList<>();
@@ -241,10 +288,28 @@ public class RedisEnhancedQuery implements RepositoryQuery {
         // Set / List
         //
         else if (Set.class.isAssignableFrom(fieldType) || List.class.isAssignableFrom(fieldType)) {
-          if (isANDQuery) {
-            qf.add(Pair.of(actualKey, QueryClause.Tag_CONTAINING_ALL));
-          } else {
-            qf.add(Pair.of(actualKey, QueryClause.get(FieldType.Tag, part.getType())));
+          Optional<Class<?>> maybeCollectionType = ObjectUtils.getCollectionElementType(field);
+          if (maybeCollectionType.isPresent()) {
+            Class<?> collectionType = maybeCollectionType.get();
+            if (Number.class.isAssignableFrom(collectionType)) {
+              if (isANDQuery) {
+                qf.add(Pair.of(actualKey, QueryClause.Numeric_CONTAINING_ALL));
+              } else {
+                qf.add(Pair.of(actualKey, QueryClause.get(FieldType.Numeric, part.getType())));
+              }
+            } else if (collectionType == Point.class) {
+              if (isANDQuery) {
+                qf.add(Pair.of(actualKey, QueryClause.Geo_CONTAINING_ALL));
+              } else {
+                qf.add(Pair.of(actualKey, QueryClause.get(FieldType.Geo, part.getType())));
+              }
+            } else { // String or Boolean
+              if (isANDQuery) {
+                qf.add(Pair.of(actualKey, QueryClause.Tag_CONTAINING_ALL));
+              } else {
+                qf.add(Pair.of(actualKey, QueryClause.get(FieldType.Tag, part.getType())));
+              }
+            }
           }
         }
         //
@@ -327,6 +392,14 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       query.setSortBy(sortBy, sortAscending);
     }
 
+    if (hasLanguageParameter) {
+      Optional<SearchLanguage> maybeSearchLanguage = Arrays.stream(parameters).filter(SearchLanguage.class::isInstance)
+          .map(SearchLanguage.class::cast).findFirst();
+      if (maybeSearchLanguage.isPresent()) {
+        query.setLanguage(maybeSearchLanguage.get().getValue());
+      }
+    }
+
     // Intercept TAG collection queries with empty parameters and use an
     // aggregation
     if (queryMethod.isCollectionQuery() && !queryMethod.getParameters().isEmpty()) {
@@ -375,18 +448,97 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
   private Object executeAggregation(Object[] parameters) {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
-    AggregationBuilder aggregation = new AggregationBuilder(value).load(load);
-    for (Map.Entry<String, String> entry : apply.entrySet()) {
-      aggregation.apply(entry.getKey(), entry.getValue());
+
+    // build the aggregation
+    AggregationBuilder aggregation = new AggregationBuilder(value);
+
+    // load
+    for (Map.Entry<String, String> apply : aggregationLoad) {
+      if (apply.getValue().isBlank()) {
+        aggregation.load(apply.getKey());
+      } else {
+        aggregation.load(apply.getKey(), "AS", apply.getValue());
+      }
     }
+
+    // group by
+    aggregationGroups.forEach(group -> {
+      aggregation.groupBy(group);
+    });
+
+    // filter
+    if (aggregationFilter != null && aggregationFilter.length > 0) {
+      for (String filter:aggregationFilter) {
+        aggregation.filter(filter);
+      }
+    }
+
+    // sort by
+    Optional<Pageable> maybePageable = Optional.empty();
+
+    if (queryMethod.isPageQuery()) {
+      maybePageable = Arrays.stream(parameters).filter(Pageable.class::isInstance).map(Pageable.class::cast)
+          .findFirst();
+
+      if (maybePageable.isPresent()) {
+        Pageable pageable = maybePageable.get();
+        if (!pageable.isUnpaged()) {
+          aggregation.limit(Math.toIntExact(pageable.getOffset()), pageable.getPageSize());
+
+          // sort by
+          if (pageable.getSort() != null) {
+            for (Order order : pageable.getSort()) {
+              if (order.isAscending()) {
+                aggregation.sortByAsc(order.getProperty());
+              } else {
+                aggregation.sortByDesc(order.getProperty());
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if ((sortBy != null && !sortBy.isBlank())) {
+      aggregation.sortByAsc(sortBy);
+    } else if (!aggregationSortedFields.isEmpty()) {
+      if (aggregationSortByMax != null) {
+        aggregation.sortBy(aggregationSortByMax, aggregationSortedFields.toArray(new SortedField[] {}));
+      } else {
+        aggregation.sortBy(aggregationSortedFields.toArray(new SortedField[] {}));
+      }
+    }
+
+    // apply
+    for (Map.Entry<String, String> apply : aggregationApply) {
+      aggregation.apply(apply.getValue(), apply.getKey());
+    }
+
+    // limit
+    if ((limit != null) || (offset != null)) {
+      aggregation.limit(offset != null ? offset : 0, limit != null ? limit : 0);
+    }
+
+    // execute the aggregation
     AggregationResult aggregationResult = ops.aggregate(aggregation);
 
     // what to return
     Object result = null;
     if (queryMethod.getReturnedObjectType() == AggregationResult.class) {
       result = aggregationResult;
-    } else if (queryMethod.isCollectionQuery()) {
-      result = Collections.emptyList();
+    } else if (queryMethod.getReturnedObjectType() == Map.class) {
+      List<?> content = List.of();
+      if (queryMethod.getReturnedObjectType() == Map.class) {
+        content = aggregationResult.getResults().stream().map(m ->
+            m.entrySet().stream() //
+                .map(e -> new AbstractMap.SimpleEntry<>(e.getKey(), e.getValue() != null ? new String((byte[])e.getValue()) : "")) //
+                .collect(Collectors.toMap(r -> r.getKey(), r -> r.getValue())) //
+        ).collect(Collectors.toList());
+      }
+      if (queryMethod.isPageQuery() && maybePageable.isPresent()) {
+        Pageable pageable = maybePageable.get();
+        result = new PageImpl<>(content, pageable, aggregationResult.totalResults);
+      }
     }
 
     return result;
@@ -453,14 +605,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       }
     }
 
+    logger.debug(String.format("query: %s", preparedQuery.toString()));
+
     return preparedQuery.toString();
   }
-
-  private Map<String, String> splitApplyArguments(String... entries) {
-    return IntStream //
-        .range(0, entries.length / 2) //
-        .map(i -> i * 2) //
-        .collect(HashMap::new, (m, i) -> m.put(entries[i], entries[i + 1]), Map::putAll);
-  }
-
 }

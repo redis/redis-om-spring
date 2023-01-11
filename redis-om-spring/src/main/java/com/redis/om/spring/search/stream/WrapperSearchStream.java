@@ -1,34 +1,16 @@
 package com.redis.om.spring.search.stream;
 
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Spliterator;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.BinaryOperator;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
-import java.util.function.ToDoubleFunction;
-import java.util.function.ToIntFunction;
-import java.util.function.ToLongFunction;
-import java.util.stream.Collector;
-import java.util.stream.DoubleStream;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
-import java.util.stream.Stream;
-
+import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
-
 import io.redisearch.aggregation.SortedField.SortOrder;
+
+import java.util.*;
+import java.util.function.*;
+import java.util.stream.*;
 
 public class WrapperSearchStream<E> implements SearchStream<E> {
 
-  private Stream<E> backingStream = Stream.empty();
+  private final Stream<E> backingStream;
   private Runnable closeHandler;
 
   public WrapperSearchStream(Stream<E> backingStream) {
@@ -76,8 +58,7 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
     if (closeHandler == null) {
       backingStream.close();
     } else {
-      backingStream.onClose(closeHandler);
-      backingStream.close();
+      backingStream.onClose(closeHandler).close();
     }
   }
 
@@ -92,6 +73,12 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
   public SearchStream<E> filter(Predicate<?> predicate) {
     // TODO: need to test this cast!
     return new WrapperSearchStream<>(backingStream.filter((Predicate<? super E>) predicate));
+  }
+
+  @Override
+  public SearchStream<E> filter(String freeText) {
+    // NO-OP
+    return this;
   }
 
   @Override
@@ -252,6 +239,19 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
   @Override
   public Stream<Map<String, Object>> mapToLabelledMaps() {
     throw new UnsupportedOperationException("mapToLabelledMaps is not supported on a WrappedSearchStream");
+  }
+
+  @Override
+  public <R> AggregationStream<R> groupBy(MetamodelField<E, ?>... fields) {
+    throw new UnsupportedOperationException("groupBy is not supported on a WrappedSearchStream");
+  }
+
+  @Override public <R> AggregationStream<R> apply(String expression, String alias) {
+    throw new UnsupportedOperationException("apply is not supported on a WrappedSearchStream");
+  }
+
+  @Override public <R> AggregationStream<R> load(MetamodelField<E, ?>... fields) {
+    throw new UnsupportedOperationException("load is not supported on a WrappedSearchStream");
   }
 
 }
