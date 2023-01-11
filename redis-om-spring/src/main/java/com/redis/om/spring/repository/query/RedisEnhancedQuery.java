@@ -393,8 +393,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     }
 
     if (hasLanguageParameter) {
-      Optional<SearchLanguage> maybeSearchLanguage = Arrays.stream(parameters).filter(SearchLanguage.class::isInstance).map(SearchLanguage.class::cast)
-          .findFirst();
+      Optional<SearchLanguage> maybeSearchLanguage = Arrays.stream(parameters).filter(SearchLanguage.class::isInstance)
+          .map(SearchLanguage.class::cast).findFirst();
       if (maybeSearchLanguage.isPresent()) {
         query.setLanguage(maybeSearchLanguage.get().getValue());
       }
