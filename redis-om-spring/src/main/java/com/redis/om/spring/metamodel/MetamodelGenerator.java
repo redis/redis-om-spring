@@ -458,8 +458,8 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
   public static final Character REPLACEMENT_CHARACTER = '_';
 
-  private Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> generateFieldMetamodel(TypeName entity, List<Element> chain, String chainFieldName,
-      TypeName entityField, Class<?> interceptorClass, boolean fieldIsIndexed) {
+  private Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> generateFieldMetamodel(TypeName entity, List<Element> chain,
+      String chainFieldName, TypeName entityField, Class<?> interceptorClass, boolean fieldIsIndexed) {
     String fieldAccessor = staticField(chainFieldName);
 
     FieldSpec objectField = FieldSpec.builder(Field.class, chainFieldName).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
