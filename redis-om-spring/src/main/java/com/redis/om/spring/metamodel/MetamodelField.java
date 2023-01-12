@@ -1,5 +1,7 @@
 package com.redis.om.spring.metamodel;
 
+import org.springframework.data.domain.Sort.Order;
+
 import java.util.Comparator;
 import java.util.function.Function;
 
@@ -45,5 +47,13 @@ public class MetamodelField<E, T> implements Comparator<E>, Function<E,T> {
 
   public Class<?> getTargetClass() {
     return searchFieldAccessor != null ? searchFieldAccessor.getTargetClass() : String.class;
+  }
+
+  public Order asc() {
+    return Order.asc("@" + getSearchAlias());
+  }
+
+  public Order desc() {
+    return Order.desc("@" + getSearchAlias());
   }
 }

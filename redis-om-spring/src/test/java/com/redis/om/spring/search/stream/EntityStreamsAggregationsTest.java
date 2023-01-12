@@ -543,7 +543,7 @@ class EntityStreamsAggregationsTest extends AbstractBaseDocumentTest {
     List<Pair<String, Double>> sumPrice = entityStream
         .of(Game.class) //
         .load(Game$.TITLE) //
-        .sorted(Order.asc("@price")) //
+        .sorted(Game$.PRICE.asc()) //
         .limit(2) //
         .toList(String.class, Double.class);
 
@@ -575,7 +575,7 @@ class EntityStreamsAggregationsTest extends AbstractBaseDocumentTest {
     List<Triple<String, Double, String>> loadWithDocId = entityStream
         .of(Game.class) //
         .load(Game$.BRAND, Game$.PRICE, Game$._KEY) //
-        .sorted(4, Order.desc("@price")) //
+        .sorted(4, Game$.PRICE.desc()) //
         .toList(String.class, Double.class, String.class);
 
     IntStream.range(0, expectedData.size() - 1).forEach(i -> {
@@ -592,7 +592,7 @@ class EntityStreamsAggregationsTest extends AbstractBaseDocumentTest {
     // The long way...
     List<Pair<String, Double>> minAggregation = entityStream.of(Game.class) //
         .load(Game$._KEY) //
-        .sorted(Order.asc("@price"))
+        .sorted(Game$.PRICE.asc())
         .limit(1) //
         .toList(String.class, Double.class);
 
@@ -615,7 +615,7 @@ class EntityStreamsAggregationsTest extends AbstractBaseDocumentTest {
     // The long way...
     List<Pair<String, Double>> maxAggregation = entityStream.of(Game.class) //
         .load(Game$._KEY) //
-        .sorted(Order.desc("@price"))
+        .sorted(Game$.PRICE.desc())
         .limit(1) //
         .toList(String.class, Double.class);
 
@@ -633,7 +633,4 @@ class EntityStreamsAggregationsTest extends AbstractBaseDocumentTest {
         .map(Game::getPrice)
         .hasValue(expected.getSecond());
   }
-
-
-
 }
