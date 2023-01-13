@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.data.geo.Point;
 
 import com.redis.om.documents.domain.Company;
+import com.redis.om.documents.domain.CompanyMeta;
 import com.redis.om.documents.domain.Person;
 import com.redis.om.documents.repositories.CompanyRepository;
 import com.redis.om.documents.repositories.PersonRepository;
@@ -29,10 +30,10 @@ public class RomsDocumentsApplication {
   CommandLineRunner loadTestData() {
     return args -> {
       companyRepo.deleteAll();
-      Company redis = Company.of("Redis", "https://redis.com", new Point(-122.066540, 37.377690), 526, 2011);
+      Company redis = Company.of("Redis", "https://redis.com", new Point(-122.066540, 37.377690), 526, 2011, Set.of(CompanyMeta.of("Redis", 100, Set.of("RedisTag"))));
       redis.setTags(Set.of("fast", "scalable", "reliable"));
 
-      Company microsoft = Company.of("Microsoft", "https://microsoft.com", new Point(-122.124500, 47.640160), 182268, 1975);
+      Company microsoft = Company.of("Microsoft", "https://microsoft.com", new Point(-122.124500, 47.640160), 182268, 1975, Set.of(CompanyMeta.of("MS", 50, Set.of("MsTag"))));
       microsoft.setTags(Set.of("innovative", "reliable"));
 
       companyRepo.save(redis);
