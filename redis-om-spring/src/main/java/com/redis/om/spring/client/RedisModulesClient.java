@@ -51,7 +51,8 @@ public class RedisModulesClient {
   }
   
   public Optional<UnifiedJedis> getUnifiedJedis() {
-      return Optional.of(new JedisPooled(Objects.requireNonNull(jedisConnectionFactory.getPoolConfig())));
+      return Optional.of(new JedisPooled(Objects.requireNonNull(jedisConnectionFactory.getPoolConfig()),
+              jedisConnectionFactory.getHostName(), jedisConnectionFactory.getPort()));
   }
 
   public Optional<Jedis> getJedis() {
