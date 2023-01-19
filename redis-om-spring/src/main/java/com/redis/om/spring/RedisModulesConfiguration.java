@@ -113,15 +113,15 @@ public class RedisModulesConfiguration implements CachingConfigurer {
   }
 
   @Bean(name = "redisModulesClient")
-  RedisModulesClient redisModulesClient(JedisConnectionFactory jedisConnectionFactory, GsonBuilder builder) {
-    return new RedisModulesClient(jedisConnectionFactory, builder);
+  RedisModulesClient redisModulesClient(JedisConnectionFactory jedisConnectionFactory) {
+    return new RedisModulesClient(jedisConnectionFactory);
   }
 
   @Bean(name = "redisModulesOperations")
   @Primary
   @ConditionalOnMissingBean
-  RedisModulesOperations<?> redisModulesOperations(RedisModulesClient rmc, RedisTemplate<?, ?> template) {
-    return new RedisModulesOperations<>(rmc, template);
+  RedisModulesOperations<?> redisModulesOperations(RedisModulesClient rmc, RedisTemplate<?, ?> template, GsonBuilder gsonBuilder) {
+    return new RedisModulesOperations<>(rmc, template, gsonBuilder);
   }
 
   @Bean(name = "redisJSONOperations")

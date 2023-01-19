@@ -17,7 +17,7 @@ public interface JSONOperations<K> {
   <T> T get(K key, Class<T> clazz);
 
   @Nullable
-  <T> T get(K key, Class<T> clazz, Path... paths);
+  <T> T get(K key, Class<T> clazz, Path path);
 
   @SuppressWarnings("unchecked")
   <T> List<T> mget(Class<T> clazz, K... keys);
@@ -37,7 +37,7 @@ public interface JSONOperations<K> {
   
   Class<?> type(K key, Path path);
   
-  Long strAppend(K key, Path path, Object... objects);
+  Long strAppend(K key, Path path, Object object);
   
   Long strLen(K key, Path path);
   

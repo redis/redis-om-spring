@@ -1,19 +1,22 @@
 package com.redis.om.spring.ops.json;
 
-import java.util.Arrays;
-import java.util.List;
-
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.redis.om.spring.client.RedisModulesClient;
-
 import redis.clients.jedis.json.JsonSetParams;
 import redis.clients.jedis.json.Path;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class JSONOperationsImpl<K> implements JSONOperations<K> {
 
+  private final Gson gson;
   RedisModulesClient client;
 
-  public JSONOperationsImpl(RedisModulesClient client) {
+  public JSONOperationsImpl(RedisModulesClient client, GsonBuilder gson) {
     this.client = client;
+    this.gson = gson.create();
   }
 
   @Override
@@ -23,18 +26,22 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
 
   @Override
   public <T> T get(K key, Class<T> clazz) {
-    return client.clientForJSON().jsonGet(key.toString(), clazz);
+    return gson.fromJson(client.clientForJSON().jsonGetAsPlainString(key.toString(), Path.ROOT_PATH), clazz);
   }
 
   @Override
-  public <T> T get(K key, Class<T> clazz, Path... paths) {
-    return client.clientForJSON().jsonGet(key.toString(), clazz, paths);
+  public <T> T get(K key, Class<T> clazz, Path path) {
+    return gson.fromJson(client.clientForJSON().jsonGetAsPlainString(key.toString(), path), clazz);
   }
 
   @Override
   public <T> List<T> mget(Class<T> clazz, @SuppressWarnings("unchecked") K... keys) {
-    String[] keysAsStrings = Arrays.asList(keys).stream().map(Object::toString).toArray(String[]::new);
-    return client.clientForJSON().jsonMGet(clazz, keysAsStrings);
+    String[] keysAsStrings = Arrays.stream(keys).map(Object::toString).toArray(String[]::new);
+    return client.clientForJSON().jsonMGet(keysAsStrings)
+            .stream().map(jsonArr -> jsonArr.get(0))
+            .map(Object::toString)
+            .map(str -> gson.fromJson(str, clazz))
+            .toList();
   }
 
   @Override
@@ -50,7 +57,7 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
 
   @Override
   public void set(K key, Object object) {
-    client.clientForJSON().jsonSet(key.toString(), object);
+    client.clientForJSON().jsonSetWithPlainString(key.toString(), Path.ROOT_PATH, gson.toJson(object));
   }
 
   @Override
@@ -74,8 +81,8 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
   }
 
   @Override
-  public Long strAppend(K key, Path path, Object... objects) {
-    return client.clientForJSON().jsonStrAppend(key.toString(), path, objects);
+  public Long strAppend(K key, Path path, Object object) {
+    return client.clientForJSON().jsonStrAppend(key.toString(), path, object);
   }
 
   @Override

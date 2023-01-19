@@ -15,7 +15,7 @@ class QueryClauseTest {
 
   @Test
   void testItShouldFindTheClauseByFieldTypeandPartType() {
-    assertEquals(QueryClause.FullText_SIMPLE_PROPERTY, QueryClause.get(FieldType.TEXT, Part.Type.SIMPLE_PROPERTY));
+    assertEquals(QueryClause.TEXT_SIMPLE_PROPERTY, QueryClause.get(FieldType.TEXT, Part.Type.SIMPLE_PROPERTY));
     assertEquals(QueryClause.Numeric_SIMPLE_PROPERTY, QueryClause.get(FieldType.NUMERIC, Part.Type.SIMPLE_PROPERTY));
     assertEquals(QueryClause.Numeric_BETWEEN, QueryClause.get(FieldType.NUMERIC, Part.Type.BETWEEN));
     assertEquals(QueryClause.Geo_NEAR, QueryClause.get(FieldType.GEO, Part.Type.NEAR));
@@ -24,7 +24,7 @@ class QueryClauseTest {
 
   @Test
   void testRenderFullTextEqualsQuery() {
-    String querySegment = QueryClause.FullText_SIMPLE_PROPERTY.prepareQuery("name", "Bumfuzzle");
+    String querySegment = QueryClause.TEXT_SIMPLE_PROPERTY.prepareQuery("name", "Bumfuzzle");
     assertEquals("@name:Bumfuzzle", querySegment);
   }
 

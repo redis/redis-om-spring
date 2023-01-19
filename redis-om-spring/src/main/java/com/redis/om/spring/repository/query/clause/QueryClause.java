@@ -20,32 +20,32 @@ import redis.clients.jedis.search.Schema.FieldType;
 
 public enum QueryClause {
   // FULL TEXT
-  FullText_ALL( //
+  TEXT_ALL( //
       QueryClauseTemplate.of(FieldType.TEXT, Part.Type.SIMPLE_PROPERTY, "$param_0", 1) //
   ),
-  FullText_SIMPLE_PROPERTY( //
+  TEXT_SIMPLE_PROPERTY( //
       QueryClauseTemplate.of(FieldType.TEXT, Part.Type.SIMPLE_PROPERTY, "@$field:$param_0", 1) //
   ),
-  FullText_NEGATING_SIMPLE_PROPERTY( //
+  TEXT_NEGATING_SIMPLE_PROPERTY( //
       QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.SIMPLE_PROPERTY, "-@$field:$param_0", 1) //
   ),
-  FullText_STARTING_WITH( //
+  TEXT_STARTING_WITH( //
       QueryClauseTemplate.of(FieldType.TEXT, Part.Type.STARTING_WITH, "@$field:$param_0*", 1) //
   ),
   // TODO: currently not supported with RediSearch - potential work around with aggregations
-  FullText_ENDING_WITH( //
+  TEXT_ENDING_WITH( //
       QueryClauseTemplate.of(FieldType.TEXT, Part.Type.ENDING_WITH, "@$field:$param_0", 1) //
   ),
-  FullText_LIKE( //
+  TEXT_LIKE( //
       QueryClauseTemplate.of(FieldType.TEXT, Part.Type.LIKE, "@$field:%%%$param_0%%%", 1) //
   ),
-  FullText_NOT_LIKE( //
+  TEXT_NOT_LIKE( //
       QueryClauseTemplate.of(FieldType.TEXT, Part.Type.NOT_LIKE, "-@$field:%%%$param_0%%%", 1) //
   ),
-  FullText_CONTAINING( //
+  TEXT_CONTAINING( //
       QueryClauseTemplate.of(FieldType.TEXT, Part.Type.CONTAINING, "@$field:%%%$param_0%%%", 1) //
   ),
-  FullText_NOT_CONTAINING( //
+  TEXT_NOT_CONTAINING( //
       QueryClauseTemplate.of(FieldType.TEXT, Part.Type.NOT_CONTAINING, "-@$field:%%%$param_0%%%", 1) //
   ),
   // NUMERIC

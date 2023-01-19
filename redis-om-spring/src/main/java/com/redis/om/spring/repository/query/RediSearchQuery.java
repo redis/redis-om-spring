@@ -138,7 +138,7 @@ public class RediSearchQuery implements RepositoryQuery {
       } else if (queryMethod.getName().equalsIgnoreCase("search")) {
         this.type = RediSearchQueryType.QUERY;
         List<Pair<String, QueryClause>> orPartParts = new ArrayList<>();
-        orPartParts.add(Pair.of("__ALL__", QueryClause.FullText_ALL));
+        orPartParts.add(Pair.of("__ALL__", QueryClause.TEXT_ALL));
         queryOrParts.add(orPartParts);
         this.returnFields = new String[] {};
       } else if (queryMethod.getName().startsWith("getAll")) {

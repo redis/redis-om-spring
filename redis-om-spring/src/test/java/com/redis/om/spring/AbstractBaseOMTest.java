@@ -4,6 +4,7 @@ import static com.redis.testcontainers.RedisModulesContainer.DEFAULT_IMAGE_NAME;
 
 import java.util.Set;
 
+import com.redis.testcontainers.RedisStackContainer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -21,10 +22,10 @@ import com.redis.testcontainers.RedisModulesContainer;
 @DirtiesContext
 public abstract class AbstractBaseOMTest {
   @Container
-  static final RedisModulesContainer REDIS;
+  static final RedisStackContainer REDIS;
 
   static {
-    REDIS = new RedisModulesContainer(DEFAULT_IMAGE_NAME.withTag("edge")).withReuse(true);
+    REDIS = new RedisStackContainer(DEFAULT_IMAGE_NAME.withTag("edge")).withReuse(true);
     REDIS.start();
   }
 

@@ -1,15 +1,9 @@
 package com.redis.om.spring.client;
 
-import java.util.Optional;
-
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
-
-import com.google.gson.GsonBuilder;
-//import com.redislabs.modules.rejson.JReJSON;
-//
-//import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
+import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.bloom.commands.BloomFilterCommands;
 import redis.clients.jedis.bloom.commands.CountMinSketchCommands;
@@ -18,13 +12,13 @@ import redis.clients.jedis.bloom.commands.TopKFilterCommands;
 import redis.clients.jedis.json.RedisJsonCommands;
 import redis.clients.jedis.search.RediSearchCommands;
 
+import java.util.Objects;
+import java.util.Optional;
+
 public class RedisModulesClient {
 
-  private GsonBuilder builder;
-
-  public RedisModulesClient(JedisConnectionFactory jedisConnectionFactory, GsonBuilder builder) {
+  public RedisModulesClient(JedisConnectionFactory jedisConnectionFactory) {
     this.jedisConnectionFactory = jedisConnectionFactory;
-    this.builder = builder;
   }
 
   public RedisJsonCommands clientForJSON() {
@@ -57,16 +51,7 @@ public class RedisModulesClient {
   }
   
   public Optional<UnifiedJedis> getUnifiedJedis() {
-    Object nativeConnection = jedisConnectionFactory.getConnection().getNativeConnection();
-    if (nativeConnection instanceof Jedis) {
-      Jedis jedis = (Jedis)nativeConnection;
-      return Optional.of(new UnifiedJedis(jedis.getConnection()));
-    } else if (nativeConnection instanceof JedisCluster) {
-      JedisCluster jedisCluster = (JedisCluster)nativeConnection;
-      return Optional.of(new UnifiedJedis(jedisCluster.getConnectionFromSlot(0)));
-    } else {
-      return Optional.empty();
-    }
+      return Optional.of(new JedisPooled(Objects.requireNonNull(jedisConnectionFactory.getPoolConfig())));
   }
 
   public Optional<Jedis> getJedis() {

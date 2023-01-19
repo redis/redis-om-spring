@@ -1,5 +1,6 @@
 package com.redis.om.spring.ops;
 
+import com.google.gson.GsonBuilder;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import com.redis.om.spring.client.RedisModulesClient;
@@ -18,16 +19,18 @@ import com.redis.om.spring.ops.search.SearchOperationsImpl;
 
 public class RedisModulesOperations<K> {
 
+  private final GsonBuilder gsonBuilder;
   private RedisModulesClient client;
   private RedisTemplate<?, ?> template;
 
-  public RedisModulesOperations(RedisModulesClient client, RedisTemplate<?, ?> template) {
+  public RedisModulesOperations(RedisModulesClient client, RedisTemplate<?, ?> template, GsonBuilder gsonBuilder) {
     this.client = client;
     this.template = template;
+    this.gsonBuilder = gsonBuilder;
   }
 
   public JSONOperations<K> opsForJSON() {
-    return new JSONOperationsImpl<>(client);
+    return new JSONOperationsImpl<>(client, gsonBuilder);
   }
 
   public SearchOperations<K> opsForSearch(K index) {
