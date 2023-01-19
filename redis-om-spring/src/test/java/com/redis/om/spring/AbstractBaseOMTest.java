@@ -1,6 +1,6 @@
 package com.redis.om.spring;
 
-import static com.redis.testcontainers.RedisModulesContainer.DEFAULT_IMAGE_NAME;
+import static com.redis.testcontainers.RedisStackContainer.DEFAULT_IMAGE_NAME;
 
 import java.util.Set;
 
@@ -16,7 +16,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
-import com.redis.testcontainers.RedisModulesContainer;
 
 @Testcontainers(disabledWithoutDocker = true)
 @DirtiesContext
