@@ -1,4 +1,4 @@
-package com.redis.om.documents.domain;
+package com.redis.om.spring.annotations.document.fixtures;
 
 import java.util.Set;
 
