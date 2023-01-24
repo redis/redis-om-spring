@@ -57,12 +57,12 @@
     <maven.test.source>17</maven.test.source>
     <maven.test.target>17</maven.test.target>
     <java.version>17</java.version>
-    <spring.version>3.0.1</spring.version>
+    <spring.version>3.0.2</spring.version>
     <sdr.version>3.0.1</sdr.version>
-    <jedis.version>4.3.0</jedis.version>
+    <jedis.version>4.3.1</jedis.version>
     <cdi>1.0</cdi>
     <auto-service.version>1.0.1</auto-service.version>
-    <spring.test.version>6.0.0-SNAPSHOT</spring.test.version>
+    <spring.test.version>6.0.4</spring.test.version>
     <testcontainers.redis.version>1.6.2</testcontainers.redis.version>
     <testcontainers.redis.junit.version>1.6.2</testcontainers.redis.junit.version>
     <guava.version>31.1-jre</guava.version>
@@ -80,7 +80,7 @@
       <dependency>
         <groupId>org.junit</groupId>
         <artifactId>junit-bom</artifactId>
-        <version>5.9.0</version>
+        <version>5.9.2</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -231,7 +231,7 @@
     <dependency>
       <groupId>com.karuslabs</groupId>
       <artifactId>elementary</artifactId>
-      <version>1.1.2</version>
+      <version>${elementary.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
