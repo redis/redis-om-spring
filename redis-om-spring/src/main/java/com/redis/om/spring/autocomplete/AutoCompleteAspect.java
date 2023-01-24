@@ -95,11 +95,14 @@ public class AutoCompleteAspect implements Ordered {
   @AfterReturning("inRedisDocumentRepositoryDeleteAll()")
   public void deleteAllSuggestions(JoinPoint jp) {
     Repository<?, ?> repository = (Repository<?, ?>) jp.getTarget();
-    Class<?> entityClass = GenericTypeResolver.resolveTypeArguments(repository.getClass(), Repository.class)[0];
-    for (Field field : entityClass.getDeclaredFields()) {
-      if (field.isAnnotationPresent(AutoComplete.class)) {
-        String key = String.format(Suggestion.KEY_FORMAT_STRING, entityClass.getSimpleName(), field.getName());
-        template.delete(key);
+    var typeArguments = GenericTypeResolver.resolveTypeArguments(repository.getClass(), Repository.class);
+    if (typeArguments != null && typeArguments.length > 0) {
+      Class<?> entityClass = typeArguments[0];
+      for (Field field : entityClass.getDeclaredFields()) {
+        if (field.isAnnotationPresent(AutoComplete.class)) {
+          String key = String.format(Suggestion.KEY_FORMAT_STRING, entityClass.getSimpleName(), field.getName());
+          template.delete(key);
+        }
       }
     }
   }

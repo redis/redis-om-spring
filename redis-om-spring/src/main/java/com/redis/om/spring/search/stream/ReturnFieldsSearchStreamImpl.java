@@ -101,6 +101,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     throw new UnsupportedOperationException("Filter on free text predicate is not supported on mapped stream");
   }
 
+  @SuppressWarnings("resource")
   @Override
   public <R> SearchStream<R> map(Function<? super T, ? extends R> mapper) {
     return new WrapperSearchStream<>(resolveStream()).map(mapper);
@@ -121,21 +122,25 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     return resolveStream().mapToDouble(mapper);
   }
 
+  @SuppressWarnings("resource")
   @Override
   public <R> SearchStream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMap(mapper);
   }
 
+  @SuppressWarnings("resource")
   @Override
   public IntStream flatMapToInt(Function<? super T, ? extends IntStream> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMapToInt(mapper);
   }
 
+  @SuppressWarnings("resource")
   @Override
   public LongStream flatMapToLong(Function<? super T, ? extends LongStream> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMapToLong(mapper);
   }
 
+  @SuppressWarnings("resource")
   @Override
   public DoubleStream flatMapToDouble(Function<? super T, ? extends DoubleStream> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMapToDouble(mapper);

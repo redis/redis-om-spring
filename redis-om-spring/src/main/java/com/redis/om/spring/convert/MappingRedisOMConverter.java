@@ -167,7 +167,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       R instance = (R) conversionService.convert(partial, readType.getType());
 
       RedisPersistentEntity<?> entity = mappingContext.getPersistentEntity(readType);
-      if (entity != null && entity.hasIdProperty()) {
+      if (entity != null && instance != null && entity.hasIdProperty()) {
 
         PersistentPropertyAccessor<R> propertyAccessor = entity.getPropertyAccessor(instance);
 
@@ -548,8 +548,8 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       return;
     }
 
-    if (value instanceof byte[]) {
-      sink.getBucket().put(StringUtils.hasText(path) ? path : "_raw", (byte[]) value);
+    if (value instanceof byte[] ba) {
+      sink.getBucket().put(StringUtils.hasText(path) ? path : "_raw", ba);
       return;
     }
 
@@ -988,8 +988,8 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
    */
   public byte[] toBytes(Object source) {
 
-    if (source instanceof byte[]) {
-      return (byte[]) source;
+    if (source instanceof byte[] ba) {
+      return ba;
     }
 
     return conversionService.convert(source, byte[].class);

@@ -184,6 +184,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
     return search.aggregate(aggregation);
   }
 
+  @SuppressWarnings("unchecked")
   @Override public <R extends T> List<R> toList(Class<?>... contentTypes) {
     // execute the aggregation
     AggregationResult aggregationResult = search.aggregate(aggregation);
@@ -203,7 +204,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
           mappedValues.add(raw != null ? Double.parseDouble(new String((byte[]) raw)) : 0);
         } else if (contentTypes[i] == List.class && List.class.isAssignableFrom(raw.getClass())) {
           Class<?> listContents = returnFieldsTypeHints.get(labels[i]);
-          List<?> rawList = (ArrayList) raw;
+          List<?> rawList = (List<?>) raw;
           if (listContents != null) {
             if (listContents == String.class) {
               mappedValues.add(

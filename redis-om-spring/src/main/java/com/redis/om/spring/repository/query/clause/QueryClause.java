@@ -21,93 +21,111 @@ import redis.clients.jedis.search.Schema.FieldType;
 public enum QueryClause {
   // FULL TEXT
   TEXT_ALL( //
-      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.SIMPLE_PROPERTY, "$param_0", 1) //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.SIMPLE_PROPERTY, QueryClause.FIRST_PARAM, 1) //
   ),
   TEXT_SIMPLE_PROPERTY( //
-      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.SIMPLE_PROPERTY, "@$field:$param_0", 1) //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.SIMPLE_PROPERTY, QueryClause.FIELD_EQUAL, 1) //
   ),
   TEXT_NEGATING_SIMPLE_PROPERTY( //
-      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.SIMPLE_PROPERTY, "-@$field:$param_0", 1) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.SIMPLE_PROPERTY, QueryClause.FIELD_NON_EQUAL_PARAM_0, 1) //
   ),
   TEXT_STARTING_WITH( //
-      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.STARTING_WITH, "@$field:$param_0*", 1) //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.STARTING_WITH, QueryClause.FIELD_TEXT_STARTING_WITH, 1) //
   ),
   // TODO: currently not supported with RediSearch - potential work around with aggregations
   TEXT_ENDING_WITH( //
-      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.ENDING_WITH, "@$field:$param_0", 1) //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.ENDING_WITH, QueryClause.FIELD_EQUAL, 1) //
   ),
   TEXT_LIKE( //
-      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.LIKE, "@$field:%%%$param_0%%%", 1) //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.LIKE, QueryClause.FIELD_LIKE, 1) //
   ),
   TEXT_NOT_LIKE( //
-      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.NOT_LIKE, "-@$field:%%%$param_0%%%", 1) //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.NOT_LIKE, QueryClause.FIELD_NOT_LIKE, 1) //
   ),
   TEXT_CONTAINING( //
-      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.CONTAINING, "@$field:%%%$param_0%%%", 1) //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.CONTAINING, QueryClause.FIELD_LIKE, 1) //
   ),
   TEXT_NOT_CONTAINING( //
-      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.NOT_CONTAINING, "-@$field:%%%$param_0%%%", 1) //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.NOT_CONTAINING, QueryClause.FIELD_NOT_LIKE, 1) //
   ),
   // NUMERIC
   NUMERIC_SIMPLE_PROPERTY( //
-      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.SIMPLE_PROPERTY, "@$field:[$param_0 $param_0]", 1) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.SIMPLE_PROPERTY, QueryClause.FIELD_NUMERIC_EQUAL_PARAM_0, 1) //
   ),
   NUMERIC_NEGATING_SIMPLE_PROPERTY( //
-      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.SIMPLE_PROPERTY, "@$field:-[$param_0 $param_0]", 1) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.SIMPLE_PROPERTY, QueryClause.FIELD_NUMERIC_NOT_EQUAL, 1) //
   ),
   NUMERIC_BETWEEN( //
-      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.BETWEEN, "@$field:[$param_0 $param_1]", 2) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.BETWEEN, QueryClause.FIELD_NUMERIC_BETWEEN, 2) //
   ),
   NUMERIC_LESS_THAN( //
-      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.LESS_THAN, "@$field:[-inf ($param_0]", 1) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.LESS_THAN, QueryClause.FIELD_NUMERIC_LESS_THAN, 1) //
   ),
   NUMERIC_LESS_THAN_EQUAL( //
-      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.LESS_THAN_EQUAL, "@$field:[-inf $param_0]", 1) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.LESS_THAN_EQUAL, QueryClause.FIELD_NUMERIC_LESS_THAN_EQUAL, 1) //
   ),
   NUMERIC_GREATER_THAN( //
-      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.GREATER_THAN, "@$field:[($param_0 inf]", 1) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.GREATER_THAN, QueryClause.FIELD_NUMERIC_GREATER_THAN, 1) //
   ),
   NUMERIC_GREATER_THAN_EQUAL( //
-      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.GREATER_THAN_EQUAL, "@$field:[$param_0 inf]", 1) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.GREATER_THAN_EQUAL, QueryClause.FIELD_NUMERIC_GREATER_THAN_EQUAL, 1) //
   ),
   NUMERIC_BEFORE( //
-      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.BEFORE, "@$field:[-inf ($param_0]", 1) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.BEFORE, QueryClause.FIELD_NUMERIC_BEFORE, 1) //
   ),
   NUMERIC_AFTER( //
-      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.AFTER, "@$field:[($param_0 inf]", 1) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.AFTER, QueryClause.FIELD_NUMERIC_AFTER, 1) //
   ),
   NUMERIC_CONTAINING( //
-      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.CONTAINING, "$param_0", 1) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.CONTAINING, QueryClause.FIRST_PARAM, 1) //
   ),
   NUMERIC_CONTAINING_ALL( //
-      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.CONTAINING, "$param_0", 1) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.CONTAINING, QueryClause.FIRST_PARAM, 1) //
   ),
   // GEO
   GEO_NEAR( //
-      QueryClauseTemplate.of(FieldType.GEO, Part.Type.NEAR, "@$field:[$param_0 $param_1 $param_2]", 2) //
+      QueryClauseTemplate.of(FieldType.GEO, Part.Type.NEAR, QueryClause.FIELD_GEO_NEAR, 2) //
   ),
   GEO_CONTAINING( //
-      QueryClauseTemplate.of(FieldType.GEO, Part.Type.CONTAINING, "$param_0", 1) //
+      QueryClauseTemplate.of(FieldType.GEO, Part.Type.CONTAINING, QueryClause.FIRST_PARAM, 1) //
   ),
   GEO_CONTAINING_ALL( //
-      QueryClauseTemplate.of(FieldType.GEO, Part.Type.CONTAINING, "$param_0", 1) //
+      QueryClauseTemplate.of(FieldType.GEO, Part.Type.CONTAINING, QueryClause.FIRST_PARAM, 1) //
   ),
   // TAG
   TAG_SIMPLE_PROPERTY( //
-      QueryClauseTemplate.of(FieldType.TAG, Part.Type.SIMPLE_PROPERTY, "@$field:{$param_0}", 1) //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.SIMPLE_PROPERTY, QueryClause.FIELD_TAG_EQUAL, 1) //
   ),
   TAG_NOT_IN( //
-      QueryClauseTemplate.of(FieldType.TAG, Part.Type.NOT_IN, "@$field:$param_0", 1) //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.NOT_IN, QueryClause.FIELD_EQUAL, 1) //
   ),
   TAG_IN( //
-      QueryClauseTemplate.of(FieldType.TAG, Part.Type.IN, "@$field:$param_0", 1) //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.IN, QueryClause.FIELD_EQUAL, 1) //
   ),
   TAG_CONTAINING( //
-      QueryClauseTemplate.of(FieldType.TAG, Part.Type.CONTAINING, "@$field:$param_0", 1) //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.CONTAINING, QueryClause.FIELD_EQUAL, 1) //
   ),
   TAG_CONTAINING_ALL( //
-      QueryClauseTemplate.of(FieldType.TAG, Part.Type.CONTAINING, "$param_0", 1) //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.CONTAINING, QueryClause.FIRST_PARAM, 1) //
   );
+
+  private static final String FIRST_PARAM = "$param_0";
+  private static final String FIELD_EQUAL ="@$field:$param_0";
+  private static final String FIELD_NON_EQUAL_PARAM_0 ="-@$field:$param_0";
+  private static final String FIELD_TAG_EQUAL = "@$field:{$param_0}";
+  private static final String FIELD_LIKE = "@$field:%%%$param_0%%%";
+  private static final String FIELD_NOT_LIKE = "-@$field:%%%$param_0%%%";
+  private static final String FIELD_NUMERIC_EQUAL_PARAM_0 = "@$field:[$param_0 $param_0]";
+  private static final String FIELD_TEXT_STARTING_WITH ="@$field:$param_0*";
+  private static final String FIELD_NUMERIC_NOT_EQUAL = "@$field:-[$param_0 $param_0]";
+  private static final String FIELD_NUMERIC_BETWEEN = "@$field:[$param_0 $param_1]";
+  private static final String FIELD_NUMERIC_LESS_THAN = "@$field:[-inf ($param_0]";
+  private static final String FIELD_NUMERIC_LESS_THAN_EQUAL = "@$field:[-inf $param_0]";
+  private static final String FIELD_NUMERIC_GREATER_THAN = "@$field:[($param_0 inf]";
+  private static final String FIELD_NUMERIC_GREATER_THAN_EQUAL = "@$field:[$param_0 inf]";
+  private static final String FIELD_NUMERIC_BEFORE = "@$field:[-inf ($param_0]";
+  private static final String FIELD_NUMERIC_AFTER = "@$field:[($param_0 inf]";
+  private static final String FIELD_GEO_NEAR = "@$field:[$param_0 $param_1 $param_2]";
 
   private final QueryClauseTemplate clauseTemplate;
   private final MappingRedisOMConverter converter = new MappingRedisOMConverter();

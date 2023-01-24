@@ -1348,14 +1348,14 @@ import static org.junit.jupiter.api.Assertions.*;
   @Test void testReduceWithIdentityBifunctionAndBinaryOperator() {
     Integer firstEstablish = entityStream //
         .of(Company.class) //
-        .reduce(Integer.MAX_VALUE, (minimum, company) -> Integer.min(minimum, company.getYearFounded()), Integer::min);
+        .reduce(Integer.MAX_VALUE, (minimum, company) -> Integer.min(minimum, company.getYearFounded()), (t, u) -> Integer.min(t, u));
     assertThat(firstEstablish).isEqualTo(1975);
   }
 
   @Test void testReduceWithMethodReferenceAndCombiner() {
     int result = entityStream //
         .of(Company.class) //
-        .reduce(0, (acc, company) -> acc + company.getYearFounded(), Integer::sum);
+        .reduce(0, (acc, company) -> acc + company.getYearFounded(), (t, u) -> Integer.sum(t, u));
 
     assertThat(result).isEqualTo(2011 + 1975 + 2003);
   }
@@ -1388,7 +1388,7 @@ import static org.junit.jupiter.api.Assertions.*;
     int result = entityStream //
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
-        .reduce(0, Integer::sum);
+        .reduce(0, (t, u) -> Integer.sum(t, u));
 
     assertThat(result).isEqualTo(2011 + 1975 + 2003);
   }
@@ -1397,7 +1397,7 @@ import static org.junit.jupiter.api.Assertions.*;
     int result = entityStream //
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
-        .reduce(0, Integer::sum);
+        .reduce(0, (t, u) -> Integer.sum(t, u));
 
     assertThat(result).isEqualTo(2011 + 1975 + 2003);
   }
@@ -1420,7 +1420,7 @@ import static org.junit.jupiter.api.Assertions.*;
     Integer firstEstablish = entityStream //
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
-        .reduce(Integer.MAX_VALUE, Integer::min, Integer::min);
+        .reduce(Integer.MAX_VALUE, (t, u) -> Integer.min(t, u), (t, u) -> Integer.min(t, u));
     assertThat(firstEstablish).isEqualTo(1975);
   }
 
@@ -2123,6 +2123,17 @@ import static org.junit.jupiter.api.Assertions.*;
     assertAll( //
         () -> assertThat(emailLengths).hasSize(3), //
         () -> assertThat(emailLengths).containsExactly(8L, 9L, 5L) //
+    );
+  }
+
+  @Test void testArrayLengthOnNonIndexedTagFieldInDocuments() {
+    List<Long> tagsLengths = entityStream.of(NiCompany.class) //
+        .filter(NiCompany$.NAME.eq("Microsoft")) //
+        .map(NiCompany$.TAGS.length()) //
+        .collect(Collectors.toList());
+    assertAll( //
+        () -> assertThat(tagsLengths).hasSize(1), //
+        () -> assertThat(tagsLengths).containsExactly(4L) //
     );
   }
 

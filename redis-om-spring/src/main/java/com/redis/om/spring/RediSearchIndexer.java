@@ -65,6 +65,8 @@ public class RediSearchIndexer {
   private final RedisModulesOperations<String> rmo;
   private final RedisMappingContext mappingContext;
 
+  private static final String SKIPPING_INDEX_CREATION = "Skipping index creation for %s because %s";
+
   @SuppressWarnings("unchecked")
   public RediSearchIndexer(ApplicationContext ac) {
     this.ac = ac;
@@ -83,11 +85,12 @@ public class RediSearchIndexer {
         createIndexFor(cl);
       } catch (ClassNotFoundException e) {
         logger.warn(
-            String.format("Skipping index creation for %s because %s", beanDef.getBeanClassName(), e.getMessage()));
+            String.format(SKIPPING_INDEX_CREATION, beanDef.getBeanClassName(), e.getMessage()));
       }
     }
   }
 
+  @SuppressWarnings("deprecation")
   public void createIndexFor(Class<?> cl) {
     IndexDefinition.Type idxType;
     if (cl.isAnnotationPresent(Document.class)) {
@@ -120,17 +123,15 @@ public class RediSearchIndexer {
       if (maybeIdField.isPresent()) {
         java.lang.reflect.Field idField = maybeIdField.get();
         // Only auto-index the @Id if not already indexed by the user (gh-135)
-        if (!idField.isAnnotationPresent(Indexed.class) && !idField.isAnnotationPresent(Searchable.class)) {
-          if (fields.stream().noneMatch(f -> f.name.equals(idField.getName()))) {
-            if (Number.class.isAssignableFrom(idField.getType())) {
-              fields
-                  .add(indexAsNumericFieldFor(maybeIdField.get(), idxType == IndexDefinition.Type.JSON, "", true,
-                      false));
-            } else {
-              fields.add(
-                  indexAsTagFieldFor(maybeIdField.get(), idxType == IndexDefinition.Type.JSON, "", false, "|",
-                      Integer.MIN_VALUE));
-            }
+        if (!idField.isAnnotationPresent(Indexed.class) && !idField.isAnnotationPresent(Searchable.class) && (fields.stream().noneMatch(f -> f.name.equals(idField.getName())))) {
+          if (Number.class.isAssignableFrom(idField.getType())) {
+            fields
+                .add(indexAsNumericFieldFor(maybeIdField.get(), idxType == IndexDefinition.Type.JSON, "", true,
+                    false));
+          } else {
+            fields.add(
+                indexAsTagFieldFor(maybeIdField.get(), idxType == IndexDefinition.Type.JSON, "", false, "|",
+                    Integer.MIN_VALUE));
           }
         }
       }
@@ -198,7 +199,7 @@ public class RediSearchIndexer {
       opsForSearch.createIndex(schema, ops);
       entityClassToSchema.put(cl, schema);
     } catch (Exception e) {
-      logger.warn(String.format("Skipping index creation for %s because %s", indexName, e.getMessage()));
+      logger.warn(String.format(SKIPPING_INDEX_CREATION, indexName, e.getMessage()));
     }
   }
 
@@ -227,7 +228,7 @@ public class RediSearchIndexer {
 
       removeKeySpaceMapping(entityPrefix, cl);
     } catch (Exception e) {
-      logger.warn(String.format("Skipping index creation for %s because %s", indexName, e.getMessage()));
+      logger.warn(String.format(SKIPPING_INDEX_CREATION, indexName, e.getMessage()));
     }
   }
 
@@ -301,7 +302,8 @@ public class RediSearchIndexer {
       //
       else {
         for (java.lang.reflect.Field subfield : field.getType().getDeclaredFields()) {
-          String subfieldPrefix = (prefix == null || prefix.isBlank()) ? field.getName() : String.join(".", prefix, field.getName());
+          String subfieldPrefix = (prefix == null || prefix.isBlank()) ? field.getName()
+              : String.join(".", prefix, field.getName());
           fields.addAll(findIndexFields(subfield, subfieldPrefix, isDocument));
         }
       }
@@ -482,10 +484,10 @@ public class RediSearchIndexer {
           fieldList.add(new TagField(fieldName, ti.separator(), false));
           continue;
         } else if (subField.isAnnotationPresent(Indexed.class)) {
-          boolean subFieldIsTagField = ((subField.isAnnotationPresent(Indexed.class)
-              && ((CharSequence.class.isAssignableFrom(subField.getType()) || (subField.getType() == Boolean.class)
+          boolean subFieldIsTagField = (subField.isAnnotationPresent(Indexed.class)
+              && (CharSequence.class.isAssignableFrom(subField.getType()) || (subField.getType() == Boolean.class)
                   || (maybeCollectionType.isPresent() && (CharSequence.class.isAssignableFrom(maybeCollectionType.get())
-                      || (maybeCollectionType.get() == Boolean.class)))))));
+                      || (maybeCollectionType.get() == Boolean.class)))));
           if (subFieldIsTagField) {
             Indexed indexed = subField.getAnnotation(Indexed.class);
             tempPrefix = field.getName() + "[0:].";
@@ -496,6 +498,15 @@ public class RediSearchIndexer {
             logger.info(String.format("Creating nested relationships: %s -> %s", field.getName(), subField.getName()));
             fieldList.add(new TagField(fieldName, indexed.separator(), false));
             continue;
+          }
+
+          else if (Number.class.isAssignableFrom(subField.getType()) || (subField.getType() == LocalDateTime.class)
+              || (subField.getType() == LocalDate.class) || (subField.getType() == Date.class)) {
+
+            FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName());
+            fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(subField, prefix));
+            logger.info(String.format("Creating nested relationships: %s -> %s", field.getName(), subField.getName()));
+            fieldList.add(new Field(fieldName, FieldType.NUMERIC));
           }
         }
         getNestedField(fieldPrefix + tempPrefix, subField, prefix, fieldList);

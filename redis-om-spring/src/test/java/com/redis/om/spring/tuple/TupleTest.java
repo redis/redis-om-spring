@@ -13,6 +13,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("SpellCheckingInspection") final class TupleTest {
+  
+  @Test
+  void empty() {
+    final EmptyTuple tuple = Tuples.of();
+    assertThat(tuple.stream()).isEmpty();
+    assertThat(tuple.streamOf(String.class)).isEmpty();
+    assertThat(tuple.labelledMap()).isEmpty();
+  }
 
   @Test
   void single() {
@@ -2241,6 +2249,16 @@ import static org.junit.jupiter.api.Assertions.*;
     assertThat(labelledMap) //
         .containsEntry("lastName", "Jordan") //
         .containsEntry("number", 23);
+  }
+  
+  @Test
+  void testTupleEquality() {
+    final Pair<String, Integer> pair = Tuples.of(new String[] { "lastName", "number" }, "Jordan", 23);
+    final Pair<String, Integer> other = Tuples.of(new String[] { "lastName", "number" }, "Jordan", 23);
+    assertThat(pair) //
+        .isEqualTo(other) //
+        .isNotEqualTo(null) //
+        .isNotEqualTo("foo");
   }
 
 }

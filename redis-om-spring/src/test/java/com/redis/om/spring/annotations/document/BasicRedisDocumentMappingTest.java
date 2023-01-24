@@ -21,7 +21,8 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-@SuppressWarnings("SpellCheckingInspection") class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
+@SuppressWarnings("SpellCheckingInspection")
+class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   @Autowired
   CompanyRepository repository;
 
@@ -39,10 +40,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
   @Test
   void testBasicCrudOperations() {
-    Company redis = repository.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
-    Company microsoft = repository.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
-        new Point(-122.124500, 47.640160), "research@microsoft.com"));
+    Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "stack@redis.com");
+    redis.setMetaList(Set.of(CompanyMeta.of("Redis", 100, Set.of("RedisTag"))));
+
+    Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
+        new Point(-122.124500, 47.640160), "research@microsoft.com");
+    microsoft.setMetaList(Set.of(CompanyMeta.of("MS", 50, Set.of("MsTag"))));
+
+    repository.saveAll(List.of(redis, microsoft));
 
     assertEquals(2, repository.count());
 
@@ -258,7 +264,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
     List<Company> publiclyListed = repository.findByPubliclyListed(true);
 
-    //noinspection ResultOfMethodCallIgnored
+    // noinspection ResultOfMethodCallIgnored
     assertAll( //
         () -> assertThat(publiclyListed).hasSize(10), //
         () -> assertThat(publiclyListed).allSatisfy(Company::isPubliclyListed) //
@@ -445,4 +451,75 @@ import static org.junit.jupiter.api.Assertions.*;
     assertThat(docs).containsOnly(doc1, doc2);
   }
 
+  @Test
+  void testFindByTagsInNestedField() {
+    Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "stack@redis.com");
+    redis.setMetaList(Set.of(CompanyMeta.of("Redis", 100, Set.of("RedisTag", "CommonTag"))));
+
+    Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
+        new Point(-122.124500, 47.640160), "research@microsoft.com");
+    microsoft.setMetaList(Set.of(CompanyMeta.of("MS", 50, Set.of("MsTag", "CommonTag"))));
+
+    repository.saveAll(List.of(redis, microsoft));
+
+    assertEquals(2, repository.count());
+
+    List<Company> shouldBeOnlyRedis = repository.findByMetaList_tagValues(Set.of("RedisTag"));
+    List<Company> shouldBeOnlyMS = repository.findByMetaList_tagValues(Set.of("MsTag"));
+    List<Company> shouldBeBoth = repository.findByMetaList_tagValues(Set.of("CommonTag"));
+
+    assertAll( //
+        () -> assertThat(shouldBeOnlyRedis).hasSize(1).allSatisfy(c -> c.getName().equalsIgnoreCase("RedisInc")), //
+        () -> assertThat(shouldBeOnlyMS).hasSize(1).allSatisfy(c -> c.getName().equalsIgnoreCase("Microsoft")), //
+        () -> assertThat(shouldBeBoth).hasSize(2).map(Company::getName).containsExactlyInAnyOrder("RedisInc",
+            "Microsoft") //
+    );
+  }
+
+  @Test
+  void testFindByStringValueInNestedField() {
+    Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "stack@redis.com");
+    redis.setMetaList(Set.of(CompanyMeta.of("RD", 100, Set.of("RedisTag", "CommonTag"))));
+
+    Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
+        new Point(-122.124500, 47.640160), "research@microsoft.com");
+    microsoft.setMetaList(Set.of(CompanyMeta.of("MS", 50, Set.of("MsTag", "CommonTag"))));
+
+    repository.saveAll(List.of(redis, microsoft));
+
+    assertEquals(2, repository.count());
+
+    List<Company> shouldBeOnlyRedis = repository.findByMetaList_stringValue("RD");
+    List<Company> shouldBeOnlyMS = repository.findByMetaList_stringValue("MS");
+
+    assertAll( //
+        () -> assertThat(shouldBeOnlyRedis).hasSize(1).allSatisfy(c -> c.getName().equalsIgnoreCase("RedisInc")), //
+        () -> assertThat(shouldBeOnlyMS).hasSize(1).allSatisfy(c -> c.getName().equalsIgnoreCase("Microsoft")) //
+    );
+  }
+
+  @Test
+  void testFindByNumericValueInNestedField() {
+    Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "stack@redis.com");
+    redis.setMetaList(Set.of(CompanyMeta.of("RD", 100, Set.of("RedisTag", "CommonTag"))));
+
+    Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
+        new Point(-122.124500, 47.640160), "research@microsoft.com");
+    microsoft.setMetaList(Set.of(CompanyMeta.of("MS", 50, Set.of("MsTag", "CommonTag"))));
+
+    repository.saveAll(List.of(redis, microsoft));
+
+    assertEquals(2, repository.count());
+
+    List<Company> shouldBeOnlyRedis = repository.findByMetaList_numberValue(100);
+    List<Company> shouldBeOnlyMS = repository.findByMetaList_numberValue(50);
+
+    assertAll( //
+        () -> assertThat(shouldBeOnlyRedis).hasSize(1).allSatisfy(c -> c.getName().equalsIgnoreCase("RedisInc")), //
+        () -> assertThat(shouldBeOnlyMS).hasSize(1).allSatisfy(c -> c.getName().equalsIgnoreCase("Microsoft")) //
+    );
+  }
 }

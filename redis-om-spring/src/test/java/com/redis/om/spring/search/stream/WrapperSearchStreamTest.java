@@ -378,7 +378,7 @@ import static org.junit.jupiter.api.Assertions.*;
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
         .sequential() //
-        .reduce(0, Integer::sum);
+        .reduce(0, (t, u) -> Integer.sum(t, u));
 
     assertThat(result).isEqualTo(2011 + 1975 + 2003);
   }
@@ -389,7 +389,7 @@ import static org.junit.jupiter.api.Assertions.*;
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
         .sequential() //
-        .reduce(0, Integer::sum);
+        .reduce(0, (t, u) -> Integer.sum(t, u));
 
     assertThat(result).isEqualTo(2011 + 1975 + 2003);
   }
@@ -416,7 +416,7 @@ import static org.junit.jupiter.api.Assertions.*;
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
         .sequential() //
-        .reduce(Integer.MAX_VALUE, Integer::min, Integer::min);
+        .reduce(Integer.MAX_VALUE, (t, u) -> Integer.min(t, u), (t, u) -> Integer.min(t, u));
     assertThat(firstEstablish).isEqualTo(1975);
   }
 

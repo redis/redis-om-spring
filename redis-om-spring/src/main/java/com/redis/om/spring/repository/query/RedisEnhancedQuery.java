@@ -169,10 +169,10 @@ public class RedisEnhancedQuery implements RepositoryQuery {
           });
           aggregationGroups.add(group);
         });
-        Arrays.stream(aggregation.sortBy()).forEach(sortBy -> {
-          SortedField sortedField = sortBy.direction().isAscending() ? SortedField.asc(sortBy.field())
+        Arrays.stream(aggregation.sortBy()).forEach(sb -> {
+          SortedField sortedField = sb.direction().isAscending() ? SortedField.asc(sb.field())
               : SortedField.desc(
-                  sortBy.field());
+                  sb.field());
           aggregationSortedFields.add(sortedField);
         });
 
@@ -578,8 +578,13 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       while (iterator.hasNext()) {
         Parameter p = iterator.next();
         Optional<String> maybeKey = p.getName();
-        String key = (maybeKey.isPresent() ? maybeKey.get()
-            : (paramNames.size() > index ? paramNames.get(index) : ""));
+        String key;
+        if (maybeKey.isPresent()) {
+          key = maybeKey.get();
+        } else {
+          key = paramNames.size() > index ? paramNames.get(index) : "";
+        }
+
         if (!key.isBlank()) {
           String v;
 

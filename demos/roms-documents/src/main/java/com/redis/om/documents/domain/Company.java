@@ -51,6 +51,10 @@ public class Company {
   @Indexed
   private Integer yearFounded;
 
+  @NonNull
+  @Indexed
+  private Set<CompanyMeta> metaList;
+
   private boolean publiclyListed;
   
   // audit fields

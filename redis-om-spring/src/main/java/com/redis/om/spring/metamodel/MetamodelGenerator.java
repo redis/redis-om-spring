@@ -180,6 +180,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
     if (field.asType().getKind().isPrimitive()) {
       Class<?> primitive = ClassUtils.resolvePrimitiveClassName(cls);
+      if (primitive == null) return Collections.emptyList();
       Class<?> primitiveWrapper = ClassUtils.resolvePrimitiveIfNecessary(primitive);
       entityField = TypeName.get(primitiveWrapper);
       fullTypeClassName = entityField.toString();

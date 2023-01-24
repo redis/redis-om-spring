@@ -84,10 +84,12 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
 
   Stream<Map<String, Object>> mapToLabelledMaps();
 
+  @SuppressWarnings("unchecked")
   <R> AggregationStream<R> groupBy(MetamodelField<E, ?>... fields);
 
   <R> AggregationStream<R> apply(String expression, String alias);
 
+  @SuppressWarnings("unchecked")
   <R> AggregationStream<R> load(MetamodelField<E, ?>... fields);
 
   Optional<E> min(NumericField<E, ?> field);

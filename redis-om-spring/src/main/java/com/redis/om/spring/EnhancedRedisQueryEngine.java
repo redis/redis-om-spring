@@ -58,7 +58,8 @@ public class EnhancedRedisQueryEngine extends QueryEngine<RedisKeyValueAdapter, 
   @Override
   public long count(RedisOperationChain criteria, String keyspace) {
     if (criteria == null || criteria.isEmpty()) {
-      return this.getAdapter().count(keyspace);
+      var adapter = getAdapter();
+      return adapter != null ? adapter.count(keyspace) : 0;
     }
 
     return 0;

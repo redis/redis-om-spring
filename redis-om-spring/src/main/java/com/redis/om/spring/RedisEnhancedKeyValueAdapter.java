@@ -1,34 +1,18 @@
 package com.redis.om.spring;
 
-import static com.redis.om.spring.util.ObjectUtils.documentToObject;
-import static com.redis.om.spring.util.ObjectUtils.getIdFieldForEntity;
-
-import java.lang.reflect.Field;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.Date;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
+import com.redis.om.spring.convert.MappingRedisOMConverter;
+import com.redis.om.spring.convert.RedisOMCustomConversions;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.search.SearchOperations;
 import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.redis.connection.RedisConnection;
-import org.springframework.data.redis.core.PartialUpdate;
+import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.core.PartialUpdate.PropertyUpdate;
 import org.springframework.data.redis.core.PartialUpdate.UpdateCommand;
-import org.springframework.data.redis.core.RedisCallback;
-import org.springframework.data.redis.core.RedisKeyValueAdapter;
-import org.springframework.data.redis.core.RedisOperations;
-import org.springframework.data.redis.core.TimeToLive;
 import org.springframework.data.redis.core.convert.RedisConverter;
 import org.springframework.data.redis.core.convert.RedisCustomConversions;
 import org.springframework.data.redis.core.convert.RedisData;
@@ -40,13 +24,17 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
-
-import com.redis.om.spring.convert.MappingRedisOMConverter;
-import com.redis.om.spring.convert.RedisOMCustomConversions;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.ops.search.SearchOperations;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
+
+import java.lang.reflect.Field;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+
+import static com.redis.om.spring.util.ObjectUtils.documentToObject;
+import static com.redis.om.spring.util.ObjectUtils.getIdFieldForEntity;
 
 public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
@@ -124,8 +112,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   public Object put(Object id, Object item, String keyspace) {
 
     RedisData rdo;
-    if (item instanceof RedisData) {
-      rdo = (RedisData) item;
+    if (item instanceof RedisData redisData) {
+      rdo = redisData;
     } else {
       byte[] redisKey = createKey(keyspace, converter.getConversionService().convert(id, String.class));
       processAuditAnnotations(redisKey, item);
@@ -277,7 +265,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
       result = (List<T>) searchResult.getDocuments().stream() //
           .map(d -> documentToObject(d, type, (MappingRedisOMConverter)converter)) //
-          .collect(Collectors.toList());
+          .toList();
     }
 
     return result;
@@ -319,11 +307,12 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
             redisUpdateObject.fieldsToRemove.toArray(new byte[redisUpdateObject.fieldsToRemove.size()][]));
       }
 
-      if (!rdo.getBucket().isEmpty()) {
-        if (rdo.getBucket().size() > 1
-            || (rdo.getBucket().size() == 1 && !rdo.getBucket().asMap().containsKey("_class"))) {
-          connection.hashCommands().hMSet(redisKey, rdo.getBucket().rawMap());
-        }
+      if (!rdo.getBucket().isEmpty() &&  //
+          ( //
+              rdo.getBucket().size() > 1 || //
+                  (rdo.getBucket().size() == 1 && !rdo.getBucket().asMap().containsKey("_class")) //
+          )) {
+        connection.hashCommands().hMSet(redisKey, rdo.getBucket().rawMap());
       }
 
       if (update.isRefreshTtl()) {
@@ -405,8 +394,11 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   }
 
   private String asString(Object value) {
-    return value instanceof String ? (String) value
-        : getConverter().getConversionService().convert(value, String.class);
+    if (value instanceof String valueAsString) {
+      return valueAsString;
+    } else {
+      return getConverter().getConversionService().convert(value, String.class);
+    }
   }
 
   /**

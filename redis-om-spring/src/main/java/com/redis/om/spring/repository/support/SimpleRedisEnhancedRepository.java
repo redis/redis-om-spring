@@ -97,7 +97,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
       result = (List<ID>) searchResult.getDocuments().stream()
           .map(d -> ObjectUtils.documentToObject(d, metadata.getJavaType(), mappingConverter)) //
           .map(e -> ObjectUtils.getIdFieldForEntity(maybeIdField.get(), e)) //
-          .collect(Collectors.toList());
+          .toList();
     }
 
     return result;
@@ -199,7 +199,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
         @SuppressWarnings("unchecked")
         List<T> content = (List<T>) searchResult.getDocuments().stream() //
             .map(d -> ObjectUtils.documentToObject(d, metadata.getJavaType(), mappingConverter)) //
-            .collect(Collectors.toList());
+            .toList();
 
         return new PageImpl<>(content, pageable, searchResult.getTotalResults());
       } else {

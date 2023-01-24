@@ -53,7 +53,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueRepository<T, ID>
@@ -105,7 +104,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
       result = searchResult.getDocuments().stream()
           .map(d -> gson.fromJson(d.get(idField).toString(), metadata.getIdType()))
-          .collect(Collectors.toList());
+          .toList();
     }
 
     return result;
@@ -138,7 +137,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     String[] keys = StreamSupport.stream(ids.spliterator(), false).map(this::getKey).toArray(String[]::new);
     return (Iterable<F>) modulesOperations.opsForJSON()
         .mget(Path.of("$." + field.getSearchAlias()), List.class, keys).stream().flatMap(List::stream)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   @Override

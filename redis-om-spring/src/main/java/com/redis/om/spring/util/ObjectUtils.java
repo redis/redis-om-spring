@@ -256,8 +256,11 @@ public class ObjectUtils {
   }
 
   public static String asString(Object value, MappingRedisOMConverter mappingConverter) {
-    return value instanceof String ? (String) value
-        : mappingConverter.getConversionService().convert(value, String.class);
+    if (value instanceof String valueAsString) {
+      return valueAsString;
+    } else {
+      return mappingConverter.getConversionService().convert(value, String.class);
+    }
   }
   
   @SuppressWarnings({ "unchecked", "rawtypes" })
