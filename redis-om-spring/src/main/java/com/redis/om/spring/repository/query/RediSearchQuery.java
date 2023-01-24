@@ -303,12 +303,14 @@ public class RediSearchQuery implements RepositoryQuery {
               } else {
                 qf.add(Pair.of(actualKey, QueryClause.get(FieldType.Geo, part.getType())));
               }
-            } else { // String or Boolean
+            } else if (CharSequence.class.isAssignableFrom(collectionType) || (collectionType == Boolean.class)) {
               if (isANDQuery) {
                 qf.add(Pair.of(actualKey, QueryClause.Tag_CONTAINING_ALL));
               } else {
                 qf.add(Pair.of(actualKey, QueryClause.get(FieldType.Tag, part.getType())));
               }
+            } else {
+              qf.addAll(extractQueryFields(collectionType, part, path, level + 1));
             }
           }
         }

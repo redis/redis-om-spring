@@ -45,11 +45,14 @@ public class Company {
 
   @Indexed
   private Set<String> tags = new HashSet<String>();
-
+  
   @NonNull
   @Indexed
   @Bloom(name = "bf_company_email", capacity = 100000, errorRate = 0.001)
   private String email;
+  
+  @Indexed
+  private Set<CompanyMeta> metaList;
 
   @Indexed
   private boolean publiclyListed;
