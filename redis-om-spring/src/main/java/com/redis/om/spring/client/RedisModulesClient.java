@@ -51,7 +51,7 @@ public class RedisModulesClient {
     return unifiedJedis;
   }
 
-  public UnifiedJedis getUnifiedJedis() {
+  private UnifiedJedis getUnifiedJedis() {
     return new JedisPooled(Objects.requireNonNull(jedisConnectionFactory.getPoolConfig()),
         jedisConnectionFactory.getHostName(), jedisConnectionFactory.getPort());
   }
