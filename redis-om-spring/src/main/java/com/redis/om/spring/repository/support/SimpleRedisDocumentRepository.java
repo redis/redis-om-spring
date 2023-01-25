@@ -35,6 +35,7 @@ import org.springframework.util.ReflectionUtils;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.json.Path;
+import redis.clients.jedis.json.Path2;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.util.SafeEncoder;
@@ -114,7 +115,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   public Page<ID> getIds(Pageable pageable) {
     List<ID> ids = Lists.newArrayList(getIds());
 
-    int fromIndex = Long.valueOf(pageable.getOffset()).intValue();
+    int fromIndex = Math.toIntExact(pageable.getOffset());
     int toIndex = fromIndex + pageable.getPageSize();
 
     return new PageImpl<>(ids.subList(fromIndex, toIndex), pageable, ids.size());
@@ -136,7 +137,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   public <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field) {
     String[] keys = StreamSupport.stream(ids.spliterator(), false).map(this::getKey).toArray(String[]::new);
     return (Iterable<F>) modulesOperations.opsForJSON()
-        .mget(Path.of("$." + field.getSearchAlias()), List.class, keys).stream().flatMap(List::stream)
+        .mget(Path2.of("$." + field.getSearchAlias()), List.class, keys).stream().flatMap(List::stream)
         .toList();
   }
 

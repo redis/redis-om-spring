@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.redis.om.spring.client.RedisModulesClient;
 import redis.clients.jedis.json.JsonSetParams;
 import redis.clients.jedis.json.Path;
+import redis.clients.jedis.json.Path2;
 
 import java.util.Arrays;
 import java.util.List;
@@ -45,9 +46,14 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
   }
 
   @SafeVarargs @Override
-  public final <T> List<T> mget(Path path, Class<T> clazz, K... keys) {
+  public final <T> List<T> mget(Path2 path, Class<T> clazz, K... keys) {
     String[] keysAsStrings = Arrays.stream(keys).map(Object::toString).toArray(String[]::new);
-    return client.clientForJSON().jsonMGet(path, clazz, keysAsStrings);
+
+    return client.clientForJSON().jsonMGet(path, keysAsStrings)
+        .stream()
+        .map(Object::toString)
+        .map(str -> gson.fromJson(str, clazz))
+        .toList();
   }
 
   @Override

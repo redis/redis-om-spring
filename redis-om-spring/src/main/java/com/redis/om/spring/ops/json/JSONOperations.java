@@ -6,6 +6,7 @@ import org.springframework.lang.Nullable;
 
 import redis.clients.jedis.json.JsonSetParams;
 import redis.clients.jedis.json.Path;
+import redis.clients.jedis.json.Path2;
 
 public interface JSONOperations<K> {
   Long del(K key, Path path);
@@ -20,7 +21,7 @@ public interface JSONOperations<K> {
   <T> List<T> mget(Class<T> clazz, K... keys);
 
   @SuppressWarnings("unchecked")
-  <T> List<T> mget(Path path, Class<T> clazz, K... keys);
+  <T> List<T> mget(Path2 path, Class<T> clazz, K... keys);
 
   void set(K key, Object object, JsonSetParams params);
 
