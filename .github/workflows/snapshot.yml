@@ -33,7 +33,7 @@ jobs:
           server-password: MAVEN_PASSWORD
       - run: mvn dependency:go-offline
       - run: mvn integration-test
-      - run: mvn cobertura:cobertura
+        #- run: mvn cobertura:cobertura
       - name: codecov
         run: |
           curl -s https://raw.githubusercontent.com/codecov/codecov-bash/master/codecov
