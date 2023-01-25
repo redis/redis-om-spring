@@ -470,9 +470,9 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
     List<Company> shouldBeBoth = repository.findByMetaList_tagValues(Set.of("CommonTag"));
 
     assertAll( //
-        () -> assertThat(shouldBeOnlyRedis).hasSize(1).allSatisfy(c -> c.getName().equalsIgnoreCase("RedisInc")), //
-        () -> assertThat(shouldBeOnlyMS).hasSize(1).allSatisfy(c -> c.getName().equalsIgnoreCase("Microsoft")), //
-        () -> assertThat(shouldBeBoth).hasSize(2).map(Company::getName).containsExactlyInAnyOrder("RedisInc",
+        () -> assertThat(shouldBeOnlyRedis).map(Company::getName).containsExactly("RedisInc"), //
+        () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft"), //
+        () -> assertThat(shouldBeBoth).map(Company::getName).containsExactlyInAnyOrder("RedisInc",
             "Microsoft") //
     );
   }
@@ -495,8 +495,8 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
     List<Company> shouldBeOnlyMS = repository.findByMetaList_stringValue("MS");
 
     assertAll( //
-        () -> assertThat(shouldBeOnlyRedis).hasSize(1).allSatisfy(c -> c.getName().equalsIgnoreCase("RedisInc")), //
-        () -> assertThat(shouldBeOnlyMS).hasSize(1).allSatisfy(c -> c.getName().equalsIgnoreCase("Microsoft")) //
+        () -> assertThat(shouldBeOnlyRedis).map(Company::getName).containsExactly("RedisInc"), //
+        () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft") //
     );
   }
 
@@ -518,8 +518,8 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
     List<Company> shouldBeOnlyMS = repository.findByMetaList_numberValue(50);
 
     assertAll( //
-        () -> assertThat(shouldBeOnlyRedis).hasSize(1).allSatisfy(c -> c.getName().equalsIgnoreCase("RedisInc")), //
-        () -> assertThat(shouldBeOnlyMS).hasSize(1).allSatisfy(c -> c.getName().equalsIgnoreCase("Microsoft")) //
+        () -> assertThat(shouldBeOnlyRedis).map(Company::getName).containsExactly("RedisInc"), //
+        () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft") //
     );
   }
 }
