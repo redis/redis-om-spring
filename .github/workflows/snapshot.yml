@@ -3,6 +3,8 @@
 name: Publish Snapshot
 
 on:
+  workflow_dispatch:
+
   push:
     branches:
       - main
@@ -30,7 +32,7 @@ jobs:
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
       - run: mvn dependency:go-offline
-        run: mvn integration-test
+      - run: mvn integration-test
       - run: mvn cobertura:cobertura
       - name: codecov
         run: |
