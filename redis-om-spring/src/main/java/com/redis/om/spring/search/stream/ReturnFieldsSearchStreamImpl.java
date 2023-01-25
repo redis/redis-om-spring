@@ -2,6 +2,7 @@ package com.redis.om.spring.search.stream;
 
 import com.google.gson.Gson;
 import com.redis.om.spring.metamodel.MetamodelField;
+import com.redis.om.spring.metamodel.indexed.NumericField;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
 import com.redis.om.spring.tuple.Tuple;
 import com.redis.om.spring.tuple.Tuples;
@@ -357,6 +358,14 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
 
   @Override public <R> AggregationStream<R> load(MetamodelField<T, ?>... fields) {
     throw new UnsupportedOperationException("load is not supported on a ReturnFieldSearchStream");
+  }
+
+  @Override public Optional<T> min(NumericField<T, ?> field) {
+    throw new UnsupportedOperationException("min is not supported on a ReturnFieldSearchStream");
+  }
+
+  @Override public Optional<T> max(NumericField<T, ?> field) {
+    throw new UnsupportedOperationException("max is not supported on a ReturnFieldSearchStream");
   }
 
 }

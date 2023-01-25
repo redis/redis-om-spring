@@ -36,6 +36,7 @@ jobs:
           gpg --list-secret-keys --keyid-format LONG
 
       - name: Publish
+        working-directory: redis-om-spring
         run: |
           mvn --no-transfer-progress \
             --batch-mode \

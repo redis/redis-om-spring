@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.Point;
 
 import com.redis.om.spring.annotations.document.fixtures.Company;
+import com.redis.om.spring.annotations.document.fixtures.CompanyMeta;
 import com.redis.om.spring.annotations.document.fixtures.CompanyRepository;
 
 public class RedisJSONKeyValueAdapterTest extends AbstractBaseDocumentTest {
@@ -28,10 +30,14 @@ public class RedisJSONKeyValueAdapterTest extends AbstractBaseDocumentTest {
   @BeforeEach
   void createData() {
     repository.deleteAll();
-    redis = repository.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
-    microsoft = repository.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
-        new Point(-122.124500, 47.640160), "research@microsoft.com"));
+    
+    redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com");
+    redis.setMetaList(Set.of(CompanyMeta.of("Redis", 100, Set.of("RedisTag"))));
+    
+    microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160), "research@microsoft.com");
+    microsoft.setMetaList(Set.of(CompanyMeta.of("MS", 50, Set.of("MsTag"))));
+    
+    repository.saveAll(List.of(redis, microsoft));
   }
 
   @Test

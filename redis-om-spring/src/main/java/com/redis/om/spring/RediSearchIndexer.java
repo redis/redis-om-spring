@@ -274,7 +274,8 @@ public class RediSearchIndexer {
       //
       else {
         for (java.lang.reflect.Field subfield : field.getType().getDeclaredFields()) {
-          String subfieldPrefix = (prefix == null || prefix.isBlank()) ? field.getName() : String.join(".", prefix, field.getName());
+          String subfieldPrefix = (prefix == null || prefix.isBlank()) ? field.getName()
+              : String.join(".", prefix, field.getName());
           fields.addAll(findIndexFields(subfield, subfieldPrefix, isDocument));
         }
       }
@@ -489,6 +490,15 @@ public class RediSearchIndexer {
             logger.info(String.format("Creating nested relationships: %s -> %s", field.getName(), subField.getName()));
             fieldList.add(new TagField(fieldName, indexed.separator(), false));
             continue;
+          }
+
+          else if (Number.class.isAssignableFrom(subField.getType()) || (subField.getType() == LocalDateTime.class)
+              || (subField.getType() == LocalDate.class) || (subField.getType() == Date.class)) {
+
+            FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName());
+            fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(subField, prefix));
+            logger.info(String.format("Creating nested relationships: %s -> %s", field.getName(), subField.getName()));
+            fieldList.add(new Field(fieldName, FieldType.Numeric));
           }
         }
         getNestedField(fieldPrefix + tempPrefix, subField, prefix, fieldList);

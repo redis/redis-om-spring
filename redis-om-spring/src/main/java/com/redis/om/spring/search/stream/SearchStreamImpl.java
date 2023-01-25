@@ -2,12 +2,14 @@ package com.redis.om.spring.search.stream;
 
 import com.google.gson.Gson;
 import com.redis.om.spring.metamodel.MetamodelField;
+import com.redis.om.spring.metamodel.indexed.NumericField;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.search.stream.actions.TakesJSONOperations;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
 import com.redis.om.spring.tuple.AbstractTupleMapper;
+import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.TupleMapper;
 import com.redis.om.spring.util.ObjectUtils;
 import io.redisearch.Query;
@@ -18,6 +20,7 @@ import io.redisearch.querybuilder.Node;
 import io.redisearch.querybuilder.QueryBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.data.domain.Sort.Order;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -254,13 +257,11 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public Optional<E> min(Comparator<? super E> comparator) {
-    // TODO possible aggregation?
     return resolveStream().min(comparator);
   }
 
   @Override
   public Optional<E> max(Comparator<? super E> comparator) {
-    // TODO possible aggregation?
     return resolveStream().max(comparator);
   }
 
@@ -448,6 +449,26 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, query);
     aggregationStream.load(fields);
     return aggregationStream;
+  }
+
+  @Override public Optional<E> min(NumericField<E, ?> field) {
+    List<Pair<String, ?>> minByField = this //
+        .load(new MetamodelField<E, String>("__key")) //
+        .sorted(Order.asc("@"+field.getSearchAlias()))
+        .limit(1) //
+        .toList(String.class, Double.class);
+
+    return minByField.isEmpty() ? Optional.empty() : Optional.of(json.get(minByField.get(0).getFirst(), entityClass));
+  }
+
+  @Override public Optional<E> max(NumericField<E, ?> field) {
+    List<Pair<String, ?>> maxByField = this //
+        .load(new MetamodelField<E, String>("__key")) //
+        .sorted(1, Order.desc("@"+field.getSearchAlias()))
+        .limit(1) //
+        .toList(String.class, Double.class);
+
+    return maxByField.isEmpty() ? Optional.empty() : Optional.of(json.get(maxByField.get(0).getFirst(), entityClass));
   }
 
 }
