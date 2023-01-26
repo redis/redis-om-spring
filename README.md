@@ -58,10 +58,10 @@ This **preview** release provides all of SDRs capabilities plus:
 * `RedisDocumentRepository` with automatic implementation of Repository interfaces for complex querying capabilities using `@EnableRedisDocumentRepositories`
 * Declarative Search Indices via `@Indexable`
 * Full-text Search Indices via `@Searchable`
-* `EntityStream`s: Streams-based Query Builder
+* `EntityStream`s: Streams-based Query and Aggregations Builder
 * `@Bloom` annotation to determine very fast, with and with high degree of certainty, whether a value is in a collection.
 
-**Note:** Redis OM Spring currently works only with Jedis.
+**Note:** Redis OM Spring depends on Jedis.
 
 ## 🏁 Getting Started
 
@@ -219,7 +219,7 @@ The repository proxy has two ways to derive a store-specific query from the meth
 
 Redis OM Spring Entity Streams provides a Java 8 Streams interface to Query Redis JSON documents using RediSearch. Entity Streams allow you to process data in a type safe declarative way similar to SQL statements. Streams can be used to express a query as a chain of operations.
 
-Entity Streams in Redis OM Spring provide the same semantics as Java 8 streams. Streams can be made of Redis Mapped entities (`@Document`) or one or more properties of an Entity. Entity Streams progressively build the query until a terminal operation is invoked (such as `collect`). Whenever a Terminal operation is applied to a Stream, the Stream cannot accept additional operations to its pipeline and it also means that the Stream is started.
+Entity Streams in Redis OM Spring provides the same semantics as Java 8 streams. Streams can be made of Redis Mapped entities (`@Document`) or one or more properties of an Entity. Entity Streams progressively build the query until a terminal operation is invoked (such as `collect`). Whenever a Terminal operation is applied to a Stream, the Stream cannot accept additional operations to its pipeline and it also means that the Stream is started.
 
 Let's start with a simple example, a Spring `@Service` which includes `EntityStream` to query for instances of the mapped class `Person`:
 
@@ -254,8 +254,8 @@ The `EntityStream` is injected into the `PeopleService` using `@Autowired`. We c
 
 #### 👭 Entity Meta-model
 
-To produce more elaborate queries, you're provided with a generated meta-model, which is a class with the same name as your model but ending with a dollar sign. In the
-example below, our entity model is `Person` therefore we get a meta-model named `Person$`. With the meta-model you have access to the operations related to the
+To produce more elaborate queries, you're provided with a generated metamodel, which is a class with the same name as your model but ending with a dollar sign. In the
+example below, our entity model is `Person` therefore we get a metamodel named `Person$`. With the meta-model you have access to the operations related to the
 underlying search engine field. For example, in the example we have an `age` property which is an integer. Therefore our metamodel has an `AGE` property which has
 numeric operations we can use with the stream's `filter` method such as `between`.
 
@@ -323,7 +323,7 @@ repositories {
 ### Dependency
 ```groovy
 ext {
-  redisOmVersion = '0.5.2-SNAPSHOT'
+  redisOmVersion = '0.8.0-SNAPSHOT'
 }
 
 dependencies {
@@ -396,7 +396,7 @@ Redis OM uses the [MIT license][license-url].
 [badge-codeql-page]: https://github.com/redis/redis-om-spring/actions/workflows/codeql-analysis.yml
 [license-image]: https://img.shields.io/github/license/redis/redis-om-spring
 [license-url]: LICENSE
-[sdr-badge-releases]: https://img.shields.io/maven-central/v/org.springframework.data/spring-data-redis/2.7.2
+[sdr-badge-releases]: https://img.shields.io/maven-central/v/org.springframework.data/spring-data-redis/3.0.1
 
 <!-- Links -->
 
@@ -413,7 +413,7 @@ Redis OM uses the [MIT license][license-url].
 [open-issues]: http://isitmaintained.com/project/redis/redis-om-spring
 [issue-resolution]: http://isitmaintained.com/project/redis/redis-om-spring
 [redisearch-wjson]: https://github.com/redislabs-training/mod-devcap-redisjson-getting-started/blob/master/articles/QuickStart-RediSearchWithJSON.md
-[sdr-link-releases]: https://repo1.maven.org/maven2/org/springframework/data/spring-data-redis/2.7.2/
+[sdr-link-releases]: https://repo1.maven.org/maven2/org/springframework/data/spring-data-redis/3.0.1/
 
 
 
