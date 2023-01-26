@@ -40,7 +40,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
   private final RediSearchIndexer indexer;
   private final Gson gson;
 
-  private RedisMappingContext mappingContext;
+  private final RedisMappingContext mappingContext;
 
   /**
    * Creates a new {@link KeyValueRepositoryFactory} for the given
@@ -141,13 +141,13 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
 
   private static class RediSearchQueryLookupStrategy implements QueryLookupStrategy {
 
-    private QueryMethodEvaluationContextProvider evaluationContextProvider;
-    private KeyValueOperations keyValueOperations;
-    private RedisModulesOperations<?> rmo;
-    private Gson gson;
+    private final QueryMethodEvaluationContextProvider evaluationContextProvider;
+    private final KeyValueOperations keyValueOperations;
+    private final RedisModulesOperations<?> rmo;
+    private final Gson gson;
 
-    private Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
-    private Class<? extends RepositoryQuery> repositoryQueryType;
+    private final Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
+    private final Class<? extends RepositoryQuery> repositoryQueryType;
 
     /**
      * @param key

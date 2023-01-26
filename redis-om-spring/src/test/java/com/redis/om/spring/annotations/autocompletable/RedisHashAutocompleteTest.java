@@ -1,24 +1,22 @@
 package com.redis.om.spring.annotations.autocompletable;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.annotations.hash.fixtures.Person;
+import com.redis.om.spring.annotations.hash.fixtures.PersonRepository;
+import com.redis.om.spring.autocomplete.Suggestion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.hash.fixtures.Person;
-import com.redis.om.spring.annotations.hash.fixtures.PersonRepository;
+import java.util.List;
+import java.util.stream.Collectors;
 
-import io.redisearch.Suggestion;
+import static org.assertj.core.api.Assertions.assertThat;
 
-class RedisHashAutocompleteTest extends AbstractBaseEnhancedRedisTest {
+@SuppressWarnings("SpellCheckingInspection") class RedisHashAutocompleteTest extends AbstractBaseEnhancedRedisTest {
   @Autowired
   PersonRepository repository;
-  
+
   @BeforeEach
   void loadPersons() {
     Person guyr = Person.of("Guy Royse", "guy.royse@redis.com", "guy");
@@ -39,11 +37,11 @@ class RedisHashAutocompleteTest extends AbstractBaseEnhancedRedisTest {
 
     repository.saveAll(persons);
   }
-  
+
   @Test
   void testBasicAutocomplete() {
     List<Suggestion> suggestions = repository.autoCompleteEmail("gu");
-    List<String> suggestionsString = suggestions.stream().map(Suggestion::getString).collect(Collectors.toList());
+    List<String> suggestionsString = suggestions.stream().map(Suggestion::getValue).collect(Collectors.toList());
     assertThat(suggestionsString).containsAll(List.of("guy.royse@redis.com", "guy.korland@redis.com"));
   }
 }

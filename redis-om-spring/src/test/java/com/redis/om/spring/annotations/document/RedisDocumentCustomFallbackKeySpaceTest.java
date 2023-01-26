@@ -1,27 +1,14 @@
 package com.redis.om.spring.annotations.document;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-
 import com.google.gson.JsonObject;
-import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.AbstractBaseOMTest;
 import com.redis.om.spring.TestConfig;
 import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
 import com.redis.om.spring.annotations.document.fixtures.MyDoc;
 import com.redis.om.spring.annotations.document.fixtures.MyDocRepository;
-import com.redis.om.spring.annotations.document.fixtures.WithAlias;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
-import com.redislabs.modules.rejson.Path;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,14 +23,21 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.test.annotation.DirtiesContext;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import redis.clients.jedis.json.Path;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers
 @DirtiesContext
 @SpringBootTest( //
     classes = RedisDocumentCustomFallbackKeySpaceTest.Config.class, //
     properties = { "spring.main.allow-bean-definition-overriding=true" } //
-)
-public class RedisDocumentCustomFallbackKeySpaceTest extends AbstractBaseOMTest {
+) class RedisDocumentCustomFallbackKeySpaceTest extends AbstractBaseOMTest {
 
   @SpringBootApplication
   @Configuration
@@ -69,14 +63,13 @@ public class RedisDocumentCustomFallbackKeySpaceTest extends AbstractBaseOMTest 
   RedisModulesOperations<String> modulesOperations;
 
   String myDoc1Id;
-  String id2;
 
   @BeforeEach
   void loadTestData() {
     Point point1 = new Point(-122.124500, 47.640160);
     MyDoc myDoc1 = MyDoc.of("hello world", point1, point1, 1);
 
-    Set<String> tags = new HashSet<String>();
+    Set<String> tags = new HashSet<>();
     tags.add("news");
     tags.add("article");
 

@@ -1,15 +1,14 @@
 package com.redis.om.spring.annotations.hash.fixtures;
 
+import com.redis.om.spring.repository.RedisEnhancedRepository;
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Point;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import org.springframework.data.geo.Distance;
-import org.springframework.data.geo.Point;
-
-import com.redis.om.spring.repository.RedisEnhancedRepository;
-
-public interface CompanyRepository extends RedisEnhancedRepository<Company, String> {
+@SuppressWarnings("unused") public interface CompanyRepository extends RedisEnhancedRepository<Company, String> {
   List<Company> findByName(String companyName);
 
   boolean existsByEmail(String email);

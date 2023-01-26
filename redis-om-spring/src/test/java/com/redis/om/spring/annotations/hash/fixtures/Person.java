@@ -1,21 +1,14 @@
 package com.redis.om.spring.annotations.hash.fixtures;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import org.springframework.data.annotation.Id;
-import org.springframework.data.redis.core.RedisHash;
-
 import com.redis.om.spring.annotations.AutoComplete;
 import com.redis.om.spring.annotations.Bloom;
 import com.redis.om.spring.annotations.Indexed;
+import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.redis.core.RedisHash;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -41,8 +34,8 @@ public class Person {
   
   @NonNull
   @Indexed
-  Set<String> roles = new HashSet<String>();
+  Set<String> roles = new HashSet<>();
   
   @NonNull
-  Set<String> favoriteFoods = new HashSet<String>();
+  Set<String> favoriteFoods = new HashSet<>();
 }

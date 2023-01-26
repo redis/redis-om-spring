@@ -6,10 +6,10 @@ import java.util.Arrays;
 import java.util.List;
 
 public class SearchFieldAccessor {
-  private List<Field> fields = new ArrayList<>();
-  private String searchAlias;
-  private Class<?> targetClass;
-  private Class<?> declaringClass;
+  private final List<Field> fields = new ArrayList<>();
+  private final String searchAlias;
+  private final Class<?> targetClass;
+  private final Class<?> declaringClass;
 
   public SearchFieldAccessor(String searchAlias, Field... fields) {
     this.searchAlias = searchAlias;

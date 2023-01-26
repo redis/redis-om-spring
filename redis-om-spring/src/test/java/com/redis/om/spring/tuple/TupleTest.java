@@ -1,52 +1,32 @@
 package com.redis.om.spring.tuple;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import com.redis.om.spring.tuple.accessor.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
-import com.redis.om.spring.tuple.Tuples;
-import com.redis.om.spring.tuple.accessor.EighteenthAccessor;
-import com.redis.om.spring.tuple.accessor.EighthAccessor;
-import com.redis.om.spring.tuple.accessor.EleventhAccessor;
-import com.redis.om.spring.tuple.accessor.FifteenthAccessor;
-import com.redis.om.spring.tuple.accessor.FifthAccessor;
-import com.redis.om.spring.tuple.accessor.FirstAccessor;
-import com.redis.om.spring.tuple.accessor.FourteenthAccessor;
-import com.redis.om.spring.tuple.accessor.FourthAccessor;
-import com.redis.om.spring.tuple.accessor.NineteenthAccessor;
-import com.redis.om.spring.tuple.accessor.NinthAccessor;
-import com.redis.om.spring.tuple.accessor.SecondAccessor;
-import com.redis.om.spring.tuple.accessor.SeventeenthAccessor;
-import com.redis.om.spring.tuple.accessor.SeventhAccessor;
-import com.redis.om.spring.tuple.accessor.SixteenthAccessor;
-import com.redis.om.spring.tuple.accessor.SixthAccessor;
-import com.redis.om.spring.tuple.accessor.TenthAccessor;
-import com.redis.om.spring.tuple.accessor.ThirdAccessor;
-import com.redis.om.spring.tuple.accessor.ThirteenthAccessor;
-import com.redis.om.spring.tuple.accessor.TwelfthAccessor;
-import com.redis.om.spring.tuple.accessor.TwentiethAccessor;
-
-final class TupleTest {
+@SuppressWarnings("SpellCheckingInspection") final class TupleTest {
+  
+  @Test
+  void empty() {
+    final EmptyTuple tuple = Tuples.of();
+    assertThat(tuple.stream()).isEmpty();
+    assertThat(tuple.streamOf(String.class)).isEmpty();
+    assertThat(tuple.labelledMap()).isEmpty();
+  }
 
   @Test
   void single() {
     final Single<Integer> tuple = Tuples.of(0);
     tupleTest(tuple);
-    final Single<Integer> defaultTuple = new Single<Integer>() {
-      @Override
-      public Integer getFirst() {
-        return 0;
-      }
-    };
+    final Single<Integer> defaultTuple = () -> 0;
     tupleTest(defaultTuple);
   }
 
@@ -54,14 +34,12 @@ final class TupleTest {
   void pair() {
     final Pair<Integer, Integer> tuple = Tuples.of(0, 1);
     tupleTest(tuple);
-    final Pair<Integer, Integer> defaultTuple = new Pair<Integer, Integer>() {
-      @Override
-      public Integer getFirst() {
+    final Pair<Integer, Integer> defaultTuple = new Pair<>() {
+      @Override public Integer getFirst() {
         return 0;
       }
 
-      @Override
-      public Integer getSecond() {
+      @Override public Integer getSecond() {
         return 1;
       }
     };
@@ -72,19 +50,16 @@ final class TupleTest {
   void triple() {
     final Triple<Integer, Integer, Integer> tuple = Tuples.of(0, 1, 2);
     tupleTest(tuple);
-    final Triple<Integer, Integer, Integer> defaultTuple = new Triple<Integer, Integer, Integer>() {
-      @Override
-      public Integer getFirst() {
+    final Triple<Integer, Integer, Integer> defaultTuple = new Triple<>() {
+      @Override public Integer getFirst() {
         return 0;
       }
 
-      @Override
-      public Integer getSecond() {
+      @Override public Integer getSecond() {
         return 1;
       }
 
-      @Override
-      public Integer getThird() {
+      @Override public Integer getThird() {
         return 2;
       }
     };
@@ -95,24 +70,20 @@ final class TupleTest {
   void quad() {
     final Quad<Integer, Integer, Integer, Integer> tuple = Tuples.of(0, 1, 2, 3);
     tupleTest(tuple);
-    final Quad<Integer, Integer, Integer, Integer> defaultTuple = new Quad<Integer, Integer, Integer, Integer>() {
-      @Override
-      public Integer getFirst() {
+    final Quad<Integer, Integer, Integer, Integer> defaultTuple = new Quad<>() {
+      @Override public Integer getFirst() {
         return 0;
       }
 
-      @Override
-      public Integer getSecond() {
+      @Override public Integer getSecond() {
         return 1;
       }
 
-      @Override
-      public Integer getThird() {
+      @Override public Integer getThird() {
         return 2;
       }
 
-      @Override
-      public Integer getFourth() {
+      @Override public Integer getFourth() {
         return 3;
       }
     };
@@ -123,29 +94,24 @@ final class TupleTest {
   void quintuple() {
     final Quintuple<Integer, Integer, Integer, Integer, Integer> tuple = Tuples.of(0, 1, 2, 3, 4);
     tupleTest(tuple);
-    final Quintuple<Integer, Integer, Integer, Integer, Integer> defaultTuple = new Quintuple<Integer, Integer, Integer, Integer, Integer>() {
-      @Override
-      public Integer getFirst() {
+    final Quintuple<Integer, Integer, Integer, Integer, Integer> defaultTuple = new Quintuple<>() {
+      @Override public Integer getFirst() {
         return 0;
       }
 
-      @Override
-      public Integer getSecond() {
+      @Override public Integer getSecond() {
         return 1;
       }
 
-      @Override
-      public Integer getThird() {
+      @Override public Integer getThird() {
         return 2;
       }
 
-      @Override
-      public Integer getFourth() {
+      @Override public Integer getFourth() {
         return 3;
       }
 
-      @Override
-      public Integer getFifth() {
+      @Override public Integer getFifth() {
         return 4;
       }
     };
@@ -156,34 +122,28 @@ final class TupleTest {
   void hextuple() {
     final Hextuple<Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples.of(0, 1, 2, 3, 4, 5);
     tupleTest(tuple);
-    final Hextuple<Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Hextuple<Integer, Integer, Integer, Integer, Integer, Integer>() {
-      @Override
-      public Integer getFirst() {
+    final Hextuple<Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Hextuple<>() {
+      @Override public Integer getFirst() {
         return 0;
       }
 
-      @Override
-      public Integer getSecond() {
+      @Override public Integer getSecond() {
         return 1;
       }
 
-      @Override
-      public Integer getThird() {
+      @Override public Integer getThird() {
         return 2;
       }
 
-      @Override
-      public Integer getFourth() {
+      @Override public Integer getFourth() {
         return 3;
       }
 
-      @Override
-      public Integer getFifth() {
+      @Override public Integer getFifth() {
         return 4;
       }
 
-      @Override
-      public Integer getSixth() {
+      @Override public Integer getSixth() {
         return 5;
       }
     };
@@ -195,39 +155,32 @@ final class TupleTest {
     final Septuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples.of(0, 1, 2, 3, 4, 5,
         6);
     tupleTest(tuple);
-    final Septuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Septuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer>() {
-      @Override
-      public Integer getFirst() {
+    final Septuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Septuple<>() {
+      @Override public Integer getFirst() {
         return 0;
       }
 
-      @Override
-      public Integer getSecond() {
+      @Override public Integer getSecond() {
         return 1;
       }
 
-      @Override
-      public Integer getThird() {
+      @Override public Integer getThird() {
         return 2;
       }
 
-      @Override
-      public Integer getFourth() {
+      @Override public Integer getFourth() {
         return 3;
       }
 
-      @Override
-      public Integer getFifth() {
+      @Override public Integer getFifth() {
         return 4;
       }
 
-      @Override
-      public Integer getSixth() {
+      @Override public Integer getSixth() {
         return 5;
       }
 
-      @Override
-      public Integer getSeventh() {
+      @Override public Integer getSeventh() {
         return 6;
       }
     };
@@ -239,44 +192,36 @@ final class TupleTest {
     final Octuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples.of(0, 1, 2, 3,
         4, 5, 6, 7);
     tupleTest(tuple);
-    final Octuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Octuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>() {
-      @Override
-      public Integer getFirst() {
+    final Octuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Octuple<>() {
+      @Override public Integer getFirst() {
         return 0;
       }
 
-      @Override
-      public Integer getSecond() {
+      @Override public Integer getSecond() {
         return 1;
       }
 
-      @Override
-      public Integer getThird() {
+      @Override public Integer getThird() {
         return 2;
       }
 
-      @Override
-      public Integer getFourth() {
+      @Override public Integer getFourth() {
         return 3;
       }
 
-      @Override
-      public Integer getFifth() {
+      @Override public Integer getFifth() {
         return 4;
       }
 
-      @Override
-      public Integer getSixth() {
+      @Override public Integer getSixth() {
         return 5;
       }
 
-      @Override
-      public Integer getSeventh() {
+      @Override public Integer getSeventh() {
         return 6;
       }
 
-      @Override
-      public Integer getEighth() {
+      @Override public Integer getEighth() {
         return 7;
       }
     };
@@ -288,49 +233,40 @@ final class TupleTest {
     final Nonuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples.of(0,
         1, 2, 3, 4, 5, 6, 7, 8);
     tupleTest(tuple);
-    final Nonuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Nonuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>() {
-      @Override
-      public Integer getFirst() {
+    final Nonuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Nonuple<>() {
+      @Override public Integer getFirst() {
         return 0;
       }
 
-      @Override
-      public Integer getSecond() {
+      @Override public Integer getSecond() {
         return 1;
       }
 
-      @Override
-      public Integer getThird() {
+      @Override public Integer getThird() {
         return 2;
       }
 
-      @Override
-      public Integer getFourth() {
+      @Override public Integer getFourth() {
         return 3;
       }
 
-      @Override
-      public Integer getFifth() {
+      @Override public Integer getFifth() {
         return 4;
       }
 
-      @Override
-      public Integer getSixth() {
+      @Override public Integer getSixth() {
         return 5;
       }
 
-      @Override
-      public Integer getSeventh() {
+      @Override public Integer getSeventh() {
         return 6;
       }
 
-      @Override
-      public Integer getEighth() {
+      @Override public Integer getEighth() {
         return 7;
       }
 
-      @Override
-      public Integer getNinth() {
+      @Override public Integer getNinth() {
         return 8;
       }
     };
@@ -342,54 +278,44 @@ final class TupleTest {
     final Decuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples
         .of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
     tupleTest(tuple);
-    final Decuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Decuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>() {
-      @Override
-      public Integer getFirst() {
+    final Decuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Decuple<>() {
+      @Override public Integer getFirst() {
         return 0;
       }
 
-      @Override
-      public Integer getSecond() {
+      @Override public Integer getSecond() {
         return 1;
       }
 
-      @Override
-      public Integer getThird() {
+      @Override public Integer getThird() {
         return 2;
       }
 
-      @Override
-      public Integer getFourth() {
+      @Override public Integer getFourth() {
         return 3;
       }
 
-      @Override
-      public Integer getFifth() {
+      @Override public Integer getFifth() {
         return 4;
       }
 
-      @Override
-      public Integer getSixth() {
+      @Override public Integer getSixth() {
         return 5;
       }
 
-      @Override
-      public Integer getSeventh() {
+      @Override public Integer getSeventh() {
         return 6;
       }
 
-      @Override
-      public Integer getEighth() {
+      @Override public Integer getEighth() {
         return 7;
       }
 
-      @Override
-      public Integer getNinth() {
+      @Override public Integer getNinth() {
         return 8;
       }
 
-      @Override
-      public Integer getTenth() {
+      @Override public Integer getTenth() {
         return 9;
       }
     };
@@ -401,59 +327,48 @@ final class TupleTest {
     final Undecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples
         .of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
     tupleTest(tuple);
-    final Undecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Undecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>() {
-      @Override
-      public Integer getFirst() {
+    final Undecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Undecuple<>() {
+      @Override public Integer getFirst() {
         return 0;
       }
 
-      @Override
-      public Integer getSecond() {
+      @Override public Integer getSecond() {
         return 1;
       }
 
-      @Override
-      public Integer getThird() {
+      @Override public Integer getThird() {
         return 2;
       }
 
-      @Override
-      public Integer getFourth() {
+      @Override public Integer getFourth() {
         return 3;
       }
 
-      @Override
-      public Integer getFifth() {
+      @Override public Integer getFifth() {
         return 4;
       }
 
-      @Override
-      public Integer getSixth() {
+      @Override public Integer getSixth() {
         return 5;
       }
 
-      @Override
-      public Integer getSeventh() {
+      @Override public Integer getSeventh() {
         return 6;
       }
 
-      @Override
-      public Integer getEighth() {
+      @Override public Integer getEighth() {
         return 7;
       }
 
-      @Override
-      public Integer getNinth() {
+      @Override public Integer getNinth() {
         return 8;
       }
 
-      @Override
-      public Integer getTenth() {
+      @Override public Integer getTenth() {
         return 9;
       }
 
-      @Override
-      public Integer getEleventh() {
+      @Override public Integer getEleventh() {
         return 10;
       }
     };
@@ -465,64 +380,52 @@ final class TupleTest {
     final Duodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples
         .of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
     tupleTest(tuple);
-    final Duodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Duodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>() {
-      @Override
-      public Integer getFirst() {
+    final Duodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Duodecuple<>() {
+      @Override public Integer getFirst() {
         return 0;
       }
 
-      @Override
-      public Integer getSecond() {
+      @Override public Integer getSecond() {
         return 1;
       }
 
-      @Override
-      public Integer getThird() {
+      @Override public Integer getThird() {
         return 2;
       }
 
-      @Override
-      public Integer getFourth() {
+      @Override public Integer getFourth() {
         return 3;
       }
 
-      @Override
-      public Integer getFifth() {
+      @Override public Integer getFifth() {
         return 4;
       }
 
-      @Override
-      public Integer getSixth() {
+      @Override public Integer getSixth() {
         return 5;
       }
 
-      @Override
-      public Integer getSeventh() {
+      @Override public Integer getSeventh() {
         return 6;
       }
 
-      @Override
-      public Integer getEighth() {
+      @Override public Integer getEighth() {
         return 7;
       }
 
-      @Override
-      public Integer getNinth() {
+      @Override public Integer getNinth() {
         return 8;
       }
 
-      @Override
-      public Integer getTenth() {
+      @Override public Integer getTenth() {
         return 9;
       }
 
-      @Override
-      public Integer getEleventh() {
+      @Override public Integer getEleventh() {
         return 10;
       }
 
-      @Override
-      public Integer getTwelfth() {
+      @Override public Integer getTwelfth() {
         return 11;
       }
     };
@@ -534,69 +437,56 @@ final class TupleTest {
     final Tredecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples
         .of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
     tupleTest(tuple);
-    final Tredecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Tredecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>() {
-      @Override
-      public Integer getFirst() {
+    final Tredecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Tredecuple<>() {
+      @Override public Integer getFirst() {
         return 0;
       }
 
-      @Override
-      public Integer getSecond() {
+      @Override public Integer getSecond() {
         return 1;
       }
 
-      @Override
-      public Integer getThird() {
+      @Override public Integer getThird() {
         return 2;
       }
 
-      @Override
-      public Integer getFourth() {
+      @Override public Integer getFourth() {
         return 3;
       }
 
-      @Override
-      public Integer getFifth() {
+      @Override public Integer getFifth() {
         return 4;
       }
 
-      @Override
-      public Integer getSixth() {
+      @Override public Integer getSixth() {
         return 5;
       }
 
-      @Override
-      public Integer getSeventh() {
+      @Override public Integer getSeventh() {
         return 6;
       }
 
-      @Override
-      public Integer getEighth() {
+      @Override public Integer getEighth() {
         return 7;
       }
 
-      @Override
-      public Integer getNinth() {
+      @Override public Integer getNinth() {
         return 8;
       }
 
-      @Override
-      public Integer getTenth() {
+      @Override public Integer getTenth() {
         return 9;
       }
 
-      @Override
-      public Integer getEleventh() {
+      @Override public Integer getEleventh() {
         return 10;
       }
 
-      @Override
-      public Integer getTwelfth() {
+      @Override public Integer getTwelfth() {
         return 11;
       }
 
-      @Override
-      public Integer getThirteenth() {
+      @Override public Integer getThirteenth() {
         return 12;
       }
     };
@@ -608,74 +498,60 @@ final class TupleTest {
     final Quattuordecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples
         .of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
     tupleTest(tuple);
-    final Quattuordecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Quattuordecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>() {
-      @Override
-      public Integer getFirst() {
+    final Quattuordecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Quattuordecuple<>() {
+      @Override public Integer getFirst() {
         return 0;
       }
 
-      @Override
-      public Integer getSecond() {
+      @Override public Integer getSecond() {
         return 1;
       }
 
-      @Override
-      public Integer getThird() {
+      @Override public Integer getThird() {
         return 2;
       }
 
-      @Override
-      public Integer getFourth() {
+      @Override public Integer getFourth() {
         return 3;
       }
 
-      @Override
-      public Integer getFifth() {
+      @Override public Integer getFifth() {
         return 4;
       }
 
-      @Override
-      public Integer getSixth() {
+      @Override public Integer getSixth() {
         return 5;
       }
 
-      @Override
-      public Integer getSeventh() {
+      @Override public Integer getSeventh() {
         return 6;
       }
 
-      @Override
-      public Integer getEighth() {
+      @Override public Integer getEighth() {
         return 7;
       }
 
-      @Override
-      public Integer getNinth() {
+      @Override public Integer getNinth() {
         return 8;
       }
 
-      @Override
-      public Integer getTenth() {
+      @Override public Integer getTenth() {
         return 9;
       }
 
-      @Override
-      public Integer getEleventh() {
+      @Override public Integer getEleventh() {
         return 10;
       }
 
-      @Override
-      public Integer getTwelfth() {
+      @Override public Integer getTwelfth() {
         return 11;
       }
 
-      @Override
-      public Integer getThirteenth() {
+      @Override public Integer getThirteenth() {
         return 12;
       }
 
-      @Override
-      public Integer getFourteenth() {
+      @Override public Integer getFourteenth() {
         return 13;
       }
     };
@@ -687,79 +563,64 @@ final class TupleTest {
     final Quindecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples
         .of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
     tupleTest(tuple);
-    final Quindecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Quindecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>() {
-      @Override
-      public Integer getFirst() {
+    final Quindecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Quindecuple<>() {
+      @Override public Integer getFirst() {
         return 0;
       }
 
-      @Override
-      public Integer getSecond() {
+      @Override public Integer getSecond() {
         return 1;
       }
 
-      @Override
-      public Integer getThird() {
+      @Override public Integer getThird() {
         return 2;
       }
 
-      @Override
-      public Integer getFourth() {
+      @Override public Integer getFourth() {
         return 3;
       }
 
-      @Override
-      public Integer getFifth() {
+      @Override public Integer getFifth() {
         return 4;
       }
 
-      @Override
-      public Integer getSixth() {
+      @Override public Integer getSixth() {
         return 5;
       }
 
-      @Override
-      public Integer getSeventh() {
+      @Override public Integer getSeventh() {
         return 6;
       }
 
-      @Override
-      public Integer getEighth() {
+      @Override public Integer getEighth() {
         return 7;
       }
 
-      @Override
-      public Integer getNinth() {
+      @Override public Integer getNinth() {
         return 8;
       }
 
-      @Override
-      public Integer getTenth() {
+      @Override public Integer getTenth() {
         return 9;
       }
 
-      @Override
-      public Integer getEleventh() {
+      @Override public Integer getEleventh() {
         return 10;
       }
 
-      @Override
-      public Integer getTwelfth() {
+      @Override public Integer getTwelfth() {
         return 11;
       }
 
-      @Override
-      public Integer getThirteenth() {
+      @Override public Integer getThirteenth() {
         return 12;
       }
 
-      @Override
-      public Integer getFourteenth() {
+      @Override public Integer getFourteenth() {
         return 13;
       }
 
-      @Override
-      public Integer getFifteenth() {
+      @Override public Integer getFifteenth() {
         return 14;
       }
     };
@@ -771,84 +632,68 @@ final class TupleTest {
     final Sexdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples
         .of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
     tupleTest(tuple);
-    final Sexdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Sexdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>() {
-      @Override
-      public Integer getFirst() {
+    final Sexdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Sexdecuple<>() {
+      @Override public Integer getFirst() {
         return 0;
       }
 
-      @Override
-      public Integer getSecond() {
+      @Override public Integer getSecond() {
         return 1;
       }
 
-      @Override
-      public Integer getThird() {
+      @Override public Integer getThird() {
         return 2;
       }
 
-      @Override
-      public Integer getFourth() {
+      @Override public Integer getFourth() {
         return 3;
       }
 
-      @Override
-      public Integer getFifth() {
+      @Override public Integer getFifth() {
         return 4;
       }
 
-      @Override
-      public Integer getSixth() {
+      @Override public Integer getSixth() {
         return 5;
       }
 
-      @Override
-      public Integer getSeventh() {
+      @Override public Integer getSeventh() {
         return 6;
       }
 
-      @Override
-      public Integer getEighth() {
+      @Override public Integer getEighth() {
         return 7;
       }
 
-      @Override
-      public Integer getNinth() {
+      @Override public Integer getNinth() {
         return 8;
       }
 
-      @Override
-      public Integer getTenth() {
+      @Override public Integer getTenth() {
         return 9;
       }
 
-      @Override
-      public Integer getEleventh() {
+      @Override public Integer getEleventh() {
         return 10;
       }
 
-      @Override
-      public Integer getTwelfth() {
+      @Override public Integer getTwelfth() {
         return 11;
       }
 
-      @Override
-      public Integer getThirteenth() {
+      @Override public Integer getThirteenth() {
         return 12;
       }
 
-      @Override
-      public Integer getFourteenth() {
+      @Override public Integer getFourteenth() {
         return 13;
       }
 
-      @Override
-      public Integer getFifteenth() {
+      @Override public Integer getFifteenth() {
         return 14;
       }
 
-      @Override
-      public Integer getSixteenth() {
+      @Override public Integer getSixteenth() {
         return 15;
       }
     };
@@ -860,89 +705,72 @@ final class TupleTest {
     final Septendecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples
         .of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
     tupleTest(tuple);
-    final Septendecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Septendecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>() {
-      @Override
-      public Integer getFirst() {
+    final Septendecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Septendecuple<>() {
+      @Override public Integer getFirst() {
         return 0;
       }
 
-      @Override
-      public Integer getSecond() {
+      @Override public Integer getSecond() {
         return 1;
       }
 
-      @Override
-      public Integer getThird() {
+      @Override public Integer getThird() {
         return 2;
       }
 
-      @Override
-      public Integer getFourth() {
+      @Override public Integer getFourth() {
         return 3;
       }
 
-      @Override
-      public Integer getFifth() {
+      @Override public Integer getFifth() {
         return 4;
       }
 
-      @Override
-      public Integer getSixth() {
+      @Override public Integer getSixth() {
         return 5;
       }
 
-      @Override
-      public Integer getSeventh() {
+      @Override public Integer getSeventh() {
         return 6;
       }
 
-      @Override
-      public Integer getEighth() {
+      @Override public Integer getEighth() {
         return 7;
       }
 
-      @Override
-      public Integer getNinth() {
+      @Override public Integer getNinth() {
         return 8;
       }
 
-      @Override
-      public Integer getTenth() {
+      @Override public Integer getTenth() {
         return 9;
       }
 
-      @Override
-      public Integer getEleventh() {
+      @Override public Integer getEleventh() {
         return 10;
       }
 
-      @Override
-      public Integer getTwelfth() {
+      @Override public Integer getTwelfth() {
         return 11;
       }
 
-      @Override
-      public Integer getThirteenth() {
+      @Override public Integer getThirteenth() {
         return 12;
       }
 
-      @Override
-      public Integer getFourteenth() {
+      @Override public Integer getFourteenth() {
         return 13;
       }
 
-      @Override
-      public Integer getFifteenth() {
+      @Override public Integer getFifteenth() {
         return 14;
       }
 
-      @Override
-      public Integer getSixteenth() {
+      @Override public Integer getSixteenth() {
         return 15;
       }
 
-      @Override
-      public Integer getSeventeenth() {
+      @Override public Integer getSeventeenth() {
         return 16;
       }
     };
@@ -954,94 +782,76 @@ final class TupleTest {
     final Octodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples
         .of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17);
     tupleTest(tuple);
-    final Octodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Octodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>() {
-      @Override
-      public Integer getFirst() {
+    final Octodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Octodecuple<>() {
+      @Override public Integer getFirst() {
         return 0;
       }
 
-      @Override
-      public Integer getSecond() {
+      @Override public Integer getSecond() {
         return 1;
       }
 
-      @Override
-      public Integer getThird() {
+      @Override public Integer getThird() {
         return 2;
       }
 
-      @Override
-      public Integer getFourth() {
+      @Override public Integer getFourth() {
         return 3;
       }
 
-      @Override
-      public Integer getFifth() {
+      @Override public Integer getFifth() {
         return 4;
       }
 
-      @Override
-      public Integer getSixth() {
+      @Override public Integer getSixth() {
         return 5;
       }
 
-      @Override
-      public Integer getSeventh() {
+      @Override public Integer getSeventh() {
         return 6;
       }
 
-      @Override
-      public Integer getEighth() {
+      @Override public Integer getEighth() {
         return 7;
       }
 
-      @Override
-      public Integer getNinth() {
+      @Override public Integer getNinth() {
         return 8;
       }
 
-      @Override
-      public Integer getTenth() {
+      @Override public Integer getTenth() {
         return 9;
       }
 
-      @Override
-      public Integer getEleventh() {
+      @Override public Integer getEleventh() {
         return 10;
       }
 
-      @Override
-      public Integer getTwelfth() {
+      @Override public Integer getTwelfth() {
         return 11;
       }
 
-      @Override
-      public Integer getThirteenth() {
+      @Override public Integer getThirteenth() {
         return 12;
       }
 
-      @Override
-      public Integer getFourteenth() {
+      @Override public Integer getFourteenth() {
         return 13;
       }
 
-      @Override
-      public Integer getFifteenth() {
+      @Override public Integer getFifteenth() {
         return 14;
       }
 
-      @Override
-      public Integer getSixteenth() {
+      @Override public Integer getSixteenth() {
         return 15;
       }
 
-      @Override
-      public Integer getSeventeenth() {
+      @Override public Integer getSeventeenth() {
         return 16;
       }
 
-      @Override
-      public Integer getEighteenth() {
+      @Override public Integer getEighteenth() {
         return 17;
       }
     };
@@ -1053,99 +863,80 @@ final class TupleTest {
     final Novemdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples
         .of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18);
     tupleTest(tuple);
-    final Novemdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Novemdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>() {
-      @Override
-      public Integer getFirst() {
+    final Novemdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Novemdecuple<>() {
+      @Override public Integer getFirst() {
         return 0;
       }
 
-      @Override
-      public Integer getSecond() {
+      @Override public Integer getSecond() {
         return 1;
       }
 
-      @Override
-      public Integer getThird() {
+      @Override public Integer getThird() {
         return 2;
       }
 
-      @Override
-      public Integer getFourth() {
+      @Override public Integer getFourth() {
         return 3;
       }
 
-      @Override
-      public Integer getFifth() {
+      @Override public Integer getFifth() {
         return 4;
       }
 
-      @Override
-      public Integer getSixth() {
+      @Override public Integer getSixth() {
         return 5;
       }
 
-      @Override
-      public Integer getSeventh() {
+      @Override public Integer getSeventh() {
         return 6;
       }
 
-      @Override
-      public Integer getEighth() {
+      @Override public Integer getEighth() {
         return 7;
       }
 
-      @Override
-      public Integer getNinth() {
+      @Override public Integer getNinth() {
         return 8;
       }
 
-      @Override
-      public Integer getTenth() {
+      @Override public Integer getTenth() {
         return 9;
       }
 
-      @Override
-      public Integer getEleventh() {
+      @Override public Integer getEleventh() {
         return 10;
       }
 
-      @Override
-      public Integer getTwelfth() {
+      @Override public Integer getTwelfth() {
         return 11;
       }
 
-      @Override
-      public Integer getThirteenth() {
+      @Override public Integer getThirteenth() {
         return 12;
       }
 
-      @Override
-      public Integer getFourteenth() {
+      @Override public Integer getFourteenth() {
         return 13;
       }
 
-      @Override
-      public Integer getFifteenth() {
+      @Override public Integer getFifteenth() {
         return 14;
       }
 
-      @Override
-      public Integer getSixteenth() {
+      @Override public Integer getSixteenth() {
         return 15;
       }
 
-      @Override
-      public Integer getSeventeenth() {
+      @Override public Integer getSeventeenth() {
         return 16;
       }
 
-      @Override
-      public Integer getEighteenth() {
+      @Override public Integer getEighteenth() {
         return 17;
       }
 
-      @Override
-      public Integer getNineteenth() {
+      @Override public Integer getNineteenth() {
         return 18;
       }
     };
@@ -1157,104 +948,84 @@ final class TupleTest {
     final Vigintuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples
         .of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19);
     tupleTest(tuple);
-    final Vigintuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Vigintuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>() {
-      @Override
-      public Integer getFirst() {
+    final Vigintuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Vigintuple<>() {
+      @Override public Integer getFirst() {
         return 0;
       }
 
-      @Override
-      public Integer getSecond() {
+      @Override public Integer getSecond() {
         return 1;
       }
 
-      @Override
-      public Integer getThird() {
+      @Override public Integer getThird() {
         return 2;
       }
 
-      @Override
-      public Integer getFourth() {
+      @Override public Integer getFourth() {
         return 3;
       }
 
-      @Override
-      public Integer getFifth() {
+      @Override public Integer getFifth() {
         return 4;
       }
 
-      @Override
-      public Integer getSixth() {
+      @Override public Integer getSixth() {
         return 5;
       }
 
-      @Override
-      public Integer getSeventh() {
+      @Override public Integer getSeventh() {
         return 6;
       }
 
-      @Override
-      public Integer getEighth() {
+      @Override public Integer getEighth() {
         return 7;
       }
 
-      @Override
-      public Integer getNinth() {
+      @Override public Integer getNinth() {
         return 8;
       }
 
-      @Override
-      public Integer getTenth() {
+      @Override public Integer getTenth() {
         return 9;
       }
 
-      @Override
-      public Integer getEleventh() {
+      @Override public Integer getEleventh() {
         return 10;
       }
 
-      @Override
-      public Integer getTwelfth() {
+      @Override public Integer getTwelfth() {
         return 11;
       }
 
-      @Override
-      public Integer getThirteenth() {
+      @Override public Integer getThirteenth() {
         return 12;
       }
 
-      @Override
-      public Integer getFourteenth() {
+      @Override public Integer getFourteenth() {
         return 13;
       }
 
-      @Override
-      public Integer getFifteenth() {
+      @Override public Integer getFifteenth() {
         return 14;
       }
 
-      @Override
-      public Integer getSixteenth() {
+      @Override public Integer getSixteenth() {
         return 15;
       }
 
-      @Override
-      public Integer getSeventeenth() {
+      @Override public Integer getSeventeenth() {
         return 16;
       }
 
-      @Override
-      public Integer getEighteenth() {
+      @Override public Integer getEighteenth() {
         return 17;
       }
 
-      @Override
-      public Integer getNineteenth() {
+      @Override public Integer getNineteenth() {
         return 18;
       }
 
-      @Override
-      public Integer getTwentieth() {
+      @Override public Integer getTwentieth() {
         return 19;
       }
     };
@@ -2447,13 +2218,13 @@ final class TupleTest {
     );
   }
 
-  @SuppressWarnings("unlikely-arg-type")
-  @Test
-  void testTuplesEqualsWithBasicTuple() {
+  @Test void testTuplesEqualsWithBasicTuple() {
     final Triple<Integer, Integer, Integer> oneTriple = Tuples.of(0, 1, 42);
-    assertThat(oneTriple.equals(null)).isFalse();
-    assertThat(oneTriple.equals(oneTriple)).isTrue();
-    assertThat(oneTriple.equals("notATuple")).isFalse();
+    assertThat(oneTriple) //
+        .isNotNull() //
+        .isEqualTo(oneTriple) //
+        .isEqualTo(Tuples.of(0, 1, 42) //
+        );
   }
 
   @Test
@@ -2464,9 +2235,7 @@ final class TupleTest {
 
   @Test
   void testEntityWithoutIdThrowsException() {
-    NullPointerException exception = Assertions.assertThrows(NullPointerException.class, () -> {
-      Tuples.of(0, 1, null);
-    });
+    NullPointerException exception = Assertions.assertThrows(NullPointerException.class, () -> Tuples.of(0, 1, null));
 
     String expectedErrorMessage = "com.redis.om.spring.tuple.impl.TripleImpl cannot hold null values.";
     Assertions.assertEquals(expectedErrorMessage, exception.getMessage());
@@ -2480,6 +2249,16 @@ final class TupleTest {
     assertThat(labelledMap) //
         .containsEntry("lastName", "Jordan") //
         .containsEntry("number", 23);
+  }
+  
+  @Test
+  void testTupleEquality() {
+    final Pair<String, Integer> pair = Tuples.of(new String[] { "lastName", "number" }, "Jordan", 23);
+    final Pair<String, Integer> other = Tuples.of(new String[] { "lastName", "number" }, "Jordan", 23);
+    assertThat(pair) //
+        .isEqualTo(other) //
+        .isNotEqualTo(null) //
+        .isNotEqualTo("foo");
   }
 
 }

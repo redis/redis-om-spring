@@ -6,13 +6,13 @@ import java.util.function.Function;
 
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.util.ObjectUtils;
-import com.redislabs.modules.rejson.Path;
+import redis.clients.jedis.json.Path;
 
 public class ArrayPopAction<E, R> extends BaseAbstractAction implements Function<E, R> {
 
-  private Long index;
+  private final Integer index;
 
-  public ArrayPopAction(SearchFieldAccessor field, Long index) {
+  public ArrayPopAction(SearchFieldAccessor field, Integer index) {
     super(field);
     this.index = index;
   }

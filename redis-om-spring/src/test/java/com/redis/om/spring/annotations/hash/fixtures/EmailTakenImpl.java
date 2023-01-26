@@ -1,11 +1,10 @@
 package com.redis.om.spring.annotations.hash.fixtures;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.pds.BloomOperations;
+import org.springframework.beans.factory.annotation.Autowired;
 
-public class EmailTakenImpl implements EmailTaken {
+@SuppressWarnings("ALL") public class EmailTakenImpl implements EmailTaken {
   
   @Autowired
   RedisModulesOperations<String> modulesOperations;

@@ -2,7 +2,7 @@ package com.redis.om.spring.repository.query.clause;
 
 import org.springframework.data.repository.query.parser.Part;
 
-import io.redisearch.Schema.FieldType;
+import redis.clients.jedis.search.Schema.FieldType;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;

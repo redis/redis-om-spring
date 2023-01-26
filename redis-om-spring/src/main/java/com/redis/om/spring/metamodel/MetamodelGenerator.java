@@ -39,7 +39,7 @@ import java.util.stream.Stream;
 import static java.util.Objects.requireNonNull;
 
 @SupportedAnnotationTypes("com.redis.om.spring.annotations.Document")
-@SupportedSourceVersion(SourceVersion.RELEASE_11)
+@SupportedSourceVersion(SourceVersion.RELEASE_17)
 @AutoService(Processor.class)
 public final class MetamodelGenerator extends AbstractProcessor {
 
@@ -125,9 +125,9 @@ public final class MetamodelGenerator extends AbstractProcessor {
     blockBuilder.beginControlFlow("try");
     for (ObjectGraphFieldSpec ogfs : fields) {
       String sb = "$L = $T.class";
-      sb = sb + ogfs.getChain().stream().map(e -> String.format(".getDeclaredField(\"%s\")", e.getSimpleName().toString())).collect(
+      sb = sb + ogfs.chain().stream().map(e -> String.format(".getDeclaredField(\"%s\")", e.getSimpleName().toString())).collect(
           Collectors.joining(".getType()"));
-      FieldSpec fieldSpec = ogfs.getFieldSpec();
+      FieldSpec fieldSpec = ogfs.fieldSpec();
       blockBuilder.addStatement(sb, fieldSpec.name, entity);
     }
 
@@ -143,7 +143,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
     TypeSpec metaClass = TypeSpec.classBuilder(genEntityName) //
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL) //
-        .addFields(fields.stream().map(ObjectGraphFieldSpec::getFieldSpec).collect(Collectors.toList())) //
+        .addFields(fields.stream().map(ObjectGraphFieldSpec::fieldSpec).toList()) //
         .addFields(nestedFieldsConstants) //
         .addStaticBlock(staticBlock) //
         .addFields(interceptors) //
@@ -180,6 +180,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
     if (field.asType().getKind().isPrimitive()) {
       Class<?> primitive = ClassUtils.resolvePrimitiveClassName(cls);
+      if (primitive == null) return Collections.emptyList();
       Class<?> primitiveWrapper = ClassUtils.resolvePrimitiveIfNecessary(primitive);
       entityField = TypeName.get(primitiveWrapper);
       fullTypeClassName = entityField.toString();

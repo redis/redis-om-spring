@@ -3,7 +3,7 @@ package com.redis.om.spring.search.stream;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.indexed.NumericField;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
-import io.redisearch.aggregation.SortedField.SortOrder;
+import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
 import java.util.*;
 import java.util.function.*;
@@ -242,24 +242,28 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
     throw new UnsupportedOperationException("mapToLabelledMaps is not supported on a WrappedSearchStream");
   }
 
-  @Override
-  public <R> AggregationStream<R> groupBy(MetamodelField<E, ?>... fields) {
+  @SafeVarargs @Override
+  public final <R> AggregationStream<R> groupBy(MetamodelField<E, ?>... fields) {
     throw new UnsupportedOperationException("groupBy is not supported on a WrappedSearchStream");
   }
 
-  @Override public <R> AggregationStream<R> apply(String expression, String alias) {
+  @Override
+  public <R> AggregationStream<R> apply(String expression, String alias) {
     throw new UnsupportedOperationException("apply is not supported on a WrappedSearchStream");
   }
 
-  @Override public <R> AggregationStream<R> load(MetamodelField<E, ?>... fields) {
+  @SafeVarargs @Override
+  public final <R> AggregationStream<R> load(MetamodelField<E, ?>... fields) {
     throw new UnsupportedOperationException("load is not supported on a WrappedSearchStream");
   }
 
-  @Override public Optional<E> min(NumericField<E, ?> field) {
+  @Override
+  public Optional<E> min(NumericField<E, ?> field) {
     throw new UnsupportedOperationException("min is not supported on a WrappedSearchStream");
   }
 
-  @Override public Optional<E> max(NumericField<E, ?> field) {
+  @Override
+  public Optional<E> max(NumericField<E, ?> field) {
     throw new UnsupportedOperationException("max is not supported on a WrappedSearchStream");
   }
 

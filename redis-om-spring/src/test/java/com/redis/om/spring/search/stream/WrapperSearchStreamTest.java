@@ -1,49 +1,26 @@
 package com.redis.om.spring.search.stream;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
-import java.util.function.BinaryOperator;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
-import java.util.function.ToLongFunction;
-import java.util.stream.Collectors;
-import java.util.stream.DoubleStream;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
-import java.util.stream.Stream;
-
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Sets;
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.annotations.document.fixtures.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.Point;
 
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Sets;
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.Company;
-import com.redis.om.spring.annotations.document.fixtures.Company$;
-import com.redis.om.spring.annotations.document.fixtures.CompanyRepository;
-import com.redis.om.spring.annotations.document.fixtures.Employee;
-import com.redis.om.spring.annotations.document.fixtures.User;
-import com.redis.om.spring.annotations.document.fixtures.User$;
-import com.redis.om.spring.annotations.document.fixtures.UserRepository;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.*;
+import java.util.stream.*;
 
-class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+
+@SuppressWarnings("SpellCheckingInspection") class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   @Autowired
   CompanyRepository repository;
 
@@ -92,7 +69,7 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
     assertThat(stream.isParallel()).isFalse();
     assertThat(stream.parallel().isParallel()).isTrue();
 
-    SearchStream<String> stream2 = entityStream.of(Company.class).map(Company$.NAME).sequential().sequential();
+    SearchStream<String> stream2 = entityStream.of(Company.class).map(Company$.NAME).sequential();
     assertThat(stream2.isParallel()).isFalse();
     assertThat(stream2.parallel().isParallel()).isTrue();
 
@@ -105,6 +82,7 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   void testCloseHandlerOnWrapperSearchStream() {
     SearchStream<String> stream = entityStream.of(Company.class).map(Company$.NAME).sequential();
     AtomicBoolean wasClosed = new AtomicBoolean(false);
+    //noinspection ResultOfMethodCallIgnored
     stream.onClose(() -> wasClosed.set(true));
     stream.close();
     assertThat(wasClosed.get()).isTrue();
@@ -114,9 +92,7 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   void testCloseHandlerIsNullOnWrapperSearchStream() {
     SearchStream<String> stream = entityStream.of(Company.class).map(Company$.NAME).sequential();
     stream.close();
-    IllegalStateException exception = Assertions.assertThrows(IllegalStateException.class, () -> {
-      stream.findAny();
-    });
+    IllegalStateException exception = Assertions.assertThrows(IllegalStateException.class, stream::findAny);
 
     String expectedErrorMessage = "stream has already been operated upon or closed";
     Assertions.assertEquals(expectedErrorMessage, exception.getMessage());
@@ -138,7 +114,7 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   @Test
   void testFlatMapToIntOnMappedField() {
     // expected
-    List<Integer> expected = new ArrayList<Integer>();
+    List<Integer> expected = new ArrayList<>();
     for (Company company : entityStream.of(Company.class).collect(Collectors.toList())) {
       for (String tag : company.getTags()) {
         expected.add(tag.length());
@@ -160,10 +136,10 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   @Test
   void testFlatMapToLongOnMappedField() {
     // expected
-    List<Long> expected = new ArrayList<Long>();
+    List<Long> expected = new ArrayList<>();
     for (Company company : entityStream.of(Company.class).collect(Collectors.toList())) {
       for (String tag : company.getTags()) {
-        expected.add(Long.valueOf(tag.length()));
+        expected.add((long) tag.length());
       }
     }
 
@@ -182,10 +158,10 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   @Test
   void testFlatMapToDoubleOnMappedField() {
     // expected
-    List<Double> expected = new ArrayList<Double>();
+    List<Double> expected = new ArrayList<>();
     for (Company company : entityStream.of(Company.class).collect(Collectors.toList())) {
       for (String tag : company.getTags()) {
-        expected.add(Double.valueOf(tag.length()));
+        expected.add((double) tag.length());
       }
     }
 
@@ -236,8 +212,8 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
 
   @Test
   void testForEachOrderedOnMappedField() {
-    List<String> names = new ArrayList<String>();
-    Consumer<? super String> testConsumer = (String companyName) -> names.add(companyName);
+    List<String> names = new ArrayList<>();
+    Consumer<? super String> testConsumer = names::add;
     entityStream //
         .of(Company.class) //
         .map(Company$.NAME) //
@@ -246,15 +222,15 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
 
     assertEquals(3, names.size());
 
-    assertEquals(names.get(0), "RedisInc");
-    assertEquals(names.get(1), "Microsoft");
-    assertEquals(names.get(2), "Tesla");
+    assertEquals("RedisInc", names.get(0));
+    assertEquals("Microsoft", names.get(1));
+    assertEquals("Tesla", names.get(2));
   }
 
   @Test
   void testForEachOnMappedField() {
-    List<String> names = new ArrayList<String>();
-    Consumer<? super String> testConsumer = (String companyName) -> names.add(companyName);
+    List<String> names = new ArrayList<>();
+    Consumer<? super String> testConsumer = names::add;
     entityStream //
         .of(Company.class) //
         .map(Company$.NAME) //
@@ -263,9 +239,9 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
 
     assertEquals(3, names.size());
 
-    assertEquals(names.get(0), "RedisInc");
-    assertEquals(names.get(1), "Microsoft");
-    assertEquals(names.get(2), "Tesla");
+    assertEquals("RedisInc", names.get(0));
+    assertEquals("Microsoft", names.get(1));
+    assertEquals("Tesla", names.get(2));
   }
 
   @Test
@@ -278,7 +254,7 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
 
     assertEquals(3, allCompanies.length);
 
-    List<String> names = Stream.of(allCompanies).map(Object::toString).collect(Collectors.toList());
+    List<String> names = Stream.of(allCompanies).map(Object::toString).toList();
 
     assertTrue(names.contains("RedisInc"));
     assertTrue(names.contains("Microsoft"));
@@ -295,7 +271,7 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
 
     assertEquals(3, namesArray.length);
 
-    List<String> names = Stream.of(namesArray).collect(Collectors.toList());
+    List<String> names = Stream.of(namesArray).toList();
     assertTrue(names.contains("RedisInc"));
     assertTrue(names.contains("Microsoft"));
     assertTrue(names.contains("Tesla"));
@@ -351,9 +327,9 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
 
     assertEquals(3, names.size());
 
-    assertEquals(names.get(0), "Tesla");
-    assertEquals(names.get(1), "RedisInc");
-    assertEquals(names.get(2), "Microsoft");
+    assertEquals("Tesla", names.get(0));
+    assertEquals("RedisInc", names.get(1));
+    assertEquals("Microsoft", names.get(2));
   }
 
   @Test
@@ -364,7 +340,7 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
         .filter(Company$.NAME.eq("RedisInc")) //
         .map(Company$.EMAIL) //
         .sequential() //
-        .peek(email -> peekedEmails.add(email)) //
+        .peek(peekedEmails::add) //
         .collect(Collectors.toList());
 
     assertThat(peekedEmails).containsExactly("stack@redis.com");
@@ -413,7 +389,7 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
         .sequential() //
-        .reduce(0, (subtotal, element) -> subtotal + element);
+        .reduce(0, (t, u) -> Integer.sum(t, u));
 
     assertThat(result).isEqualTo(2011 + 1975 + 2003);
   }
@@ -440,20 +416,16 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
         .sequential() //
-        .reduce(Integer.MAX_VALUE, (minimum, yearFounded) -> Integer.min(minimum, yearFounded), (t, u) -> Integer.min(t, u));
+        .reduce(Integer.MAX_VALUE, (t, u) -> Integer.min(t, u), (t, u) -> Integer.min(t, u));
     assertThat(firstEstablish).isEqualTo(1975);
   }
 
   @Test
   void testCollectWithSupplierAccumulatorAndCombinerOnMappedField() {
     Supplier<AtomicInteger> supplier = AtomicInteger::new;
-    BiConsumer<AtomicInteger, Integer> accumulator = (AtomicInteger a, Integer i) -> {
-      a.set(a.get() + i);
-    };
+    BiConsumer<AtomicInteger, Integer> accumulator = (AtomicInteger a, Integer i) -> a.set(a.get() + i);
 
-    BiConsumer<AtomicInteger, AtomicInteger> combiner = (a1, a2) -> {
-      a1.set(a1.get() + a2.get());
-    };
+    BiConsumer<AtomicInteger, AtomicInteger> combiner = (a1, a2) -> a1.set(a1.get() + a2.get());
 
     AtomicInteger result = entityStream //
         .of(Company.class) //
@@ -496,13 +468,13 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
         .sequential() //
-        .anyMatch(c -> c.intValue() == 1975);
+        .anyMatch(c -> c == 1975);
 
     boolean c1976 = entityStream //
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
         .sequential() //
-        .anyMatch(c -> c.intValue() == 1976);
+        .anyMatch(c -> c == 1976);
 
     assertThat(c1975).isTrue();
     assertThat(c1976).isFalse();
@@ -514,13 +486,13 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
         .sequential() //
-        .allMatch(c -> c.intValue() < 1970);
+        .allMatch(c -> c < 1970);
 
     boolean allEstablishedOnOrAfter1970 = entityStream //
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
         .sequential() //
-        .allMatch(c -> c.intValue() >= 1970);
+        .allMatch(c -> c >= 1970);
 
     assertThat(allEstablishedOnOrAfter1970).isTrue();
     assertThat(allEstablishedBefore1970).isFalse();
@@ -532,13 +504,13 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
         .sequential() //
-        .noneMatch(c -> c.intValue() == 1975);
+        .noneMatch(c -> c == 1975);
 
     boolean noneIn1976 = entityStream //
         .of(Company.class) //
         .map(Company$.YEAR_FOUNDED) //
         .sequential() //
-        .noneMatch(c -> c.intValue() == 1976);
+        .noneMatch(c -> c == 1976);
 
     assertThat(noneIn1976).isTrue();
     assertThat(noneIn1975).isFalse();

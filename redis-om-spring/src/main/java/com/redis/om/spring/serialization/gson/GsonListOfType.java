@@ -5,7 +5,7 @@ import java.util.List;
 
 public class GsonListOfType<T> implements ParameterizedType {
 
-  private Class<T> containedType;
+  private final Class<T> containedType;
 
   public GsonListOfType(Class<T> containedType) {
     this.containedType = containedType;

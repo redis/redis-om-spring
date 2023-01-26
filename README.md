@@ -145,22 +145,18 @@ package com.redis.om.documents.domain;
 
 import java.util.HashSet;
 import java.util.Set;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.geo.Point;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.Searchable;
 import lombok.*;
 
-@Data
-@NoArgsConstructor
-@RequiredArgsConstructor(staticName = "of")
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
-@Document
-public class Company {
+@Data @NoArgsConstructor @RequiredArgsConstructor(staticName = "of") @AllArgsConstructor(access = AccessLevel.PROTECTED) @Document public class Company {
   @Id private String id;
   @Searchable private String name;
   @Indexed private Point location;
-  @Indexed private Set<String> tags = new HashSet<String>();
+  @Indexed private Set<String> tags = new HashSet<>();
   @Indexed private Integer numberOfEmployees;
   @Indexed private Integer yearFounded;
   private String url;
@@ -363,7 +359,7 @@ hit us up on the [Redis Discord Server](http://discord.gg/redis).
 
 ## ✨ So How Do You Get RediSearch and RedisJSON?
 
-Some advanced features of Redis OM rely on core features from two source available Redis modules: [RediSearch][redisearch-url] and [RedisJSON][redis-json-url].
+Redis OM relies on two source available Redis modules: [RediSearch][redisearch-url] and [RedisJSON][redis-json-url].
 
 You can run these modules in your self-hosted Redis deployment, or you can use [Redis Enterprise][redis-enterprise-url], which includes both modules.
 

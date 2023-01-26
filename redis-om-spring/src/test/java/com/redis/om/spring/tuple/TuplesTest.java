@@ -1,7 +1,8 @@
 package com.redis.om.spring.tuple;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import com.redis.om.spring.tuple.accessor.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -10,31 +11,10 @@ import java.util.Random;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.redis.om.spring.tuple.accessor.EighteenthAccessor;
-import com.redis.om.spring.tuple.accessor.EighthAccessor;
-import com.redis.om.spring.tuple.accessor.EleventhAccessor;
-import com.redis.om.spring.tuple.accessor.FifteenthAccessor;
-import com.redis.om.spring.tuple.accessor.FifthAccessor;
-import com.redis.om.spring.tuple.accessor.FirstAccessor;
-import com.redis.om.spring.tuple.accessor.FourteenthAccessor;
-import com.redis.om.spring.tuple.accessor.FourthAccessor;
-import com.redis.om.spring.tuple.accessor.NineteenthAccessor;
-import com.redis.om.spring.tuple.accessor.NinthAccessor;
-import com.redis.om.spring.tuple.accessor.SecondAccessor;
-import com.redis.om.spring.tuple.accessor.SeventeenthAccessor;
-import com.redis.om.spring.tuple.accessor.SeventhAccessor;
-import com.redis.om.spring.tuple.accessor.SixteenthAccessor;
-import com.redis.om.spring.tuple.accessor.SixthAccessor;
-import com.redis.om.spring.tuple.accessor.TenthAccessor;
-import com.redis.om.spring.tuple.accessor.ThirdAccessor;
-import com.redis.om.spring.tuple.accessor.ThirteenthAccessor;
-import com.redis.om.spring.tuple.accessor.TwelfthAccessor;
-import com.redis.om.spring.tuple.accessor.TwentiethAccessor;
-
-final class TuplesTest {
+@SuppressWarnings("SpellCheckingInspection") final class TuplesTest {
 
   @Test
   void ofEmptyTuple() {
@@ -54,7 +34,7 @@ final class TuplesTest {
 
   @Test
   void toSingle() {
-    final Function<Integer, Single<Integer>> mapper = Tuples.toTuple(i -> i + 0);
+    final Function<Integer, Single<Integer>> mapper = Tuples.toTuple(i -> i);
     assertTuple(mapper.apply(0), 1);
   }
 
@@ -65,7 +45,7 @@ final class TuplesTest {
 
   @Test
   void toPair() {
-    final Function<Integer, Pair<Integer, Integer>> mapper = Tuples.toTuple(i -> i + 0, i -> i + 1);
+    final Function<Integer, Pair<Integer, Integer>> mapper = Tuples.toTuple(i -> i, i -> i + 1);
     assertTuple(mapper.apply(0), 2);
   }
 
@@ -76,7 +56,7 @@ final class TuplesTest {
 
   @Test
   void toTriple() {
-    final Function<Integer, Triple<Integer, Integer, Integer>> mapper = Tuples.toTuple(i -> i + 0, i -> i + 1,
+    final Function<Integer, Triple<Integer, Integer, Integer>> mapper = Tuples.toTuple(i -> i, i -> i + 1,
         i -> i + 2);
     assertTuple(mapper.apply(0), 3);
   }
@@ -88,7 +68,7 @@ final class TuplesTest {
 
   @Test
   void toQuad() {
-    final Function<Integer, Quad<Integer, Integer, Integer, Integer>> mapper = Tuples.toTuple(i -> i + 0, i -> i + 1,
+    final Function<Integer, Quad<Integer, Integer, Integer, Integer>> mapper = Tuples.toTuple(i -> i, i -> i + 1,
         i -> i + 2, i -> i + 3);
     assertTuple(mapper.apply(0), 4);
   }
@@ -100,7 +80,7 @@ final class TuplesTest {
 
   @Test
   void toQuintuple() {
-    final Function<Integer, Quintuple<Integer, Integer, Integer, Integer, Integer>> mapper = Tuples.toTuple(i -> i + 0,
+    final Function<Integer, Quintuple<Integer, Integer, Integer, Integer, Integer>> mapper = Tuples.toTuple(i -> i,
         i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4);
     assertTuple(mapper.apply(0), 5);
   }
@@ -113,7 +93,7 @@ final class TuplesTest {
   @Test
   void toHextuple() {
     final Function<Integer, Hextuple<Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples
-        .toTuple(i -> i + 0, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5);
+        .toTuple(i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5);
     assertTuple(mapper.apply(0), 6);
   }
 
@@ -125,7 +105,7 @@ final class TuplesTest {
   @Test
   void toSeptuple() {
     final Function<Integer, Septuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples
-        .toTuple(i -> i + 0, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6);
+        .toTuple(i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6);
     assertTuple(mapper.apply(0), 7);
   }
 
@@ -137,7 +117,7 @@ final class TuplesTest {
   @Test
   void toOctuple() {
     final Function<Integer, Octuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples
-        .toTuple(i -> i + 0, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7);
+        .toTuple(i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7);
     assertTuple(mapper.apply(0), 8);
   }
 
@@ -149,7 +129,7 @@ final class TuplesTest {
   @Test
   void toNonuple() {
     final Function<Integer, Nonuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples
-        .toTuple(i -> i + 0, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
+        .toTuple(i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
             i -> i + 8);
     assertTuple(mapper.apply(0), 9);
   }
@@ -162,7 +142,7 @@ final class TuplesTest {
   @Test
   void toDecuple() {
     final Function<Integer, Decuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples
-        .toTuple(i -> i + 0, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
+        .toTuple(i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
             i -> i + 8, i -> i + 9);
     assertTuple(mapper.apply(0), 10);
   }
@@ -175,7 +155,7 @@ final class TuplesTest {
   @Test
   void toUndecuple() {
     final Function<Integer, Undecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples
-        .toTuple(i -> i + 0, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
+        .toTuple(i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
             i -> i + 8, i -> i + 9, i -> i + 10);
     assertTuple(mapper.apply(0), 11);
   }
@@ -188,7 +168,7 @@ final class TuplesTest {
   @Test
   void toDuodecuple() {
     final Function<Integer, Duodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples
-        .toTuple(i -> i + 0, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
+        .toTuple(i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
             i -> i + 8, i -> i + 9, i -> i + 10, i -> i + 11);
     assertTuple(mapper.apply(0), 12);
   }
@@ -201,7 +181,7 @@ final class TuplesTest {
   @Test
   void toTredecuple() {
     final Function<Integer, Tredecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples
-        .toTuple(i -> i + 0, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
+        .toTuple(i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
             i -> i + 8, i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12);
     assertTuple(mapper.apply(0), 13);
   }
@@ -214,7 +194,7 @@ final class TuplesTest {
   @Test
   void toQuattuordecuple() {
     final Function<Integer, Quattuordecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples
-        .toTuple(i -> i + 0, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
+        .toTuple(i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
             i -> i + 8, i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12, i -> i + 13);
     assertTuple(mapper.apply(0), 14);
   }
@@ -227,7 +207,7 @@ final class TuplesTest {
   @Test
   void toQuindecuple() {
     final Function<Integer, Quindecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples
-        .toTuple(i -> i + 0, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
+        .toTuple(i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
             i -> i + 8, i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12, i -> i + 13, i -> i + 14);
     assertTuple(mapper.apply(0), 15);
   }
@@ -240,7 +220,7 @@ final class TuplesTest {
   @Test
   void toSexdecuple() {
     final Function<Integer, Sexdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples
-        .toTuple(i -> i + 0, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
+        .toTuple(i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
             i -> i + 8, i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12, i -> i + 13, i -> i + 14, i -> i + 15);
     assertTuple(mapper.apply(0), 16);
   }
@@ -253,7 +233,7 @@ final class TuplesTest {
   @Test
   void toSeptendecuple() {
     final Function<Integer, Septendecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples
-        .toTuple(i -> i + 0, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
+        .toTuple(i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
             i -> i + 8, i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12, i -> i + 13, i -> i + 14, i -> i + 15,
             i -> i + 16);
     assertTuple(mapper.apply(0), 17);
@@ -267,7 +247,7 @@ final class TuplesTest {
   @Test
   void toOctodecuple() {
     final Function<Integer, Octodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples
-        .toTuple(i -> i + 0, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
+        .toTuple(i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
             i -> i + 8, i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12, i -> i + 13, i -> i + 14, i -> i + 15,
             i -> i + 16, i -> i + 17);
     assertTuple(mapper.apply(0), 18);
@@ -281,7 +261,7 @@ final class TuplesTest {
   @Test
   void toNovemdecuple() {
     final Function<Integer, Novemdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples
-        .toTuple(i -> i + 0, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
+        .toTuple(i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
             i -> i + 8, i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12, i -> i + 13, i -> i + 14, i -> i + 15,
             i -> i + 16, i -> i + 17, i -> i + 18);
     assertTuple(mapper.apply(0), 19);
@@ -295,7 +275,7 @@ final class TuplesTest {
   @Test
   void toVigintuple() {
     final Function<Integer, Vigintuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples
-        .toTuple(i -> i + 0, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
+        .toTuple(i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7,
             i -> i + 8, i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12, i -> i + 13, i -> i + 14, i -> i + 15,
             i -> i + 16, i -> i + 17, i -> i + 18, i -> i + 19);
     assertTuple(mapper.apply(0), 20);
@@ -1265,9 +1245,7 @@ final class TuplesTest {
     });
 
     Map<Integer, Tuple> tuplesFromArrays = new HashMap<>();
-    tupleData.forEach((k, v) -> {
-      tuplesFromArrays.put(k, Tuples.ofArray(new String[] {}, v));
-    });
+    tupleData.forEach((k, v) -> tuplesFromArrays.put(k, Tuples.ofArray(new String[] {}, v)));
 
     tuplesFromArrays.forEach((k, tuple) -> {
       Object[] parts = tuple.stream().toArray();
@@ -1282,9 +1260,7 @@ final class TuplesTest {
     final EmptyTuple empty = Tuples.of();
     assertThat(empty.size()).isZero();
     
-    IndexOutOfBoundsException exception = Assertions.assertThrows(IndexOutOfBoundsException.class, () -> {
-      empty.get(0);
-    });
+    IndexOutOfBoundsException exception = Assertions.assertThrows(IndexOutOfBoundsException.class, () -> empty.get(0));
 
     String expectedErrorMessage = "index 0 is illegal. The degree of this Tuple is 0.";
     Assertions.assertEquals(expectedErrorMessage, exception.getMessage());

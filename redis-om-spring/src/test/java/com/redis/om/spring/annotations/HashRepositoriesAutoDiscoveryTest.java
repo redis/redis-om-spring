@@ -1,18 +1,17 @@
 package com.redis.om.spring.annotations;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.util.Optional;
-
+import com.redis.om.spring.AbstractBaseOMTest;
+import com.redis.om.spring.TestConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
 
-import com.redis.om.spring.AbstractBaseOMTest;
-import com.redis.om.spring.TestConfig;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest( //
     classes = HashRepositoriesAutoDiscoveryTest.Config.class, //
@@ -21,7 +20,7 @@ import com.redis.om.spring.TestConfig;
 class HashRepositoriesAutoDiscoveryTest extends AbstractBaseOMTest {
   @SpringBootApplication
   @Configuration
-  @EnableRedisEnhancedRepositories(basePackageClasses = {})
+  @EnableRedisEnhancedRepositories()
   static class Config extends TestConfig {
   }
 

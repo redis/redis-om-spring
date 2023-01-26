@@ -2,14 +2,14 @@ package com.redis.om.spring.annotations.document.fixtures;
 
 import com.redis.om.spring.annotations.*;
 import com.redis.om.spring.repository.RedisDocumentRepository;
-import io.redisearch.AggregationResult;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
+import redis.clients.jedis.search.aggr.AggregationResult;
 
 import java.util.Map;
 
-public interface GameRepository extends RedisDocumentRepository<Game, String> {
+@SuppressWarnings({ "unused", "SpellCheckingInspection", "SpringDataRepositoryMethodReturnTypeInspection" }) public interface GameRepository extends RedisDocumentRepository<Game, String> {
   /**
    * <pre>
    * FT.AGGREGATE "com.redis.om.spring.annotations.document.fixtures.GameIdx" '*'

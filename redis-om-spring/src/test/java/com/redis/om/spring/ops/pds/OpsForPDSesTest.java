@@ -1,14 +1,13 @@
 package com.redis.om.spring.ops.pds;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.ops.RedisModulesOperations;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.ops.RedisModulesOperations;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-class OpsForPDSesTest extends AbstractBaseDocumentTest {
+@SuppressWarnings("SpellCheckingInspection") class OpsForPDSesTest extends AbstractBaseDocumentTest {
   @Autowired
   RedisModulesOperations<String> modulesOperations;
   

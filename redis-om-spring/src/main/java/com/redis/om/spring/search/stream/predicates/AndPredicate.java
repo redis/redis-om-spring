@@ -5,12 +5,12 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import io.redisearch.querybuilder.Node;
-import io.redisearch.querybuilder.QueryBuilder;
+import redis.clients.jedis.search.querybuilder.Node;
+import redis.clients.jedis.search.querybuilder.QueryBuilders;
 
 public class AndPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
-  private List<Predicate<T>> predicates = new ArrayList<>();
+  private final List<Predicate<T>> predicates = new ArrayList<>();
 
   public AndPredicate(SearchFieldPredicate<E, T> root) {
     predicates.add(root);
@@ -28,7 +28,7 @@ public class AndPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   @Override
   public Node apply(Node root) {
     Node[] nodes = stream().map(p -> ((SearchFieldPredicate) p).apply(root)).toArray(Node[]::new);
-    return QueryBuilder.intersect(nodes);
+    return QueryBuilders.intersect(nodes);
   }
 
 }

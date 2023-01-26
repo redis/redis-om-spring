@@ -57,7 +57,7 @@ public abstract class BasicAbstractTuple<T extends GenericTuple<R>, R> implement
     }
     if (!baseClass.isInstance(obj)) {
       return false;
-    } else {//if (obj instanceof BasicAbstractTuple) {
+    } else {
       final BasicAbstractTuple<?, ?> tuple = (BasicAbstractTuple<?, ?>) obj;
       // Faster
       return Arrays.equals(this.values, tuple.values);

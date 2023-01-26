@@ -1,6 +1,5 @@
 package com.redis.om.spring.search.stream;
 
-import com.google.gson.GsonBuilder;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,8 +12,7 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class EntityStreamsIssuesTest extends AbstractBaseDocumentTest {
-  @Autowired GsonBuilder gsonBuilder;
+@SuppressWarnings("SpellCheckingInspection") class EntityStreamsIssuesTest extends AbstractBaseDocumentTest {
   @Autowired SomeDocumentRepository someDocumentRepository;
   @Autowired DeepNestRepository deepNestRepository;
 
@@ -36,7 +34,6 @@ public class EntityStreamsIssuesTest extends AbstractBaseDocumentTest {
 
   // issue gh-124 - return fields of type String with target String cause GSON MalformedJsonException
   @Test void testReturnFieldsOfTypeStringAreProperlyReturned() {
-    var docs = someDocumentRepository.findAll();
     List<String> results = entityStream.of(SomeDocument.class) //
         .filter(SomeDocument$.NAME.eq("LRAWMRENZY")) //
         .limit(1000) //

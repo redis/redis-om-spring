@@ -1,35 +1,31 @@
 package com.redis.om.spring;
 
-import static com.redis.testcontainers.RedisModulesContainer.DEFAULT_IMAGE_NAME;
-
-import java.util.Set;
-
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.testcontainers.RedisStackContainer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.ops.search.SearchOperations;
-import com.redis.testcontainers.RedisModulesContainer;
+import static com.redis.testcontainers.RedisStackContainer.DEFAULT_IMAGE_NAME;
 
-@Testcontainers(disabledWithoutDocker = true)
+@SuppressWarnings("SpellCheckingInspection") @Testcontainers(disabledWithoutDocker = true)
 @DirtiesContext
 public abstract class AbstractBaseOMTest {
   @Container
-  static final RedisModulesContainer REDIS;
+  static final RedisStackContainer REDIS;
 
   static {
-    REDIS = new RedisModulesContainer(DEFAULT_IMAGE_NAME.withTag("edge")).withReuse(true);
+    REDIS = new RedisStackContainer(DEFAULT_IMAGE_NAME.withTag("edge")).withReuse(true);
     REDIS.start();
   }
 
   @Autowired
-  protected RedisTemplate<String, String> template;
+  protected StringRedisTemplate template;
 
   @Autowired
   protected RedisModulesOperations<String> modulesOperations;
@@ -38,6 +34,9 @@ public abstract class AbstractBaseOMTest {
   @Qualifier("redisCustomKeyValueTemplate")
   protected CustomRedisKeyValueTemplate kvTemplate;
 
+  @Autowired
+  protected RediSearchIndexer indexer; // = (RediSearchIndexer) ac.getBean("rediSearchIndexer");
+
   @DynamicPropertySource
   static void properties(DynamicPropertyRegistry registry) {
     registry.add("spring.redis.host", REDIS::getHost);
@@ -45,9 +44,8 @@ public abstract class AbstractBaseOMTest {
   }
 
   protected void flushSearchIndexFor(Class<?> entityClass) {
-    SearchOperations<String> searchOps = modulesOperations.opsForSearch(entityClass.getName() + "Idx");
-    Set<String> docKeys = template.keys(String.format("%s:*", entityClass.getName()));
-    searchOps.deleteDocuments(false, docKeys.toArray(String[]::new));
+    indexer.dropIndexAndDocumentsFor(entityClass);
+    indexer.createIndexFor(entityClass);
   }
 
 }

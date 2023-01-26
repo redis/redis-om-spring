@@ -1,35 +1,26 @@
 package com.redis.om.spring.ops.json;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import redis.clients.jedis.exceptions.JedisDataException;
+import redis.clients.jedis.json.JsonSetParams;
+import redis.clients.jedis.json.Path;
 
 import java.util.List;
 import java.util.Objects;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import static org.junit.jupiter.api.Assertions.*;
 
-import com.google.gson.Gson;
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redislabs.modules.rejson.JReJSON.ExistenceModifier;
-import com.redislabs.modules.rejson.Path;
-
-import redis.clients.jedis.exceptions.JedisDataException;
-
+@SuppressWarnings({ "unused", "SpellCheckingInspection" })
 class OpsForJSONTest extends AbstractBaseDocumentTest {
-  
-  @Autowired
-  Gson gson;
 
   /* A simple class that represents an object in real life */
+  @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
   private static class IRLObject {
-    public String str;
-    public boolean bTrue;
+    public final String str;
+    public final boolean bTrue;
 
     public IRLObject() {
       this.str = "string";
@@ -45,11 +36,11 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
 
   @SuppressWarnings("unused")
   private static class FooBarObject {
-    public String foo;
-    public boolean fooB;
-    public int fooI;
-    public float fooF;
-    public String[] fooArr;
+    public final String foo;
+    public final boolean fooB;
+    public final int fooI;
+    public final float fooF;
+    public final String[] fooArr;
 
     public FooBarObject() {
       this.foo = "bar";
@@ -60,6 +51,7 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
     }
   }
 
+  @SuppressWarnings({ "SpellCheckingInspection", "FieldMayBeFinal" })
   private static class Baz {
     private String quuz;
     private String grault;
@@ -87,13 +79,14 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
     }
   }
 
+  @SuppressWarnings({ "SpellCheckingInspection", "FieldMayBeFinal" })
   private static class Qux {
     private String quux;
     private String corge;
     private String garply;
     private Baz baz;
 
-    public Qux(final String quux, final String corge, final String garply, final Baz baz) {
+    public Qux(String quux, String corge, String garply, Baz baz) {
       this.quux = quux;
       this.corge = corge;
       this.garply = garply;
@@ -139,13 +132,12 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
 
     // real scalar value and no path
     ops.set("str", "strong");
-    assertEquals("strong", ops.get("str"));
+    assertEquals("strong", ops.get("str", String.class));
 
     // a slightly more complex object
     IRLObject obj = new IRLObject();
     ops.set("obj", obj);
-    Object expected = gson.fromJson(gson.toJson(obj), Object.class);
-    assertTrue(expected.equals(ops.get("obj")));
+    assertEquals(obj, ops.get("obj", IRLObject.class));
 
     // check an update
     Path p = Path.of(".str");
@@ -162,12 +154,12 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
 
     IRLObject obj1 = ops.get("obj", IRLObject.class);
 
-    assertEquals("string", obj1.str);
+    assertEquals("string", Objects.requireNonNull(obj1).str);
 
     ops.set("obj", "String", Path.of("$.str"));
     IRLObject obj2 = ops.get("obj", IRLObject.class);
 
-    assertEquals("String", obj2.str);
+    assertEquals("String", Objects.requireNonNull(obj2).str);
   }
 
   @Test
@@ -175,7 +167,7 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     ops.set("obj", new IRLObject());
     Path p = Path.of(".str");
-    ops.set("obj", "strangle", ExistenceModifier.MUST_EXIST, p);
+    ops.set("obj", "strangle", JsonSetParams.jsonSetParams().xx(), p);
     assertEquals("strangle", ops.get("obj", String.class, p));
   }
 
@@ -183,7 +175,7 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
   void setWithoutAPathDefaultsToRootPath() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     ops.set("obj1", new IRLObject());
-    ops.set("obj1", "strangle", ExistenceModifier.MUST_EXIST);
+    ops.set("obj1", "strangle");
     assertEquals("strangle", ops.get("obj1", String.class, Path.ROOT_PATH));
   }
 
@@ -229,15 +221,15 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
 
     Path pbool = Path.of(".bTrue");
     // check initial value
-    assertTrue(ops.get("obj", Boolean.class, pbool));
+    assertEquals(Boolean.TRUE, ops.get("obj", Boolean.class, pbool));
 
     // true -> false
     ops.toggle("obj", pbool);
-    assertFalse(ops.get("obj", Boolean.class, pbool));
+    assertNotEquals(Boolean.TRUE, ops.get("obj", Boolean.class, pbool));
 
     // false -> true
     ops.toggle("obj", pbool);
-    assertTrue(ops.get("obj", Boolean.class, pbool));
+    assertEquals(Boolean.TRUE, ops.get("obj", Boolean.class, pbool));
 
     // ignore non-boolean field
     Path pstr = Path.of(".str");
@@ -261,10 +253,10 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
   void testArrayPop() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     ops.set("arr", new int[] { 0, 1, 2, 3, 4 }, Path.ROOT_PATH);
-    assertEquals(Long.valueOf(4L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, 4L));
-    assertEquals(Long.valueOf(3L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, -1L));
+    assertEquals(Long.valueOf(4L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, 4));
+    assertEquals(Long.valueOf(3L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, -1));
     assertEquals(Long.valueOf(2L), ops.arrPop("arr", Long.class, Path.ROOT_PATH));
-    assertEquals(Long.valueOf(0L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, 0L));
+    assertEquals(Long.valueOf(0L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, 0));
     assertEquals(Long.valueOf(1L), ops.arrPop("arr", Long.class));
   }
 
@@ -279,11 +271,7 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
     assertSame(float.class, ops.type("foobar", Path.of(".fooF")));
     assertSame(List.class, ops.type("foobar", Path.of(".fooArr")));
     assertSame(boolean.class, ops.type("foobar", Path.of(".fooB")));
-
-    try {
-      ops.type("foobar", Path.of(".fooErr"));
-      fail();
-    } catch (Exception e) {}
+    assertNull(ops.type("foobar", Path.of(".fooErr")));
   }
 
 }

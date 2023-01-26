@@ -15,7 +15,7 @@ public enum ReducerFunction {
 
   // REDUCE SUM 1 {property}
   // Return the sum of all numeric values of a given property in a group.
-  // Non numeric values if the group are counted as 0.
+  // Non-numeric values if the group are counted as 0.
   SUM,
 
   // REDUCE MIN 1 {property}
@@ -51,5 +51,5 @@ public enum ReducerFunction {
   // REDUCE RANDOM_SAMPLE {nargs} {property} {sample_size}
   // Perform a reservoir sampling of the group elements with a given size,
   // and return an array of the sampled items with an even distribution.
-  RANDOM_SAMPLE;
+  RANDOM_SAMPLE
 }

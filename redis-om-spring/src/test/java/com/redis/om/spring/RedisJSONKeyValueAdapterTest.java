@@ -17,7 +17,7 @@ import com.redis.om.spring.annotations.document.fixtures.Company;
 import com.redis.om.spring.annotations.document.fixtures.CompanyMeta;
 import com.redis.om.spring.annotations.document.fixtures.CompanyRepository;
 
-public class RedisJSONKeyValueAdapterTest extends AbstractBaseDocumentTest {
+class RedisJSONKeyValueAdapterTest extends AbstractBaseDocumentTest {
   @Autowired
   RedisJSONKeyValueAdapter adapter;
 
@@ -30,13 +30,15 @@ public class RedisJSONKeyValueAdapterTest extends AbstractBaseDocumentTest {
   @BeforeEach
   void createData() {
     repository.deleteAll();
-    
-    redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com");
+
+    redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "stack@redis.com");
     redis.setMetaList(Set.of(CompanyMeta.of("Redis", 100, Set.of("RedisTag"))));
-    
-    microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160), "research@microsoft.com");
+
+    microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
+        "research@microsoft.com");
     microsoft.setMetaList(Set.of(CompanyMeta.of("MS", 50, Set.of("MsTag"))));
-    
+
     repository.saveAll(List.of(redis, microsoft));
   }
 
@@ -49,7 +51,7 @@ public class RedisJSONKeyValueAdapterTest extends AbstractBaseDocumentTest {
         () -> assertThat(companies).hasSize(2) //
     );
   }
-  
+
   @Test
   void testGetAllOfWithRowsSet() {
     assertEquals(2, repository.count());

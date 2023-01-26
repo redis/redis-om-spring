@@ -7,7 +7,7 @@
 
   <groupId>com.redis.om</groupId>
   <artifactId>redis-om-spring</artifactId>
-  <version>0.6.4</version>
+  <version>0.7.0</version>
   <packaging>jar</packaging>
 
   <name>redis-om-spring</name>
@@ -51,20 +51,18 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.release>11</maven.compiler.release>
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
-    <maven.test.source>11</maven.test.source>
-    <maven.test.target>11</maven.test.target>
-    <java.version>11</java.version>
-    <spring.version>2.7.7</spring.version>
-    <sdr.version>2.7.6</sdr.version>
-    <jredisjson.version>1.5.0</jredisjson.version>
-    <jredisearch.version>2.2.0</jredisearch.version>
-    <jredisbloom.version>2.2.0</jredisbloom.version>
+    <maven.compiler.release>17</maven.compiler.release>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <maven.test.source>17</maven.test.source>
+    <maven.test.target>17</maven.test.target>
+    <java.version>17</java.version>
+    <spring.version>3.0.2</spring.version>
+    <sdr.version>3.0.1</sdr.version>
+    <jedis.version>4.3.1</jedis.version>
     <cdi>1.0</cdi>
     <auto-service.version>1.0.1</auto-service.version>
-    <spring.test.version>5.3.22</spring.test.version>
+    <spring.test.version>6.0.4</spring.test.version>
     <testcontainers.redis.version>1.6.2</testcontainers.redis.version>
     <testcontainers.redis.junit.version>1.6.2</testcontainers.redis.junit.version>
     <guava.version>31.1-jre</guava.version>
@@ -82,7 +80,7 @@
       <dependency>
         <groupId>org.junit</groupId>
         <artifactId>junit-bom</artifactId>
-        <version>5.9.0</version>
+        <version>5.9.2</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -98,6 +96,22 @@
       <id>elementary-releases</id>
       <url>https://repo.karuslabs.com/repository/elementary-releases/</url>
     </repository>
+    <repository>
+      <id>spring-milestones</id>
+      <name>Spring Milestones</name>
+      <url>https://repo.spring.io/milestone</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>spring-snapshots</id>
+      <name>Spring Snapshots</name>
+      <url>https://repo.spring.io/snapshot</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+    </repository>
   </repositories>
 
   <dependencies>
@@ -110,12 +124,6 @@
       <groupId>org.springframework.data</groupId>
       <artifactId>spring-data-redis</artifactId>
       <version>${sdr.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>io.lettuce</groupId>
-          <artifactId>lettuce-core</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -128,19 +136,10 @@
       <version>${spring.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.redislabs</groupId>
-      <artifactId>jrejson</artifactId>
-      <version>${jredisjson.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.redislabs</groupId>
-      <artifactId>jredisearch</artifactId>
-      <version>${jredisearch.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.redislabs</groupId>
-      <artifactId>jrebloom</artifactId>
-      <version>${jredisbloom.version}</version>
+      <groupId>redis.clients</groupId>
+      <artifactId>jedis</artifactId>
+      <version>${jedis.version}</version>
+      <optional>false</optional>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -232,7 +231,7 @@
     <dependency>
       <groupId>com.karuslabs</groupId>
       <artifactId>elementary</artifactId>
-      <version>1.1.2</version>
+      <version>${elementary.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -286,21 +285,11 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.0.0-M5</version>
-        <configuration>
-          <argLine>
-            --illegal-access=permit
-</argLine>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
         <version>3.0.0-M5</version>
-        <configuration>
-          <argLine>
-            --illegal-access=permit
-</argLine>
-        </configuration>
       </plugin>
     </plugins>
   </build>

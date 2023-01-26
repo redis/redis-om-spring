@@ -32,13 +32,12 @@ import com.redis.om.spring.annotations.document.fixtures.CompanyRepository;
 import com.redis.om.spring.annotations.document.fixtures.DocWithCustomNameId;
 import com.redis.om.spring.annotations.document.fixtures.DocWithCustomNameIdRepository;
 
-import io.redisearch.querybuilder.GeoValue;
-import io.redisearch.querybuilder.GeoValue.Unit;
+import redis.clients.jedis.args.GeoUnit;
 
-class ObjectUtilsTest extends AbstractBaseDocumentTest {
+@SuppressWarnings({ "ConstantConditions", "SpellCheckingInspection" }) class ObjectUtilsTest extends AbstractBaseDocumentTest {
 
   @Autowired
-  CompanyRepository companyRepository;
+  CompanyRepository companyRepository; 
 
   @Autowired
   DocWithCustomNameIdRepository docWithCustomNameIdRepository;
@@ -87,25 +86,25 @@ class ObjectUtilsTest extends AbstractBaseDocumentTest {
   @Test
   void testGetDistanceUnit() {
     Distance d30Miles = new Distance(30, DistanceUnit.MILES);
-    Unit unitFor30Miles = ObjectUtils.getDistanceUnit(d30Miles);
-    assertThat(unitFor30Miles).isEqualTo(GeoValue.Unit.MILES);
+    GeoUnit unitFor30Miles = ObjectUtils.getDistanceUnit(d30Miles);
+    assertThat(unitFor30Miles).isEqualTo(GeoUnit.MI);
 
     Distance d25Kilometers = new Distance(25, DistanceUnit.KILOMETERS);
-    Unit unitFor25Kilometers = ObjectUtils.getDistanceUnit(d25Kilometers);
-    assertThat(unitFor25Kilometers).isEqualTo(GeoValue.Unit.KILOMETERS);
+    GeoUnit unitFor25Kilometers = ObjectUtils.getDistanceUnit(d25Kilometers);
+    assertThat(unitFor25Kilometers).isEqualTo(GeoUnit.KM);
 
     Distance d20Meters = new Distance(25, DistanceUnit.METERS);
-    Unit unitFor20Meters = ObjectUtils.getDistanceUnit(d20Meters);
-    assertThat(unitFor20Meters).isEqualTo(GeoValue.Unit.METERS);
+    GeoUnit unitFor20Meters = ObjectUtils.getDistanceUnit(d20Meters);
+    assertThat(unitFor20Meters).isEqualTo(GeoUnit.M);
 
     Distance d6Feet = new Distance(6, DistanceUnit.FEET);
-    Unit unitFor6Feet = ObjectUtils.getDistanceUnit(d6Feet);
-    assertThat(unitFor6Feet).isEqualTo(GeoValue.Unit.FEET);
+    GeoUnit unitFor6Feet = ObjectUtils.getDistanceUnit(d6Feet);
+    assertThat(unitFor6Feet).isEqualTo(GeoUnit.FT);
   }
 
   @Test
-  void testGetTargetClassName() throws NoSuchFieldException, SecurityException, NoSuchMethodException {
-    List<String> lofs = new ArrayList<String>();
+  void testGetTargetClassName() throws NoSuchFieldException, SecurityException {
+    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection") List<String> lofs = new ArrayList<>();
     int[] inta = new int[] {};
     String typeName = Company.class.getDeclaredField("publiclyListed").getType().getName();
 
@@ -127,9 +126,9 @@ class ObjectUtilsTest extends AbstractBaseDocumentTest {
   }
 
   static class BunchOfCollections {
-    public List<String> lofs = new ArrayList<String>();
-    public Set<Integer> sois = new HashSet<Integer>();
-    public Iterable<Company> ioc = new ArrayList<Company>();
+    public final List<String> lofs = new ArrayList<>();
+    public final Set<Integer> sois = new HashSet<>();
+    public final Iterable<Company> ioc = new ArrayList<>();
   }
 
   @Test
@@ -186,7 +185,7 @@ class ObjectUtilsTest extends AbstractBaseDocumentTest {
     assertThat(maybeDocId).isPresent();
     assertThat(maybeDocId.get()).hasToString(actualDocId);
 
-    Optional<?> noEntityId = ObjectUtils.getIdFieldForEntity(new String());
+    Optional<?> noEntityId = ObjectUtils.getIdFieldForEntity("");
     assertThat(noEntityId).isEmpty();
   }
 
@@ -277,5 +276,20 @@ class ObjectUtilsTest extends AbstractBaseDocumentTest {
     assertThat(ObjectUtils.toUnderscoreSeparated("city")).isEqualTo("city");
     assertThat(ObjectUtils.toUnderscoreSeparated("someValue")).isEqualTo("some_value");
     assertThat(ObjectUtils.toUnderscoreSeparated("someOtherValue")).isEqualTo("some_other_value");
+  }
+  
+  @Test
+  void testIsPropertyAnnotatedWith() {    
+    assertThat(ObjectUtils.isPropertyAnnotatedWith(Address.class, "city", Indexed.class)).isTrue();
+    assertThat(ObjectUtils.isPropertyAnnotatedWith(Address.class, "city", Searchable.class)).isFalse();
+    assertThat(ObjectUtils.isPropertyAnnotatedWith(Address.class, "street", Searchable.class)).isTrue();
+    assertThat(ObjectUtils.isPropertyAnnotatedWith(Address.class, "street", Indexed.class)).isFalse();
+    assertThat(ObjectUtils.isPropertyAnnotatedWith(Airport.class, "name", AutoComplete.class)).isTrue();
+    assertThat(ObjectUtils.isPropertyAnnotatedWith(Airport.class, "name", AutoCompletePayload.class)).isFalse();
+    assertThat(ObjectUtils.isPropertyAnnotatedWith(Airport.class, "code", AutoCompletePayload.class)).isTrue();
+    assertThat(ObjectUtils.isPropertyAnnotatedWith(Airport.class, "code", Indexed.class)).isFalse();
+    assertThat(ObjectUtils.isPropertyAnnotatedWith(Airport.class, "state", AutoCompletePayload.class)).isTrue();
+    assertThat(ObjectUtils.isPropertyAnnotatedWith(Airport.class, "state", Searchable.class)).isFalse();
+    assertThat(ObjectUtils.isPropertyAnnotatedWith(Airport.class, "nonExistentField", Searchable.class)).isFalse();
   }
 }

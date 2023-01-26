@@ -1,11 +1,9 @@
 package com.redis.om.spring.annotations;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.time.LocalDate;
-import java.util.Optional;
-
+import com.redis.om.spring.AbstractBaseOMTest;
+import com.redis.om.spring.TestConfig;
+import com.redis.om.spring.annotations.hash.fixtures.Company;
+import com.redis.om.spring.annotations.hash.fixtures.CompanyRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -13,10 +11,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.geo.Point;
 
-import com.redis.om.spring.AbstractBaseOMTest;
-import com.redis.om.spring.TestConfig;
-import com.redis.om.spring.annotations.hash.fixtures.Company;
-import com.redis.om.spring.annotations.hash.fixtures.CompanyRepository;
+import java.time.LocalDate;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest( //
     classes = HashRepositoryBasePackageClassesTest.Config.class, //

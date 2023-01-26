@@ -18,8 +18,8 @@ public class BloomQueryExecutor {
   
   private static final Log logger = LogFactory.getLog(BloomQueryExecutor.class);
   public static final String EXISTS_BY_PREFIX = "existsBy";
-  RepositoryQuery query;
-  RedisModulesOperations<String> modulesOperations;
+  final RepositoryQuery query;
+  final RedisModulesOperations<String> modulesOperations;
   
   public BloomQueryExecutor(RepositoryQuery query, RedisModulesOperations<String> modulesOperations) {
     this.query = query;
@@ -30,7 +30,7 @@ public class BloomQueryExecutor {
     String methodName = query.getQueryMethod().getName();
     boolean hasExistByPrefix = methodName.startsWith(EXISTS_BY_PREFIX);
     if (hasExistByPrefix && boolean.class.isAssignableFrom(query.getQueryMethod().getReturnedObjectType())) {
-      String targetProperty = ObjectUtils.firstToLowercase(methodName.substring(EXISTS_BY_PREFIX.length(), methodName.length()));
+      String targetProperty = ObjectUtils.firstToLowercase(methodName.substring(EXISTS_BY_PREFIX.length()));
       logger.debug(String.format("Target Property : %s", targetProperty));
       Class<?> entityClass = query.getQueryMethod().getEntityInformation().getJavaType();
 

@@ -7,7 +7,7 @@ import java.util.List;
 import org.springframework.data.redis.core.convert.RedisCustomConversions;
 
 public class RedisOMCustomConversions extends RedisCustomConversions {
-  private static List<Object> omConverters = new ArrayList<>();
+  private static final List<Object> omConverters = new ArrayList<>();
   
   static {
     // Ulid
