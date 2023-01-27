@@ -67,9 +67,6 @@ class RedisDocumentWithAliasTest extends AbstractBaseDocumentTest {
     assertTrue(maybeDoc1.isPresent());
     WithAlias doc1 = maybeDoc1.get();
 
-    JsonObject rawJSON = ops.get(WithAlias.class.getName() + ":" + id1, JsonObject.class);
-    System.out.println(rawJSON.toString());
-
     Optional<WithAlias> alsoMaybeDoc1 = repository.findFirstByNumber(42);
     assertTrue(alsoMaybeDoc1.isPresent());
     WithAlias alsoDoc1 = alsoMaybeDoc1.get();
