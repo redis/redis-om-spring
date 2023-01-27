@@ -2,6 +2,7 @@ package com.redis.om.spring.annotations.document;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.Custom;
+import com.redis.om.spring.annotations.document.fixtures.Custom$;
 import com.redis.om.spring.annotations.document.fixtures.CustomRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,8 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("SpellCheckingInspection") class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
   @Autowired
@@ -78,6 +78,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     assertThat(repository.count()).isEqualTo(3L);
     repository.deleteAll();
     assertThat(repository.count()).isZero();
+  }
+  
+  @Test
+  void testUpdateSingleField() {
+    Optional<Custom> maybeC1 = repository.findById(id1);
+    assertTrue(maybeC1.isPresent());
+    repository.updateField(maybeC1.get(), Custom$.NAME, "fufoo");
+
+    Optional<Custom> maybeC1After = repository.findById(id1);
+
+    assertAll( //
+        () -> assertTrue(maybeC1After.isPresent()), () -> assertEquals("fufoo", maybeC1After.get().getName()) //
+    );
   }
 
 }
