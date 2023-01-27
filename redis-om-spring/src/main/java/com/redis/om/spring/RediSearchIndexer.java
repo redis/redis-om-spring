@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.logging.Log;
@@ -58,13 +59,17 @@ import io.redisearch.client.Client.IndexOptions;
 public class RediSearchIndexer {
   private Map<String, Class<?>> keyspaceToEntityClass = new ConcurrentHashMap<>();
   private Map<Class<?>, String> entityClassToKeySpace = new ConcurrentHashMap<>();
-  private List<Class<?>> indexedEntityClasses = new ArrayList<>();
+  private Set<Class<?>> indexedEntityClasses = new HashSet<>();
 
   private static final Log logger = LogFactory.getLog(RediSearchIndexer.class);
 
   private ApplicationContext ac;
   private RedisModulesOperations<String> rmo;
   private RedisMappingContext mappingContext;
+
+  public List<String> getIndexedEntityClasses() {
+    return indexedEntityClasses.stream().map(Class::getSimpleName).collect(Collectors.toList());
+  }
 
   @SuppressWarnings("unchecked")
   public RediSearchIndexer(ApplicationContext ac) {
@@ -313,10 +318,8 @@ public class RediSearchIndexer {
 
   private Field indexAsTagFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, TagIndexed ti) {
     ClassTypeInformation<?> typeInfo = ClassTypeInformation.from(field.getType());
-//    String chain = (prefix == null || prefix.isBlank()) ? "" : prefix + ".";
-//    String fieldPrefix = isDocument ? "$." + chain : chain;
-    String fieldPrefix = getFieldPrefix(prefix, isDocument);
 
+    String fieldPrefix = getFieldPrefix(prefix, isDocument);
     String fieldPostfix = (isDocument && typeInfo.isCollectionLike() && !field.isAnnotationPresent(JsonAdapter.class))
         ? "[*]"
         : "";
@@ -334,8 +337,7 @@ public class RediSearchIndexer {
   private Field indexAsTagFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, boolean sortable,
       String separator, int arrayIndex) {
     ClassTypeInformation<?> typeInfo = ClassTypeInformation.from(field.getType());
-//    String chain = (prefix == null || prefix.isBlank()) ? "" : prefix + ".";
-//    String fieldPrefix = isDocument ? "$." + chain : chain;
+
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
     String index = (arrayIndex != Integer.MIN_VALUE) ? ".[" + arrayIndex + "]" : "[*]";
     String fieldPostfix = (isDocument && typeInfo.isCollectionLike() && !field.isAnnotationPresent(JsonAdapter.class))
@@ -349,9 +351,6 @@ public class RediSearchIndexer {
   }
 
   private Field indexAsTextFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, TextIndexed ti) {
-//    String chain = (prefix == null || prefix.isBlank()) ? "" : prefix + ".";
-//    String fieldPrefix = isDocument ? "$." + chain : chain;
-
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
     FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
 
@@ -367,8 +366,6 @@ public class RediSearchIndexer {
   }
 
   private Field indexAsTextFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, Searchable ti) {
-//    String chain = (prefix == null || prefix.isBlank()) ? "" : prefix + ".";
-//    String fieldPrefix = isDocument ? "$." + chain : chain;
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
     FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
 
@@ -383,8 +380,6 @@ public class RediSearchIndexer {
   }
 
   private Field indexAsGeoFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, GeoIndexed gi) {
-//    String chain = (prefix == null || prefix.isBlank()) ? "" : prefix + ".";
-//    String fieldPrefix = isDocument ? "$." + chain : chain;
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
     FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
 
@@ -399,8 +394,6 @@ public class RediSearchIndexer {
 
   private Field indexAsNumericFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix,
       NumericIndexed ni) {
-//    String chain = (prefix == null || prefix.isBlank()) ? "" : prefix + ".";
-//    String fieldPrefix = isDocument ? "$." + chain : chain;
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
     FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
 
@@ -415,8 +408,6 @@ public class RediSearchIndexer {
 
   private Field indexAsNumericFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix,
       boolean sortable, boolean noIndex) {
-//    String chain = (prefix == null || prefix.isBlank()) ? "" : prefix + ".";
-//    String fieldPrefix = isDocument ? "$." + chain : chain;
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
     FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
 
@@ -427,8 +418,6 @@ public class RediSearchIndexer {
 
   private Field indexAsGeoFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, boolean sortable,
       boolean noIndex) {
-//    String chain = (prefix == null || prefix.isBlank()) ? "" : prefix + ".";
-//    String fieldPrefix = isDocument ? "$." + chain : chain;
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
     FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
 
@@ -438,8 +427,6 @@ public class RediSearchIndexer {
   }
 
   private List<Field> indexAsNestedFieldFor(java.lang.reflect.Field field, String prefix) {
-//    String chain = (prefix == null || prefix.isBlank()) ? "" : prefix + ".";
-//    String fieldPrefix = "$." + chain;
     String fieldPrefix = getFieldPrefix(prefix, true);
     return getNestedField(fieldPrefix, field, prefix, null);
   }
@@ -546,7 +533,12 @@ public class RediSearchIndexer {
   }
 
   public String getKeyspaceForEntityClass(Class<?> entityClass) {
-    return entityClassToKeySpace.get(entityClass);
+    String keyspace = entityClassToKeySpace.get(entityClass);
+    if (keyspace == null) {
+      keyspace = mappingContext.getPersistentEntity(entityClass).getKeySpace() + ":";
+    }
+
+    return keyspace;
   }
 
   public boolean indexExistsFor(Class<?> entityClass) {

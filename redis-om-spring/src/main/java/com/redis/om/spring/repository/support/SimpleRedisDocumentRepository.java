@@ -16,7 +16,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import com.google.gson.reflect.TypeToken;
 import com.redis.om.spring.serialization.gson.GsonListOfType;
 import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
@@ -196,14 +195,10 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   }
 
   @Override public Iterable<T> bulkLoad(String file) throws IOException {
-    Reader reader = null;
-    try {
-      reader = Files.newBufferedReader(Paths.get(file));
+    try (Reader reader = Files.newBufferedReader(Paths.get(file));) {
       List<T> entities = gson.fromJson(reader, new GsonListOfType<T>(metadata.getJavaType()));
       return saveAll(entities);
-    } finally {
-      reader.close();
-    }
+    } 
   }
 
   private String getKeyspace() {

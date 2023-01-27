@@ -1,9 +1,11 @@
 package com.redis.om.spring.annotations.document;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,10 +13,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.geo.Point;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.annotations.document.fixtures.Company;
 import com.redis.om.spring.annotations.document.fixtures.Custom;
+import com.redis.om.spring.annotations.document.fixtures.Custom$;
 import com.redis.om.spring.annotations.document.fixtures.CustomRepository;
 
 class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
@@ -82,6 +87,19 @@ class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
     assertThat(repository.count()).isEqualTo(3L);
     repository.deleteAll();
     assertThat(repository.count()).isZero();
+  }
+  
+  @Test
+  void testUpdateSingleField() {
+    Optional<Custom> maybeC1 = repository.findById(id1);
+    assertTrue(maybeC1.isPresent());
+    repository.updateField(maybeC1.get(), Custom$.NAME, "fufoo");
+
+    Optional<Custom> maybeC1After = repository.findById(id1);
+
+    assertAll( //
+        () -> assertTrue(maybeC1After.isPresent()), () -> assertEquals("fufoo", maybeC1After.get().getName()) //
+    );
   }
 
 }
