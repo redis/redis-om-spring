@@ -561,7 +561,12 @@ public class RediSearchIndexer {
   }
 
   public String getKeyspaceForEntityClass(Class<?> entityClass) {
-    return entityClassToKeySpace.get(entityClass);
+    String keyspace = entityClassToKeySpace.get(entityClass);
+    if (keyspace == null) {
+      keyspace = mappingContext.getPersistentEntity(entityClass).getKeySpace() + ":";
+    }
+
+    return keyspace;
   }
 
   public boolean indexExistsFor(Class<?> entityClass) {
