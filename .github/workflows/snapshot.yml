@@ -3,6 +3,8 @@
 name: Publish Snapshot
 
 on:
+  workflow_dispatch:
+
   push:
     branches:
       - main
@@ -35,9 +37,12 @@ jobs:
         run: |
           curl -s https://raw.githubusercontent.com/codecov/codecov-bash/master/codecov
       - name: deploy
+        working-directory: redis-om-spring
         run: |
           mvn --no-transfer-progress \
-            -DskipTests deploy
+            -DskipTests\
+            -Dgpg.passphrase='${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}' \
+            deploy
         env:
           MAVEN_USERNAME: ${{secrets.OSSRH_USERNAME}}
           MAVEN_PASSWORD: ${{secrets.OSSRH_TOKEN}}
