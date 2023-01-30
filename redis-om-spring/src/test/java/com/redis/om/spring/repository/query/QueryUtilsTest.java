@@ -1,8 +1,8 @@
 package com.redis.om.spring.repository.query;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class QueryUtilsTest {
   @Test

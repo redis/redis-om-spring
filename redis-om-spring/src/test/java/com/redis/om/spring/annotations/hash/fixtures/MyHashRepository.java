@@ -1,19 +1,17 @@
 package com.redis.om.spring.annotations.hash.fixtures;
 
-import java.util.Set;
-
+import com.redis.om.spring.annotations.Query;
+import com.redis.om.spring.repository.RedisEnhancedRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.repository.query.Param;
+import redis.clients.jedis.search.SearchResult;
 
-import com.redis.om.spring.annotations.Query;
-import com.redis.om.spring.repository.RedisEnhancedRepository;
+import java.util.Set;
 
-import io.redisearch.SearchResult;
-
-public interface MyHashRepository extends RedisEnhancedRepository<MyHash, String>, MyHashQueries {
+@SuppressWarnings({ "unused", "SpellCheckingInspection", "SpringDataMethodInconsistencyInspection" }) public interface MyHashRepository extends RedisEnhancedRepository<MyHash, String>, MyHashQueries {
   /**
    * <pre>
    * > FT.SEARCH idx '@title:hello @tag:{news}' 

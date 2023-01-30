@@ -43,28 +43,28 @@ public enum ULIDIdentifierGenerator implements IdentifierGenerator {
 
   private SecureRandom getSecureRandom() {
 
-    SecureRandom secureRandom = this.secureRandom.get();
-    if (secureRandom != null) {
-      return secureRandom;
+    SecureRandom sr = this.secureRandom.get();
+    if (sr != null) {
+      return sr;
     }
 
     for (String algorithm : OsTools.secureRandomAlgorithmNames()) {
       try {
-        secureRandom = SecureRandom.getInstance(algorithm);
+        sr = SecureRandom.getInstance(algorithm);
       } catch (NoSuchAlgorithmException e) {
         // ignore and try next.
       }
     }
 
-    if (secureRandom == null) {
+    if (sr == null) {
       throw new InvalidDataAccessApiUsageException(
           String.format("Could not create SecureRandom instance for one of the algorithms '%s'.",
               StringUtils.collectionToCommaDelimitedString(OsTools.secureRandomAlgorithmNames())));
     }
 
-    this.secureRandom.compareAndSet(null, secureRandom);
+    this.secureRandom.compareAndSet(null, sr);
 
-    return secureRandom;
+    return sr;
   }
 
   private static class OsTools {

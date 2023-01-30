@@ -1,34 +1,28 @@
 package com.redis.om.spring.annotations.hash.serialization;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import com.github.f4b6a3.ulid.Ulid;
+import com.github.f4b6a3.ulid.UlidCreator;
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.annotations.hash.fixtures.KitchenSink;
+import com.redis.om.spring.annotations.hash.fixtures.KitchenSinkRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.geo.Point;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.geo.Point;
-import org.springframework.data.redis.core.RedisTemplate;
+import static org.assertj.core.api.Assertions.assertThat;
 
-import com.github.f4b6a3.ulid.Ulid;
-import com.github.f4b6a3.ulid.UlidCreator;
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.hash.fixtures.KitchenSink;
-import com.redis.om.spring.annotations.hash.fixtures.KitchenSinkRepository;
+@SuppressWarnings("SpellCheckingInspection") class SerializationTest extends AbstractBaseEnhancedRedisTest {
 
-class SerializationTest extends AbstractBaseEnhancedRedisTest {
-
-  @Autowired
-  RedisTemplate<String, String> template;
+  @Autowired StringRedisTemplate template;
 
   @Autowired
   KitchenSinkRepository repository;
@@ -44,8 +38,7 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
   private Date date;
   private Point point;
   private Ulid ulid;
-  private byte[] byteArray; 
-  private List<String[]> listOfStringArrays; 
+  private byte[] byteArray;
 
   private Set<String> setThings;
   private List<String> listThings;
@@ -61,8 +54,8 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
     point = new Point(-111.83592170193586,33.62826024782707);
     ulid = UlidCreator.getMonotonicUlid();
     byteArray = "Hello World!".getBytes();
-    
-    listOfStringArrays = new ArrayList<String[]>();
+
+    List<String[]> listOfStringArrays = new ArrayList<>();
     listOfStringArrays.add(new String[] {"a", "b"});
     listOfStringArrays.add(new String[] {"c", "d"});
     listOfStringArrays.add(new String[] { null, "e"});
@@ -134,26 +127,26 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
     // LocalDate
     Instant localDateInstant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
     long localDateAsUnixTS = localDateInstant.getEpochSecond();
-    long rawLocalDate = Long.parseLong(template.opsForHash().get(key, "localDate").toString());
+    long rawLocalDate = Long.parseLong(Objects.requireNonNull(template.opsForHash().get(key, "localDate")).toString());
 
     // LocalDateTime
     Instant localDateTimeInstant = localDateTime.atZone(ZoneId.systemDefault()).toInstant();
     long localDateTimeInMillis = localDateTimeInstant.toEpochMilli();
-    long rawLocalDateTime = Long.parseLong(template.opsForHash().get(key, "localDateTime").toString());
+    long rawLocalDateTime = Long.parseLong(Objects.requireNonNull(template.opsForHash().get(key, "localDateTime")).toString());
 
     // Date
     long dateInMillis = date.getTime();
-    long rawDate = Long.parseLong(template.opsForHash().get(key, "date").toString());
+    long rawDate = Long.parseLong(Objects.requireNonNull(template.opsForHash().get(key, "date")).toString());
 
     // Point
     String redisGeo = "-111.83592170193586,33.62826024782707";
 
-    String rawPoint = template.opsForHash().get(key, "point").toString();
-    String rawUlid = template.opsForHash().get(key, "ulid").toString();
+    String rawPoint = Objects.requireNonNull(template.opsForHash().get(key, "point")).toString();
+    String rawUlid = Objects.requireNonNull(template.opsForHash().get(key, "ulid")).toString();
     
     //
-    String rawSetThings = template.opsForHash().get(key, "setThings").toString();
-    String rawListThings = template.opsForHash().get(key, "listThings").toString();
+    String rawSetThings = Objects.requireNonNull(template.opsForHash().get(key, "setThings")).toString();
+    String rawListThings = Objects.requireNonNull(template.opsForHash().get(key, "listThings")).toString();
 
     assertThat(rawLocalDate).isEqualTo(localDateAsUnixTS);
     assertThat(rawLocalDateTime).isEqualTo(localDateTimeInMillis);

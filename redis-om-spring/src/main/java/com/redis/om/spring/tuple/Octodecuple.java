@@ -64,47 +64,28 @@ public interface Octodecuple<E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, 
   }
 
   default Object get(int index) {
-    switch (index) {
-      case 0:
-        return getFirst();
-      case 1:
-        return getSecond();
-      case 2:
-        return getThird();
-      case 3:
-        return getFourth();
-      case 4:
-        return getFifth();
-      case 5:
-        return getSixth();
-      case 6:
-        return getSeventh();
-      case 7:
-        return getEighth();
-      case 8:
-        return getNinth();
-      case 9:
-        return getTenth();
-      case 10:
-        return getEleventh();
-      case 11:
-        return getTwelfth();
-      case 12:
-        return getThirteenth();
-      case 13:
-        return getFourteenth();
-      case 14:
-        return getFifteenth();
-      case 15:
-        return getSixteenth();
-      case 16:
-        return getSeventeenth();
-      case 17:
-        return getEighteenth();
-      default:
-        throw new IndexOutOfBoundsException(
-            String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
-    }
+    return switch (index) {
+      case 0 -> getFirst();
+      case 1 -> getSecond();
+      case 2 -> getThird();
+      case 3 -> getFourth();
+      case 4 -> getFifth();
+      case 5 -> getSixth();
+      case 6 -> getSeventh();
+      case 7 -> getEighth();
+      case 8 -> getNinth();
+      case 9 -> getTenth();
+      case 10 -> getEleventh();
+      case 11 -> getTwelfth();
+      case 12 -> getThirteenth();
+      case 13 -> getFourteenth();
+      case 14 -> getFifteenth();
+      case 15 -> getSixteenth();
+      case 16 -> getSeventeenth();
+      case 17 -> getEighteenth();
+      default -> throw new IndexOutOfBoundsException(
+          String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
+    };
   }
 
   static <E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E15, E25, E26, E27> FirstAccessor<Octodecuple<E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E15, E25, E26, E27>, E1> getFirstGetter() {

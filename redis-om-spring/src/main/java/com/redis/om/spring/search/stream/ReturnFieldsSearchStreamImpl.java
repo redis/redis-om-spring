@@ -7,9 +7,9 @@ import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
 import com.redis.om.spring.tuple.Tuple;
 import com.redis.om.spring.tuple.Tuples;
 import com.redis.om.spring.util.ObjectUtils;
-import io.redisearch.Query;
-import io.redisearch.SearchResult;
-import io.redisearch.aggregation.SortedField.SortOrder;
+import redis.clients.jedis.search.Query;
+import redis.clients.jedis.search.SearchResult;
+import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.data.geo.Point;
@@ -29,7 +29,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   private final Gson gson;
 
   private final SearchStreamImpl<E> entitySearchStream;
-  private List<MetamodelField<E, ?>> returning;
+  private final List<MetamodelField<E, ?>> returning;
   private Stream<T> resolvedStream;
   private Runnable closeHandler;
 
@@ -101,6 +101,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     throw new UnsupportedOperationException("Filter on free text predicate is not supported on mapped stream");
   }
 
+  @SuppressWarnings("resource")
   @Override
   public <R> SearchStream<R> map(Function<? super T, ? extends R> mapper) {
     return new WrapperSearchStream<>(resolveStream()).map(mapper);
@@ -121,21 +122,25 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     return resolveStream().mapToDouble(mapper);
   }
 
+  @SuppressWarnings("resource")
   @Override
   public <R> SearchStream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMap(mapper);
   }
 
+  @SuppressWarnings("resource")
   @Override
   public IntStream flatMapToInt(Function<? super T, ? extends IntStream> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMapToInt(mapper);
   }
 
+  @SuppressWarnings("resource")
   @Override
   public LongStream flatMapToLong(Function<? super T, ? extends LongStream> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMapToLong(mapper);
   }
 
+  @SuppressWarnings("resource")
   @Override
   public DoubleStream flatMapToDouble(Function<? super T, ? extends DoubleStream> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMapToDouble(mapper);
@@ -262,9 +267,9 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
       if (resultSetHasNonIndexedFields) {
         SearchResult searchResult = entitySearchStream.getOps().search(query);
 
-        List<E> entities = searchResult.docs.stream()
+        List<E> entities = searchResult.getDocuments().stream()
             .map(d -> gson.fromJson(d.get("$").toString(), entitySearchStream.getEntityClass()))
-            .collect(Collectors.toList());
+            .toList();
 
         results = toResultTuple(entities, returnFields);
 
@@ -281,7 +286,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   @SuppressWarnings("unchecked")
   private List<T> toResultTuple(SearchResult searchResult, String[] returnFields) {
     List<T> results = new ArrayList<>();
-    searchResult.docs.forEach(doc -> {
+    searchResult.getDocuments().forEach(doc -> {
       Map<String, Object> props = StreamSupport.stream(doc.getProperties().spliterator(), false)
           .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
 
@@ -347,24 +352,28 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     return resolveStream().map(Tuple.class::cast).map(Tuple::labelledMap);
   }
 
-  @Override
-  public <R> AggregationStream<R> groupBy(MetamodelField<T, ?>... field) {
+  @SafeVarargs @Override
+  public final <R> AggregationStream<R> groupBy(MetamodelField<T, ?>... field) {
     throw new UnsupportedOperationException("groupBy is not supported on a ReturnFieldSearchStream");
   }
 
-  @Override public <R> AggregationStream<R> apply(String expression, String alias) {
+  @Override
+  public <R> AggregationStream<R> apply(String expression, String alias) {
     throw new UnsupportedOperationException("apply is not supported on a ReturnFieldSearchStream");
   }
 
-  @Override public <R> AggregationStream<R> load(MetamodelField<T, ?>... fields) {
+  @SafeVarargs @Override
+  public final <R> AggregationStream<R> load(MetamodelField<T, ?>... fields) {
     throw new UnsupportedOperationException("load is not supported on a ReturnFieldSearchStream");
   }
 
-  @Override public Optional<T> min(NumericField<T, ?> field) {
+  @Override
+  public Optional<T> min(NumericField<T, ?> field) {
     throw new UnsupportedOperationException("min is not supported on a ReturnFieldSearchStream");
   }
 
-  @Override public Optional<T> max(NumericField<T, ?> field) {
+  @Override
+  public Optional<T> max(NumericField<T, ?> field) {
     throw new UnsupportedOperationException("max is not supported on a ReturnFieldSearchStream");
   }
 

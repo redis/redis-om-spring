@@ -1,17 +1,16 @@
 package com.redis.om.spring.search.stream.actions;
 
-import java.lang.reflect.Field;
+import com.redis.om.spring.metamodel.SearchFieldAccessor;
+import redis.clients.jedis.json.Path;
+
 import java.util.function.Consumer;
 
-import com.redis.om.spring.metamodel.SearchFieldAccessor;
-import com.redislabs.modules.rejson.Path;
-
 public class ArrayInsertAction<E> extends BaseAbstractAction implements Consumer<E> {
-  
-  private Object value;
-  private Long index;
 
-  public ArrayInsertAction(SearchFieldAccessor field, Object value, Long index) {
+  private final Object value;
+  private final Integer index;
+
+  public ArrayInsertAction(SearchFieldAccessor field, Object value, Integer index) {
     super(field);
     this.value = value;
     this.index = index;

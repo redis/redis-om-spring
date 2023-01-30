@@ -17,9 +17,10 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class EntityStreamsAggregationsTest extends AbstractBaseDocumentTest {
+@SuppressWarnings({ "unchecked", "SpellCheckingInspection" }) class EntityStreamsAggregationsTest extends AbstractBaseDocumentTest {
   @Autowired EntityStream entityStream;
 
   @Autowired GameRepository repository;
@@ -309,9 +310,7 @@ class EntityStreamsAggregationsTest extends AbstractBaseDocumentTest {
           .sorted(10, Order.desc("@num")) //
           .toList(String.class, Long.class, List.class);
 
-      randomSample.forEach(row -> {
-        assertThat(row.getThird()).hasSize(10);
-      });
+      randomSample.forEach(row -> assertThat(row.getThird()).hasSize(10));
     }
 
   /**
@@ -332,7 +331,7 @@ class EntityStreamsAggregationsTest extends AbstractBaseDocumentTest {
    */
     @Test void testTimeFunctions() {
       Decuple<Long, String, Long, Long, Long, Long, Long, Long, Long, Long> expected = Tuples.of(
-          1517417144L, "2018-01-31T16:45:44Z", 1517356800L, 1517414400L, 1517417100L, 1514764800L, 3L, 31L, 30l, 2018L
+          1517417144L, "2018-01-31T16:45:44Z", 1517356800L, 1517414400L, 1517417100L, 1514764800L, 3L, 31L, 30L, 2018L
       );
 
       List<Decuple<Long, String, Long, Long, Long, Long, Long, Long, Long, Long>> parseTime = entityStream
@@ -460,7 +459,10 @@ class EntityStreamsAggregationsTest extends AbstractBaseDocumentTest {
           .filter("@count > 2 && @brand != \"\"")
           .toList(String.class, Long.class);
 
-      assertThat(filtered).allSatisfy(e -> assertThat(e.getSecond()).isGreaterThan(2).isLessThan(5));
+      assertAll( //
+          () -> assertThat(filtered).isNotEmpty(), //
+          () -> assertThat(filtered).allSatisfy(e -> assertThat(e.getSecond()).isGreaterThan(2).isLessThan(5)) //
+      );
     }
 
   /**

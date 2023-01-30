@@ -2,9 +2,10 @@ package com.redis.om.spring.search.stream;
 
 import com.redis.om.spring.annotations.ReducerFunction;
 import com.redis.om.spring.metamodel.MetamodelField;
-import io.redisearch.AggregationResult;
 import org.springframework.data.domain.Sort.Order;
+import redis.clients.jedis.search.aggr.AggregationResult;
 
+import java.time.Duration;
 import java.util.List;
 
 public interface AggregationStream<T> {
@@ -31,6 +32,13 @@ public interface AggregationStream<T> {
   AggregationStream<T> filter(String... filters);
 
   AggregationResult aggregate();
+
+  AggregationResult aggregateVerbatim();
+
+  AggregationResult aggregate(Duration timeout);
+
+  AggregationResult aggregateVerbatim(Duration timeout);
+
 
   <R extends T> List<R> toList(Class<?>... contentTypes);
 }

@@ -3,7 +3,8 @@ package com.redis.om.spring.search.stream;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.indexed.NumericField;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
-import io.redisearch.aggregation.SortedField.SortOrder;
+
+import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
 import java.util.Comparator;
 import java.util.Map;
@@ -20,7 +21,7 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
   SearchStream<E> filter(String freeText);
 
   <R> SearchStream<R> map(Function<? super E, ? extends R> field);
-  
+
   Stream<Long> map(ToLongFunction<? super E> mapper);
 
   IntStream mapToInt(ToIntFunction<? super E> mapper);
@@ -80,13 +81,15 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
   Optional<E> findFirst();
 
   Optional<E> findAny();
-  
-  Stream<Map<String,Object>> mapToLabelledMaps();
 
+  Stream<Map<String, Object>> mapToLabelledMaps();
+
+  @SuppressWarnings("unchecked")
   <R> AggregationStream<R> groupBy(MetamodelField<E, ?>... fields);
 
   <R> AggregationStream<R> apply(String expression, String alias);
 
+  @SuppressWarnings("unchecked")
   <R> AggregationStream<R> load(MetamodelField<E, ?>... fields);
 
   Optional<E> min(NumericField<E, ?> field);

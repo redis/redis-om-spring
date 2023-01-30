@@ -1,11 +1,9 @@
 package com.redis.om.spring.annotations.document;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Set;
-
+import com.google.common.collect.Lists;
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.annotations.document.fixtures.*;
+import com.redis.om.spring.repository.query.Sort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,17 +13,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.geo.Point;
 
-import com.google.common.collect.Lists;
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.Address;
-import com.redis.om.spring.annotations.document.fixtures.Attribute;
-import com.redis.om.spring.annotations.document.fixtures.Order;
-import com.redis.om.spring.annotations.document.fixtures.Permit;
-import com.redis.om.spring.annotations.document.fixtures.Permit$;
-import com.redis.om.spring.annotations.document.fixtures.PermitRepository;
-import com.redis.om.spring.repository.query.Sort;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
 
-class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SuppressWarnings("SpellCheckingInspection") class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
   Permit permit1;
   Permit permit2;
   Permit permit3;

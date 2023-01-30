@@ -1,12 +1,11 @@
 package com.redis.om.spring.annotations.document.fixtures;
 
-import java.util.List;
-
 import com.redis.om.spring.annotations.Indexed;
-
 import lombok.Data;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 @Data
 @RequiredArgsConstructor(staticName = "of")

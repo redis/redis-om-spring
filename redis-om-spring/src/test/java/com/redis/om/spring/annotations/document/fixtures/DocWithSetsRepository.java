@@ -6,7 +6,7 @@ import org.springframework.data.geo.Point;
 
 import java.util.Set;
 
-public interface DocWithSetsRepository extends RedisDocumentRepository<DocWithSets,String> {
+@SuppressWarnings("ALL") public interface DocWithSetsRepository extends RedisDocumentRepository<DocWithSets,String> {
   Iterable<DocWithSets> findByTheNumbersContaining(Set<Integer> ints);
   Iterable<DocWithSets> findByTheNumbersContainingAll(Set<Integer> ints);
 

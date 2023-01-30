@@ -1,6 +1,19 @@
 package com.redis.om.spring.annotations.document.serialization;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import com.github.f4b6a3.ulid.Ulid;
+import com.github.f4b6a3.ulid.UlidCreator;
+import com.google.gson.JsonObject;
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.annotations.document.fixtures.KitchenSink;
+import com.redis.om.spring.annotations.document.fixtures.KitchenSinkRepository;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.json.JSONOperations;
+import org.assertj.core.util.Arrays;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.geo.Point;
+import org.springframework.data.redis.serializer.JdkSerializationRedisSerializer;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -11,23 +24,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import org.assertj.core.util.Arrays;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.geo.Point;
-import org.springframework.data.redis.serializer.JdkSerializationRedisSerializer;
+import static org.assertj.core.api.Assertions.assertThat;
 
-import com.github.f4b6a3.ulid.Ulid;
-import com.github.f4b6a3.ulid.UlidCreator;
-import com.google.gson.JsonObject;
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.KitchenSink;
-import com.redis.om.spring.annotations.document.fixtures.KitchenSinkRepository;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.ops.json.JSONOperations;
-
-class SerializationTest extends AbstractBaseDocumentTest {
+@SuppressWarnings("SpellCheckingInspection") class SerializationTest extends AbstractBaseDocumentTest {
   @Autowired
   KitchenSinkRepository repository;
 
@@ -122,6 +121,7 @@ class SerializationTest extends AbstractBaseDocumentTest {
 
     JsonObject rawJSON = ops.get(KitchenSink.class.getName() + ":" + ks.getId(), JsonObject.class);
 
+    assert rawJSON != null;
     assertThat(rawJSON.get("localDate").getAsLong()).isEqualTo(localDateAsUnixTS);
     assertThat(rawJSON.get("localDateTime").getAsLong()).isEqualTo(localDateTimeInMillis);
     assertThat(rawJSON.get("date").getAsLong()).isEqualTo(dateInMillis);
@@ -151,12 +151,12 @@ class SerializationTest extends AbstractBaseDocumentTest {
   @Test
   void testEmptySetToStringDeserialization() {
     Optional<KitchenSink> fromDb1 = repository.findById(ks1.getId());
-    assertThat(fromDb1.get().getSetThings()).isNull();
-    assertThat(fromDb1.get().getListThings()).isNull();
+    assertThat(fromDb1).isPresent().map(KitchenSink::getSetThings).isEmpty();
+    assertThat(fromDb1).isPresent().map(KitchenSink::getListThings).isEmpty();
 
     Optional<KitchenSink> fromDb2 = repository.findById(ks2.getId());
-    assertThat(fromDb2.get().getSetThings()).isNull();
-    assertThat(fromDb2.get().getListThings()).isNull();
+    assertThat(fromDb2).isPresent().map(KitchenSink::getSetThings).isEmpty();
+    assertThat(fromDb2).isPresent().map(KitchenSink::getListThings).isEmpty();
   }
 
   @Test

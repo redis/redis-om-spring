@@ -1,6 +1,7 @@
 package com.redis.om.spring.serialization.gson;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,7 +26,7 @@ public class ListToStringAdapter extends TypeAdapter<List<?>> {
   public List read(JsonReader reader) throws IOException {
     if (reader.peek() == JsonToken.NULL) {
       reader.nextNull();
-      return null;
+      return Collections.emptyList();
     }
     String csv = reader.nextString();
     String[] parts = csv.split("\\|");

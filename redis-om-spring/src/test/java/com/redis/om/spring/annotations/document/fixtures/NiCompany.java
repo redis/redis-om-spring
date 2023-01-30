@@ -1,24 +1,17 @@
 package com.redis.om.spring.annotations.document.fixtures;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
+import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.annotations.Searchable;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.geo.Point;
 
-import com.redis.om.spring.annotations.Document;
-import com.redis.om.spring.annotations.Searchable;
-
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 @Data
 @RequiredArgsConstructor(staticName = "of")
@@ -42,7 +35,7 @@ public class NiCompany {
   @NonNull
   private Point location;
 
-  private List<String> tags = new ArrayList<String>();
+  private List<String> tags = new ArrayList<>();
 
   @NonNull
   private String email;

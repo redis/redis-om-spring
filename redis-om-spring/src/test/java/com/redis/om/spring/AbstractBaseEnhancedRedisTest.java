@@ -1,10 +1,9 @@
 package com.redis.om.spring;
 
+import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
-
-import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
 
 @SpringBootTest( //
     classes = AbstractBaseEnhancedRedisTest.Config.class, //

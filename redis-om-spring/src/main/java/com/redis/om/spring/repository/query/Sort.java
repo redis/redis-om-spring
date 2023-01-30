@@ -1,5 +1,6 @@
 package com.redis.om.spring.repository.query;
 
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
 
@@ -20,10 +21,10 @@ public class Sort extends org.springframework.data.domain.Sort {
    * @return a Spring Sort object
    */
   public static org.springframework.data.domain.Sort by(Direction direction, MetamodelField<?, ?>... fields) {
-    String[] properties = Arrays.asList(fields).stream().map(metamodel ->  metamodel.getSearchAlias()).toArray(String[]::new);
+    String[] properties = Arrays.stream(fields).map(MetamodelField::getSearchAlias).toArray(String[]::new);
     return org.springframework.data.domain.Sort.by(direction, properties);
   }
 
-  private static final long serialVersionUID = 7789210988714363618L;
+  @Serial private static final long serialVersionUID = 7789210988714363618L;
 
 }

@@ -1,17 +1,8 @@
 package com.redis.om.spring.annotations.hash;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.Set;
-
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.annotations.hash.fixtures.MyHash;
+import com.redis.om.spring.annotations.hash.fixtures.MyHashRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,20 +15,20 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import redis.clients.jedis.search.SearchResult;
 
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.hash.fixtures.MyHash;
-import com.redis.om.spring.annotations.hash.fixtures.MyHashRepository;
+import java.util.*;
 
-import io.redisearch.SearchResult;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
+@SuppressWarnings("SpellCheckingInspection") class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
   @Autowired
   MyHashRepository repository;
 
-  @Autowired
-  RedisTemplate<String, String> template;
+  @Autowired StringRedisTemplate template;
 
   String id1;
   String id2;
@@ -47,7 +38,7 @@ class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
     Point point1 = new Point(-122.124500, 47.640160);
     MyHash doc1 = MyHash.of("hello world", point1, point1, 1);
 
-    Set<String> tags = new HashSet<String>();
+    Set<String> tags = new HashSet<>();
     tags.add("news");
     tags.add("article");
 
@@ -59,7 +50,7 @@ class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
     Point point2 = new Point(-122.066540, 37.377690);
     MyHash doc2 = MyHash.of("hello mundo", point2, point2, 2);
 
-    Set<String> tags2 = new HashSet<String>();
+    Set<String> tags2 = new HashSet<>();
     tags2.add("noticias");
     tags2.add("articulo");
 
@@ -220,9 +211,7 @@ class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
     assertEquals("hello mundo", doc.getTitle());
 
     @SuppressWarnings("unused")
-    NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class, () -> {
-      iter.next();
-    });
+    NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class, iter::next);
   }
 
   @Test
@@ -235,9 +224,7 @@ class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
     assertEquals("hello mundo", doc.getTitle());
 
     @SuppressWarnings("unused")
-    NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class, () -> {
-      iter.next();
-    });
+    NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class, iter::next);
   }
 
   @Test
@@ -274,21 +261,20 @@ class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
 
     SearchResult result = repository.customFindAllByTitleStartingWithReturnFieldsAndLimit("pre");
 
-    assertEquals(16, result.totalResults);
-    assertThat(result.totalResults).isEqualTo(16);
-    assertThat(result.docs).hasSize(12);
-    assertThat(result.docs.get(0).get("title")).isEqualTo("precentorships");
-    assertThat(result.docs.get(1).get("title")).isEqualTo("preceptorships");
-    assertThat(result.docs.get(2).get("title")).isEqualTo("preciousnesses");
-    assertThat(result.docs.get(3).get("title")).isEqualTo("precipitancies");
-    assertThat(result.docs.get(4).get("title")).isEqualTo("precipitations");
-    assertThat(result.docs.get(5).get("title")).isEqualTo("precipitinogen");
-    assertThat(result.docs.get(6).get("title")).isEqualTo("precociousness");
-    assertThat(result.docs.get(7).get("title")).isEqualTo("precombustions");
-    assertThat(result.docs.get(8).get("title")).isEqualTo("preconceptions");
-    assertThat(result.docs.get(9).get("title")).isEqualTo("preconditioned");
-    assertThat(result.docs.get(10).get("title")).isEqualTo("predestinarian");
-    assertThat(result.docs.get(11).get("title")).isEqualTo("predestination");
+    assertThat(result.getTotalResults()).isEqualTo(16);
+    assertThat(result.getDocuments()).hasSize(12);
+    assertThat(result.getDocuments().get(0).get("title")).isEqualTo("precentorships");
+    assertThat(result.getDocuments().get(1).get("title")).isEqualTo("preceptorships");
+    assertThat(result.getDocuments().get(2).get("title")).isEqualTo("preciousnesses");
+    assertThat(result.getDocuments().get(3).get("title")).isEqualTo("precipitancies");
+    assertThat(result.getDocuments().get(4).get("title")).isEqualTo("precipitations");
+    assertThat(result.getDocuments().get(5).get("title")).isEqualTo("precipitinogen");
+    assertThat(result.getDocuments().get(6).get("title")).isEqualTo("precociousness");
+    assertThat(result.getDocuments().get(7).get("title")).isEqualTo("precombustions");
+    assertThat(result.getDocuments().get(8).get("title")).isEqualTo("preconceptions");
+    assertThat(result.getDocuments().get(9).get("title")).isEqualTo("preconditioned");
+    assertThat(result.getDocuments().get(10).get("title")).isEqualTo("predestinarian");
+    assertThat(result.getDocuments().get(11).get("title")).isEqualTo("predestination");
   }
 
 }

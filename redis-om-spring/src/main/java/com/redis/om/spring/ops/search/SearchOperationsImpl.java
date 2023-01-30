@@ -1,271 +1,200 @@
 package com.redis.om.spring.ops.search;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Set;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.redis.om.spring.autocomplete.Suggestion;
 import com.redis.om.spring.client.RedisModulesClient;
-import com.redis.om.spring.ops.Command;
 
-import io.redisearch.AggregationResult;
-import io.redisearch.Client;
-import io.redisearch.Document;
-import io.redisearch.Query;
-import io.redisearch.Schema;
-import io.redisearch.Schema.Field;
-import io.redisearch.SearchResult;
-import io.redisearch.Suggestion;
-import io.redisearch.aggregation.AggregationBuilder;
-import io.redisearch.client.AddOptions;
-import io.redisearch.client.Client.IndexOptions;
-import io.redisearch.client.ConfigOption;
-import io.redisearch.client.SuggestionOptions;
-import redis.clients.jedis.BinaryClient;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.util.SafeEncoder;
+import com.redis.om.spring.repository.query.autocomplete.AutoCompleteOptions;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import redis.clients.jedis.resps.Tuple;
+import redis.clients.jedis.search.FTSearchParams;
+import redis.clients.jedis.search.IndexOptions;
+import redis.clients.jedis.search.Query;
+import redis.clients.jedis.search.RediSearchCommands;
+import redis.clients.jedis.search.Schema;
+import redis.clients.jedis.search.SearchResult;
+import redis.clients.jedis.search.aggr.AggregationBuilder;
+import redis.clients.jedis.search.aggr.AggregationResult;
+import redis.clients.jedis.search.schemafields.SchemaField;
 
 public class SearchOperationsImpl<K> implements SearchOperations<K> {
 
-  Client client;
-  K index;
+  private final RediSearchCommands search;
+  private final RedisModulesClient modulesClient;
+  private final K index;
+  private final StringRedisTemplate template;
 
-  public SearchOperationsImpl(K index, RedisModulesClient client) {
+  public SearchOperationsImpl(K index, RedisModulesClient modulesClient, StringRedisTemplate template) {
     this.index = index;
-    this.client = client.clientForSearch(index.toString());
+    this.modulesClient = modulesClient;
+    this.search = modulesClient.clientForSearch();
+    this.template = template;
   }
 
   @Override
-  public boolean createIndex(Schema schema, IndexOptions options) {
-    return client.createIndex(schema, options);
+  public String createIndex(Schema schema, IndexOptions options) {
+    return search.ftCreate(index.toString(), options, schema);
   }
 
   @Override
   public SearchResult search(Query q) {
-    return client.search(q);
+    return search.ftSearch(index.toString(), q);
   }
-
+  
   @Override
-  public SearchResult[] searchBatch(Query... queries) {
-    return client.searchBatch(queries);
-  }
-
-  @Override
-  public SearchResult search(Query q, boolean decode) {
-    return client.search(q, decode);
+  public SearchResult search(Query q, FTSearchParams params) {
+    return search.ftSearch(index.toString(), q.toString(), params);
   }
 
   @Override
   public AggregationResult aggregate(AggregationBuilder q) {
-    return client.aggregate(q);
+    return search.ftAggregate(index.toString(), q);
   }
 
   @Override
-  public boolean cursorDelete(long cursorId) {
-    return client.cursorDelete(cursorId);
+  public String cursorDelete(long cursorId) {
+    return search.ftCursorDel(index.toString(), cursorId);
   }
 
   @Override
   public AggregationResult cursorRead(long cursorId, int count) {
-    return client.cursorRead(cursorId, count);
+    return search.ftCursorRead(index.toString(), cursorId, count);
   }
 
   @Override
   public String explain(Query q) {
-    return client.explain(q);
-  }
-
-  @Override
-  public boolean addDocument(Document doc, AddOptions options) {
-    return client.addDocument(doc, options);
-  }
-
-  @Override
-  public boolean addDocument(String docId, double score, Map<String, Object> fields, boolean noSave, boolean replace,
-      byte[] payload) {
-    return client.addDocument(docId, score, fields, noSave, replace, payload);
-  }
-
-  @Override
-  public boolean addDocument(Document doc) {
-    return client.addDocument(doc);
-  }
-
-  @Override
-  public boolean[] addDocuments(Document... docs) {
-    return client.addDocuments(docs);
-  }
-
-  @Override
-  public boolean[] addDocuments(AddOptions options, Document... docs) {
-    return client.addDocuments(options, docs);
-  }
-
-  @Override
-  public boolean addDocument(String docId, double score, Map<String, Object> fields) {
-    return client.addDocument(docId, score, fields);
-  }
-
-  @Override
-  public boolean addDocument(String docId, Map<String, Object> fields) {
-    return client.addDocument(docId, fields);
-  }
-
-  @Override
-  public boolean replaceDocument(String docId, double score, Map<String, Object> fields) {
-    return client.replaceDocument(docId, score, fields);
-  }
-
-  @Override
-  public boolean replaceDocument(String docId, double score, Map<String, Object> fields, String filter) {
-    return client.replaceDocument(docId, score, fields, filter);
-  }
-
-  @Override
-  public boolean updateDocument(String docId, double score, Map<String, Object> fields) {
-    return client.updateDocument(docId, score, fields);
-  }
-
-  @Override
-  public boolean updateDocument(String docId, double score, Map<String, Object> fields, String filter) {
-    return client.updateDocument(docId, score, fields, filter);
+    return search.ftExplain(index.toString(), q);
   }
 
   @Override
   public Map<String, Object> getInfo() {
-    return client.getInfo();
+    return search.ftInfo(index.toString());
   }
 
   @Override
-  public boolean deleteDocument(String docId) {
-    return client.deleteDocument(docId);
+  public String dropIndex() {
+    return search.ftDropIndex(index.toString());
   }
 
   @Override
-  public boolean[] deleteDocuments(boolean deleteDocuments, String... docIds) {
-    return client.deleteDocuments(deleteDocuments, docIds);
+  public String dropIndexAndDocuments() {
+    return search.ftDropIndexDD(index.toString());
   }
 
   @Override
-  public boolean deleteDocument(String docId, boolean deleteDocument) {
-    return client.deleteDocument(docId, deleteDocument);
+  public Long addSuggestion(String key, String suggestion) {
+     return search.ftSugAdd(key, suggestion, 1.0);
   }
 
   @Override
-  public Document getDocument(String docId) {
-    return client.getDocument(docId);
+  public Long addSuggestion(String key, String suggestion, double score) {
+    return search.ftSugAdd(key, suggestion, score);
   }
 
   @Override
-  public Document getDocument(String docId, boolean decode) {
-    return client.getDocument(docId, decode);
+  public List<Suggestion> getSuggestion(String key,String prefix) {
+    return this.getSuggestion(key, prefix, AutoCompleteOptions.get());
+  }
+
+  @Override public List<Suggestion> getSuggestion(String key, String prefix, AutoCompleteOptions options) {
+    Gson gson = modulesClient.gsonBuilder().create();
+
+    if (options.isWithScore()) {
+      List<Tuple> suggestions = search.ftSugGetWithScores(key, prefix, options.isFuzzy(), options.getLimit());
+      return suggestions.stream().map(suggestion -> {
+        if (options.isWithPayload()) {
+          String[] keyParts = key.split(":");
+          String payLoadKey = String.format("sugg:payload:%s:%s", keyParts[keyParts.length - 2], keyParts[keyParts.length - 1]);
+          Object payload = template.opsForHash().get(payLoadKey, suggestion);
+          String json = payload != null ? payload.toString() : "{}";
+          Map<String, Object> payloadMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {}.getType());
+          return new Suggestion(suggestion.getElement(), suggestion.getScore(), payloadMap);
+        } else {
+          return new Suggestion(suggestion.getElement(), suggestion.getScore());
+        }
+      }).toList();
+    } else {
+      List<String> suggestions = search.ftSugGet(key, prefix, options.isFuzzy(), options.getLimit());
+      return suggestions.stream().map(suggestion -> {
+        if (options.isWithPayload()) {
+          String[] keyParts = key.split(":");
+          String payLoadKey = String.format("sugg:payload:%s:%s", keyParts[keyParts.length - 2], keyParts[keyParts.length - 1]);
+          Object payload = template.opsForHash().get(payLoadKey, suggestion);
+          String json = payload != null ? payload.toString() : "{}";
+          Map<String, Object> payloadMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {}.getType());
+          return new Suggestion(suggestion, payloadMap);
+        } else {
+          return new Suggestion(suggestion);
+        }
+      }).toList();
+    }
   }
 
   @Override
-  public List<Document> getDocuments(String... docIds) {
-    return client.getDocuments(docIds);
+  public Boolean deleteSuggestion(String key, String entry) {
+    return search.ftSugDel(key, entry);
+  }
+  
+  @Override
+  public Long getSuggestionLength(String key) {
+    return search.ftSugLen(key);
   }
 
   @Override
-  public List<Document> getDocuments(boolean decode, String... docIds) {
-    return client.getDocuments(decode, docIds);
+  public String alterIndex(SchemaField... fields) {
+    return search.ftAlter(index.toString(), fields);
   }
 
   @Override
-  public boolean dropIndex() {
-    return client.dropIndex();
+  public String setConfig(String option, String value) {
+    return search.ftConfigSet(option, value);
   }
 
   @Override
-  public boolean dropIndex(boolean missingOk) {
-    return client.dropIndex(missingOk);
+  public Map<String,String> getConfig(String option) {
+    return search.ftConfigGet(option);
   }
 
   @Override
-  public Long addSuggestion(Suggestion suggestion, boolean increment) {
-    return client.addSuggestion(suggestion, increment);
+  public Map<String, String> getIndexConfig(String option) {
+    return search.ftConfigGet(index.toString(), option);
   }
 
   @Override
-  public List<Suggestion> getSuggestion(String prefix, SuggestionOptions suggestionOptions) {
-    return client.getSuggestion(prefix, suggestionOptions);
+  public String addAlias(String name) {
+    return search.ftAliasAdd(name, index.toString());
   }
 
   @Override
-  public Long deleteSuggestion(String entry) {
-    return client.deleteSuggestion(entry);
+  public String updateAlias(String name) {
+    return search.ftAliasUpdate(name, index.toString());
   }
 
   @Override
-  public Long getSuggestionLength() {
-    return client.getSuggestionLength();
+  public String deleteAlias(String name) {
+    return search.ftAliasDel(name);
   }
 
   @Override
-  public boolean alterIndex(Field... fields) {
-    return client.alterIndex(fields);
-  }
-
-  @Override
-  public boolean setConfig(ConfigOption option, String value) {
-    return client.setConfig(option, value);
-  }
-
-  @Override
-  public String getConfig(ConfigOption option) {
-    return client.getConfig(option);
-  }
-
-  @Override
-  public Map<String, String> getAllConfig() {
-    return client.getAllConfig();
-  }
-
-  @Override
-  public boolean addAlias(String name) {
-    return client.addAlias(name);
-  }
-
-  @Override
-  public boolean updateAlias(String name) {
-    return client.updateAlias(name);
-  }
-
-  @Override
-  public boolean deleteAlias(String name) {
-    return client.deleteAlias(name);
-  }
-
-  @Override
-  public boolean updateSynonym(String synonymGroupId, String... terms) {
-    return client.updateSynonym(synonymGroupId, terms);
+  public String updateSynonym(String synonymGroupId, String... terms) {
+    return search.ftSynUpdate(index.toString(), synonymGroupId, terms);
   }
 
   @Override
   public Map<String, List<String>> dumpSynonym() {
-    return client.dumpSynonym();
+    return search.ftSynDump(index.toString());
   }
 
   @Override
-  public List<String> tagVals(String field) {
-    ArrayList<byte[]> args = new ArrayList<>();
-    args.add(SafeEncoder.encode(index.toString()));
-    args.add(SafeEncoder.encode(field));
-
-    List<String> result = List.of();
-
-    try (Jedis conn = client.connection()) {
-      BinaryClient bc = conn.getClient();
-      bc.sendCommand(Command.FT_TAGVALS, args.toArray(new byte[args.size()][]));
-      List<Object> resp = bc.getObjectMultiBulkReply();
-
-      result = resp.stream() //
-          .map(x -> x instanceof Long ? String.valueOf(x) : SafeEncoder.encode((byte[]) x)) //
-          .collect(Collectors.toList());
-    }
-
-    return result;
-
+  public Set<String> tagVals(String field) {
+    return search.ftTagVals(index.toString(), field);
   }
+
+
 
 }

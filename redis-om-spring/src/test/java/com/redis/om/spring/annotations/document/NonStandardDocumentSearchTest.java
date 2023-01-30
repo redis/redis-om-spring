@@ -1,32 +1,29 @@
 package com.redis.om.spring.annotations.document;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.util.List;
-import java.util.Optional;
-
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.annotations.document.fixtures.Custom;
+import com.redis.om.spring.annotations.document.fixtures.CustomRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.Custom;
-import com.redis.om.spring.annotations.document.fixtures.CustomRepository;
+import java.util.List;
+import java.util.Optional;
 
-class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@SuppressWarnings("SpellCheckingInspection") class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
   @Autowired
   CustomRepository repository;
 
-  @Autowired
-  RedisTemplate<String, String> template;
+  @Autowired StringRedisTemplate template;
 
-  long id1;
-  long id2;
-  long id3;
+  private long id1;
+  private long id2;
 
   @BeforeEach
   void loadTestData() {
@@ -39,7 +36,6 @@ class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
 
     id1 = c1.getId();
     id2 = c2.getId();
-    id3 = c3.getId();
   }
 
   @AfterEach

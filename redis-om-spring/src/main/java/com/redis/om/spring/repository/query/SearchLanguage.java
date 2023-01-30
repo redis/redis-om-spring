@@ -1,7 +1,7 @@
 package com.redis.om.spring.repository.query;
 
 /**
- * From https://github.com/RediSearch/RediSearch/blob/master/src/language.c
+ * From <a href="https://github.com/RediSearch/RediSearch/blob/master/src/language.c">...</a>
  * TODO: potentially move to Jedis
  */
 public enum SearchLanguage {

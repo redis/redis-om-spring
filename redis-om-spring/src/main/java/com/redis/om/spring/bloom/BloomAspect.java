@@ -22,7 +22,7 @@ import com.redis.om.spring.ops.pds.BloomOperations;
 @Aspect
 @Component
 public class BloomAspect implements Ordered {
-  private BloomOperations<String> ops;
+  private final BloomOperations<String> ops;
   private static final Log logger = LogFactory.getLog(BloomAspect.class);
 
   public BloomAspect(BloomOperations<String> ops) {

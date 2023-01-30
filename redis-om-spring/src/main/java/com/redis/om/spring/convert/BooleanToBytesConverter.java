@@ -18,6 +18,6 @@ public class BooleanToBytesConverter implements Converter<Boolean, byte[]> {
 
   @Override
   public byte[] convert(Boolean source) {
-    return source.booleanValue() ? trueAsBytes : falseAsBytes;
+    return Boolean.TRUE.equals(source) ? trueAsBytes : falseAsBytes;
   }
 }

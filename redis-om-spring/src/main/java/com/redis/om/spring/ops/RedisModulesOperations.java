@@ -1,6 +1,6 @@
 package com.redis.om.spring.ops;
 
-import org.springframework.data.redis.core.RedisTemplate;
+import com.google.gson.GsonBuilder;
 
 import com.redis.om.spring.client.RedisModulesClient;
 import com.redis.om.spring.ops.json.JSONOperations;
@@ -15,23 +15,26 @@ import com.redis.om.spring.ops.pds.TopKOperations;
 import com.redis.om.spring.ops.pds.TopKOperationsImpl;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.ops.search.SearchOperationsImpl;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 public class RedisModulesOperations<K> {
 
-  private RedisModulesClient client;
-  private RedisTemplate<?, ?> template;
+  private final GsonBuilder gsonBuilder;
+  private final RedisModulesClient client;
+  private final StringRedisTemplate template;
 
-  public RedisModulesOperations(RedisModulesClient client, RedisTemplate<?, ?> template) {
+  public RedisModulesOperations(RedisModulesClient client, StringRedisTemplate template, GsonBuilder gsonBuilder) {
     this.client = client;
     this.template = template;
+    this.gsonBuilder = gsonBuilder;
   }
 
   public JSONOperations<K> opsForJSON() {
-    return new JSONOperationsImpl<>(client);
+    return new JSONOperationsImpl<>(client, gsonBuilder);
   }
 
   public SearchOperations<K> opsForSearch(K index) {
-    return new SearchOperationsImpl<>(index, client);
+    return new SearchOperationsImpl<>(index, client, template);
   }
 
   public BloomOperations<K> opsForBloom() {
@@ -50,7 +53,7 @@ public class RedisModulesOperations<K> {
     return new TopKOperationsImpl<>(client);
   }
 
-  public RedisTemplate<?, ?> getTemplate() {
+  public StringRedisTemplate getTemplate() {
     return template;
   }
 

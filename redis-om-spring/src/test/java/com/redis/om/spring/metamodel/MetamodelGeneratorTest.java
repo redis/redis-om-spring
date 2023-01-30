@@ -1,27 +1,23 @@
 package com.redis.om.spring.metamodel;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Locale;
-import java.util.stream.Collectors;
-
-import javax.tools.JavaFileObject;
-
-import com.redis.om.spring.metamodel.indexed.TextField;
-import com.redis.om.spring.metamodel.indexed.TextTagField;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-
 import com.karuslabs.elementary.Results;
 import com.karuslabs.elementary.junit.JavacExtension;
 import com.karuslabs.elementary.junit.annotations.Classpath;
 import com.karuslabs.elementary.junit.annotations.Options;
 import com.karuslabs.elementary.junit.annotations.Processors;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-@ExtendWith(JavacExtension.class)
+import javax.tools.JavaFileObject;
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
+@SuppressWarnings("SpellCheckingInspection") @ExtendWith(JavacExtension.class)
 @Options("-Werror")
 @Processors({ MetamodelGenerator.class })
 class MetamodelGeneratorTest {
@@ -274,7 +270,7 @@ class MetamodelGeneratorTest {
 
   @Test
   @Classpath("data.metamodel.ValidDocumentUnindexedWoPackage")
-  void testValidDocumentUnindexedWithoutPackage(Results results) throws IOException {
+  void testValidDocumentUnindexedWithoutPackage(Results results) {
     assertThat(results.generated).hasSize(1);
     List<String> warnings = getWarningStrings(results);
     assertAll( //
@@ -291,7 +287,7 @@ class MetamodelGeneratorTest {
 
   @Test
   @Classpath("data.metamodel.BadBean")
-  void testValidDocumentInBadJavaBean(Results results) throws IOException {
+  void testValidDocumentInBadJavaBean(Results results) {
     assertThat(results.generated).hasSize(1);
 
     List<String> errors = getErrorStrings(results);

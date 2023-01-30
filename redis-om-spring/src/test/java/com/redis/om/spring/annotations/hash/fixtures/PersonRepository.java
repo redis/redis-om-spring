@@ -1,21 +1,19 @@
 package com.redis.om.spring.annotations.hash.fixtures;
 
+import com.redis.om.spring.annotations.Aggregation;
+import com.redis.om.spring.annotations.Apply;
+import com.redis.om.spring.annotations.Load;
+import com.redis.om.spring.annotations.Query;
+import com.redis.om.spring.autocomplete.Suggestion;
+import com.redis.om.spring.repository.RedisEnhancedRepository;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import redis.clients.jedis.search.aggr.AggregationResult;
+
 import java.util.List;
 import java.util.Set;
 
-import com.redis.om.spring.annotations.Apply;
-import com.redis.om.spring.annotations.Load;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
-
-import com.redis.om.spring.annotations.Aggregation;
-import com.redis.om.spring.annotations.Query;
-import com.redis.om.spring.repository.RedisEnhancedRepository;
-
-import io.redisearch.AggregationResult;
-import io.redisearch.Suggestion;
-
-@Repository
+@SuppressWarnings({ "unused", "SpellCheckingInspection", "SpringDataMethodInconsistencyInspection" }) @Repository
 public interface PersonRepository extends RedisEnhancedRepository<Person, String>, EmailTaken {
   boolean existsByEmail(String email);
 
@@ -35,6 +33,6 @@ public interface PersonRepository extends RedisEnhancedRepository<Person, String
   // com.redis.om.spring.annotations.hash.fixtures.PersonIdx "*"
   // LOAD 1 name
   // APPLY upper(@name) AS upcasedName
-  @Aggregation(value = "*", load = { @Load(property = "name") }, apply = { @Apply(expression = "upper(@name)", alias = "upcasedName") })
+  @Aggregation(load = { @Load(property = "name") }, apply = { @Apply(expression = "upper(@name)", alias = "upcasedName") })
   AggregationResult allNamesInUppercase();
 }

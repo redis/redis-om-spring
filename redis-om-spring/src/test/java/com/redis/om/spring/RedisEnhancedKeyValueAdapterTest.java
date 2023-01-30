@@ -1,33 +1,31 @@
 package com.redis.om.spring;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import java.time.LocalDate;
-import java.util.Collections;
-import java.util.List;
-
+import com.redis.om.spring.annotations.hash.fixtures.Company;
+import com.redis.om.spring.annotations.hash.fixtures.CompanyRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.geo.Point;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.convert.Bucket;
 import org.springframework.data.redis.core.convert.RedisData;
 
-import com.redis.om.spring.annotations.hash.fixtures.Company;
-import com.redis.om.spring.annotations.hash.fixtures.CompanyRepository;
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.List;
 
-class RedisEnhancedKeyValueAdapterTest extends AbstractBaseEnhancedRedisTest {
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@SuppressWarnings("SpellCheckingInspection") class RedisEnhancedKeyValueAdapterTest extends AbstractBaseEnhancedRedisTest {
 
   @Autowired
   @Qualifier("redisCustomKeyValueTemplate")
   CustomRedisKeyValueTemplate kvTemplate;
   
-  @Autowired
-  RedisTemplate<String, String> template;
+  @Autowired StringRedisTemplate template;
   
   RedisEnhancedKeyValueAdapter adapter;
 
@@ -60,10 +58,10 @@ class RedisEnhancedKeyValueAdapterTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testGetAllOf() {
-    assertEquals(2, repository.count());
     Iterable<Company> companies = adapter.getAllOf("com.redis.om.spring.annotations.hash.fixtures.Company",
         Company.class);
     assertAll( //
+        () -> assertThat(repository.count()).isEqualTo(2),
         () -> assertThat(companies).hasSize(2) //
     );
   }

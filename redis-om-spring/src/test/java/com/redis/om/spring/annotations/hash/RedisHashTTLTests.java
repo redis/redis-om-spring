@@ -1,23 +1,17 @@
 package com.redis.om.spring.annotations.hash;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.annotations.hash.fixtures.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
-
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.hash.fixtures.ExpiringPerson;
-import com.redis.om.spring.annotations.hash.fixtures.ExpiringPersonDifferentTimeUnit;
-import com.redis.om.spring.annotations.hash.fixtures.ExpiringPersonDifferentTimeUnitRepository;
-import com.redis.om.spring.annotations.hash.fixtures.ExpiringPersonRepository;
-import com.redis.om.spring.annotations.hash.fixtures.ExpiringPersonWithDefault;
-import com.redis.om.spring.annotations.hash.fixtures.ExpiringPersonWithDefaultRepository;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.util.List;
 
-class RedisHashTTLTests extends AbstractBaseEnhancedRedisTest {
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SuppressWarnings("SpellCheckingInspection") class RedisHashTTLTests extends AbstractBaseEnhancedRedisTest {
   @Autowired
   ExpiringPersonWithDefaultRepository withDefaultrepository;
   
@@ -27,8 +21,7 @@ class RedisHashTTLTests extends AbstractBaseEnhancedRedisTest {
   @Autowired
   ExpiringPersonDifferentTimeUnitRepository withTTLwTimeUnitAnnotationRepository;
   
-  @Autowired
-  RedisTemplate<String, String> template;
+  @Autowired StringRedisTemplate template;
   
   @BeforeEach
   void cleanUp() {

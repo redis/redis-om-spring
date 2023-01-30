@@ -20,20 +20,17 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
-public class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
+@SuppressWarnings("SpellCheckingInspection") class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
   @Autowired GameRepository repository;
   @Autowired Gson gson;
 
   @BeforeEach void beforeEach() throws IOException {
     // Load Sample Docs
     if (repository.count() == 0) {
-      Reader reader = null;
-      try {
-        reader = Files.newBufferedReader(Paths.get("src/test/resources/data/games.json"));
-        List<Game> entities = gson.fromJson(reader, new TypeToken<List<Game>>() {}.getType());
+      try (Reader reader = Files.newBufferedReader(Paths.get("src/test/resources/data/games.json"))) {
+        List<Game> entities = gson.fromJson(reader, new TypeToken<List<Game>>() {
+        }.getType());
         repository.saveAll(entities);
-      } finally {
-        reader.close();
       }
     }
   }
@@ -66,7 +63,7 @@ public class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
         { "Case Logic", "9.99" }, { "Neewer", "9.71" } //
     };
     var result = repository.minPricesContainingSony();
-    assertThat(result.totalResults).isEqualTo(27);
+    assertThat(result.getTotalResults()).isEqualTo(27);
 
     IntStream.range(0, expectedData.length - 1).forEach(i -> {
       var row = result.getRow(i);
@@ -82,7 +79,7 @@ public class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
         { "Oceantree", "12.45" } //
     };
     var result = repository.maxPricesContainingSony();
-    assertThat(result.totalResults).isEqualTo(27);
+    assertThat(result.getTotalResults()).isEqualTo(27);
 
     IntStream.range(0, expectedData.length - 1).forEach(i -> {
       var row = result.getRow(i);
@@ -99,7 +96,7 @@ public class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
     };
 
     var result = repository.top5countDistinctByBrand();
-    assertThat(result.totalResults).isEqualTo(293);
+    assertThat(result.getTotalResults()).isEqualTo(293);
 
     IntStream.range(0, expectedData.length - 1).forEach(i -> {
       var row = result.getRow(i);
@@ -115,12 +112,10 @@ public class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
     };
 
     var result = repository.priceQuantiles();
-    assertThat(result.totalResults).isEqualTo(293);
+    assertThat(result.getTotalResults()).isEqualTo(293);
 
     var row = result.getRow(0);
-    IntStream.range(0, expectedData.length - 1).forEach(i -> {
-      assertThat(row.getString(expectedData[i][0])).isEqualTo(expectedData[i][1]);
-    });
+    IntStream.range(0, expectedData.length - 1).forEach(i -> assertThat(row.getString(expectedData[i][0])).isEqualTo(expectedData[i][1]));
   }
 
   @Test void testPriceStdDev() {
@@ -148,7 +143,7 @@ public class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
     };
 
     var result = repository.priceStdDev();
-    assertThat(result.totalResults).isEqualTo(293);
+    assertThat(result.getTotalResults()).isEqualTo(293);
 
     IntStream.range(0, expectedData.length - 1).forEach(i -> {
       var row = result.getRow(i);
@@ -167,17 +162,15 @@ public class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
     };
 
     var result = repository.parseTime();
-    assertThat(result.totalResults).isEqualTo(293);
+    assertThat(result.getTotalResults()).isEqualTo(293);
 
     var row = result.getRow(0);
-    IntStream.range(0, expectedData.length - 1).forEach(i -> {
-      assertThat(row.getString(expectedData[i][0])).isEqualTo(expectedData[i][1]);
-    });
+    IntStream.range(0, expectedData.length - 1).forEach(i -> assertThat(row.getString(expectedData[i][0])).isEqualTo(expectedData[i][1]));
   }
 
   @Test void testRandomSample() {
     var result = repository.randomSample();
-    assertThat(result.totalResults).isEqualTo(293);
+    assertThat(result.getTotalResults()).isEqualTo(293);
 
     result.getResults().forEach(row -> {
       assertThat(row).isNotNull()//
@@ -198,12 +191,10 @@ public class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
     };
 
     var result = repository.timeFunctions();
-    assertThat(result.totalResults).isEqualTo(1);
+    assertThat(result.getTotalResults()).isEqualTo(1);
 
     var row = result.getRow(0);
-    IntStream.range(0, expectedData.length - 1).forEach(i -> {
-      assertThat(row.getString(expectedData[i][0])).isEqualTo(expectedData[i][1]);
-    });
+    IntStream.range(0, expectedData.length - 1).forEach(i -> assertThat(row.getString(expectedData[i][0])).isEqualTo(expectedData[i][1]));
   }
 
   @Test void testStringFormat() {
@@ -234,7 +225,7 @@ public class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
     };
 
     var result = repository.stringFormat();
-    assertThat(result.totalResults).isEqualTo(2218);
+    assertThat(result.getTotalResults()).isEqualTo(2218);
 
     IntStream.range(0, expectedData.length - 1).forEach(i -> {
       var row = result.getRow(i);
@@ -256,7 +247,7 @@ public class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
     };
 
     var result = repository.sumPrice();
-    assertThat(result.totalResults).isEqualTo(293);
+    assertThat(result.getTotalResults()).isEqualTo(293);
 
     IntStream.range(0, expectedData.length - 1).forEach(i -> {
       var row = result.getRow(i);
@@ -270,7 +261,7 @@ public class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
 
   @Test void testFilters() {
     var result = repository.filters();
-    assertThat(result.totalResults).isEqualTo(293);
+    assertThat(result.getTotalResults()).isEqualTo(293);
 
     IntStream.range(0, result.getResults().size() - 1).forEach(i -> {
       var row = result.getRow(i);
@@ -280,7 +271,7 @@ public class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
 
   @Test void testToList() {
     var result = repository.toList();
-    assertThat(result.totalResults).isEqualTo(293);
+    assertThat(result.getTotalResults()).isEqualTo(293);
 
     IntStream.range(0, result.getResults().size() - 1).forEach(i -> {
       var row = result.getRow(i);
@@ -304,13 +295,11 @@ public class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
     };
 
     var result = repository.sortByMany();
-    assertThat(result.totalResults).isEqualTo(293);
+    assertThat(result.getTotalResults()).isEqualTo(293);
 
     IntStream.range(0, expectedData.length - 1).forEach(i -> {
       var row = result.getRow(i);
-      IntStream.range(0, expectedData[i].length - 1).forEach(j -> {
-        assertThat(row.getString(expectedData[i][j][0])).isEqualTo(expectedData[i][j][1].toLowerCase());
-      });
+      IntStream.range(0, expectedData[i].length - 1).forEach(j -> assertThat(row.getString(expectedData[i][j][0])).isEqualTo(expectedData[i][j][1].toLowerCase()));
     });
   }
 
@@ -320,13 +309,11 @@ public class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
         { { "title", "Sony PSP Slim &amp; Lite 2000 Console" }, { "price", "695.8" } }, //
     };
     var result = repository.loadWithSort();
-    assertThat(result.totalResults).isEqualTo(2265);
+    assertThat(result.getTotalResults()).isEqualTo(2265);
 
     IntStream.range(0, expectedData.length - 1).forEach(i -> {
       var row = result.getRow(i);
-      IntStream.range(0, expectedData[i].length - 1).forEach(j -> {
-        assertThat(row.getString(expectedData[i][j][0])).isEqualTo(expectedData[i][j][1]);
-      });
+      IntStream.range(0, expectedData[i].length - 1).forEach(j -> assertThat(row.getString(expectedData[i][j][0])).isEqualTo(expectedData[i][j][1]));
     });
   }
 
@@ -338,13 +325,11 @@ public class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
         { { "__key", "games:B00006IZIL" }, { "price", "759.12" } }, //
     };
     var result = repository.loadWithDocId();
-    assertThat(result.totalResults).isEqualTo(2265);
+    assertThat(result.getTotalResults()).isEqualTo(2265);
 
     IntStream.range(0, expectedData.length - 1).forEach(i -> {
       var row = result.getRow(i);
-      IntStream.range(0, expectedData[i].length - 1).forEach(j -> {
-        assertThat(row.getString(expectedData[i][j][0])).isEqualTo(expectedData[i][j][1]);
-      });
+      IntStream.range(0, expectedData[i].length - 1).forEach(j -> assertThat(row.getString(expectedData[i][j][0])).isEqualTo(expectedData[i][j][1]));
     });
   }
 }

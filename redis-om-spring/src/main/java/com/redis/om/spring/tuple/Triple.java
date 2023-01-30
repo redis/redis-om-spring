@@ -18,17 +18,13 @@ public interface Triple<E1, E2, E3> extends Tuple {
   }
 
   default Object get(int index) {
-    switch (index) {
-      case 0:
-        return getFirst();
-      case 1:
-        return getSecond();
-      case 2:
-        return getThird();
-      default:
-        throw new IndexOutOfBoundsException(
-            String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
-    }
+    return switch (index) {
+      case 0 -> getFirst();
+      case 1 -> getSecond();
+      case 2 -> getThird();
+      default -> throw new IndexOutOfBoundsException(
+          String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
+    };
   }
 
   static <E1, E2, E3> FirstAccessor<Triple<E1, E2, E3>, E1> getFirstGetter() {

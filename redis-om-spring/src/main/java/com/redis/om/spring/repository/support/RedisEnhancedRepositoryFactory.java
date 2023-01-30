@@ -173,13 +173,13 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
    */
   private static class RedisEnhancedQueryLookupStrategy implements QueryLookupStrategy {
 
-    private QueryMethodEvaluationContextProvider evaluationContextProvider;
-    private KeyValueOperations keyValueOperations;
-    private RedisModulesOperations<?> rmo;
-    private RedisOperations<?, ?> redisOperations;
+    private final QueryMethodEvaluationContextProvider evaluationContextProvider;
+    private final KeyValueOperations keyValueOperations;
+    private final RedisModulesOperations<?> rmo;
+    private final RedisOperations<?, ?> redisOperations;
 
-    private Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
-    private Class<? extends RepositoryQuery> repositoryQueryType;
+    private final Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
+    private final Class<? extends RepositoryQuery> repositoryQueryType;
 
     /**
      * @param key

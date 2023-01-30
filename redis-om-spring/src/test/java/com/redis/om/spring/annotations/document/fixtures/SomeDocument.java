@@ -1,11 +1,12 @@
 package com.redis.om.spring.annotations.document.fixtures;
 
-import com.redis.om.spring.annotations.*;
-import org.springframework.data.annotation.Id;
-
+import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.annotations.Indexed;
+import com.redis.om.spring.annotations.Searchable;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import org.springframework.data.annotation.Id;
 
 import java.time.LocalDateTime;
 
@@ -21,7 +22,7 @@ import java.time.LocalDateTime;
   @Searchable private String objectStorageKey;
   @Searchable private String searchableContent;
 
-  public enum Format {
+  @SuppressWarnings("unused") public enum Format {
     pdf,
     word,
     text,
@@ -29,7 +30,7 @@ import java.time.LocalDateTime;
     jpeg
   }
 
-  public enum Source {
+  @SuppressWarnings("unused") public enum Source {
     sourceA,
     sourceB
   }

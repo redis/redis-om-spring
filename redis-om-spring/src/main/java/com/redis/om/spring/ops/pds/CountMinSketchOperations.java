@@ -86,5 +86,5 @@ public interface CountMinSketchOperations<K> {
    * @param key The name of the sketch
    * @return A Map with width, depth and total count.
    */
-  Map<String, Long> cmsInfo(K key);
+  Map<String, Object> cmsInfo(K key);
 }
