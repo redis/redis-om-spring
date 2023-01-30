@@ -37,6 +37,7 @@ jobs:
         run: |
           curl -s https://raw.githubusercontent.com/codecov/codecov-bash/master/codecov
       - name: deploy
+        working-directory: redis-om-spring
         run: |
           mvn --no-transfer-progress \
             -DskipTests\
