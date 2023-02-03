@@ -7,15 +7,10 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.redis.om.spring.annotations.*;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -32,14 +27,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 
 import com.google.gson.annotations.JsonAdapter;
-import com.redis.om.spring.annotations.Document;
-import com.redis.om.spring.annotations.DocumentScore;
-import com.redis.om.spring.annotations.GeoIndexed;
-import com.redis.om.spring.annotations.Indexed;
-import com.redis.om.spring.annotations.NumericIndexed;
-import com.redis.om.spring.annotations.Searchable;
-import com.redis.om.spring.annotations.TagIndexed;
-import com.redis.om.spring.annotations.TextIndexed;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.query.QueryUtils;
@@ -51,6 +38,8 @@ import redis.clients.jedis.search.Schema.Field;
 import redis.clients.jedis.search.Schema.FieldType;
 import redis.clients.jedis.search.Schema.TagField;
 import redis.clients.jedis.search.Schema.TextField;
+import redis.clients.jedis.search.Schema.VectorField;
+import redis.clients.jedis.search.Schema.VectorField.VectorAlgo;
 
 @Component
 public class RediSearchIndexer {
@@ -335,6 +324,11 @@ public class RediSearchIndexer {
       NumericIndexed ni = field.getAnnotation(NumericIndexed.class);
       fields.add(indexAsNumericFieldFor(field, isDocument, prefix, ni));
     }
+    // Vector
+    else if (field.isAnnotationPresent(VectorIndexed.class)) {
+      VectorIndexed vi = field.getAnnotation(VectorIndexed.class);
+      fields.add(indexAsVectorFieldFor(field, isDocument, prefix, vi));
+    }
 
     return fields;
   }
@@ -355,6 +349,49 @@ public class RediSearchIndexer {
     }
 
     return new TagField(fieldName, ti.separator(), false);
+  }
+
+  private Field indexAsVectorFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, VectorIndexed vi) {
+    TypeInformation<?> typeInfo = TypeInformation.of(field.getType());
+    String fieldPrefix = getFieldPrefix(prefix, isDocument);
+
+    String fieldPostfix = (isDocument && typeInfo.isCollectionLike() && !field.isAnnotationPresent(JsonAdapter.class))
+        ? "[*]"
+        : "";
+    String fieldName =fieldPrefix + field.getName() + fieldPostfix;
+
+    Map<String, Object> attributes = new HashMap<>();
+    attributes.put("TYPE", vi.type().toString());
+    attributes.put("DIM", vi.dimension());
+    attributes.put("DISTANCE_METRIC", vi.distanceMetric());
+
+    if (vi.algorithm().equals(VectorAlgo.FLAT)) {
+      // Optional parameters for FLAT
+      if (vi.initialCapacity() > 0) {
+        attributes.put("INITIAL_CAP", vi.initialCapacity());
+      }
+      if (vi.blockSize() > 0) {
+        attributes.put("BLOCK_SIZE", vi.blockSize());
+      }
+    }
+
+    if (vi.algorithm().equals(VectorAlgo.HNSW)) {
+      // Optional parameters for HNSW
+      attributes.put("M", vi.m());
+      attributes.put("EF_CONSTRUCTION", vi.efConstruction());
+      attributes.put("EF_RUNTIME", vi.efRuntime());
+      attributes.put("EPSILON", vi.epsilon());
+    }
+
+    VectorField vectorField = new VectorField(fieldName, vi.algorithm(), attributes);
+
+    if (!ObjectUtils.isEmpty(vi.alias())) {
+      vectorField.as(vi.alias());
+    } else {
+      vectorField.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
+    }
+
+    return vectorField;
   }
 
   private Field indexAsTagFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, boolean sortable,

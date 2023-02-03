@@ -35,7 +35,7 @@ public abstract class AbstractBaseOMTest {
   protected CustomRedisKeyValueTemplate kvTemplate;
 
   @Autowired
-  protected RediSearchIndexer indexer; // = (RediSearchIndexer) ac.getBean("rediSearchIndexer");
+  protected RediSearchIndexer indexer;
 
   @DynamicPropertySource
   static void properties(DynamicPropertyRegistry registry) {
