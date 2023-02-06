@@ -1,37 +1,34 @@
 package com.redis.om.spring.annotations.document;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.annotations.document.fixtures.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.Point;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.Company;
-import com.redis.om.spring.annotations.document.fixtures.Custom;
-import com.redis.om.spring.annotations.document.fixtures.Custom$;
-import com.redis.om.spring.annotations.document.fixtures.CustomRepository;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+
+@SuppressWarnings("SpellCheckingInspection")
 class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
   @Autowired
   CustomRepository repository;
 
   @Autowired
-  RedisTemplate<String, String> template;
+  CompanyWithLongIdRepository companyRepo;
 
-  long id1;
-  long id2;
-  long id3;
+  @Autowired
+  StringRedisTemplate template;
+
+  private long id1;
+  private long id2;
 
   @BeforeEach
   void loadTestData() {
@@ -44,7 +41,6 @@ class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
 
     id1 = c1.getId();
     id2 = c2.getId();
-    id3 = c3.getId();
   }
 
   @AfterEach
@@ -88,7 +84,7 @@ class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
     repository.deleteAll();
     assertThat(repository.count()).isZero();
   }
-  
+
   @Test
   void testUpdateSingleField() {
     Optional<Custom> maybeC1 = repository.findById(id1);
@@ -100,6 +96,20 @@ class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
     assertAll( //
         () -> assertTrue(maybeC1After.isPresent()), () -> assertEquals("fufoo", maybeC1After.get().getName()) //
     );
+  }
+
+  @Test
+  void testSaveAllWithNonStringKey() {
+    CompanyWithLongId redis = CompanyWithLongId.of("RedisInc", 2011, LocalDate.of(2021, 5, 1),
+        new Point(-122.066540, 37.377690),
+        "stack@redis.com");
+
+    CompanyWithLongId microsoft = CompanyWithLongId.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
+        new Point(-122.124500, 47.640160), "research@microsoft.com");
+
+    companyRepo.saveAll(List.of(redis, microsoft));
+
+    assertEquals(2, companyRepo.count());
   }
 
 }
