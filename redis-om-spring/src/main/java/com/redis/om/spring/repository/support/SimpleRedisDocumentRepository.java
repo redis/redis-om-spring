@@ -164,7 +164,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
         KeyValuePersistentEntity<?, ?> keyValueEntity = mappingConverter.getMappingContext()
             .getRequiredPersistentEntity(ClassUtils.getUserClass(entity));
         Object id = isNew ? generator.generateIdentifierOfType(keyValueEntity.getIdProperty().getTypeInformation())
-            : (String) keyValueEntity.getPropertyAccessor(entity).getProperty(keyValueEntity.getIdProperty());
+            : keyValueEntity.getPropertyAccessor(entity).getProperty(keyValueEntity.getIdProperty());
         keyValueEntity.getPropertyAccessor(entity).setProperty(keyValueEntity.getIdProperty(), id);
 
         String keyspace = keyValueEntity.getKeySpace();
