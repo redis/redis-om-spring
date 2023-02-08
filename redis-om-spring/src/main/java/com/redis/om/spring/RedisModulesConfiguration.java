@@ -44,7 +44,7 @@ import java.util.Set;
 import static com.redis.om.spring.util.ObjectUtils.getBeanDefinitionsFor;
 
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties(RedisProperties.class)
+@EnableConfigurationProperties({RedisProperties.class, RedisOMSpringProperties.class})
 @EnableAspectJAutoProxy
 @ComponentScan("com.redis.om.spring.bloom")
 @ComponentScan("com.redis.om.spring.autocomplete")
@@ -112,17 +112,17 @@ public class RedisModulesConfiguration implements CachingConfigurer {
   RedisJSONKeyValueAdapter getRedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps,
       RedisModulesOperations<?> redisModulesOperations, RedisMappingContext mappingContext,
       RediSearchIndexer keyspaceToIndexMap,
-      GsonBuilder gsonBuilder) {
-    return new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap, gsonBuilder);
+      GsonBuilder gsonBuilder, RedisOMSpringProperties properties) {
+    return new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap, gsonBuilder, properties);
   }
 
   @Bean(name = "redisJSONKeyValueTemplate")
   public CustomRedisKeyValueTemplate getRedisJSONKeyValueTemplate(RedisOperations<?, ?> redisOps,
       RedisModulesOperations<?> redisModulesOperations, RedisMappingContext mappingContext,
       RediSearchIndexer keyspaceToIndexMap,
-      GsonBuilder gsonBuilder) {
+      GsonBuilder gsonBuilder, RedisOMSpringProperties properties) {
     return new CustomRedisKeyValueTemplate(
-        new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap, gsonBuilder),
+        new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap, gsonBuilder, properties),
         mappingContext);
   }
 
