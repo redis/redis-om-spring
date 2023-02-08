@@ -20,7 +20,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.autoconfigure.gson.GsonBuilderCustomizer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.context.event.ContextRefreshedEvent;
@@ -49,7 +48,7 @@ import static com.redis.om.spring.util.ObjectUtils.getBeanDefinitionsFor;
 @ComponentScan("com.redis.om.spring.bloom")
 @ComponentScan("com.redis.om.spring.autocomplete")
 @ComponentScan("com.redis.om.spring.metamodel")
-public class RedisModulesConfiguration implements CachingConfigurer {
+public class RedisModulesConfiguration {
 
   private static final Log logger = LogFactory.getLog(RedisModulesConfiguration.class);
 
