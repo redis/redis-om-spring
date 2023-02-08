@@ -46,6 +46,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private final RedisModulesOperations<String> modulesOperations;
   private final RediSearchIndexer indexer;
   private final Gson gson;
+  private final RedisOMSpringProperties redisOMSpringProperties;
 
   /**
    * Creates new {@link RedisKeyValueAdapter} with default
@@ -58,7 +59,8 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @SuppressWarnings("unchecked")
   public RedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisModulesOperations<?> rmo,
-      RedisMappingContext mappingContext, RediSearchIndexer keyspaceToIndexMap, GsonBuilder gsonBuilder) {
+      RedisMappingContext mappingContext, RediSearchIndexer keyspaceToIndexMap, GsonBuilder gsonBuilder,
+      RedisOMSpringProperties redisOMSpringProperties) {
     super(redisOps, mappingContext, new RedisOMCustomConversions());
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.redisJSONOperations = modulesOperations.opsForJSON();
@@ -66,6 +68,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     this.mappingContext = mappingContext;
     this.indexer = keyspaceToIndexMap;
     this.gson = gsonBuilder.create();
+    this.redisOMSpringProperties = redisOMSpringProperties;
   }
 
   /*
@@ -136,9 +139,11 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
       Query query = new Query("*");
       offset = Math.max(0, offset);
-      if (rows > 0) {
-        query.limit(Math.toIntExact(offset), rows);
+      int limit = rows;
+      if (limit <= 0) {
+        limit = redisOMSpringProperties.getRepository().getQuery().getLimit();
       }
+      query.limit(Math.toIntExact(offset), limit);
       SearchResult searchResult = searchOps.search(query);
 
       result = searchResult.getDocuments().stream()
