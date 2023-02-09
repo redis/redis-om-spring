@@ -80,14 +80,26 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public SearchStream<E> filter(String freeText) {
-    rootNode = new Node() {
-      @Override public String toString(ParenMode mode) {
+    Node freeTextNode = new Node() {
+      @Override
+      public String toString() {
         return freeText;
       }
-      @Override public String toString() {
-        return freeText;
+
+      @Override
+      public String toString(ParenMode mode) {
+        switch (mode) {
+          case NEVER:
+            return toString();
+          case ALWAYS:
+          case DEFAULT:
+            return String.format("(%s)", toString());
+          default:
+            throw new IllegalArgumentException();
+        }
       }
     };
+    rootNode = (rootNode.toString().isBlank()) ? freeTextNode : QueryBuilder.intersect(rootNode, freeTextNode);
     return this;
   }
 
@@ -97,7 +109,6 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   private Node processPredicate(Predicate<?> predicate) {
     if (SearchFieldPredicate.class.isAssignableFrom(predicate.getClass())) {
-      @SuppressWarnings("unchecked")
       SearchFieldPredicate<? super E, ?> p = (SearchFieldPredicate<? super E, ?>) predicate;
       return processPredicate(p);
     }
@@ -336,7 +347,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     return this;
   }
 
-  @Override public void close() {
+  @Override
+  public void close() {
     if (closeHandler == null) {
       resolveStream().close();
     } else {
@@ -429,13 +441,15 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     throw new UnsupportedOperationException("mapToLabelledMaps is not supported on a SearchStream");
   }
 
-  @Override public <R> AggregationStream<R> groupBy(MetamodelField<E, ?>... fields) {
+  @Override
+  public <R> AggregationStream<R> groupBy(MetamodelField<E, ?>... fields) {
     this.close();
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
     return new AggregationStreamImpl<>(searchIndex, modulesOperations, query, fields);
   }
 
-  @Override public <R> AggregationStream<R> apply(String expression, String alias) {
+  @Override
+  public <R> AggregationStream<R> apply(String expression, String alias) {
     this.close();
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
     AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, query);
@@ -443,7 +457,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     return aggregationStream;
   }
 
-  @Override public <R> AggregationStream<R> load(MetamodelField<E, ?>... fields) {
+  @Override
+  public <R> AggregationStream<R> load(MetamodelField<E, ?>... fields) {
     this.close();
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
     AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, query);
@@ -451,20 +466,22 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     return aggregationStream;
   }
 
-  @Override public Optional<E> min(NumericField<E, ?> field) {
+  @Override
+  public Optional<E> min(NumericField<E, ?> field) {
     List<Pair<String, ?>> minByField = this //
         .load(new MetamodelField<E, String>("__key")) //
-        .sorted(Order.asc("@"+field.getSearchAlias()))
+        .sorted(Order.asc("@" + field.getSearchAlias()))
         .limit(1) //
         .toList(String.class, Double.class);
 
     return minByField.isEmpty() ? Optional.empty() : Optional.of(json.get(minByField.get(0).getFirst(), entityClass));
   }
 
-  @Override public Optional<E> max(NumericField<E, ?> field) {
+  @Override
+  public Optional<E> max(NumericField<E, ?> field) {
     List<Pair<String, ?>> maxByField = this //
         .load(new MetamodelField<E, String>("__key")) //
-        .sorted(1, Order.desc("@"+field.getSearchAlias()))
+        .sorted(1, Order.desc("@" + field.getSearchAlias()))
         .limit(1) //
         .toList(String.class, Double.class);
 
