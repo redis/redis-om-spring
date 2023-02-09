@@ -93,7 +93,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       public String toString(Parenthesize mode) {
         return switch(mode) {
           case NEVER -> toString();
-          case ALWAYS, DEFAULT -> String.format("%s%s%s", "(", toString(), ")");
+          case ALWAYS, DEFAULT -> String.format("(%s)", toString());
         };
       }
     };
