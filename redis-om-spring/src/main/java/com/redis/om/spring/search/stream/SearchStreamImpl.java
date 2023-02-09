@@ -83,7 +83,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public SearchStream<E> filter(String freeText) {
-    rootNode = new Node() {
+    Node freeTextNode = new Node() {
       @Override
       public String toString() {
         return freeText;
@@ -91,9 +91,13 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
       @Override
       public String toString(Parenthesize mode) {
-        return freeText;
+        return switch(mode) {
+          case NEVER -> toString();
+          case ALWAYS, DEFAULT -> String.format("%s%s%s", "(", toString(), ")");
+        };
       }
     };
+    rootNode = (rootNode.toString().isBlank()) ? freeTextNode : QueryBuilders.intersect(rootNode, freeTextNode);
     return this;
   }
 
