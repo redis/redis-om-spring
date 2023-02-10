@@ -3,6 +3,9 @@ package com.redis.om.spring.search.stream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.convert.MappingRedisOMConverter;
+import com.redis.om.spring.search.stream.predicates.vector.KNNPredicate;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.data.domain.Sort.Order;
@@ -20,6 +23,7 @@ import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.TupleMapper;
 import com.redis.om.spring.util.ObjectUtils;
 
+import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.SortedField;
@@ -53,6 +57,9 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private final Field idField;
   private Runnable closeHandler;
   private Stream<E> resolvedStream;
+  private KNNPredicate<E,?> knnPredicate;
+  private final boolean isDocument;
+  private final MappingRedisOMConverter mappingConverter;
 
   public SearchStreamImpl(Class<E> entityClass, RedisModulesOperations<String> modulesOperations, Gson gson) {
     this.modulesOperations = modulesOperations;
@@ -67,11 +74,18 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     } else {
       throw new IllegalArgumentException(entityClass.getName() + " does not appear to have an ID field");
     }
+    isDocument = entityClass.isAnnotationPresent(Document.class);
+    this.mappingConverter = new MappingRedisOMConverter(null,
+        new ReferenceResolverImpl(modulesOperations.getTemplate()));
   }
 
   @Override
   public SearchStream<E> filter(SearchFieldPredicate<? super E, ?> predicate) {
-    rootNode = processPredicate(predicate);
+    if (predicate instanceof KNNPredicate) {
+      knnPredicate = (KNNPredicate<E,?>) predicate;
+    } else {
+      rootNode = processPredicate(predicate);
+    }
     return this;
   }
 
@@ -360,7 +374,15 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   Query prepareQuery() {
-    Query query = (rootNode.toString().isBlank()) ? new Query() : new Query(rootNode.toString());
+    Query query;
+    if (knnPredicate != null) {
+      query = new Query(knnPredicate.apply(rootNode).toString());
+      query.addParam(knnPredicate.getBlobAttributeName(), knnPredicate.getBlobAttribute());
+      query.addParam("K", knnPredicate.getK());
+      query.dialect(2);
+    } else {
+      query = (rootNode.toString().isBlank()) ? new Query() : new Query(rootNode.toString());
+    }
 
     query.limit(skip != null ? skip.intValue() : 0, limit != null ? limit.intValue() : MAX_LIMIT);
 
@@ -381,8 +403,11 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   private List<E> toEntityList(SearchResult searchResult) {
-    return searchResult.getDocuments().stream().map(d -> gson.fromJson(d.get("$").toString(), entityClass))
-        .toList();
+    if (isDocument) {
+      return searchResult.getDocuments().stream().map(d -> gson.fromJson(d.get("$").toString(), entityClass)).toList();
+    } else {
+      return searchResult.getDocuments().stream().map(d -> (E)ObjectUtils.documentToObject(d, entityClass, mappingConverter)).toList();
+    }
   }
 
   private Stream<E> resolveStream() {
@@ -468,7 +493,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @Override
   public Optional<E> min(NumericField<E, ?> field) {
     List<Pair<String, ?>> minByField = this //
-        .load(new MetamodelField<E, String>("__key")) //
+        .load(new MetamodelField<E, String>("__key", String.class)) //
         .sorted(Order.asc("@" + field.getSearchAlias()))
         .limit(1) //
         .toList(String.class, Double.class);
@@ -479,12 +504,16 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @Override
   public Optional<E> max(NumericField<E, ?> field) {
     List<Pair<String, ?>> maxByField = this //
-        .load(new MetamodelField<E, String>("__key")) //
+        .load(new MetamodelField<E, String>("__key", String.class)) //
         .sorted(1, Order.desc("@" + field.getSearchAlias()))
         .limit(1) //
         .toList(String.class, Double.class);
 
     return maxByField.isEmpty() ? Optional.empty() : Optional.of(json.get(maxByField.get(0).getFirst(), entityClass));
+  }
+
+  public boolean isDocument() {
+    return isDocument;
   }
 
 }

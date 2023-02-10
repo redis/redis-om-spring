@@ -231,69 +231,85 @@ public class RediSearchIndexer {
 
       Class<?> fieldType = ClassUtils.resolvePrimitiveIfNecessary(field.getType());
 
-      //
-      // Any Character class or Boolean -> Tag Search Field
-      //
-      if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class)) {
-        fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
-            indexed.arrayIndex()));
-      }
-      //
-      // Any Numeric class -> Numeric Search Field
-      //
-      else if (Number.class.isAssignableFrom(fieldType) || (fieldType == LocalDateTime.class)
-          || (field.getType() == LocalDate.class) || (field.getType() == Date.class)) {
-        fields.add(indexAsNumericFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.noindex()));
-      }
-      //
-      // Set / List
-      //
-      else if (Set.class.isAssignableFrom(fieldType) || List.class.isAssignableFrom(fieldType)) {
-        Optional<Class<?>> maybeCollectionType = com.redis.om.spring.util.ObjectUtils.getCollectionElementType(field);
+      if (indexed.schemaFieldType() == SchemaFieldType.AUTODETECT) {
+        //
+        // Any Character class or Boolean -> Tag Search Field
+        //
+        if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class)) {
+          fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(), indexed.arrayIndex()));
+        }
+        //
+        // Any Numeric class -> Numeric Search Field
+        //
+        else if (Number.class.isAssignableFrom(fieldType) || (fieldType == LocalDateTime.class) || (field.getType() == LocalDate.class) || (field.getType() == Date.class)) {
+          fields.add(indexAsNumericFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.noindex()));
+        }
+        //
+        // Set / List
+        //
+        else if (Set.class.isAssignableFrom(fieldType) || List.class.isAssignableFrom(fieldType)) {
+          Optional<Class<?>> maybeCollectionType = com.redis.om.spring.util.ObjectUtils.getCollectionElementType(field);
 
-        if (maybeCollectionType.isPresent()) {
-          // https://redis.io/docs/stack/search/indexing_json/#index-limitations
-          // JSON array:
-          // - Array of strings as TAG or TEXT.
-          // - Array of numbers as NUMERIC or VECTOR.
-          // - Array of geo coordinates as GEO.
-          // - null values in such arrays are ignored.
-          Class<?> collectionType = maybeCollectionType.get();
+          if (maybeCollectionType.isPresent()) {
+            // https://redis.io/docs/stack/search/indexing_json/#index-limitations
+            // JSON array:
+            // - Array of strings as TAG or TEXT.
+            // - Array of numbers as NUMERIC or VECTOR.
+            // - Array of geo coordinates as GEO.
+            // - null values in such arrays are ignored.
+            Class<?> collectionType = maybeCollectionType.get();
 
-          if (CharSequence.class.isAssignableFrom(collectionType) || (collectionType == Boolean.class)) {
-            fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
-                indexed.arrayIndex()));
-            // Index nested fields
-          } else if (isDocument) {
-            if (Number.class.isAssignableFrom(collectionType)) {
-              fields.add(indexAsNumericFieldFor(field, true, prefix, indexed.sortable(), indexed.noindex()));
-            } else if (collectionType == Point.class) {
-              fields.add(indexAsGeoFieldFor(field, true, prefix, indexed.sortable(), indexed.noindex()));
-            } else {
-              // Index nested JSON fields
-              logger.debug(String.format("Found nested field on field of type: %s", field.getType()));
-              fields.addAll(indexAsNestedFieldFor(field, prefix));
+            if (CharSequence.class.isAssignableFrom(collectionType) || (collectionType == Boolean.class)) {
+              fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(), indexed.arrayIndex()));
+              // Index nested fields
+            } else if (isDocument) {
+              if (Number.class.isAssignableFrom(collectionType)) {
+                fields.add(indexAsNumericFieldFor(field, true, prefix, indexed.sortable(), indexed.noindex()));
+              } else if (collectionType == Point.class) {
+                fields.add(indexAsGeoFieldFor(field, true, prefix, indexed.sortable(), indexed.noindex()));
+              } else {
+                // Index nested JSON fields
+                logger.debug(String.format("Found nested field on field of type: %s", field.getType()));
+                fields.addAll(indexAsNestedFieldFor(field, prefix));
+              }
+            }
+          } else {
+            logger.debug(String.format("Could not determine the type of elements in the collection %s in entity %s",
+                field.getName(), field.getDeclaringClass().getSimpleName()));
+          }
+        }
+        //
+        // Point
+        //
+        else if (fieldType == Point.class) {
+          fields.add(indexAsGeoFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.noindex()));
+        }
+        //
+        // Recursively explore the fields for Index annotated fields
+        //
+        else {
+          for (java.lang.reflect.Field subfield : field.getType().getDeclaredFields()) {
+            String subfieldPrefix = (prefix == null || prefix.isBlank()) ?
+                field.getName() :
+                String.join(".", prefix, field.getName());
+            fields.addAll(findIndexFields(subfield, subfieldPrefix, isDocument));
+          }
+        }
+      } else { // Schema field type hardcoded/set in @Indexed
+        switch (indexed.schemaFieldType()) {
+          case TAG ->
+              fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(), indexed.arrayIndex()));
+          case NUMERIC -> fields.add(indexAsNumericFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.noindex()));
+          case GEO -> fields.add(indexAsGeoFieldFor(field, true, prefix, indexed.sortable(), indexed.noindex()));
+          case VECTOR -> fields.add(indexAsVectorFieldFor(field, isDocument, prefix, indexed));
+          case NESTED -> {
+            for (java.lang.reflect.Field subfield : field.getType().getDeclaredFields()) {
+              String subfieldPrefix = (prefix == null || prefix.isBlank()) ?
+                  field.getName() :
+                  String.join(".", prefix, field.getName());
+              fields.addAll(findIndexFields(subfield, subfieldPrefix, isDocument));
             }
           }
-        } else {
-          logger.debug(String.format("Could not determine the type of elements in the collection %s in entity %s",
-              field.getName(), field.getDeclaringClass().getSimpleName()));
-        }
-      }
-      //
-      // Point
-      //
-      else if (fieldType == Point.class) {
-        fields.add(indexAsGeoFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.noindex()));
-      }
-      //
-      // Recursively explore the fields for Index annotated fields
-      //
-      else {
-        for (java.lang.reflect.Field subfield : field.getType().getDeclaredFields()) {
-          String subfieldPrefix = (prefix == null || prefix.isBlank()) ? field.getName()
-              : String.join(".", prefix, field.getName());
-          fields.addAll(findIndexFields(subfield, subfieldPrefix, isDocument));
         }
       }
     }
@@ -351,6 +367,54 @@ public class RediSearchIndexer {
     return new TagField(fieldName, ti.separator(), false);
   }
 
+  private Field indexAsVectorFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, Indexed indexed) {
+    TypeInformation<?> typeInfo = TypeInformation.of(field.getType());
+    String fieldPrefix = getFieldPrefix(prefix, isDocument);
+
+    String fieldPostfix = (isDocument && typeInfo.isCollectionLike() && !field.isAnnotationPresent(JsonAdapter.class))
+        ? "[*]"
+        : "";
+    String fieldName =fieldPrefix + field.getName() + fieldPostfix;
+
+    Map<String, Object> attributes = new HashMap<>();
+    attributes.put("TYPE", indexed.type().toString());
+    attributes.put("DIM", indexed.dimension());
+    attributes.put("DISTANCE_METRIC", indexed.distanceMetric());
+
+    if (indexed.initialCapacity() > 0) {
+      attributes.put("INITIAL_CAP", indexed.initialCapacity());
+    }
+
+    if (indexed.algorithm().equals(VectorAlgo.FLAT)) {
+      // Optional parameters for FLAT
+      if (indexed.blockSize() > 0) {
+        attributes.put("BLOCK_SIZE", indexed.blockSize());
+      }
+    }
+
+    if (indexed.algorithm().equals(VectorAlgo.HNSW)) {
+      // Optional parameters for HNSW
+      attributes.put("M", indexed.m());
+      attributes.put("EF_CONSTRUCTION", indexed.efConstruction());
+      if (indexed.efRuntime() != 10) {
+        attributes.put("EF_RUNTIME", indexed.efRuntime());
+      }
+      if (indexed.epsilon() != 0.01) {
+        attributes.put("EPSILON", indexed.epsilon());
+      }
+    }
+
+    VectorField vectorField = new VectorField(fieldName, indexed.algorithm(), attributes);
+
+    if (!ObjectUtils.isEmpty(indexed.alias())) {
+      vectorField.as(indexed.alias());
+    } else {
+      vectorField.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
+    }
+
+    return vectorField;
+  }
+
   private Field indexAsVectorFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, VectorIndexed vi) {
     TypeInformation<?> typeInfo = TypeInformation.of(field.getType());
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
@@ -365,11 +429,12 @@ public class RediSearchIndexer {
     attributes.put("DIM", vi.dimension());
     attributes.put("DISTANCE_METRIC", vi.distanceMetric());
 
+    if (vi.initialCapacity() > 0) {
+      attributes.put("INITIAL_CAP", vi.initialCapacity());
+    }
+
+    // Optional parameters for FLAT
     if (vi.algorithm().equals(VectorAlgo.FLAT)) {
-      // Optional parameters for FLAT
-      if (vi.initialCapacity() > 0) {
-        attributes.put("INITIAL_CAP", vi.initialCapacity());
-      }
       if (vi.blockSize() > 0) {
         attributes.put("BLOCK_SIZE", vi.blockSize());
       }
@@ -379,8 +444,12 @@ public class RediSearchIndexer {
       // Optional parameters for HNSW
       attributes.put("M", vi.m());
       attributes.put("EF_CONSTRUCTION", vi.efConstruction());
-      attributes.put("EF_RUNTIME", vi.efRuntime());
-      attributes.put("EPSILON", vi.epsilon());
+      if (vi.efRuntime() != 10) {
+        attributes.put("EF_RUNTIME", vi.efRuntime());
+      }
+      if (vi.epsilon() != 0.01) {
+        attributes.put("EPSILON", vi.epsilon());
+      }
     }
 
     VectorField vectorField = new VectorField(fieldName, vi.algorithm(), attributes);

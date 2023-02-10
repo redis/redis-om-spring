@@ -2,6 +2,8 @@ package com.redis.om.spring.annotations.hash.fixtures;
 
 import com.redis.om.spring.DistanceMetric;
 import com.redis.om.spring.VectorType;
+import com.redis.om.spring.annotations.Indexed;
+import com.redis.om.spring.annotations.SchemaFieldType;
 import com.redis.om.spring.annotations.VectorIndexed;
 import lombok.*;
 import org.springframework.data.annotation.Id;
@@ -24,4 +26,12 @@ public class HashWithVectors {
   @NonNull
   @VectorIndexed(algorithm = VectorAlgo.HNSW, type = VectorType.FLOAT32, dimension = 2, distanceMetric = DistanceMetric.L2)
   private String hnsw;
+
+  @NonNull
+  @Indexed(schemaFieldType = SchemaFieldType.VECTOR, algorithm = VectorAlgo.FLAT, type = VectorType.FLOAT32, dimension = 2, distanceMetric = DistanceMetric.L2)
+  private String flat2;
+
+  @NonNull
+  @Indexed(schemaFieldType = SchemaFieldType.VECTOR, algorithm = VectorAlgo.HNSW, type = VectorType.FLOAT32, dimension = 2, distanceMetric = DistanceMetric.L2)
+  private String hnsw2;
 }

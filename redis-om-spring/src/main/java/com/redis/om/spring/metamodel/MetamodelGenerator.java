@@ -4,6 +4,7 @@ import com.github.f4b6a3.ulid.Ulid;
 import com.google.auto.service.AutoService;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.Indexed;
+import com.redis.om.spring.annotations.SchemaFieldType;
 import com.redis.om.spring.annotations.Searchable;
 import com.redis.om.spring.metamodel.indexed.*;
 import com.redis.om.spring.metamodel.nonindexed.*;
@@ -110,13 +111,22 @@ public final class MetamodelGenerator extends AbstractProcessor {
     enclosedFields.forEach((field, getter) -> {
       List<Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock>> fieldMetamodels = processFieldMetamodel(entity, entityName, List.of(field));
       for (Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> fieldMetamodel: fieldMetamodels) {
+        FieldSpec fieldSpec = fieldMetamodel.getSecond();
         fields.add(fieldMetamodel.getFirst());
         interceptors.add(fieldMetamodel.getSecond());
         initCodeBlocks.add(fieldMetamodel.getThird());
+
+        // Add _SCORE field to Vector
+        if (fieldSpec.type.toString().startsWith(VectorField.class.getName())) {
+          String fieldName = fieldMetamodel.getFirst().fieldSpec().name;
+          Pair<FieldSpec, CodeBlock> vectorFieldScore = generateUnboundMetamodelField(entity, "_" + fieldSpec.name + "_SCORE", "__" + fieldName + "_score", Double.class, true);
+          interceptors.add(vectorFieldScore.getFirst());
+          initCodeBlocks.add(vectorFieldScore.getSecond());
+        }
       }
     });
 
-    Pair<FieldSpec, CodeBlock> keyAccessor = generateUnboundMetamodelField(entity, "_KEY", "__key");
+    Pair<FieldSpec, CodeBlock> keyAccessor = generateUnboundMetamodelField(entity, "_KEY", "__key", String.class, true);
     interceptors.add(keyAccessor.getFirst());
     initCodeBlocks.add(keyAccessor.getSecond());
 
@@ -189,9 +199,13 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
     Class<?> targetInterceptor = null;
     Class<?> targetCls = null;
-    if (field.getAnnotation(Searchable.class) != null) {
+
+    var indexed = field.getAnnotation(Indexed.class);
+    var searchable = field.getAnnotation(Searchable.class);
+
+    if (searchable != null) {
       targetInterceptor = TextField.class;
-    } else if (field.getAnnotation(Indexed.class) != null || field.getAnnotation(Id.class) != null) {
+    } else if (indexed != null || field.getAnnotation(Id.class) != null) {
       try {
         targetCls = ClassUtils.forName(cls, MetamodelGenerator.class.getClassLoader());
       } catch (ClassNotFoundException cnfe) {
@@ -199,7 +213,16 @@ public final class MetamodelGenerator extends AbstractProcessor {
             "Processing class " + entityName + " could not resolve " + cls + " while checking for nested indexables");
         fieldMetamodelSpec.addAll(processNestedIndexableFields(entity, chain));
       }
-      if (targetCls != null) {
+
+      if (indexed != null && indexed.schemaFieldType() != SchemaFieldType.AUTODETECT) {
+        // here we do the non autodetect annotated fields
+        switch (indexed.schemaFieldType()) {
+          case TAG -> targetInterceptor = TextTagField.class;
+          case NUMERIC -> targetInterceptor = NumericField.class;
+          case GEO -> targetInterceptor = GeoField.class;
+          case VECTOR -> targetInterceptor = VectorField.class;
+        }
+      } else if (targetCls != null) {
         //
         // Any Character class -> Tag Search Field
         //
@@ -237,6 +260,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
           targetInterceptor = BooleanField.class;
         }
       }
+
     } else {
       try {
         targetCls = ClassUtils.forName(cls, MetamodelGenerator.class.getClassLoader());
@@ -481,14 +505,14 @@ public final class MetamodelGenerator extends AbstractProcessor {
   }
 
 
-  private Pair<FieldSpec, CodeBlock> generateUnboundMetamodelField(TypeName entity, String name, String alias) {
-    TypeName interceptor = ParameterizedTypeName.get(ClassName.get(MetamodelField.class), entity, TypeName.get(String.class));
+  private Pair<FieldSpec, CodeBlock> generateUnboundMetamodelField(TypeName entity, String name, String alias, Class type, boolean indexed) {
+    TypeName interceptor = ParameterizedTypeName.get(ClassName.get(MetamodelField.class), entity, TypeName.get(type));
 
     FieldSpec aField = FieldSpec.builder(interceptor, name).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
         .build();
 
     CodeBlock aFieldInit = CodeBlock.builder()
-        .addStatement("$L = new $T(\"$L\")", name, interceptor, alias).build();
+        .addStatement("$L = new $T(\"$L\", $T.class, $L)", name, interceptor, alias, type, indexed).build();
 
     return Tuples.of(aField, aFieldInit);
   }
