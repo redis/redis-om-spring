@@ -7,13 +7,15 @@ import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
 import com.redis.om.spring.tuple.Tuple;
 import com.redis.om.spring.tuple.Tuples;
 import com.redis.om.spring.util.ObjectUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.geo.Point;
+import org.springframework.util.ReflectionUtils;
+import redis.clients.jedis.search.Document;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.data.geo.Point;
-import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -32,12 +34,14 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   private final List<MetamodelField<E, ?>> returning;
   private Stream<T> resolvedStream;
   private Runnable closeHandler;
+  private final boolean useNoContent;
 
   public ReturnFieldsSearchStreamImpl(SearchStreamImpl<E> entitySearchStream, List<MetamodelField<E, ?>> returning,
       Gson gson) {
     this.entitySearchStream = entitySearchStream;
     this.returning = returning;
     this.gson = gson;
+    useNoContent = returning.size() == 1 && returning.get(0).getSearchFieldAccessor().getField().isAnnotationPresent(Id.class);
   }
 
   @Override
@@ -101,7 +105,6 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     throw new UnsupportedOperationException("Filter on free text predicate is not supported on mapped stream");
   }
 
-  @SuppressWarnings("resource")
   @Override
   public <R> SearchStream<R> map(Function<? super T, ? extends R> mapper) {
     return new WrapperSearchStream<>(resolveStream()).map(mapper);
@@ -122,25 +125,21 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     return resolveStream().mapToDouble(mapper);
   }
 
-  @SuppressWarnings("resource")
   @Override
   public <R> SearchStream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMap(mapper);
   }
 
-  @SuppressWarnings("resource")
   @Override
   public IntStream flatMapToInt(Function<? super T, ? extends IntStream> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMapToInt(mapper);
   }
 
-  @SuppressWarnings("resource")
   @Override
   public LongStream flatMapToLong(Function<? super T, ? extends LongStream> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMapToLong(mapper);
   }
 
-  @SuppressWarnings("resource")
   @Override
   public DoubleStream flatMapToDouble(Function<? super T, ? extends DoubleStream> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMapToDouble(mapper);
@@ -260,25 +259,33 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     if (resolvedStream == null) {
       List<T> results;
       Query query = entitySearchStream.prepareQuery();
-      String[] returnFields = returning.stream().map(foi -> "$." + foi.getSearchAlias()).toArray(String[]::new);
-
-      boolean resultSetHasNonIndexedFields = returning.stream().anyMatch(foi -> !foi.isIndexed());
-
-      if (resultSetHasNonIndexedFields) {
+      if (useNoContent) {
+        query.setNoContent();
         SearchResult searchResult = entitySearchStream.getOps().search(query);
-
-        List<E> entities = searchResult.getDocuments().stream()
-            .map(d -> gson.fromJson(d.get("$").toString(), entitySearchStream.getEntityClass()))
-            .toList();
-
-        results = toResultTuple(entities, returnFields);
-
+        String keySample = searchResult.getDocuments().get(0).getId();
+        int idBegin = keySample.indexOf(":") + 1;
+        resolvedStream = (Stream<T>) searchResult.getDocuments().stream().map(Document::getId).map(key -> key.substring(idBegin));
       } else {
+        String[] returnFields = returning.stream() //
+            .map(foi -> entitySearchStream.isDocument() ? "$." + foi.getSearchAlias() : foi.getSearchAlias()) //
+            .toArray(String[]::new);
 
-        query.returnFields(returnFields);
-        results = toResultTuple(entitySearchStream.getOps().search(query), returnFields);
+        boolean resultSetHasNonIndexedFields = returning.stream().anyMatch(foi -> !foi.isIndexed());
+
+        if (resultSetHasNonIndexedFields) {
+          SearchResult searchResult = entitySearchStream.getOps().search(query);
+
+          List<E> entities = searchResult.getDocuments().stream().map(d -> gson.fromJson(d.get("$").toString(), entitySearchStream.getEntityClass())).toList();
+
+          results = toResultTuple(entities, returnFields);
+
+        } else {
+
+          query.returnFields(returnFields);
+          results = toResultTuple(entitySearchStream.getOps().search(query), returnFields);
+        }
+        resolvedStream = results.stream();
       }
-      resolvedStream = results.stream();
     }
     return resolvedStream;
   }
@@ -293,7 +300,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
       List<Object> mappedResults = new ArrayList<>();
       returning.forEach(foi -> {
         String field = foi.getSearchAlias();
-        Object value = props.get("$." + field);
+        Object value = props.get(entitySearchStream.isDocument() ? "$." + field : field);
         Class<?> targetClass = foi.getTargetClass();
         if (targetClass == Date.class) {
           mappedResults.add(new Date(Long.parseLong(value.toString())));

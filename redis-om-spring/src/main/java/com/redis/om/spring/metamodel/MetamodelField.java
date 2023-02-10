@@ -10,6 +10,7 @@ public class MetamodelField<E, T> implements Comparator<E>, Function<E,T> {
   protected final SearchFieldAccessor searchFieldAccessor;
   protected final boolean indexed;
   protected final String alias;
+  protected Class<?> targetClass;
   
   public MetamodelField(SearchFieldAccessor searchFieldAccessor, boolean indexed) {
     this.searchFieldAccessor = searchFieldAccessor;
@@ -17,10 +18,18 @@ public class MetamodelField<E, T> implements Comparator<E>, Function<E,T> {
     this.alias = null;
   }
 
-  public MetamodelField(String alias) {
+  public MetamodelField(String alias, Class targetClass, boolean indexed) {
+    this.searchFieldAccessor = null;
+    this.indexed = indexed;
+    this.alias = alias;
+    this.targetClass = targetClass;
+  }
+
+  public MetamodelField(String alias, Class targetClass) {
     this.searchFieldAccessor = null;
     this.indexed = false;
     this.alias = alias;
+    this.targetClass = targetClass;
   }
   
   public SearchFieldAccessor getSearchFieldAccessor() {
@@ -46,7 +55,7 @@ public class MetamodelField<E, T> implements Comparator<E>, Function<E,T> {
   }
 
   public Class<?> getTargetClass() {
-    return searchFieldAccessor != null ? searchFieldAccessor.getTargetClass() : String.class;
+    return searchFieldAccessor != null ? searchFieldAccessor.getTargetClass() : targetClass;
   }
 
   public Order asc() {

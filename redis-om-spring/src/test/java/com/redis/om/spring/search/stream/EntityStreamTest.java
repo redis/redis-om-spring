@@ -37,6 +37,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
   @Autowired EntityStream entityStream;
 
+  String redisId;
+  String microsoftId;
+  String teslaId;
+
   @BeforeEach void cleanUp() {
     if (repository.count() == 0) {
       Company redis = repository.save(Company.of( //
@@ -66,6 +70,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
       repository.saveAll(List.of(redis, microsoft, tesla));
     }
+
+    List<Company> saved = repository.findAll();
+    redisId = saved.get(0).getId();
+    microsoftId = saved.get(1).getId();
+    teslaId = saved.get(2).getId();
 
     // users
     if (userRepository.count() == 0) {
@@ -2318,5 +2327,15 @@ import static org.junit.jupiter.api.Assertions.*;
         .containsEntry("name", "Microsoft") //
         .containsEntry("yearFounded", 1975) //
         .containsEntry("location", new Point(-122.124500, 47.640160));
+  }
+
+  @Test void testMapToIdProperty() {
+    List<String> ids = entityStream //
+        .of(Company.class) //
+        .sorted(Company$.NAME, SortOrder.DESC) //
+        .map(Company$.ID) //
+        .collect(Collectors.toList());
+
+    assertThat(ids).containsExactly(teslaId, redisId, microsoftId);
   }
 }
