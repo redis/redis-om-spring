@@ -1,9 +1,7 @@
 package com.redis.om.spring.search.stream.predicates.numeric;
 
-import java.lang.reflect.Field;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.time.*;
+import java.util.Date;
 
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
@@ -14,7 +12,7 @@ import io.redisearch.querybuilder.Values;
 
 public class LessThanPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
-  private T value;
+  private final T value;
 
   public LessThanPredicate(SearchFieldAccessor field, T value) {
     super(field);
@@ -31,12 +29,26 @@ public class LessThanPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     if (cls == LocalDate.class) {
       LocalDate localDate = (LocalDate) getValue();
       Instant instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
-      Long unixTime = instant.getEpochSecond();
+      long unixTime = instant.getEpochSecond();
+      return QueryBuilder.intersect(root).add(getSearchAlias(), Values.lt(unixTime));
+    } else if (cls == Date.class) {
+      Date date = (Date) getValue();
+      Instant instant = date.toInstant();
+      long unixTime = instant.getEpochSecond();
+      return QueryBuilder.intersect(root).add(getSearchAlias(), Values.lt(unixTime));
+    } else if (cls == LocalDateTime.class) {
+      LocalDateTime localDateTime = (LocalDateTime) getValue();
+      Instant instant = localDateTime.toInstant(ZoneOffset.of(ZoneId.systemDefault().getId()));
+      long unixTime = instant.getEpochSecond();
+      return QueryBuilder.intersect(root).add(getSearchAlias(), Values.lt(unixTime));
+    } else if (cls == Instant.class) {
+      Instant instant = (Instant) getValue();
+      long unixTime = instant.getEpochSecond();
       return QueryBuilder.intersect(root).add(getSearchAlias(), Values.lt(unixTime));
     } else if (cls == Integer.class) {
-      return QueryBuilder.intersect(root).add(getSearchAlias(), Values.lt(Integer.valueOf(getValue().toString())));
+      return QueryBuilder.intersect(root).add(getSearchAlias(), Values.lt(Integer.parseInt(getValue().toString())));
     } else if (cls == Double.class) {
-      return QueryBuilder.intersect(root).add(getSearchAlias(), Values.lt(Double.valueOf(getValue().toString())));
+      return QueryBuilder.intersect(root).add(getSearchAlias(), Values.lt(Double.parseDouble(getValue().toString())));
     } else {
       return root;
     }

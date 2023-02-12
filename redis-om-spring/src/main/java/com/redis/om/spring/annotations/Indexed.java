@@ -10,6 +10,9 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.FIELD, ElementType.ANNOTATION_TYPE })
 public @interface Indexed {
+  // by default, attempt to determine the schema field type from the Java datatype
+  SchemaFieldType schemaFieldType() default SchemaFieldType.AUTODETECT;
+
   String fieldName() default "";
 
   String alias() default "";

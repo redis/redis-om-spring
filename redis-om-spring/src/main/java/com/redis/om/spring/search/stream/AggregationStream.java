@@ -5,6 +5,7 @@ import com.redis.om.spring.metamodel.MetamodelField;
 import io.redisearch.AggregationResult;
 import org.springframework.data.domain.Sort.Order;
 
+import java.time.Duration;
 import java.util.List;
 
 public interface AggregationStream<T> {
@@ -12,17 +13,19 @@ public interface AggregationStream<T> {
 
   AggregationStream<T> groupBy(MetamodelField<?, ?>... fields);
 
-  AggregationStream<T> reduce(ReducerFunction reducer);
-
   AggregationStream<T> apply(String expression, String alias);
 
   AggregationStream<T> as(String alias);
 
   AggregationStream<T> sorted(Order... fields);
 
-  AggregationStream<T> sorted(int max, Order ...fields);
+  AggregationStream<T> sorted(int max, Order... fields);
 
-  AggregationStream<T> reduce(ReducerFunction reducer, MetamodelField<?, ?> field, String... params);
+  AggregationStream<T> reduce(ReducerFunction reducer);
+
+  AggregationStream<T> reduce(ReducerFunction reducer, MetamodelField<?, ?> field, Object... params);
+
+  AggregationStream<T> reduce(ReducerFunction reducer, String alias, Object... params);
 
   AggregationStream<T> limit(int limit);
 

@@ -1,6 +1,7 @@
 package com.redis.om.spring.search.stream.predicates.numeric;
 
-import java.lang.reflect.Field;
+import java.time.*;
+import java.util.Date;
 import java.util.List;
 
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
@@ -32,7 +33,26 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
     for (Object value : getValues()) {
       if (cls == Integer.class) {
-        or.add(getSearchAlias(), Values.eq(Integer.valueOf(value.toString())));
+        or.add(getSearchAlias(), Values.eq(Integer.parseInt(value.toString())));
+      } else if (cls == LocalDate.class) {
+        LocalDate localDate = (LocalDate) value;
+        Instant instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+        long unixTime = instant.getEpochSecond();
+        or.add(getSearchAlias(), Values.eq(unixTime));
+      } else if (cls == Date.class) {
+        Date date = (Date) value;
+        Instant instant = date.toInstant();
+        long unixTime = instant.getEpochSecond();
+        or.add(getSearchAlias(), Values.eq(unixTime));
+      } else if (cls == LocalDateTime.class) {
+        LocalDateTime localDateTime = (LocalDateTime) value;
+        Instant instant = localDateTime.toInstant(ZoneOffset.of(ZoneId.systemDefault().getId()));
+        long unixTime = instant.getEpochSecond();
+        or.add(getSearchAlias(), Values.eq(unixTime));
+      } else if (cls == Instant.class) {
+        Instant instant = (Instant) value;
+        long unixTime = instant.getEpochSecond();
+        or.add(getSearchAlias(), Values.eq(unixTime));
       } else {
         or.add(getSearchAlias(), Values.eq(Double.valueOf(value.toString())));
       }

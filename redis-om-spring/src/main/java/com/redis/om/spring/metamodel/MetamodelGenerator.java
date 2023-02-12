@@ -30,6 +30,7 @@ import java.io.Writer;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -224,7 +225,8 @@ public final class MetamodelGenerator extends AbstractProcessor {
         //
         // Any Date/Time Types
         //
-        else if ((targetCls == LocalDateTime.class) || (targetCls == LocalDate.class) || (targetCls == Date.class)) {
+        else if ((targetCls == LocalDateTime.class) || (targetCls == LocalDate.class) //
+            || (targetCls == Date.class) || (targetCls == Instant.class)) {
           targetInterceptor = DateField.class;
         }
         //
@@ -265,7 +267,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
         // Numeric class AND Any Date/Time Types
         //
         else if (Number.class.isAssignableFrom(targetCls) || (targetCls == LocalDateTime.class)
-            || (targetCls == LocalDate.class) || (targetCls == Date.class)) {
+            || (targetCls == LocalDate.class) || (targetCls == Date.class) || (targetCls == Instant.class)) {
           targetInterceptor = NonIndexedNumericField.class;
         }
         //

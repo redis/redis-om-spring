@@ -9,11 +9,13 @@ import io.redisearch.AggregationResult;
 import io.redisearch.aggregation.AggregationBuilder;
 import io.redisearch.aggregation.Group;
 import io.redisearch.aggregation.SortedField;
+import io.redisearch.aggregation.SortedField.SortOrder;
 import io.redisearch.aggregation.reducers.Reducer;
 import io.redisearch.aggregation.reducers.Reducers;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NonNull;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.domain.Sort.Order;
 
 import java.util.*;
@@ -21,19 +23,25 @@ import java.util.stream.Collectors;
 
 public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
   private final AggregationBuilder aggregation;
-  private Long aggregationTimeout;
   private Group currentGroup;
-  private Optional<ReducerFieldPair> currentReducer = Optional.empty();
+  private ReducerFieldPair currentReducer;
 
   private final SearchOperations<String> search;
   private final Set<String> returnFields = new LinkedHashSet<>();
   private final Map<String, Class<?>> returnFieldsTypeHints = new HashMap<>();
 
-  @Data @AllArgsConstructor(staticName = "of") private static class ReducerFieldPair {
-    @NonNull private Reducer reducer;
+  private static final Integer MAX_LIMIT = 10000;
+  private boolean limitSet = false;
+
+  @Data
+  @AllArgsConstructor(staticName = "of")
+  private static class ReducerFieldPair {
+    @NonNull
+    private Reducer reducer;
     private MetamodelField<?, ?> field;
   }
 
+  @SafeVarargs
   public AggregationStreamImpl(String searchIndex, RedisModulesOperations<String> modulesOperations, String query,
       MetamodelField<E, ?>... fields) {
     search = modulesOperations.opsForSearch(searchIndex);
@@ -41,7 +49,8 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
     createAggregationGroup(fields);
   }
 
-  @Override public AggregationStream<T> load(MetamodelField<?, ?>... fields) {
+  @Override
+  public AggregationStream<T> load(MetamodelField<?, ?>... fields) {
     applyCurrentGroupBy();
     if (fields.length > 0) {
       var aliases = new ArrayList<String>();
@@ -55,101 +64,135 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
     return this;
   }
 
-  @Override public AggregationStream<T> groupBy(MetamodelField<?, ?>... fields) {
+  @Override
+  public AggregationStream<T> groupBy(MetamodelField<?, ?>... fields) {
     applyCurrentGroupBy();
-    createAggregationGroup(fields);
+    createAggregationGroup(true, fields);
     return this;
   }
 
-  @Override public AggregationStream<T> reduce(ReducerFunction reducer, MetamodelField<?, ?> field, String... params) {
-    if (currentGroup != null) {
-      applyCurrentReducer();
-      Reducer r = null;
-      switch (reducer) {
-        case COUNT:
-          r = Reducers.count();
-          break;
-        case COUNT_DISTINCT:
-          r = Reducers.count_distinct(field.getSearchAlias());
-          break;
-        case COUNT_DISTINCTISH:
-          r = Reducers.count_distinctish(field.getSearchAlias());
-          break;
-        case SUM:
-          r = Reducers.sum(field.getSearchAlias());
-          break;
-        case MIN:
-          r = Reducers.min(field.getSearchAlias());
-          break;
-        case MAX:
-          r = Reducers.max(field.getSearchAlias());
-          break;
-        case AVG:
-          r = Reducers.avg(field.getSearchAlias());
-          break;
-        case STDDEV:
-          r = Reducers.stddev(field.getSearchAlias());
-          break;
-        case QUANTILE:
-          double percentile = Double.parseDouble(params[0]);
-          r = Reducers.quantile(field.getSearchAlias(), percentile);
-          break;
-        case TOLIST:
-          r = Reducers.to_list(field.getSearchAlias());
-          break;
-        case FIRST_VALUE:
-          r = Reducers.first_value(field.getSearchAlias());
-          break;
-        case RANDOM_SAMPLE:
-          int sampleSize = Integer.parseInt(params[0]);
-          r = Reducers.random_sample(field.getSearchAlias(), sampleSize);
-          break;
-      }
-      if (r != null) {
-        currentReducer = Optional.of(ReducerFieldPair.of(r, field));
-      }
+  @Override
+  public AggregationStream<T> reduce(ReducerFunction reducer, MetamodelField<?, ?> field, Object... params) {
 
+    String alias = null;
+    if (field != null) {
+      alias = field.getSearchAlias();
+      returnFields.remove(alias.startsWith("@") ? alias.substring(1) : alias);
     }
+
+    if (currentGroup == null) {
+      createAggregationGroup(true);
+    }
+
+    applyCurrentReducer();
+    Reducer r = null;
+    switch (reducer) {
+      case COUNT:
+        r = Reducers.count();
+        break;
+      case COUNT_DISTINCT:
+        r = Reducers.count_distinct(alias);
+        break;
+      case COUNT_DISTINCTISH:
+        r = Reducers.count_distinctish(alias);
+        break;
+      case SUM:
+        r = Reducers.sum(alias);
+        break;
+      case MIN:
+        r = Reducers.min(alias);
+        break;
+      case MAX:
+        r = Reducers.max(alias);
+        break;
+      case AVG:
+        r = Reducers.avg(alias);
+        break;
+      case STDDEV:
+        r = Reducers.stddev(alias);
+        break;
+      case QUANTILE:
+        double percentile = Double.parseDouble(params[0].toString());
+        r = Reducers.quantile(alias, percentile);
+        break;
+      case TOLIST:
+        r = Reducers.to_list(alias);
+        break;
+      case FIRST_VALUE:
+        if (params.length > 0 && params[0].getClass().isAssignableFrom(Order.class)) {
+          Order o = (Order) params[0];
+          SortedField sf = new SortedField(o.getProperty(),
+              o.getDirection() == Direction.ASC ? SortOrder.ASC : SortOrder.DESC);
+          r = Reducers.first_value(alias, sf);
+        } else {
+          r = Reducers.first_value(alias);
+        }
+        break;
+      case RANDOM_SAMPLE:
+        int sampleSize = Integer.parseInt(params[0].toString());
+        r = Reducers.random_sample(alias, sampleSize);
+        break;
+    }
+    if (r != null) {
+      currentReducer = ReducerFieldPair.of(r, field);
+    }
+
     return this;
   }
 
-  private void applyCurrentReducer() {
-    if (currentReducer.isPresent()) {
-      Reducer cr = currentReducer.get().getReducer();
-      MetamodelField<?, ?> crField = currentReducer.get().getField();
+  @Override
+  public AggregationStream<T> reduce(ReducerFunction reducer) {
+    return reduce(reducer, (MetamodelField<?, ?>) null);
+  }
+
+  @Override
+  public AggregationStream<T> reduce(ReducerFunction reducer, String alias, Object... params) {
+    return reduce(reducer, new MetamodelField<>(alias), params);
+  }
+
+  private boolean applyCurrentReducer() {
+    if (currentReducer != null) {
+      Reducer cr = currentReducer.getReducer();
+      MetamodelField<?, ?> crField = currentReducer.getField();
       if (cr.getAlias() == null) {
         cr.setAlias(cr.getName().toLowerCase());
       }
       currentGroup.reduce(cr);
       returnFields.add(cr.getAlias());
       returnFieldsTypeHints.put(cr.getAlias(), getTypeHintForReducer(cr, crField));
+      currentReducer = null;
+      return true;
+    } else {
+      return false;
     }
   }
 
-  @Override public AggregationStream<T> reduce(ReducerFunction reducer) {
-    return reduce(reducer, null);
-  }
-
-  @Override public AggregationStream<T> apply(String expression, String alias) {
+  @Override
+  public AggregationStream<T> apply(String expression, String alias) {
     applyCurrentGroupBy();
     aggregation.apply(expression, alias);
     returnFields.add(alias);
     return this;
   }
 
-  @Override public AggregationStream<T> as(String alias) {
-    this.currentReducer.ifPresent(reducerFieldPair -> reducerFieldPair.getReducer().setAlias(alias));
+  @Override
+  public AggregationStream<T> as(String alias) {
+    if (currentReducer != null) {
+      currentReducer.getReducer().setAlias(alias);
+    }
     return this;
   }
 
-  @Override public AggregationStream<T> sorted(Order... fields) {
+  @Override
+  public AggregationStream<T> sorted(Order... fields) {
     applyCurrentGroupBy();
     aggregation.sortBy(mapToSortedFields(fields));
     returnFields.addAll(extractAliases(fields));
     return this;
   }
 
-  @Override public AggregationStream<T> sorted(int max, Order... fields) {
+  @Override
+  public AggregationStream<T> sorted(int max, Order... fields) {
     applyCurrentGroupBy();
     aggregation.sortBy(max, mapToSortedFields(fields));
     returnFields.addAll(extractAliases(fields));
@@ -169,19 +212,24 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
         .toArray(SortedField[]::new);
   }
 
-  @Override public AggregationStream<T> limit(int limit) {
+  @Override
+  public AggregationStream<T> limit(int limit) {
     applyCurrentGroupBy();
     aggregation.limit(limit);
+    limitSet = true;
     return this;
   }
 
-  @Override public AggregationStream<T> limit(int offset, int limit) {
+  @Override
+  public AggregationStream<T> limit(int offset, int limit) {
     applyCurrentGroupBy();
     aggregation.limit(offset, limit);
+    limitSet = true;
     return this;
   }
 
-  @Override public AggregationStream<T> filter(String... filters) {
+  @Override
+  public AggregationStream<T> filter(String... filters) {
     applyCurrentGroupBy();
     for (String filter : filters) {
       aggregation.filter(filter);
@@ -189,11 +237,21 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
     return this;
   }
 
-  @Override public AggregationResult aggregate() {
+  @Override
+  public AggregationResult aggregate() {
+    applyCurrentGroupBy();
     return search.aggregate(aggregation);
   }
 
-  @Override public <R extends T> List<R> toList(Class<?>... contentTypes) {
+  @SuppressWarnings("unchecked")
+  @Override
+  public <R extends T> List<R> toList(Class<?>... contentTypes) {
+    applyCurrentGroupBy();
+
+    if (!limitSet) {
+      aggregation.limit(MAX_LIMIT);
+    }
+
     // execute the aggregation
     AggregationResult aggregationResult = search.aggregate(aggregation);
 
@@ -208,6 +266,8 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
           mappedValues.add(raw != null ? new String((byte[]) raw) : "");
         } else if (contentTypes[i] == Long.class) {
           mappedValues.add(raw != null ? Long.parseLong(new String((byte[]) raw)) : 0L);
+        } else if (contentTypes[i] == Integer.class) {
+          mappedValues.add(raw != null ? Integer.parseInt(new String((byte[]) raw)) : 0);
         } else if (contentTypes[i] == Double.class) {
           mappedValues.add(raw != null ? Double.parseDouble(new String((byte[]) raw)) : 0);
         } else if (contentTypes[i] == List.class && List.class.isAssignableFrom(raw.getClass())) {
@@ -219,6 +279,9 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
                   rawList.stream().map(e -> e != null ? new String((byte[]) e) : "").collect(Collectors.toList()));
             } else if (listContents == Long.class) {
               mappedValues.add(rawList.stream().map(e -> e != null ? Long.parseLong(new String((byte[]) e)) : 0L)
+                  .collect(Collectors.toList()));
+            } else if (listContents == Integer.class) {
+              mappedValues.add(rawList.stream().map(e -> e != null ? Integer.parseInt(new String((byte[]) e)) : 0)
                   .collect(Collectors.toList()));
             } else if (listContents == Double.class) {
               mappedValues.add(rawList.stream().map(e -> e != null ? Double.parseDouble(new String((byte[]) e)) : 0)
@@ -302,13 +365,18 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
 
   private void applyCurrentGroupBy() {
     if (currentGroup != null) {
-      applyCurrentReducer();
-      aggregation.groupBy(currentGroup);
+      if (applyCurrentReducer()) {
+        aggregation.groupBy(currentGroup);
+      }
       currentGroup = null;
     }
   }
 
   private void createAggregationGroup(MetamodelField<?, ?>... fields) {
+    createAggregationGroup(false, fields);
+  }
+
+  private void createAggregationGroup(boolean createIfEmpty, MetamodelField<?, ?>... fields) {
     if (fields.length > 0) {
       var aliases = new ArrayList<String>();
       for (MetamodelField<?, ?> mmf : fields) {
@@ -317,6 +385,8 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
       }
       currentGroup = new Group(aliases.stream().map(alias -> String.format("@%s", alias)).toArray(String[]::new));
       returnFields.addAll(aliases);
+    } else if (createIfEmpty) {
+      currentGroup = new Group();
     }
   }
 
