@@ -3,15 +3,8 @@ package com.redis.om.spring.serialization.gson;
 import java.lang.reflect.Type;
 import java.util.StringTokenizer;
 
+import com.google.gson.*;
 import org.springframework.data.geo.Point;
-
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
 
 public class PointTypeAdapter implements JsonSerializer<Point>, JsonDeserializer<Point>{
 
@@ -24,10 +17,18 @@ public class PointTypeAdapter implements JsonSerializer<Point>, JsonDeserializer
   @Override
   public Point deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
       throws JsonParseException {
-    String latlon = json.getAsString();
-    StringTokenizer st = new StringTokenizer(latlon, ",");
-    String lon = st.nextToken();
-    String lat = st.nextToken();
+    String lon;
+    String lat;
+    if (json.isJsonArray()) {
+      JsonArray latlon = json.getAsJsonArray();
+      lon = latlon.get(0).getAsString();
+      lat = latlon.get(1).getAsString();
+    } else {
+      String latlon = json.getAsString();
+      StringTokenizer st = new StringTokenizer(latlon, ",");
+      lon = st.nextToken();
+      lat = st.nextToken();
+    }
     
     return new Point(Double.parseDouble(lon), Double.parseDouble(lat));
   }
