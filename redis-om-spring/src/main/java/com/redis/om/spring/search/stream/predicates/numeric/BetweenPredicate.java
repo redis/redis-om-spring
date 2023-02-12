@@ -1,8 +1,7 @@
 package com.redis.om.spring.search.stream.predicates.numeric;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.time.*;
+import java.util.Date;
 
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
@@ -38,6 +37,31 @@ public class BetweenPredicate<E, T> extends BaseAbstractPredicate<E, T> {
       LocalDate maxLocalDate = (LocalDate) max;
       Instant minInstant = minLocalDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
       Instant maxInstant = maxLocalDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+      long minUnixTime = minInstant.getEpochSecond();
+      long maxUnixTime = maxInstant.getEpochSecond();
+      return QueryBuilders.intersect(root).add(getSearchAlias(),
+          Values.between(Double.parseDouble(Long.toString(minUnixTime)), Double.parseDouble(Long.toString(maxUnixTime))));
+    } else if (cls == Date.class) {
+      Date minLocalDate = (Date) min;
+      Date maxLocalDate = (Date) max;
+      Instant minInstant = minLocalDate.toInstant();
+      Instant maxInstant = maxLocalDate.toInstant();
+      long minUnixTime = minInstant.getEpochSecond();
+      long maxUnixTime = maxInstant.getEpochSecond();
+      return QueryBuilders.intersect(root).add(getSearchAlias(),
+          Values.between(Double.parseDouble(Long.toString(minUnixTime)), Double.parseDouble(Long.toString(maxUnixTime))));
+    } else if (cls == LocalDateTime.class) {
+      LocalDateTime minLocalDateTime = (LocalDateTime) min;
+      LocalDateTime maxLocalDateTime = (LocalDateTime) max;
+        Instant minInstant = minLocalDateTime.toInstant(ZoneOffset.of(ZoneId.systemDefault().getId()));
+        Instant maxInstant = maxLocalDateTime.toInstant(ZoneOffset.of(ZoneId.systemDefault().getId()));
+        long minUnixTime = minInstant.getEpochSecond();
+        long maxUnixTime = maxInstant.getEpochSecond();
+        return QueryBuilders.intersect(root).add(getSearchAlias(),
+            Values.between(Double.parseDouble(Long.toString(minUnixTime)), Double.parseDouble(Long.toString(maxUnixTime))));
+    } else if (cls == Instant.class) {
+      Instant minInstant = (Instant) min;
+      Instant maxInstant = (Instant) max;
       long minUnixTime = minInstant.getEpochSecond();
       long maxUnixTime = maxInstant.getEpochSecond();
       return QueryBuilders.intersect(root).add(getSearchAlias(),

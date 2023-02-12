@@ -5,6 +5,7 @@ import static com.redis.om.spring.util.ObjectUtils.getIdFieldForEntityClass;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -241,7 +242,7 @@ public class RediSearchIndexer {
         //
         // Any Numeric class -> Numeric Search Field
         //
-        else if (Number.class.isAssignableFrom(fieldType) || (fieldType == LocalDateTime.class) || (field.getType() == LocalDate.class) || (field.getType() == Date.class)) {
+        else if (Number.class.isAssignableFrom(fieldType) || (fieldType == LocalDateTime.class) || (field.getType() == LocalDate.class) || (field.getType() == Date.class) || (field.getType() == Instant.class)) {
           fields.add(indexAsNumericFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.noindex()));
         }
         //
@@ -385,11 +386,9 @@ public class RediSearchIndexer {
       attributes.put("INITIAL_CAP", indexed.initialCapacity());
     }
 
-    if (indexed.algorithm().equals(VectorAlgo.FLAT)) {
-      // Optional parameters for FLAT
-      if (indexed.blockSize() > 0) {
-        attributes.put("BLOCK_SIZE", indexed.blockSize());
-      }
+    // Optional parameters for FLAT
+    if (indexed.algorithm().equals(VectorAlgo.FLAT) && (indexed.blockSize() > 0)) {
+      attributes.put("BLOCK_SIZE", indexed.blockSize());
     }
 
     if (indexed.algorithm().equals(VectorAlgo.HNSW)) {
@@ -434,10 +433,8 @@ public class RediSearchIndexer {
     }
 
     // Optional parameters for FLAT
-    if (vi.algorithm().equals(VectorAlgo.FLAT)) {
-      if (vi.blockSize() > 0) {
-        attributes.put("BLOCK_SIZE", vi.blockSize());
-      }
+    if (vi.algorithm().equals(VectorAlgo.FLAT) && (vi.blockSize() > 0)) {
+      attributes.put("BLOCK_SIZE", vi.blockSize());
     }
 
     if (vi.algorithm().equals(VectorAlgo.HNSW)) {

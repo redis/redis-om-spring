@@ -2,9 +2,8 @@ package com.redis.om.spring.search.stream;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.ReducerFunction;
-import com.redis.om.spring.annotations.document.fixtures.Game;
-import com.redis.om.spring.annotations.document.fixtures.Game$;
-import com.redis.om.spring.annotations.document.fixtures.GameRepository;
+import com.redis.om.spring.annotations.document.fixtures.*;
+import com.redis.om.spring.metamodel.Alias;
 import com.redis.om.spring.tuple.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort.Order;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -24,21 +25,88 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
   @Autowired EntityStream entityStream;
 
   @Autowired GameRepository repository;
+  @Autowired PersonRepository personRepository;
+  @Autowired PizzaOrderRepository pizzaOrderRepository;
 
   @BeforeEach void beforeEach() throws IOException {
     // Load Sample Docs
     if (repository.count() == 0) {
       repository.bulkLoad("src/test/resources/data/games.json");
     }
+    // Create Sample Persons
+    if (personRepository.count() == 0) {
+      var beaker = new Person();
+      beaker.setName("Beaker");
+      beaker.setAge(23);
+      beaker.setSales(500000);
+      beaker.setSalesAdjustment(.6);
+      beaker.setHeight(15);
+      beaker.setDepartmentNumber(3);
+
+      var bunsen = new Person();
+      bunsen.setName("Dr Bunsen Honeydew");
+      bunsen.setAge(63);
+      bunsen.setSales(500000);
+      bunsen.setSalesAdjustment(.6);
+      bunsen.setHeight(15);
+      bunsen.setDepartmentNumber(3);
+
+      var fozzie = new Person();
+      fozzie.setName("Fozzie Bear");
+      fozzie.setAge(45);
+      fozzie.setSales(350000);
+      fozzie.setSalesAdjustment(.7);
+      fozzie.setHeight(14);
+      fozzie.setDepartmentNumber(2);
+
+      var startler = new Person();
+      startler.setName("Statler");
+      startler.setAge(75);
+      startler.setSales(650000);
+      startler.setSalesAdjustment(.8);
+      startler.setHeight(13);
+      startler.setDepartmentNumber(4);
+
+      var waldorf = new Person();
+      waldorf.setName("Waldorf");
+      waldorf.setAge(78);
+      waldorf.setSales(750000);
+      waldorf.setSalesAdjustment(.8);
+      waldorf.setHeight(13);
+      waldorf.setDepartmentNumber(4);
+
+      var kermit = new Person();
+      kermit.setName("Kermit the Frog");
+      kermit.setAge(52);
+      kermit.setSales(1500000);
+      kermit.setSalesAdjustment(.8);
+      kermit.setHeight(13);
+      kermit.setDepartmentNumber(1);
+
+      personRepository.saveAll(List.of(beaker, bunsen, fozzie, startler, waldorf, kermit));
+    }
+    // Create Sample Orders
+    if (pizzaOrderRepository.count() == 0) {
+      var order0 = PizzaOrder.of(0, "Pepperoni", "small", 19, 10, Instant.parse("2021-03-13T08:14:30Z"));
+      var order1 = PizzaOrder.of(1, "Pepperoni", "medium", 20, 20, Instant.parse("2021-03-13T09:13:24Z"));
+      var order2 = PizzaOrder.of(2, "Pepperoni", "large", 21, 30, Instant.parse("2021-03-17T09:22:12Z"));
+      var order3 = PizzaOrder.of(3, "Cheese", "small", 12, 15, Instant.parse("2021-03-13T11:21:39.736Z"));
+      var order4 = PizzaOrder.of(4, "Cheese", "medium", 13, 50, Instant.parse("2022-01-12T21:23:13.331Z"));
+      var order5 = PizzaOrder.of(5, "Cheese", "large", 14, 10, Instant.parse("2022-01-12T05:08:13Z"));
+      var order6 = PizzaOrder.of(6, "Vegan", "small", 17, 10, Instant.parse("2021-01-13T05:08:13Z"));
+      var order7 = PizzaOrder.of(7, "Vegan", "medium", 18, 10, Instant.parse("2021-01-13T05:10:13Z"));
+
+      pizzaOrderRepository.saveAll(List.of(order0, order1, order2, order3, order4, order5, order6, order7));
+    }
   }
 
   /**
    * <pre>
-   * FT.AGGREGATE "com.redis.om.spring.annotations.document.fixtures.GameIdx" '*'
-   *   'GROUPBY' '1' '@brand'
-   *   'REDUCE' 'count' '0' 'AS' 'count'
-   *   'SORTBY' 2 '@count' 'desc'
-   *   'LIMIT' '0' '5'
+   * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*"
+   *   "GROUPBY" "1" "@brand"
+   *   "REDUCE" "COUNT" "0" "AS" "count"
+   *   "SORTBY" "2" "@count" "DESC"
+   *   "LIMIT" "0" "5"
    * </pre>
    */
   @Test void testCountAggregation() {
@@ -92,7 +160,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
           .sorted(Order.desc("@minPrice")) //
           .toList(String.class, Long.class, Double.class);
 
-      assertThat(minPrices).hasSize(10);
+      assertThat(minPrices).hasSize(27);
 
       IntStream.range(0, expectedData.size() - 1).forEach(i -> {
         var actual = minPrices.get(i);
@@ -131,7 +199,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
           .sorted(Order.desc("@maxPrice")) //
           .toList(String.class, Long.class, Double.class);
 
-      assertThat(maxPrices).hasSize(10);
+      assertThat(maxPrices).hasSize(27);
 
       IntStream.range(0, expectedData.size() - 1).forEach(i -> {
         var actual = maxPrices.get(i);
@@ -308,6 +376,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
           .reduce(ReducerFunction.COUNT).as("num") //
           .reduce(ReducerFunction.RANDOM_SAMPLE, Game$.PRICE, "10").as("sample") //
           .sorted(10, Order.desc("@num")) //
+          .limit(10) //
           .toList(String.class, Long.class, List.class);
 
       randomSample.forEach(row -> assertThat(row.getThird()).hasSize(10));
@@ -634,5 +703,181 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
     assertThat(actual) //
         .map(Game::getPrice)
         .hasValue(expected.getSecond());
+  }
+
+  //
+  // Aggregation Tests with apply expressions
+  //
+
+  /**
+   * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.PersonIdx" "*"
+   *   "APPLY" "@sales * @salesAdjustment" "AS" "AdjustedSales"
+   *   "GROUPBY" "1" "@departmentNumber"
+   *     "REDUCE" "SUM" "1" "AdjustedSales" "AS" "AdjustedSales_SUM"
+   *   "SORTBY" "2" "@AdjustedSales_SUM" "DESC"
+   */
+  @Test void testGetDepartmentBySales() {
+    var stream = entityStream.of(Person.class);
+    List<Pair<Integer,Double>> departments = stream //
+        .apply("@sales * @salesAdjustment", "AdjustedSales")
+        .groupBy(Person$.DEPARTMENT_NUMBER) //
+        .reduce(ReducerFunction.SUM, "AdjustedSales").as("AdjustedSales_SUM") //
+        .sorted(Order.desc("@AdjustedSales_SUM")) //
+        .toList(Integer.class, Double.class);
+
+    assertAll(
+        () -> assertThat(departments).map(Pair::getFirst).containsExactly(1, 4, 3, 2),
+        () -> assertThat(departments).map(Pair::getSecond).containsExactly(1200000.0, 1120000.0, 600000.0, 245000.0)
+    );
+
+  }
+
+  /**
+   * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.PersonIdx" "*"
+   *   "APPLY" "@sales * @salesAdjustment" "AS" "AdjustedSales"
+   *   "SORTBY" "2" "@AdjustedSales" "DESC"
+   */
+  @Test void testGetHandicappedSales() {
+    var stream = entityStream.of(Person.class);
+    List<Single<Double>> employees = stream //
+        .apply("@sales * @salesAdjustment", "AdjustedSales")
+        .sorted(Order.desc("@AdjustedSales")) //
+        .toList(Double.class);
+
+    assertThat(employees).map(Single::getFirst).isSortedAccordingTo(Comparator.reverseOrder());
+  }
+
+  /**
+   * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.PersonIdx" "*"
+   *   "APPLY" "@sales * @salesAdjustment" "AS" "AdjustedSales"
+   *   "GROUPBY" "0"
+   *     "REDUCE" "STDDEV" "1" "@AdjustedSales" "AS" "stddev"
+   */
+  @Test
+  void testGetAdjustedSalesStandardDeviation() {
+    var stream = entityStream.of(Person.class);
+    List<Single<Double>> stddev = stream //
+        .apply("@sales * @salesAdjustment", "AdjustedSales") //
+        .groupBy() //
+        .reduce(ReducerFunction.STDDEV, "@AdjustedSales").as("stddev") //
+        .toList(Double.class);
+
+    assertThat(stddev).first().extracting("first").isEqualTo(358018.854252);
+  }
+
+  /**
+   * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.PersonIdx" "*"
+   *   "APPLY" "@sales * @salesAdjustment" "AS" "AdjustedSales"
+   *   "GROUPBY" "0"
+   *     "REDUCE" "STDDEV" "1" "@AdjustedSales" "AS" "stddev"
+   */
+  @Test
+  void testGetAdjustedSalesStandardDeviationImplicitGroupByZero() {
+    var stream = entityStream.of(Person.class);
+    List<Single<Double>> stddev = stream //
+        .apply("@sales * @salesAdjustment", "AdjustedSales") //
+        .reduce(ReducerFunction.STDDEV, "@AdjustedSales").as("stddev") //
+        .toList(Double.class);
+
+    assertThat(stddev).first().extracting("first").isEqualTo(358018.854252);
+  }
+
+  /**
+   * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.PersonIdx" "*"
+   *   "APPLY" "@sales * @salesAdjustment" "AS" "AdjustedSales"
+   *   "GROUPBY" "0"
+   *     "REDUCE" "AVG" "1" "@AdjustedSales" "AS" "avg"
+   */
+  @Test
+  void testGetAverageAdjustedSales() {
+    var stream = entityStream.of(Person.class);
+    List<Single<Double>> stddev = stream //
+        .apply("@sales * @salesAdjustment", "AdjustedSales") //
+        .reduce(ReducerFunction.AVG, "@AdjustedSales").as("avg") //
+        .toList(Double.class);
+
+    assertThat(stddev).first().extracting("first").isEqualTo(527500.0);
+  }
+
+  //
+  // Port of Mongo's Aggregation Examples
+  // https://www.mongodb.com/docs/manual/core/aggregation-pipeline/#std-label-aggregation-pipeline-examples
+  //
+
+  /**
+   * Calculate Total Order Quantity
+   * The following aggregation pipeline example contains two stages and returns the total order quantity
+   * of medium size pizzas grouped by pizza name:
+   *
+   * In Mongo:
+   * db.orders.aggregate( [
+   *    // Stage 1: Filter pizza order documents by pizza size
+   *    { $match: { size: "medium" } },
+   *    // Stage 2: Group remaining documents by pizza name and calculate total quantity
+   *    { $group: { _id: "$name", totalQuantity: { $sum: "$quantity" } } }
+   * ] )
+   */
+  @Test
+  void testCalculateTotalOrderQuantity() {
+    var stream = entityStream.of(PizzaOrder.class);
+    List<Pair<String,Integer>> totalOrderQuanties = stream //
+        .filter(PizzaOrder$.SIZE.eq("medium"))
+        .groupBy(PizzaOrder$.NAME)
+        .reduce(ReducerFunction.SUM, PizzaOrder$.QUANTITY)
+        .as("sum")
+        .toList(String.class, Integer.class);
+
+    assertAll(
+        () -> assertThat(totalOrderQuanties).map(Pair::getFirst).containsExactly("Pepperoni", "Cheese", "Vegan"),
+        () -> assertThat(totalOrderQuanties).map(Pair::getSecond).containsExactly(20, 50, 10)
+    );
+  }
+
+  /**
+   * Calculate Total Order Value and Average Order Quantity
+   * The following example calculates the total pizza order value and average order quantity between two dates:
+   *
+   * In Mongo:
+   * db.orders.aggregate( [
+   *    // Stage 1: Filter pizza order documents by date range
+   *    { $match: { "date": { $gte: new ISODate( "2020-01-30" ), $lt: new ISODate( "2022-01-30" ) } } },
+   *    // Stage 2: Group remaining documents by date and calculate results
+   *    { $group: {
+   *          _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+   *          totalOrderValue: { $sum: { $multiply: [ "$price", "$quantity" ] } },
+   *          averageOrderQuantity: { $avg: "$quantity" } } },
+   *    // Stage 3: Sort documents by totalOrderValue in descending order
+   *    { $sort: { totalOrderValue: -1 }}
+   *  ] )
+   *
+   * Equivalent RediSearch Aggregation:
+   *
+   * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.PizzaOrderIdx"
+   *   "(( @date:[1.5803424E9 inf]) @date:[-inf (1.6435008E9])"
+   *   "APPLY" "timefmt(@date, '%Y-%m-%d') " "AS" "_id"
+   *   "APPLY" "@price * @quantity" "AS" "total"
+   *   "GROUPBY" "1" "@_id"
+   *     "REDUCE" "SUM" "1" "@total" "AS" "totalOrderValue"
+   *     "REDUCE" "AVG" "1" "@quantity" "AS" "averageOrderQuantity"
+   */
+  @Test
+  void testCalculateTotalOrderValueandAverageOrderQuantity() {
+    var stream = entityStream.of(PizzaOrder.class);
+    List<Triple<String,Double,Integer>> totalOrderQuanties = stream //
+        .filter(PizzaOrder$.DATE.onOrAfter(Instant.parse("2020-01-30T00:00:00.00Z"))) //
+        .filter(PizzaOrder$.DATE.before(Instant.parse("2022-01-30T00:00:00.00Z"))) //
+        .apply("timefmt(@date, '%Y-%m-%d') ", "_id") //
+        .apply("@price * @quantity", "total") //
+        .groupBy(Alias.of("_id")) //
+        .reduce(ReducerFunction.SUM,  "@total").as("totalOrderValue") //
+        .reduce(ReducerFunction.AVG, "@quantity").as("averageOrderQuantity") //
+        .sorted(Order.desc("@totalOrderValue")) //
+        .toList(String.class, Double.class, Integer.class);
+
+    assertAll(
+        () -> assertThat(totalOrderQuanties).map(Triple::getFirst).containsExactly("2022-01-12", "2021-03-13", "2021-03-17", "2021-01-13"),
+        () -> assertThat(totalOrderQuanties).map(Triple::getSecond).containsExactly(790.0, 770.0, 630.0, 350.0),
+        () -> assertThat(totalOrderQuanties).map(Triple::getThird).containsExactly(30, 15, 30, 10)
+    );
   }
 }

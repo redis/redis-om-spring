@@ -13,8 +13,6 @@ public interface AggregationStream<T> {
 
   AggregationStream<T> groupBy(MetamodelField<?, ?>... fields);
 
-  AggregationStream<T> reduce(ReducerFunction reducer);
-
   AggregationStream<T> apply(String expression, String alias);
 
   AggregationStream<T> as(String alias);
@@ -23,7 +21,11 @@ public interface AggregationStream<T> {
 
   AggregationStream<T> sorted(int max, Order ...fields);
 
-  AggregationStream<T> reduce(ReducerFunction reducer, MetamodelField<?, ?> field, String... params);
+  AggregationStream<T> reduce(ReducerFunction reducer);
+
+  AggregationStream<T> reduce(ReducerFunction reducer, MetamodelField<?, ?> field, Object... params);
+
+  AggregationStream<T> reduce(ReducerFunction reducer, String alias, Object... params);
 
   AggregationStream<T> limit(int limit);
 
@@ -38,7 +40,6 @@ public interface AggregationStream<T> {
   AggregationResult aggregate(Duration timeout);
 
   AggregationResult aggregateVerbatim(Duration timeout);
-
 
   <R extends T> List<R> toList(Class<?>... contentTypes);
 }
