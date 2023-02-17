@@ -2,10 +2,7 @@ package com.redis.om.spring.annotations.document.serialization;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +38,7 @@ class SerializationTest extends AbstractBaseDocumentTest {
   private LocalDate localDate;
   private LocalDateTime localDateTime;
   private Date date;
+  private OffsetDateTime localOffsetDateTime;
   private Point point;
   private Ulid ulid;
   private Instant instant;
@@ -55,6 +53,7 @@ class SerializationTest extends AbstractBaseDocumentTest {
 
     localDate = LocalDate.now();
     localDateTime = LocalDateTime.now();
+    localOffsetDateTime = OffsetDateTime.now();
     date = new Date();
     point = new Point(33.62826024782707, -111.83592170193586);
     ulid = UlidCreator.getMonotonicUlid();
@@ -63,35 +62,38 @@ class SerializationTest extends AbstractBaseDocumentTest {
     instant = Instant.now();
 
     ks = KitchenSink.builder() //
-        .localDate(localDate) //
-        .localDateTime(localDateTime) //
-        .date(date) //
-        .point(point) //
-        .ulid(ulid) //
-        .setThings(setThings) //
-        .listThings(listThings) //
-        .instant(instant) //
-        .build();
+            .localDate(localDate) //
+            .localDateTime(localDateTime) //
+            .localOffsetDateTime(localOffsetDateTime) //
+            .date(date) //
+            .point(point) //
+            .ulid(ulid) //
+            .setThings(setThings) //
+            .listThings(listThings) //
+            .instant(instant) //
+            .build();
 
     ks1 = KitchenSink.builder() //
-        .localDate(localDate) //
-        .localDateTime(localDateTime) //
-        .date(date) //
-        .point(point) //
-        .ulid(ulid) //
-        .setThings(Set.of()) //
-        .listThings(List.of()) //
-        .instant(instant) //
-        .build();
+            .localDate(localDate) //
+            .localDateTime(localDateTime) //
+            .localOffsetDateTime(localOffsetDateTime) //
+            .date(date) //
+            .point(point) //
+            .ulid(ulid) //
+            .setThings(Set.of()) //
+            .listThings(List.of()) //
+            .instant(instant) //
+            .build();
 
     ks2 = KitchenSink.builder() //
-        .localDate(localDate) //
-        .localDateTime(localDateTime) //
-        .date(date) //
-        .point(point) //
-        .ulid(ulid) //
-        .instant(instant) //
-        .build();
+            .localDate(localDate) //
+            .localDateTime(localDateTime) //
+            .localOffsetDateTime(localOffsetDateTime) //
+            .date(date) //
+            .point(point) //
+            .ulid(ulid) //
+            .instant(instant) //
+            .build();
 
     ks2.setSetThings(null);
     ks2.setListThings(null);
@@ -111,6 +113,10 @@ class SerializationTest extends AbstractBaseDocumentTest {
     Instant localDateTimeInstant = localDateTime.atZone(ZoneId.systemDefault()).toInstant();
     long localDateTimeInMillis = localDateTimeInstant.toEpochMilli();
 
+    // LocalOffsetDateTime
+    Instant localOffsetDateTimeInstant = localOffsetDateTime.atZoneSameInstant(ZoneId.systemDefault()).toInstant();
+    long localOffsetDateTimeInMillis = localOffsetDateTimeInstant.toEpochMilli();
+
     // Date
     long dateInMillis = date.getTime();
 
@@ -124,6 +130,7 @@ class SerializationTest extends AbstractBaseDocumentTest {
 
     assertThat(rawJSON.get("localDate").getAsLong()).isEqualTo(localDateAsUnixTS);
     assertThat(rawJSON.get("localDateTime").getAsLong()).isEqualTo(localDateTimeInMillis);
+    assertThat(rawJSON.get("localOffsetDateTime").getAsLong()).isEqualTo(localOffsetDateTimeInMillis);
     assertThat(rawJSON.get("date").getAsLong()).isEqualTo(dateInMillis);
     assertThat(rawJSON.get("point").getAsString()).isEqualTo(redisGeo);
     assertThat(rawJSON.get("ulid").getAsString()).isEqualTo(ulid.toString());
@@ -137,6 +144,7 @@ class SerializationTest extends AbstractBaseDocumentTest {
     Optional<KitchenSink> fromDb = repository.findById(ks.getId());
     assertThat(fromDb).isPresent();
     assertThat(fromDb.get().getLocalDate()).isEqualTo(localDate);
+    assertThat(fromDb.get().getLocalOffsetDateTime()).isEqualToIgnoringNanos(localOffsetDateTime);
     assertThat(fromDb.get().getDate()).isEqualTo(date);
     assertThat(fromDb.get().getPoint()).isEqualTo(point);
     assertThat(fromDb.get().getUlid()).isEqualTo(ulid);

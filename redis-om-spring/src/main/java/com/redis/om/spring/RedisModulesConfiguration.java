@@ -45,15 +45,40 @@ import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.pds.BloomOperations;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.EntityStreamImpl;
-import com.redis.om.spring.serialization.gson.DateTypeAdapter;
-import com.redis.om.spring.serialization.gson.InstantTypeAdapter;
-import com.redis.om.spring.serialization.gson.LocalDateTimeTypeAdapter;
-import com.redis.om.spring.serialization.gson.LocalDateTypeAdapter;
-import com.redis.om.spring.serialization.gson.PointTypeAdapter;
-import com.redis.om.spring.serialization.gson.UlidTypeAdapter;
+import com.redis.om.spring.serialization.gson.*;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
+import org.springframework.boot.autoconfigure.gson.GsonBuilderCustomizer;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.*;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.data.geo.Point;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.core.RedisHash;
+import org.springframework.data.redis.core.RedisOperations;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.mapping.RedisMappingContext;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.Date;
+import java.util.List;
+import java.util.Set;
+
+import static com.redis.om.spring.util.ObjectUtils.getBeanDefinitionsFor;
 
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties({RedisProperties.class, RedisOMSpringProperties.class})
+@EnableConfigurationProperties({ RedisProperties.class, RedisOMSpringProperties.class })
 @EnableAspectJAutoProxy
 @ComponentScan("com.redis.om.spring.bloom")
 @ComponentScan("com.redis.om.spring.autocomplete")
@@ -75,6 +100,7 @@ public class RedisModulesConfiguration {
     builder.registerTypeAdapter(LocalDateTime.class, LocalDateTimeTypeAdapter.getInstance());
     builder.registerTypeAdapter(Ulid.class, UlidTypeAdapter.getInstance());
     builder.registerTypeAdapter(Instant.class, InstantTypeAdapter.getInstance());
+    builder.registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeTypeAdapter());
 
     return builder;
   }
@@ -122,7 +148,8 @@ public class RedisModulesConfiguration {
       RedisModulesOperations<?> redisModulesOperations, RedisMappingContext mappingContext,
       RediSearchIndexer keyspaceToIndexMap,
       GsonBuilder gsonBuilder, RedisOMSpringProperties properties) {
-    return new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap, gsonBuilder, properties);
+    return new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap,
+        gsonBuilder, properties);
   }
 
   @Bean(name = "redisJSONKeyValueTemplate")
@@ -131,7 +158,8 @@ public class RedisModulesConfiguration {
       RediSearchIndexer keyspaceToIndexMap,
       GsonBuilder gsonBuilder, RedisOMSpringProperties properties) {
     return new CustomRedisKeyValueTemplate(
-        getRedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap, gsonBuilder, properties),
+        getRedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap, gsonBuilder,
+            properties),
         mappingContext);
   }
 
