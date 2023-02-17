@@ -9,6 +9,7 @@ import org.springframework.data.geo.Point;
 import org.springframework.data.repository.query.Param;
 import redis.clients.jedis.search.SearchResult;
 
+import java.util.List;
 import java.util.Set;
 
 @SuppressWarnings({ "unused", "SpellCheckingInspection", "SpringDataMethodInconsistencyInspection" }) public interface MyHashRepository extends RedisEnhancedRepository<MyHash, String>, MyHashQueries {
@@ -30,6 +31,13 @@ import java.util.Set;
    * </pre>
    */
   Page<MyHash> findAllByTitleStartingWith(String title, Pageable pageable);
+
+  /**
+   * <pre>
+   * > FT.SEARCH idx @title:*hel
+   * </pre>
+   */
+  List<MyHash> findAllByTitleEndingWith(String title);
   
   /**
    * <pre>

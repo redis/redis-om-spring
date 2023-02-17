@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.AggregationResult;
 
+import java.util.List;
 import java.util.Set;
 
 @SuppressWarnings({ "unused", "SpellCheckingInspection", "SpringDataMethodInconsistencyInspection" }) public interface MyDocRepository extends RedisDocumentRepository<MyDoc, String>, MyDocQueries {
@@ -54,6 +55,13 @@ import java.util.Set;
    * </pre>
    */
   Page<MyDoc> findAllByTitleStartingWith(String title, Pageable pageable);
+
+  /**
+   * <pre>
+   * > FT.SEARCH idx @title:*hel
+   * </pre>
+   */
+  List<MyDoc> findAllByTitleEndingWith(String title);
 
   /**
    * <pre>

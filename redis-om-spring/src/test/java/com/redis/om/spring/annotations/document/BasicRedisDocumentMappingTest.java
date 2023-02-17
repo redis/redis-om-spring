@@ -522,4 +522,50 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
         () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft") //
     );
   }
+
+  @Test
+  void testFindByTagValueStartingWith() {
+    Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "stack@redis.com");
+    redis.setMetaList(Set.of(CompanyMeta.of("RD", 100, Set.of("RedisTag", "CommonTag"))));
+
+    Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
+        new Point(-122.124500, 47.640160), "research@microsoft.com");
+    microsoft.setMetaList(Set.of(CompanyMeta.of("MS", 50, Set.of("MsTag", "CommonTag"))));
+
+    repository.saveAll(List.of(redis, microsoft));
+
+    assertEquals(2, repository.count());
+
+    List<Company> shouldBeOnlyRedis = repository.findByEmailStartingWith("stack");
+    List<Company> shouldBeOnlyMS = repository.findByEmailStartingWith("res");
+
+    assertAll( //
+        () -> assertThat(shouldBeOnlyRedis).map(Company::getName).containsExactly("RedisInc"), //
+        () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft") //
+    );
+  }
+
+  @Test
+  void testFindByTagValueEndingWith() {
+    Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "stack@redis.com");
+    redis.setMetaList(Set.of(CompanyMeta.of("RD", 100, Set.of("RedisTag", "CommonTag"))));
+
+    Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
+        new Point(-122.124500, 47.640160), "research@microsoft.com");
+    microsoft.setMetaList(Set.of(CompanyMeta.of("MS", 50, Set.of("MsTag", "CommonTag"))));
+
+    repository.saveAll(List.of(redis, microsoft));
+
+    assertEquals(2, repository.count());
+
+    List<Company> shouldBeOnlyRedis = repository.findByEmailEndingWith("s.com");
+    List<Company> shouldBeOnlyMS = repository.findByEmailEndingWith("t.com");
+
+    assertAll( //
+        () -> assertThat(shouldBeOnlyRedis).map(Company::getName).containsExactly("RedisInc"), //
+        () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft") //
+    );
+  }
 }
