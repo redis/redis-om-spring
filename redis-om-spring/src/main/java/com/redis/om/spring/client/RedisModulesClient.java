@@ -1,10 +1,13 @@
 package com.redis.om.spring.client;
 
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.springframework.data.redis.connection.RedisConfiguration;
+import org.springframework.data.redis.connection.RedisPassword;
+import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisCluster;
-import redis.clients.jedis.JedisPooled;
-import redis.clients.jedis.UnifiedJedis;
+import org.springframework.lang.Nullable;
+import org.springframework.util.ObjectUtils;
+import redis.clients.jedis.*;
 import redis.clients.jedis.bloom.commands.BloomFilterCommands;
 import redis.clients.jedis.bloom.commands.CountMinSketchCommands;
 import redis.clients.jedis.bloom.commands.CuckooFilterCommands;
@@ -52,8 +55,11 @@ public class RedisModulesClient {
   }
 
   private UnifiedJedis getUnifiedJedis() {
-    return new JedisPooled(Objects.requireNonNull(jedisConnectionFactory.getPoolConfig()),
-        jedisConnectionFactory.getHostName(), jedisConnectionFactory.getPort());
+    var cc = jedisConnectionFactory.getClientConfiguration();
+    return new JedisPooled(//
+        Objects.requireNonNull(jedisConnectionFactory.getPoolConfig()),
+        new HostAndPort(jedisConnectionFactory.getHostName(), jedisConnectionFactory.getPort()),
+        createClientConfig(jedisConnectionFactory.getDatabase(), jedisConnectionFactory.getStandaloneConfiguration().getUsername(), jedisConnectionFactory.getStandaloneConfiguration().getPassword(), cc));
   }
 
   public Optional<Jedis> getJedis() {
@@ -79,4 +85,31 @@ public class RedisModulesClient {
   }
 
   private final JedisConnectionFactory jedisConnectionFactory;
+
+  private JedisClientConfig createClientConfig(int database, @Nullable String username, RedisPassword password, JedisClientConfiguration clientConfiguration) {
+
+    DefaultJedisClientConfig.Builder builder = DefaultJedisClientConfig.builder();
+
+    clientConfiguration.getClientName().ifPresent(builder::clientName);
+    builder.connectionTimeoutMillis(Math.toIntExact(clientConfiguration.getConnectTimeout().toMillis()));
+    builder.socketTimeoutMillis(Math.toIntExact(clientConfiguration.getReadTimeout().toMillis()));
+
+    builder.database(database);
+
+    if (!ObjectUtils.isEmpty(username)) {
+      builder.user(username);
+    }
+    password.toOptional().map(String::new).ifPresent(builder::password);
+
+    if (clientConfiguration.isUseSsl()) {
+
+      builder.ssl(true);
+
+      clientConfiguration.getSslSocketFactory().ifPresent(builder::sslSocketFactory);
+      clientConfiguration.getHostnameVerifier().ifPresent(builder::hostnameVerifier);
+      clientConfiguration.getSslParameters().ifPresent(builder::sslParameters);
+    }
+
+    return builder.build();
+  }
 }
