@@ -8,8 +8,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 
 public class OffsetDateTimeTypeAdapter implements JsonSerializer<OffsetDateTime>, JsonDeserializer<OffsetDateTime> {
-    public OffsetDateTimeTypeAdapter() {
-    }
 
     public JsonElement serialize(OffsetDateTime offsetDateTime, Type typeOfSrc, JsonSerializationContext context) {
         long timeInMillis = offsetDateTime.toInstant().toEpochMilli();
