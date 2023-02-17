@@ -36,6 +36,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -65,6 +66,7 @@ public class RedisModulesConfiguration {
     builder.registerTypeAdapter(LocalDateTime.class, LocalDateTimeTypeAdapter.getInstance());
     builder.registerTypeAdapter(Ulid.class, UlidTypeAdapter.getInstance());
     builder.registerTypeAdapter(Instant.class, InstantTypeAdapter.getInstance());
+    builder.registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeTypeAdapter());
 
     return builder;
   }
