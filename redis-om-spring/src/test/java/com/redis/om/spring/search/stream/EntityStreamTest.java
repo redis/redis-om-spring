@@ -608,6 +608,20 @@ import static org.junit.jupiter.api.Assertions.*;
     assertTrue(names.contains("Microsoft"));
   }
 
+  @Test void testFindByTextThatEndsWith() {
+    SearchStream<Company> stream = entityStream.of(Company.class);
+
+    List<Company> companies = stream //
+        .filter(Company$.NAME.endsWith("soft")) //
+        .collect(Collectors.toList());
+
+    assertEquals(1, companies.size());
+
+    List<String> names = companies.stream().map(Company::getName).toList();
+
+    assertTrue(names.contains("Microsoft"));
+  }
+
   @Test void testFindByTagsIn() {
     List<String> names = entityStream //
         .of(Company.class) //
@@ -2337,5 +2351,31 @@ import static org.junit.jupiter.api.Assertions.*;
         .collect(Collectors.toList());
 
     assertThat(ids).containsExactly(teslaId, redisId, microsoftId);
+  }
+
+  @Test void testFindByTagStartsWith() {
+    SearchStream<Company> stream = entityStream.of(Company.class);
+
+    List<Company> companies = stream //
+        .filter(Company$.EMAIL.startsWith("sta")) //
+        .collect(Collectors.toList());
+
+    assertEquals(1, companies.size());
+
+    List<String> names = companies.stream().map(Company::getName).toList();
+    assertTrue(names.contains("RedisInc"));
+  }
+
+  @Test void testFindByTagEndsWith() {
+    SearchStream<Company> stream = entityStream.of(Company.class);
+
+    List<Company> companies = stream //
+        .filter(Company$.EMAIL.endsWith("sla.com")) //
+        .collect(Collectors.toList());
+
+    assertEquals(1, companies.size());
+
+    List<String> names = companies.stream().map(Company::getName).toList();
+    assertTrue(names.contains("Tesla"));
   }
 }

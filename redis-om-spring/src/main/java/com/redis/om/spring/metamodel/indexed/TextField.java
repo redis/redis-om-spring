@@ -8,12 +8,7 @@ import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.actions.StrLengthAction;
 import com.redis.om.spring.search.stream.actions.StringAppendAction;
-import com.redis.om.spring.search.stream.predicates.fulltext.EqualPredicate;
-import com.redis.om.spring.search.stream.predicates.fulltext.InPredicate;
-import com.redis.om.spring.search.stream.predicates.fulltext.LikePredicate;
-import com.redis.om.spring.search.stream.predicates.fulltext.NotEqualPredicate;
-import com.redis.om.spring.search.stream.predicates.fulltext.NotLikePredicate;
-import com.redis.om.spring.search.stream.predicates.fulltext.StartsWithPredicate;
+import com.redis.om.spring.search.stream.predicates.fulltext.*;
 
 public class TextField<E, T> extends MetamodelField<E, T> {
 
@@ -31,6 +26,9 @@ public class TextField<E, T> extends MetamodelField<E, T> {
   
   public StartsWithPredicate<? super E,T> startsWith(T value) {
     return new StartsWithPredicate<>(searchFieldAccessor,value);
+  }
+  public EndsWithPredicate<? super E,T> endsWith(T value) {
+    return new EndsWithPredicate<>(searchFieldAccessor,value);
   }
   
   public LikePredicate<? super E,T> like(T value) {

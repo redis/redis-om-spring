@@ -1,7 +1,6 @@
 package com.redis.om.spring.client;
 
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
-import org.springframework.data.redis.connection.RedisConfiguration;
+import com.google.gson.GsonBuilder;
 import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
@@ -14,7 +13,6 @@ import redis.clients.jedis.bloom.commands.CuckooFilterCommands;
 import redis.clients.jedis.bloom.commands.TopKFilterCommands;
 import redis.clients.jedis.json.RedisJsonCommands;
 import redis.clients.jedis.search.RediSearchCommands;
-import com.google.gson.GsonBuilder;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -56,10 +54,13 @@ public class RedisModulesClient {
 
   private UnifiedJedis getUnifiedJedis() {
     var cc = jedisConnectionFactory.getClientConfiguration();
-    return new JedisPooled(//
-        Objects.requireNonNull(jedisConnectionFactory.getPoolConfig()),
-        new HostAndPort(jedisConnectionFactory.getHostName(), jedisConnectionFactory.getPort()),
-        createClientConfig(jedisConnectionFactory.getDatabase(), jedisConnectionFactory.getStandaloneConfiguration().getUsername(), jedisConnectionFactory.getStandaloneConfiguration().getPassword(), cc));
+    var hostAndPort = new HostAndPort(jedisConnectionFactory.getHostName(), jedisConnectionFactory.getPort());
+    var jedisClientConfig = createClientConfig(jedisConnectionFactory.getDatabase(),
+        jedisConnectionFactory.getStandaloneConfiguration().getUsername(),
+        jedisConnectionFactory.getStandaloneConfiguration().getPassword(), cc);
+
+    return new JedisPooled(Objects.requireNonNull(jedisConnectionFactory.getPoolConfig()), hostAndPort,
+        jedisClientConfig);
   }
 
   public Optional<Jedis> getJedis() {

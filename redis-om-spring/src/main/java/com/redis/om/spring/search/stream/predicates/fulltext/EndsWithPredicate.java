@@ -3,16 +3,14 @@ package com.redis.om.spring.search.stream.predicates.fulltext;
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
-
 import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
-import redis.clients.jedis.search.querybuilder.Values;
 
-public class NotLikePredicate<E, T> extends BaseAbstractPredicate<E, T> {
+public class EndsWithPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   private final T value;
 
-  public NotLikePredicate(SearchFieldAccessor field, T value) {
+  public EndsWithPredicate(SearchFieldAccessor field, T value) {
     super(field);
     this.value = value;
   }
@@ -23,8 +21,7 @@ public class NotLikePredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
-    return QueryBuilders.intersect(root)
-        .add(QueryBuilders.disjunct(getSearchAlias(), Values.value("%%%" + QueryUtils.escape(getValue().toString(), true) + "%%%")));
+    return QueryBuilders.intersect(root).add(getSearchAlias(), "*" + QueryUtils.escape(getValue().toString(), true) );
   }
 
 }
