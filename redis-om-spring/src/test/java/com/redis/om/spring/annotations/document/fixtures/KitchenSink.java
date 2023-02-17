@@ -12,6 +12,7 @@ import org.springframework.data.geo.Point;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -38,7 +39,8 @@ public class KitchenSink {
   private Ulid ulid;
   @NonNull
   private Instant instant;
-
+  @NonNull
+  private OffsetDateTime localOffsetDateTime;
   @Singular
   @JsonAdapter(SetToStringAdapter.class)
   private Set<String> setThings;
