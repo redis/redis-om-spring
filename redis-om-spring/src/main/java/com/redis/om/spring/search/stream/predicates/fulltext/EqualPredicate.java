@@ -1,6 +1,7 @@
 package com.redis.om.spring.search.stream.predicates.fulltext;
 
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
+import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 
 import redis.clients.jedis.search.querybuilder.Node;
@@ -20,7 +21,7 @@ public class EqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
-    return QueryBuilders.intersect(root).add(getSearchAlias(), getValue().toString());
+    return QueryBuilders.intersect(root).add(getSearchAlias(), QueryUtils.escape(getValue().toString(), true));
   }
 
 }

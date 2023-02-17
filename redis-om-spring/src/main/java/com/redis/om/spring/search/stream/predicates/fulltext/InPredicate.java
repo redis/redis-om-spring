@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.StringJoiner;
 
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
+import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 
 import redis.clients.jedis.search.querybuilder.Node;
@@ -26,7 +27,7 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   public Node apply(Node root) {
     StringJoiner sj = new StringJoiner(" | ");
     for (Object value : getValues()) {
-      sj.add(value.toString());
+      sj.add(QueryUtils.escape(value.toString(), true));
     }
 
     return QueryBuilders.intersect(root).add(getSearchAlias(), sj.toString());
