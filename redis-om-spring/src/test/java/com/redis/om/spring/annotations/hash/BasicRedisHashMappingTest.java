@@ -2,6 +2,7 @@ package com.redis.om.spring.annotations.hash;
 
 import com.google.common.collect.Ordering;
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.annotations.document.fixtures.CompanyMeta;
 import com.redis.om.spring.annotations.hash.fixtures.*;
 import com.redis.om.spring.repository.query.QueryUtils;
 import org.assertj.core.util.Arrays;
@@ -517,5 +518,47 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
         () -> assertThat(redis.getLastModifiedDate()).isNull(), //
         () -> assertThat(microsoft.getCreatedDate()).isNotNull(), //
         () -> assertThat(microsoft.getLastModifiedDate()).isNotNull());
+  }
+
+  @Test
+  void testFindByTagValueStartingWith() {
+    Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "stack@redis.com");
+
+    Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
+        new Point(-122.124500, 47.640160), "research@microsoft.com");
+
+    companyRepo.saveAll(List.of(redis, microsoft));
+
+    assertEquals(2, companyRepo.count());
+
+    List<Company> shouldBeOnlyRedis = companyRepo.findByEmailStartingWith("stack");
+    List<Company> shouldBeOnlyMS = companyRepo.findByEmailStartingWith("res");
+
+    assertAll( //
+        () -> assertThat(shouldBeOnlyRedis).map(Company::getName).containsExactly("RedisInc"), //
+        () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft") //
+    );
+  }
+
+  @Test
+  void testFindByTagValueEndingWith() {
+    Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "stack@redis.com");
+
+    Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
+        new Point(-122.124500, 47.640160), "research@microsoft.com");
+
+    companyRepo.saveAll(List.of(redis, microsoft));
+
+    assertEquals(2, companyRepo.count());
+
+    List<Company> shouldBeOnlyRedis = companyRepo.findByEmailEndingWith("s.com");
+    List<Company> shouldBeOnlyMS = companyRepo.findByEmailEndingWith("t.com");
+
+    assertAll( //
+        () -> assertThat(shouldBeOnlyRedis).map(Company::getName).containsExactly("RedisInc"), //
+        () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft") //
+    );
   }
 }

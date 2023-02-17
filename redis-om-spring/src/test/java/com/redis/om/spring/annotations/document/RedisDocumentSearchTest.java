@@ -320,4 +320,35 @@ import static org.junit.jupiter.api.Assertions.*;
         "predestinarian", "predestination");
   }
 
+  @Test
+  void testEndingWithSearches() {
+    Point point = new Point(-122.066540, 37.377690);
+    repository.saveAll(List.of(
+        MyDoc.of("predisposition", point, point, 4), //
+        MyDoc.of("predisposition", point, point, 8), //
+        MyDoc.of("prepublication", point, point, 15), //
+        MyDoc.of("predestinarian", point, point, 16), //
+        MyDoc.of("preadolescence", point, point, 23), //
+        MyDoc.of("premillenarian", point, point, 42), //
+        MyDoc.of("precipitinogen", point, point, 4), //
+        MyDoc.of("precipitations", point, point, 8), //
+        MyDoc.of("precociousness", point, point, 15), //
+        MyDoc.of("precombustions", point, point, 16), //
+        MyDoc.of("preconditioned", point, point, 23), //
+        MyDoc.of("preconceptions", point, point, 42), //
+        MyDoc.of("precipitancies", point, point, 4), //
+        MyDoc.of("preciousnesses", point, point, 8), //
+        MyDoc.of("precentorships", point, point, 15), //
+        MyDoc.of("preceptorships", point, point, 16) //
+    ));
+
+    List<MyDoc> endsWithTion = repository.findAllByTitleEndingWith("tion");
+    List<MyDoc> endsWithTions = repository.findAllByTitleEndingWith("tions");
+
+    assertAll( //
+        () -> assertThat(endsWithTion).extracting("title").containsExactlyInAnyOrder("predisposition", "predisposition", "prepublication"),
+        () -> assertThat(endsWithTions).extracting("title").containsExactlyInAnyOrder("precipitations", "precombustions", "preconceptions")
+    );
+  }
+
 }

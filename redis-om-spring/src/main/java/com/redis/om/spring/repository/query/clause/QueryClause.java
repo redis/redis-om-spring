@@ -32,9 +32,8 @@ public enum QueryClause {
   TEXT_STARTING_WITH( //
       QueryClauseTemplate.of(FieldType.TEXT, Part.Type.STARTING_WITH, QueryClause.FIELD_TEXT_STARTING_WITH, 1) //
   ),
-  // TODO: currently not supported with RediSearch - potential work around with aggregations
   TEXT_ENDING_WITH( //
-      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.ENDING_WITH, QueryClause.FIELD_EQUAL, 1) //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.ENDING_WITH, QueryClause.FIELD_TEXT_ENDING_WITH, 1) //
   ),
   TEXT_LIKE( //
       QueryClauseTemplate.of(FieldType.TEXT, Part.Type.LIKE, QueryClause.FIELD_LIKE, 1) //
@@ -107,6 +106,12 @@ public enum QueryClause {
   ),
   TAG_CONTAINING_ALL( //
       QueryClauseTemplate.of(FieldType.TAG, Part.Type.CONTAINING, QueryClause.FIRST_PARAM, 1) //
+  ),
+  TAG_STARTING_WITH( //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.STARTING_WITH, QueryClause.FIELD_TAG_STARTING_WITH, 1) //
+  ),
+  TAG_ENDING_WITH( //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.ENDING_WITH, QueryClause.FIELD_TAG_ENDING_WITH, 1) //
   );
 
   private static final String FIRST_PARAM = "$param_0";
@@ -117,6 +122,9 @@ public enum QueryClause {
   private static final String FIELD_NOT_LIKE = "-@$field:%%%$param_0%%%";
   private static final String FIELD_NUMERIC_EQUAL_PARAM_0 = "@$field:[$param_0 $param_0]";
   private static final String FIELD_TEXT_STARTING_WITH ="@$field:$param_0*";
+  private static final String FIELD_TAG_STARTING_WITH ="@$field:{$param_0*}";
+  private static final String FIELD_TEXT_ENDING_WITH ="@$field:*$param_0";
+  private static final String FIELD_TAG_ENDING_WITH ="@$field:{*$param_0}";
   private static final String FIELD_NUMERIC_NOT_EQUAL = "@$field:-[$param_0 $param_0]";
   private static final String FIELD_NUMERIC_BETWEEN = "@$field:[$param_0 $param_1]";
   private static final String FIELD_NUMERIC_LESS_THAN = "@$field:[-inf ($param_0]";

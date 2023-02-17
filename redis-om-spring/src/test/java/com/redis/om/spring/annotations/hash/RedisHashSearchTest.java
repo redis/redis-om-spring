@@ -21,8 +21,7 @@ import redis.clients.jedis.search.SearchResult;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("SpellCheckingInspection") class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
   @Autowired
@@ -275,6 +274,36 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     assertThat(result.getDocuments().get(9).get("title")).isEqualTo("preconditioned");
     assertThat(result.getDocuments().get(10).get("title")).isEqualTo("predestinarian");
     assertThat(result.getDocuments().get(11).get("title")).isEqualTo("predestination");
+  }
+
+  @Test
+  void testEndingWithSearches() {
+    repository.deleteAll();
+    Point point = new Point(-122.066540, 37.377690);
+    repository.saveAll(List.of(MyHash.of("predisposition", point, point, 4), //
+        MyHash.of("predestination", point, point, 8), //
+        MyHash.of("prepublication", point, point, 15), //
+        MyHash.of("predestinarian", point, point, 16), //
+        MyHash.of("preadolescence", point, point, 23), //
+        MyHash.of("premillenarian", point, point, 42), //
+        MyHash.of("precipitinogen", point, point, 4), //
+        MyHash.of("precipitations", point, point, 8), //
+        MyHash.of("precociousness", point, point, 15), //
+        MyHash.of("precombustions", point, point, 16), //
+        MyHash.of("preconditioned", point, point, 23), //
+        MyHash.of("preconceptions", point, point, 42), //
+        MyHash.of("precipitancies", point, point, 4), //
+        MyHash.of("preciousnesses", point, point, 8), //
+        MyHash.of("precentorships", point, point, 15), //
+        MyHash.of("preceptorships", point, point, 16) //
+    ));
+
+    List<MyHash> endsWithTion = repository.findAllByTitleEndingWith("tion");
+    List<MyHash> endsWithTions = repository.findAllByTitleEndingWith("tions");
+
+    assertAll( //
+        () -> assertThat(endsWithTion).extracting("title").containsExactlyInAnyOrder("predisposition", "predestination", "prepublication"),
+        () -> assertThat(endsWithTions).extracting("title").containsExactlyInAnyOrder("precipitations", "precombustions", "preconceptions"));
   }
 
 }

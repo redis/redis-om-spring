@@ -23,6 +23,10 @@ public interface CompanyRepository extends RedisDocumentRepository<Company, Stri
 
   Optional<Company> findFirstByEmail(String email);
 
+  List<Company> findByEmailStartingWith(String prefix);
+
+  List<Company> findByEmailEndingWith(String prefix);
+
   List<Company> findByPubliclyListed(boolean publiclyListed);
 
   List<Company> findByTags(Set<String> tags);
