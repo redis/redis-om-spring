@@ -594,7 +594,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
             v = ObjectUtils.asString(parameters[index], mappingConverter);
           }
 
-          preparedQuery = new StringBuilder(preparedQuery.toString().replace("$" + key, v));
+          var regex = "(\\$" + key + ")(\\W+|\\*|\\+)(.*)";
+          preparedQuery = new StringBuilder(preparedQuery.toString().replaceAll(regex, v+"$2$3"));
         }
         index++;
       }
