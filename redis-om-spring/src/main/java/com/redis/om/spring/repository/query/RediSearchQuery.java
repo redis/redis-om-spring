@@ -49,7 +49,6 @@ public class RediSearchQuery implements RepositoryQuery {
   private final QueryMethod queryMethod;
   private final String searchIndex;
 
-
   private RediSearchQueryType type;
   private String value;
 
@@ -594,7 +593,8 @@ public class RediSearchQuery implements RepositoryQuery {
             v = parameters[index].toString();
           }
 
-          preparedQuery = new StringBuilder(preparedQuery.toString().replace("$" + key, v));
+          var regex = "(\\$" + key + ")(\\W+|\\*|\\+)(.*)";
+          preparedQuery = new StringBuilder(preparedQuery.toString().replaceAll(regex, v + "$2$3"));
         }
         index++;
       }
