@@ -13,9 +13,8 @@ public class BytesToOffsetDateTimeConverter implements Converter<byte[], OffsetD
 
   @Override
   public OffsetDateTime convert(byte[] source) {
-    return OffsetDateTime.ofInstant(Instant.ofEpochSecond(Long.parseLong(toString(source))), ZoneId.systemDefault());
+    return OffsetDateTime.ofInstant(Instant.ofEpochMilli(Long.parseLong(toString(source))), ZoneId.systemDefault());
   }
-
   String toString(byte[] source) {
     return new String(source, StandardCharsets.UTF_8);
   }

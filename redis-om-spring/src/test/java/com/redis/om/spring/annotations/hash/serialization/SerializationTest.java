@@ -11,10 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
@@ -35,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
   private LocalDate localDate;
   private LocalDateTime localDateTime;
+  private OffsetDateTime localOffsetDateTime;
   private Date date;
   private Point point;
   private Ulid ulid;
@@ -50,6 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
     localDate = LocalDate.now();
     localDateTime = LocalDateTime.now();
+    localOffsetDateTime = OffsetDateTime.now();
     date = new Date();
     point = new Point(-111.83592170193586,33.62826024782707);
     ulid = UlidCreator.getMonotonicUlid();
@@ -67,6 +66,7 @@ import static org.assertj.core.api.Assertions.assertThat;
     ks = KitchenSink.builder() //
         .localDate(localDate) //
         .localDateTime(localDateTime) //
+        .localOffsetDateTime(localOffsetDateTime) //
         .date(date) //
         .point(point) //
         .ulid(ulid) //
@@ -77,6 +77,7 @@ import static org.assertj.core.api.Assertions.assertThat;
     ks1 = KitchenSink.builder() //
         .localDate(localDate) //
         .localDateTime(localDateTime) //
+        .localOffsetDateTime(localOffsetDateTime) //
         .date(date) //
         .point(point) //
         .ulid(ulid) //
@@ -87,6 +88,7 @@ import static org.assertj.core.api.Assertions.assertThat;
     ks2 = KitchenSink.builder() //
         .localDate(localDate) //
         .localDateTime(localDateTime) //
+        .localOffsetDateTime(localOffsetDateTime) //
         .date(date) //
         .point(point) //
         .ulid(ulid) //
@@ -98,6 +100,7 @@ import static org.assertj.core.api.Assertions.assertThat;
     ks3 = KitchenSink.builder() //
         .localDate(localDate) //
         .localDateTime(localDateTime) //
+        .localOffsetDateTime(localOffsetDateTime) //
         .date(date) //
         .point(point) //
         .ulid(ulid) //
@@ -109,6 +112,7 @@ import static org.assertj.core.api.Assertions.assertThat;
     ks4 = KitchenSink.builder() //
         .localDate(localDate) //
         .localDateTime(localDateTime) //
+        .localOffsetDateTime(localOffsetDateTime) //
         .date(date) //
         .point(point) //
         .ulid(ulid) //
@@ -134,6 +138,11 @@ import static org.assertj.core.api.Assertions.assertThat;
     long localDateTimeInMillis = localDateTimeInstant.toEpochMilli();
     long rawLocalDateTime = Long.parseLong(Objects.requireNonNull(template.opsForHash().get(key, "localDateTime")).toString());
 
+    // OffsetDateTime
+    Instant localOffsetDateTimeInstant = localOffsetDateTime.atZoneSameInstant(ZoneId.systemDefault()).toInstant();
+    long localOffsetDateTimeInMillis = localOffsetDateTimeInstant.toEpochMilli();
+    long rawlocalOffsetDateTime = Long.parseLong(Objects.requireNonNull(template.opsForHash().get(key, "localOffsetDateTime")).toString());
+
     // Date
     long dateInMillis = date.getTime();
     long rawDate = Long.parseLong(Objects.requireNonNull(template.opsForHash().get(key, "date")).toString());
@@ -150,6 +159,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
     assertThat(rawLocalDate).isEqualTo(localDateAsUnixTS);
     assertThat(rawLocalDateTime).isEqualTo(localDateTimeInMillis);
+    assertThat(rawlocalOffsetDateTime).isEqualTo(localOffsetDateTimeInMillis);
     assertThat(rawDate).isEqualTo(dateInMillis);
     assertThat(rawPoint).isEqualTo(redisGeo);
     assertThat(rawUlid).isEqualTo(ulid.toString());
@@ -168,6 +178,7 @@ import static org.assertj.core.api.Assertions.assertThat;
     // NOTE: We lose nanosecond precision in order to store LocalDateTime as long in
     // order to allow for RediSearch range queries
     assertThat(fromDb.get().getLocalDateTime()).isEqualToIgnoringNanos(localDateTime);
+    assertThat(fromDb.get().getLocalOffsetDateTime()).isEqualToIgnoringNanos(localOffsetDateTime);
     assertThat(fromDb.get().getSetThings()).isEqualTo(setThings);
     assertThat(fromDb.get().getListThings()).isEqualTo(listThings);
   }

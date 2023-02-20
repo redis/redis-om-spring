@@ -9,6 +9,7 @@ import org.springframework.data.redis.core.RedisHash;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -31,6 +32,9 @@ public class KitchenSink {
   @NonNull
   @Indexed
   private LocalDateTime localDateTime;
+  @NonNull
+  @Indexed
+  private OffsetDateTime localOffsetDateTime;
   @NonNull
   @Indexed
   private Date date;
