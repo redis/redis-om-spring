@@ -20,6 +20,10 @@ public class RedisOMCustomConversions extends RedisCustomConversions {
     omConverters.add(new LocalDateToBytesConverter());
     omConverters.add(new BytesToLocalDateConverter());
     omConverters.add(new LocalDateToStringConverter());
+    // OffsetDateTime
+    omConverters.add(new OffsetDateTimeToBytesConverter());
+    omConverters.add(new BytesToOffsetDateTimeConverter());
+    omConverters.add(new OffsetDateTimeToStringConverter());
     // LocalDateTime
     omConverters.add(new LocalDateTimeToBytesConverter());
     omConverters.add(new BytesToLocalDateTimeConverter());
