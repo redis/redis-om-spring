@@ -16,8 +16,8 @@
 
 **Redis OM Spring** extends [Spring Data Redis](https://spring.io/projects/spring-data-redis) to take full advantage of the power of Redis.
 
-| Project Stage | Release | Snapshot | Issues | Resolution | Code QL | License | SDR Version
-| --- | --- | --- | --- | --- | --- | --- | --- |
+| Project Stage                                     | Release                                      | Snapshot                                        | Issues                                                               | Resolution                                                                      | Code QL                                      | License                                  | SDR Version                                             |
+| ------------------------------------------------- | -------------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------- | ---------------------------------------- | ------------------------------------------------------- |
 | [![Project stage][badge-Stage]][badge-stage-page] | [![Releases][badge-releases]][link-releases] | [![Snapshots][badge-snapshots]][link-snapshots] | [![Percentage of issues still open][badge-open-issues]][open-issues] | [![Average time to resolve an issue][badge-issue-resolution]][issue-resolution] | [![CodeQL][badge-codeql]][badge-codeql-page] | [![License][license-image]][license-url] | [![SDR Version][sdr-badge-releases]][sdr-link-releases] |
 
 <details>
@@ -26,16 +26,29 @@
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
-  - [💡 Why Redis OM?](#-why-redis-om)
-  - [🍀 Redis OM Spring](#-redis-om-spring)
-  - [🏁 Getting Started](#-getting-started)
-  - [💻 Maven configuration](#-maven-configuration)
-  - [📚 Documentation](#-documentation)
-  - [⛏️ Troubleshooting](#-troubleshooting)
-  - [✨ So, How Do You Get RediSearch and RedisJSON?](#-so-how-do-you-get-redisearch-and-redisjson)
-  - [💖 Contributing](#-contributing)
-  - [🧑‍🤝‍🧑 Sibling Projects](#-sibling-projects)
-  - [📝 License](#-license)
+- [💡 Why Redis OM?](#-why-redis-om)
+- [🍀 Redis OM Spring](#-redis-om-spring)
+- [🏁 Getting Started](#-getting-started)
+  - [🚀 Launch Redis](#-launch-redis)
+  - [The SpringBoot App](#the-springboot-app)
+  - [💁‍♂️ The Mapped Model](#️-the-mapped-model)
+  - [🧰 The Repository](#-the-repository)
+  - [🚤 Querying with Entity Streams](#-querying-with-entity-streams)
+    - [👭 Entity Meta-model](#-entity-meta-model)
+- [💻 Maven configuration](#-maven-configuration)
+  - [Official Releases](#official-releases)
+  - [Snapshots](#snapshots)
+- [🐘 Gradle configuration](#-gradle-configuration)
+  - [Add Repository - Snapshots Only](#add-repository---snapshots-only)
+  - [Dependency](#dependency)
+- [📚 Documentation](#-documentation)
+- [Demos](#demos)
+  - [Basic JSON Mapping and Querying](#basic-json-mapping-and-querying)
+- [⛏️ Troubleshooting](#️-troubleshooting)
+- [✨ So How Do You Get RediSearch and RedisJSON?](#-so-how-do-you-get-redisearch-and-redisjson)
+- [💖 Contributing](#-contributing)
+- [🧑‍🤝‍🧑 Sibling Projects](#-sibling-projects)
+- [📝 License](#-license)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -328,6 +341,7 @@ ext {
 
 dependencies {
   implementation: "com.redis.om:redis-om-spring:$redisOmVersion"
+  annotationProcessor "com.redis.om:redis-om-spring:$redisOmVersion"
 }
 ```
 
