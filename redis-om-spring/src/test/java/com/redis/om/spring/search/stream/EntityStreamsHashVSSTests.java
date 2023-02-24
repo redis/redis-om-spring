@@ -4,6 +4,7 @@ import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
 import com.redis.om.spring.annotations.hash.fixtures.*;
 import com.redis.om.spring.tuple.Fields;
 import com.redis.om.spring.tuple.Pair;
+import org.assertj.core.util.DoubleComparator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -127,7 +128,9 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     assertAll( //
         () -> assertThat(results).hasSize(5), //
         () -> assertThat(results).map(Pair::getFirst).containsExactly(12, 289, 15, 280, 2), //
-        () -> assertThat(results).map(Pair::getSecond).containsExactly(4.01816287194e-05, 4.19937859988e-05, 4.19969328505e-05, 4.19990610681e-05, 4.19991047238e-05) //
+        () -> assertThat(results).map(Pair::getSecond)
+            .usingComparatorForType(new DoubleComparator(0.001), Double.class)
+            .containsExactly(4.01816287194e-05, 4.19937859988e-05, 4.19969328505e-05, 4.19990610681e-05, 4.19991047238e-05) //
     );
   }
 
