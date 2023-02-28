@@ -323,12 +323,11 @@ repositories {
 ### Dependency
 ```groovy
 ext {
-  redisOmVersion = '0.8.0-SNAPSHOT'
+  redisOmVersion = '0.8.1-SNAPSHOT'
 }
 
 dependencies {
-    implementation: "com.redis.om:redis-om-spring:$redisOmVersion"
-    }
+  implementation: "com.redis.om:redis-om-spring:$redisOmVersion"
 }
 ```
 
