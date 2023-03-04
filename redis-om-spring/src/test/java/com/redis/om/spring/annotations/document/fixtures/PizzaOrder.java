@@ -2,11 +2,14 @@ package com.redis.om.spring.annotations.document.fixtures;
 
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.Indexed;
-import lombok.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.annotation.Id;
 
 import java.time.Instant;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -30,4 +33,7 @@ public class PizzaOrder {
 
   @NonNull @Indexed(sortable = true)
   private Instant date;
+
+  @NonNull @Indexed(sortable = true)
+  private LocalDateTime created;
 }

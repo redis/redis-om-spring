@@ -12,9 +12,11 @@ import org.springframework.data.domain.Sort.Order;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -87,14 +89,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
     }
     // Create Sample Orders
     if (pizzaOrderRepository.count() == 0) {
-      var order0 = PizzaOrder.of(0, "Pepperoni", "small", 19, 10, Instant.parse("2021-03-13T08:14:30Z"));
-      var order1 = PizzaOrder.of(1, "Pepperoni", "medium", 20, 20, Instant.parse("2021-03-13T09:13:24Z"));
-      var order2 = PizzaOrder.of(2, "Pepperoni", "large", 21, 30, Instant.parse("2021-03-17T09:22:12Z"));
-      var order3 = PizzaOrder.of(3, "Cheese", "small", 12, 15, Instant.parse("2021-03-13T11:21:39.736Z"));
-      var order4 = PizzaOrder.of(4, "Cheese", "medium", 13, 50, Instant.parse("2022-01-12T21:23:13.331Z"));
-      var order5 = PizzaOrder.of(5, "Cheese", "large", 14, 10, Instant.parse("2022-01-12T05:08:13Z"));
-      var order6 = PizzaOrder.of(6, "Vegan", "small", 17, 10, Instant.parse("2021-01-13T05:08:13Z"));
-      var order7 = PizzaOrder.of(7, "Vegan", "medium", 18, 10, Instant.parse("2021-01-13T05:10:13Z"));
+      var order0 = PizzaOrder.of(0, "Pepperoni", "small", 19, 10, Instant.parse("2021-03-13T08:14:30Z"), LocalDateTime.parse("2021-03-13T00:00:00.000"));
+      var order1 = PizzaOrder.of(1, "Pepperoni", "medium", 20, 20, Instant.parse("2021-03-13T09:13:24Z"), LocalDateTime.parse("2021-03-13T00:00:00.000"));
+      var order2 = PizzaOrder.of(2, "Pepperoni", "large", 21, 30, Instant.parse("2021-03-17T09:22:12Z"), LocalDateTime.parse("2021-03-13T00:00:00.000"));
+      var order3 = PizzaOrder.of(3, "Cheese", "small", 12, 15, Instant.parse("2021-03-13T11:21:39.736Z"), LocalDateTime.parse("2021-03-13T00:00:00.000"));
+      var order4 = PizzaOrder.of(4, "Cheese", "medium", 13, 50, Instant.parse("2022-01-12T21:23:13.331Z"), LocalDateTime.parse("2021-03-13T00:00:00.000"));
+      var order5 = PizzaOrder.of(5, "Cheese", "large", 14, 10, Instant.parse("2022-01-12T05:08:13Z"), LocalDateTime.parse("2021-03-13T00:00:00.000"));
+      var order6 = PizzaOrder.of(6, "Vegan", "small", 17, 10, Instant.parse("2021-01-13T05:08:13Z"), LocalDateTime.parse("2021-03-13T00:00:00.000"));
+      var order7 = PizzaOrder.of(7, "Vegan", "medium", 18, 10, Instant.parse("2021-01-13T05:10:13Z"), LocalDateTime.parse("2021-03-13T00:00:00.001"));
 
       pizzaOrderRepository.saveAll(List.of(order0, order1, order2, order3, order4, order5, order6, order7));
     }
@@ -880,4 +882,29 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
         () -> assertThat(totalOrderQuanties).map(Triple::getThird).containsExactly(30, 15, 30, 10)
     );
   }
+
+  /**
+   * Find all rows between given dates.
+   */
+  @Test
+  void testSearchBetweenDates() {
+    var byCreated = entityStream.of(PizzaOrder.class)
+            .filter(PizzaOrder$.CREATED.between(
+                    LocalDateTime.parse("2021-03-13T00:00:00.000000"),
+                    LocalDateTime.parse("2021-03-13T00:00:00.000000")
+            )).collect(Collectors.toList());
+
+    var byDate = entityStream.of(PizzaOrder.class)
+            .filter(PizzaOrder$.DATE.between(
+                    Instant.parse("2021-01-12T05:08:13Z"),
+                    Instant.parse("2021-03-30T00:00:00.00Z")
+            ))
+            .collect(Collectors.toList());
+
+    assertAll(
+            () -> assertEquals(7, byCreated.size()),
+            () -> assertEquals(6, byDate.size())
+    );
+  }
+
 }
