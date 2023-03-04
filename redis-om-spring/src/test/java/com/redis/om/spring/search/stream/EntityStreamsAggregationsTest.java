@@ -888,22 +888,29 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
    */
   @Test
   void testSearchBetweenDates() {
-    var byCreated = entityStream.of(PizzaOrder.class)
+    List<Single<Integer>> byCreated = entityStream.of(PizzaOrder.class)
             .filter(PizzaOrder$.CREATED.between(
                     LocalDateTime.parse("2021-03-13T00:00:00.000000"),
                     LocalDateTime.parse("2021-03-13T00:00:00.000000")
-            )).collect(Collectors.toList());
+            ))
+            .load(PizzaOrder$.ID)
+            .sorted(PizzaOrder$.ID.asc())
+            .toList(Integer.class);
 
-    var byDate = entityStream.of(PizzaOrder.class)
+    List<Single<Integer>> byDate = entityStream.of(PizzaOrder.class)
             .filter(PizzaOrder$.DATE.between(
                     Instant.parse("2021-01-12T05:08:13Z"),
                     Instant.parse("2021-03-30T00:00:00.00Z")
             ))
-            .collect(Collectors.toList());
+            .load(PizzaOrder$.ID)
+            .sorted(PizzaOrder$.ID.asc())
+            .toList(Integer.class);
 
     assertAll(
             () -> assertEquals(7, byCreated.size()),
-            () -> assertEquals(6, byDate.size())
+            () -> assertThat(byCreated).map(Single::getFirst).containsAll(List.of(0,1,2,3,4,5,6)),
+            () -> assertEquals(6, byDate.size()),
+            () -> assertThat(byDate).map(Single::getFirst).containsAll(List.of(0,1,2,3,6,7))
     );
   }
 
