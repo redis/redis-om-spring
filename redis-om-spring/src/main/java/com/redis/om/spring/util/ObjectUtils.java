@@ -44,8 +44,8 @@ public class ObjectUtils {
   }
 
   public static List<Field> getFieldsWithAnnotation(Class<?> clazz, Class<? extends Annotation> annotationClass) {
-    return Arrays //
-        .stream(clazz.getDeclaredFields()) //
+    return getDeclaredFieldsTransitively(clazz) //
+        .stream() //
         .filter(f -> f.isAnnotationPresent(annotationClass)) //
         .toList();
   }
@@ -88,7 +88,7 @@ public class ObjectUtils {
   }
 
   public static Optional<Field> getIdFieldForEntityClass(Class<?> cl) {
-    return Arrays.stream(cl.getDeclaredFields()).filter(f -> f.isAnnotationPresent(Id.class)).findFirst();
+    return getDeclaredFieldsTransitively(cl).stream().filter(f -> f.isAnnotationPresent(Id.class)).findFirst();
   }
 
   public static Optional<?> getIdFieldForEntity(Object entity) {
@@ -230,9 +230,12 @@ public class ObjectUtils {
       Class<? extends Annotation> annotationClass) {
     Field field;
     try {
-      field = cls.getDeclaredField(property);
+      field = ReflectionUtils.findField(cls, property);
+      if (field == null) {
+        return false;
+      }
       return field.isAnnotationPresent(annotationClass);
-    } catch (NoSuchFieldException | SecurityException e) {
+    } catch (SecurityException e) {
       return false;
     }
 
@@ -335,6 +338,23 @@ public class ObjectUtils {
     }
     
     return erers;
+  }
+
+  public static List<Field> getDeclaredFieldsTransitively(Class<?> clazz) {
+    List<Field> fields = new ArrayList<>();
+    while (clazz != null) {
+      fields.addAll(Arrays.stream(clazz.getDeclaredFields()).toList());
+      clazz = clazz.getSuperclass();
+    }
+    return fields;
+  }
+
+  public static Field getDeclaredFieldTransitively(Class<?> clazz, String fieldName) throws NoSuchFieldException {
+    Field field = ReflectionUtils.findField(clazz, fieldName);
+    if (field == null) {
+      throw new NoSuchFieldException(fieldName);
+    }
+    return field;
   }
 
   private ObjectUtils() {}

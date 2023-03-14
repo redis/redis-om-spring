@@ -8,6 +8,7 @@ import com.redis.om.spring.repository.query.autocomplete.AutoCompleteQueryExecut
 import com.redis.om.spring.repository.query.bloom.BloomQueryExecutor;
 import com.redis.om.spring.repository.query.clause.QueryClause;
 import com.redis.om.spring.util.ObjectUtils;
+import org.springframework.util.ReflectionUtils;
 import redis.clients.jedis.search.aggr.*;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.Schema.FieldType;
@@ -228,90 +229,89 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     String property = path.get(level).getSegment();
     String key = part.getProperty().toDotPath().replace(".", "_");
 
-    Field field;
-    try {
-      field = type.getDeclaredField(property);
+    Field field = ReflectionUtils.findField(type, property);
+    if (field == null) {
+      logger.info(String.format("Did not find a field named %s", key));
+      return qf;
+    }
 
-      if (field.isAnnotationPresent(TextIndexed.class)) {
-        TextIndexed indexAnnotation = field.getAnnotation(TextIndexed.class);
-        String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
-        qf.add(Pair.of(actualKey, QueryClause.get(FieldType.TEXT, part.getType())));
-      } else if (field.isAnnotationPresent(Searchable.class)) {
-        Searchable indexAnnotation = field.getAnnotation(Searchable.class);
-        String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
-        qf.add(Pair.of(actualKey, QueryClause.get(FieldType.TEXT, part.getType())));
-      } else if (field.isAnnotationPresent(TagIndexed.class)) {
-        TagIndexed indexAnnotation = field.getAnnotation(TagIndexed.class);
-        String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
+    if (field.isAnnotationPresent(TextIndexed.class)) {
+      TextIndexed indexAnnotation = field.getAnnotation(TextIndexed.class);
+      String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
+      qf.add(Pair.of(actualKey, QueryClause.get(FieldType.TEXT, part.getType())));
+    } else if (field.isAnnotationPresent(Searchable.class)) {
+      Searchable indexAnnotation = field.getAnnotation(Searchable.class);
+      String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
+      qf.add(Pair.of(actualKey, QueryClause.get(FieldType.TEXT, part.getType())));
+    } else if (field.isAnnotationPresent(TagIndexed.class)) {
+      TagIndexed indexAnnotation = field.getAnnotation(TagIndexed.class);
+      String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
+      qf.add(Pair.of(actualKey, QueryClause.get(FieldType.TAG, part.getType())));
+    } else if (field.isAnnotationPresent(GeoIndexed.class)) {
+      GeoIndexed indexAnnotation = field.getAnnotation(GeoIndexed.class);
+      String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
+      qf.add(Pair.of(actualKey, QueryClause.get(FieldType.GEO, part.getType())));
+    } else if (field.isAnnotationPresent(NumericIndexed.class)) {
+      NumericIndexed indexAnnotation = field.getAnnotation(NumericIndexed.class);
+      String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
+      qf.add(Pair.of(actualKey, QueryClause.get(FieldType.NUMERIC, part.getType())));
+    } else if (field.isAnnotationPresent(Indexed.class)) {
+      Indexed indexAnnotation = field.getAnnotation(Indexed.class);
+      String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
+      Class<?> fieldType = ClassUtils.resolvePrimitiveIfNecessary(field.getType());
+      //
+      // Any Character class or Boolean -> Tag Search Field
+      //
+      if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class)) {
         qf.add(Pair.of(actualKey, QueryClause.get(FieldType.TAG, part.getType())));
-      } else if (field.isAnnotationPresent(GeoIndexed.class)) {
-        GeoIndexed indexAnnotation = field.getAnnotation(GeoIndexed.class);
-        String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
-        qf.add(Pair.of(actualKey, QueryClause.get(FieldType.GEO, part.getType())));
-      } else if (field.isAnnotationPresent(NumericIndexed.class)) {
-        NumericIndexed indexAnnotation = field.getAnnotation(NumericIndexed.class);
-        String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
+      }
+      //
+      // Any Numeric class -> Numeric Search Field
+      //
+      else if (Number.class.isAssignableFrom(fieldType) || (fieldType == LocalDateTime.class)
+          || (field.getType() == LocalDate.class) || (field.getType() == Date.class)) {
         qf.add(Pair.of(actualKey, QueryClause.get(FieldType.NUMERIC, part.getType())));
-      } else if (field.isAnnotationPresent(Indexed.class)) {
-        Indexed indexAnnotation = field.getAnnotation(Indexed.class);
-        String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
-        Class<?> fieldType = ClassUtils.resolvePrimitiveIfNecessary(field.getType());
-        //
-        // Any Character class or Boolean -> Tag Search Field
-        //
-        if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class)) {
-          qf.add(Pair.of(actualKey, QueryClause.get(FieldType.TAG, part.getType())));
-        }
-        //
-        // Any Numeric class -> Numeric Search Field
-        //
-        else if (Number.class.isAssignableFrom(fieldType) || (fieldType == LocalDateTime.class)
-            || (field.getType() == LocalDate.class) || (field.getType() == Date.class)) {
-          qf.add(Pair.of(actualKey, QueryClause.get(FieldType.NUMERIC, part.getType())));
-        }
-        //
-        // Set / List
-        //
-        else if (Set.class.isAssignableFrom(fieldType) || List.class.isAssignableFrom(fieldType)) {
-          Optional<Class<?>> maybeCollectionType = ObjectUtils.getCollectionElementType(field);
-          if (maybeCollectionType.isPresent()) {
-            Class<?> collectionType = maybeCollectionType.get();
-            if (Number.class.isAssignableFrom(collectionType)) {
-              if (isANDQuery) {
-                qf.add(Pair.of(actualKey, QueryClause.NUMERIC_CONTAINING_ALL));
-              } else {
-                qf.add(Pair.of(actualKey, QueryClause.get(FieldType.NUMERIC, part.getType())));
-              }
-            } else if (collectionType == Point.class) {
-              if (isANDQuery) {
-                qf.add(Pair.of(actualKey, QueryClause.GEO_CONTAINING_ALL));
-              } else {
-                qf.add(Pair.of(actualKey, QueryClause.get(FieldType.GEO, part.getType())));
-              }
-            } else { // String or Boolean
-              if (isANDQuery) {
-                qf.add(Pair.of(actualKey, QueryClause.TAG_CONTAINING_ALL));
-              } else {
-                qf.add(Pair.of(actualKey, QueryClause.get(FieldType.TAG, part.getType())));
-              }
+      }
+      //
+      // Set / List
+      //
+      else if (Set.class.isAssignableFrom(fieldType) || List.class.isAssignableFrom(fieldType)) {
+        Optional<Class<?>> maybeCollectionType = ObjectUtils.getCollectionElementType(field);
+        if (maybeCollectionType.isPresent()) {
+          Class<?> collectionType = maybeCollectionType.get();
+          if (Number.class.isAssignableFrom(collectionType)) {
+            if (isANDQuery) {
+              qf.add(Pair.of(actualKey, QueryClause.NUMERIC_CONTAINING_ALL));
+            } else {
+              qf.add(Pair.of(actualKey, QueryClause.get(FieldType.NUMERIC, part.getType())));
+            }
+          } else if (collectionType == Point.class) {
+            if (isANDQuery) {
+              qf.add(Pair.of(actualKey, QueryClause.GEO_CONTAINING_ALL));
+            } else {
+              qf.add(Pair.of(actualKey, QueryClause.get(FieldType.GEO, part.getType())));
+            }
+          } else { // String or Boolean
+            if (isANDQuery) {
+              qf.add(Pair.of(actualKey, QueryClause.TAG_CONTAINING_ALL));
+            } else {
+              qf.add(Pair.of(actualKey, QueryClause.get(FieldType.TAG, part.getType())));
             }
           }
         }
-        //
-        // Point
-        //
-        else if (fieldType == Point.class) {
-          qf.add(Pair.of(actualKey, QueryClause.get(FieldType.GEO, part.getType())));
-        }
-        //
-        // Recursively explore the fields for @Indexed annotated fields
-        //
-        else {
-          qf.addAll(extractQueryFields(fieldType, part, path, level + 1));
-        }
       }
-    } catch (NoSuchFieldException e) {
-      logger.info(String.format("Did not find a field named %s", key));
+      //
+      // Point
+      //
+      else if (fieldType == Point.class) {
+        qf.add(Pair.of(actualKey, QueryClause.get(FieldType.GEO, part.getType())));
+      }
+      //
+      // Recursively explore the fields for @Indexed annotated fields
+      //
+      else {
+        qf.addAll(extractQueryFields(fieldType, part, path, level + 1));
+      }
     }
 
     return qf;

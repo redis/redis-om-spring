@@ -40,7 +40,7 @@ public class BloomAspect implements Ordered {
 
   @AfterReturning("inSaveOperation() && args(entity,..)")
   public void addToBloom(JoinPoint jp, Object entity) {
-    for (Field field : entity.getClass().getDeclaredFields()) {
+    for (Field field : com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(entity.getClass())) {
       if (field.isAnnotationPresent(Bloom.class)) {
         Bloom bloom = field.getAnnotation(Bloom.class);
         String filterName = !ObjectUtils.isEmpty(bloom.name()) ? bloom.name() : String.format("bf:%s:%s", entity.getClass().getSimpleName(), field.getName());
@@ -66,7 +66,7 @@ public class BloomAspect implements Ordered {
   @AfterReturning("inSaveAllOperation() && args(entities,..)")
   public void addAllToBloom(JoinPoint jp, List<Object> entities) {
     for (Object entity : entities) {
-      for (Field field : entity.getClass().getDeclaredFields()) {
+      for (Field field : com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(entity.getClass())) {
         if (field.isAnnotationPresent(Bloom.class)) {
           Bloom bloom = field.getAnnotation(Bloom.class);
           String filterName = !ObjectUtils.isEmpty(bloom.name()) ? bloom.name() : String.format("bf:%s:%s", entity.getClass().getSimpleName(), field.getName());
