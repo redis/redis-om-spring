@@ -467,14 +467,12 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @SafeVarargs @Override
   public final <R> AggregationStream<R> groupBy(MetamodelField<E, ?>... fields) {
-    this.close();
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
     return new AggregationStreamImpl<>(searchIndex, modulesOperations, query, fields);
   }
 
   @Override
   public <R> AggregationStream<R> apply(String expression, String alias) {
-    this.close();
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
     AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, query);
     aggregationStream.apply(expression, alias);
@@ -483,7 +481,6 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @SafeVarargs @Override
   public final <R> AggregationStream<R> load(MetamodelField<E, ?>... fields) {
-    this.close();
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
     AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, query);
     aggregationStream.load(fields);
