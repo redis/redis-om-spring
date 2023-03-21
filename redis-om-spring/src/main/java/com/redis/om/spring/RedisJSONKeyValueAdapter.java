@@ -23,6 +23,7 @@ import org.springframework.data.redis.core.convert.KeyspaceConfiguration;
 import org.springframework.data.redis.core.convert.RedisCustomConversions;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.lang.Nullable;
+import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -276,15 +277,21 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   }
 
   private Optional<Long> getTTLForEntity(Object entity) {
-    KeyspaceConfiguration keyspaceConfig = mappingContext.getMappingConfiguration().getKeyspaceConfiguration();
-    if (keyspaceConfig.hasSettingsFor(entity.getClass())) {
-      var settings = keyspaceConfig.getKeyspaceSettings(entity.getClass());
+    Class entityClass;
+    try {
+      entityClass = ClassLoader.getSystemClassLoader().loadClass(entity.getClass().getTypeName());
+    } catch (ClassNotFoundException e) {
+      entityClass = entity.getClass();
+    }
 
+    KeyspaceConfiguration keyspaceConfig = mappingContext.getMappingConfiguration().getKeyspaceConfiguration();
+    if (keyspaceConfig.hasSettingsFor(entityClass)) {
+      var settings = keyspaceConfig.getKeyspaceSettings(entityClass);
       if (StringUtils.hasText(settings.getTimeToLivePropertyName())) {
         Method ttlGetter;
         try {
-          Field fld = ReflectionUtils.findField(entity.getClass(), settings.getTimeToLivePropertyName());
-          ttlGetter = ObjectUtils.getGetterForField(entity.getClass(), fld);
+          Field fld = ReflectionUtils.findField(entityClass, settings.getTimeToLivePropertyName());
+          ttlGetter = ObjectUtils.getGetterForField(entityClass, fld);
           Long ttlPropertyValue = ((Number) ReflectionUtils.invokeMethod(ttlGetter, entity)).longValue();
 
           ReflectionUtils.invokeMethod(ttlGetter, entity);
