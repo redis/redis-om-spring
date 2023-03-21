@@ -18,10 +18,12 @@
     <name>Redis</name>
     <url>www.redis.com</url>
   </organization>
+
   <issueManagement>
     <url>https://github.com/redis/redis-om-spring/issues</url>
     <system>Github</system>
   </issueManagement>
+
   <scm>
     <url>https://github.com/redis/redis-om-spring</url>
     <connection>scm:git:git://github.com/redis/redis-om-spring.git</connection>
@@ -343,8 +345,7 @@
       <id>release</id>
       <build>
         <plugins>
-          <!--Include
-          sources and docs -->
+          <!-- Include sources and docs -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-source-plugin</artifactId>
@@ -372,9 +373,7 @@
             </executions>
           </plugin>
 
-          <!--Sign
-          the components - this is required by maven central for
-            releases -->
+          <!-- Sign the components - this is required by maven central for releases -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
