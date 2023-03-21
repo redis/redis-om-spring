@@ -348,6 +348,13 @@ The Redis OM documentation is available [here](docs/index.md).
 - **rds-permits**:
   - Port of [Elena Kolevska's](https://github.com/elena-kolevska) Quick Start: Using RediSearch with JSON [Demo][redisearch-wjso] to Redis OM Spring.
   - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-permits`
+  
+| :exclamation: If you are not using a local Redis instance, please add Redis connection properties to application properties file e.g. `resources/application.properties` or add them to the command line e.g. `--spring.data.redis.host=redis-10422.c289.us-west-1-2.ec2.cloud.redislabs.com`.                                                                                                                                                                    |
+|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| spring.data.redis.host=redis-10422.c289.us-west-1-2.ec2.cloud.redislabs.com
+spring.data.redis.port=10422
+spring.data.redis.password=xxxxxxxx
+spring.data.redis.username=default |  
 
 ## ⛏️ Troubleshooting
 
