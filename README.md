@@ -16,9 +16,15 @@
 
 **Redis OM Spring** extends [Spring Data Redis](https://spring.io/projects/spring-data-redis) to take full advantage of the power of Redis.
 
-| Project Stage                                     | Release                                      | Snapshot                                        | Issues                                                               | Resolution                                                                      | Code QL                                      | License                                  | SDR Version                                             |
+| Stage                                             | Release                                      | Snapshot                                        | Issues                                                               | Resolution                                                                      | Code QL                                      | License                                  | SDR Ver.                                                |
 | ------------------------------------------------- | -------------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------- | ---------------------------------------- | ------------------------------------------------------- |
 | [![Project stage][badge-Stage]][badge-stage-page] | [![Releases][badge-releases]][link-releases] | [![Snapshots][badge-snapshots]][link-snapshots] | [![Percentage of issues still open][badge-open-issues]][open-issues] | [![Average time to resolve an issue][badge-issue-resolution]][issue-resolution] | [![CodeQL][badge-codeql]][badge-codeql-page] | [![License][license-image]][license-url] | [![SDR Version][sdr-badge-releases]][sdr-link-releases] |
+
+Learn / Discuss / Collaborate
+
+| Discord                                   | Twitch                                 | YouTube                                   | Twitter                                   |
+| ----------------------------------------- | -------------------------------------- | ----------------------------------------- | ----------------------------------------- |
+| [![Discord][discord-shield]][discord-url] | [![Twitch][twitch-shield]][twitch-url] | [![YouTube][youtube-shield]][youtube-url] | [![Twitter][twitter-shield]][twitter-url] |
 
 <details>
   <summary><strong>Table of contents</strong></summary>
@@ -356,19 +362,22 @@ The Redis OM documentation is available [here](docs/index.md).
 - **roms-documents**:
   - Simple API example of `@Document` mapping, Spring Repositories and Querying.
   - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-documents`
-- **rds-hashes**:
+- **roms-ashes**:
   - Simple API example of `@RedisHash`, enhanced secondary indices and querying.
   - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-hashes`
-- **rds-permits**:
+- **roms-permits**:
   - Port of [Elena Kolevska's](https://github.com/elena-kolevska) Quick Start: Using RediSearch with JSON [Demo][redisearch-wjso] to Redis OM Spring.
   - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-permits`
-  
-| :exclamation: If you are not using a local Redis instance, please add Redis connection properties to application properties file e.g. `resources/application.properties` or add them to the command line e.g. `--spring.data.redis.host=redis-10422.c289.us-west-1-2.ec2.cloud.redislabs.com`.                                                                                                                                                                    |
-|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| spring.data.redis.host=redis-10422.c289.us-west-1-2.ec2.cloud.redislabs.com
+- **roms-vss**:
+  - Port of [Redis Vector Search Demo](https://github.com/RedisVentures/redis-product-search).
+  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-vss`
+
+| :exclamation: If you are not using a local Redis instance, please add Redis connection properties to application properties file e.g. `resources/application.properties` or add them to the command line e.g. `--spring.data.redis.host=redis-10422.c289.us-west-1-2.ec2.cloud.redislabs.com`. |
+| :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| spring.data.redis.host=redis-10422.c289.us-west-1-2.ec2.cloud.redislabs.com                                                                                                                                                                                                                    |
 spring.data.redis.port=10422
 spring.data.redis.password=xxxxxxxx
-spring.data.redis.username=default |  
+spring.data.redis.username=default |
 
 ## ⛏️ Troubleshooting
 
@@ -403,7 +412,7 @@ You can also **contribute documentation** -- or just let us know if something ne
 
 Redis OM uses the [MIT license][license-url].
 
-<!-- Badges -->
+<!-- Badges / Shields -->
 
 [ci-url]: https://github.com/redis-developer/redis-om-spring/actions/workflows/ci.yml
 [badge-stage]: https://img.shields.io/badge/Project%20Stage-Development-green.svg
@@ -417,6 +426,10 @@ Redis OM uses the [MIT license][license-url].
 [license-image]: https://img.shields.io/github/license/redis/redis-om-spring
 [license-url]: LICENSE
 [sdr-badge-releases]: https://img.shields.io/maven-central/v/org.springframework.data/spring-data-redis/3.0.1
+[discord-shield]: https://img.shields.io/discord/697882427875393627?style=social&logo=discord
+[twitch-shield]: https://img.shields.io/twitch/status/redisinc?style=social
+[twitter-shield]: https://img.shields.io/twitter/follow/redisinc?style=social
+[youtube-shield]: https://img.shields.io/youtube/channel/views/UCD78lHSwYqMlyetR0_P4Vig?style=social
 
 <!-- Links -->
 
@@ -434,6 +447,10 @@ Redis OM uses the [MIT license][license-url].
 [issue-resolution]: http://isitmaintained.com/project/redis/redis-om-spring
 [redisearch-wjson]: https://github.com/redislabs-training/mod-devcap-redisjson-getting-started/blob/master/articles/QuickStart-RediSearchWithJSON.md
 [sdr-link-releases]: https://repo1.maven.org/maven2/org/springframework/data/spring-data-redis/3.0.1/
+[discord-url]: http://discord.gg/redis
+[twitch-url]: https://www.twitch.tv/redisinc
+[twitter-url]: https://twitter.com/redisinc
+[youtube-url]: https://www.youtube.com/redisinc
 
 
 

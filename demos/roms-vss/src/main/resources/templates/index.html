@@ -1,0 +1,57 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <link rel="icon" th:href="@{/favicon.ico}"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+<!--    <meta name="theme-color" content="#000000"/>-->
+    <meta
+            name="description"
+            content="Redis vector similarity search demonstration"
+    />
+    <link rel="apple-touch-icon" sizes="180x180" th:href="@{/apple-touch-icon.png}">
+    <link rel="icon" type="image/png" sizes="32x32" th:href="@{/favicon-32x32.png}">
+    <link rel="icon" type="image/png" sizes="16x16" th:href="@{/favicon-16x16.png}">
+
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/vishnucss__chips/dist/vishnu.chips.min.css}">
+
+    <link rel="manifest" th:href="@{/site.webmanifest}">
+    <title>Redis VSS Demo</title>
+</head>
+<body>
+<noscript>You need to enable JavaScript to run this app.</noscript>
+<div th:replace="~{fragments :: root}"></div>
+
+<!-- Scripts here. Don't remove ↓ -->
+<script type="text/javascript" th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script type="text/javascript" th:src="@{/webjars/htmx.org/dist/htmx.min.js}"></script>
+<script type="text/javascript">
+const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
+const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
+
+function getGenderFilter() {
+    const checkedBox = document.querySelectorAll('input[type="radio"][name="gender"]:checked')[0];
+  return (checkedBox ? checkedBox.getAttribute("data-value") : "all");
+}
+
+function getCategoryFilter() {
+    const checkedBox = document.querySelectorAll('input[type="radio"][name="category"]:checked')[0];
+    return (checkedBox ? checkedBox.getAttribute("data-value") : "all");
+}
+
+function getSkip() {
+    return document.querySelector("#root").getAttribute("data-skip") || "0"
+}
+
+function toggleFilter(group, value) {
+    const radioButton = document.getElementById("btn_filter_" + value.toLowerCase());
+    radioButton.checked = false;
+    const chip = document.getElementById(group + "_chip");
+    chip.style.display = "none";
+}
+</script>
+</body>
+</html>
