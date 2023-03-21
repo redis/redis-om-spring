@@ -23,6 +23,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
@@ -51,6 +52,8 @@ public final class MetamodelGenerator extends AbstractProcessor {
   private ProcessingEnvironment processingEnvironment;
   private Messager messager;
 
+  private TypeElement objectTypeElement;
+
   @Override
   public synchronized void init(ProcessingEnvironment env) {
     super.init(env);
@@ -61,6 +64,8 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
     messager = processingEnvironment.getMessager();
     messager.printMessage(Diagnostic.Kind.NOTE, "Redis OM Spring Field Generator Processor");
+
+    this.objectTypeElement = processingEnvironment.getElementUtils().getTypeElement("java.lang.Object");
   }
 
   @Override
@@ -93,7 +98,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
     final String genEntityName = entityName + "$";
     TypeName entity = TypeName.get(annotatedElement.asType());
 
-    Map<? extends Element, String> enclosedFields = getDeclaredInstanceFields(annotatedElement);
+    Map<? extends Element, String> enclosedFields = getInstanceFields(annotatedElement);
 
     final PackageElement packageElement = processingEnvironment.getElementUtils().getPackageOf(annotatedElement);
     String packageName;
@@ -135,11 +140,16 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
     blockBuilder.beginControlFlow("try");
     for (ObjectGraphFieldSpec ogfs : fields) {
-      String sb = "$L = $T.class";
-      sb = sb + ogfs.chain().stream().map(e -> String.format(".getDeclaredField(\"%s\")", e.getSimpleName().toString())).collect(
-          Collectors.joining(".getType()"));
+      String sb = "$T.class";
+      for (int i = 0; i < ogfs.chain().size(); i++) {
+        Element element = ogfs.chain().get(i);
+        if (i != 0) {
+          sb = sb + ".getType()";
+        }
+        sb = String.format("com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(%s, \"%s\")", sb, element.getSimpleName());
+      }
       FieldSpec fieldSpec = ogfs.fieldSpec();
-      blockBuilder.addStatement(sb, fieldSpec.name, entity);
+      blockBuilder.addStatement("$L = " + sb, fieldSpec.name, entity);
     }
 
     for (CodeBlock initCodeBlock : initCodeBlocks) {
@@ -323,7 +333,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
     final String entityFieldName = fieldElement.toString();
     messager.printMessage(Diagnostic.Kind.NOTE, "entityFieldName => " + entityFieldName);
 
-    Map<? extends Element, String> enclosedFields = getDeclaredInstanceFields(entityField);
+    Map<? extends Element, String> enclosedFields = getInstanceFields(entityField);
 
     messager.printMessage(Diagnostic.Kind.NOTE, "Enclosed subfield size() ==> " + enclosedFields.size());
 
@@ -340,7 +350,11 @@ public final class MetamodelGenerator extends AbstractProcessor {
     return fieldMetamodels;
   }
 
-  private Map<? extends Element, String> getDeclaredInstanceFields(Element element) {
+  private Map<? extends Element, String> getInstanceFields(Element element) {
+    if (objectTypeElement.equals(element)) {
+      return Collections.emptyMap();
+    }
+
     final Map<String, Element> getters = element.getEnclosedElements().stream()
         .filter(ee -> ee.getKind() == ElementKind.METHOD)
         // Only consider methods with no parameters
@@ -356,11 +370,21 @@ public final class MetamodelGenerator extends AbstractProcessor {
         .map(ObjectUtils::lcfirst).collect(Collectors.toSet());
 
     // Retrieve all declared non-final instance fields of the annotated class
-    return element.getEnclosedElements().stream()
+    Map<Element, String> results = element.getEnclosedElements().stream()
         .filter(ee -> ee.getKind().isField() && !ee.getModifiers().contains(Modifier.STATIC) // Ignore static fields
             && !ee.getModifiers().contains(Modifier.FINAL)) // Ignore final fields
         .collect(Collectors.toMap(Function.identity(),
             ee -> findGetter(ee, getters, isGetters, element.toString(), lombokGetterAvailable(element, ee))));
+
+    Types types = processingEnvironment.getTypeUtils();
+    List<? extends TypeMirror> superTypes = types.directSupertypes(element.asType());
+    superTypes.stream()
+            .map(types::asElement)
+            .filter(superElement -> superElement.getKind().isClass())
+            .findFirst()
+            .ifPresent(superElement -> results.putAll(getInstanceFields(superElement)));
+
+    return results;
   }
 
 

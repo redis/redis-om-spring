@@ -97,9 +97,11 @@ public class RediSearchIndexer {
       indexName = cl.getName() + "Idx";
       logger.info(String.format("Found @%s annotated class: %s", idxType, cl.getName()));
 
+      final List<java.lang.reflect.Field> allClassFields = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(cl);
+
       List<Field> fields = new ArrayList<>();
 
-      for (java.lang.reflect.Field field : cl.getDeclaredFields()) {
+      for (java.lang.reflect.Field field : allClassFields) {
         fields.addAll(findIndexFields(field, null, idxType == IndexDefinition.Type.JSON));
 
         // @DocumentScore
@@ -176,7 +178,7 @@ public class RediSearchIndexer {
           setting.setTimeToLive(document.timeToLive());
         }
 
-        for (java.lang.reflect.Field field : cl.getDeclaredFields()) {
+        for (java.lang.reflect.Field field : allClassFields) {
           // @TimeToLive
           if (field.isAnnotationPresent(TimeToLive.class)) {
             setting.setTimeToLivePropertyName(field.getName());
@@ -289,7 +291,7 @@ public class RediSearchIndexer {
         // Recursively explore the fields for Index annotated fields
         //
         else {
-          for (java.lang.reflect.Field subfield : field.getType().getDeclaredFields()) {
+          for (java.lang.reflect.Field subfield : com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(field.getType())) {
             String subfieldPrefix = (prefix == null || prefix.isBlank()) ?
                 field.getName() :
                 String.join(".", prefix, field.getName());
@@ -304,7 +306,7 @@ public class RediSearchIndexer {
           case GEO -> fields.add(indexAsGeoFieldFor(field, true, prefix, indexed.sortable(), indexed.noindex()));
           case VECTOR -> fields.add(indexAsVectorFieldFor(field, isDocument, prefix, indexed));
           case NESTED -> {
-            for (java.lang.reflect.Field subfield : field.getType().getDeclaredFields()) {
+            for (java.lang.reflect.Field subfield : com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(field.getType())) {
               String subfieldPrefix = (prefix == null || prefix.isBlank()) ?
                   field.getName() :
                   String.join(".", prefix, field.getName());
@@ -564,7 +566,7 @@ public class RediSearchIndexer {
     Type genericType = field.getGenericType();
     if (genericType instanceof ParameterizedType pt) {
       Class<?> actualTypeArgument = (Class<?>) pt.getActualTypeArguments()[0];
-      java.lang.reflect.Field[] subDeclaredFields = actualTypeArgument.getDeclaredFields();
+      List<java.lang.reflect.Field> subDeclaredFields = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(actualTypeArgument);
       String tempPrefix = "";
       if (prefix == null) {
         prefix = field.getName();

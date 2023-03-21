@@ -59,6 +59,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.util.comparator.NullSafeComparator;
 
@@ -688,15 +689,17 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     Indexed indexed = null;
     TagIndexed tagIndexed = null;
     try {
-      field = entityClass.getDeclaredField(path);
-      Optional<Class<?>> maybeCollectionElementType = com.redis.om.spring.util.ObjectUtils.getCollectionElementType(field);
-      collectionElementType = maybeCollectionElementType.orElse(null);
-      if (field.isAnnotationPresent(Indexed.class)) {
-        indexed = entityClass.getDeclaredField(path).getAnnotation(Indexed.class);
-      } else if (field.isAnnotationPresent(TagIndexed.class)) {
-        tagIndexed = entityClass.getDeclaredField(path).getAnnotation(TagIndexed.class);
+      field = ReflectionUtils.findField(entityClass, path);
+      if (field != null) {
+        Optional<Class<?>> maybeCollectionElementType = com.redis.om.spring.util.ObjectUtils.getCollectionElementType(field);
+        collectionElementType = maybeCollectionElementType.orElse(null);
+        if (field.isAnnotationPresent(Indexed.class)) {
+          indexed = field.getAnnotation(Indexed.class);
+        } else if (field.isAnnotationPresent(TagIndexed.class)) {
+          tagIndexed = field.getAnnotation(TagIndexed.class);
+        }
       }
-    } catch (NoSuchFieldException | SecurityException | NoSuchElementException e1) {
+    } catch (SecurityException | NoSuchElementException e1) {
       // it's ok, move on!
     }
 
@@ -776,15 +779,17 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     Indexed indexed = null;
     TagIndexed tagIndexed = null;
     try {
-      field = entityClass.getDeclaredField(path);
-      Optional<Class<?>> maybeCollectionElementType = com.redis.om.spring.util.ObjectUtils.getCollectionElementType(field);
-      collectionElementType = maybeCollectionElementType.orElse(null);
-      if (field.isAnnotationPresent(Indexed.class)) {
-        indexed = entityClass.getDeclaredField(path).getAnnotation(Indexed.class);
-      } else if (field.isAnnotationPresent(TagIndexed.class)) {
-        tagIndexed = entityClass.getDeclaredField(path).getAnnotation(TagIndexed.class);
+      field = ReflectionUtils.findField(entityClass, path);
+      if (field != null) {
+        Optional<Class<?>> maybeCollectionElementType = com.redis.om.spring.util.ObjectUtils.getCollectionElementType(field);
+        collectionElementType = maybeCollectionElementType.orElse(null);
+        if (field.isAnnotationPresent(Indexed.class)) {
+          indexed = field.getAnnotation(Indexed.class);
+        } else if (field.isAnnotationPresent(TagIndexed.class)) {
+          tagIndexed = field.getAnnotation(TagIndexed.class);
+        }
       }
-    } catch (NoSuchFieldException | SecurityException | NoSuchElementException e) {
+    } catch (SecurityException | NoSuchElementException e) {
       // it's ok, move on!
     }
 

@@ -32,6 +32,7 @@ import com.redis.om.spring.annotations.document.fixtures.CompanyRepository;
 import com.redis.om.spring.annotations.document.fixtures.DocWithCustomNameId;
 import com.redis.om.spring.annotations.document.fixtures.DocWithCustomNameIdRepository;
 
+import org.springframework.util.ReflectionUtils;
 import redis.clients.jedis.args.GeoUnit;
 
 @SuppressWarnings({ "ConstantConditions", "SpellCheckingInspection" }) class ObjectUtilsTest extends AbstractBaseDocumentTest {
@@ -103,10 +104,12 @@ import redis.clients.jedis.args.GeoUnit;
   }
 
   @Test
-  void testGetTargetClassName() throws NoSuchFieldException, SecurityException {
+  void testGetTargetClassName() throws SecurityException {
     @SuppressWarnings("MismatchedQueryAndUpdateOfCollection") List<String> lofs = new ArrayList<>();
     int[] inta = new int[] {};
-    String typeName = Company.class.getDeclaredField("publiclyListed").getType().getName();
+    Field field = ReflectionUtils.findField(Company.class, "publiclyListed");
+    assertThat(field).isNotNull();
+    String typeName = field.getType().getName();
 
     assertThat(ObjectUtils.getTargetClassName(String.class.getTypeName())).isEqualTo(String.class.getTypeName());
     assertThat(ObjectUtils.getTargetClassName(lofs.getClass().getTypeName())).isEqualTo(ArrayList.class.getTypeName());
@@ -132,10 +135,14 @@ import redis.clients.jedis.args.GeoUnit;
   }
 
   @Test
-  void testGetCollectionElementType() throws NoSuchFieldException, SecurityException {
-    Field lofsField = BunchOfCollections.class.getDeclaredField("lofs");
-    Field soisField = BunchOfCollections.class.getDeclaredField("sois");
-    Field iocField = BunchOfCollections.class.getDeclaredField("ioc");
+  void testGetCollectionElementType() throws SecurityException {
+    Field lofsField = ReflectionUtils.findField(BunchOfCollections.class, "lofs");
+    Field soisField = ReflectionUtils.findField(BunchOfCollections.class, "sois");
+    Field iocField = ReflectionUtils.findField(BunchOfCollections.class, "ioc");
+
+    assertThat(lofsField).isNotNull();
+    assertThat(soisField).isNotNull();
+    assertThat(iocField).isNotNull();
 
     Optional<Class<?>> maybeContentsOfLofs = ObjectUtils.getCollectionElementType(lofsField);
     Optional<Class<?>> maybeContentsOfSois = ObjectUtils.getCollectionElementType(soisField);

@@ -13,6 +13,7 @@ import com.redis.om.spring.annotations.Bloom;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.pds.BloomOperations;
 import com.redis.om.spring.util.ObjectUtils;
+import org.springframework.util.ReflectionUtils;
 
 public class BloomQueryExecutor {
   
@@ -35,13 +36,16 @@ public class BloomQueryExecutor {
       Class<?> entityClass = query.getQueryMethod().getEntityInformation().getJavaType();
 
       try {
-        Field field = entityClass.getDeclaredField(targetProperty);
+        Field field = ReflectionUtils.findField(entityClass, targetProperty);
+        if (field == null) {
+          return Optional.empty();
+        }
         if (field.isAnnotationPresent(Bloom.class)) {
           Bloom bloom = field.getAnnotation(Bloom.class);
           return Optional.of(!org.apache.commons.lang3.ObjectUtils.isEmpty(bloom.name()) ? bloom.name()
               : String.format("bf:%s:%s", entityClass.getSimpleName(), field.getName()));
         }
-      } catch (NoSuchFieldException | SecurityException e) {
+      } catch (SecurityException e) {
         // NO-OP
       }
     }

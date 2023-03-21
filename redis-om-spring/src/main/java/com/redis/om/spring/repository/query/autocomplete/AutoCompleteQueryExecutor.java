@@ -8,6 +8,7 @@ import com.redis.om.spring.util.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -37,13 +38,16 @@ public class AutoCompleteQueryExecutor {
       Class<?> entityClass = query.getQueryMethod().getEntityInformation().getJavaType();
 
       try {
-        Field field = entityClass.getDeclaredField(targetProperty);
+        Field field = ReflectionUtils.findField(entityClass, targetProperty);
+        if (field == null) {
+          return Optional.empty();
+        }
         if (field.isAnnotationPresent(AutoComplete.class)) {
           AutoComplete bloom = field.getAnnotation(AutoComplete.class);
           return Optional.of(!org.apache.commons.lang3.ObjectUtils.isEmpty(bloom.name()) ? bloom.name()
               : String.format(Suggestion.KEY_FORMAT_STRING, entityClass.getSimpleName(), field.getName()));
         }
-      } catch (NoSuchFieldException | SecurityException e) {
+      } catch (SecurityException e) {
         return Optional.empty();
       }
     }

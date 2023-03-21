@@ -163,7 +163,7 @@ public class RedisModulesConfiguration {
     for (BeanDefinition beanDef : beanDefs) {
       try {
         Class<?> cl = Class.forName(beanDef.getBeanClassName());
-        for (java.lang.reflect.Field field : cl.getDeclaredFields()) {
+        for (java.lang.reflect.Field field : com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(cl)) {
           // Text
           if (field.isAnnotationPresent(Bloom.class)) {
             Bloom bloom = field.getAnnotation(Bloom.class);
