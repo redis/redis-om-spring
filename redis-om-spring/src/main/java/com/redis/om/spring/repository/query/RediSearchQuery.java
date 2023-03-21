@@ -42,6 +42,7 @@ import redis.clients.jedis.search.Document;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.Schema.FieldType;
 import redis.clients.jedis.search.SearchResult;
+import redis.clients.jedis.util.SafeEncoder;
 
 public class RediSearchQuery implements RepositoryQuery {
 
@@ -406,7 +407,7 @@ public class RediSearchQuery implements RepositoryQuery {
       result = searchResult;
     } else if (queryMethod.isPageQuery()) {
       List<Object> content = searchResult.getDocuments().stream()
-          .map(d -> gson.fromJson(d.get("$").toString(), queryMethod.getReturnedObjectType()))
+          .map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), queryMethod.getReturnedObjectType()))
           .collect(Collectors.toList());
 
       if (maybePageable.isPresent()) {
@@ -417,13 +418,13 @@ public class RediSearchQuery implements RepositoryQuery {
     } else if (queryMethod.isQueryForEntity() && !queryMethod.isCollectionQuery()) {
       if (!searchResult.getDocuments().isEmpty()) {
         Document doc = searchResult.getDocuments().get(0);
-        Object json = doc != null ? doc.get("$") : "";
+        Object json = doc != null ? SafeEncoder.encode((byte[])doc.get("$")) : "";
         String jsonResult = json != null ? json.toString() : "";
         result = gson.fromJson(jsonResult, queryMethod.getReturnedObjectType());
       }
     } else if (queryMethod.isQueryForEntity() && queryMethod.isCollectionQuery()) {
       result = searchResult.getDocuments().stream()
-          .map(d -> gson.fromJson(d.get("$").toString(), queryMethod.getReturnedObjectType()))
+          .map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), queryMethod.getReturnedObjectType()))
           .collect(Collectors.toList());
     }
 

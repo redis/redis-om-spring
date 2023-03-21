@@ -73,6 +73,8 @@
     <assertj.version>3.23.1</assertj.version>
     <elementary.version>1.1.2</elementary.version>
     <gson.version>2.9.1</gson.version>
+    <djl.starter.version>0.20</djl.starter.version>
+    <djl.version>0.21.0</djl.version>
   </properties>
 
   <dependencyManagement>
@@ -195,6 +197,22 @@
       <groupId>com.squareup</groupId>
       <artifactId>javapoet</artifactId>
       <version>${javapoet.version}</version>
+    </dependency>
+    <!-- DJL Dependencies -->
+    <dependency>
+      <groupId>ai.djl.spring</groupId>
+      <artifactId>djl-spring-boot-starter-autoconfigure</artifactId>
+      <version>${djl.starter.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>ai.djl.spring</groupId>
+      <artifactId>djl-spring-boot-starter-pytorch-auto</artifactId>
+      <version>${djl.starter.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>ai.djl.huggingface</groupId>
+      <artifactId>tokenizers</artifactId>
+      <version>${djl.version}</version>
     </dependency>
 
     <!-- test dependencies -->

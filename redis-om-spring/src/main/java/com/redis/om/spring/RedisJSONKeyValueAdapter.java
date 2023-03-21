@@ -38,6 +38,7 @@ import redis.clients.jedis.json.Path;
 import redis.clients.jedis.search.Document;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
+import redis.clients.jedis.util.SafeEncoder;
 
 public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private static final Log logger = LogFactory.getLog(RedisJSONKeyValueAdapter.class);
@@ -148,7 +149,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       SearchResult searchResult = searchOps.search(query);
 
       result = searchResult.getDocuments().stream()
-          .map(d -> gson.fromJson(d.get("$").toString(), type)) //
+          .map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), type)) //
           .toList();
     }
 

@@ -1,5 +1,6 @@
 package com.redis.om.spring.ops.search;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -43,7 +44,7 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
 
   @Override
   public SearchResult search(Query q) {
-    return search.ftSearch(index.toString(), q);
+    return search.ftSearch(index.toString().getBytes(StandardCharsets.UTF_8), q);
   }
   
   @Override

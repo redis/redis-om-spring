@@ -1,9 +1,9 @@
 package com.redis.om.spring.repository.support;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.util.Optional;
-
+import com.redis.om.spring.RediSearchIndexer;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.repository.query.RedisEnhancedQuery;
+import com.redis.om.spring.vectorize.FeatureExtractor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.repository.query.KeyValuePartTreeQuery;
@@ -29,9 +29,9 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
-import com.redis.om.spring.RediSearchIndexer;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.repository.query.RedisEnhancedQuery;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.util.Optional;
 
 public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
 
@@ -44,6 +44,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
   private final MappingContext<?, ?> context;
   private final Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
   private final Class<? extends RepositoryQuery> repositoryQueryType;
+  private final FeatureExtractor featureExtractor;
 
   /**
    * Creates a new {@link KeyValueRepositoryFactory} for the given
@@ -52,14 +53,16 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
    * @param keyValueOperations must not be {@literal null}.
    * @param redisOperations  must not be {@literal null}.
    * @param rmo must not be {@literal null}.
-   * @param keyspaceToIndexMap must not be {@literal null}.
+   * @param indexer must not be {@literal null}.
    */
   public RedisEnhancedRepositoryFactory( //
       KeyValueOperations keyValueOperations, //
       RedisOperations<?, ?> redisOperations, //
       RedisModulesOperations<?> rmo, //
-      RediSearchIndexer keyspaceToIndexMap) {
-    this(keyValueOperations, redisOperations, rmo, keyspaceToIndexMap, DEFAULT_QUERY_CREATOR);
+      RediSearchIndexer indexer, //
+      FeatureExtractor featureExtractor //
+  ) {
+    this(keyValueOperations, redisOperations, rmo, indexer, featureExtractor, DEFAULT_QUERY_CREATOR);
   }
 
   /**
@@ -69,17 +72,18 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
    * @param keyValueOperations must not be {@literal null}.
    * @param redisOperations must not be {@literal null}.
    * @param rmo must not be {@literal null}.
-   * @param keyspaceToIndexMap must not be {@literal null}.
+   * @param indexer must not be {@literal null}.
    * @param queryCreator must not be {@literal null}.
    */
   public RedisEnhancedRepositoryFactory( //
                                          KeyValueOperations keyValueOperations, //
                                          RedisOperations<?, ?> redisOperations, //
                                          RedisModulesOperations<?> rmo, //
-                                         RediSearchIndexer keyspaceToIndexMap, //
+                                         RediSearchIndexer indexer, //
+                                         FeatureExtractor featureExtractor, //
                                          Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
 
-    this(keyValueOperations, redisOperations, rmo, keyspaceToIndexMap, queryCreator, RedisEnhancedQuery.class);
+    this(keyValueOperations, redisOperations, rmo, indexer, featureExtractor, queryCreator, RedisEnhancedQuery.class);
   }
 
   /**
@@ -89,7 +93,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
    * @param keyValueOperations must not be {@literal null}.
    * @param redisOperations must not be {@literal null}.
    * @param rmo must not be {@literal null}.
-   * @param keyspaceToIndexMap must not be {@literal null}.
+   * @param indexer must not be {@literal null}.
    * @param queryCreator must not be {@literal null}.
    * @param repositoryQueryType must not be {@literal null}.
    */
@@ -97,7 +101,8 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
                                          KeyValueOperations keyValueOperations, //
                                          RedisOperations<?, ?> redisOperations, //
                                          RedisModulesOperations<?> rmo, //
-                                         RediSearchIndexer keyspaceToIndexMap, //
+                                         RediSearchIndexer indexer, //
+                                         FeatureExtractor featureExtractor, //
                                          Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
                                          Class<? extends RepositoryQuery> repositoryQueryType) {
 
@@ -106,14 +111,16 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
     Assert.notNull(rmo, "RedisModulesOperations must not be null!");
     Assert.notNull(queryCreator, "Query creator type must not be null!");
     Assert.notNull(repositoryQueryType, "RepositoryQueryType type must not be null!");
+    Assert.notNull(featureExtractor, "FeatureExtractor type must not be null!");
 
     this.keyValueOperations = keyValueOperations;
     this.redisOperations = redisOperations;
     this.rmo = rmo;
-    this.indexer = keyspaceToIndexMap;
+    this.indexer = indexer;
     this.context = keyValueOperations.getMappingContext();
     this.queryCreator = queryCreator;
     this.repositoryQueryType = repositoryQueryType;
+    this.featureExtractor = featureExtractor;
   }
 
   /* (non-Javadoc)
@@ -139,7 +146,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
   @Override
   protected Object getTargetRepository(RepositoryInformation repositoryInformation) {    
     EntityInformation<?, ?> entityInformation = getEntityInformation(repositoryInformation.getDomainType());
-    return super.getTargetRepositoryViaReflection(repositoryInformation, entityInformation, keyValueOperations, rmo, indexer);
+    return super.getTargetRepositoryViaReflection(repositoryInformation, entityInformation, keyValueOperations, rmo, indexer, featureExtractor);
   }
 
   /* (non-Javadoc)

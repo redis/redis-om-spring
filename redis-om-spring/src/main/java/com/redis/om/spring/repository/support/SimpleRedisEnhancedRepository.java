@@ -1,25 +1,19 @@
 package com.redis.om.spring.repository.support;
 
-import java.lang.reflect.Field;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import org.springframework.beans.PropertyAccessor;
-import org.springframework.beans.PropertyAccessorFactory;
+import com.google.common.collect.Lists;
+import com.redis.om.spring.RediSearchIndexer;
+import com.redis.om.spring.RedisEnhancedKeyValueAdapter;
+import com.redis.om.spring.audit.EntityAuditor;
+import com.redis.om.spring.convert.MappingRedisOMConverter;
+import com.redis.om.spring.id.ULIDIdentifierGenerator;
+import com.redis.om.spring.metamodel.MetamodelField;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.search.SearchOperations;
+import com.redis.om.spring.repository.RedisEnhancedRepository;
+import com.redis.om.spring.util.ObjectUtils;
+import com.redis.om.spring.vectorize.FeatureExtractor;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.keyvalue.core.IterableConverter;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
@@ -32,22 +26,17 @@ import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
 import org.springframework.data.repository.core.EntityInformation;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
-
-import com.google.common.collect.Lists;
-import com.redis.om.spring.RediSearchIndexer;
-import com.redis.om.spring.RedisEnhancedKeyValueAdapter;
-import com.redis.om.spring.convert.MappingRedisOMConverter;
-import com.redis.om.spring.id.ULIDIdentifierGenerator;
-import com.redis.om.spring.metamodel.MetamodelField;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.ops.search.SearchOperations;
-import com.redis.om.spring.repository.RedisEnhancedRepository;
-import com.redis.om.spring.util.ObjectUtils;
-
-import redis.clients.jedis.search.Query;
-import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
+import redis.clients.jedis.search.Query;
+import redis.clients.jedis.search.SearchResult;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueRepository<T, ID>
     implements RedisEnhancedRepository<T, ID> {
@@ -60,23 +49,30 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   protected final RediSearchIndexer indexer;
   protected final MappingRedisOMConverter mappingConverter;
   protected final RedisEnhancedKeyValueAdapter enhancedKeyValueAdapter;
+  protected final EntityAuditor auditor;
+  protected final FeatureExtractor featureExtractor;
 
   private final ULIDIdentifierGenerator generator;
 
   @SuppressWarnings("unchecked")
-  public SimpleRedisEnhancedRepository(EntityInformation<T, ID> metadata, //
+  public SimpleRedisEnhancedRepository( //
+      EntityInformation<T, ID> metadata, //
       KeyValueOperations operations, //
       @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo, //
-      RediSearchIndexer keyspaceToIndexMap) {
+      RediSearchIndexer indexer, //
+      FeatureExtractor featureExtractor //
+  ) {
     super(metadata, operations);
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.metadata = metadata;
     this.operations = operations;
-    this.indexer = keyspaceToIndexMap;
+    this.indexer = indexer;
     this.mappingConverter = new MappingRedisOMConverter(null,
         new ReferenceResolverImpl(modulesOperations.getTemplate()));
-    this.enhancedKeyValueAdapter = new RedisEnhancedKeyValueAdapter(rmo.getTemplate(), rmo, keyspaceToIndexMap);
+    this.enhancedKeyValueAdapter = new RedisEnhancedKeyValueAdapter(rmo.getTemplate(), rmo, indexer, featureExtractor);
     this.generator = ULIDIdentifierGenerator.INSTANCE;
+    this.auditor = new EntityAuditor(modulesOperations.getTemplate());
+    this.featureExtractor = featureExtractor;
   }
 
   @SuppressWarnings("unchecked")
@@ -94,7 +90,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
       query.returnFields(idField);
       SearchResult searchResult = searchOps.search(query);
   
-      result = (List<ID>) searchResult.getDocuments().stream()
+      result = (List<ID>) searchResult.getDocuments().stream() //
           .map(d -> ObjectUtils.documentToObject(d, metadata.getJavaType(), mappingConverter)) //
           .map(e -> ObjectUtils.getIdFieldForEntity(maybeIdField.get(), e)) //
           .toList();
@@ -240,7 +236,9 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
         String keyspace = keyValueEntity.getKeySpace();
         byte[] objectKey = createKey(keyspace, id.toString());
 
-        processAuditAnnotations(objectKey, entity, isNew);
+        // process entity pre-save mutation entities
+        auditor.processEntity(objectKey, entity, isNew);
+        featureExtractor.processEntity(objectKey, entity, isNew);
 
         RedisData rdo = new RedisData();
         mappingConverter.write(entity, rdo);
@@ -265,23 +263,5 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
 
   private boolean expires(RedisData data) {
     return data.getTimeToLive() != null && data.getTimeToLive() > 0L;
-  }
-
-  private void processAuditAnnotations(byte[] redisKey, Object item, boolean isNew) {
-    var auditClass = isNew ? CreatedDate.class : LastModifiedDate.class;
-
-    List<Field> fields = com.redis.om.spring.util.ObjectUtils.getFieldsWithAnnotation(item.getClass(), auditClass);
-    if (!fields.isEmpty()) {
-      PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(item);
-      fields.forEach(f -> {
-        if (f.getType() == Date.class) {
-          accessor.setPropertyValue(f.getName(), new Date(System.currentTimeMillis()));
-        } else if (f.getType() == LocalDateTime.class) {
-          accessor.setPropertyValue(f.getName(), LocalDateTime.now());
-        } else if (f.getType() == LocalDate.class) {
-          accessor.setPropertyValue(f.getName(), LocalDate.now());
-        }
-      });
-    }
   }
 }

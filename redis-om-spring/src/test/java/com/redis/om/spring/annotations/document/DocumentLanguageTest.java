@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import redis.clients.jedis.search.SearchResult;
+import redis.clients.jedis.util.SafeEncoder;
 
 import java.util.HashMap;
 import java.util.List;
@@ -61,12 +62,12 @@ import static org.junit.jupiter.api.Assertions.assertAll;
   void testLanguage() {
     SearchResult result = spanishDocRepository.findByBody("fusil");
     assertThat(result.getTotalResults()).isEqualTo(1);
-    SpanishDoc doc = gson.fromJson(result.getDocuments().get(0).get("$").toString(), SpanishDoc.class);
+    SpanishDoc doc = gson.fromJson(SafeEncoder.encode((byte[]) result.getDocuments().get(0).get("$")), SpanishDoc.class);
     assertThat(doc.getTitle()).isEqualTo("Cien Años de Soledad");
 
     SearchResult result2 = spanishDocRepository.findByBody("manchas");
     assertThat(result2.getTotalResults()).isEqualTo(1);
-    SpanishDoc doc2 = gson.fromJson(result2.getDocuments().get(0).get("$").toString(), SpanishDoc.class);
+    SpanishDoc doc2 = gson.fromJson(SafeEncoder.encode((byte[]) result2.getDocuments().get(0).get("$")), SpanishDoc.class);
     assertThat(doc2.getTitle()).isEqualTo("Don Quijote");
   }
 
@@ -79,10 +80,10 @@ import static org.junit.jupiter.api.Assertions.assertAll;
         () -> assertThat(doppelGe.getTotalResults()).isEqualTo(1), //
         () -> assertThat(doppelEn.getTotalResults()).isEqualTo(1), //
         () -> {
-          MultiLingualDoc geDoc1 = gson.fromJson(doppelGe.getDocuments().get(0).get("$").toString(),
+          MultiLingualDoc geDoc1 = gson.fromJson(SafeEncoder.encode((byte[]) doppelGe.getDocuments().get(0).get("$")),
               MultiLingualDoc.class);
           assertThat(geDoc1.getBody()).isEqualTo(MULTILINGUAL_SENTENCES.get(SearchLanguage.GERMAN));
-          MultiLingualDoc enDoc1 = gson.fromJson(doppelEn.getDocuments().get(0).get("$").toString(),
+          MultiLingualDoc enDoc1 = gson.fromJson(SafeEncoder.encode((byte[]) doppelEn.getDocuments().get(0).get("$")),
               MultiLingualDoc.class);
           assertThat(enDoc1.getBody()).isEqualTo(MULTILINGUAL_SENTENCES.get(SearchLanguage.ENGLISH));
         } //
@@ -98,9 +99,9 @@ import static org.junit.jupiter.api.Assertions.assertAll;
         () -> assertThat(searchHi.getTotalResults()).isEqualTo(1), //
         () -> assertThat(searchCat.getTotalResults()).isEqualTo(1), //
         () -> {
-          MultiLingualDoc hiDoc1 = gson.fromJson(searchHi.getDocuments().get(0).get("$").toString(),
+          MultiLingualDoc hiDoc1 = gson.fromJson(SafeEncoder.encode((byte[]) searchHi.getDocuments().get(0).get("$")),
               MultiLingualDoc.class);
-          MultiLingualDoc catDoc1 = gson.fromJson(searchCat.getDocuments().get(0).get("$").toString(),
+          MultiLingualDoc catDoc1 = gson.fromJson(SafeEncoder.encode((byte[]) searchCat.getDocuments().get(0).get("$")),
               MultiLingualDoc.class);
           assertThat(hiDoc1.getBody()).isEqualTo(MULTILINGUAL_SENTENCES.get(SearchLanguage.HINDI));
           assertThat(catDoc1.getBody()).isEqualTo(MULTILINGUAL_SENTENCES.get(SearchLanguage.CATALAN));

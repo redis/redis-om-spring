@@ -30,6 +30,7 @@ import redis.clients.jedis.search.aggr.SortedField;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
+import redis.clients.jedis.util.SafeEncoder;
 
 import java.util.*;
 import java.util.function.*;
@@ -404,7 +405,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   private List<E> toEntityList(SearchResult searchResult) {
     if (isDocument) {
-      return searchResult.getDocuments().stream().map(d -> gson.fromJson(d.get("$").toString(), entityClass)).toList();
+      return searchResult.getDocuments().stream().map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), entityClass)).toList();
     } else {
       return searchResult.getDocuments().stream().map(d -> (E)ObjectUtils.documentToObject(d, entityClass, mappingConverter)).toList();
     }

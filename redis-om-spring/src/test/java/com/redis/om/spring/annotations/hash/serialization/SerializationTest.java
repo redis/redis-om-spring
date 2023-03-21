@@ -5,12 +5,18 @@ import com.github.f4b6a3.ulid.UlidCreator;
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
 import com.redis.om.spring.annotations.hash.fixtures.KitchenSink;
 import com.redis.om.spring.annotations.hash.fixtures.KitchenSinkRepository;
+import com.redis.om.spring.vectorize.FeatureExtractor;
+import org.apache.commons.codec.binary.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
+import java.io.IOException;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -23,6 +29,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
   @Autowired
   KitchenSinkRepository repository;
+
+  @Autowired
+  FeatureExtractor featureExtractor;
+
+  @Autowired
+  private ApplicationContext applicationContext;
 
   private KitchenSink ks;
   private KitchenSink ks1;
@@ -37,12 +49,13 @@ import static org.assertj.core.api.Assertions.assertThat;
   private Point point;
   private Ulid ulid;
   private byte[] byteArray;
+  private byte[] byteArray2;
 
   private Set<String> setThings;
   private List<String> listThings;
 
   @BeforeEach
-  public void cleanUp() {
+  public void cleanUp() throws IOException {
     repository.deleteAll();
     flushSearchIndexFor(KitchenSink.class);
 
@@ -53,6 +66,9 @@ import static org.assertj.core.api.Assertions.assertThat;
     point = new Point(-111.83592170193586,33.62826024782707);
     ulid = UlidCreator.getMonotonicUlid();
     byteArray = "Hello World!".getBytes();
+    byteArray2 = featureExtractor.getImageEmbeddingsFor( //
+        applicationContext.getResource("classpath:/images/cat.jpg").getInputStream()
+    );
 
     List<String[]> listOfStringArrays = new ArrayList<>();
     listOfStringArrays.add(new String[] {"a", "b"});
@@ -64,6 +80,7 @@ import static org.assertj.core.api.Assertions.assertThat;
     listThings = List.of("redFish", "blueFish");
 
     ks = KitchenSink.builder() //
+        .name("ks") //
         .localDate(localDate) //
         .localDateTime(localDateTime) //
         .localOffsetDateTime(localOffsetDateTime) //
@@ -75,6 +92,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         .build();
 
     ks1 = KitchenSink.builder() //
+        .name("ks1") //
         .localDate(localDate) //
         .localDateTime(localDateTime) //
         .localOffsetDateTime(localOffsetDateTime) //
@@ -86,6 +104,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         .build();
 
     ks2 = KitchenSink.builder() //
+        .name("ks2") //
         .localDate(localDate) //
         .localDateTime(localDateTime) //
         .localOffsetDateTime(localOffsetDateTime) //
@@ -96,8 +115,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
     ks2.setSetThings(null);
     ks2.setListThings(null);
+    ks2.setByteArray(byteArray2);
     
     ks3 = KitchenSink.builder() //
+        .name("ks3") //
         .localDate(localDate) //
         .localDateTime(localDateTime) //
         .localOffsetDateTime(localOffsetDateTime) //
@@ -110,6 +131,7 @@ import static org.assertj.core.api.Assertions.assertThat;
     ks3.setByteArray(byteArray);
     
     ks4 = KitchenSink.builder() //
+        .name("ks4") //
         .localDate(localDate) //
         .localDateTime(localDateTime) //
         .localOffsetDateTime(localOffsetDateTime) //
@@ -182,6 +204,22 @@ import static org.assertj.core.api.Assertions.assertThat;
     assertThat(fromDb.get().getSetThings()).isEqualTo(setThings);
     assertThat(fromDb.get().getListThings()).isEqualTo(listThings);
   }
+
+  @Test
+  void testHashDeserializationUsingCustomFinder() {
+    Optional<KitchenSink> fromDb = repository.findFirstByName("ks");
+    assertThat(fromDb).isPresent();
+    assertThat(fromDb.get().getLocalDate()).isEqualTo(localDate);
+    assertThat(fromDb.get().getDate()).isEqualTo(date);
+    assertThat(fromDb.get().getPoint()).isEqualTo(point);
+    assertThat(fromDb.get().getUlid()).isEqualTo(ulid);
+    // NOTE: We lose nanosecond precision in order to store LocalDateTime as long in
+    // order to allow for RediSearch range queries
+    assertThat(fromDb.get().getLocalDateTime()).isEqualToIgnoringNanos(localDateTime);
+    assertThat(fromDb.get().getLocalOffsetDateTime()).isEqualToIgnoringNanos(localOffsetDateTime);
+    assertThat(fromDb.get().getSetThings()).isEqualTo(setThings);
+    assertThat(fromDb.get().getListThings()).isEqualTo(listThings);
+  }
   
   @Test
   void testLocalDateDeSerializationInQuery() {
@@ -195,6 +233,13 @@ import static org.assertj.core.api.Assertions.assertThat;
     assertThat(fromDb).isPresent();
     assertThat(fromDb.get().getUlid()).isNull();
   }
+
+  @Test
+  void testEmptyUlidReturnsAsNullUsingCustomFinder() {
+    Optional<KitchenSink> fromDb = repository.findFirstByName("ks3");
+    assertThat(fromDb).isPresent();
+    assertThat(fromDb.get().getUlid()).isNull();
+  }
   
   @Test
   void testArraySerialization() {
@@ -202,12 +247,54 @@ import static org.assertj.core.api.Assertions.assertThat;
     assertThat(fromDb).isPresent();
     assertThat(fromDb.get().getByteArray()).isEqualTo(byteArray);
   }
+
+  @Test
+  void testArraySerializationUsingCustomFinder() {
+    Optional<KitchenSink> fromDb = repository.findFirstByName("ks3");
+    assertThat(fromDb).isPresent();
+    assertThat(fromDb.get().getByteArray()).isEqualTo(byteArray);
+  }
+
+  @Test
+  void testArraySerializationLargeBlob() {
+    Optional<KitchenSink> fromDb = repository.findById(ks2.getId());
+    assertThat(fromDb).isPresent();
+    assertThat(fromDb.get().getByteArray()).isEqualTo(byteArray2);
+  }
+
+  @Test
+  void testArraySerializationLargeBlobUsingCustomFinder() {
+    Optional<KitchenSink> fromDb = repository.findFirstByName("ks2");
+    assertThat(fromDb).isPresent();
+    System.out.println(">>>> BEFORE: " + byteArray2.length);
+    System.out.println(">>>> AFTER : " + fromDb.get().getByteArray().length);
+    assertThat(fromDb.get().getByteArray()).isEqualTo(byteArray2);
+  }
   
   @Test
   void testCantPersistCollectionWithNulls() {
     Optional<KitchenSink> fromDb = repository.findById(ks4.getId());
     assertThat(fromDb).isPresent();
     assertThat(fromDb.get().getListOfStringArrays()).isNull();
+  }
+
+  @Test
+  void testCantPersistCollectionWithNullsUsingCustomFinder() {
+    Optional<KitchenSink> fromDb = repository.findFirstByName("ks4");
+    assertThat(fromDb).isPresent();
+    assertThat(fromDb.get().getListOfStringArrays()).isNull();
+  }
+
+  @Test
+  void testRawShit() {
+    CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder();
+
+    byte[] data = byteArray2;
+    System.out.println(">>>> BEFORE: " + data.length);
+    String asString = new String(data, StandardCharsets.UTF_8);
+    byte[] dataBack = StringUtils.getBytesUtf16Le(asString);
+    System.out.println(">>>> AFTER: " + dataBack.length);
+
   }
 
 }

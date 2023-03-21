@@ -16,6 +16,7 @@ import redis.clients.jedis.search.Schema.TextField;
 import redis.clients.jedis.search.aggr.AggregationBuilder;
 import redis.clients.jedis.search.aggr.AggregationResult;
 import redis.clients.jedis.search.aggr.Row;
+import redis.clients.jedis.util.SafeEncoder;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -89,7 +90,7 @@ import static org.junit.jupiter.api.Assertions.*;
     Document doc = result.getDocuments().get(0);
     assertEquals(1.0, doc.getScore(), 0);
     assertNull(doc.getPayload());
-    assertEquals("{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}", doc.get("$"));
+    assertEquals("{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}", SafeEncoder.encode((byte[])doc.get("$")));
   }
 
   /**
@@ -109,7 +110,7 @@ import static org.junit.jupiter.api.Assertions.*;
     assertNull(doc.getPayload());
     assertTrue(StreamSupport //
         .stream(doc.getProperties().spliterator(), false) //
-        .anyMatch(p -> p.getKey().contentEquals("first_tag") && p.getValue().equals("news")));
+        .anyMatch(p -> p.getKey().contentEquals("first_tag") && SafeEncoder.encode((byte[])p.getValue()).equals("news")));
   }
 
   /**

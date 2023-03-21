@@ -28,6 +28,10 @@ public class KitchenSink {
 
   @NonNull
   @Indexed
+  private String name;
+
+  @NonNull
+  @Indexed
   private LocalDate localDate;
   @NonNull
   @Indexed

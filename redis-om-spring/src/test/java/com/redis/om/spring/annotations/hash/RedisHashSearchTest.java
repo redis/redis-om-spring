@@ -17,6 +17,7 @@ import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import redis.clients.jedis.search.SearchResult;
+import redis.clients.jedis.util.SafeEncoder;
 
 import java.util.*;
 
@@ -262,18 +263,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
     assertThat(result.getTotalResults()).isEqualTo(16);
     assertThat(result.getDocuments()).hasSize(12);
-    assertThat(result.getDocuments().get(0).get("title")).isEqualTo("precentorships");
-    assertThat(result.getDocuments().get(1).get("title")).isEqualTo("preceptorships");
-    assertThat(result.getDocuments().get(2).get("title")).isEqualTo("preciousnesses");
-    assertThat(result.getDocuments().get(3).get("title")).isEqualTo("precipitancies");
-    assertThat(result.getDocuments().get(4).get("title")).isEqualTo("precipitations");
-    assertThat(result.getDocuments().get(5).get("title")).isEqualTo("precipitinogen");
-    assertThat(result.getDocuments().get(6).get("title")).isEqualTo("precociousness");
-    assertThat(result.getDocuments().get(7).get("title")).isEqualTo("precombustions");
-    assertThat(result.getDocuments().get(8).get("title")).isEqualTo("preconceptions");
-    assertThat(result.getDocuments().get(9).get("title")).isEqualTo("preconditioned");
-    assertThat(result.getDocuments().get(10).get("title")).isEqualTo("predestinarian");
-    assertThat(result.getDocuments().get(11).get("title")).isEqualTo("predestination");
+    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(0).get("title"))).isEqualTo("precentorships");
+    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(1).get("title"))).isEqualTo("preceptorships");
+    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(2).get("title"))).isEqualTo("preciousnesses");
+    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(3).get("title"))).isEqualTo("precipitancies");
+    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(4).get("title"))).isEqualTo("precipitations");
+    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(5).get("title"))).isEqualTo("precipitinogen");
+    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(6).get("title"))).isEqualTo("precociousness");
+    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(7).get("title"))).isEqualTo("precombustions");
+    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(8).get("title"))).isEqualTo("preconceptions");
+    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(9).get("title"))).isEqualTo("preconditioned");
+    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(10).get("title"))).isEqualTo("predestinarian");
+    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(11).get("title"))).isEqualTo("predestination");
   }
 
   @Test

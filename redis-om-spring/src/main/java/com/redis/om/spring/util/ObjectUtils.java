@@ -1,20 +1,10 @@
 package com.redis.om.spring.util;
 
-import static java.util.Objects.requireNonNull;
-
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-
+import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
+import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
+import com.redis.om.spring.convert.MappingRedisOMConverter;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.Configuration;
@@ -25,18 +15,19 @@ import org.springframework.data.geo.Distance;
 import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
 import org.springframework.data.redis.core.convert.Bucket;
 import org.springframework.data.redis.core.convert.RedisData;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.data.util.Pair;
 import org.springframework.util.ReflectionUtils;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
-import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
-import com.redis.om.spring.convert.MappingRedisOMConverter;
-
 import redis.clients.jedis.args.GeoUnit;
 import redis.clients.jedis.search.Document;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.util.*;
+import java.util.function.Function;
+
+import static java.util.Objects.requireNonNull;
 
 public class ObjectUtils {
   public static String getDistanceAsRedisString(Distance distance) {
@@ -245,7 +236,9 @@ public class ObjectUtils {
       MappingRedisOMConverter mappingConverter) {
     Bucket b = new Bucket();
     document.getProperties()
-        .forEach(p -> b.put(p.getKey(), StringRedisSerializer.UTF_8.serialize(p.getValue().toString())));
+        .forEach(p -> {
+          b.put(p.getKey(), (byte[]) p.getValue());
+        });
 
     return mappingConverter.read(returnedObjectType, new RedisData(b));
   }
@@ -253,7 +246,7 @@ public class ObjectUtils {
   public static <T> T documentToEntity(Document document, Class<T> classOfT, MappingRedisOMConverter mappingConverter) {
     Bucket b = new Bucket();
     document.getProperties()
-        .forEach(p -> b.put(p.getKey(), StringRedisSerializer.UTF_8.serialize(p.getValue().toString())));
+        .forEach(p -> b.put(p.getKey(), (byte[]) p.getValue()));
 
     return mappingConverter.read(classOfT, new RedisData(b));
   }
@@ -265,7 +258,7 @@ public class ObjectUtils {
       return mappingConverter.getConversionService().convert(value, String.class);
     }
   }
-  
+
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public static Set<BeanDefinition> getBeanDefinitionsFor(ApplicationContext ac, Class... classes) {
     Set<BeanDefinition> beanDefs = new HashSet<>();
@@ -274,9 +267,9 @@ public class ObjectUtils {
     for (Class cls : classes) {
       provider.addIncludeFilter(new AnnotationTypeFilter(cls));
     }
-    
-    List<Pair<EnableRedisDocumentRepositories,String>> erdrs = getEnableRedisDocumentRepositories(ac);
-    for (Pair<EnableRedisDocumentRepositories,String> pair : erdrs) {
+
+    List<Pair<EnableRedisDocumentRepositories, String>> erdrs = getEnableRedisDocumentRepositories(ac);
+    for (Pair<EnableRedisDocumentRepositories, String> pair : erdrs) {
       EnableRedisDocumentRepositories edr = pair.getFirst();
       if (edr.basePackages().length > 0) {
         for (String pkg : edr.basePackages()) {
@@ -290,9 +283,9 @@ public class ObjectUtils {
         beanDefs.addAll(provider.findCandidateComponents(pair.getSecond()));
       }
     }
-    
-    List<Pair<EnableRedisEnhancedRepositories,String>> erers = getEnableRedisEnhancedRepositories(ac);
-    for (Pair<EnableRedisEnhancedRepositories,String> pair : erers) {
+
+    List<Pair<EnableRedisEnhancedRepositories, String>> erers = getEnableRedisEnhancedRepositories(ac);
+    for (Pair<EnableRedisEnhancedRepositories, String> pair : erers) {
       EnableRedisEnhancedRepositories er = pair.getFirst();
       if (er.basePackages().length > 0) {
         for (String pkg : er.basePackages()) {
@@ -309,11 +302,12 @@ public class ObjectUtils {
 
     return beanDefs;
   }
-  
-  public static List<Pair<EnableRedisDocumentRepositories,String>> getEnableRedisDocumentRepositories(ApplicationContext ac) {
+
+  public static List<Pair<EnableRedisDocumentRepositories, String>> getEnableRedisDocumentRepositories(
+      ApplicationContext ac) {
     Map<String, Object> annotatedBeans = ac.getBeansWithAnnotation(SpringBootApplication.class);
     annotatedBeans.putAll(ac.getBeansWithAnnotation(Configuration.class));
-    List<Pair<EnableRedisDocumentRepositories,String>> erdrs = new ArrayList<>();
+    List<Pair<EnableRedisDocumentRepositories, String>> erdrs = new ArrayList<>();
     for (Object ab : annotatedBeans.values()) {
       Class<?> cls = ab.getClass();
       if (cls.isAnnotationPresent(EnableRedisDocumentRepositories.class)) {
@@ -321,14 +315,15 @@ public class ObjectUtils {
         erdrs.add(Pair.of(edr, cls.getPackageName()));
       }
     }
-    
+
     return erdrs;
   }
-  
-  public static List<Pair<EnableRedisEnhancedRepositories,String>> getEnableRedisEnhancedRepositories(ApplicationContext ac) {
+
+  public static List<Pair<EnableRedisEnhancedRepositories, String>> getEnableRedisEnhancedRepositories(
+      ApplicationContext ac) {
     Map<String, Object> annotatedBeans = ac.getBeansWithAnnotation(SpringBootApplication.class);
     annotatedBeans.putAll(ac.getBeansWithAnnotation(Configuration.class));
-    List<Pair<EnableRedisEnhancedRepositories,String>> erers = new ArrayList<>();
+    List<Pair<EnableRedisEnhancedRepositories, String>> erers = new ArrayList<>();
     for (Object ab : annotatedBeans.values()) {
       Class<?> cls = ab.getClass();
       if (cls.isAnnotationPresent(EnableRedisEnhancedRepositories.class)) {
@@ -336,7 +331,7 @@ public class ObjectUtils {
         erers.add(Pair.of(edr, cls.getPackageName()));
       }
     }
-    
+
     return erers;
   }
 
@@ -357,5 +352,20 @@ public class ObjectUtils {
     return field;
   }
 
-  private ObjectUtils() {}
+  public static byte[] floatArrayToByteArray(float[] input) {
+    byte bytes[] = new byte[Float.BYTES * input.length];
+    ByteBuffer.wrap(bytes).asFloatBuffer().put(input);
+    return bytes;
+  }
+
+  public static byte[] longArrayToByteArray(long[] input) {
+    float[] floats = new float[input.length];
+    for (int i = 0; i < input.length; i++) {
+      floats[i] = Long.valueOf(input[i]).floatValue();
+    }
+    return floatArrayToByteArray(floats);
+  }
+
+  private ObjectUtils() {
+  }
 }

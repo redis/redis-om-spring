@@ -1,5 +1,17 @@
 package com.redis.om.spring;
 
+import ai.djl.MalformedModelException;
+import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
+import ai.djl.modality.cv.Image;
+import ai.djl.modality.cv.ImageFactory;
+import ai.djl.modality.cv.transform.CenterCrop;
+import ai.djl.modality.cv.transform.Resize;
+import ai.djl.modality.cv.transform.ToTensor;
+import ai.djl.repository.zoo.Criteria;
+import ai.djl.repository.zoo.ModelNotFoundException;
+import ai.djl.repository.zoo.ModelZoo;
+import ai.djl.repository.zoo.ZooModel;
+import ai.djl.translate.Pipeline;
 import com.github.f4b6a3.ulid.Ulid;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -12,9 +24,11 @@ import com.redis.om.spring.ops.pds.BloomOperations;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.EntityStreamImpl;
 import com.redis.om.spring.serialization.gson.*;
+import com.redis.om.spring.vectorize.FeatureExtractor;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
@@ -33,12 +47,14 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static com.redis.om.spring.util.ObjectUtils.getBeanDefinitionsFor;
@@ -109,30 +125,88 @@ public class RedisModulesConfiguration {
     return new RediSearchIndexer(ac);
   }
 
+  @Bean(name = "djlImageFactory")
+  public ImageFactory imageFactory() {
+    return ImageFactory.getInstance();
+  }
+
+  @Bean(name = "djlImageEmbeddingModelCriteria")
+  public Criteria<Image, byte[]> imageEmbeddingModelCriteria() {
+    return Criteria.builder()
+        .setTypes(Image.class, byte[].class) //
+        .optEngine("PyTorch")  //
+        .optModelUrls("djl://ai.djl.pytorch/resnet18_embedding") //
+        .build();
+  }
+
+  @Bean(name = "djlImageEmbeddingModel")
+  public ZooModel<Image, byte[]> imageModel(
+      @Qualifier("djlImageEmbeddingModelCriteria") Criteria<Image, byte[]> imageEmbeddingModelCriteria)
+      throws MalformedModelException, ModelNotFoundException, IOException {
+    return ModelZoo.loadModel(imageEmbeddingModelCriteria);
+  }
+
+  @Bean(name = "djlDefaultImagePipeline")
+  public Pipeline defaultImagePipeline() {
+    return new Pipeline() //
+        .add(new CenterCrop()) //
+        .add(new Resize(224, 224)) //
+        .add(new ToTensor());
+  }
+
+  @Bean(name = "djlSentenceTokenizer")
+  public HuggingFaceTokenizer sentenceTokenizer() {
+    Map<String, String> options = Map.of("maxLength", "768", "modelMaxLength", "768");
+    return HuggingFaceTokenizer.newInstance("sentence-transformers/all-mpnet-base-v2", options);
+  }
+
+  @Bean(name = "featureExtractor")
+  public FeatureExtractor featureExtractor(
+      @Qualifier("djlImageEmbeddingModel") ZooModel<Image, byte[]> model,
+      @Qualifier("djlImageFactory") ImageFactory imageFactory,
+      @Qualifier("djlDefaultImagePipeline") Pipeline defaultImagePipeline,
+      @Qualifier("djlSentenceTokenizer") HuggingFaceTokenizer sentenceTokenizer,
+      @Qualifier("redisTemplate") RedisTemplate<?, ?> redisTemplate,
+      ApplicationContext ac) {
+    return new FeatureExtractor(redisTemplate, ac, model, imageFactory, defaultImagePipeline, sentenceTokenizer);
+  }
+
   @Bean(name = "redisJSONKeyValueAdapter")
-  RedisJSONKeyValueAdapter getRedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps,
-      RedisModulesOperations<?> redisModulesOperations, RedisMappingContext mappingContext,
-      RediSearchIndexer keyspaceToIndexMap,
-      GsonBuilder gsonBuilder, RedisOMSpringProperties properties) {
-    return new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap, gsonBuilder, properties);
+  RedisJSONKeyValueAdapter getRedisJSONKeyValueAdapter( //
+      RedisOperations<?, ?> redisOps, //
+      RedisModulesOperations<?> redisModulesOperations, //
+      RedisMappingContext mappingContext, //
+      RediSearchIndexer indexer, //
+      GsonBuilder gsonBuilder, //
+      RedisOMSpringProperties properties //
+  ) {
+    return new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, gsonBuilder, properties);
   }
 
   @Bean(name = "redisJSONKeyValueTemplate")
-  public CustomRedisKeyValueTemplate getRedisJSONKeyValueTemplate(RedisOperations<?, ?> redisOps,
-      RedisModulesOperations<?> redisModulesOperations, RedisMappingContext mappingContext,
-      RediSearchIndexer keyspaceToIndexMap,
-      GsonBuilder gsonBuilder, RedisOMSpringProperties properties) {
+  public CustomRedisKeyValueTemplate getRedisJSONKeyValueTemplate( //
+      RedisOperations<?, ?> redisOps, //
+      RedisModulesOperations<?> redisModulesOperations, //
+      RedisMappingContext mappingContext, //
+      RediSearchIndexer indexer, //
+      GsonBuilder gsonBuilder, //
+      RedisOMSpringProperties properties //
+  ) {
     return new CustomRedisKeyValueTemplate(
-        new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap, gsonBuilder, properties),
+        new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, gsonBuilder, properties),
         mappingContext);
   }
 
   @Bean(name = "redisCustomKeyValueTemplate")
-  public CustomRedisKeyValueTemplate getKeyValueTemplate(RedisOperations<?, ?> redisOps,
-      RedisModulesOperations<?> redisModulesOperations, RedisMappingContext mappingContext,
-      RediSearchIndexer keyspaceToIndexMap) {
+  public CustomRedisKeyValueTemplate getKeyValueTemplate( //
+      RedisOperations<?, ?> redisOps, //
+      RedisModulesOperations<?> redisModulesOperations, //
+      RedisMappingContext mappingContext, //
+      RediSearchIndexer indexer, //
+      FeatureExtractor featureExtractor
+  ) {
     return new CustomRedisKeyValueTemplate(
-        new RedisEnhancedKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap),
+        new RedisEnhancedKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, featureExtractor), //
         mappingContext);
   }
 
