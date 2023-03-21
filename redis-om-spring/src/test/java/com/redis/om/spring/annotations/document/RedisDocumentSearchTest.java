@@ -20,6 +20,7 @@ import redis.clients.jedis.json.Path;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.AggregationResult;
 import redis.clients.jedis.search.aggr.Row;
+import redis.clients.jedis.util.SafeEncoder;
 
 import java.util.*;
 
@@ -313,7 +314,7 @@ import static org.junit.jupiter.api.Assertions.*;
     assertEquals(16, result.getTotalResults());
     assertThat(result.getTotalResults()).isEqualTo(16);
 
-    List<String> titles = result.getDocuments().stream().map(d -> d.get("title")).map(Object::toString).toList();
+    List<String> titles = result.getDocuments().stream().map(d -> SafeEncoder.encode((byte[])d.get("title"))).map(Object::toString).toList();
 
     assertThat(titles).containsExactly("precentorships", "preceptorships", "preciousnesses", "precipitancies",
         "precipitations", "precipitinogen", "precociousness", "precombustions", "preconceptions", "preconditioned",

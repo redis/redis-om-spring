@@ -1,5 +1,8 @@
 package com.redis.om.spring.repository.support;
 
+import ai.djl.modality.cv.Image;
+import ai.djl.modality.cv.ImageFactory;
+import ai.djl.repository.zoo.ZooModel;
 import com.google.gson.Gson;
 import com.redis.om.spring.RediSearchIndexer;
 import com.redis.om.spring.ops.RedisModulesOperations;
@@ -26,7 +29,8 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
   private Gson gson;
 
   /**
-   * Creates a new {@link RedisDocumentRepositoryFactoryBean} for the given repository
+   * Creates a new {@link RedisDocumentRepositoryFactoryBean} for the given
+   * repository
    * interface.
    *
    * @param repositoryInterface must not be {@literal null}.
@@ -36,11 +40,13 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
   }
 
   @Override
-  protected final RedisDocumentRepositoryFactory createRepositoryFactory(
-          KeyValueOperations operations,
-          Class<? extends AbstractQueryCreator<?, ?>> queryCreator, Class<? extends RepositoryQuery> repositoryQueryType
+  protected final RedisDocumentRepositoryFactory createRepositoryFactory( //
+      KeyValueOperations operations, //
+      Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
+      Class<? extends RepositoryQuery> repositoryQueryType //
   ) {
-    return new RedisDocumentRepositoryFactory(operations, rmo, indexer, queryCreator, repositoryQueryType, this.mappingContext, this.gson);
+    return new RedisDocumentRepositoryFactory(operations, rmo, indexer, queryCreator, repositoryQueryType,
+        this.mappingContext, this.gson);
   }
 
   @Override

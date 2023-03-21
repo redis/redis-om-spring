@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import redis.clients.jedis.search.Document;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
+import redis.clients.jedis.util.SafeEncoder;
 
 import java.util.Optional;
 
@@ -26,7 +27,7 @@ public class MyDocQueriesImpl implements MyDocQueries {
     SearchResult result = ops.search(new Query("@title:'" + title + "'"));
     if (result.getTotalResults() > 0) {
       Document doc = result.getDocuments().get(0);
-      return Optional.of(gson.fromJson(doc.get("$").toString(), MyDoc.class));
+      return Optional.of(gson.fromJson(SafeEncoder.encode((byte[])doc.get("$")), MyDoc.class));
     } else {
       return Optional.empty();
     }

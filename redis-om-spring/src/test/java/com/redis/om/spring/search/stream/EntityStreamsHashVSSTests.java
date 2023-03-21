@@ -4,6 +4,7 @@ import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
 import com.redis.om.spring.annotations.hash.fixtures.*;
 import com.redis.om.spring.tuple.Fields;
 import com.redis.om.spring.tuple.Pair;
+import com.redis.om.spring.util.ObjectUtils;
 import org.assertj.core.util.DoubleComparator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,8 +39,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
         float[] vec = new float[dimension];
         float val = (float) i / (dimension + i);
         Arrays.fill(vec, val);
-        hashWithByteArrayHNSWVectors.add(HashWithByteArrayHNSWVector.of("doc:" + i, floatToByte(vec), i));
-        hashWithByteArrayFlatVectors.add(HashWithByteArrayFlatVector.of("doc:" + i, floatToByte(vec), i));
+        hashWithByteArrayHNSWVectors.add(HashWithByteArrayHNSWVector.of("doc:" + i, ObjectUtils.floatArrayToByteArray(vec), i));
+        hashWithByteArrayFlatVectors.add(HashWithByteArrayFlatVector.of("doc:" + i, ObjectUtils.floatArrayToByteArray(vec), i));
       }
       hnswRepository.saveAll(hashWithByteArrayHNSWVectors);
       flatRepository.saveAll(hashWithByteArrayFlatVectors);
@@ -62,7 +63,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     SearchStream<HashWithByteArrayHNSWVector> stream = entityStream.of(HashWithByteArrayHNSWVector.class);
 
     List<HashWithByteArrayHNSWVector> results = stream //
-        .filter(HashWithByteArrayHNSWVector$.VECTOR.knn(K, floatToByte(e))) //
+        .filter(HashWithByteArrayHNSWVector$.VECTOR.knn(K, ObjectUtils.floatArrayToByteArray(e))) //
         .sorted(HashWithByteArrayHNSWVector$._VECTOR_SCORE)
         .limit(K)
         .collect(Collectors.toList());
@@ -86,7 +87,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     SearchStream<HashWithByteArrayHNSWVector> stream = entityStream.of(HashWithByteArrayHNSWVector.class);
 
     List<Pair<Integer,Double>> results = stream //
-        .filter(HashWithByteArrayHNSWVector$.VECTOR.knn(K, floatToByte(e))) //
+        .filter(HashWithByteArrayHNSWVector$.VECTOR.knn(K, ObjectUtils.floatArrayToByteArray(e))) //
         .sorted(HashWithByteArrayHNSWVector$._VECTOR_SCORE) //
         .limit(K) //
         .map(Fields.of(HashWithByteArrayHNSWVector$.NUMBER, HashWithByteArrayHNSWVector$._VECTOR_SCORE)) //
@@ -119,7 +120,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     List<Pair<Integer,Double>> results = stream //
         .filter(HashWithByteArrayFlatVector$.NUMBER.between(0, 20) //
             .or(HashWithByteArrayFlatVector$.NUMBER.between(NUMBER_ARTICLES - 20, NUMBER_ARTICLES))) //
-        .filter(HashWithByteArrayHNSWVector$.VECTOR.knn(K, floatToByte(e))) //
+        .filter(HashWithByteArrayHNSWVector$.VECTOR.knn(K, ObjectUtils.floatArrayToByteArray(e))) //
         .sorted(HashWithByteArrayHNSWVector$._VECTOR_SCORE) //
         .limit(K) //
         .map(Fields.of(HashWithByteArrayHNSWVector$.NUMBER, HashWithByteArrayHNSWVector$._VECTOR_SCORE)) //
@@ -149,7 +150,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
     List<HashWithByteArrayFlatVector> results = stream //
         .filter(HashWithByteArrayFlatVector$.NUMBER.between(0, 100)) //
-        .filter(HashWithByteArrayFlatVector$.VECTOR.knn(K, floatToByte(e))) //
+        .filter(HashWithByteArrayFlatVector$.VECTOR.knn(K, ObjectUtils.floatArrayToByteArray(e))) //
         .sorted(HashWithByteArrayFlatVector$._VECTOR_SCORE)
         .limit(K)
         .collect(Collectors.toList());
@@ -157,11 +158,5 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     assertThat(results).hasSize(5).map(HashWithByteArrayFlatVector::getId).containsExactly("doc:12", "doc:75", "doc:71", "doc:15", "doc:2");
   }
 
-  private byte[] floatToByte(float[] input) {
-    byte[] ret = new byte[input.length*4];
-    for (int x = 0; x < input.length; x++) {
-      ByteBuffer.wrap(ret, x*4, 4).putFloat(input[x]);
-    }
-    return ret;
-  }
+
 }

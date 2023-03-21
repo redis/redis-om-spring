@@ -104,7 +104,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       SearchResult searchResult = searchOps.search(query);
 
       result = searchResult.getDocuments().stream()
-          .map(d -> gson.fromJson(d.get(idField).toString(), metadata.getIdType()))
+          .map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get(idField)), metadata.getIdType()))
           .toList();
     }
 

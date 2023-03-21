@@ -16,6 +16,7 @@ import redis.clients.jedis.search.Document;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
+import redis.clients.jedis.util.SafeEncoder;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -275,7 +276,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
         if (resultSetHasNonIndexedFields) {
           SearchResult searchResult = entitySearchStream.getOps().search(query);
 
-          List<E> entities = searchResult.getDocuments().stream().map(d -> gson.fromJson(d.get("$").toString(), entitySearchStream.getEntityClass())).toList();
+          List<E> entities = searchResult.getDocuments().stream().map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), entitySearchStream.getEntityClass())).toList();
 
           results = toResultTuple(entities, returnFields);
 
@@ -300,7 +301,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
       List<Object> mappedResults = new ArrayList<>();
       returning.forEach(foi -> {
         String field = foi.getSearchAlias();
-        Object value = props.get(entitySearchStream.isDocument() ? "$." + field : field);
+        Object value = SafeEncoder.encode((byte[])props.get(entitySearchStream.isDocument() ? "$." + field : field));
         Class<?> targetClass = foi.getTargetClass();
         if (targetClass == Date.class) {
           mappedResults.add(new Date(Long.parseLong(value.toString())));

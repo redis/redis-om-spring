@@ -1,13 +1,12 @@
 package com.redis.om.spring;
 
+import com.redis.om.spring.audit.EntityAuditor;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.convert.RedisOMCustomConversions;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
-import org.springframework.beans.PropertyAccessor;
-import org.springframework.beans.PropertyAccessorFactory;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
+import com.redis.om.spring.vectorize.FeatureExtractor;
+import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.*;
@@ -28,8 +27,6 @@ import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 
 import java.lang.reflect.Field;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -42,6 +39,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   private final RedisConverter converter;
   private final RedisModulesOperations<String> modulesOperations;
   private final RediSearchIndexer indexer;
+  private final EntityAuditor auditor;
+  private final FeatureExtractor featureExtractor;
 
   /**
    * Creates new {@link RedisKeyValueAdapter} with default
@@ -49,11 +48,15 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    *
    * @param redisOps           must not be {@literal null}.
    * @param rmo                must not be {@literal null}.
-   * @param keyspaceToIndexMap must not be {@literal null}.
+   * @param indexer must not be {@literal null}.
    */
-  public RedisEnhancedKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisModulesOperations<?> rmo,
-      RediSearchIndexer keyspaceToIndexMap) {
-    this(redisOps, rmo, new RedisMappingContext(), keyspaceToIndexMap);
+  public RedisEnhancedKeyValueAdapter( //
+      RedisOperations<?, ?> redisOps, //
+      RedisModulesOperations<?> rmo, //
+      RediSearchIndexer indexer, //
+      FeatureExtractor featureExtractor
+  ) {
+    this(redisOps, rmo, new RedisMappingContext(), indexer, featureExtractor);
   }
 
   /**
@@ -63,11 +66,16 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * @param redisOps           must not be {@literal null}.
    * @param rmo                must not be {@literal null}.
    * @param mappingContext     must not be {@literal null}.
-   * @param keyspaceToIndexMap must not be {@literal null}.
+   * @param indexer must not be {@literal null}.
    */
-  public RedisEnhancedKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisModulesOperations<?> rmo,
-      RedisMappingContext mappingContext, RediSearchIndexer keyspaceToIndexMap) {
-    this(redisOps, rmo, mappingContext, new RedisOMCustomConversions(), keyspaceToIndexMap);
+  public RedisEnhancedKeyValueAdapter( //
+      RedisOperations<?, ?> redisOps, //
+      RedisModulesOperations<?> rmo, //
+      RedisMappingContext mappingContext, //
+      RediSearchIndexer indexer, //
+      FeatureExtractor featureExtractor
+  ) {
+    this(redisOps, rmo, mappingContext, new RedisOMCustomConversions(), indexer, featureExtractor);
   }
 
   /**
@@ -77,13 +85,17 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * @param rmo                must not be {@literal null}.
    * @param mappingContext     must not be {@literal null}.
    * @param customConversions  can be {@literal null}.
-   * @param keyspaceToIndexMap must not be {@literal null}.
+   * @param indexer must not be {@literal null}.
    */
   @SuppressWarnings("unchecked")
-  public RedisEnhancedKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisModulesOperations<?> rmo,
-      RedisMappingContext mappingContext,
-      @Nullable org.springframework.data.convert.CustomConversions customConversions,
-      RediSearchIndexer keyspaceToIndexMap) {
+  public RedisEnhancedKeyValueAdapter( //
+      RedisOperations<?, ?> redisOps, //
+      RedisModulesOperations<?> rmo, //
+      RedisMappingContext mappingContext, //
+      @Nullable CustomConversions customConversions, //
+      RediSearchIndexer indexer, //
+      FeatureExtractor featureExtractor //
+  ) {
     super(redisOps, mappingContext, customConversions);
 
     Assert.notNull(redisOps, "RedisOperations must not be null!");
@@ -98,7 +110,9 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     this.converter = mappingConverter;
     this.redisOperations = redisOps;
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
-    this.indexer = keyspaceToIndexMap;
+    this.indexer = indexer;
+    this.auditor = new EntityAuditor(this.redisOperations);
+    this.featureExtractor = featureExtractor;
   }
 
   /*
@@ -110,13 +124,13 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public Object put(Object id, Object item, String keyspace) {
-
     RedisData rdo;
     if (item instanceof RedisData redisData) {
       rdo = redisData;
     } else {
       byte[] redisKey = createKey(keyspace, converter.getConversionService().convert(id, String.class));
-      processAuditAnnotations(redisKey, item);
+      auditor.processEntity(redisKey, item);
+      featureExtractor.processEntity(redisKey, item);
 
       rdo = new RedisData();
       converter.write(item, rdo);
@@ -459,26 +473,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     return data.getTimeToLive() != null && data.getTimeToLive() > 0;
   }
 
-  private void processAuditAnnotations(byte[] redisKey, Object item) {
-    boolean isNew = (boolean) redisOperations
-        .execute((RedisCallback<Object>) connection -> !connection.keyCommands().exists(redisKey));
 
-    var auditClass = isNew ? CreatedDate.class : LastModifiedDate.class;
-
-    List<Field> fields = com.redis.om.spring.util.ObjectUtils.getFieldsWithAnnotation(item.getClass(), auditClass);
-    if (!fields.isEmpty()) {
-      PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(item);
-      fields.forEach(f -> {
-        if (f.getType() == Date.class) {
-          accessor.setPropertyValue(f.getName(), new Date(System.currentTimeMillis()));
-        } else if (f.getType() == LocalDateTime.class) {
-          accessor.setPropertyValue(f.getName(), LocalDateTime.now());
-        } else if (f.getType() == LocalDate.class) {
-          accessor.setPropertyValue(f.getName(), LocalDate.now());
-        }
-      });
-    }
-  }
 
   /**
    * Container holding update information like fields to remove from the Redis

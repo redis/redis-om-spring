@@ -797,7 +797,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     boolean isArray = collectionType.isArray();
 
     if ((field != null) && (indexed != null || tagIndexed != null)
-        && CharSequence.class.isAssignableFrom(collectionElementType)) {
+        && (collectionElementType != null && CharSequence.class.isAssignableFrom(collectionElementType))) {
       @SuppressWarnings("null")
       String separator = indexed != null ? indexed.separator() : tagIndexed.separator();
       Bucket elementData = bucket.extract(path);

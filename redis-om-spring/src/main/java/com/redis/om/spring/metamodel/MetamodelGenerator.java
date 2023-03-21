@@ -41,7 +41,7 @@ import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 
-@SupportedAnnotationTypes("com.redis.om.spring.annotations.Document")
+@SupportedAnnotationTypes(value = {"com.redis.om.spring.annotations.Document","org.springframework.data.redis.core.RedisHash"})
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
 @AutoService(Processor.class)
 public final class MetamodelGenerator extends AbstractProcessor {
