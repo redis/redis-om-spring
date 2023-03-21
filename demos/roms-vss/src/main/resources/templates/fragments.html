@@ -1,0 +1,240 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      lang="en">
+<div th:fragment="root" th:data-skip="${skip != null ? skip : 0}" id="root">
+  <header>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark" style="padding: 25px;">
+      <div class="container-fluid">
+        <a href="#" class="navbar-brand" style="margin-right: -30rem;">
+          <img th:src="@{/redis-logo.png}" alt="Redis Logo"
+               style="height: 7%; width: 7%; padding-right: 10px;">Redis
+          Vector Search Demo</a>
+        <button aria-controls="navbarScroll" type="button" aria-label="Toggle navigation"
+                class="navbar-toggler collapsed"><span class="navbar-toggler-icon"></span></button>
+        <div class="navbar-collapse collapse" id="navbarScroll" style="top: 5px;">
+          <div class="me-auto my-2 my-lg-0 navbar-nav navbar-nav-scroll" style="max-height: 175px;">
+            <div class="nav-item dropdown">
+              <a id="aboutDropDown"
+                 aria-expanded="false"
+                 role="button"
+                 class="dropdown-toggle nav-link"
+                 tabindex="0"
+                 data-bs-toggle="dropdown"
+                 href="#">About</a>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="https://github.com/redis/redis-om-spring">Code</a></li>
+                <li><a class="dropdown-item" href="https://mlops.community/vector-similarity-search-from-basics-to-production/">Blog</a></li>
+                <li><a class="dropdown-item" href="https://forms.gle/ANpHTe2Da5CVGHty7" target="_blank">Talk With Us</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="https://redis.io/docs/stack/search/reference/vectors/">
+                  Docs: Redis Vector Search
+                </a></li>
+              </ul>
+            </div>
+          </div>
+          <div class="navbar-nav"><a href="https://forms.gle/ANpHTe2Da5CVGHty7" target="_blank"
+                                     data-rr-ui-event-key="https://forms.gle/ANpHTe2Da5CVGHty7"
+                                     class="btn btn-primary m-2 nav-link">Talk With Us</a></div>
+        </div>
+      </div>
+    </nav>
+  </header>
+  <main role="main">
+    <section class="jumbotron text-center mb-0 bg-white" style="padding-top: 40px;">
+      <div class="container">
+        <h1 class="jumbotron-heading">Fashion Product Finder</h1>
+        <p class="lead text-muted">This demo uses the built-in Vector Search capabilities of Redis Stack to
+          show how unstructured data, such as images and text, can be used to create powerful search
+          engines.</p>
+        <div>
+          <button class="btn btn-secondary m-2"
+                  aria-label="Select product tags to use as filters"
+                  data-bs-toggle="modal"
+                  data-bs-target="#filtersModal">
+            Apply Filters
+          </button>
+          <a hx:get="@{/load}"
+             hx-target="#root"
+             hx-swap="outerHTML"
+             hx-vals='js:{gender: getGenderFilter(), category: getCategoryFilter(), skip: getSkip()}'
+             class="btn btn-primary m-2"
+             aria-label="Fetch more products from Redis">
+            Load More Products
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <div class="album py-5 bg-light">
+      <div class="container"><p style="font-size: 15px;"><em aria-label="Filtered product count">
+        <span th:text="${totalNumberOfProducts}"></span> searchable products</em></p>
+
+        <div th:replace="~{fragments :: filters}"></div>
+
+        <div id="product-list" class="row">
+          <div th:each="product : ${products}" class="col-md-2" style="width: 20%;">
+            <div class="card mb-2 box-shadow" style="align-content: center;">
+              <img class="card-img-top"
+                   th:src="${product.productImage}"
+                   th:alt="${product.productDisplayName}"
+                   style="height: 60%; width: 60%; align-self: center;">
+              <div class="card-body">
+                <p class="card-text" th:text="${product.productDisplayName}">Product Display Name</p>
+                <div><b>View Similar:</b></div>
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                            th:attr="hx-get=@{/vss/text/{id}(id=${product.id})}"
+                            hx-vals='js:{gender: getGenderFilter(), category: getCategoryFilter(), skip: getSkip()}'
+                            hx-trigger="click"
+                            hx-target="#root"
+                            hx-swap="outerHTML"
+                            aria-label="Search for similar products by text"
+                            style="font-size: 12px;">By Text
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                            th:attr="hx-get=@{/vss/image/{id}(id=${product.id})}"
+                            hx-vals='js:{gender: getGenderFilter(),category: getCategoryFilter(), skip: getSkip()}'
+                            hx-trigger="click"
+                            hx-target="#root"
+                            hx-swap="outerHTML"
+                            aria-label="Search for similar products by image"
+                            style="font-size: 12px;">By Image
+                    </button>
+                  </div>
+                  <div class="btn-group"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer class="text-muted py-5">
+    <div class="container"><span>All Redis software used in this demo is licensed according to the  <a
+        href="https://redis.io/docs/stack/license/"> Redis Stack License. </a></span>
+      <p class="float-right"><a href="#">Back to top</a></p></div>
+  </footer>
+  <div th:replace="~{fragments :: filters_modal}"></div>
+</div>
+
+<div th:fragment="filters_modal" class="modal fade" id="filtersModal" tabindex="-1" aria-labelledby="filtersModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="filtersModalLabel">Search Filters</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="mb-3">
+            <label class="form-label">Gender</label>
+            <div class="btn-group-gender" role="group" aria-label="Gender">
+              <input type="radio"
+                     class="btn-check"
+                     name="gender"
+                     id="btn_filter_women"
+                     autocomplete="off"
+                     data-value="Women"
+                     th:checked="${gender != null && gender == 'Women'}"
+                     hx-get="filters"
+                     hx-target="#filters"
+                     hx-swap="outerHTML"
+                     hx-vals='js:{gender: getGenderFilter(), category: getCategoryFilter(), skip: getSkip()}'
+              >
+              <label class="btn btn-outline-primary" for="btn_filter_women">Women</label>
+
+              <input type="radio"
+                     class="btn-check"
+                     name="gender"
+                     id="btn_filter_men"
+                     autocomplete="off"
+                     data-value="Men"
+                     th:checked="${gender != null && gender == 'Men'}"
+                     hx-get="filters"
+                     hx-target="#filters"
+                     hx-swap="outerHTML"
+                     hx-vals='js:{gender: getGenderFilter(), category: getCategoryFilter(), skip: getSkip()}'
+              >
+              <label class="btn btn-outline-primary" for="btn_filter_men">Men</label>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Category</label>
+            <div class="btn-group-category" role="group" aria-label="Category">
+              <input type="radio"
+                     class="btn-check"
+                     name="category"
+                     id="btn_filter_apparel"
+                     autocomplete="off"
+                     data-value="Apparel"
+                     th:checked="${category != null && category == 'Apparel'}"
+                     hx-get="filters"
+                     hx-target="#filters"
+                     hx-swap="outerHTML"
+                     hx-vals='js:{gender: getGenderFilter(), category: getCategoryFilter(), skip: getSkip()}'
+              >
+              <label class="btn btn-outline-primary" for="btn_filter_apparel">Apparel</label>
+
+              <input type="radio"
+                     class="btn-check"
+                     name="category"
+                     id="btn_filter_accessories"
+                     autocomplete="off"
+                     data-value="Accessories"
+                     th:checked="${category != null && category == 'Accessories'}"
+                     hx-get="filters"
+                     hx-target="#filters"
+                     hx-swap="outerHTML"
+                     hx-vals='js:{gender: getGenderFilter(), category: getCategoryFilter(), skip: getSkip()}'
+              >
+              <label class="btn btn-outline-primary" for="btn_filter_accessories">Accessories</label>
+
+              <input type="radio"
+                     class="btn-check"
+                     name="category"
+                     id="btn_filter_footwear"
+                     autocomplete="off"
+                     data-value="Footwear"
+                     th:checked="${category != null && category == 'Footwear'}"
+                     hx-get="filters"
+                     hx-target="#filters"
+                     hx-swap="outerHTML"
+                     hx-vals='js:{gender: getGenderFilter(), category: getCategoryFilter(), skip: getSkip()}'
+              >
+              <label class="btn btn-outline-primary" for="btn_filter_footwear">Footwear</label>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div th:fragment="filters" id="filters" class="hstack gap-3 pb-3">
+  <div th:if="${gender != null}" class="row" id="gender_chip">
+    <div class="col-xs-12 vertical-align wrap">
+      <div class="chips outline info">
+        <svg class="icon" th:onclick="toggleFilter('gender', [[${gender}]])">
+          <use xlink:href="/icons.svg#close"></use>
+        </svg>
+        <span class="label" th:text="${'Gender: ' + gender}">Gender</span>
+      </div>
+    </div>
+  </div>
+  <div th:if="${category != null}" class="row" id="category_chip">
+    <div class="col-xs-12 vertical-align wrap">
+      <div class="chips outline info">
+        <svg class="icon" th:onclick="toggleFilter('category', [[${category}]])">
+          <use xlink:href="/icons.svg#close"></use>
+        </svg>
+        <span class="label" th:text="${'Category: ' + category}">Category</span>
+      </div>
+    </div>
+  </div>
+</div>
+</html>

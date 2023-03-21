@@ -28,3 +28,4 @@ redis-om-spring/target/maven-status/maven-compiler-plugin/compile/default-compil
 
 # spelling
 *.dic
+/demos/roms-vss/src/main/resources/static/product-images/
