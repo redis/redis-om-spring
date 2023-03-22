@@ -6,11 +6,7 @@
   <br/>
 </div>
 
-<p align="center">
-    <p align="center">
-        Object Mapping (and more) for Redis!
-    </p>
-</p>
+<p><p align="center">Object Mapping (and more) for Redis!</p></p>
 
 ---
 
@@ -43,6 +39,7 @@ Learn / Discuss / Collaborate
     - [👭 Entity Meta-model](#-entity-meta-model)
 - [💻 Maven configuration](#-maven-configuration)
   - [Official Releases](#official-releases)
+    - [Explicitly configuring OM as an annotation processor](#explicitly-configuring-om-as-an-annotation-processor)
   - [Snapshots](#snapshots)
 - [🐘 Gradle configuration](#-gradle-configuration)
   - [Add Repository - Snapshots Only](#add-repository---snapshots-only)
@@ -66,7 +63,7 @@ The Redis OM family of projects aim is to provide high-level abstractions idioma
 
 ## 🍀 Redis OM Spring
 
-Redis OM Spring provides powerful repository and custom object-mapping abstractions built on top of the powerful Spring Data Redis (SDR) framework.
+Redis OM Spring provides powerful repository and custom object-mapping abstractions built on top of the powerful Spring Data Redis ([SDR](https://spring.io/projects/spring-data-redis)) framework.
 
 This **preview** release provides all of SDRs capabilities plus:
 
@@ -79,6 +76,8 @@ This **preview** release provides all of SDRs capabilities plus:
 * Full-text Search Indices via `@Searchable`
 * `EntityStream`s: Streams-based Query and Aggregations Builder
 * `@Bloom` annotation to determine very fast, with and with high degree of certainty, whether a value is in a collection.
+* `@Vectorize` annotation to generate embeddings for text and images for use in Vector Similarity Searches
+* Vector Similarity Search API (See [Redis Stack Vectors](https://redis.io/docs/stack/search/reference/vectors/))
 
 **Note:** Redis OM Spring depends on Jedis.
 
@@ -90,7 +89,21 @@ using a RedisJSON document.
 ### 🚀 Launch Redis
 
 Redis OM Spring relies on the power of the [RediSearch][redisearch-url] and [RedisJSON][redis-json-url] modules.
-We have provided a docker compose YAML file for you to quickly get started. To launch the docker compose application, on the command line (or via Docker Desktop), clone this repository and run (from the root folder):
+Before writing any code you'll need a Redis instance with the appropriate Redis modules! The quickest way to get
+this is with Docker:
+
+```sh
+docker run -p 6379:6379 -p 8001:8001 redis/redis-stack
+```
+
+This launches the [redis-stack](https://redis.io/docs/stack/) an extension of Redis that adds all manner of modern data
+structures to Redis. You'll also notice that if you open up `http://localhost:8001` you'll have access to the
+redis-insight GUI, a GUI you can use to visualize and work with your data in Redis.
+We have also provided a docker compose YAML file for you to quickly get started
+using [Redis Stack](https://redis.io/docs/stack/).
+
+To launch the docker compose application, on the command line (or via Docker Desktop), clone this repository and run
+(from the root folder):
 
 ```bash
 docker compose up
@@ -301,6 +314,40 @@ In this example we also make use of the Streams `sorted` method to declare that 
   <artifactId>redis-om-spring</artifactId>
   <version>${version}</version>
 </dependency>
+```
+
+#### Explicitly configuring OM as an annotation processor
+
+For Maven, things normally just work, when you run `./mvnw spring-boot:run`. Some users have experienced this not being
+the case, in which I recommend to explicitly declaring the `maven-compiler-plugin` in the case below it is paired with
+an app created with [`start.spring.io`](https://start.spring.io/) with Spring Boot `v3.0.4` (all other versions can be
+inherited from the parent poms):
+
+```xml
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-compiler-plugin</artifactId>
+  <version>${maven-compiler-plugin.version}</version>
+  <configuration>
+    <annotationProcessorPaths>
+      <path>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-configuration-processor</artifactId>
+        <version>3.0.4</version>
+      </path>
+      <path>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>${lombok.version}</version>
+      </path>
+      <path>
+        <groupId>com.redis.om</groupId>
+        <artifactId>redis-om-spring</artifactId>
+        <version>0.8.0</version>
+      </path>
+    </annotationProcessorPaths>
+  </configuration>
+</plugin>
 ```
 
 ### Snapshots
