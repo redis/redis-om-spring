@@ -1,11 +1,7 @@
 package com.redis.om.vss;
 
-import java.io.File;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import com.google.common.io.Files;
+import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
 import com.redis.om.vss.domain.Product;
 import com.redis.om.vss.repositories.ProductRepository;
 import org.slf4j.Logger;
@@ -16,7 +12,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
-import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @SpringBootApplication
 @EnableRedisEnhancedRepositories(basePackages = "com.redis.om.vss.*")
@@ -39,7 +37,7 @@ public class RomsVectorSimilaritySearchApplication {
             .stream() //
             .limit(maxLines) //
             .map(line -> Product.fromCSV(line, useLocalImages)) //
-            .collect(Collectors.toList());
+            .toList();
         repository.saveAll(data);
       }
     };
