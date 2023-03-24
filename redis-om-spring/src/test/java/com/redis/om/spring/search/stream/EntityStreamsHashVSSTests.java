@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.withPrecision;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 @SuppressWarnings("SpellCheckingInspection") class EntityStreamsHashVSSTests extends AbstractBaseEnhancedRedisTest {
@@ -93,10 +94,12 @@ import static org.junit.jupiter.api.Assertions.assertAll;
         .map(Fields.of(HashWithByteArrayHNSWVector$.NUMBER, HashWithByteArrayHNSWVector$._VECTOR_SCORE)) //
         .collect(Collectors.toList());
 
+    double[] expected = new double[] { 1.08511912913e-05, 4.01816287194e-05, 4.01816287194e-05, 4.18252566305e-05 };
+
     assertAll( //
         () -> assertThat(results).hasSize(4), //
         () -> assertThat(results).map(Pair::getFirst).containsExactly(132, 12, 75, 240), //
-        () -> assertThat(results).map(Pair::getSecond).containsExactly(1.08511912913e-05, 4.01816287194e-05, 4.01816287194e-05, 4.18252566305e-05) //
+        () -> assertThat(results.stream().mapToDouble(Pair::getSecond).toArray()).containsExactly(expected, withPrecision(0.001))
     );
   }
 
@@ -126,12 +129,12 @@ import static org.junit.jupiter.api.Assertions.assertAll;
         .map(Fields.of(HashWithByteArrayHNSWVector$.NUMBER, HashWithByteArrayHNSWVector$._VECTOR_SCORE)) //
         .collect(Collectors.toList());
 
+    double[] expected = new double[] { 4.01816287194e-05, 4.19937859988e-05, 4.19969328505e-05, 4.19990610681e-05, 4.19991047238e-05 };
+
     assertAll( //
         () -> assertThat(results).hasSize(5), //
         () -> assertThat(results).map(Pair::getFirst).containsExactly(12, 289, 15, 280, 2), //
-        () -> assertThat(results).map(Pair::getSecond)
-            .usingComparatorForType(new DoubleComparator(0.001), Double.class)
-            .containsExactly(4.01816287194e-05, 4.19937859988e-05, 4.19969328505e-05, 4.19990610681e-05, 4.19991047238e-05) //
+        () -> assertThat(results.stream().mapToDouble(Pair::getSecond).toArray()).containsExactly(expected, withPrecision(0.001))
     );
   }
 
