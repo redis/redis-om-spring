@@ -131,11 +131,11 @@ public class RedisModulesConfiguration {
   }
 
   @Bean(name = "djlImageEmbeddingModelCriteria")
-  public Criteria<Image, byte[]> imageEmbeddingModelCriteria() {
+  public Criteria<Image, byte[]> imageEmbeddingModelCriteria(RedisOMSpringProperties properties) {
     return Criteria.builder()
         .setTypes(Image.class, byte[].class) //
-        .optEngine("PyTorch")  //
-        .optModelUrls("djl://ai.djl.pytorch/resnet18_embedding") //
+        .optEngine(properties.getDjl().getImageEmbeddingModelEngine())  //
+        .optModelUrls(properties.getDjl().getImageEmbeddingModelModelUrls()) //
         .build();
   }
 
@@ -147,17 +147,26 @@ public class RedisModulesConfiguration {
   }
 
   @Bean(name = "djlDefaultImagePipeline")
-  public Pipeline defaultImagePipeline() {
-    return new Pipeline() //
-        .add(new CenterCrop()) //
-        .add(new Resize(224, 224)) //
+  public Pipeline defaultImagePipeline(RedisOMSpringProperties properties) {
+    Pipeline pipeline = new Pipeline();
+    if (properties.getDjl().isDefaultImagePipelineCenterCrop()) {
+      pipeline.add(new CenterCrop());
+    }
+    return pipeline //
+        .add(new Resize( //
+            properties.getDjl().getDefaultImagePipelineResizeWidth(), //
+            properties.getDjl().getDefaultImagePipelineResizeHeight() //
+        )) //
         .add(new ToTensor());
   }
 
   @Bean(name = "djlSentenceTokenizer")
-  public HuggingFaceTokenizer sentenceTokenizer() {
-    Map<String, String> options = Map.of("maxLength", "768", "modelMaxLength", "768");
-    return HuggingFaceTokenizer.newInstance("sentence-transformers/all-mpnet-base-v2", options);
+  public HuggingFaceTokenizer sentenceTokenizer(RedisOMSpringProperties properties) {
+    Map<String, String> options = Map.of( //
+        "maxLength", properties.getDjl().getSentenceTokenizerMaxLength(), //
+        "modelMaxLength", properties.getDjl().getSentenceTokenizerModelMaxLength() //
+    );
+    return HuggingFaceTokenizer.newInstance(properties.getDjl().getSentenceTokenizerModel(), options);
   }
 
   @Bean(name = "featureExtractor")
