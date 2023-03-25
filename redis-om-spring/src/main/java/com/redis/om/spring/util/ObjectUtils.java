@@ -353,7 +353,7 @@ public class ObjectUtils {
   }
 
   public static byte[] floatArrayToByteArray(float[] input) {
-    byte bytes[] = new byte[Float.BYTES * input.length];
+    byte[] bytes = new byte[Float.BYTES * input.length];
     ByteBuffer.wrap(bytes).asFloatBuffer().put(input);
     return bytes;
   }
