@@ -27,8 +27,6 @@ import java.lang.reflect.Field;
 import java.util.List;
 
 @Component public class FeatureExtractor {
-  private static final float[] MEAN = { 0.485f, 0.456f, 0.406f };
-  private static final float[] STD = { 0.229f, 0.224f, 0.225f };
   private final RedisOperations<?, ?> redisOperations;
   private final ZooModel<Image, byte[]> imageEmbeddingModel;
   private final ImageFactory imageFactory;
