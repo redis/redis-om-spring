@@ -6,6 +6,6 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.FIELD, ElementType.ANNOTATION_TYPE })
 public @interface Vectorize {
-  String destination() default "";
+  String destination();
   EmbeddingType embeddingType() default EmbeddingType.SENTENCE;
 }
