@@ -33,7 +33,7 @@ import java.util.List;
   private final ZooModel<Image, byte[]> imageEmbeddingModel;
   private final ImageFactory imageFactory;
   private final ApplicationContext applicationContext;
-  private ImageFeatureExtractor featureExtractor;
+  private ImageFeatureExtractor imageFeatureExtractor;
   public final Pipeline imagePipeline;
   public final HuggingFaceTokenizer sentenceTokenizer;
 
@@ -55,7 +55,7 @@ import java.util.List;
     this.sentenceTokenizer = sentenceTokenizer;
 
     // feature extractor
-    this.featureExtractor = ImageFeatureExtractor.builder().setPipeline(imagePipeline).build();
+    this.imageFeatureExtractor = ImageFeatureExtractor.builder().setPipeline(imagePipeline).build();
   }
 
   public void processEntity(byte[] redisKey, Object item) {
@@ -67,7 +67,7 @@ import java.util.List;
   public byte[] getImageEmbeddingsFor(InputStream is) {
     try {
       var img = ImageFactory.getInstance().fromInputStream(is);
-      Predictor<Image, byte[]> predictor = imageEmbeddingModel.newPredictor(featureExtractor);
+      Predictor<Image, byte[]> predictor = imageEmbeddingModel.newPredictor(imageFeatureExtractor);
       return predictor.predict(img);
     } catch (IOException | TranslateException e) {
       logger.warn("Error generating image embedding", e);
