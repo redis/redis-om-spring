@@ -16,19 +16,19 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-@SpringBootApplication
-@EnableRedisEnhancedRepositories(basePackages = "com.redis.om.vss.*")
-public class RomsVectorSimilaritySearchApplication {
+@SpringBootApplication @EnableRedisEnhancedRepositories(basePackages = "com.redis.om.vss.*") public class RomsVectorSimilaritySearchApplication {
   Logger logger = LoggerFactory.getLogger(RomsVectorSimilaritySearchApplication.class);
 
-  @Value("${com.redis.om.vss.useLocalImages}")
-  private boolean useLocalImages;
+  @Value("${com.redis.om.vss.useLocalImages}") private boolean useLocalImages;
 
-  @Value("${com.redis.om.vss.maxLines}")
-  private long maxLines;
+  @Value("${com.redis.om.vss.maxLines}") private long maxLines;
 
-  @Bean
-  CommandLineRunner loadAndVectorizeProductData(ProductRepository repository, @Value("classpath:/data/styles.csv") File dataFile) {
+  public static void main(String[] args) {
+    SpringApplication.run(RomsVectorSimilaritySearchApplication.class, args);
+  }
+
+  @Bean CommandLineRunner loadAndVectorizeProductData(ProductRepository repository,
+      @Value("classpath:/data/styles.csv") File dataFile) {
     return args -> {
       if (repository.count() == 0) {
         logger.info("⚙️ Loading products...");
@@ -42,9 +42,5 @@ public class RomsVectorSimilaritySearchApplication {
       }
     };
   }
-
-	public static void main(String[] args) {
-		SpringApplication.run(RomsVectorSimilaritySearchApplication.class, args);
-	}
 
 }
