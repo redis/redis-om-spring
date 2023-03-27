@@ -284,17 +284,4 @@ import static org.assertj.core.api.Assertions.assertThat;
     assertThat(fromDb).isPresent();
     assertThat(fromDb.get().getListOfStringArrays()).isNull();
   }
-
-  @Test
-  void testRawShit() {
-    CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder();
-
-    byte[] data = byteArray2;
-    System.out.println(">>>> BEFORE: " + data.length);
-    String asString = new String(data, StandardCharsets.UTF_8);
-    byte[] dataBack = StringUtils.getBytesUtf16Le(asString);
-    System.out.println(">>>> AFTER: " + dataBack.length);
-
-  }
-
 }
