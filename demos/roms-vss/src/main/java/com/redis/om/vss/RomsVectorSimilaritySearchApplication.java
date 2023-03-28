@@ -40,6 +40,7 @@ import java.util.List;
             .toList();
         repository.saveAll(data);
       }
+      logger.info("🏁 {} Products Available...", repository.count());
     };
   }
 
