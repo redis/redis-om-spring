@@ -34,6 +34,7 @@ import com.redis.om.spring.annotations.document.fixtures.DocWithCustomNameIdRepo
 
 import io.redisearch.querybuilder.GeoValue;
 import io.redisearch.querybuilder.GeoValue.Unit;
+import org.springframework.util.ReflectionUtils;
 
 class ObjectUtilsTest extends AbstractBaseDocumentTest {
 
@@ -104,10 +105,12 @@ class ObjectUtilsTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  void testGetTargetClassName() throws NoSuchFieldException, SecurityException, NoSuchMethodException {
+  void testGetTargetClassName() throws SecurityException, NoSuchMethodException {
     List<String> lofs = new ArrayList<String>();
     int[] inta = new int[] {};
-    String typeName = Company.class.getDeclaredField("publiclyListed").getType().getName();
+    Field field = ReflectionUtils.findField(Company.class, "publiclyListed");
+    assertThat(field).isNotNull();
+    String typeName = field.getType().getName();
 
     assertThat(ObjectUtils.getTargetClassName(String.class.getTypeName())).isEqualTo(String.class.getTypeName());
     assertThat(ObjectUtils.getTargetClassName(lofs.getClass().getTypeName())).isEqualTo(ArrayList.class.getTypeName());
@@ -133,10 +136,14 @@ class ObjectUtilsTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  void testGetCollectionElementType() throws NoSuchFieldException, SecurityException {
-    Field lofsField = BunchOfCollections.class.getDeclaredField("lofs");
-    Field soisField = BunchOfCollections.class.getDeclaredField("sois");
-    Field iocField = BunchOfCollections.class.getDeclaredField("ioc");
+  void testGetCollectionElementType() throws SecurityException {
+    Field lofsField = ReflectionUtils.findField(BunchOfCollections.class, "lofs");
+    Field soisField = ReflectionUtils.findField(BunchOfCollections.class, "sois");
+    Field iocField = ReflectionUtils.findField(BunchOfCollections.class, "ioc");
+
+    assertThat(lofsField).isNotNull();
+    assertThat(soisField).isNotNull();
+    assertThat(iocField).isNotNull();
 
     Optional<Class<?>> maybeContentsOfLofs = ObjectUtils.getCollectionElementType(lofsField);
     Optional<Class<?>> maybeContentsOfSois = ObjectUtils.getCollectionElementType(soisField);
