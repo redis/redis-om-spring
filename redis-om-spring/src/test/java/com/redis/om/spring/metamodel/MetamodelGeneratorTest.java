@@ -59,21 +59,21 @@ class MetamodelGeneratorTest {
 
         // test fields initialization
         () -> assertThat(fileContents)
-            .contains("createdDate = ValidDocumentIndexed.class.getDeclaredField(\"createdDate\");"), //
+            .contains("createdDate = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentIndexed.class, \"createdDate\");"), //
         () -> assertThat(fileContents)
-            .contains("lastModifiedDate = ValidDocumentIndexed.class.getDeclaredField(\"lastModifiedDate\");"), //
-        () -> assertThat(fileContents).contains("email = ValidDocumentIndexed.class.getDeclaredField(\"email\");"), //
+            .contains("lastModifiedDate = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentIndexed.class, \"lastModifiedDate\");"), //
+        () -> assertThat(fileContents).contains("email = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentIndexed.class, \"email\");"), //
         () -> assertThat(fileContents)
-            .contains("publiclyListed = ValidDocumentIndexed.class.getDeclaredField(\"publiclyListed\");"), //
+            .contains("publiclyListed = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentIndexed.class, \"publiclyListed\");"), //
         () -> assertThat(fileContents)
-            .contains("lastValuation = ValidDocumentIndexed.class.getDeclaredField(\"lastValuation\");"), //
-        () -> assertThat(fileContents).contains("id = ValidDocumentIndexed.class.getDeclaredField(\"id\");"), //
+            .contains("lastValuation = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentIndexed.class, \"lastValuation\");"), //
+        () -> assertThat(fileContents).contains("id = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentIndexed.class, \"id\");"), //
         () -> assertThat(fileContents)
-            .contains("yearFounded = ValidDocumentIndexed.class.getDeclaredField(\"yearFounded\");"), //
-        () -> assertThat(fileContents).contains("name = ValidDocumentIndexed.class.getDeclaredField(\"name\");"), //
+            .contains("yearFounded = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentIndexed.class, \"yearFounded\");"), //
+        () -> assertThat(fileContents).contains("name = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentIndexed.class, \"name\");"), //
         () -> assertThat(fileContents)
-            .contains("location = ValidDocumentIndexed.class.getDeclaredField(\"location\");"), //
-        () -> assertThat(fileContents).contains("tags = ValidDocumentIndexed.class.getDeclaredField(\"tags\");"), //
+            .contains("location = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentIndexed.class, \"location\");"), //
+        () -> assertThat(fileContents).contains("tags = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentIndexed.class, \"tags\");"), //
 
         // test Metamodel Field generation
         () -> assertThat(fileContents)
@@ -147,24 +147,24 @@ class MetamodelGeneratorTest {
         () -> assertThat(fileContents).contains("public static Field bool;"), //
 
         // test fields initialization
-        () -> assertThat(fileContents).contains("id = ValidDocumentUnindexed.class.getDeclaredField(\"id\");"), //
+        () -> assertThat(fileContents).contains("id = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentUnindexed.class, \"id\");"), //
         () -> assertThat(fileContents)
-            .contains("setThings = ValidDocumentUnindexed.class.getDeclaredField(\"setThings\");"), //
+            .contains("setThings = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentUnindexed.class, \"setThings\");"), //
         () -> assertThat(fileContents)
-            .contains("localDateTime = ValidDocumentUnindexed.class.getDeclaredField(\"localDateTime\");"), //
-        () -> assertThat(fileContents).contains("point = ValidDocumentUnindexed.class.getDeclaredField(\"point\");"), //
+            .contains("localDateTime = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentUnindexed.class, \"localDateTime\");"), //
+        () -> assertThat(fileContents).contains("point = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentUnindexed.class, \"point\");"), //
         () -> assertThat(fileContents)
-            .contains("listThings = ValidDocumentUnindexed.class.getDeclaredField(\"listThings\");"), //
-        () -> assertThat(fileContents).contains("date = ValidDocumentUnindexed.class.getDeclaredField(\"date\");"), //
+            .contains("listThings = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentUnindexed.class, \"listThings\");"), //
+        () -> assertThat(fileContents).contains("date = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentUnindexed.class, \"date\");"), //
         () -> assertThat(fileContents)
-            .contains("localDate = ValidDocumentUnindexed.class.getDeclaredField(\"localDate\");"), //
-        () -> assertThat(fileContents).contains("ulid = ValidDocumentUnindexed.class.getDeclaredField(\"ulid\");"), //
+            .contains("localDate = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentUnindexed.class, \"localDate\");"), //
+        () -> assertThat(fileContents).contains("ulid = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentUnindexed.class, \"ulid\");"), //
         () -> assertThat(fileContents)
-            .contains("integerWrapper = ValidDocumentUnindexed.class.getDeclaredField(\"integerWrapper\");"), //
+            .contains("integerWrapper = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentUnindexed.class, \"integerWrapper\");"), //
         () -> assertThat(fileContents)
-            .contains("integerPrimitive = ValidDocumentUnindexed.class.getDeclaredField(\"integerPrimitive\");"), //
-        () -> assertThat(fileContents).contains("string = ValidDocumentUnindexed.class.getDeclaredField(\"string\");"), //
-        () -> assertThat(fileContents).contains("bool = ValidDocumentUnindexed.class.getDeclaredField(\"bool\");"), //
+            .contains("integerPrimitive = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentUnindexed.class, \"integerPrimitive\");"), //
+        () -> assertThat(fileContents).contains("string = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentUnindexed.class, \"string\");"), //
+        () -> assertThat(fileContents).contains("bool = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentUnindexed.class, \"bool\");"), //
 
         // test Metamodel Field generation
         () -> assertThat(fileContents)
@@ -248,11 +248,11 @@ class MetamodelGeneratorTest {
         () -> assertThat(fileContents).contains("public static Field address_city;"), //
 
         // test fields initialization
-        () -> assertThat(fileContents).contains("id = ValidDocumentIndexedNested.class.getDeclaredField(\"id\");"), //
+        () -> assertThat(fileContents).contains("id = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentIndexedNested.class, \"id\");"), //
         () -> assertThat(fileContents)
-            .contains("address_street = ValidDocumentIndexedNested.class.getDeclaredField(\"address\").getType().getDeclaredField(\"street\");"), //
+            .contains("address_street = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentIndexedNested.class, \"address\").getType(), \"street\");"), //
         () -> assertThat(fileContents)
-            .contains("address_city = ValidDocumentIndexedNested.class.getDeclaredField(\"address\").getType().getDeclaredField(\"city\");"), //
+            .contains("address_city = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentIndexedNested.class, \"address\").getType(), \"city\");"), //
 
         // test Metamodel Field generation
         () -> assertThat(fileContents)

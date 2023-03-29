@@ -98,7 +98,7 @@ public class AutoCompleteAspect implements Ordered {
   public void deleteAllSuggestions(JoinPoint jp) {
     Repository<?, ?> repository = (Repository<?, ?>) jp.getTarget();
     Class<?> entityClass = GenericTypeResolver.resolveTypeArguments(repository.getClass(), Repository.class)[0];
-    for (Field field : entityClass.getDeclaredFields()) {
+    for (Field field : com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(entityClass)) {
       if (field.isAnnotationPresent(AutoComplete.class)) {
         String key = String.format("sugg:%s:%s", entityClass.getSimpleName(), field.getName());
         @SuppressWarnings("unchecked")
@@ -115,7 +115,7 @@ public class AutoCompleteAspect implements Ordered {
   @AfterReturning("inRedisDocumentRepositoryDeleteAllEntities() && args(entities,..)")
   public void deleteAllSuggestionsFromEntities(JoinPoint jp, List<Object> entities) {
     for (Object entity : entities) {
-      for (Field field : entity.getClass().getDeclaredFields()) {
+      for (Field field : com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(entity.getClass())) {
         if (field.isAnnotationPresent(AutoComplete.class)) {
           AutoComplete suggestable = field.getAnnotation(AutoComplete.class);
           String key = !ObjectUtils.isEmpty(suggestable.name()) ? suggestable.name()
@@ -173,7 +173,8 @@ public class AutoCompleteAspect implements Ordered {
   }
 
   private void processSuggestionsForEntity(Object entity) {
-    for (Field field : entity.getClass().getDeclaredFields()) {
+    final List<Field> entityClassFields = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(entity.getClass());
+    for (Field field : entityClassFields) {
       if (field.isAnnotationPresent(AutoComplete.class)) {
         Suggestion.Builder builder = Suggestion.builder();
         Map<String, Object> payload = null;
@@ -190,7 +191,7 @@ public class AutoCompleteAspect implements Ordered {
           e.printStackTrace();
         }
 
-        for (Field field2 : entity.getClass().getDeclaredFields()) {
+        for (Field field2 : entityClassFields) {
           if (field2.isAnnotationPresent(AutoCompletePayload.class)) {
             AutoCompletePayload suggestablePayload = field2.getAnnotation(AutoCompletePayload.class);
             boolean inPayload = (!suggestablePayload.value().isBlank()
@@ -220,7 +221,7 @@ public class AutoCompleteAspect implements Ordered {
   }
 
   private void deleteSuggestionsForEntity(Object entity) {
-    for (Field field : entity.getClass().getDeclaredFields()) {
+    for (Field field : com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(entity.getClass())) {
       if (field.isAnnotationPresent(AutoComplete.class)) {
         AutoComplete suggestable = field.getAnnotation(AutoComplete.class);
         String key = !ObjectUtils.isEmpty(suggestable.name()) ? suggestable.name()

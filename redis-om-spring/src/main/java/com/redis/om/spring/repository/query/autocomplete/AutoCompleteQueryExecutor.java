@@ -16,6 +16,7 @@ import com.redis.om.spring.util.ObjectUtils;
 
 import io.redisearch.Suggestion;
 import io.redisearch.client.SuggestionOptions;
+import org.springframework.util.ReflectionUtils;
 
 public class AutoCompleteQueryExecutor {
 
@@ -40,13 +41,16 @@ public class AutoCompleteQueryExecutor {
       Class<?> entityClass = query.getQueryMethod().getEntityInformation().getJavaType();
 
       try {
-        Field field = entityClass.getDeclaredField(targetProperty);
+        Field field = ReflectionUtils.findField(entityClass, targetProperty);
+        if (field == null) {
+          return Optional.empty();
+        }
         if (field.isAnnotationPresent(AutoComplete.class)) {
           AutoComplete bloom = field.getAnnotation(AutoComplete.class);
           return Optional.of(!org.apache.commons.lang3.ObjectUtils.isEmpty(bloom.name()) ? bloom.name()
               : String.format("sugg:%s:%s", entityClass.getSimpleName(), field.getName()));
         }
-      } catch (NoSuchFieldException | SecurityException e) {
+      } catch (SecurityException e) {
         return Optional.empty();
       }
     }
