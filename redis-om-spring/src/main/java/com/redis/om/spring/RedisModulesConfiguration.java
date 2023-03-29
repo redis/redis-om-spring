@@ -58,7 +58,7 @@ import com.redis.om.spring.serialization.gson.UlidTypeAdapter;
 @ComponentScan("com.redis.om.spring.bloom")
 @ComponentScan("com.redis.om.spring.autocomplete")
 @ComponentScan("com.redis.om.spring.metamodel")
-public class RedisModulesConfiguration extends CachingConfigurerSupport {
+public class RedisModulesConfiguration {
 
   private static final Log logger = LogFactory.getLog(RedisModulesConfiguration.class);
 
