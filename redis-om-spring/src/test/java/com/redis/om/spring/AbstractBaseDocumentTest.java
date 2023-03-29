@@ -17,7 +17,7 @@ import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
 public abstract class AbstractBaseDocumentTest extends AbstractBaseOMTest {
   @SpringBootApplication
   @Configuration
-  @EnableRedisDocumentRepositories(basePackages = "com.redis.om.spring.annotations.document.fixtures")
+  @EnableRedisDocumentRepositories(basePackages = {"com.redis.om.spring.annotations.document.fixtures", "com.redis.om.spring.repository"})
   static class Config extends TestConfig {
   }
 }
