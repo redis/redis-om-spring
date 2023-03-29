@@ -53,7 +53,7 @@ import com.redis.om.spring.serialization.gson.PointTypeAdapter;
 import com.redis.om.spring.serialization.gson.UlidTypeAdapter;
 
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties(RedisProperties.class)
+@EnableConfigurationProperties({RedisProperties.class, RedisOMSpringProperties.class})
 @EnableAspectJAutoProxy
 @ComponentScan("com.redis.om.spring.bloom")
 @ComponentScan("com.redis.om.spring.autocomplete")
@@ -121,17 +121,17 @@ public class RedisModulesConfiguration {
   RedisJSONKeyValueAdapter getRedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps,
       RedisModulesOperations<?> redisModulesOperations, RedisMappingContext mappingContext,
       RediSearchIndexer keyspaceToIndexMap,
-      GsonBuilder gsonBuilder) {
-    return new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap, gsonBuilder);
+      GsonBuilder gsonBuilder, RedisOMSpringProperties properties) {
+    return new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap, gsonBuilder, properties);
   }
 
   @Bean(name = "redisJSONKeyValueTemplate")
   public CustomRedisKeyValueTemplate getRedisJSONKeyValueTemplate(RedisOperations<?, ?> redisOps,
       RedisModulesOperations<?> redisModulesOperations, RedisMappingContext mappingContext,
       RediSearchIndexer keyspaceToIndexMap,
-      GsonBuilder gsonBuilder) {
+      GsonBuilder gsonBuilder, RedisOMSpringProperties properties) {
     return new CustomRedisKeyValueTemplate(
-        getRedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap, gsonBuilder),
+        getRedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, keyspaceToIndexMap, gsonBuilder, properties),
         mappingContext);
   }
 
@@ -154,7 +154,7 @@ public class RedisModulesConfiguration {
     logger.info("Creating Indexes......");
 
     ApplicationContext ac = cre.getApplicationContext();
-    
+
     RediSearchIndexer indexer = (RediSearchIndexer) ac.getBean("rediSearchIndexer");
     indexer.createIndicesFor(Document.class);
     indexer.createIndicesFor(RedisHash.class);
