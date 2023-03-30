@@ -32,54 +32,30 @@ The dataset was taken from the following Kaggle links.
 ## Running the App
 Before running the app, install [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 
+The app can run with images from a CDN (slower to vectorize) or with local images
+that can be obtained from https://www.dropbox.com/s/9o59z8zbhknnmvx/product-images.zip?dl=0
+
+Unzip the file `product-images.zip` under `src/main/resources/static/` which will 
+result in the folder `src/main/resources/static/product-images` being created.
+
 #### Redis Cloud (recommended)
 
 1. [Get your Redis Cloud Database](https://app.redislabs.com/) (if needed).
 
-2. Export Redis Endpoint Environment Variables:
-    ```bash
-    $ export REDIS_HOST=your-redis-host
-    $ export REDIS_PORT=your-redis-port
-    $ export REDIS_PASSOWRD=your-redis-password
+2. Set Redis Endpoint Environment Variables (in `applications.properties`):
     ```
-
-3. Run the App:
-    ```bash
-    $ docker compose -f docker-cloud-redis.yml up
+    spring.data.redis.host=xxxx.ec2.cloud.redislabs.com
+    spring.data.redis.port=10422
+    spring.data.redis.password=xxxxxx
+    spring.data.redis.username=default
     ```
-
-> The benefit of this approach is that the db will persist beyond application runs. So you can make updates and re run the app without having to provision the dataset or create another search index.
-
-#### Redis Docker
-```bash
-$ docker compose -f docker-local-redis.yml up
-```
-
-### Customizing (optional)
-You can use the Jupyter Notebook in the `data/` directory to create product embeddings and product metadata JSON files. Both files will end up stored in the `data/` directory and used when creating your own container.
-
-Create your own containers using the `build.sh` script and then make sure to update the `.yml` file with the right image name.
-
-
-### Using a React development env
-It's typically easier to write front end code in an interactive environment, testing changes in realtime.
-
-1. Deploy the app using steps above.
-2. Install NPM packages (you may need to use `npm` to install `yarn`)
+3. Configure whether to use local images or CDN images and how many images to 
+   load, the maximum being `3000` (in `applications.properties`):
+   ```
+   com.redis.om.vss.useLocalImages=false
+   com.redis.om.vss.maxLines=300
+   ```
+4. Run the App:
     ```bash
-    $ cd gui/
-    $ yarn install --no-optional
-    ````
-4. Use `yarn` to serve the application from your machine
-    ```bash
-    $ yarn start
+    ./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-vss
     ```
-5. Navigate to `http://localhost:3000` in a browser.
-
-All changes to your local code will be reflected in your display in semi realtime.
-
-### Troubleshooting
-Sometimes you need to clear out some Docker cached artifacts. Run `docker system prune`, restart Docker Desktop, and try again.
-
-Open an issue here on GitHub and we will try to be responsive to these. Additionally, please consider [contributing](CONTRIBUTING.md).
-
