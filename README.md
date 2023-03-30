@@ -438,18 +438,33 @@ These can be found in the `/demos` folder:
 - **roms-documents**:
   - Simple API example of `@Document` mapping, Spring Repositories and Querying.
   - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-documents`
+
 - **roms-hashes**:
   - Simple API example of `@RedisHash`, enhanced secondary indices and querying.
   - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-hashes`
+
 - **roms-permits**:
   - Port of [Elena Kolevska's](https://github.com/elena-kolevska) Quick Start: Using RediSearch with JSON [Demo][redisearch-wjso] to Redis OM Spring.
   - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-permits`
+
 - **roms-vss**:
   - Port of [Redis Vector Search Demo](https://github.com/RedisVentures/redis-product-search).
   - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-vss`
 
 ### External Demos
 
+- **redis-om-spring-skeleton-app**:
+  - Redis OM Spring Skeleton App
+  - Repo: https://github.com/redis-developer/redis-om-spring-skeleton-app
+
+- **redis-om-spring-react-todomvc**:
+  - Redis OM Spring to build a RESTful API that satisfies the simple web API spec set by 
+    the Todo-Backend project using JSON Documents stored in Redis.
+  - Repo: https://github.com/redis-developer/redis-om-spring-react-todomvc
+
+- **redis-om-autocomplete-demo**:
+  - A Spring Boot demo of autocomplete functionality using Redis OM Spring.
+  - Repo: https://github.com/redis-developer/redis-om-autocomplete-demo
 
 ## ⛏️ Troubleshooting
 
