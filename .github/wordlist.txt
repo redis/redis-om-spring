@@ -1,10 +1,14 @@
+autocomplete
+Backend
 CodeQL
 De
 ec
 embeddings
+github
 Gradle
 gradle
 http
+https
 Jedis
 js
 JSON
@@ -23,6 +27,8 @@ redisearch
 RedisJSON
 redisjson
 redislabs
+Repo
+RESTful
 roms
 runtime
 SDR
@@ -30,6 +36,8 @@ SDRs
 Sortable
 SpringBoot
 springboot
+Todo
+todomvc
 ULID
 Ver
 vss
