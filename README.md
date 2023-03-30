@@ -109,6 +109,33 @@ To launch the docker compose application, on the command line (or via Docker Des
 docker compose up
 ```
 
+### Configuring your Redis Connection
+
+By default, Redis OM Spring connects to `localhost` at port `6379`. If
+your instance is running somewhere else, you can configure the connection
+in your `application.properties` or `application.yaml`:
+
+In `applications.properties`:
+
+```
+spring.data.redis.host=your.cloud.db.redislabs.com                                                                                                                                                                                                                    |
+spring.data.redis.port=12345
+spring.data.redis.password=xxxxxxxx
+spring.data.redis.username=default 
+```
+
+In `applications.yaml`:
+
+```
+spring:
+  data:
+    redis:
+      host: your.cloud.db.redislabs.com
+      port: 12345
+      password: xxxxxxxx
+      username: default 
+```
+
 ### The SpringBoot App
 
 Use the `@EnableRedisDocumentRepositories` annotation to scan for `@Document` annotated Spring models,
@@ -404,12 +431,14 @@ The Redis OM documentation is available [here](docs/index.md).
 
 ## Demos
 
-### Basic JSON Mapping and Querying
+### Embedded Demos 
+
+These can be found in the `/demos` folder:
 
 - **roms-documents**:
   - Simple API example of `@Document` mapping, Spring Repositories and Querying.
   - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-documents`
-- **roms-ashes**:
+- **roms-hashes**:
   - Simple API example of `@RedisHash`, enhanced secondary indices and querying.
   - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-hashes`
 - **roms-permits**:
@@ -419,12 +448,8 @@ The Redis OM documentation is available [here](docs/index.md).
   - Port of [Redis Vector Search Demo](https://github.com/RedisVentures/redis-product-search).
   - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-vss`
 
-| :exclamation: If you are not using a local Redis instance, please add Redis connection properties to application properties file e.g. `resources/application.properties` or add them to the command line e.g. `--spring.data.redis.host=redis-10422.c289.us-west-1-2.ec2.cloud.redislabs.com`. |
-| :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| spring.data.redis.host=redis-10422.c289.us-west-1-2.ec2.cloud.redislabs.com                                                                                                                                                                                                                    |
-spring.data.redis.port=10422
-spring.data.redis.password=xxxxxxxx
-spring.data.redis.username=default |
+### External Demos
+
 
 ## ⛏️ Troubleshooting
 
