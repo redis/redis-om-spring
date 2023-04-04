@@ -71,6 +71,22 @@ public class RedisOMSpringProperties {
         private String sentenceTokenizerModelMaxLength = "768";
         @NotNull
         private String sentenceTokenizerModel = "sentence-transformers/all-mpnet-base-v2";
+
+        // face detection
+        @NotNull
+        private String faceDetectionModelEngine = "PyTorch";
+        @NotNull
+        private String faceDetectionModelName = "retinaface";
+        @NotNull
+        private String faceDetectionModelModelUrls = "https://resources.djl.ai/test-models/pytorch/retinaface.zip";
+
+        // face embeddings
+        @NotNull
+        private String faceEmbeddingModelEngine = "PyTorch";
+        @NotNull
+        private String faceEmbeddingModelName = "face_feature";
+        @NotNull
+        private String faceEmbeddingModelModelUrls = "https://resources.djl.ai/test-models/pytorch/face_feature.zip";
     }
 
     private final Djl djl = new Djl();

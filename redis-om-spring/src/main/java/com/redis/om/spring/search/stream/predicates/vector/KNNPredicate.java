@@ -2,12 +2,7 @@ package com.redis.om.spring.search.stream.predicates.vector;
 
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
-import com.redis.om.spring.util.ObjectUtils;
-import org.springframework.data.geo.Distance;
-import org.springframework.data.geo.Point;
-import redis.clients.jedis.search.querybuilder.GeoValue;
 import redis.clients.jedis.search.querybuilder.Node;
-import redis.clients.jedis.search.querybuilder.QueryBuilders;
 
 public class KNNPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 

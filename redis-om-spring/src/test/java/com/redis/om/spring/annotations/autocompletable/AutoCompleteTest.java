@@ -63,8 +63,10 @@ class AutoCompleteTest extends AbstractBaseDocumentTest {
   void testGetAutocompleteSuggestionsWithLimit() {
     List<Suggestion> suggestions = repository.autoCompleteName("col", AutoCompleteOptions.get().limit(2));
     List<String> suggestionsString = suggestions.stream().map(Suggestion::getValue).collect(Collectors.toList());
-    assertAll(() -> assertThat(suggestionsString).size().isEqualTo(2),
-        () -> assertThat(suggestionsString).containsAll(List.of("Columbia", "Columbus")));
+    assertAll( //
+        () -> assertThat(suggestionsString).size().isEqualTo(2), //
+        () -> assertThat(suggestionsString).containsAll(List.of("Columbia", "Columbus")) //
+    );
   }
 
   @Test

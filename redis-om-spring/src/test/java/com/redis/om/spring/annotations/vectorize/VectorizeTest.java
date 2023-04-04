@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
-public class VectorizeTest extends AbstractBaseEnhancedRedisTest {
+class VectorizeTest extends AbstractBaseEnhancedRedisTest {
   @Autowired ProductRepository repository;
   @Autowired EntityStream entityStream;
 
@@ -34,8 +34,8 @@ public class VectorizeTest extends AbstractBaseEnhancedRedisTest {
       repository.save(Product.of("cat2", "classpath:/images/cat2.jpg",
           "It is the only domesticated species in the family Felidae and is commonly referred to as the domestic cat or house cat"));
       repository.save(Product.of("catdog", "classpath:/images/catdog.jpg", "This is a picture of a cat and a dog together"));
-      repository.save(Product.of("face", "classpath:/images/face.jpg", "Some dude's face"));
-      repository.save(Product.of("face2", "classpath:/images/face2.jpg", "Another fellow's face"));
+      repository.save(Product.of("face", "classpath:/images/face.jpg", "Three years later, the coffin was still full of Jello."));
+      repository.save(Product.of("face2", "classpath:/images/face2.jpg", "The person box was packed with jelly many dozens of months later."));
     }
   }
 
@@ -72,7 +72,8 @@ public class VectorizeTest extends AbstractBaseEnhancedRedisTest {
         .limit(K) //
         .collect(Collectors.toList());
 
-    assertThat(results).hasSize(5).map(Product::getName).containsExactly("cat", "cat2", "face", "face2", "catdog");
+    assertThat(results).hasSize(5).map(Product::getName).containsExactly("cat", "cat2",
+        "face", "face2", "catdog");
   }
 
   @Test
@@ -88,6 +89,8 @@ public class VectorizeTest extends AbstractBaseEnhancedRedisTest {
         .limit(K) //
         .collect(Collectors.toList());
 
-    assertThat(results).hasSize(5).map(Product::getName).containsExactly("cat", "cat2", "catdog", "face", "face2");
+    assertThat(results).hasSize(5).map(Product::getName).containsExactly( //
+        "cat", "catdog", "cat2", "face", "face2" //
+    );
   }
 }
