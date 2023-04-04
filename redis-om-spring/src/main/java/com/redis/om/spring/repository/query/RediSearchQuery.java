@@ -77,6 +77,7 @@ public class RediSearchQuery implements RepositoryQuery {
   // for non @Param annotated dynamic names
   private final List<String> paramNames = new ArrayList<>();
   private final Class<?> domainType;
+  private Pair<String, Boolean> sortFieldDynamicName;
 
   private final RedisModulesOperations<String> modulesOperations;
 
@@ -218,6 +219,9 @@ public class RediSearchQuery implements RepositoryQuery {
       });
       queryOrParts.add(orPartParts);
     });
+
+    pt.getSort().stream().limit(1).forEach(sortField ->
+            sortFieldDynamicName = Pair.of(sortField.getProperty(), sortField.getDirection().isAscending()));
   }
 
   private List<Pair<String, QueryClause>> extractQueryFields(Class<?> type, Part part, List<PropertyPath> path) {
@@ -377,6 +381,10 @@ public class RediSearchQuery implements RepositoryQuery {
 
     if ((sortBy != null && !sortBy.isBlank())) {
       query.setSortBy(sortBy, sortAscending);
+    }
+
+    if(sortFieldDynamicName != null) {
+      query.setSortBy(sortFieldDynamicName.getFirst(), sortFieldDynamicName.getSecond());
     }
 
     if (hasLanguageParameter) {
