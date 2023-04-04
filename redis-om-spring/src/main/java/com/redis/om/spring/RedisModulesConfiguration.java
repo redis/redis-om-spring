@@ -4,6 +4,7 @@ import ai.djl.MalformedModelException;
 import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
 import ai.djl.modality.cv.Image;
 import ai.djl.modality.cv.ImageFactory;
+import ai.djl.modality.cv.output.DetectedObjects;
 import ai.djl.modality.cv.transform.CenterCrop;
 import ai.djl.modality.cv.transform.Resize;
 import ai.djl.modality.cv.transform.ToTensor;
@@ -11,7 +12,9 @@ import ai.djl.repository.zoo.Criteria;
 import ai.djl.repository.zoo.ModelNotFoundException;
 import ai.djl.repository.zoo.ModelZoo;
 import ai.djl.repository.zoo.ZooModel;
+import ai.djl.training.util.ProgressBar;
 import ai.djl.translate.Pipeline;
+import ai.djl.translate.Translator;
 import com.github.f4b6a3.ulid.Ulid;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -25,6 +28,8 @@ import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.EntityStreamImpl;
 import com.redis.om.spring.serialization.gson.*;
 import com.redis.om.spring.vectorize.FeatureExtractor;
+import com.redis.om.spring.vectorize.face.FaceDetectionTranslator;
+import com.redis.om.spring.vectorize.face.FaceFeatureTranslator;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -139,11 +144,69 @@ public class RedisModulesConfiguration {
         .build();
   }
 
+  @Bean(name = "djlFaceDetectionTranslator")
+  public Translator<Image, DetectedObjects> faceDetectionTranslator(RedisOMSpringProperties properties) {
+    double confThresh = 0.85f;
+    double nmsThresh = 0.45f;
+    double[] variance = {0.1f, 0.2f};
+    int topK = 5000;
+    int[][] scales = {{16, 32}, {64, 128}, {256, 512}};
+    int[] steps = {8, 16, 32};
+    return new FaceDetectionTranslator(confThresh, nmsThresh, variance, topK, scales, steps);
+  }
+
+  @Bean(name = "djlFaceDetectionModelCriteria")
+  public Criteria<Image, DetectedObjects> faceDetectionModelCriteria( //
+      @Qualifier("djlFaceDetectionTranslator") Translator<Image, DetectedObjects> translator, //
+      RedisOMSpringProperties properties) {
+
+    return Criteria.builder()
+        .setTypes(Image.class, DetectedObjects.class) //
+        .optModelUrls(properties.getDjl().getFaceDetectionModelModelUrls()) //
+        .optModelName(properties.getDjl().getFaceDetectionModelName()) //
+        .optTranslator(translator) //
+        .optEngine(properties.getDjl().getFaceDetectionModelEngine()) //
+        .build();
+  }
+
+  @Bean(name = "djlFaceDetectionModel")
+  public ZooModel<Image, DetectedObjects> faceDetectionModel(
+      @Qualifier("djlFaceDetectionModelCriteria") Criteria<Image, DetectedObjects> criteria)
+      throws MalformedModelException, ModelNotFoundException, IOException {
+    return ModelZoo.loadModel(criteria);
+  }
+
+  @Bean(name = "djlFaceEmbeddingTranslator")
+  public Translator<Image, float[]> faceEmbeddingTranslator(RedisOMSpringProperties properties) {
+    return new FaceFeatureTranslator();
+  }
+
+  @Bean(name = "djlFaceEmbeddingModelCriteria")
+  public Criteria<Image, float[]> faceEmbeddingModelCriteria( //
+      @Qualifier("djlFaceEmbeddingTranslator") Translator<Image, float[]> translator, //
+      RedisOMSpringProperties properties) {
+
+    return Criteria.builder() //
+            .setTypes(Image.class, float[].class)
+            .optModelUrls(properties.getDjl().getFaceEmbeddingModelModelUrls()) //
+            .optModelName(properties.getDjl().getFaceEmbeddingModelName()) //
+            .optTranslator(translator) //
+            .optEngine(properties.getDjl().getFaceEmbeddingModelEngine()) //
+            .build();
+  }
+
+  @Bean(name = "djlFaceEmbeddingModel")
+  public ZooModel<Image, float[]> faceEmbeddingModel(
+      @Qualifier("djlFaceEmbeddingModelCriteria") Criteria<Image, float[]> criteria)
+      throws MalformedModelException, ModelNotFoundException, IOException {
+    return ModelZoo.loadModel(criteria);
+  }
+
   @Bean(name = "djlImageEmbeddingModel")
   public ZooModel<Image, byte[]> imageModel(
-      @Qualifier("djlImageEmbeddingModelCriteria") Criteria<Image, byte[]> imageEmbeddingModelCriteria)
+      @Qualifier("djlImageEmbeddingModelCriteria") Criteria<Image, byte[]> criteria)
       throws MalformedModelException, ModelNotFoundException, IOException {
-    return ModelZoo.loadModel(imageEmbeddingModelCriteria);
+    return ModelZoo.loadModel(criteria);
   }
 
   @Bean(name = "djlDefaultImagePipeline")
@@ -171,13 +234,14 @@ public class RedisModulesConfiguration {
 
   @Bean(name = "featureExtractor")
   public FeatureExtractor featureExtractor(
-      @Qualifier("djlImageEmbeddingModel") ZooModel<Image, byte[]> model,
+      @Qualifier("djlImageEmbeddingModel") ZooModel<Image, byte[]> imageEmbeddingModel,
+      @Qualifier("djlFaceEmbeddingModel") ZooModel<Image, float[]> faceEmbeddingModel,
       @Qualifier("djlImageFactory") ImageFactory imageFactory,
       @Qualifier("djlDefaultImagePipeline") Pipeline defaultImagePipeline,
       @Qualifier("djlSentenceTokenizer") HuggingFaceTokenizer sentenceTokenizer,
       @Qualifier("redisTemplate") RedisTemplate<?, ?> redisTemplate,
       ApplicationContext ac) {
-    return new FeatureExtractor(redisTemplate, ac, model, imageFactory, defaultImagePipeline, sentenceTokenizer);
+    return new FeatureExtractor(redisTemplate, ac, imageEmbeddingModel, faceEmbeddingModel, imageFactory, defaultImagePipeline, sentenceTokenizer);
   }
 
   @Bean(name = "redisJSONKeyValueAdapter")

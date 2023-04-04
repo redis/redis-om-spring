@@ -24,6 +24,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.*;
 import java.util.function.Function;
 
@@ -235,18 +236,14 @@ public class ObjectUtils {
   public static Object documentToObject(Document document, Class<?> returnedObjectType,
       MappingRedisOMConverter mappingConverter) {
     Bucket b = new Bucket();
-    document.getProperties()
-        .forEach(p -> {
-          b.put(p.getKey(), (byte[]) p.getValue());
-        });
+    document.getProperties().forEach(p -> b.put(p.getKey(), (byte[]) p.getValue()));
 
     return mappingConverter.read(returnedObjectType, new RedisData(b));
   }
 
   public static <T> T documentToEntity(Document document, Class<T> classOfT, MappingRedisOMConverter mappingConverter) {
     Bucket b = new Bucket();
-    document.getProperties()
-        .forEach(p -> b.put(p.getKey(), (byte[]) p.getValue()));
+    document.getProperties().forEach(p -> b.put(p.getKey(), (byte[]) p.getValue()));
 
     return mappingConverter.read(classOfT, new RedisData(b));
   }
@@ -354,7 +351,7 @@ public class ObjectUtils {
 
   public static byte[] floatArrayToByteArray(float[] input) {
     byte[] bytes = new byte[Float.BYTES * input.length];
-    ByteBuffer.wrap(bytes).asFloatBuffer().put(input);
+    ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer().put(input);
     return bytes;
   }
 

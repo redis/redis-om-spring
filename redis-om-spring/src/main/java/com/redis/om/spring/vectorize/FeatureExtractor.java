@@ -24,11 +24,13 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.List;
 
 @Component public class FeatureExtractor {
   private final RedisOperations<?, ?> redisOperations;
   private final ZooModel<Image, byte[]> imageEmbeddingModel;
+  private final ZooModel<Image, float[]> faceEmbeddingModel;
   private final ImageFactory imageFactory;
   private final ApplicationContext applicationContext;
   private ImageFeatureExtractor imageFeatureExtractor;
@@ -41,6 +43,7 @@ import java.util.List;
       RedisOperations<?, ?> redisOperations, //
       ApplicationContext applicationContext, //
       ZooModel<Image, byte[]> imageEmbeddingModel, //
+      ZooModel<Image, float[]> faceEmbeddingModel, //
       ImageFactory imageFactory, //
       Pipeline imagePipeline,
       HuggingFaceTokenizer sentenceTokenizer
@@ -48,6 +51,7 @@ import java.util.List;
     this.redisOperations = redisOperations;
     this.applicationContext = applicationContext;
     this.imageEmbeddingModel = imageEmbeddingModel;
+    this.faceEmbeddingModel = faceEmbeddingModel;
     this.imageFactory = imageFactory;
     this.imagePipeline = imagePipeline;
     this.sentenceTokenizer = sentenceTokenizer;
@@ -64,12 +68,22 @@ import java.util.List;
 
   public byte[] getImageEmbeddingsFor(InputStream is) {
     try {
-      var img = ImageFactory.getInstance().fromInputStream(is);
+      var img = imageFactory.fromInputStream(is);
       Predictor<Image, byte[]> predictor = imageEmbeddingModel.newPredictor(imageFeatureExtractor);
       return predictor.predict(img);
     } catch (IOException | TranslateException e) {
       logger.warn("Error generating image embedding", e);
       return new byte[]{};
+    }
+  }
+
+  public byte[] getFacialImageEmbeddingsFor(InputStream is) {
+    try (Predictor<Image, float[]> predictor = faceEmbeddingModel.newPredictor()) {
+      var img = imageFactory.fromInputStream(is);
+      return ObjectUtils.floatArrayToByteArray(predictor.predict(img));
+    } catch (IOException | TranslateException e) {
+      logger.warn("Error generating image embedding", e);
+      return new byte[] {};
     }
   }
 
@@ -91,6 +105,15 @@ import java.util.List;
               Resource resource = applicationContext.getResource(fieldValue.toString());
               try {
                 byte[] feature = getImageEmbeddingsFor(resource.getInputStream());
+                accessor.setPropertyValue(vectorize.destination(), feature);
+              } catch (IOException e) {
+                logger.warn("Error generating image embedding", e);
+              }
+            }
+            case FACE -> {
+              Resource resource = applicationContext.getResource(fieldValue.toString());
+              try {
+                byte[] feature = getFacialImageEmbeddingsFor(resource.getInputStream());
                 accessor.setPropertyValue(vectorize.destination(), feature);
               } catch (IOException e) {
                 logger.warn("Error generating image embedding", e);
