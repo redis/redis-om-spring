@@ -29,5 +29,9 @@ import java.util.Set;
 
   Iterable<Company> search(String text);
   
-  List<Company> findByLocationNear(Point point, Distance distance); 
+  List<Company> findByLocationNear(Point point, Distance distance);
+
+  // order by
+  List<Company> findByYearFoundedOrderByNameAsc(int year);
+  List<Company> findByYearFoundedOrderByNameDesc(int year);
 }

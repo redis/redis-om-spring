@@ -42,6 +42,7 @@ import redis.clients.jedis.search.Document;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.Schema.FieldType;
 import redis.clients.jedis.search.SearchResult;
+import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 import redis.clients.jedis.util.SafeEncoder;
 
 public class RediSearchQuery implements RepositoryQuery {
@@ -218,6 +219,14 @@ public class RediSearchQuery implements RepositoryQuery {
       });
       queryOrParts.add(orPartParts);
     });
+
+    // Order By
+    Optional<Order> maybeOrder = pt.getSort().stream().findFirst();
+    if (maybeOrder.isPresent()) {
+      Order order = maybeOrder.get();
+      sortBy = order.getProperty();
+      sortAscending = order.isAscending();
+    }
   }
 
   private List<Pair<String, QueryClause>> extractQueryFields(Class<?> type, Part part, List<PropertyPath> path) {

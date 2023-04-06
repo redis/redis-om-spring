@@ -561,4 +561,22 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
         () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft") //
     );
   }
+
+  @Test
+  void testOrderByInMethodName() {
+    companyRepo.saveAll(
+        List.of(
+            Company.of("aaa", 2000, LocalDate.of(2020, 5, 1), new Point(-122.066540, 37.377690), "aaa@aaa.com"),
+            Company.of("bbb", 2000, LocalDate.of(2021, 6, 2), new Point(-122.066540, 37.377690), "bbb@bbb.com"),
+            Company.of("ccc", 2000, LocalDate.of(2022, 7, 3), new Point(-122.066540, 37.377690), "ccc@ccc.com")
+        ));
+
+    List<Company> byNameAsc = companyRepo.findByYearFoundedOrderByNameAsc(2000);
+    List<Company> byNameDesc = companyRepo.findByYearFoundedOrderByNameDesc(2000);
+
+    assertAll( //
+        () -> assertThat(byNameAsc).extracting("name").containsExactly("aaa", "bbb", "ccc"),
+        () -> assertThat(byNameDesc).extracting("name").containsExactly("ccc", "bbb", "aaa")
+    );
+  }
 }
