@@ -330,4 +330,20 @@ import static org.assertj.core.api.Assertions.entry;
       IntStream.range(0, expectedData[i].length - 1).forEach(j -> assertThat(row.getString(expectedData[i][j][0])).isEqualTo(expectedData[i][j][1]));
     });
   }
+
+  @Test void testFirstValue() {
+    String[][][] expectedData = { //
+        { { "brand", "sony" }, { "top_item", "sony psp slim &amp; lite 2000 console" }, { "top_price", "695.8" }, {"bottom_item", "sony dlchd20p high speed hdmi cable for playstation 3"}, { "bottom_price", "5.88" }   }, //
+        { { "brand", "matias" }, { "top_item", "matias halfkeyboard usb" }, { "top_price", "559.99" }, {"bottom_item", "matias halfkeyboard usb"}, { "bottom_price", "559.99" }   }, //
+        { { "brand", "beyerdynamic" }, { "top_item", "beyerdynamic mmx300 pc gaming premium digital headset with microphone" }, { "top_price", "359.74" }, {"bottom_item", "beyerdynamic headzone pc gaming digital surround sound system with mmx300 digital headset with microphone"}, { "bottom_price", "0" }   }, //
+        { { "brand", "mad catz" }, { "top_item", "mad catz s.t.r.i.k.e.7 gaming keyboard" }, { "top_price", "295.95" }, {"bottom_item", "madcatz mov4545 xbox replacement breakaway cable"}, { "bottom_price", "3.49" }   }, //
+    };
+
+    var result = repository.firstValue();
+
+    IntStream.range(0, expectedData.length - 1).forEach(i -> {
+      var row = result.getRow(i);
+      IntStream.range(0, expectedData[i].length - 1).forEach(j -> assertThat(row.getString(expectedData[i][j][0])).isEqualToIgnoringCase(expectedData[i][j][1]));
+    });
+  }
 }

@@ -415,4 +415,34 @@ import java.util.Map;
       sortByMax = 4
   ) //
   AggregationResult loadWithDocId();
+
+  /**
+   * <pre>
+   * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "@brand:(sony|matias|beyerdynamic|(mad catz))"
+   * "GROUPBY" "1" "@brand"
+   * "REDUCE" "FIRST_VALUE" "4" "@title" "BY" "@price" "DESC" "AS" "top_item"
+   * "REDUCE" "FIRST_VALUE" "4" "@price" "BY" "@price" "DESC" "AS" "top_price"
+   * "REDUCE" "FIRST_VALUE" "4" "@title" "BY" "@price" "ASC" "AS" "bottom_item"
+   * "REDUCE" "FIRST_VALUE" "4" "@price" "BY" "@price" "ASC" "AS" "bottom_price"
+   * "SORTBY" "2" "@top_price" "DESC"
+   * "MAX" "4"
+   * </pre>
+   */
+  @Aggregation( //
+      value = "@brand:(sony|matias|beyerdynamic|(mad catz))",
+      groupBy = { //
+          @GroupBy( //
+              properties = {"@brand"}, //
+              reduce = { //
+                  @Reducer(func = ReducerFunction.FIRST_VALUE, args={"@title", "@price", "DESC"}, alias="top_item"),
+                  @Reducer(func = ReducerFunction.FIRST_VALUE, args={"@price", "@price", "DESC"}, alias="top_price"),
+                  @Reducer(func = ReducerFunction.FIRST_VALUE, args={"@title", "@price", "ASC"}, alias="bottom_item"),
+                  @Reducer(func = ReducerFunction.FIRST_VALUE, args={"@price", "@price", "ASC"}, alias="bottom_price"),
+              } //
+          ) //
+      }, //
+      sortBy = @SortBy(field = "@top_price", direction = Direction.DESC), //
+      sortByMax = 5 //
+  ) //
+  AggregationResult firstValue();
 }
