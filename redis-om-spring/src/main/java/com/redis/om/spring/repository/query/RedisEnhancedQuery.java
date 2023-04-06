@@ -33,6 +33,7 @@ import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.data.util.Pair;
 import org.springframework.util.ClassUtils;
+import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
 import java.lang.reflect.Field;
 import java.time.LocalDate;
@@ -217,6 +218,14 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       });
       queryOrParts.add(orPartParts);
     });
+
+    // Order By
+    Optional<Order> maybeOrder = pt.getSort().stream().findFirst();
+    if (maybeOrder.isPresent()) {
+      Order order = maybeOrder.get();
+      sortBy = order.getProperty();
+      sortAscending = order.isAscending();
+    }
   }
 
   private List<Pair<String, QueryClause>> extractQueryFields(Class<?> type, Part part, List<PropertyPath> path) {

@@ -46,4 +46,8 @@ public interface CompanyRepository extends RedisDocumentRepository<Company, Stri
 
   List<Company> findByMetaList_tagValues(Set<String> tags);
 
+  // order by
+  List<Company> findByYearFoundedOrderByNameAsc(int year);
+  List<Company> findByYearFoundedOrderByNameDesc(int year);
+
 }
