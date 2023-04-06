@@ -67,7 +67,6 @@ class FaceDetectionTest extends AbstractBaseEnhancedRedisTest {
     try (Predictor<Image, float[]> predictor = faceEmbeddingModel.newPredictor()) {
       float[] embedding = predictor.predict(img);
       byte[] embeddingAsByteArray = floatArrayToByteArray(embedding);
-      System.out.println(embeddingAsByteArray.length);
 
       assertAll( //
           () -> assertThat(embedding).hasSize(512),
