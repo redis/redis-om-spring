@@ -266,8 +266,6 @@ import static org.assertj.core.api.Assertions.assertThat;
   void testArraySerializationLargeBlobUsingCustomFinder() {
     Optional<KitchenSink> fromDb = repository.findFirstByName("ks2");
     assertThat(fromDb).isPresent();
-    System.out.println(">>>> BEFORE: " + byteArray2.length);
-    System.out.println(">>>> AFTER : " + fromDb.get().getByteArray().length);
     assertThat(fromDb.get().getByteArray()).isEqualTo(byteArray2);
   }
   
