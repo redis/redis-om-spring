@@ -158,7 +158,17 @@ public class RedisEnhancedQuery implements RepositoryQuery {
                 r = Reducers.quantile(arg0, percentile);
               }
               case TOLIST -> r = Reducers.to_list(arg0);
-              case FIRST_VALUE -> r = Reducers.first_value(arg0);
+              case FIRST_VALUE -> {
+                if (reducer.args().length > 1) {
+                  String arg1 = reducer.args().length > 1 ? reducer.args()[1] : null;
+                  String arg2 = reducer.args().length > 2 ? reducer.args()[2] : null;
+                  SortOrder order = arg2 != null && arg2.equalsIgnoreCase("ASC") ? SortOrder.ASC : SortOrder.DESC;
+                  SortedField sortedField = new SortedField(arg1, order);
+                  r = Reducers.first_value(arg0, sortedField);
+                } else {
+                  r = Reducers.first_value(arg0);
+                }
+              }
               case RANDOM_SAMPLE -> {
                 int sampleSize = Integer.parseInt(reducer.args()[1]);
                 r = Reducers.random_sample(arg0, sampleSize);
