@@ -77,13 +77,10 @@ import java.util.List;
     }
   }
 
-  public byte[] getFacialImageEmbeddingsFor(InputStream is) {
+  public byte[] getFacialImageEmbeddingsFor(InputStream is) throws IOException, TranslateException {
     try (Predictor<Image, float[]> predictor = faceEmbeddingModel.newPredictor()) {
       var img = imageFactory.fromInputStream(is);
       return ObjectUtils.floatArrayToByteArray(predictor.predict(img));
-    } catch (IOException | TranslateException e) {
-      logger.warn("Error generating image embedding", e);
-      return new byte[] {};
     }
   }
 
@@ -115,8 +112,8 @@ import java.util.List;
               try {
                 byte[] feature = getFacialImageEmbeddingsFor(resource.getInputStream());
                 accessor.setPropertyValue(vectorize.destination(), feature);
-              } catch (IOException e) {
-                logger.warn("Error generating image embedding", e);
+              } catch (IOException | TranslateException e) {
+                logger.warn("Error generating facial image embedding", e);
               }
             }
             case SENTENCE -> {
