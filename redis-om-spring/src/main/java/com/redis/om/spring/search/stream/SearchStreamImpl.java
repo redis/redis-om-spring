@@ -61,6 +61,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private KNNPredicate<E,?> knnPredicate;
   private final boolean isDocument;
   private final MappingRedisOMConverter mappingConverter;
+  private int dialect = 1;
 
   public SearchStreamImpl(Class<E> entityClass, RedisModulesOperations<String> modulesOperations, Gson gson) {
     this.modulesOperations = modulesOperations;
@@ -376,6 +377,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   Query prepareQuery() {
     Query query;
+
     if (knnPredicate != null) {
       query = new Query(knnPredicate.apply(rootNode).toString());
       query.addParam(knnPredicate.getBlobAttributeName(), knnPredicate.getBlobAttribute());
@@ -383,6 +385,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       query.dialect(2);
     } else {
       query = (rootNode.toString().isBlank()) ? new Query() : new Query(rootNode.toString());
+      query.dialect(dialect);
     }
 
     query.limit(skip != null ? skip.intValue() : 0, limit != null ? limit.intValue() : MAX_LIMIT);
@@ -508,6 +511,11 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
         .toList(String.class, Double.class);
 
     return maxByField.isEmpty() ? Optional.empty() : Optional.of(json.get(maxByField.get(0).getFirst(), entityClass));
+  }
+
+  @Override public SearchStream<E> dialect(int dialect) {
+    this.dialect = dialect;
+    return this;
   }
 
   public boolean isDocument() {
