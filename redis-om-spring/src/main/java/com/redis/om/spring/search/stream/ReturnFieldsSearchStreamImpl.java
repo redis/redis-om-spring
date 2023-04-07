@@ -385,4 +385,8 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     throw new UnsupportedOperationException("max is not supported on a ReturnFieldSearchStream");
   }
 
+  @Override public SearchStream<T> dialect(int dialect) {
+    throw new UnsupportedOperationException("dialect is not supported on a ReturnFieldSearchStream");
+  }
+
 }

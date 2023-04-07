@@ -267,4 +267,8 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
     throw new UnsupportedOperationException("max is not supported on a WrappedSearchStream");
   }
 
+  @Override public SearchStream<E> dialect(int dialect) {
+    throw new UnsupportedOperationException("dialect is not supported on a WrappedSearchStream");
+  }
+
 }

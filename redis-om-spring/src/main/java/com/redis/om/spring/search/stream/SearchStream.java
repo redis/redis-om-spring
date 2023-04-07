@@ -95,4 +95,6 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
   Optional<E> min(NumericField<E, ?> field);
 
   Optional<E> max(NumericField<E, ?> field);
+
+  SearchStream<E> dialect(int dialect);
 }
