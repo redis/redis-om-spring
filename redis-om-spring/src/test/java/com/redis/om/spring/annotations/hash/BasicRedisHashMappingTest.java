@@ -3,6 +3,8 @@ package com.redis.om.spring.annotations.hash;
 import com.google.common.collect.Ordering;
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
 import com.redis.om.spring.annotations.document.fixtures.CompanyMeta;
+import com.redis.om.spring.annotations.document.fixtures.DocWithEnum;
+import com.redis.om.spring.annotations.document.fixtures.MyJavaEnum;
 import com.redis.om.spring.annotations.hash.fixtures.*;
 import com.redis.om.spring.repository.query.QueryUtils;
 import org.assertj.core.util.Arrays;
@@ -47,6 +49,9 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
 
   @Autowired
   NonIndexedHashRepository nihRepo;
+
+  @Autowired
+  HashWithEnumRepository hashWithEnumRepository;
 
   @BeforeEach
   void createTestDataIfNeeded() {
@@ -577,6 +582,24 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
     assertAll( //
         () -> assertThat(byNameAsc).extracting("name").containsExactly("aaa", "bbb", "ccc"),
         () -> assertThat(byNameDesc).extracting("name").containsExactly("ccc", "bbb", "aaa")
+    );
+  }
+
+  @Test void testEnumsAreIndexed() {
+    HashWithEnum doc1 = HashWithEnum.of(MyJavaEnum.VALUE_1);
+    HashWithEnum doc2 = HashWithEnum.of(MyJavaEnum.VALUE_2);
+    HashWithEnum doc3 = HashWithEnum.of(MyJavaEnum.VALUE_3);
+
+    hashWithEnumRepository.saveAll(List.of(doc1, doc2, doc3));
+
+    List<HashWithEnum> onlyVal1 = hashWithEnumRepository.findByEnumProp(MyJavaEnum.VALUE_1);
+    List<HashWithEnum> onlyVal2 = hashWithEnumRepository.findByEnumProp(MyJavaEnum.VALUE_2);
+    List<HashWithEnum> onlyVal3 = hashWithEnumRepository.findByEnumProp(MyJavaEnum.VALUE_3);
+
+    assertAll( //
+        () -> assertThat(onlyVal1).containsExactly(doc1), //
+        () -> assertThat(onlyVal2).containsExactly(doc2), //
+        () -> assertThat(onlyVal3).containsExactly(doc3)  //
     );
   }
 }

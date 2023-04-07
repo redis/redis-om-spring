@@ -280,9 +280,9 @@ public class RediSearchQuery implements RepositoryQuery {
       String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
       Class<?> fieldType = ClassUtils.resolvePrimitiveIfNecessary(field.getType());
       //
-      // Any Character class or Boolean -> Tag Search Field
+      // Any Character class, Enums or Boolean -> Tag Search Field
       //
-      if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class)) {
+      if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class) || (fieldType.isEnum())) {
         qf.add(Pair.of(actualKey, QueryClause.get(FieldType.TAG, part.getType())));
       }
       //
