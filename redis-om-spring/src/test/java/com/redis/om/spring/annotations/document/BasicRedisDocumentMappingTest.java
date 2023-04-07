@@ -32,6 +32,9 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   @Autowired
   DocWithSetsRepository docWithSetsRepository;
 
+  @Autowired
+  DocWithEnumRepository docWithEnumRepository;
+
   @BeforeEach
   void cleanUp() {
     flushSearchIndexFor(Company.class);
@@ -584,6 +587,24 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
     assertAll( //
         () -> assertThat(byNameAsc).extracting("name").containsExactly("aaa", "bbb", "ccc"),
         () -> assertThat(byNameDesc).extracting("name").containsExactly("ccc", "bbb", "aaa")
+    );
+  }
+
+  @Test void testEnumsAreIndexed() {
+    DocWithEnum doc1 = DocWithEnum.of(MyJavaEnum.VALUE_1);
+    DocWithEnum doc2 = DocWithEnum.of(MyJavaEnum.VALUE_2);
+    DocWithEnum doc3 = DocWithEnum.of(MyJavaEnum.VALUE_3);
+
+    docWithEnumRepository.saveAll(List.of(doc1, doc2, doc3));
+
+    List<DocWithEnum> onlyVal1 = docWithEnumRepository.findByEnumProp(MyJavaEnum.VALUE_1);
+    List<DocWithEnum> onlyVal2 = docWithEnumRepository.findByEnumProp(MyJavaEnum.VALUE_2);
+    List<DocWithEnum> onlyVal3 = docWithEnumRepository.findByEnumProp(MyJavaEnum.VALUE_3);
+
+    assertAll( //
+        () -> assertThat(onlyVal1).containsExactly(doc1), //
+        () -> assertThat(onlyVal2).containsExactly(doc2), //
+        () -> assertThat(onlyVal3).containsExactly(doc3)  //
     );
   }
 }

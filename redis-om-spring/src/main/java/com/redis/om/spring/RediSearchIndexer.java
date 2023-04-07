@@ -236,9 +236,9 @@ public class RediSearchIndexer {
 
       if (indexed.schemaFieldType() == SchemaFieldType.AUTODETECT) {
         //
-        // Any Character class or Boolean -> Tag Search Field
+        // Any Character class, Enums or Boolean -> Tag Search Field
         //
-        if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class)) {
+        if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class) || (fieldType.isEnum())) {
           fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(), indexed.arrayIndex()));
         }
         //
