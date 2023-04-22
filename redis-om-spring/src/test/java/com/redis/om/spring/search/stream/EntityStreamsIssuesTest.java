@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
   @Autowired DeepNestRepository deepNestRepository;
   @Autowired DocRepository docRepository;
   @Autowired Doc2Repository doc2Repository;
+  @Autowired DeepListRepository deepListRepository;
 
   @Autowired EntityStream entityStream;
 
@@ -42,6 +43,29 @@ import static org.junit.jupiter.api.Assertions.assertAll;
           doc2s.add(Doc2.of(String.format("Marca%s Modelo %s", i, i), String.format("COLOR %s", i)));
       });
       doc2Repository.saveAll(doc2s);
+    }
+
+    if (deepListRepository.count() == 0) {
+      List<NestLevel2> list1 = List.of(
+          NestLevel2.of("nl-1-1", "It's just a flesh wound!"),
+          NestLevel2.of("nl-1-2", "Nobody expects the Spanish Inquisition!"),
+          NestLevel2.of("nl-1-3", "I fart in your general direction!")
+      );
+      List<NestLevel2> list2 = List.of(
+          NestLevel2.of("nl-2-1", "We are the knights who say 'Ni!"),
+          NestLevel2.of("nl-2-2", "And now for something completely different."),
+          NestLevel2.of("nl-2-3", "What have the Romans ever done for us?")
+      );
+      List<NestLevel2> list3 = List.of(
+          NestLevel2.of("nl-3-1", "I have a very silly job and I take it very seriously."),
+          NestLevel2.of("nl-3-2", "What's brown and sticky? A stick!"),
+          NestLevel2.of("nl-3-3", "I have a theory that the truth is never told during the nine-to-five hours.")
+      );
+      DeepList dl1 = DeepList.of("dn-1", list1);
+      DeepList dl2 = DeepList.of("dn-2", list2);
+      DeepList dl3 = DeepList.of("dn-3", list3);
+
+      deepListRepository.saveAll(List.of(dl1, dl2, dl3));
     }
   }
 
@@ -131,5 +155,41 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
     String regex = ".*LOR\s12$";
     assertThat(startingWithMarca2).map(Doc2::getTag).allMatch(t -> t.matches(regex));
+  }
+
+  @Test void testSearchInsideListOfObjects() {
+    var results = entityStream.of(DeepList.class) //
+        .filter(DeepList$.NEST_LEVELS.NAME.eq("nl-2-2")) //
+        .map(DeepList$.NAME) //
+        .collect(Collectors.toList());
+
+    assertAll( //
+        () -> assertThat(results).hasSize(1),
+        () -> assertThat(results).containsExactly("dn-2")
+    );
+  }
+
+  @Test void testSearchInsideListOfObjects2() {
+    var results = entityStream.of(DeepList.class) //
+        .filter(DeepList$.NEST_LEVELS.NAME.startsWith("nl-2")) //
+        .map(DeepList$.NAME) //
+        .collect(Collectors.toList());
+
+    assertAll( //
+        () -> assertThat(results).hasSize(1),
+        () -> assertThat(results).containsExactly("dn-2")
+    );
+  }
+
+  @Test void testSearchInsideListOfObjects3() {
+    var results = entityStream.of(DeepList.class) //
+        .filter(DeepList$.NEST_LEVELS.BLOCK.eq("have")) //
+        .map(DeepList$.NAME) //
+        .collect(Collectors.toList());
+
+    assertAll( //
+        () -> assertThat(results).hasSize(2),
+        () -> assertThat(results).containsExactlyInAnyOrder("dn-2", "dn-3")
+    );
   }
 }

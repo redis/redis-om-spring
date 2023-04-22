@@ -63,6 +63,15 @@ public class ObjectUtils {
     return cls;
   }
 
+  public static String getCollectionTargetClassName(String fullTypeClassName) {
+    String[] splitted = fullTypeClassName.split(" ");
+    String cls = splitted[splitted.length - 1];
+    if (cls.contains("<")) {
+      cls = cls.substring(cls.indexOf("<") + 1, cls.indexOf(">"));
+    }
+    return cls;
+  }
+
   public static String firstToLowercase(String string) {
     char[] c = string.toCharArray();
     c[0] = Character.toLowerCase(c[0]);
