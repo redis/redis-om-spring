@@ -5,11 +5,13 @@ import com.redis.om.spring.annotations.Indexed;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 
+import java.util.List;
+
 @Data
 @RequiredArgsConstructor(staticName = "of")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Document
-public class DeepNest {
+public class DeepList {
   @Id
   private String id;
 
@@ -19,5 +21,5 @@ public class DeepNest {
 
   @Indexed
   @NonNull
-  private NestLevel1 nestLevel1;
+  private List<NestLevel2> nestLevels;
 }
