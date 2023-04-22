@@ -61,7 +61,7 @@
     <java.version>17</java.version>
     <spring.version>3.0.6</spring.version>
     <sdr.version>3.0.5</sdr.version>
-    <jedis.version>4.3.1</jedis.version>
+    <jedis.version>4.3.2</jedis.version>
     <cdi>1.0</cdi>
     <auto-service.version>1.0.1</auto-service.version>
     <spring.test.version>6.0.4</spring.test.version>
