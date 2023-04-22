@@ -59,7 +59,7 @@
     <maven.test.source>17</maven.test.source>
     <maven.test.target>17</maven.test.target>
     <java.version>17</java.version>
-    <spring.version>3.0.5</spring.version>
+    <spring.version>3.0.6</spring.version>
     <sdr.version>3.0.4</sdr.version>
     <jedis.version>4.3.1</jedis.version>
     <cdi>1.0</cdi>
