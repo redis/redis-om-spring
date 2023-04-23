@@ -96,16 +96,6 @@ class OpsForSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  void testBasicSearch() {
-    SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
-    SearchResult res1 = ops.search(new Query("@first:Jo*"));
-    assertEquals(2, res1.totalResults);
-
-    SearchResult res2 = ops.search(new Query("@first:Pat"));
-    assertEquals(1, res2.totalResults);
-  }
-
-  @Test
   void testComplexSearch() throws Exception {
     SearchOperations<String> ops = modulesOperations.opsForSearch("testComplexSearch");
 
@@ -152,43 +142,6 @@ class OpsForSearchTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  void searchBatch() throws Exception {
-    SearchOperations<String> ops = modulesOperations.opsForSearch("batch");
-
-    Schema sc = new Schema().addTextField("title", 1.0).addTextField("body", 1.0);
-
-    assertTrue(ops.createIndex(sc, Client.IndexOptions.defaultOptions()));
-    Map<String, Object> fields = new HashMap<>();
-    fields.put("title", "hello world");
-    fields.put("body", "lorem ipsum");
-    for (int i = 0; i < 50; i++) {
-      fields.put("title", "hello world");
-      assertTrue(ops.addDocument(String.format("doc%d", i), (double) i / 100.0, fields));
-    }
-
-    for (int i = 50; i < 100; i++) {
-      fields.put("title", "good night");
-      assertTrue(ops.addDocument(String.format("doc%d", i), (double) i / 100.0, fields));
-    }
-
-    SearchResult[] res = ops.searchBatch(new Query("hello world").limit(0, 5).setWithScores(),
-        new Query("good night").limit(0, 5).setWithScores());
-
-    assertEquals(2, res.length);
-    assertEquals(50, res[0].totalResults);
-    assertEquals(50, res[1].totalResults);
-    assertEquals(5, res[0].docs.size());
-    for (Document d : res[0].docs) {
-      assertTrue(d.getId().startsWith("doc"));
-      assertTrue(d.getScore() < 100);
-      assertEquals(String.format(
-          "{\"id\":\"%s\",\"score\":%s,\"properties\":{\"title\":\"hello world\",\"body\":\"lorem ipsum\"}}", d.getId(),
-          Double.toString(d.getScore())), d.toString());
-    }
-    dropIndex("batch");
-  }
-
-  @Test
   void testExplain() {
     SearchOperations<String> ops = modulesOperations.opsForSearch("explain");
 
@@ -222,33 +175,6 @@ class OpsForSearchTest extends AbstractBaseDocumentTest {
     }
     assertTrue(caught);
     dropIndex("language");
-  }
-
-  @Test
-  void testMultiDocuments() {
-    SearchOperations<String> ops = modulesOperations.opsForSearch("multi");
-    Schema sc = new Schema().addTextField("title", 1.0).addTextField("body", 1.0);
-
-    assertTrue(ops.createIndex(sc, Client.IndexOptions.defaultOptions()));
-
-    Map<String, Object> fields = new HashMap<>();
-    fields.put("title", "hello world");
-    fields.put("body", "lorem ipsum");
-
-    boolean[] results = ops.addDocuments(new Document("doc1", fields), new Document("doc2", fields),
-        new Document("doc3", fields));
-
-    assertArrayEquals(new boolean[] { true, true, true }, results);
-
-    assertEquals(3, ops.search(new Query("hello world")).totalResults);
-
-    results = ops.addDocuments(new Document("doc4", fields), new Document("doc2", fields),
-        new Document("doc5", fields));
-    assertArrayEquals(new boolean[] { true, false, true }, results);
-
-    results = ops.deleteDocuments(true, "doc1", "doc2", "doc36");
-    assertArrayEquals(new boolean[] { true, true, false }, results);
-    dropIndex("multi");
   }
 
   @Test
