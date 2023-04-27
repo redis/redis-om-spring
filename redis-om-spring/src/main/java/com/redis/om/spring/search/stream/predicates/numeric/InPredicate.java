@@ -33,6 +33,8 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     for (Object value : getValues()) {
       if (cls == Integer.class) {
         or.add(getSearchAlias(), Values.eq(Integer.parseInt(value.toString())));
+      } else if (cls == Long.class) {
+        or.add(getSearchAlias(), Values.eq(Long.parseLong(value.toString())));
       } else if (cls == LocalDate.class) {
         LocalDate localDate = (LocalDate) value;
         Instant instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
