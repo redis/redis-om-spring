@@ -1,17 +1,16 @@
 package com.redis.om.spring.repository.configuration;
 
-import java.lang.annotation.Annotation;
-import java.util.Collection;
-import java.util.Collections;
-
+import com.redis.om.spring.CustomRedisKeyValueTemplate;
+import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.repository.RedisDocumentRepository;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.data.redis.repository.configuration.RedisRepositoryConfigurationExtension;
 import org.springframework.data.repository.config.RepositoryConfigurationSource;
 
-import com.redis.om.spring.CustomRedisKeyValueTemplate;
-import com.redis.om.spring.annotations.Document;
-import com.redis.om.spring.repository.RedisDocumentRepository;
+import java.lang.annotation.Annotation;
+import java.util.Collection;
+import java.util.Collections;
 
 public class RedisJSONRepositoryConfigurationExtension extends RedisRepositoryConfigurationExtension {
   private static final String REDIS_ADAPTER_BEAN_NAME = "redisJSONKeyValueAdapter";

@@ -1,12 +1,11 @@
 package com.redis.om.spring.repository.query.clause;
 
-import org.springframework.data.repository.query.parser.Part;
-
-import redis.clients.jedis.search.Schema.FieldType;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.repository.query.parser.Part;
+import redis.clients.jedis.search.Schema.FieldType;
 
 @Getter
 @RequiredArgsConstructor(staticName = "of")

@@ -1,11 +1,11 @@
 package com.redis.om.spring;
 
+import org.springframework.boot.autoconfigure.AutoConfigurationImportFilter;
+import org.springframework.boot.autoconfigure.AutoConfigurationMetadata;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import org.springframework.boot.autoconfigure.AutoConfigurationImportFilter;
-import org.springframework.boot.autoconfigure.AutoConfigurationMetadata;
 
 public class RedisRepositoriesExcludeFilter implements AutoConfigurationImportFilter {
 

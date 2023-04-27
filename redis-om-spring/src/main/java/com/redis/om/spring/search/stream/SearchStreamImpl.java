@@ -1,16 +1,8 @@
 package com.redis.om.spring.search.stream;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-
+import com.google.gson.Gson;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
-import com.redis.om.spring.search.stream.predicates.vector.KNNPredicate;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.data.domain.Sort.Order;
-
-import com.google.gson.Gson;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.indexed.NumericField;
 import com.redis.om.spring.ops.RedisModulesOperations;
@@ -18,11 +10,14 @@ import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.search.stream.actions.TakesJSONOperations;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
+import com.redis.om.spring.search.stream.predicates.vector.KNNPredicate;
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.TupleMapper;
 import com.redis.om.spring.util.ObjectUtils;
-
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
@@ -32,6 +27,8 @@ import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import redis.clients.jedis.util.SafeEncoder;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;

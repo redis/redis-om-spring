@@ -1,17 +1,10 @@
 package com.redis.om.spring;
 
-import static com.redis.om.spring.util.ObjectUtils.getBeanDefinitionsFor;
-import static com.redis.om.spring.util.ObjectUtils.getIdFieldForEntityClass;
-
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-
+import com.google.gson.annotations.JsonAdapter;
 import com.redis.om.spring.annotations.*;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.search.SearchOperations;
+import com.redis.om.spring.repository.query.QueryUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -26,21 +19,23 @@ import org.springframework.data.redis.core.mapping.RedisPersistentEntity;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
-
-import com.google.gson.annotations.JsonAdapter;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.ops.search.SearchOperations;
-import com.redis.om.spring.repository.query.QueryUtils;
 import redis.clients.jedis.search.FieldName;
 import redis.clients.jedis.search.IndexDefinition;
 import redis.clients.jedis.search.IndexOptions;
 import redis.clients.jedis.search.Schema;
-import redis.clients.jedis.search.Schema.Field;
-import redis.clients.jedis.search.Schema.FieldType;
-import redis.clients.jedis.search.Schema.TagField;
-import redis.clients.jedis.search.Schema.TextField;
-import redis.clients.jedis.search.Schema.VectorField;
+import redis.clients.jedis.search.Schema.*;
 import redis.clients.jedis.search.Schema.VectorField.VectorAlgo;
+
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static com.redis.om.spring.util.ObjectUtils.getBeanDefinitionsFor;
+import static com.redis.om.spring.util.ObjectUtils.getIdFieldForEntityClass;
 
 @Component
 public class RediSearchIndexer {

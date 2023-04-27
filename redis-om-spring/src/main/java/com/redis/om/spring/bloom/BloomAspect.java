@@ -1,11 +1,7 @@
 package com.redis.om.spring.bloom;
 
-import java.beans.IntrospectionException;
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.util.List;
-
+import com.redis.om.spring.annotations.Bloom;
+import com.redis.om.spring.ops.pds.BloomOperations;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -16,8 +12,11 @@ import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.core.Ordered;
 import org.springframework.stereotype.Component;
 
-import com.redis.om.spring.annotations.Bloom;
-import com.redis.om.spring.ops.pds.BloomOperations;
+import java.beans.IntrospectionException;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 
 @Aspect
 @Component

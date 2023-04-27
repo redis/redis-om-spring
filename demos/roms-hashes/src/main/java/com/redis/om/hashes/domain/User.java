@@ -1,22 +1,15 @@
 package com.redis.om.hashes.domain;
 
-import java.util.Date;
-
+import com.redis.om.spring.annotations.Bloom;
+import com.redis.om.spring.annotations.Indexed;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Reference;
 import org.springframework.data.redis.core.RedisHash;
 
-import com.redis.om.spring.annotations.Bloom;
-import com.redis.om.spring.annotations.Indexed;
-
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import java.util.Date;
 
 @Data
 @RequiredArgsConstructor(staticName = "of")

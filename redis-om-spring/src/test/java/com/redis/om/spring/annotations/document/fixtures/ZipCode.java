@@ -3,7 +3,10 @@ package com.redis.om.spring.annotations.document.fixtures;
 import com.google.gson.annotations.SerializedName;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.Indexed;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.geo.Point;
 

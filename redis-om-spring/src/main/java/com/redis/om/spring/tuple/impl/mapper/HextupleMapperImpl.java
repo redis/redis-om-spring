@@ -1,10 +1,10 @@
 package com.redis.om.spring.tuple.impl.mapper;
 
-import java.util.function.Function;
-
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.Hextuple;
 import com.redis.om.spring.tuple.Tuples;
+
+import java.util.function.Function;
 
 public final class HextupleMapperImpl<T, T0, T1, T2, T3, T4, T5>
     extends AbstractTupleMapper<T, Hextuple<T0, T1, T2, T3, T4, T5>> {

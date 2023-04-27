@@ -1,51 +1,9 @@
 package com.redis.om.spring.tuple;
 
-import com.redis.om.spring.tuple.impl.EmptyTupleImpl;
+import com.redis.om.spring.tuple.impl.*;
+import com.redis.om.spring.tuple.impl.mapper.*;
 
 import java.util.function.Function;
-
-import com.redis.om.spring.tuple.impl.DecupleImpl;
-import com.redis.om.spring.tuple.impl.UndecupleImpl;
-import com.redis.om.spring.tuple.impl.DuodecupleImpl;
-import com.redis.om.spring.tuple.impl.TredecupleImpl;
-import com.redis.om.spring.tuple.impl.QuattuordecupleImpl;
-import com.redis.om.spring.tuple.impl.QuindecupleImpl;
-import com.redis.om.spring.tuple.impl.SexdecupleImpl;
-import com.redis.om.spring.tuple.impl.SeptendecupleImpl;
-import com.redis.om.spring.tuple.impl.OctodecupleImpl;
-import com.redis.om.spring.tuple.impl.NovemdecupleImpl;
-import com.redis.om.spring.tuple.impl.SingleImpl;
-import com.redis.om.spring.tuple.impl.VigintupleImpl;
-import com.redis.om.spring.tuple.impl.mapper.DecupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.DuodecupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.EmptyTupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.HextupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.NonupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.NovemdecupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.OctodecupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.OctupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.PairMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.QuadMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.QuattuordecupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.QuindecupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.QuintupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.SeptendecupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.SeptupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.SexdecupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.SingleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.TredecupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.TripleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.UndecupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.VigintupleMapperImpl;
-import com.redis.om.spring.tuple.impl.PairImpl;
-import com.redis.om.spring.tuple.impl.TripleImpl;
-import com.redis.om.spring.tuple.impl.TupleInfiniteDegreeImpl;
-import com.redis.om.spring.tuple.impl.QuadImpl;
-import com.redis.om.spring.tuple.impl.QuintupleImpl;
-import com.redis.om.spring.tuple.impl.HextupleImpl;
-import com.redis.om.spring.tuple.impl.SeptupleImpl;
-import com.redis.om.spring.tuple.impl.OctupleImpl;
-import com.redis.om.spring.tuple.impl.NonupleImpl;
 
 public final class Tuples {
 

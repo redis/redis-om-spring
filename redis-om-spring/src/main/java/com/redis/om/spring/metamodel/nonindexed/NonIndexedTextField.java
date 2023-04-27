@@ -1,12 +1,12 @@
 package com.redis.om.spring.metamodel.nonindexed;
 
-import java.util.function.Consumer;
-import java.util.function.ToLongFunction;
-
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.actions.StrLengthAction;
 import com.redis.om.spring.search.stream.actions.StringAppendAction;
+
+import java.util.function.Consumer;
+import java.util.function.ToLongFunction;
 
 public class NonIndexedTextField<E, T> extends MetamodelField<E, T> {
 

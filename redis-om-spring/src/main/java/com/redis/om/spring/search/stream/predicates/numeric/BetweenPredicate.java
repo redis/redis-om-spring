@@ -1,12 +1,16 @@
 package com.redis.om.spring.search.stream.predicates.numeric;
 
-import java.time.*;
-import java.util.Date;
-
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
+import redis.clients.jedis.search.querybuilder.Node;
+import redis.clients.jedis.search.querybuilder.QueryBuilders;
+import redis.clients.jedis.search.querybuilder.Values;
 
-import redis.clients.jedis.search.querybuilder.*;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 
 public class BetweenPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 

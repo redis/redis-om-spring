@@ -1,12 +1,7 @@
 package com.redis.om.spring;
 
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.data.keyvalue.core.CriteriaAccessor;
 import org.springframework.data.keyvalue.core.QueryEngine;
 import org.springframework.data.keyvalue.core.SortAccessor;
@@ -15,6 +10,10 @@ import org.springframework.data.keyvalue.core.query.KeyValueQuery;
 import org.springframework.data.redis.core.RedisKeyValueAdapter;
 import org.springframework.data.redis.repository.query.RedisOperationChain;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
+
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 
 public class EnhancedRedisQueryEngine extends QueryEngine<RedisKeyValueAdapter, RedisOperationChain, Comparator<?>> {
 

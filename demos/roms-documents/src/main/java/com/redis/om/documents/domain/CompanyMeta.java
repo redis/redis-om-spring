@@ -1,13 +1,12 @@
 package com.redis.om.documents.domain;
 
-import java.util.Set;
-
 import com.redis.om.spring.annotations.Indexed;
-
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Set;
 
 @Data
 @NoArgsConstructor

@@ -2,8 +2,6 @@ package com.redis.om.spring.annotations.hash;
 
 import com.google.common.collect.Ordering;
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.document.fixtures.CompanyMeta;
-import com.redis.om.spring.annotations.document.fixtures.DocWithEnum;
 import com.redis.om.spring.annotations.document.fixtures.MyJavaEnum;
 import com.redis.om.spring.annotations.hash.fixtures.*;
 import com.redis.om.spring.repository.query.QueryUtils;

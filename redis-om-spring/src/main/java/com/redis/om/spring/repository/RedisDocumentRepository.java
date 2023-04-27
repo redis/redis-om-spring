@@ -1,12 +1,10 @@
 package com.redis.om.spring.repository;
 
+import com.redis.om.spring.metamodel.MetamodelField;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.keyvalue.repository.KeyValueRepository;
 import org.springframework.data.repository.NoRepositoryBean;
-
-import com.redis.om.spring.metamodel.MetamodelField;
-
 import redis.clients.jedis.json.Path;
 
 import java.io.IOException;

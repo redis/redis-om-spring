@@ -1,10 +1,10 @@
 package com.redis.om.spring.tuple.impl.mapper;
 
-import java.util.function.Function;
-
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.Quattuordecuple;
 import com.redis.om.spring.tuple.Tuples;
+
+import java.util.function.Function;
 
 public final class QuattuordecupleMapperImpl<T, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>
     extends AbstractTupleMapper<T, Quattuordecuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>> {

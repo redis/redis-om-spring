@@ -1,11 +1,10 @@
 package com.redis.om.spring.repository.configuration;
 
-import java.lang.annotation.Annotation;
-
+import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
 import org.springframework.data.repository.config.RepositoryBeanDefinitionRegistrarSupport;
 import org.springframework.data.repository.config.RepositoryConfigurationExtension;
 
-import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
+import java.lang.annotation.Annotation;
 
 public class RedisJSONRepositoriesRegistrar extends RepositoryBeanDefinitionRegistrarSupport {
 
