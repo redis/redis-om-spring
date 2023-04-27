@@ -1,8 +1,8 @@
 package com.redis.om.documents.controllers;
 
-import java.util.List;
-import java.util.Optional;
-
+import com.redis.om.documents.domain.Person;
+import com.redis.om.documents.repositories.PersonRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,10 +11,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.redis.om.documents.domain.Person;
-import com.redis.om.documents.repositories.PersonRepository;
-
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor

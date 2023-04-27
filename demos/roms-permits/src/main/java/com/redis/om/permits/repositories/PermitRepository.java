@@ -1,8 +1,9 @@
 package com.redis.om.permits.repositories;
-import java.util.Set;
 
 import com.redis.om.permits.models.Permit;
 import com.redis.om.spring.repository.RedisDocumentRepository;
+
+import java.util.Set;
 
 public interface PermitRepository extends RedisDocumentRepository<Permit, String> {
 

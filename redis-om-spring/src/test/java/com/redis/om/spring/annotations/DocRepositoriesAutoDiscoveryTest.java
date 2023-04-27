@@ -2,7 +2,6 @@ package com.redis.om.spring.annotations;
 
 import com.redis.om.spring.AbstractBaseOMTest;
 import com.redis.om.spring.TestConfig;
-import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;

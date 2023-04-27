@@ -1,8 +1,5 @@
 package com.redis.om.spring.repository.support;
 
-import ai.djl.modality.cv.Image;
-import ai.djl.modality.cv.ImageFactory;
-import ai.djl.repository.zoo.ZooModel;
 import com.google.gson.Gson;
 import com.redis.om.spring.RediSearchIndexer;
 import com.redis.om.spring.ops.RedisModulesOperations;

@@ -39,7 +39,6 @@ import redis.clients.jedis.json.Path2;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.util.SafeEncoder;
-import static redis.clients.jedis.json.JsonProtocol.JsonCommand;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -55,6 +54,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
+
+import static redis.clients.jedis.json.JsonProtocol.JsonCommand;
 
 public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueRepository<T, ID>
     implements RedisDocumentRepository<T, ID> {

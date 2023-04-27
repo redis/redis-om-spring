@@ -1,14 +1,6 @@
 package com.redis.om.spring.tuple;
 
-import com.redis.om.spring.tuple.accessor.EighthAccessor;
-import com.redis.om.spring.tuple.accessor.FifthAccessor;
-import com.redis.om.spring.tuple.accessor.FirstAccessor;
-import com.redis.om.spring.tuple.accessor.FourthAccessor;
-import com.redis.om.spring.tuple.accessor.NinthAccessor;
-import com.redis.om.spring.tuple.accessor.SecondAccessor;
-import com.redis.om.spring.tuple.accessor.SeventhAccessor;
-import com.redis.om.spring.tuple.accessor.SixthAccessor;
-import com.redis.om.spring.tuple.accessor.ThirdAccessor;
+import com.redis.om.spring.tuple.accessor.*;
 
 public interface Nonuple<E1, E2, E3, E4, E5, E6, E7, E8, E9> extends Tuple {
 

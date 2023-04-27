@@ -13,11 +13,7 @@
 package com.redis.om.spring.vectorize.face;
 
 import ai.djl.modality.cv.Image;
-import ai.djl.modality.cv.output.BoundingBox;
-import ai.djl.modality.cv.output.DetectedObjects;
-import ai.djl.modality.cv.output.Landmark;
-import ai.djl.modality.cv.output.Point;
-import ai.djl.modality.cv.output.Rectangle;
+import ai.djl.modality.cv.output.*;
 import ai.djl.ndarray.NDArray;
 import ai.djl.ndarray.NDArrays;
 import ai.djl.ndarray.NDList;

@@ -1,28 +1,8 @@
 package com.redis.om.spring.tuple;
 
-import java.util.function.Function;
+import com.redis.om.spring.tuple.impl.mapper.*;
 
-import com.redis.om.spring.tuple.impl.mapper.EmptyTupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.DecupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.UndecupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.DuodecupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.TredecupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.QuattuordecupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.QuindecupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.SexdecupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.SeptendecupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.OctodecupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.NovemdecupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.SingleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.VigintupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.PairMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.TripleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.QuadMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.QuintupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.HextupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.SeptupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.OctupleMapperImpl;
-import com.redis.om.spring.tuple.impl.mapper.NonupleMapperImpl;
+import java.util.function.Function;
 
 public final class Fields {
 

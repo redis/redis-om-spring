@@ -26,6 +26,14 @@ import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.data.util.Pair;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.ReflectionUtils;
+import redis.clients.jedis.search.Document;
+import redis.clients.jedis.search.Query;
+import redis.clients.jedis.search.Schema.FieldType;
+import redis.clients.jedis.search.SearchResult;
+import redis.clients.jedis.search.aggr.*;
+import redis.clients.jedis.search.aggr.SortedField.SortOrder;
+import redis.clients.jedis.util.SafeEncoder;
 
 import java.lang.reflect.Field;
 import java.time.LocalDate;
@@ -35,15 +43,6 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-
-import org.springframework.util.ReflectionUtils;
-import redis.clients.jedis.search.aggr.*;
-import redis.clients.jedis.search.Document;
-import redis.clients.jedis.search.Query;
-import redis.clients.jedis.search.Schema.FieldType;
-import redis.clients.jedis.search.SearchResult;
-import redis.clients.jedis.search.aggr.SortedField.SortOrder;
-import redis.clients.jedis.util.SafeEncoder;
 
 public class RediSearchQuery implements RepositoryQuery {
 

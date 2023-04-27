@@ -1,22 +1,16 @@
 package com.redis.om.spring.repository.query.clause;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Optional;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import org.springframework.data.geo.Distance;
-import org.springframework.data.geo.Point;
-import org.springframework.data.repository.query.parser.Part;
-
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.util.ObjectUtils;
-
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Point;
+import org.springframework.data.repository.query.parser.Part;
 import redis.clients.jedis.search.Schema.FieldType;
+
+import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public enum QueryClause {
   // FULL TEXT

@@ -8,11 +8,6 @@ import com.redis.om.spring.repository.query.autocomplete.AutoCompleteQueryExecut
 import com.redis.om.spring.repository.query.bloom.BloomQueryExecutor;
 import com.redis.om.spring.repository.query.clause.QueryClause;
 import com.redis.om.spring.util.ObjectUtils;
-import org.springframework.util.ReflectionUtils;
-import redis.clients.jedis.search.aggr.*;
-import redis.clients.jedis.search.Query;
-import redis.clients.jedis.search.Schema.FieldType;
-import redis.clients.jedis.search.SearchResult;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.data.domain.PageImpl;
@@ -33,6 +28,11 @@ import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.data.util.Pair;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.ReflectionUtils;
+import redis.clients.jedis.search.Query;
+import redis.clients.jedis.search.Schema.FieldType;
+import redis.clients.jedis.search.SearchResult;
+import redis.clients.jedis.search.aggr.*;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
 import java.lang.reflect.Field;

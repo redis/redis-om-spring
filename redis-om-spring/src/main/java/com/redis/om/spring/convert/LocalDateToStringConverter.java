@@ -1,12 +1,12 @@
 package com.redis.om.spring.convert;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.WritingConverter;
 import org.springframework.stereotype.Component;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 
 @Component
 @WritingConverter

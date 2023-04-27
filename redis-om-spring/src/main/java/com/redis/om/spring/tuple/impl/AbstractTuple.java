@@ -1,8 +1,8 @@
 package com.redis.om.spring.tuple.impl;
 
-import java.util.stream.Stream;
-
 import com.redis.om.spring.tuple.Tuple;
+
+import java.util.stream.Stream;
 
 public abstract class AbstractTuple extends BasicAbstractTuple<AbstractTuple, Object> implements Tuple {
 

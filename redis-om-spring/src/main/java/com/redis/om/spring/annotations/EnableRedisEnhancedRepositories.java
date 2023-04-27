@@ -1,12 +1,8 @@
 package com.redis.om.spring.annotations;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
+import com.redis.om.spring.repository.configuration.RedisEnhancedRepositoriesRegistrar;
+import com.redis.om.spring.repository.query.RedisEnhancedQuery;
+import com.redis.om.spring.repository.support.RedisEnhancedRepositoryFactoryBean;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Import;
@@ -25,9 +21,7 @@ import org.springframework.data.repository.config.DefaultRepositoryBaseClass;
 import org.springframework.data.repository.query.QueryLookupStrategy;
 import org.springframework.data.repository.query.QueryLookupStrategy.Key;
 
-import com.redis.om.spring.repository.configuration.RedisEnhancedRepositoriesRegistrar;
-import com.redis.om.spring.repository.query.RedisEnhancedQuery;
-import com.redis.om.spring.repository.support.RedisEnhancedRepositoryFactoryBean;
+import java.lang.annotation.*;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

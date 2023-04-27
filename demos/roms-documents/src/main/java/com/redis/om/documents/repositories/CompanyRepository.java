@@ -1,15 +1,14 @@
 package com.redis.om.documents.repositories;
 
-import java.util.Optional;
-import java.util.Set;
-
+import com.redis.om.documents.domain.Company;
+import com.redis.om.spring.annotations.Query;
+import com.redis.om.spring.repository.RedisDocumentRepository;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.repository.query.Param;
 
-import com.redis.om.documents.domain.Company;
-import com.redis.om.spring.annotations.Query;
-import com.redis.om.spring.repository.RedisDocumentRepository;
+import java.util.Optional;
+import java.util.Set;
 
 public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
   // find one by property

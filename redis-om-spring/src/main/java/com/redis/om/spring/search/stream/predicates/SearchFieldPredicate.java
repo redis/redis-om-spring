@@ -1,11 +1,11 @@
 package com.redis.om.spring.search.stream.predicates;
 
+import redis.clients.jedis.search.Schema.FieldType;
+import redis.clients.jedis.search.querybuilder.Node;
+
 import java.lang.reflect.Field;
 import java.util.Objects;
 import java.util.function.Predicate;
-
-import redis.clients.jedis.search.Schema.FieldType;
-import redis.clients.jedis.search.querybuilder.Node;
 
 public interface SearchFieldPredicate<E, T> extends Predicate<T> {
   FieldType getSearchFieldType();
