@@ -69,6 +69,9 @@ public class BetweenPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     } else if (cls == Integer.class) {
       return QueryBuilders.intersect(root).add(getSearchAlias(),
           Values.between(Integer.parseInt(getMin().toString()), Integer.parseInt(getMax().toString())));
+    } else if (cls == Long.class) {
+      return QueryBuilders.intersect(root).add(getSearchAlias(),
+          Values.between(Long.parseLong(getMin().toString()), Long.parseLong(getMax().toString())));
     } else if (cls == Double.class) {
       return QueryBuilders.intersect(root).add(getSearchAlias(),
           Values.between(Double.parseDouble(getMin().toString()), Double.parseDouble(getMax().toString())));

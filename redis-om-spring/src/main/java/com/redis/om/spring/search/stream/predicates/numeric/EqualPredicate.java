@@ -45,6 +45,8 @@ public class EqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
       return QueryBuilders.intersect(root).add(getSearchAlias(), Values.eq(unixTime));
     } else if (cls == Integer.class) {
       return QueryBuilders.intersect(root).add(getSearchAlias(), Values.eq(Integer.parseInt(getValue().toString())));
+    } else if (cls == Long.class) {
+      return QueryBuilders.intersect(root).add(getSearchAlias(), Values.eq(Long.parseLong(getValue().toString())));
     } else if (cls == Double.class) {
       return QueryBuilders.intersect(root).add(getSearchAlias(), Values.eq(Double.parseDouble(getValue().toString())));
     } else {

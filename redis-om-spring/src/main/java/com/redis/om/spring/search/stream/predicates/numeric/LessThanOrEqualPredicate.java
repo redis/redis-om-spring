@@ -46,6 +46,8 @@ public class LessThanOrEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> 
       return QueryBuilders.intersect(root).add(getSearchAlias(), Values.le(unixTime));
     } else if (cls == Integer.class) {
       return QueryBuilders.intersect(root).add(getSearchAlias(), Values.le(Integer.parseInt(getValue().toString())));
+    } else if (cls == Long.class) {
+      return QueryBuilders.intersect(root).add(getSearchAlias(), Values.le(Long.parseLong(getValue().toString())));
     } else if (cls == Double.class) {
       return QueryBuilders.intersect(root).add(getSearchAlias(), Values.le(Double.parseDouble(getValue().toString())));
     } else {
