@@ -17,7 +17,7 @@ import java.util.Set;
 
 @Data
 @RequiredArgsConstructor(staticName = "of")
-@NoArgsConstructor
+@NoArgsConstructor(force = true)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @RedisHash
 public class Company {

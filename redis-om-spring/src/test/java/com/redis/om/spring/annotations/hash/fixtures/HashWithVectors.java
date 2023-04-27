@@ -12,7 +12,7 @@ import redis.clients.jedis.search.Schema.VectorField.VectorAlgo;
 
 @Data
 @RequiredArgsConstructor(staticName = "of")
-@NoArgsConstructor
+@NoArgsConstructor(force = true)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @RedisHash
 public class HashWithVectors {

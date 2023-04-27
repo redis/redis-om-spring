@@ -16,7 +16,7 @@ import java.util.List;
 @Data
 @RequiredArgsConstructor(staticName = "of")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-@NoArgsConstructor
+@NoArgsConstructor(force = true)
 @Document
 public class NiCompany {
   @Id

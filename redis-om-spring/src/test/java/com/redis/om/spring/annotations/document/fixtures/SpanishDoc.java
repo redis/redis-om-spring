@@ -8,7 +8,7 @@ import lombok.*;
 import org.springframework.data.annotation.Id;
 
 @Data
-@NoArgsConstructor
+@NoArgsConstructor(force = true)
 @RequiredArgsConstructor(staticName = "of")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Document(language = SearchLanguage.SPANISH)

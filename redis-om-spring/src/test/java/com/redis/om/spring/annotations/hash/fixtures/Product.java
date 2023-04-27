@@ -16,7 +16,7 @@ import redis.clients.jedis.search.Schema.VectorField.VectorAlgo;
 
 @Data
 @RequiredArgsConstructor(staticName = "of")
-@NoArgsConstructor
+@NoArgsConstructor(force = true)
 @RedisHash
 public class Product {
   @Id

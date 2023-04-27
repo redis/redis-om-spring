@@ -17,7 +17,7 @@ import java.util.Set;
 @Data
 @Builder
 @RequiredArgsConstructor(staticName = "of")
-@NoArgsConstructor
+@NoArgsConstructor(force = true)
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @RedisHash

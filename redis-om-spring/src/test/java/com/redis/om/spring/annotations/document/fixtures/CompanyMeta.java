@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 import java.util.Set;
 
 @Data
-@NoArgsConstructor
+@NoArgsConstructor(force = true)
 @RequiredArgsConstructor(staticName = "of")
 public class CompanyMeta {
 

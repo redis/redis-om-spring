@@ -12,7 +12,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Data
-@NoArgsConstructor
+@NoArgsConstructor(force = true)
 @RequiredArgsConstructor(staticName = "of")
 @Document
 public class PizzaOrder {

@@ -16,7 +16,7 @@ import java.util.Set;
 
 @Data
 @EqualsAndHashCode(of = "id")
-@NoArgsConstructor
+@NoArgsConstructor(force = true)
 @RequiredArgsConstructor(staticName = "of")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Document("tst")
