@@ -1,7 +1,9 @@
 package com.redis.om.spring.tuple.impl;
 
-import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.joining;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Streams;
+import com.redis.om.spring.tuple.GenericTuple;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -9,11 +11,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.google.common.collect.Maps;
-import com.google.common.collect.Streams;
-import com.redis.om.spring.tuple.GenericTuple;
-
-import org.apache.commons.lang3.StringUtils;
+import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 
 public abstract class BasicAbstractTuple<T extends GenericTuple<R>, R> implements GenericTuple<R> {
 

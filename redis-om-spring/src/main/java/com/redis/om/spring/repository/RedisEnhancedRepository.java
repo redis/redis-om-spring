@@ -1,11 +1,10 @@
 package com.redis.om.spring.repository;
 
+import com.redis.om.spring.metamodel.MetamodelField;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.keyvalue.repository.KeyValueRepository;
 import org.springframework.data.repository.NoRepositoryBean;
-
-import com.redis.om.spring.metamodel.MetamodelField;
 
 @NoRepositoryBean
 public interface RedisEnhancedRepository<T, ID> extends KeyValueRepository<T, ID> {

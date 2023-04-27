@@ -1,9 +1,9 @@
 package com.redis.om.spring.ops.pds;
 
+import redis.clients.jedis.bloom.BFInsertParams;
+
 import java.util.List;
 import java.util.Map;
-
-import redis.clients.jedis.bloom.BFInsertParams;
 
 public interface BloomOperations<K> {
   /**

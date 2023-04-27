@@ -1,11 +1,11 @@
 package com.redis.om.spring.convert;
 
-import java.nio.charset.StandardCharsets;
-import java.util.StringTokenizer;
-
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
 import org.springframework.data.geo.Point;
+
+import java.nio.charset.StandardCharsets;
+import java.util.StringTokenizer;
 
 @ReadingConverter
 public class BytesToPointConverter implements Converter<byte[], Point> {

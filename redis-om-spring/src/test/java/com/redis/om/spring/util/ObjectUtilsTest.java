@@ -1,39 +1,28 @@
 package com.redis.om.spring.util;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.annotations.AutoComplete;
+import com.redis.om.spring.annotations.AutoCompletePayload;
+import com.redis.om.spring.annotations.Indexed;
+import com.redis.om.spring.annotations.Searchable;
+import com.redis.om.spring.annotations.document.fixtures.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
-
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.AutoComplete;
-import com.redis.om.spring.annotations.AutoCompletePayload;
-import com.redis.om.spring.annotations.Indexed;
-import com.redis.om.spring.annotations.Searchable;
-import com.redis.om.spring.annotations.document.fixtures.Address;
-import com.redis.om.spring.annotations.document.fixtures.Airport;
-import com.redis.om.spring.annotations.document.fixtures.Company;
-import com.redis.om.spring.annotations.document.fixtures.CompanyRepository;
-import com.redis.om.spring.annotations.document.fixtures.DocWithCustomNameId;
-import com.redis.om.spring.annotations.document.fixtures.DocWithCustomNameIdRepository;
-
 import org.springframework.util.ReflectionUtils;
 import redis.clients.jedis.args.GeoUnit;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 @SuppressWarnings({ "ConstantConditions", "SpellCheckingInspection" }) class ObjectUtilsTest extends AbstractBaseDocumentTest {
 

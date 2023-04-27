@@ -1,17 +1,6 @@
 package com.redis.om.spring.tuple;
 
-import com.redis.om.spring.tuple.accessor.EighthAccessor;
-import com.redis.om.spring.tuple.accessor.EleventhAccessor;
-import com.redis.om.spring.tuple.accessor.FifthAccessor;
-import com.redis.om.spring.tuple.accessor.FirstAccessor;
-import com.redis.om.spring.tuple.accessor.FourthAccessor;
-import com.redis.om.spring.tuple.accessor.NinthAccessor;
-import com.redis.om.spring.tuple.accessor.SecondAccessor;
-import com.redis.om.spring.tuple.accessor.SeventhAccessor;
-import com.redis.om.spring.tuple.accessor.SixthAccessor;
-import com.redis.om.spring.tuple.accessor.TenthAccessor;
-import com.redis.om.spring.tuple.accessor.ThirdAccessor;
-import com.redis.om.spring.tuple.accessor.TwelfthAccessor;
+import com.redis.om.spring.tuple.accessor.*;
 
 public interface Duodecuple<E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12> extends Tuple {
 

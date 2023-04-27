@@ -1,19 +1,12 @@
 package com.redis.om.spring.metamodel.indexed;
 
-import java.util.Arrays;
-import java.util.function.Consumer;
-
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.actions.NumIncrByAction;
-import com.redis.om.spring.search.stream.predicates.numeric.BetweenPredicate;
-import com.redis.om.spring.search.stream.predicates.numeric.EqualPredicate;
-import com.redis.om.spring.search.stream.predicates.numeric.GreaterThanOrEqualPredicate;
-import com.redis.om.spring.search.stream.predicates.numeric.GreaterThanPredicate;
-import com.redis.om.spring.search.stream.predicates.numeric.InPredicate;
-import com.redis.om.spring.search.stream.predicates.numeric.LessThanOrEqualPredicate;
-import com.redis.om.spring.search.stream.predicates.numeric.LessThanPredicate;
-import com.redis.om.spring.search.stream.predicates.numeric.NotEqualPredicate;
+import com.redis.om.spring.search.stream.predicates.numeric.*;
+
+import java.util.Arrays;
+import java.util.function.Consumer;
 
 public class NumericField<E, T> extends MetamodelField<E, T> {
 

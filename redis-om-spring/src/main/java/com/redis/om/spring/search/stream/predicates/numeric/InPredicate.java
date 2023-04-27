@@ -1,16 +1,15 @@
 package com.redis.om.spring.search.stream.predicates.numeric;
 
-import java.time.*;
-import java.util.Date;
-import java.util.List;
-
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
-
 import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import redis.clients.jedis.search.querybuilder.QueryNode;
 import redis.clients.jedis.search.querybuilder.Values;
+
+import java.time.*;
+import java.util.Date;
+import java.util.List;
 
 public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 

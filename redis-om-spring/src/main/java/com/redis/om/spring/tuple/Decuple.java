@@ -1,15 +1,6 @@
 package com.redis.om.spring.tuple;
 
-import com.redis.om.spring.tuple.accessor.EighthAccessor;
-import com.redis.om.spring.tuple.accessor.FifthAccessor;
-import com.redis.om.spring.tuple.accessor.FirstAccessor;
-import com.redis.om.spring.tuple.accessor.FourthAccessor;
-import com.redis.om.spring.tuple.accessor.NinthAccessor;
-import com.redis.om.spring.tuple.accessor.SecondAccessor;
-import com.redis.om.spring.tuple.accessor.SeventhAccessor;
-import com.redis.om.spring.tuple.accessor.SixthAccessor;
-import com.redis.om.spring.tuple.accessor.TenthAccessor;
-import com.redis.om.spring.tuple.accessor.ThirdAccessor;
+import com.redis.om.spring.tuple.accessor.*;
 
 public interface Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> extends Tuple {
 

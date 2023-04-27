@@ -1,11 +1,11 @@
 package com.redis.om.spring.ops.pds;
 
+import com.redis.om.spring.client.RedisModulesClient;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import com.redis.om.spring.client.RedisModulesClient;
 
 public class CountMinSketchOperationsImpl<K> implements CountMinSketchOperations<K> {
   final RedisModulesClient client;

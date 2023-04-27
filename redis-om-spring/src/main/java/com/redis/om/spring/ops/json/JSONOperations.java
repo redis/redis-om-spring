@@ -1,12 +1,11 @@
 package com.redis.om.spring.ops.json;
 
-import java.util.List;
-
 import org.springframework.lang.Nullable;
-
 import redis.clients.jedis.json.JsonSetParams;
 import redis.clients.jedis.json.Path;
 import redis.clients.jedis.json.Path2;
+
+import java.util.List;
 
 public interface JSONOperations<K> {
   Long del(K key, Path path);

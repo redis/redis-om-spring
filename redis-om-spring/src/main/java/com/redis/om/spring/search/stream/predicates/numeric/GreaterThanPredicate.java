@@ -1,14 +1,13 @@
 package com.redis.om.spring.search.stream.predicates.numeric;
 
-import java.time.*;
-import java.util.Date;
-
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
-
 import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import redis.clients.jedis.search.querybuilder.Values;
+
+import java.time.*;
+import java.util.Date;
 
 public class GreaterThanPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   private final T value;

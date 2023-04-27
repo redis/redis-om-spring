@@ -1,18 +1,17 @@
 package com.redis.om.hashes;
 
-import java.util.List;
-
+import com.redis.om.hashes.domain.Role;
+import com.redis.om.hashes.domain.User;
+import com.redis.om.hashes.repositories.RoleRepository;
+import com.redis.om.hashes.repositories.UserRepository;
+import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
-import com.redis.om.hashes.domain.Role;
-import com.redis.om.hashes.domain.User;
-import com.redis.om.hashes.repositories.RoleRepository;
-import com.redis.om.hashes.repositories.UserRepository;
-import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
+import java.util.List;
 
 @SpringBootApplication
 @EnableRedisEnhancedRepositories(basePackages = "com.redis.om.hashes.*")

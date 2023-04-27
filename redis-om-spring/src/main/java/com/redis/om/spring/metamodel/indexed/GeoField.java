@@ -1,14 +1,13 @@
 package com.redis.om.spring.metamodel.indexed;
 
-import com.redis.om.spring.metamodel.SearchFieldAccessor;
-import org.springframework.data.geo.Distance;
-import org.springframework.data.geo.Point;
-
 import com.redis.om.spring.metamodel.MetamodelField;
-import com.redis.om.spring.search.stream.predicates.geo.NotEqualPredicate;
-import com.redis.om.spring.search.stream.predicates.geo.OutsideOfPredicate;
+import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.predicates.geo.EqualPredicate;
 import com.redis.om.spring.search.stream.predicates.geo.NearPredicate;
+import com.redis.om.spring.search.stream.predicates.geo.NotEqualPredicate;
+import com.redis.om.spring.search.stream.predicates.geo.OutsideOfPredicate;
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Point;
 
 public class GeoField<E, T> extends MetamodelField<E, T> {
 

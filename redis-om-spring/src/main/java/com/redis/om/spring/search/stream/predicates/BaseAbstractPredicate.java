@@ -1,23 +1,16 @@
 package com.redis.om.spring.search.stream.predicates;
 
+import com.redis.om.spring.annotations.*;
+import com.redis.om.spring.metamodel.SearchFieldAccessor;
+import org.springframework.data.geo.Point;
+import redis.clients.jedis.search.Schema.FieldType;
+
 import java.lang.reflect.Field;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
-
-import com.redis.om.spring.metamodel.SearchFieldAccessor;
-import org.springframework.data.geo.Point;
-
-import com.redis.om.spring.annotations.GeoIndexed;
-import com.redis.om.spring.annotations.Indexed;
-import com.redis.om.spring.annotations.NumericIndexed;
-import com.redis.om.spring.annotations.Searchable;
-import com.redis.om.spring.annotations.TagIndexed;
-import com.redis.om.spring.annotations.TextIndexed;
-
-import redis.clients.jedis.search.Schema.FieldType;
 
 public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicate<E, T> {
 

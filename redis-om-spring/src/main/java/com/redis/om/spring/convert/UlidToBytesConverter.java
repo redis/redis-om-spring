@@ -1,12 +1,11 @@
 package com.redis.om.spring.convert;
 
-import java.nio.charset.StandardCharsets;
-
+import com.github.f4b6a3.ulid.Ulid;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.WritingConverter;
 import org.springframework.stereotype.Component;
 
-import com.github.f4b6a3.ulid.Ulid;
+import java.nio.charset.StandardCharsets;
 
 @Component
 @WritingConverter

@@ -3,7 +3,6 @@ package com.redis.om.spring.search.stream;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.indexed.NumericField;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
-
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
 import java.util.Comparator;
