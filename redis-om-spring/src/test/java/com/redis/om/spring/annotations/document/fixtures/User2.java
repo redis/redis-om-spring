@@ -8,7 +8,7 @@ import org.springframework.data.annotation.Id;
 @Data
 @RequiredArgsConstructor(staticName = "of")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-@NoArgsConstructor
+@NoArgsConstructor(force = true)
 @Document
 public class User2{
   @Id

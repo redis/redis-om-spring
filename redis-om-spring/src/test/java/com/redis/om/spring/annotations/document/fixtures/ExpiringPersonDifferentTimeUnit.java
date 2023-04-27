@@ -11,7 +11,7 @@ import org.springframework.data.redis.core.TimeToLive;
 import java.util.concurrent.TimeUnit;
 
 @Data
-@NoArgsConstructor
+@NoArgsConstructor(force = true)
 @RequiredArgsConstructor(staticName = "of")
 @Document(timeToLive = 5)
 public class ExpiringPersonDifferentTimeUnit {

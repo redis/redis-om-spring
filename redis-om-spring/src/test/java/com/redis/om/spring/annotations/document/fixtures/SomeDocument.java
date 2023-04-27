@@ -10,7 +10,8 @@ import org.springframework.data.annotation.Id;
 
 import java.time.LocalDateTime;
 
-@Data @NoArgsConstructor @Document public class SomeDocument {
+@Data @NoArgsConstructor(force = true)
+@Document public class SomeDocument {
   @NonNull @Id @Indexed protected String id;
   @NonNull @Indexed private String name;
 
