@@ -1,21 +1,8 @@
 package com.redis.om.spring;
 
-import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
-import ai.djl.modality.cv.Image;
-import ai.djl.modality.cv.transform.CenterCrop;
-import ai.djl.modality.cv.transform.Resize;
-import ai.djl.modality.cv.transform.ToTensor;
-import ai.djl.repository.zoo.Criteria;
-import ai.djl.translate.Pipeline;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Bean;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @ConfigurationProperties(
         prefix = "redis.om.spring",
@@ -56,7 +43,7 @@ public class RedisOMSpringProperties {
         @NotNull
         private String imageEmbeddingModelEngine = "PyTorch";
         @NotNull
-        private String imageEmbeddingModelModelUrls = "djl://ai.djl.pytorch/resnet18_embedding";
+        private String imageEmbeddingModelModelUrls = "jar:djl/resnet18_embedding.zip";
         @NotNull
         private int defaultImagePipelineResizeWidth = 224;
         @NotNull
@@ -70,7 +57,7 @@ public class RedisOMSpringProperties {
         @NotNull
         private String sentenceTokenizerModelMaxLength = "768";
         @NotNull
-        private String sentenceTokenizerModel = "sentence-transformers/all-mpnet-base-v2";
+        private String sentenceTokenizerModel = "classpath:djl/all-mpnet-base-v2.zip";
 
         // face detection
         @NotNull
@@ -78,7 +65,7 @@ public class RedisOMSpringProperties {
         @NotNull
         private String faceDetectionModelName = "retinaface";
         @NotNull
-        private String faceDetectionModelModelUrls = "https://resources.djl.ai/test-models/pytorch/retinaface.zip";
+        private String faceDetectionModelModelUrls = "classpath:djl/retinaface.zip";
 
         // face embeddings
         @NotNull
@@ -86,7 +73,7 @@ public class RedisOMSpringProperties {
         @NotNull
         private String faceEmbeddingModelName = "face_feature";
         @NotNull
-        private String faceEmbeddingModelModelUrls = "https://resources.djl.ai/test-models/pytorch/face_feature.zip";
+        private String faceEmbeddingModelModelUrls = "classpath:djl/face_feature.zip";
     }
 
     private final Djl djl = new Djl();

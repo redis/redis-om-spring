@@ -9,6 +9,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
+import org.springframework.core.io.Resource;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.geo.Distance;
@@ -20,13 +21,21 @@ import org.springframework.util.ReflectionUtils;
 import redis.clients.jedis.args.GeoUnit;
 import redis.clients.jedis.search.Document;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.function.Function;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static java.util.Objects.requireNonNull;
 
@@ -370,6 +379,66 @@ public class ObjectUtils {
       floats[i] = Long.valueOf(input[i]).floatValue();
     }
     return floatArrayToByteArray(floats);
+  }
+
+  public static Path getResourcePath(Resource resource) {
+    try (InputStream inputStream = resource.getInputStream()) {
+      // Create the file rooted at the location pointed by the System property "java.io.tmpdir"
+      // and named after the resource filename
+      Path tempFile = Paths.get(System.getProperty("java.io.tmpdir"), resource.getFilename());
+
+      // Check if the file exists
+      if (!Files.exists(tempFile)) {
+        // Create the file and copy the resource contents to it
+        Files.copy(inputStream, tempFile, StandardCopyOption.REPLACE_EXISTING);
+      }
+
+      return tempFile;
+    } catch (IOException e) {
+      return null;
+    }
+  }
+
+  public static Path getDecompressedResourcePath(Resource resource) {
+    try (InputStream inputStream = resource.getInputStream()) {
+      // Get the filename without the extension
+      String resourceName = resource.getFilename();
+      String filenameWithoutExtension = resourceName.contains(".")
+          ? resourceName.substring(0, resourceName.lastIndexOf('.'))
+          : resourceName;
+
+      // Create the temp directory rooted at the location pointed by the System property "java.io.tmpdir"
+      // and named after the resource filename without the file extension
+      Path tempDirectory = Paths.get(System.getProperty("java.io.tmpdir"), filenameWithoutExtension);
+
+      // Check if the directory exists, if not, create it
+      if (!Files.exists(tempDirectory)) {
+        Files.createDirectories(tempDirectory);
+
+        // Wrap the InputStream in a ZipInputStream
+        try (ZipInputStream zipInputStream = new ZipInputStream(inputStream)) {
+          ZipEntry entry;
+
+          // Iterate through the entries in the ZIP file
+          while ((entry = zipInputStream.getNextEntry()) != null) {
+            if (!entry.isDirectory()) {
+              Path entryPath = tempDirectory.resolve(entry.getName());
+
+              // Create parent directories if necessary
+              Files.createDirectories(entryPath.getParent());
+
+              // Copy the entry contents to the temporary directory
+              Files.copy(zipInputStream, entryPath, StandardCopyOption.REPLACE_EXISTING);
+            }
+            zipInputStream.closeEntry();
+          }
+        }
+      }
+
+      return tempDirectory;
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private ObjectUtils() {
