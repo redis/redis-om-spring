@@ -12,7 +12,7 @@ import org.springframework.data.geo.Point;
 import java.util.Set;
 
 @Data
-@NoArgsConstructor
+@NoArgsConstructor(force = true)
 @RequiredArgsConstructor(staticName = "of")
 @Document
 public class DocWithSets {

@@ -9,7 +9,7 @@ import org.springframework.data.redis.core.RedisHash;
 import java.util.Set;
 
 @SuppressWarnings("SpellCheckingInspection") @Data
-@NoArgsConstructor
+@NoArgsConstructor(force = true)
 @RequiredArgsConstructor(staticName = "of")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @RedisHash

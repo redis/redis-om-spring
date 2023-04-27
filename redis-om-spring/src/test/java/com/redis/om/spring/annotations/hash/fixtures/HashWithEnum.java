@@ -9,7 +9,7 @@ import org.springframework.data.redis.core.RedisHash;
 @Data
 @RequiredArgsConstructor(staticName = "of")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-@NoArgsConstructor
+@NoArgsConstructor(force = true)
 @RedisHash
 public class HashWithEnum {
   @Id
