@@ -51,6 +51,9 @@ public class NotEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     } else if (cls == Integer.class) {
       return QueryBuilders.intersect(root)
           .add(QueryBuilders.disjunct(getSearchAlias(), Values.eq(Integer.parseInt(getValue().toString()))));
+    } else if (cls == Long.class) {
+      return QueryBuilders.intersect(root)
+          .add(QueryBuilders.disjunct(getSearchAlias(), Values.eq(Long.parseLong(getValue().toString()))));
     } else if (cls == Double.class) {
       return QueryBuilders.intersect(root)
           .add(QueryBuilders.disjunct(getSearchAlias(), Values.eq(Double.parseDouble(getValue().toString()))));

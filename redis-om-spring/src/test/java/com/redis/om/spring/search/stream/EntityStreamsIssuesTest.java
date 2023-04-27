@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
   @Autowired DocRepository docRepository;
   @Autowired Doc2Repository doc2Repository;
   @Autowired DeepListRepository deepListRepository;
+  @Autowired DocWithLongRepository docWithLongRepository;
 
   @Autowired EntityStream entityStream;
 
@@ -66,6 +67,15 @@ import static org.junit.jupiter.api.Assertions.assertAll;
       DeepList dl3 = DeepList.of("dn-3", list3);
 
       deepListRepository.saveAll(List.of(dl1, dl2, dl3));
+    }
+
+    if (docWithLongRepository.count() == 0) {
+      docWithLongRepository.save(DocWithLong.of("doc-1", 1L));
+      docWithLongRepository.save(DocWithLong.of("doc-2", 2L));
+      docWithLongRepository.save(DocWithLong.of("doc-3", 3L));
+      docWithLongRepository.save(DocWithLong.of("doc-4", 4L));
+      docWithLongRepository.save(DocWithLong.of("doc-5", 5L));
+      docWithLongRepository.save(DocWithLong.of("doc-6", 6L));
     }
   }
 
@@ -190,6 +200,94 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     assertAll( //
         () -> assertThat(results).hasSize(2),
         () -> assertThat(results).containsExactlyInAnyOrder("dn-2", "dn-3")
+    );
+  }
+
+  @Test void testLongEqPredicate() {
+    var results = entityStream.of(DocWithLong.class) //
+        .filter(DocWithLong$.THE_LONG.eq(3L)) //
+        .collect(Collectors.toList());
+
+    assertAll( //
+        () -> assertThat(results).hasSize(1),
+        () -> assertThat(results).extracting("id").containsExactly("doc-3")
+    );
+  }
+
+  @Test void testLongGePredicate() {
+    var results = entityStream.of(DocWithLong.class) //
+        .filter(DocWithLong$.THE_LONG.ge(3L)) //
+        .collect(Collectors.toList());
+
+    assertAll( //
+        () -> assertThat(results).hasSize(4),
+        () -> assertThat(results).extracting("id").containsExactly("doc-3", "doc-4", "doc-5", "doc-6")
+    );
+  }
+
+  @Test void testLongGtPredicate() {
+    var results = entityStream.of(DocWithLong.class) //
+        .filter(DocWithLong$.THE_LONG.gt(3L)) //
+        .collect(Collectors.toList());
+
+    assertAll( //
+        () -> assertThat(results).hasSize(3),
+        () -> assertThat(results).extracting("id").containsExactly("doc-4", "doc-5", "doc-6")
+    );
+  }
+
+  @Test void testLongInPredicate() {
+    var results = entityStream.of(DocWithLong.class) //
+        .filter(DocWithLong$.THE_LONG.in(2L, 4L, 6L)) //
+        .collect(Collectors.toList());
+
+    assertAll( //
+        () -> assertThat(results).hasSize(3),
+        () -> assertThat(results).extracting("id").containsExactly("doc-2", "doc-4", "doc-6")
+    );
+  }
+
+  @Test void testLongLePredicate() {
+    var results = entityStream.of(DocWithLong.class) //
+        .filter(DocWithLong$.THE_LONG.le(3L)) //
+        .collect(Collectors.toList());
+
+    assertAll( //
+        () -> assertThat(results).hasSize(3),
+        () -> assertThat(results).extracting("id").containsExactly("doc-1", "doc-2", "doc-3")
+    );
+  }
+
+  @Test void testLongLtPredicate() {
+    var results = entityStream.of(DocWithLong.class) //
+        .filter(DocWithLong$.THE_LONG.lt(3L)) //
+        .collect(Collectors.toList());
+
+    assertAll( //
+        () -> assertThat(results).hasSize(2),
+        () -> assertThat(results).extracting("id").containsExactly("doc-1", "doc-2")
+    );
+  }
+
+  @Test void testLongBetweenPredicate() {
+    var results = entityStream.of(DocWithLong.class) //
+        .filter(DocWithLong$.THE_LONG.between(2L, 5L)) //
+        .collect(Collectors.toList());
+
+    assertAll( //
+        () -> assertThat(results).hasSize(4),
+        () -> assertThat(results).extracting("id").containsExactly("doc-2", "doc-3", "doc-4", "doc-5")
+    );
+  }
+
+  @Test void testLongNotEqPredicate() {
+    var results = entityStream.of(DocWithLong.class) //
+        .filter(DocWithLong$.THE_LONG.notEq(5L)) //
+        .collect(Collectors.toList());
+
+    assertAll( //
+        () -> assertThat(results).hasSize(5),
+        () -> assertThat(results).extracting("id").containsExactly("doc-1", "doc-2", "doc-3", "doc-4", "doc-6")
     );
   }
 }
