@@ -123,4 +123,8 @@ import java.util.List;
       });
     }
   }
+
+  public boolean isReady() {
+    return this.faceEmbeddingModel != null && this.sentenceTokenizer != null;
+  }
 }
