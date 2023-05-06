@@ -176,6 +176,7 @@ public class RedisModulesConfiguration {
     try {
       return ModelZoo.loadModel(criteria);
     } catch (IOException | ModelNotFoundException | MalformedModelException ex) {
+      logger.warn("Error retrieving default DJL face detection model", ex);
       return null;
     }
   }
@@ -205,6 +206,7 @@ public class RedisModulesConfiguration {
     try {
       return ModelZoo.loadModel(criteria);
     } catch (Exception e) {
+      logger.warn("Error retrieving default DJL face embeddings model", e);
       return null;
     }
   }
@@ -240,6 +242,7 @@ public class RedisModulesConfiguration {
       InetAddress.getByName("www.huggingface.co").isReachable(5000);
       return HuggingFaceTokenizer.newInstance(properties.getDjl().getSentenceTokenizerModel(), options);
     } catch (IOException ex) {
+      logger.warn("Error retrieving default DJL sentence tokenizer");
       return null;
     }
   }
