@@ -10,7 +10,7 @@ import com.redis.om.spring.vectorize.FeatureExtractor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
+import org.springframework.test.context.junit.jupiter.EnabledIf;
 
 import java.io.IOException;
 import java.util.List;
@@ -26,9 +26,6 @@ class VectorizeTest extends AbstractBaseEnhancedRedisTest {
 
   @Autowired FeatureExtractor featureExtractor;
 
-  @Autowired
-  private ApplicationContext applicationContext;
-
   @BeforeEach void loadTestData() throws IOException {
     if (repository.count() == 0) {
       repository.save(Product.of("cat", "classpath:/images/cat.jpg",
@@ -42,6 +39,10 @@ class VectorizeTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
+  @EnabledIf(
+      expression = "#{@featureExtractor.isReady()}", //
+      loadContext = true //
+  )
   void testImageIsVectorized() {
     Optional<Product> cat = repository.findFirstByName("cat");
     assertAll( //
@@ -52,6 +53,10 @@ class VectorizeTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
+  @EnabledIf(
+      expression = "#{@featureExtractor.isReady()}", //
+      loadContext = true //
+  )
   void testSentenceIsVectorized() {
     Optional<Product> cat = repository.findFirstByName("cat");
     assertAll( //
@@ -62,6 +67,10 @@ class VectorizeTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
+  @EnabledIf(
+      expression = "#{@featureExtractor.isReady()}", //
+      loadContext = true //
+  )
   void testKnnImageSimilaritySearch() {
     Product cat = repository.findFirstByName("cat").get();
     int K = 5;
@@ -79,6 +88,10 @@ class VectorizeTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
+  @EnabledIf(
+      expression = "#{@featureExtractor.isReady()}", //
+      loadContext = true //
+  )
   void testKnnSentenceSimilaritySearch() {
     Product cat = repository.findFirstByName("cat").get();
     int K = 5;

@@ -12,7 +12,6 @@ import ai.djl.repository.zoo.Criteria;
 import ai.djl.repository.zoo.ModelNotFoundException;
 import ai.djl.repository.zoo.ModelZoo;
 import ai.djl.repository.zoo.ZooModel;
-import ai.djl.training.util.ProgressBar;
 import ai.djl.translate.Pipeline;
 import ai.djl.translate.Translator;
 import com.github.f4b6a3.ulid.Ulid;
@@ -51,8 +50,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.lang.Nullable;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -171,9 +172,12 @@ public class RedisModulesConfiguration {
 
   @Bean(name = "djlFaceDetectionModel")
   public ZooModel<Image, DetectedObjects> faceDetectionModel(
-      @Qualifier("djlFaceDetectionModelCriteria") Criteria<Image, DetectedObjects> criteria)
-      throws MalformedModelException, ModelNotFoundException, IOException {
-    return ModelZoo.loadModel(criteria);
+      @Qualifier("djlFaceDetectionModelCriteria") Criteria<Image, DetectedObjects> criteria) {
+    try {
+      return ModelZoo.loadModel(criteria);
+    } catch (IOException | ModelNotFoundException | MalformedModelException ex) {
+      return null;
+    }
   }
 
   @Bean(name = "djlFaceEmbeddingTranslator")
@@ -197,9 +201,12 @@ public class RedisModulesConfiguration {
 
   @Bean(name = "djlFaceEmbeddingModel")
   public ZooModel<Image, float[]> faceEmbeddingModel(
-      @Qualifier("djlFaceEmbeddingModelCriteria") Criteria<Image, float[]> criteria)
-      throws MalformedModelException, ModelNotFoundException, IOException {
-    return ModelZoo.loadModel(criteria);
+      @Qualifier("djlFaceEmbeddingModelCriteria") Criteria<Image, float[]> criteria) {
+    try {
+      return ModelZoo.loadModel(criteria);
+    } catch (Exception e) {
+      return null;
+    }
   }
 
   @Bean(name = "djlImageEmbeddingModel")
@@ -229,17 +236,22 @@ public class RedisModulesConfiguration {
         "maxLength", properties.getDjl().getSentenceTokenizerMaxLength(), //
         "modelMaxLength", properties.getDjl().getSentenceTokenizerModelMaxLength() //
     );
-    return HuggingFaceTokenizer.newInstance(properties.getDjl().getSentenceTokenizerModel(), options);
+    try {
+      InetAddress.getByName("www.huggingface.co").isReachable(5000);
+      return HuggingFaceTokenizer.newInstance(properties.getDjl().getSentenceTokenizerModel(), options);
+    } catch (IOException ex) {
+      return null;
+    }
   }
 
   @Bean(name = "featureExtractor")
   public FeatureExtractor featureExtractor(
-      @Qualifier("djlImageEmbeddingModel") ZooModel<Image, byte[]> imageEmbeddingModel,
-      @Qualifier("djlFaceEmbeddingModel") ZooModel<Image, float[]> faceEmbeddingModel,
-      @Qualifier("djlImageFactory") ImageFactory imageFactory,
-      @Qualifier("djlDefaultImagePipeline") Pipeline defaultImagePipeline,
-      @Qualifier("djlSentenceTokenizer") HuggingFaceTokenizer sentenceTokenizer,
-      @Qualifier("redisTemplate") RedisTemplate<?, ?> redisTemplate,
+      @Nullable @Qualifier("djlImageEmbeddingModel") ZooModel<Image, byte[]> imageEmbeddingModel,
+      @Nullable @Qualifier("djlFaceEmbeddingModel") ZooModel<Image, float[]> faceEmbeddingModel,
+      @Nullable @Qualifier("djlImageFactory") ImageFactory imageFactory,
+      @Nullable @Qualifier("djlDefaultImagePipeline") Pipeline defaultImagePipeline,
+      @Nullable @Qualifier("djlSentenceTokenizer") HuggingFaceTokenizer sentenceTokenizer,
+      @Nullable @Qualifier("redisTemplate") RedisTemplate<?, ?> redisTemplate,
       ApplicationContext ac) {
     return new FeatureExtractor(redisTemplate, ac, imageEmbeddingModel, faceEmbeddingModel, imageFactory, defaultImagePipeline, sentenceTokenizer);
   }
