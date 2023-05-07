@@ -420,7 +420,7 @@ ext {
 }
 
 dependencies {
-  implementation: "com.redis.om:redis-om-spring:$redisOmVersion"
+  implementation "com.redis.om:redis-om-spring:$redisOmVersion"
   annotationProcessor "com.redis.om:redis-om-spring:$redisOmVersion"
 }
 ```
