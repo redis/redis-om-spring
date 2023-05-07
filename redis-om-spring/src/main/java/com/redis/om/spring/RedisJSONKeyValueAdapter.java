@@ -276,16 +276,17 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   }
 
   private Optional<Long> getTTLForEntity(Object entity) {
-    Class entityClass;
+    Class entityClass = entity.getClass();
+    Class entityClassKey;
     try {
-      entityClass = ClassLoader.getSystemClassLoader().loadClass(entity.getClass().getTypeName());
+      entityClassKey = ClassLoader.getSystemClassLoader().loadClass(entity.getClass().getTypeName());
     } catch (ClassNotFoundException e) {
-      entityClass = entity.getClass();
+      entityClassKey = entity.getClass();
     }
 
     KeyspaceConfiguration keyspaceConfig = mappingContext.getMappingConfiguration().getKeyspaceConfiguration();
-    if (keyspaceConfig.hasSettingsFor(entityClass)) {
-      var settings = keyspaceConfig.getKeyspaceSettings(entityClass);
+    if (keyspaceConfig.hasSettingsFor(entityClassKey)) {
+      var settings = keyspaceConfig.getKeyspaceSettings(entityClassKey);
       if (StringUtils.hasText(settings.getTimeToLivePropertyName())) {
         Method ttlGetter;
         try {
@@ -293,15 +294,11 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
           ttlGetter = ObjectUtils.getGetterForField(entityClass, fld);
           Long ttlPropertyValue = ((Number) ReflectionUtils.invokeMethod(ttlGetter, entity)).longValue();
 
-          ReflectionUtils.invokeMethod(ttlGetter, entity);
-
-          if (ttlPropertyValue != null) {
-            TimeToLive ttl = fld.getAnnotation(TimeToLive.class);
-            if (!ttl.unit().equals(TimeUnit.SECONDS)) {
-              return Optional.of(TimeUnit.SECONDS.convert(ttlPropertyValue, ttl.unit()));
-            } else {
-              return Optional.of(ttlPropertyValue);
-            }
+          TimeToLive ttl = fld.getAnnotation(TimeToLive.class);
+          if (!ttl.unit().equals(TimeUnit.SECONDS)) {
+            return Optional.of(TimeUnit.SECONDS.convert(ttlPropertyValue, ttl.unit()));
+          } else {
+            return Optional.of(ttlPropertyValue);
           }
         } catch (SecurityException | IllegalArgumentException e) {
           return Optional.empty();
