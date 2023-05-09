@@ -238,6 +238,7 @@ public class RedisModulesConfiguration {
         "maxLength", properties.getDjl().getSentenceTokenizerMaxLength(), //
         "modelMaxLength", properties.getDjl().getSentenceTokenizerModelMaxLength() //
     );
+
     try {
       InetAddress.getByName("www.huggingface.co").isReachable(5000);
       return HuggingFaceTokenizer.newInstance(properties.getDjl().getSentenceTokenizerModel(), options);

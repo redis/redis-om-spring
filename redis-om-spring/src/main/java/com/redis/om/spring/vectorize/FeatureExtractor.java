@@ -89,6 +89,9 @@ import java.util.List;
   }
 
   public void processEntity(byte[] redisKey, Object item, boolean isNew) {
+    if (!isReady()) {
+      return;
+    }
     List<Field> fields = ObjectUtils.getFieldsWithAnnotation(item.getClass(), Vectorize.class);
     if (!fields.isEmpty()) {
       PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(item);
