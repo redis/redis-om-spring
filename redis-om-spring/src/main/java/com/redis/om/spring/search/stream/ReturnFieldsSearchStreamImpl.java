@@ -3,6 +3,7 @@ package com.redis.om.spring.search.stream;
 import com.google.gson.Gson;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.indexed.NumericField;
+import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
 import com.redis.om.spring.tuple.Tuple;
 import com.redis.om.spring.tuple.Tuples;
@@ -10,6 +11,8 @@ import com.redis.om.spring.util.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.geo.Point;
 import org.springframework.util.ReflectionUtils;
 import redis.clients.jedis.search.Document;
@@ -19,6 +22,7 @@ import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 import redis.clients.jedis.util.SafeEncoder;
 
 import java.lang.reflect.Method;
+import java.time.Duration;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.*;
@@ -376,6 +380,11 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   }
 
   @Override
+  public <R> AggregationStream<R> loadAll() {
+    throw new UnsupportedOperationException("loadAll is not supported on a ReturnFieldSearchStream");
+  }
+
+  @Override
   public Optional<T> min(NumericField<T, ?> field) {
     throw new UnsupportedOperationException("min is not supported on a ReturnFieldSearchStream");
   }
@@ -387,6 +396,21 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
 
   @Override public SearchStream<T> dialect(int dialect) {
     throw new UnsupportedOperationException("dialect is not supported on a ReturnFieldSearchStream");
+  }
+
+  @Override
+  public <R> AggregationStream<R> cursor(int i, Duration duration) {
+    throw new UnsupportedOperationException("cursor is not supported on a ReturnFieldSearchStream");
+  }
+
+  @Override
+  public SearchOperations<String> getSearchOperations() {
+    throw new UnsupportedOperationException("getSearchOperations is not supported on a ReturnFieldSearchStream");
+  }
+
+  @Override
+  public Slice<T> getSlice(Pageable pageable) {
+    throw new UnsupportedOperationException("getPage is not supported on a ReturnFieldSearchStream");
   }
 
 }

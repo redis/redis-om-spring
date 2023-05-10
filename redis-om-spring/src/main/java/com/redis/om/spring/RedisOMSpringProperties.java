@@ -1,21 +1,8 @@
 package com.redis.om.spring;
 
-import ai.djl.huggingface.tokenizers.HuggingFaceTokenizer;
-import ai.djl.modality.cv.Image;
-import ai.djl.modality.cv.transform.CenterCrop;
-import ai.djl.modality.cv.transform.Resize;
-import ai.djl.modality.cv.transform.ToTensor;
-import ai.djl.repository.zoo.Criteria;
-import ai.djl.translate.Pipeline;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Bean;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @ConfigurationProperties(
         prefix = "redis.om.spring",

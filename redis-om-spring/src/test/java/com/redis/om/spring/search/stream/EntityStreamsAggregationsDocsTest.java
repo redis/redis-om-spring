@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SuppressWarnings({ "unchecked", "SpellCheckingInspection" }) class EntityStreamsAggregationsTest extends AbstractBaseDocumentTest {
+@SuppressWarnings({ "unchecked", "SpellCheckingInspection" }) class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
   @Autowired EntityStream entityStream;
 
   @Autowired GameRepository repository;
@@ -809,7 +809,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
    * Calculate Total Order Quantity
    * The following aggregation pipeline example contains two stages and returns the total order quantity
    * of medium size pizzas grouped by pizza name:
-   *
+   * <p>
    * In Mongo:
    * db.orders.aggregate( [
    *    // Stage 1: Filter pizza order documents by pizza size
@@ -837,7 +837,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
   /**
    * Calculate Total Order Value and Average Order Quantity
    * The following example calculates the total pizza order value and average order quantity between two dates:
-   *
+   * <p>
    * In Mongo:
    * db.orders.aggregate( [
    *    // Stage 1: Filter pizza order documents by date range
@@ -850,9 +850,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
    *    // Stage 3: Sort documents by totalOrderValue in descending order
    *    { $sort: { totalOrderValue: -1 }}
    *  ] )
-   *
+   * <p>
    * Equivalent RediSearch Aggregation:
-   *
+   * <p>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.PizzaOrderIdx"
    *   "(( @date:[1.5803424E9 inf]) @date:[-inf (1.6435008E9])"
    *   "APPLY" "timefmt(@date, '%Y-%m-%d') " "AS" "_id"

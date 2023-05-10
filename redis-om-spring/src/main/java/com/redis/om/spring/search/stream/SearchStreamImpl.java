@@ -17,10 +17,14 @@ import com.redis.om.spring.tuple.TupleMapper;
 import com.redis.om.spring.util.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
+import redis.clients.jedis.search.aggr.AggregationResult;
 import redis.clients.jedis.search.aggr.SortedField;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 import redis.clients.jedis.search.querybuilder.Node;
@@ -29,6 +33,7 @@ import redis.clients.jedis.util.SafeEncoder;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.time.Duration;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
@@ -469,13 +474,13 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @SafeVarargs @Override
   public final <R> AggregationStream<R> groupBy(MetamodelField<E, ?>... fields) {
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
-    return new AggregationStreamImpl<>(searchIndex, modulesOperations, query, fields);
+    return new AggregationStreamImpl<>(searchIndex, modulesOperations, gson, entityClass, query, fields);
   }
 
   @Override
   public <R> AggregationStream<R> apply(String expression, String alias) {
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
-    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, query);
+    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, gson, entityClass, query);
     aggregationStream.apply(expression, alias);
     return aggregationStream;
   }
@@ -483,8 +488,24 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @SafeVarargs @Override
   public final <R> AggregationStream<R> load(MetamodelField<E, ?>... fields) {
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
-    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, query);
+    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, gson, entityClass, query);
     aggregationStream.load(fields);
+    return aggregationStream;
+  }
+
+  @Override
+  public <R> AggregationStream<R> loadAll() {
+    String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
+    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, gson, entityClass, query);
+    aggregationStream.loadAll();
+    return aggregationStream;
+  }
+
+  @Override
+  public <R> AggregationStream<R> cursor(int count, Duration timeout) {
+    String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
+    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, gson, entityClass, query);
+    aggregationStream.cursor(count, timeout);
     return aggregationStream;
   }
 
@@ -513,6 +534,21 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @Override public SearchStream<E> dialect(int dialect) {
     this.dialect = dialect;
     return this;
+  }
+
+  @Override public SearchOperations<String> getSearchOperations() {
+    return search;
+  }
+
+  @Override
+  public Slice<E> getSlice(Pageable pageable) {
+    if (pageable.getClass().isAssignableFrom(AggregationPageable.class)) {
+      AggregationPageable ap = (AggregationPageable) pageable;
+      AggregationResult ar = search.cursorRead(ap.getCursorId(), pageable.getPageSize());
+      return new AggregationPage<>(ar, pageable, entityClass, gson, mappingConverter, isDocument);
+    } else {
+      return Page.empty(pageable);
+    }
   }
 
   public boolean isDocument() {
