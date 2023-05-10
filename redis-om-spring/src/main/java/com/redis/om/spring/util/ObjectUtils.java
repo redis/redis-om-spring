@@ -250,6 +250,14 @@ public class ObjectUtils {
     return mappingConverter.read(returnedObjectType, new RedisData(b));
   }
 
+  public static Object mapToObject(Map<String,Object> properties, Class<?> returnedObjectType,
+      MappingRedisOMConverter mappingConverter) {
+    Bucket b = new Bucket();
+    properties.forEach((k,v) -> b.put(k, (byte[]) v));
+
+    return mappingConverter.read(returnedObjectType, new RedisData(b));
+  }
+
   public static <T> T documentToEntity(Document document, Class<T> classOfT, MappingRedisOMConverter mappingConverter) {
     Bucket b = new Bucket();
     document.getProperties().forEach(p -> b.put(p.getKey(), (byte[]) p.getValue()));

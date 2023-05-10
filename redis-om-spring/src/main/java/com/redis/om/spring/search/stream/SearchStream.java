@@ -2,9 +2,13 @@ package com.redis.om.spring.search.stream;
 
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.indexed.NumericField;
+import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
+import java.time.Duration;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
@@ -91,9 +95,17 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
   @SuppressWarnings("unchecked")
   <R> AggregationStream<R> load(MetamodelField<E, ?>... fields);
 
+  <R> AggregationStream<R> loadAll();
+
   Optional<E> min(NumericField<E, ?> field);
 
   Optional<E> max(NumericField<E, ?> field);
 
   SearchStream<E> dialect(int dialect);
+
+  <R> AggregationStream<R>  cursor(int i, Duration duration);
+
+  SearchOperations<String> getSearchOperations();
+
+  Slice<E> getSlice(Pageable pageable);
 }

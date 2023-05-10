@@ -1,25 +1,37 @@
 package com.redis.om.spring.search.stream;
 
+import com.google.gson.Gson;
+import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.ReducerFunction;
+import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.tuple.Tuples;
+import com.redis.om.spring.util.ObjectUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NonNull;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.domain.Sort.Order;
+import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
 import redis.clients.jedis.search.aggr.*;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
+import redis.clients.jedis.util.SafeEncoder;
 
 import java.time.Duration;
 import java.util.*;
 
 public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
+  private final Class<E> entityClass;
+  private final boolean isDocument;
   private final AggregationBuilder aggregation;
   private Group currentGroup;
   private ReducerFieldPair currentReducer;
+  private final MappingRedisOMConverter mappingConverter;
+  private final Gson gson;
 
   private final SearchOperations<String> search;
   private final Set<String> returnFields = new LinkedHashSet<>();
@@ -37,10 +49,15 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
   }
 
   @SafeVarargs
-  public AggregationStreamImpl(String searchIndex, RedisModulesOperations<String> modulesOperations, String query,
+  public AggregationStreamImpl(String searchIndex, RedisModulesOperations<String> modulesOperations, Gson gson, Class<E> entityClass, String query,
       MetamodelField<E, ?>... fields) {
+    this.entityClass = entityClass;
     search = modulesOperations.opsForSearch(searchIndex);
     aggregation = new AggregationBuilder(query);
+    isDocument = entityClass.isAnnotationPresent(Document.class);
+    this.gson = gson;
+    this.mappingConverter = new MappingRedisOMConverter(null,
+        new ReferenceResolverImpl(modulesOperations.getTemplate()));
     createAggregationGroup(fields);
   }
 
@@ -56,6 +73,13 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
       aggregation.load(aliases.stream().map(alias -> String.format("@%s", alias)).toArray(String[]::new));
       returnFields.addAll(aliases);
     }
+    return this;
+  }
+
+  @Override
+  public AggregationStream<T> loadAll() {
+    applyCurrentGroupBy();
+    aggregation.loadAll();
     return this;
   }
 
@@ -255,6 +279,11 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
     // execute the aggregation
     AggregationResult aggregationResult = search.aggregate(aggregation);
 
+    // is toList called with the same type as the stream?
+    if (contentTypes.length == 1 && contentTypes[0].isAssignableFrom(entityClass)) {
+      return (List<R>)toEntityList(aggregationResult);
+    }
+
     // package the results
     String[] labels = returnFields.toArray(String[]::new);
 
@@ -353,6 +382,29 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
     return (List<R>) asList;
   }
 
+  // Cursor API
+
+  @Override
+  public AggregationStream<T> cursor(int count, Duration timeout) {
+    applyCurrentGroupBy();
+    aggregation.cursor(count, timeout.toMillis());
+    return this;
+  }
+
+  @Override
+  public <R extends T> Slice<R> toList(PageRequest pageRequest, Class<?>... contentTypes) {
+    applyCurrentGroupBy();
+    aggregation.cursor(pageRequest.getPageSize(), -1);
+    return (Slice<R>) new AggregationPage<>(this, pageRequest, entityClass, gson, mappingConverter, isDocument );
+  }
+
+  @Override
+  public <R extends T> Slice<R> toList(PageRequest pageRequest, Duration timeout, Class<?>... contentTypes) {
+    applyCurrentGroupBy();
+    aggregation.cursor(pageRequest.getPageSize(), timeout.toMillis());
+    return (Slice<R>) new AggregationPage<>(this, pageRequest, entityClass, gson, mappingConverter, isDocument);
+  }
+
   private void applyCurrentGroupBy() {
     if (currentGroup != null) {
       if (applyCurrentReducer()) {
@@ -389,6 +441,14 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
       case "AVG", "STDDEV" -> Double.class;
       default -> String.class;
     };
+  }
+
+  List<E> toEntityList(AggregationResult aggregationResult) {
+    if (isDocument) {
+      return aggregationResult.getResults().stream().map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), entityClass)).toList();
+    } else {
+      return aggregationResult.getResults().stream().map(h -> (E) ObjectUtils.mapToObject(h, entityClass, mappingConverter)).toList();
+    }
   }
 
 }

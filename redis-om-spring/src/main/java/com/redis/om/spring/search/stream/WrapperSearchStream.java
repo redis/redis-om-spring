@@ -2,9 +2,13 @@ package com.redis.om.spring.search.stream;
 
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.indexed.NumericField;
+import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
@@ -258,6 +262,11 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
   }
 
   @Override
+  public <R> AggregationStream<R> loadAll() {
+    throw new UnsupportedOperationException("loadAll is not supported on a WrappedSearchStream");
+  }
+
+  @Override
   public Optional<E> min(NumericField<E, ?> field) {
     throw new UnsupportedOperationException("min is not supported on a WrappedSearchStream");
   }
@@ -269,6 +278,21 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
 
   @Override public SearchStream<E> dialect(int dialect) {
     throw new UnsupportedOperationException("dialect is not supported on a WrappedSearchStream");
+  }
+
+  @Override
+  public <R> AggregationStream<R> cursor(int i, Duration duration) {
+    throw new UnsupportedOperationException("cursor is not supported on a WrappedSearchStream");
+  }
+
+  @Override
+  public SearchOperations<String> getSearchOperations() {
+    throw new UnsupportedOperationException("getSearchOperations is not supported on a WrappedSearchStream");
+  }
+
+  @Override
+  public Slice<E> getSlice(Pageable pageable) {
+    throw new UnsupportedOperationException("getPage is not supported on a WrappedSearchStream");
   }
 
 }
