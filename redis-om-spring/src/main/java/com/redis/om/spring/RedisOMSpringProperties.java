@@ -57,7 +57,7 @@ public class RedisOMSpringProperties {
         @NotNull
         private String sentenceTokenizerModelMaxLength = "768";
         @NotNull
-        private String sentenceTokenizerModel = "sentence-transformers/all-mpnet-base-v1";
+        private String sentenceTokenizerModel = "sentence-transformers/all-mpnet-base-v2";
 
         // face detection
         @NotNull
