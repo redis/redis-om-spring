@@ -11,7 +11,7 @@ public class NonIndexedBooleanField<E, T> extends MetamodelField<E, T> {
     super(field, indexed);
   }
 
-  public Consumer<? super E> toggle() {
+  public Consumer<E> toggle() {
     return new ToggleAction<>(searchFieldAccessor);
   }
 }

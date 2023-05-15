@@ -35,7 +35,7 @@ public class NotEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
     StreamSupport.stream(getValues().spliterator(), false) //
         .map(v -> Values.value("{" + v.toString() + "}"))
-        .forEach(value -> and.add(QueryBuilders.disjunct(getSearchAlias(), value)));
+        .forEach(val -> and.add(QueryBuilders.disjunct(getSearchAlias(), val)));
 
     return QueryBuilders.intersect(root, and);
   }

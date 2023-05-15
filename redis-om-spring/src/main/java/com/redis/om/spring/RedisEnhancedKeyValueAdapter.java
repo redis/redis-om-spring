@@ -147,7 +147,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       Map<byte[], byte[]> rawMap = rdo.getBucket().rawMap();
       connection.hashCommands().hMSet(objectKey, rawMap);
 
-      if (expires(rdo)) {
+      if (willExpire(rdo)) {
         connection.keyCommands().expire(objectKey, rdo.getTimeToLive());
       }
 
@@ -168,8 +168,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   @Override
   public <T> T get(Object id, String keyspace, Class<T> type) {
 
-    String stringId = asString(id);
-    String stringKeyspace = asString(keyspace);
+    String stringId = asStringValue(id);
+    String stringKeyspace = asStringValue(keyspace);
 
     byte[] binId = createKey(stringKeyspace, stringId);
 
@@ -184,7 +184,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     data.setId(stringId);
     data.setKeyspace(stringKeyspace);
 
-    return readBackTimeToLiveIfSet(binId, converter.read(type, data));
+    return readTimeToLiveIfSet(binId, converter.read(type, data));
   }
 
   /*
@@ -200,7 +200,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
     if (o != null) {
 
-      byte[] keyToDelete = createKey(asString(keyspace), asString(id));
+      byte[] keyToDelete = createKey(asStringValue(keyspace), asStringValue(id));
 
       redisOperations.execute((RedisCallback<Void>) connection -> {
         connection.keyCommands().del(keyToDelete);
@@ -331,7 +331,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
       if (update.isRefreshTtl()) {
 
-        if (expires(rdo)) {
+        if (willExpire(rdo)) {
           connection.keyCommands().expire(redisKey, rdo.getTimeToLive());
         } else {
           connection.keyCommands().persist(redisKey);
@@ -398,7 +398,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
     for (byte[] field : existingFields) {
 
-      if (asString(field).startsWith(path + ".")) {
+      if (asStringValue(field).startsWith(path + ".")) {
         redisUpdateObject.addFieldToRemove(field);
         connection.hashCommands().hGet(redisUpdateObject.targetKey, toBytes(field));
       }
@@ -407,7 +407,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     return redisUpdateObject;
   }
 
-  private String asString(Object value) {
+  private String asStringValue(Object value) {
     if (value instanceof String valueAsString) {
       return valueAsString;
     } else {
@@ -423,7 +423,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * @return
    */
   @Nullable
-  private <T> T readBackTimeToLiveIfSet(@Nullable byte[] key, @Nullable T target) {
+  private <T> T readTimeToLiveIfSet(@Nullable byte[] key, @Nullable T target) {
 
     if (target == null || key == null) {
       return target;
@@ -469,7 +469,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * @param data must not be {@literal null}.
    * @since 2.3.7
    */
-  private boolean expires(RedisData data) {
+  private boolean willExpire(RedisData data) {
     return data.getTimeToLive() != null && data.getTimeToLive() > 0;
   }
 

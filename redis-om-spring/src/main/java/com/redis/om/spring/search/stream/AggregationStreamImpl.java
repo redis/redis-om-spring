@@ -395,14 +395,14 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
   public <R extends T> Slice<R> toList(PageRequest pageRequest, Class<?>... contentTypes) {
     applyCurrentGroupBy();
     aggregation.cursor(pageRequest.getPageSize(), -1);
-    return (Slice<R>) new AggregationPage<>(this, pageRequest, entityClass, gson, mappingConverter, isDocument );
+    return new AggregationPage(this, pageRequest, entityClass, gson, mappingConverter, isDocument );
   }
 
   @Override
   public <R extends T> Slice<R> toList(PageRequest pageRequest, Duration timeout, Class<?>... contentTypes) {
     applyCurrentGroupBy();
     aggregation.cursor(pageRequest.getPageSize(), timeout.toMillis());
-    return (Slice<R>) new AggregationPage<>(this, pageRequest, entityClass, gson, mappingConverter, isDocument);
+    return new AggregationPage(this, pageRequest, entityClass, gson, mappingConverter, isDocument);
   }
 
   private void applyCurrentGroupBy() {

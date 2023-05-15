@@ -237,8 +237,8 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
         byte[] objectKey = createKey(keyspace, id.toString());
 
         // process entity pre-save mutation entities
-        auditor.processEntity(objectKey, entity, isNew);
-        featureExtractor.processEntity(objectKey, entity, isNew);
+        auditor.processEntity(entity, isNew);
+        featureExtractor.processEntity(entity);
 
         RedisData rdo = new RedisData();
         mappingConverter.write(entity, rdo);

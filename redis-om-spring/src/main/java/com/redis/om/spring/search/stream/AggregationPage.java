@@ -13,20 +13,19 @@ import java.io.Serializable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class AggregationPage<E> implements Slice<E>, Serializable {
   private List<E> content;
-  private final Pageable pageable;
-  private AggregationStream aggregationStream;
+  private final transient Pageable pageable;
+  private transient AggregationStream<E> aggregationStream;
   private long cursorId = -1;
   private AggregationResult aggregationResult;
-  private final Gson gson;
+  private final transient Gson gson;
   private final Class<E> entityClass;
   private final boolean isDocument;
-  private final MappingRedisOMConverter mappingConverter;
+  private final transient MappingRedisOMConverter mappingConverter;
 
-  public AggregationPage(AggregationStream aggregationStream, Pageable pageable, Class<E> entityClass, Gson gson, MappingRedisOMConverter mappingConverter, boolean isDocument) {
+  public AggregationPage(AggregationStream<E> aggregationStream, Pageable pageable, Class<E> entityClass, Gson gson, MappingRedisOMConverter mappingConverter, boolean isDocument) {
     this.aggregationStream = aggregationStream;
     this.pageable = pageable;
     this.entityClass = entityClass;
@@ -144,7 +143,7 @@ public class AggregationPage<E> implements Slice<E>, Serializable {
 
     Assert.notNull(converter, "Function must not be null");
 
-    return this.stream().map(converter::apply).collect(Collectors.toList());
+    return (List<U>) this.stream().map(converter::apply).toList();
   }
 
   List<E> toEntityList(AggregationResult aggregationResult) {

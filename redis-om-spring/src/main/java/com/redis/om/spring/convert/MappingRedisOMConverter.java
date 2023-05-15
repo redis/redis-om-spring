@@ -1308,9 +1308,9 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
    */
   public static class BinaryKeyspaceIdentifier {
 
-    public static final byte[] PHANTOM = KeyspaceIdentifier.PHANTOM.getBytes();
+    protected static final byte[] PHANTOM = KeyspaceIdentifier.PHANTOM.getBytes();
     public static final byte DELIMITER = ':';
-    public static final byte[] PHANTOM_SUFFIX = ByteUtils.concat(new byte[] { DELIMITER }, PHANTOM);
+    protected static final byte[] PHANTOM_SUFFIX = ByteUtils.concat(new byte[] { DELIMITER }, PHANTOM);
 
     private final byte[] keyspace;
     private final byte[] id;

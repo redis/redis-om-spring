@@ -108,6 +108,7 @@ public enum QueryClause {
       QueryClauseTemplate.of(FieldType.TAG, Part.Type.ENDING_WITH, QueryClause.FIELD_TAG_ENDING_WITH, 1) //
   );
 
+  private static final String PARAM_PREFIX = "$param_";
   private static final String FIRST_PARAM = "$param_0";
   private static final String FIELD_EQUAL ="@$field:$param_0";
   private static final String FIELD_NON_EQUAL_PARAM_0 ="-@$field:$param_0";
@@ -152,12 +153,12 @@ public enum QueryClause {
       switch (paramClass) {
         case "org.springframework.data.geo.Point":
           Point point = (Point) param;
-          prepared = prepared.replace("$param_" + i++, Double.toString(point.getX()));
-          prepared = prepared.replace("$param_" + i++, Double.toString(point.getY()));
+          prepared = prepared.replace(PARAM_PREFIX + i++, Double.toString(point.getX()));
+          prepared = prepared.replace(PARAM_PREFIX + i++, Double.toString(point.getY()));
           break;
         case "org.springframework.data.geo.Distance":
           Distance distance = (Distance) param;
-          prepared = prepared.replace("$param_" + i++, ObjectUtils.getDistanceAsRedisString(distance));
+          prepared = prepared.replace(PARAM_PREFIX + i++, ObjectUtils.getDistanceAsRedisString(distance));
           break;
         default:
           // unfold collections
@@ -183,12 +184,12 @@ public enum QueryClause {
               value = c.stream().map(n -> QueryUtils.escape(ObjectUtils.asString(n, converter), true)).collect(Collectors.joining("|"));
             }
 
-            prepared = prepared.replace("$param_" + i++, value);
+            prepared = prepared.replace(PARAM_PREFIX + i++, value);
           } else {
             if (clauseTemplate.getIndexType() == FieldType.TEXT) {
-              prepared = prepared.replace("$param_" + i++, param.toString());
+              prepared = prepared.replace(PARAM_PREFIX + i++, param.toString());
             } else {
-              prepared = prepared.replace("$param_" + i++, QueryUtils.escape(ObjectUtils.asString(param, converter)));
+              prepared = prepared.replace(PARAM_PREFIX + i++, QueryUtils.escape(ObjectUtils.asString(param, converter)));
             }
           }
           break;

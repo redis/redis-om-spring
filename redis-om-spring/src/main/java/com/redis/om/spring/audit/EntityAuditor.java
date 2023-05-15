@@ -23,10 +23,10 @@ public class EntityAuditor {
   public void processEntity(byte[] redisKey, Object item) {
         boolean isNew = (boolean) redisOperations
             .execute((RedisCallback<Object>) connection -> !connection.keyCommands().exists(redisKey));
-        processEntity(redisKey, item, isNew);
+        processEntity(item, isNew);
   }
 
-  public void processEntity(byte[] redisKey, Object item, boolean isNew) {
+  public void processEntity(Object item, boolean isNew) {
     var auditClass = isNew ? CreatedDate.class : LastModifiedDate.class;
 
     List<Field> fields = com.redis.om.spring.util.ObjectUtils.getFieldsWithAnnotation(item.getClass(), auditClass);

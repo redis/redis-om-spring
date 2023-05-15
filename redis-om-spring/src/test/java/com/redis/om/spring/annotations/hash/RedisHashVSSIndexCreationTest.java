@@ -17,7 +17,7 @@ import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class RedisHashVSSIndexCreationTest extends AbstractBaseEnhancedRedisTest {
+class RedisHashVSSIndexCreationTest extends AbstractBaseEnhancedRedisTest {
   @Autowired HashWithVectorsRepository repository;
 
   @Autowired JedisConnectionFactory jedisConnectionFactory;

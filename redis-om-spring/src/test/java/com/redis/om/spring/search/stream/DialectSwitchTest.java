@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
-public class DialectSwitchTest extends AbstractBaseDocumentTest {
+class DialectSwitchTest extends AbstractBaseDocumentTest {
   @Autowired DocRepository docRepository;
 
   @Autowired EntityStream entityStream;

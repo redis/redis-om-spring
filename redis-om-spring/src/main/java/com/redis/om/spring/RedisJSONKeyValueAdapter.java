@@ -303,7 +303,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
         } catch (SecurityException | IllegalArgumentException e) {
           return Optional.empty();
         }
-      } else if (settings != null && settings.getTimeToLive() != null && settings.getTimeToLive() > 0) {
+      } else if (settings.getTimeToLive() != null && settings.getTimeToLive() > 0) {
         return Optional.of(settings.getTimeToLive());
       }
     }
