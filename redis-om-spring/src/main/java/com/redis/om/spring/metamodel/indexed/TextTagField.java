@@ -15,19 +15,20 @@ public class TextTagField<E, T> extends TagField<E, T> {
     super(field, indexed);
   }
 
-  public StartsWithPredicate<? super E,T> startsWith(T value) {
+  public StartsWithPredicate<E,T> startsWith(T value) {
     return new StartsWithPredicate<>(searchFieldAccessor,value);
   }
-  public EndsWithPredicate<? super E,T> endsWith(T value) {
+
+  public EndsWithPredicate<E,T> endsWith(T value) {
     return new EndsWithPredicate<>(searchFieldAccessor,value);
   }
 
-  public Consumer<? super E> append(String value) {
+  public Consumer<E> append(String value) {
     return new StringAppendAction<>(searchFieldAccessor, value);
   }
 
   @Override
-  public ToLongFunction<? super E> length() {
+  public ToLongFunction<E> length() {
     return new StrLengthAction<>(searchFieldAccessor);
   }
 }

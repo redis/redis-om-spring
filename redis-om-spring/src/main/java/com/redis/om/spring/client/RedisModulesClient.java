@@ -89,28 +89,28 @@ public class RedisModulesClient {
 
   private JedisClientConfig createClientConfig(int database, @Nullable String username, RedisPassword password, JedisClientConfiguration clientConfiguration) {
 
-    DefaultJedisClientConfig.Builder builder = DefaultJedisClientConfig.builder();
+    DefaultJedisClientConfig.Builder jedisConfigBuilder = DefaultJedisClientConfig.builder();
 
-    clientConfiguration.getClientName().ifPresent(builder::clientName);
-    builder.connectionTimeoutMillis(Math.toIntExact(clientConfiguration.getConnectTimeout().toMillis()));
-    builder.socketTimeoutMillis(Math.toIntExact(clientConfiguration.getReadTimeout().toMillis()));
+    clientConfiguration.getClientName().ifPresent(jedisConfigBuilder::clientName);
+    jedisConfigBuilder.connectionTimeoutMillis(Math.toIntExact(clientConfiguration.getConnectTimeout().toMillis()));
+    jedisConfigBuilder.socketTimeoutMillis(Math.toIntExact(clientConfiguration.getReadTimeout().toMillis()));
 
-    builder.database(database);
+    jedisConfigBuilder.database(database);
 
     if (!ObjectUtils.isEmpty(username)) {
-      builder.user(username);
+      jedisConfigBuilder.user(username);
     }
-    password.toOptional().map(String::new).ifPresent(builder::password);
+    password.toOptional().map(String::new).ifPresent(jedisConfigBuilder::password);
 
     if (clientConfiguration.isUseSsl()) {
 
-      builder.ssl(true);
+      jedisConfigBuilder.ssl(true);
 
-      clientConfiguration.getSslSocketFactory().ifPresent(builder::sslSocketFactory);
-      clientConfiguration.getHostnameVerifier().ifPresent(builder::hostnameVerifier);
-      clientConfiguration.getSslParameters().ifPresent(builder::sslParameters);
+      clientConfiguration.getSslSocketFactory().ifPresent(jedisConfigBuilder::sslSocketFactory);
+      clientConfiguration.getHostnameVerifier().ifPresent(jedisConfigBuilder::hostnameVerifier);
+      clientConfiguration.getSslParameters().ifPresent(jedisConfigBuilder::sslParameters);
     }
 
-    return builder.build();
+    return jedisConfigBuilder.build();
   }
 }

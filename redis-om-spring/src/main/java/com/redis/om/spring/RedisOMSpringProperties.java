@@ -36,12 +36,13 @@ public class RedisOMSpringProperties {
         }
     }
 
-    // DJL properies
+    // DJL properties
     @Data
     public static class Djl {
+        private static final String DEFAULT_ENGINE = "PyTorch";
         // image embedding settings
         @NotNull
-        private String imageEmbeddingModelEngine = "PyTorch";
+        private String imageEmbeddingModelEngine = DEFAULT_ENGINE;
         @NotNull
         private String imageEmbeddingModelModelUrls = "djl://ai.djl.pytorch/resnet18_embedding";
         @NotNull
@@ -61,7 +62,7 @@ public class RedisOMSpringProperties {
 
         // face detection
         @NotNull
-        private String faceDetectionModelEngine = "PyTorch";
+        private String faceDetectionModelEngine = DEFAULT_ENGINE;
         @NotNull
         private String faceDetectionModelName = "retinaface";
         @NotNull
@@ -69,7 +70,7 @@ public class RedisOMSpringProperties {
 
         // face embeddings
         @NotNull
-        private String faceEmbeddingModelEngine = "PyTorch";
+        private String faceEmbeddingModelEngine = DEFAULT_ENGINE;
         @NotNull
         private String faceEmbeddingModelName = "face_feature";
         @NotNull

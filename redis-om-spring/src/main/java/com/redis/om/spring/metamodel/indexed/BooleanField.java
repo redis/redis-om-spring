@@ -10,7 +10,7 @@ public class BooleanField<E, T> extends TagField<E, T> {
     super(field, indexed);
   }
 
-  public Consumer<? super E> toggle() {
+  public Consumer<E> toggle() {
     return new ToggleAction<>(searchFieldAccessor);
   }
 }

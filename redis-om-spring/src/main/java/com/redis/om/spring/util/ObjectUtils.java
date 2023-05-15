@@ -375,7 +375,7 @@ public class ObjectUtils {
   public static byte[] longArrayToByteArray(long[] input) {
     float[] floats = new float[input.length];
     for (int i = 0; i < input.length; i++) {
-      floats[i] = Long.valueOf(input[i]).floatValue();
+      floats[i] = input[i];
     }
     return floatArrayToByteArray(floats);
   }

@@ -9,7 +9,7 @@ public class VectorField <E, T> extends MetamodelField<E, T> {
     super(field, indexed);
   }
 
-  public KNNPredicate<? super E,T> knn(int k, byte[] blobAttribute) {
+  public KNNPredicate<E,T> knn(int k, byte[] blobAttribute) {
     return new KNNPredicate<>(searchFieldAccessor,k, blobAttribute);
   }
 }

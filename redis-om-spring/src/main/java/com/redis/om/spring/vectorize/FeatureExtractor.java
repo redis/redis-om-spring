@@ -60,9 +60,7 @@ import java.util.List;
   }
 
   public void processEntity(byte[] redisKey, Object item) {
-    boolean isNew = (boolean) redisOperations.execute(
-        (RedisCallback<Object>) connection -> !connection.keyCommands().exists(redisKey));
-    processEntity(redisKey, item, isNew);
+    processEntity(item);
   }
 
   public byte[] getImageEmbeddingsFor(InputStream is) {
@@ -88,7 +86,7 @@ import java.util.List;
     return ObjectUtils.longArrayToByteArray(encoding.getIds());
   }
 
-  public void processEntity(byte[] redisKey, Object item, boolean isNew) {
+  public void processEntity(Object item) {
     if (!isReady()) {
       return;
     }
@@ -109,6 +107,9 @@ import java.util.List;
                 logger.warn("Error generating image embedding", e);
               }
             }
+            case WORD -> {
+              //TODO: implement me!
+            }
             case FACE -> {
               Resource resource = applicationContext.getResource(fieldValue.toString());
               try {
@@ -118,9 +119,7 @@ import java.util.List;
                 logger.warn("Error generating facial image embedding", e);
               }
             }
-            case SENTENCE -> {
-              accessor.setPropertyValue(vectorize.destination(), getSentenceEmbeddingsFor(fieldValue.toString()));
-            }
+            case SENTENCE -> accessor.setPropertyValue(vectorize.destination(), getSentenceEmbeddingsFor(fieldValue.toString()));
           }
         }
       });

@@ -140,16 +140,18 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
     blockBuilder.beginControlFlow("try");
     for (ObjectGraphFieldSpec ogfs : fields) {
-      String sb = "$T.class";
+      StringBuilder sb = new StringBuilder("$T.class");
       for (int i = 0; i < ogfs.chain().size(); i++) {
         Element element = ogfs.chain().get(i);
         if (i != 0) {
-          sb = sb + ".getType()";
+          sb.append(".getType()");
         }
-        sb = String.format("com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(%s, \"%s\")", sb, element.getSimpleName());
+        String formattedString = String.format("com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(%s, \"%s\")", sb.toString(), element.getSimpleName());
+        sb.setLength(0); // clear the builder
+        sb.append(formattedString);
       }
       FieldSpec fieldSpec = ogfs.fieldSpec();
-      blockBuilder.addStatement("$L = " + sb, fieldSpec.name, entity);
+      blockBuilder.addStatement("$L = " + sb.toString(), fieldSpec.name, entity);
     }
 
     for (CodeBlock initCodeBlock : initCodeBlocks) {
@@ -389,16 +391,18 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
     blockBuilder.beginControlFlow("try");
     for (ObjectGraphFieldSpec ogfs : fields) {
-      String sb = "$T.class";
+      StringBuilder sb = new StringBuilder("$T.class");
       for (int i = 0; i < ogfs.chain().size(); i++) {
         Element element = ogfs.chain().get(i);
         if (i != 0) {
-          sb = sb + ".getType()";
+          sb.append(".getType()");
         }
-        sb = String.format("com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(%s, \"%s\")", sb, element.getSimpleName());
+        String formattedString = String.format("com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(%s, \"%s\")", sb.toString(), element.getSimpleName());
+        sb.setLength(0); // clear the buffer
+        sb.append(formattedString);
       }
       FieldSpec fieldSpec = ogfs.fieldSpec();
-      blockBuilder.addStatement("$L = " + sb, fieldSpec.name, entity);
+      blockBuilder.addStatement("$L = " + sb.toString(), fieldSpec.name, entity);
     }
 
     for (CodeBlock initCodeBlock : initCodeBlocks) {
@@ -710,7 +714,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
   }
 
 
-  private Pair<FieldSpec, CodeBlock> generateUnboundMetamodelField(TypeName entity, String name, String alias, Class type) {
+  private Pair<FieldSpec, CodeBlock> generateUnboundMetamodelField(TypeName entity, String name, String alias, Class<?> type) {
     TypeName interceptor = ParameterizedTypeName.get(ClassName.get(MetamodelField.class), entity, TypeName.get(type));
 
     FieldSpec aField = FieldSpec.builder(interceptor, name).addModifiers(Modifier.PUBLIC, Modifier.STATIC)

@@ -40,7 +40,7 @@ public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicat
   }
 
   private static FieldType getFieldTypeFor(java.lang.reflect.Field field) {
-    FieldType result = FieldType.TAG;
+    FieldType result = null;
     // Searchable - behaves like Text indexed
     if (field.isAnnotationPresent(Searchable.class)) {
       result = FieldType.GEO;

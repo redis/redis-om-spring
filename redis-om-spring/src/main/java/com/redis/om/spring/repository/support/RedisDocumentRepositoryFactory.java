@@ -135,7 +135,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
   @Override
   protected Optional<QueryLookupStrategy> getQueryLookupStrategy(@Nullable Key key,
       QueryMethodEvaluationContextProvider evaluationContextProvider) {
-    return Optional.of(new RediSearchQueryLookupStrategy(key, evaluationContextProvider, this.keyValueOperations,
+    return Optional.of(new RediSearchQueryLookupStrategy(evaluationContextProvider, this.keyValueOperations,
         this.rmo, this.queryCreator, this.repositoryQueryType, this.gson));
   }
 
@@ -150,13 +150,11 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
     private final Class<? extends RepositoryQuery> repositoryQueryType;
 
     /**
-     * @param key
      * @param evaluationContextProvider
      * @param keyValueOperations
      * @param queryCreator
      */
-    public RediSearchQueryLookupStrategy(@Nullable Key key,
-        QueryMethodEvaluationContextProvider evaluationContextProvider, KeyValueOperations keyValueOperations,
+    public RediSearchQueryLookupStrategy(QueryMethodEvaluationContextProvider evaluationContextProvider, KeyValueOperations keyValueOperations,
         RedisModulesOperations<?> rmo, Class<? extends AbstractQueryCreator<?, ?>> queryCreator,
         Class<? extends RepositoryQuery> repositoryQueryType,
         Gson gson) {

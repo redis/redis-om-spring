@@ -6,6 +6,6 @@ public class Alias<E, T> extends MetamodelField<E, T> {
   }
 
   public static Alias of(String alias) {
-    return new Alias(alias);
+    return new Alias<>(alias);
   }
 }
