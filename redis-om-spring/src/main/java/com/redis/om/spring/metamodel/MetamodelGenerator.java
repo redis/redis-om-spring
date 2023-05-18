@@ -54,6 +54,8 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
   private TypeElement objectTypeElement;
 
+  public MetamodelGenerator() {}
+
   @Override
   public synchronized void init(ProcessingEnvironment env) {
     super.init(env);
