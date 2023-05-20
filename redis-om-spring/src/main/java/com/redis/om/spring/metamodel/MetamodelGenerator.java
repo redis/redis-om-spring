@@ -140,7 +140,8 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
     CodeBlock.Builder blockBuilder = CodeBlock.builder();
 
-    blockBuilder.beginControlFlow("try");
+    boolean hasFields = !fields.isEmpty();
+    if (hasFields) blockBuilder.beginControlFlow("try");
     for (ObjectGraphFieldSpec ogfs : fields) {
       StringBuilder sb = new StringBuilder("$T.class");
       for (int i = 0; i < ogfs.chain().size(); i++) {
@@ -153,16 +154,18 @@ public final class MetamodelGenerator extends AbstractProcessor {
         sb.append(formattedString);
       }
       FieldSpec fieldSpec = ogfs.fieldSpec();
-      blockBuilder.addStatement("$L = " + sb.toString(), fieldSpec.name, entity);
+      blockBuilder.addStatement("$L = " + sb, fieldSpec.name, entity);
     }
 
     for (CodeBlock initCodeBlock : initCodeBlocks) {
       blockBuilder.add(initCodeBlock);
     }
 
-    blockBuilder.nextControlFlow("catch($T | $T e)", NoSuchFieldException.class, SecurityException.class);
-    blockBuilder.addStatement("System.err.println(e.getMessage())");
-    blockBuilder.endControlFlow();
+    if (hasFields) {
+      blockBuilder.nextControlFlow("catch($T | $T e)", NoSuchFieldException.class, SecurityException.class);
+      blockBuilder.addStatement("System.err.println(e.getMessage())");
+      blockBuilder.endControlFlow();
+    }
 
     CodeBlock staticBlock = blockBuilder.build();
 

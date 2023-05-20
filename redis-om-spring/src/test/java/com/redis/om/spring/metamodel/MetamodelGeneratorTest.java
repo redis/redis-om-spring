@@ -300,6 +300,38 @@ class MetamodelGeneratorTest {
     );
   }
 
+  @Test
+  @Classpath("data.metamodel.IdOnly")
+  void testValidIdOnlyDocument(Results results) throws IOException {List<String> warnings = getWarningStrings(results);
+    assertThat(warnings).isEmpty();
+
+    List<String> errors = getErrorStrings(results);
+    assertThat(errors).isEmpty();
+
+    assertThat(results.generated).hasSize(1);
+    JavaFileObject metamodel = results.generated.get(0);
+    assertThat(metamodel.getName()).isEqualTo("/SOURCE_OUTPUT/valid/IdOnly$.java");
+
+    var fileContents = metamodel.getCharContent(true);
+
+    var expected = """
+    package valid;
+    
+    import com.redis.om.spring.metamodel.MetamodelField;
+    import java.lang.String;
+
+    public final class IdOnly$ {
+      public static MetamodelField<IdOnly, String> _KEY;
+
+      static {
+        _KEY = new MetamodelField<IdOnly, String>("__key", String.class, true);
+      }
+    }
+    """;
+
+    assertThat(fileContents).containsIgnoringWhitespaces(expected);
+  }
+
   private List<String> getWarningStrings(Results results) {
     return results.find().warnings().list().stream().map(w -> w.getMessage(Locale.US)).collect(Collectors.toList());
   }
