@@ -300,7 +300,7 @@ public class PeopleService {
   EntityStream entityStream;
 
   // Find all people
-  public Iterable<Person> findAllPeople(int minAge, int maxAge) {
+  public Iterable<Person> findAllPeople() {
     return entityStream //
         .of(Person.class) //
         .collect(Collectors.toList());
@@ -319,14 +319,14 @@ underlying search engine field. For example, in the example we have an `age` pro
 numeric operations we can use with the stream's `filter` method such as `between`.
 
 ```java
-  // Find people by age range
-  public Iterable<Person> findByAgeBetween(int minAge, int maxAge) {
-    return entityStream //
-        .of(Person.class) //
-        .filter(Person$.AGE.between(minAge, maxAge)) //
-        .sorted(Person$.AGE, SortOrder.ASC) //
-        .collect(Collectors.toList());
-  }
+// Find people by age range
+public Iterable<Person> findByAgeBetween(int minAge, int maxAge) {
+  return entityStream //
+      .of(Person.class) //
+      .filter(Person$.AGE.between(minAge, maxAge)) //
+      .sorted(Person$.AGE, SortOrder.ASC) //
+      .collect(Collectors.toList());
+}
 ```
 
 In this example we also make use of the Streams `sorted` method to declare that our stream will be sorted by the `Person$.AGE` in `ASC`ending order.
@@ -360,7 +360,7 @@ inherited from the parent poms):
       <path>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-configuration-processor</artifactId>
-        <version>3.0.4</version>
+        <version>3.0.6</version>
       </path>
       <path>
         <groupId>org.projectlombok</groupId>
@@ -370,7 +370,7 @@ inherited from the parent poms):
       <path>
         <groupId>com.redis.om</groupId>
         <artifactId>redis-om-spring</artifactId>
-        <version>0.8.0</version>
+        <version>0.8.2</version>
       </path>
     </annotationProcessorPaths>
   </configuration>
@@ -416,7 +416,7 @@ repositories {
 ### Dependency
 ```groovy
 ext {
-  redisOmVersion = '0.8.1-SNAPSHOT'
+  redisOmVersion = '0.8.3-SNAPSHOT'
 }
 
 dependencies {
