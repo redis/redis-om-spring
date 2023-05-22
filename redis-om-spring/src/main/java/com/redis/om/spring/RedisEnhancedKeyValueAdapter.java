@@ -203,7 +203,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       byte[] keyToDelete = createKey(asStringValue(keyspace), asStringValue(id));
 
       redisOperations.execute((RedisCallback<Void>) connection -> {
-        connection.keyCommands().del(keyToDelete);
+        connection.keyCommands().unlink(keyToDelete);
         return null;
       });
     }
