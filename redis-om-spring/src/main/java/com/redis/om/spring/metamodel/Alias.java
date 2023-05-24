@@ -5,7 +5,7 @@ public class Alias<E, T> extends MetamodelField<E, T> {
     super(alias, String.class, true);
   }
 
-  public static Alias of(String alias) {
+  public static <E, T> Alias<E, T> of(String alias) {
     return new Alias<>(alias);
   }
 }
