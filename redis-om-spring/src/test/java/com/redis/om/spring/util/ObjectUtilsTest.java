@@ -168,21 +168,21 @@ import static org.junit.jupiter.api.Assertions.assertAll;
         Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
     String actualCompanyId = redis.getId();
 
-    Optional<?> maybeId = ObjectUtils.getIdFieldForEntity(redis);
+    Object id = ObjectUtils.getIdFieldForEntity(redis);
 
-    assertThat(maybeId).isPresent();
-    assertThat(maybeId.get()).hasToString(actualCompanyId);
+    assertThat(id).isNotNull();
+    assertThat(id).hasToString(actualCompanyId);
 
     DocWithCustomNameId doc = docWithCustomNameIdRepository.save(new DocWithCustomNameId());
     String actualDocId = doc.getIdentidad();
 
-    Optional<?> maybeDocId = ObjectUtils.getIdFieldForEntity(doc);
+    Object docId = ObjectUtils.getIdFieldForEntity(doc);
 
-    assertThat(maybeDocId).isPresent();
-    assertThat(maybeDocId.get()).hasToString(actualDocId);
+    assertThat(docId).isNotNull();
+    assertThat(docId).hasToString(actualDocId);
 
-    Optional<?> noEntityId = ObjectUtils.getIdFieldForEntity("");
-    assertThat(noEntityId).isEmpty();
+    Object noEntityId = ObjectUtils.getIdFieldForEntity("");
+    assertThat(noEntityId).isNull();
   }
 
   @Test

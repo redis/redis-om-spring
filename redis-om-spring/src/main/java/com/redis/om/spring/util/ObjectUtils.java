@@ -92,19 +92,15 @@ public class ObjectUtils {
     return getDeclaredFieldsTransitively(cl).stream().filter(f -> f.isAnnotationPresent(Id.class)).findFirst();
   }
 
-  public static Optional<?> getIdFieldForEntity(Object entity) {
+  public static Object getIdFieldForEntity(Object entity) {
     Optional<Field> maybeIdField = getIdFieldForEntityClass(entity.getClass());
-    if (maybeIdField.isPresent()) {
-      Field idField = maybeIdField.get();
+    if (maybeIdField.isEmpty()) return null;
 
-      String getterName = "get" + ObjectUtils.ucfirst(idField.getName());
-      Method getter = ReflectionUtils.findMethod(entity.getClass(), getterName);
-      Object id = ReflectionUtils.invokeMethod(getter, entity);
+    Field idField = maybeIdField.get();
 
-      return Optional.of(id);
-    } else {
-      return Optional.empty();
-    }
+    String getterName = "get" + ObjectUtils.ucfirst(idField.getName());
+    Method getter = ReflectionUtils.findMethod(entity.getClass(), getterName);
+    return getter != null ? ReflectionUtils.invokeMethod(getter, entity) : null;
   }
 
   public static Object getIdFieldForEntity(Field idField, Object entity) {
