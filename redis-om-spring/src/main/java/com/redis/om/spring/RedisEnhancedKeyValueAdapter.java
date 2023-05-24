@@ -30,8 +30,7 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import static com.redis.om.spring.util.ObjectUtils.documentToObject;
-import static com.redis.om.spring.util.ObjectUtils.getIdFieldForEntity;
+import static com.redis.om.spring.util.ObjectUtils.*;
 
 public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
@@ -234,7 +233,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     List<String> keys = List.of();
     if (maybeSearchIndex.isPresent()) {
       SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
-      Optional<Field> maybeIdField = com.redis.om.spring.util.ObjectUtils.getIdFieldForEntityClass(type);
+      Optional<Field> maybeIdField = getIdFieldForEntityClass(type);
       String idField = maybeIdField.map(Field::getName).orElse("id");
 
       Query query = new Query("*");
