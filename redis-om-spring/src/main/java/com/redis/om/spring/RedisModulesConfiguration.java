@@ -138,11 +138,11 @@ public class RedisModulesConfiguration {
 
   @Bean(name = "djlImageEmbeddingModelCriteria")
   public Criteria<Image, byte[]> imageEmbeddingModelCriteria(RedisOMSpringProperties properties) {
-    return Criteria.builder()
+    return properties.getDjl().isEnabled() ? Criteria.builder()
         .setTypes(Image.class, byte[].class) //
         .optEngine(properties.getDjl().getImageEmbeddingModelEngine())  //
         .optModelUrls(properties.getDjl().getImageEmbeddingModelModelUrls()) //
-        .build();
+        .build() : null;
   }
 
   @Bean(name = "djlFaceDetectionTranslator")
@@ -161,20 +161,21 @@ public class RedisModulesConfiguration {
       @Qualifier("djlFaceDetectionTranslator") Translator<Image, DetectedObjects> translator, //
       RedisOMSpringProperties properties) {
 
-    return Criteria.builder()
+    return properties.getDjl().isEnabled() ? Criteria.builder()
         .setTypes(Image.class, DetectedObjects.class) //
         .optModelUrls(properties.getDjl().getFaceDetectionModelModelUrls()) //
         .optModelName(properties.getDjl().getFaceDetectionModelName()) //
         .optTranslator(translator) //
         .optEngine(properties.getDjl().getFaceDetectionModelEngine()) //
-        .build();
+        .build() : null;
   }
 
   @Bean(name = "djlFaceDetectionModel")
   public ZooModel<Image, DetectedObjects> faceDetectionModel(
-      @Qualifier("djlFaceDetectionModelCriteria") Criteria<Image, DetectedObjects> criteria) {
+      @Nullable @Qualifier("djlFaceDetectionModelCriteria") Criteria<Image, DetectedObjects> criteria,
+      RedisOMSpringProperties properties) {
     try {
-      return ModelZoo.loadModel(criteria);
+      return properties.getDjl().isEnabled() ? ModelZoo.loadModel(criteria) : null;
     } catch (IOException | ModelNotFoundException | MalformedModelException ex) {
       logger.warn("Error retrieving default DJL face detection model", ex);
       return null;
@@ -191,20 +192,21 @@ public class RedisModulesConfiguration {
       @Qualifier("djlFaceEmbeddingTranslator") Translator<Image, float[]> translator, //
       RedisOMSpringProperties properties) {
 
-    return Criteria.builder() //
+    return properties.getDjl().isEnabled() ? Criteria.builder() //
             .setTypes(Image.class, float[].class)
             .optModelUrls(properties.getDjl().getFaceEmbeddingModelModelUrls()) //
             .optModelName(properties.getDjl().getFaceEmbeddingModelName()) //
             .optTranslator(translator) //
             .optEngine(properties.getDjl().getFaceEmbeddingModelEngine()) //
-            .build();
+            .build() : null;
   }
 
   @Bean(name = "djlFaceEmbeddingModel")
   public ZooModel<Image, float[]> faceEmbeddingModel(
-      @Qualifier("djlFaceEmbeddingModelCriteria") Criteria<Image, float[]> criteria) {
+      @Nullable @Qualifier("djlFaceEmbeddingModelCriteria") Criteria<Image, float[]> criteria, //
+      RedisOMSpringProperties properties) {
     try {
-      return ModelZoo.loadModel(criteria);
+      return properties.getDjl().isEnabled() ? ModelZoo.loadModel(criteria) : null;
     } catch (Exception e) {
       logger.warn("Error retrieving default DJL face embeddings model", e);
       return null;
@@ -213,39 +215,43 @@ public class RedisModulesConfiguration {
 
   @Bean(name = "djlImageEmbeddingModel")
   public ZooModel<Image, byte[]> imageModel(
-      @Qualifier("djlImageEmbeddingModelCriteria") Criteria<Image, byte[]> criteria)
+      @Nullable @Qualifier("djlImageEmbeddingModelCriteria") Criteria<Image, byte[]> criteria, RedisOMSpringProperties properties)
       throws MalformedModelException, ModelNotFoundException, IOException {
-    return ModelZoo.loadModel(criteria);
+    return properties.getDjl().isEnabled() ? ModelZoo.loadModel(criteria) : null;
   }
 
   @Bean(name = "djlDefaultImagePipeline")
   public Pipeline defaultImagePipeline(RedisOMSpringProperties properties) {
-    Pipeline pipeline = new Pipeline();
-    if (properties.getDjl().isDefaultImagePipelineCenterCrop()) {
-      pipeline.add(new CenterCrop());
-    }
-    return pipeline //
-        .add(new Resize( //
-            properties.getDjl().getDefaultImagePipelineResizeWidth(), //
-            properties.getDjl().getDefaultImagePipelineResizeHeight() //
-        )) //
-        .add(new ToTensor());
+    if (properties.getDjl().isEnabled()) {
+      Pipeline pipeline = new Pipeline();
+      if (properties.getDjl().isDefaultImagePipelineCenterCrop()) {
+        pipeline.add(new CenterCrop());
+      }
+      return pipeline //
+          .add(new Resize( //
+              properties.getDjl().getDefaultImagePipelineResizeWidth(), //
+              properties.getDjl().getDefaultImagePipelineResizeHeight() //
+          )) //
+          .add(new ToTensor());
+    } else return null;
   }
 
   @Bean(name = "djlSentenceTokenizer")
   public HuggingFaceTokenizer sentenceTokenizer(RedisOMSpringProperties properties) {
-    Map<String, String> options = Map.of( //
-        "maxLength", properties.getDjl().getSentenceTokenizerMaxLength(), //
-        "modelMaxLength", properties.getDjl().getSentenceTokenizerModelMaxLength() //
-    );
+    if (properties.getDjl().isEnabled()) {
+      Map<String, String> options = Map.of( //
+          "maxLength", properties.getDjl().getSentenceTokenizerMaxLength(), //
+          "modelMaxLength", properties.getDjl().getSentenceTokenizerModelMaxLength() //
+      );
 
-    try {
-      InetAddress.getByName("www.huggingface.co").isReachable(5000);
-      return HuggingFaceTokenizer.newInstance(properties.getDjl().getSentenceTokenizerModel(), options);
-    } catch (IOException ex) {
-      logger.warn("Error retrieving default DJL sentence tokenizer");
-      return null;
-    }
+      try {
+        InetAddress.getByName("www.huggingface.co").isReachable(5000);
+        return HuggingFaceTokenizer.newInstance(properties.getDjl().getSentenceTokenizerModel(), options);
+      } catch (IOException ex) {
+        logger.warn("Error retrieving default DJL sentence tokenizer");
+        return null;
+      }
+    } else return null;
   }
 
   @Bean(name = "featureExtractor")
@@ -256,8 +262,9 @@ public class RedisModulesConfiguration {
       @Nullable @Qualifier("djlDefaultImagePipeline") Pipeline defaultImagePipeline,
       @Nullable @Qualifier("djlSentenceTokenizer") HuggingFaceTokenizer sentenceTokenizer,
       @Nullable @Qualifier("redisTemplate") RedisTemplate<?, ?> redisTemplate,
+      RedisOMSpringProperties properties,
       ApplicationContext ac) {
-    return new FeatureExtractor(redisTemplate, ac, imageEmbeddingModel, faceEmbeddingModel, imageFactory, defaultImagePipeline, sentenceTokenizer);
+    return properties.getDjl().isEnabled() ? new FeatureExtractor(redisTemplate, ac, imageEmbeddingModel, faceEmbeddingModel, imageFactory, defaultImagePipeline, sentenceTokenizer) : null;
   }
 
   @Bean(name = "redisJSONKeyValueAdapter")

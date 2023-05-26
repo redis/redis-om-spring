@@ -10,6 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.geo.Point;
+import org.springframework.test.context.TestPropertySource;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -21,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     classes = HashRepositoryBasePackageClassesTest.Config.class, //
     properties = { "spring.main.allow-bean-definition-overriding=true" } //
 )
+@TestPropertySource(properties = {"spring.config.location=classpath:vss_on.yaml"})
 class HashRepositoryBasePackageClassesTest extends AbstractBaseOMTest {
   @SpringBootApplication
   @Configuration
