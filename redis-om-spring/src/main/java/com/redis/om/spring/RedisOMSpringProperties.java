@@ -40,6 +40,8 @@ public class RedisOMSpringProperties {
     @Data
     public static class Djl {
         private static final String DEFAULT_ENGINE = "PyTorch";
+        @NotNull
+        private boolean enabled = false;
         // image embedding settings
         @NotNull
         private String imageEmbeddingModelEngine = DEFAULT_ENGINE;

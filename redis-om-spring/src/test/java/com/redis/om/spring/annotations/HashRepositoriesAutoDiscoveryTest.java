@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.test.context.TestPropertySource;
 
 import java.util.Optional;
 
@@ -17,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     classes = HashRepositoriesAutoDiscoveryTest.Config.class, //
     properties = { "spring.main.allow-bean-definition-overriding=true" } //
 )
+@TestPropertySource(properties = {"spring.config.location=classpath:vss_on.yaml"})
 class HashRepositoriesAutoDiscoveryTest extends AbstractBaseOMTest {
   @SpringBootApplication
   @Configuration
