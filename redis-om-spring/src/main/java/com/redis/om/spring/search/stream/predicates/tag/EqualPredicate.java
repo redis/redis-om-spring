@@ -7,6 +7,8 @@ import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import redis.clients.jedis.search.querybuilder.QueryNode;
 
+import static org.apache.commons.lang3.ObjectUtils.isEmpty;
+
 public class EqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   private final T value;
 
@@ -21,6 +23,7 @@ public class EqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
+    if (isEmpty(getValue())) return root;
     if (Iterable.class.isAssignableFrom(getValue().getClass())) {
       Iterable<?> values = (Iterable<?>) getValue();
       QueryNode and = QueryBuilders.intersect();
