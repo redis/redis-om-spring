@@ -11,6 +11,8 @@ import java.time.*;
 import java.util.Date;
 import java.util.List;
 
+import static org.apache.commons.lang3.ObjectUtils.isEmpty;
+
 public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   private final List<T> values;
@@ -26,6 +28,7 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
+    if (isEmpty(getValues())) return root;
     QueryNode or = QueryBuilders.union();
 
     Class<?> cls = values.get(0).getClass();

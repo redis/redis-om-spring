@@ -9,6 +9,8 @@ import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import java.util.List;
 import java.util.StringJoiner;
 
+import static org.apache.commons.lang3.ObjectUtils.isEmpty;
+
 public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   private final List<String> values;
@@ -24,6 +26,7 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
+    if (isEmpty(getValues())) return root;
     StringJoiner sj = new StringJoiner(" | ");
     for (Object value : getValues()) {
       sj.add(value.toString());

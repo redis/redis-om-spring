@@ -9,6 +9,8 @@ import redis.clients.jedis.search.querybuilder.QueryNode;
 
 import java.util.List;
 
+import static org.apache.commons.lang3.ObjectUtils.isEmpty;
+
 public class ContainsAllPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   private final List<String> values;
@@ -24,6 +26,7 @@ public class ContainsAllPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
+    if (isEmpty(getValues())) return root;
     QueryNode and = QueryBuilders.intersect();
     for (String value : getValues()) {
       and.add(getSearchAlias(), "{" + value + "}");

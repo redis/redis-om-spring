@@ -9,6 +9,8 @@ import redis.clients.jedis.search.querybuilder.Values;
 import java.time.*;
 import java.util.Date;
 
+import static org.apache.commons.lang3.ObjectUtils.isEmpty;
+
 public class GreaterThanPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   private final T value;
 
@@ -23,6 +25,7 @@ public class GreaterThanPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
+    if (isEmpty(getValue())) return root;
     Class<?> cls = value.getClass();
     if (cls == LocalDate.class) {
       LocalDate localDate = (LocalDate) getValue();

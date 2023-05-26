@@ -11,6 +11,8 @@ import redis.clients.jedis.search.querybuilder.Values;
 import java.util.List;
 import java.util.stream.StreamSupport;
 
+import static org.apache.commons.lang3.ObjectUtils.isEmpty;
+
 public class NotEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   private T value;
   private Iterable<?> values;
@@ -31,6 +33,7 @@ public class NotEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
+    if (isEmpty(getValues())) return root;
     QueryNode and = QueryBuilders.intersect();
 
     StreamSupport.stream(getValues().spliterator(), false) //

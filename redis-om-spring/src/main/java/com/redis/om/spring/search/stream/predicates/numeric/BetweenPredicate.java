@@ -12,6 +12,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 
+import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
+
 public class BetweenPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   private final T min;
@@ -33,6 +35,8 @@ public class BetweenPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
+    boolean paramsPresent = isNotEmpty(getMin()) && isNotEmpty(getMax());
+    if (!paramsPresent) return root;
     Class<?> cls = min.getClass();
     if (cls == LocalDate.class) {
       LocalDate minLocalDate = (LocalDate) min;

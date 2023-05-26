@@ -2378,4 +2378,16 @@ import static org.junit.jupiter.api.Assertions.*;
     List<String> names = companies.stream().map(Company::getName).toList();
     assertTrue(names.contains("Tesla"));
   }
+
+  @Test void testIgnorePredicatesWithNullParamsAnded() {
+    SearchStream<Company> stream = entityStream.of(Company.class);
+
+    List<Company> companies = stream //
+        .filter(Company$.NAME.eq("RedisInc")) //
+        .filter(Company$.YEAR_FOUNDED.eq(null)) //
+        .collect(Collectors.toList());
+
+    List<String> names = companies.stream().map(Company::getName).collect(Collectors.toList());
+    assertThat(names).contains("RedisInc");
+  }
 }

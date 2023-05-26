@@ -8,6 +8,7 @@ import org.springframework.data.geo.Point;
 import redis.clients.jedis.search.querybuilder.GeoValue;
 import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
+import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
 
 public class NearPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
@@ -30,10 +31,11 @@ public class NearPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
-    GeoValue geoValue = new GeoValue(getPoint().getX(), getPoint().getY(), getDistance().getValue(),
-        ObjectUtils.getDistanceUnit(getDistance()));
-
-    return QueryBuilders.intersect(root).add(getSearchAlias(), geoValue);
+    boolean paramsPresent = isNotEmpty(point) && isNotEmpty(distance);
+    if (paramsPresent) {
+      GeoValue geoValue = new GeoValue(getPoint().getX(), getPoint().getY(), getDistance().getValue(), ObjectUtils.getDistanceUnit(getDistance()));
+      return QueryBuilders.intersect(root).add(getSearchAlias(), geoValue);
+    } else return root;
   }
 
 }
