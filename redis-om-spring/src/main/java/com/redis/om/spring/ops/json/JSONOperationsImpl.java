@@ -9,6 +9,7 @@ import redis.clients.jedis.json.Path2;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class JSONOperationsImpl<K> implements JSONOperations<K> {
 
@@ -39,11 +40,14 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
   public final <T> List<T> mget(Class<T> clazz, K... keys) {
     String[] keysAsStrings = Arrays.stream(keys).map(Object::toString).toArray(String[]::new);
     return client.clientForJSON().jsonMGet(keysAsStrings)
-        .stream().map(jsonArr -> jsonArr.get(0))
+        .stream()
+        .filter(Objects::nonNull)
+        .map(jsonArr -> jsonArr.get(0))
         .map(Object::toString)
         .map(str -> gson.fromJson(str, clazz))
         .toList();
   }
+
 
   @SafeVarargs @Override
   public final <T> List<T> mget(Path2 path, Class<T> clazz, K... keys) {

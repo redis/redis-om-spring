@@ -11,6 +11,7 @@ import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.RedisDocumentRepository;
 import com.redis.om.spring.serialization.gson.GsonListOfType;
 import com.redis.om.spring.util.ObjectUtils;
+import lombok.NonNull;
 import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -53,6 +54,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static redis.clients.jedis.json.JsonProtocol.JsonCommand;
@@ -195,6 +197,15 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       List<T> entities = gson.fromJson(reader, new GsonListOfType<>(metadata.getJavaType()));
       return saveAll(entities);
     }
+  }
+
+  @Override
+  public @NonNull List<T> findAllById(Iterable<ID> ids) {
+    String[] keys = StreamSupport.stream(ids.spliterator(), false).map(this::getKey).toArray(String[]::new);
+
+    return modulesOperations.opsForJSON()
+        .mget(metadata.getJavaType(), keys).stream()
+        .toList();
   }
 
   private String getKeyspace() {
