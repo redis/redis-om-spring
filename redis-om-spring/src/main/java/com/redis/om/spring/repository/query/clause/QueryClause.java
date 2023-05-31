@@ -41,6 +41,12 @@ public enum QueryClause {
   TEXT_NOT_CONTAINING( //
       QueryClauseTemplate.of(FieldType.TEXT, Part.Type.NOT_CONTAINING, QueryClause.FIELD_NOT_LIKE, 1) //
   ),
+  TEXT_NOT_IN( //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.NOT_IN, QueryClause.FIELD_EQUAL, 1) //
+  ),
+  TEXT_IN( //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.IN, QueryClause.FIELD_EQUAL, 1) //
+  ),
   // NUMERIC
   NUMERIC_SIMPLE_PROPERTY( //
       QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.SIMPLE_PROPERTY, QueryClause.FIELD_NUMERIC_EQUAL_PARAM_0, 1) //
@@ -90,10 +96,10 @@ public enum QueryClause {
       QueryClauseTemplate.of(FieldType.TAG, Part.Type.SIMPLE_PROPERTY, QueryClause.FIELD_TAG_EQUAL, 1) //
   ),
   TAG_NOT_IN( //
-      QueryClauseTemplate.of(FieldType.TAG, Part.Type.NOT_IN, QueryClause.FIELD_EQUAL, 1) //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.NOT_IN, QueryClause.FIELD_TAG_EQUAL, 1) //
   ),
   TAG_IN( //
-      QueryClauseTemplate.of(FieldType.TAG, Part.Type.IN, QueryClause.FIELD_EQUAL, 1) //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.IN, QueryClause.FIELD_TAG_EQUAL, 1) //
   ),
   TAG_CONTAINING( //
       QueryClauseTemplate.of(FieldType.TAG, Part.Type.CONTAINING, QueryClause.FIELD_EQUAL, 1) //
@@ -181,7 +187,7 @@ public enum QueryClause {
                 return "@" + field + ":[" + p.getX() + " " + p.getY() + " .000001 ft]";
               }).collect(Collectors.joining(" "));
             } else {
-              value = c.stream().map(n -> QueryUtils.escape(ObjectUtils.asString(n, converter), true)).collect(Collectors.joining("|"));
+              value = c.stream().map(n -> QueryUtils.escape(ObjectUtils.asString(n, converter), false)).collect(Collectors.joining("|"));
             }
 
             prepared = prepared.replace(PARAM_PREFIX + i++, value);
