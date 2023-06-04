@@ -59,8 +59,8 @@
     <maven.test.source>17</maven.test.source>
     <maven.test.target>17</maven.test.target>
     <java.version>17</java.version>
-    <spring.version>3.0.6</spring.version>
-    <sdr.version>3.0.5</sdr.version>
+    <spring.version>3.1.0</spring.version>
+    <sdr.version>3.1.0</sdr.version>
     <jedis.version>4.3.2</jedis.version>
     <cdi>1.0</cdi>
     <auto-service.version>1.0.1</auto-service.version>
