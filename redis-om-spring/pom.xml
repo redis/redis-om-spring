@@ -68,7 +68,7 @@
     <testcontainers.redis.version>1.6.4</testcontainers.redis.version>
     <testcontainers.redis.junit.version>1.6.4</testcontainers.redis.junit.version>
     <guava.version>32.0.0-jre</guava.version>
-    <ulid.version>5.0.1</ulid.version>
+    <ulid.version>5.2.0</ulid.version>
     <lombok.version>1.18.24</lombok.version>
     <commons-lang.version>3.12.0</commons-lang.version>
     <javapoet.version>1.13.0</javapoet.version>
