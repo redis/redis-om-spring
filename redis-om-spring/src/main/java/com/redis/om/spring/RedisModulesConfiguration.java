@@ -299,7 +299,7 @@ public class RedisModulesConfiguration {
       RedisModulesOperations<?> redisModulesOperations, //
       RedisMappingContext mappingContext, //
       RediSearchIndexer indexer, //
-      FeatureExtractor featureExtractor
+      @Nullable @Qualifier("featureExtractor") FeatureExtractor featureExtractor
   ) {
     return new CustomRedisKeyValueTemplate(
         new RedisEnhancedKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, featureExtractor), //
