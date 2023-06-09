@@ -125,13 +125,24 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
+        <version>${maven-compiler-plugin.version}</version>
         <configuration>
           <annotationProcessorPaths>
-            <annotationProcessorPath>
+            <path>
+              <groupId>org.springframework.boot</groupId>
+              <artifactId>spring-boot-configuration-processor</artifactId>
+              <version>3.0.6</version>
+            </path>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>${lombok.version}</version>
+            </path>
+            <path>
               <groupId>com.redis.om</groupId>
               <artifactId>redis-om-spring</artifactId>
               <version>0.8.3</version>
-            </annotationProcessorPath>
+            </path>
           </annotationProcessorPaths>
         </configuration>
       </plugin>
