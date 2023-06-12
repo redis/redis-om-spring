@@ -262,10 +262,9 @@ public class RedisModulesConfiguration {
       @Nullable @Qualifier("djlImageFactory") ImageFactory imageFactory,
       @Nullable @Qualifier("djlDefaultImagePipeline") Pipeline defaultImagePipeline,
       @Nullable @Qualifier("djlSentenceTokenizer") HuggingFaceTokenizer sentenceTokenizer,
-      @Nullable @Qualifier("redisTemplate") RedisTemplate<?, ?> redisTemplate,
       RedisOMSpringProperties properties,
       ApplicationContext ac) {
-    return properties.getDjl().isEnabled() ? new DefaultFeatureExtractor(redisTemplate, ac, imageEmbeddingModel, faceEmbeddingModel, imageFactory, defaultImagePipeline, sentenceTokenizer) : null;
+    return properties.getDjl().isEnabled() ? new DefaultFeatureExtractor( ac, imageEmbeddingModel, faceEmbeddingModel, imageFactory, defaultImagePipeline, sentenceTokenizer) : null;
   }
 
   @Bean(name = "redisJSONKeyValueAdapter")
