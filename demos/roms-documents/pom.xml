@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.0.6</version>
+    <version>3.1.0</version>
     <relativePath /> <!-- lookup parent from repository -->
   </parent>
 
@@ -31,7 +31,7 @@
     <dependency>
       <groupId>com.redis.om</groupId>
       <artifactId>redis-om-spring</artifactId>
-      <version>0.8.3</version>
+      <version>0.8.4-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -131,7 +131,7 @@
             <path>
               <groupId>org.springframework.boot</groupId>
               <artifactId>spring-boot-configuration-processor</artifactId>
-              <version>3.0.6</version>
+              <version>3.1.0</version>
             </path>
             <path>
               <groupId>org.projectlombok</groupId>
@@ -141,7 +141,7 @@
             <path>
               <groupId>com.redis.om</groupId>
               <artifactId>redis-om-spring</artifactId>
-              <version>0.8.3</version>
+              <version>0.8.4-SNAPSHOT</version>
             </path>
           </annotationProcessorPaths>
         </configuration>
