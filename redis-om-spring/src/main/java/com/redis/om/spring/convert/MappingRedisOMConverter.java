@@ -37,6 +37,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static com.redis.om.spring.util.ObjectUtils.getCollectionElementClass;
+
 public class MappingRedisOMConverter implements RedisConverter, InitializingBean {
 
   private static final String INVALID_TYPE_ASSIGNMENT = "Value of type %s cannot be assigned to property %s of type %s.";
@@ -661,7 +663,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     try {
       field = ReflectionUtils.findField(entityClass, path);
       if (field != null) {
-        Optional<Class<?>> maybeCollectionElementType = com.redis.om.spring.util.ObjectUtils.getCollectionElementType(field);
+        Optional<Class<?>> maybeCollectionElementType = getCollectionElementClass(field);
         collectionElementType = maybeCollectionElementType.orElse(null);
         if (field.isAnnotationPresent(Indexed.class)) {
           indexed = field.getAnnotation(Indexed.class);
@@ -751,7 +753,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     try {
       field = ReflectionUtils.findField(entityClass, path);
       if (field != null) {
-        Optional<Class<?>> maybeCollectionElementType = com.redis.om.spring.util.ObjectUtils.getCollectionElementType(field);
+        Optional<Class<?>> maybeCollectionElementType = com.redis.om.spring.util.ObjectUtils.getCollectionElementClass(field);
         collectionElementType = maybeCollectionElementType.orElse(null);
         if (field.isAnnotationPresent(Indexed.class)) {
           indexed = field.getAnnotation(Indexed.class);
