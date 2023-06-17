@@ -133,9 +133,9 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     assertThat(soisField).isNotNull();
     assertThat(iocField).isNotNull();
 
-    Optional<Class<?>> maybeContentsOfLofs = ObjectUtils.getCollectionElementType(lofsField);
-    Optional<Class<?>> maybeContentsOfSois = ObjectUtils.getCollectionElementType(soisField);
-    Optional<Class<?>> maybeContentsOfIoc = ObjectUtils.getCollectionElementType(iocField);
+    Optional<Class<?>> maybeContentsOfLofs = ObjectUtils.getCollectionElementClass(lofsField);
+    Optional<Class<?>> maybeContentsOfSois = ObjectUtils.getCollectionElementClass(soisField);
+    Optional<Class<?>> maybeContentsOfIoc = ObjectUtils.getCollectionElementClass(iocField);
 
     assertAll( //
         () -> assertThat(maybeContentsOfLofs).isPresent(), //
