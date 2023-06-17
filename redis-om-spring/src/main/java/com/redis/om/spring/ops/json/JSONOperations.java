@@ -11,10 +11,16 @@ public interface JSONOperations<K> {
   Long del(K key, Path path);
 
   @Nullable
+  String get(K key);
+
+  @Nullable
   <T> T get(K key, Class<T> clazz);
 
   @Nullable
   <T> T get(K key, Class<T> clazz, Path path);
+
+  @SuppressWarnings("unchecked")
+  List<String> mget(K... keys);
 
   @SuppressWarnings("unchecked")
   <T> List<T> mget(Class<T> clazz, K... keys);
