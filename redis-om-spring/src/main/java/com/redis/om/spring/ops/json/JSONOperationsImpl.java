@@ -14,12 +14,12 @@ import java.util.Objects;
 
 public class JSONOperationsImpl<K> implements JSONOperations<K> {
 
-  private final Gson gson;
+  private final GsonBuilder builder;
   final RedisModulesClient client;
 
-  public JSONOperationsImpl(RedisModulesClient client, GsonBuilder gson) {
+  public JSONOperationsImpl(RedisModulesClient client, GsonBuilder builder) {
     this.client = client;
-    this.gson = gson.create();
+    this.builder = builder;
   }
 
   @Override
@@ -35,12 +35,12 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
 
   @Override
   public <T> T get(K key, Class<T> clazz) {
-    return gson.fromJson(client.clientForJSON().jsonGetAsPlainString(key.toString(), Path.ROOT_PATH), clazz);
+    return builder.create().fromJson(client.clientForJSON().jsonGetAsPlainString(key.toString(), Path.ROOT_PATH), clazz);
   }
 
   @Override
   public <T> T get(K key, Class<T> clazz, Path path) {
-    return gson.fromJson(client.clientForJSON().jsonGetAsPlainString(key.toString(), path), clazz);
+    return builder.create().fromJson(client.clientForJSON().jsonGetAsPlainString(key.toString(), path), clazz);
   }
 
   @SafeVarargs
@@ -56,6 +56,7 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
 
   @SafeVarargs @Override
   public final <T> List<T> mget(Class<T> clazz, K... keys) {
+    Gson gson = builder.create();
     return client.clientForJSON().jsonMGet(getKeysAsString(keys))
         .stream()
         .filter(Objects::nonNull)
@@ -67,6 +68,7 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
 
   @SafeVarargs @Override
   public final <T> List<T> mget(Path2 path, Class<T> clazz, K... keys) {
+    Gson gson = builder.create();
     return client.clientForJSON().jsonMGet(path, getKeysAsString(keys))
         .stream()
         .map(Object::toString)
@@ -81,6 +83,7 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
 
   @Override
   public void set(K key, Object object) {
+    Gson gson = builder.create();
     client.clientForJSON().jsonSetWithPlainString(key.toString(), Path.ROOT_PATH, gson.toJson(object));
   }
 

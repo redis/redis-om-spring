@@ -17,6 +17,7 @@ import ai.djl.translate.Translator;
 import com.github.f4b6a3.ulid.Ulid;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import com.redis.om.spring.annotations.Bloom;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.client.RedisModulesClient;
@@ -42,6 +43,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.annotation.Reference;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisHash;
@@ -58,12 +60,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import static com.redis.om.spring.util.ObjectUtils.getBeanDefinitionsFor;
+import static com.redis.om.spring.util.ObjectUtils.*;
 
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({RedisProperties.class, RedisOMSpringProperties.class})
@@ -75,7 +74,7 @@ public class RedisModulesConfiguration {
 
   private static final Log logger = LogFactory.getLog(RedisModulesConfiguration.class);
 
-  @Bean
+  @Bean(name = "omGsonBuilder")
   public GsonBuilder gsonBuilder(List<GsonBuilderCustomizer> customizers) {
 
     GsonBuilder builder = new GsonBuilder();
@@ -90,18 +89,27 @@ public class RedisModulesConfiguration {
     builder.registerTypeAdapter(Instant.class, InstantTypeAdapter.getInstance());
     builder.registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeTypeAdapter());
 
+    builder.addSerializationExclusionStrategy(GsonReferencesSerializationExclusionStrategy.INSTANCE);
+
     return builder;
   }
 
   @Bean(name = "redisModulesClient")
-  RedisModulesClient redisModulesClient(JedisConnectionFactory jedisConnectionFactory, GsonBuilder builder) {
+  @Lazy
+  RedisModulesClient redisModulesClient( //
+          JedisConnectionFactory jedisConnectionFactory, //
+          @Qualifier("omGsonBuilder") GsonBuilder builder) {
     return new RedisModulesClient(jedisConnectionFactory, builder);
   }
 
   @Bean(name = "redisModulesOperations")
   @Primary
   @ConditionalOnMissingBean
-  RedisModulesOperations<?> redisModulesOperations(RedisModulesClient rmc, StringRedisTemplate template, GsonBuilder gsonBuilder) {
+  @Lazy
+  RedisModulesOperations<?> redisModulesOperations( //
+          RedisModulesClient rmc, //
+          StringRedisTemplate template, //
+          @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder) {
     return new RedisModulesOperations<>(rmc, template, gsonBuilder);
   }
 
@@ -312,6 +320,41 @@ public class RedisModulesConfiguration {
   }
 
   @EventListener(ContextRefreshedEvent.class)
+  public void registerGsonDocumentReferenceDeserializers(ContextRefreshedEvent cre) {
+    logger.info("Registering GSon document reference deserializers......");
+
+    ApplicationContext ac = cre.getApplicationContext();
+    GsonBuilder builder = (GsonBuilder) ac.getBean("omGsonBuilder");
+
+    Set<BeanDefinition> beanDefs = new HashSet<>(getBeanDefinitionsFor(ac, Document.class));
+    for (BeanDefinition beanDef : beanDefs) {
+      try {
+        Class<?> cl = Class.forName(beanDef.getBeanClassName());
+        final List<java.lang.reflect.Field> allClassFields = getDeclaredFieldsTransitively(cl);
+        for (java.lang.reflect.Field field : allClassFields) {
+          if (field.isAnnotationPresent(Reference.class)) {
+            logger.info(String.format("Registering reference type adapter for %s", field.getType().getName()));
+            if (isCollection(field)) {
+              var maybeCollectionElementType = getCollectionElementType(field);
+              if (maybeCollectionElementType.isPresent()) {
+                TypeToken<?> typeToken = TypeToken.getParameterized(field.getType(), maybeCollectionElementType.get());
+                builder.registerTypeAdapter(typeToken.getType(), new ReferenceDeserializer(field));
+              } else {
+                builder.registerTypeAdapter(field.getType(), new ReferenceDeserializer(field));
+              }
+            } else {
+              builder.registerTypeAdapter(field.getType(), new ReferenceDeserializer(field));
+            }
+          }
+        }
+      } catch (ClassNotFoundException e) {
+        logger.debug(
+            String.format("Error processing references in %s: %s", beanDef.getBeanClassName(), e.getMessage()));
+      }
+    }
+  }
+
+  @EventListener(ContextRefreshedEvent.class)
   public void ensureIndexesAreCreated(ContextRefreshedEvent cre) {
     logger.info("Creating Indexes......");
 
@@ -333,7 +376,7 @@ public class RedisModulesConfiguration {
     for (BeanDefinition beanDef : beanDefs) {
       try {
         Class<?> cl = Class.forName(beanDef.getBeanClassName());
-        for (java.lang.reflect.Field field : com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(cl)) {
+        for (java.lang.reflect.Field field : getDeclaredFieldsTransitively(cl)) {
           // Text
           if (field.isAnnotationPresent(Bloom.class)) {
             Bloom bloom = field.getAnnotation(Bloom.class);

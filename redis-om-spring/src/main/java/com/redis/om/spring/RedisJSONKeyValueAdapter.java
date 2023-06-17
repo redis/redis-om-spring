@@ -13,6 +13,7 @@ import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.annotation.Reference;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisKeyValueAdapter;
 import org.springframework.data.redis.core.RedisOperations;
@@ -33,9 +34,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
@@ -45,7 +44,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private final RedisMappingContext mappingContext;
   private final RedisModulesOperations<String> modulesOperations;
   private final RediSearchIndexer indexer;
-  private final Gson gson;
+  private final GsonBuilder gsonBuilder;
   private final RedisOMSpringProperties redisOMSpringProperties;
 
   /**
@@ -67,7 +66,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     this.redisOperations = redisOps;
     this.mappingContext = mappingContext;
     this.indexer = keyspaceToIndexMap;
-    this.gson = gsonBuilder.create();
+    this.gsonBuilder = gsonBuilder;
     this.redisOMSpringProperties = redisOMSpringProperties;
   }
 
@@ -90,6 +89,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     Optional<Long> maybeTtl = getTTLForEntity(item);
 
     ops.set(key, item);
+    processReferences(key, item);
 
     redisOperations.execute((RedisCallback<Object>) connection -> {
 
@@ -145,7 +145,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       }
       query.limit(Math.toIntExact(offset), limit);
       SearchResult searchResult = searchOps.search(query);
-
+      Gson gson = gsonBuilder.create();
       result = searchResult.getDocuments().stream()
           .map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), type)) //
           .toList();
@@ -266,6 +266,36 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
           accessor.setPropertyValue(f.getName(), LocalDateTime.now());
         } else if (f.getType() == LocalDate.class) {
           accessor.setPropertyValue(f.getName(), LocalDate.now());
+        }
+      });
+    }
+  }
+
+  private void processReferences(String key, Object item) {
+    List<Field> fields = ObjectUtils.getFieldsWithAnnotation(item.getClass(), Reference.class);
+    if (!fields.isEmpty()) {
+      JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
+      PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(item);
+      fields.forEach(f -> {
+        var referencedValue = accessor.getPropertyValue(f.getName());
+        if (referencedValue != null) {
+          if (referencedValue instanceof Collection<?> referenceValues) {
+            List<String> referenceKeys = new ArrayList<>();
+            referenceValues.forEach(r -> {
+              Object id = ObjectUtils.getIdFieldForEntity(r);
+              if (id != null) {
+                String referenceKey = indexer.getKeyspaceForEntityClass(r.getClass()) + id;
+                referenceKeys.add(referenceKey);
+              }
+            });
+            ops.set(key, referenceKeys, Path.of("$." + f.getName()));
+          } else {
+            Object id = ObjectUtils.getIdFieldForEntity(referencedValue);
+            if (id != null) {
+              String referenceKey = indexer.getKeyspaceForEntityClass(f.getType()) + id;
+              ops.set(key, referenceKey, Path.of("$." + f.getName()));
+            }
+          }
         }
       });
     }

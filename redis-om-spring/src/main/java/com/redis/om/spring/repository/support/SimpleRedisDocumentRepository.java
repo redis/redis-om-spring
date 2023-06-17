@@ -17,6 +17,7 @@ import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.annotation.Reference;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -49,10 +50,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -170,7 +168,8 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
         String keyspace = keyValueEntity.getKeySpace();
         byte[] objectKey = createKey(keyspace, id.toString());
 
-        processAuditAnnotations(objectKey, entity, isNew);
+        processAuditAnnotations(entity, isNew);
+
         Optional<Long> maybeTtl = getTTLForEntity(entity);
 
         RedisData rdo = new RedisData();
@@ -181,6 +180,8 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
         args.add(SafeEncoder.encode(Path.ROOT_PATH.toString()));
         args.add(SafeEncoder.encode(this.gson.toJson(entity)));
         pipeline.sendCommand(JsonCommand.SET, args.toArray(new byte[args.size()][]));
+
+        processReferenceAnnotations(objectKey, entity, pipeline);
 
         maybeTtl.ifPresent(aLong -> pipeline.expire(objectKey, aLong));
 
@@ -220,7 +221,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     return this.mappingConverter.toBytes(keyspace + ":" + id);
   }
 
-  private void processAuditAnnotations(byte[] redisKey, Object item, boolean isNew) {
+  private void processAuditAnnotations(Object item, boolean isNew) {
     var auditClass = isNew ? CreatedDate.class : LastModifiedDate.class;
 
     List<Field> fields = com.redis.om.spring.util.ObjectUtils.getFieldsWithAnnotation(item.getClass(), auditClass);
@@ -233,6 +234,46 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
           accessor.setPropertyValue(f.getName(), LocalDateTime.now());
         } else if (f.getType() == LocalDate.class) {
           accessor.setPropertyValue(f.getName(), LocalDate.now());
+        }
+      });
+    }
+  }
+
+  private void processReferenceAnnotations(byte[] objectKey, Object entity, Pipeline pipeline) {
+    List<Field> fields = com.redis.om.spring.util.ObjectUtils.getFieldsWithAnnotation(entity.getClass(), Reference.class);
+    if (!fields.isEmpty()) {
+      PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(entity);
+      fields.forEach(f -> {
+        var referencedValue = accessor.getPropertyValue(f.getName());
+        if (referencedValue != null) {
+          if (referencedValue instanceof Collection<?> referenceValues) {
+            List<String> referenceKeys = new ArrayList<>();
+            referenceValues.forEach(r -> {
+              Object id = ObjectUtils.getIdFieldForEntity(r);
+              if (id != null) {
+                String referenceKey = indexer.getKeyspaceForEntityClass(r.getClass()) + id;
+                referenceKeys.add(referenceKey);
+              }
+            });
+
+            List<byte[]> args = new ArrayList<>(4);
+            args.add(objectKey);
+            args.add(SafeEncoder.encode(Path.of("$." + f.getName()).toString()));
+            args.add(SafeEncoder.encode(this.gson.toJson(referenceKeys)));
+            pipeline.sendCommand(JsonCommand.SET, args.toArray(new byte[args.size()][]));
+
+          } else {
+            Object id = ObjectUtils.getIdFieldForEntity(referencedValue);
+            if (id != null) {
+              String referenceKey = indexer.getKeyspaceForEntityClass(f.getType()) + id;
+
+              List<byte[]> args = new ArrayList<>(4);
+              args.add(objectKey);
+              args.add(SafeEncoder.encode(Path.of("$." + f.getName()).toString()));
+              args.add(SafeEncoder.encode(this.gson.toJson(referenceKey)));
+              pipeline.sendCommand(JsonCommand.SET, args.toArray(new byte[args.size()][]));
+            }
+          }
         }
       });
     }
