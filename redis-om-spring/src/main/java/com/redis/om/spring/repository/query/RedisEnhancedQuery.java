@@ -295,7 +295,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       // Set / List
       //
       else if (Set.class.isAssignableFrom(fieldType) || List.class.isAssignableFrom(fieldType)) {
-        Optional<Class<?>> maybeCollectionType = ObjectUtils.getCollectionElementType(field);
+        Optional<Class<?>> maybeCollectionType = ObjectUtils.getCollectionElementClass(field);
         if (maybeCollectionType.isPresent()) {
           Class<?> collectionType = maybeCollectionType.get();
           if (Number.class.isAssignableFrom(collectionType)) {

@@ -23,6 +23,8 @@ import redis.clients.jedis.search.Document;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.*;
@@ -78,14 +80,28 @@ public class ObjectUtils {
     return new String(c);
   }
 
-  public static Optional<Class<?>> getCollectionElementType(Field field) {
-    if (Collection.class.isAssignableFrom(field.getType()) || Iterable.class.isAssignableFrom(field.getType())) {
+  public static Optional<Class<?>> getCollectionElementClass(Field field) {
+    if (isCollection(field)) {
       ResolvableType collectionType = ResolvableType.forField(field);
       Class<?> elementType = collectionType.getGeneric(0).getRawClass();
-      return Optional.of(elementType);
+      return elementType != null ? Optional.of(elementType) : Optional.empty();
     }
 
     return Optional.empty();
+  }
+
+  public static Optional<Type> getCollectionElementType(Field field) {
+    if (isCollection(field)) {
+      ResolvableType collectionType = ResolvableType.forField(field);
+      Type elementType = collectionType.getGeneric(0).getType();
+      return Optional.of(elementType);
+    } else {
+      return Optional.empty();
+    }
+  }
+
+  public static boolean isCollection(Field field) {
+    return Collection.class.isAssignableFrom(field.getType()) || Iterable.class.isAssignableFrom(field.getType());
   }
 
   public static Optional<Field> getIdFieldForEntityClass(Class<?> cl) {
@@ -375,6 +391,28 @@ public class ObjectUtils {
     }
     return floatArrayToByteArray(floats);
   }
+
+  public static Collection instantiateCollection(Type type) {
+    Class<?> rawType = (Class<?>) ((ParameterizedType) type).getRawType();
+    if (rawType.isInterface()) {
+      if (List.class.isAssignableFrom(rawType)) {
+        return new ArrayList<>();
+      } else if (Set.class.isAssignableFrom(rawType)) {
+        return new HashSet<>();
+      } else if (Queue.class.isAssignableFrom(rawType)) {
+        return new LinkedList<>();
+      } else {
+        throw new IllegalArgumentException("Unsupported interface: " + rawType);
+      }
+    } else {
+      try {
+        return (Collection<?>) rawType.getDeclaredConstructor().newInstance();
+      } catch (Exception e) {
+        throw new IllegalArgumentException("Type not instantiatable: " + rawType);
+      }
+    }
+  }
+
 
   private ObjectUtils() {
   }

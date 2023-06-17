@@ -36,6 +36,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.redis.om.spring.util.ObjectUtils.getBeanDefinitionsFor;
 import static com.redis.om.spring.util.ObjectUtils.getIdFieldForEntityClass;
+import static com.redis.om.spring.util.ObjectUtils.getCollectionElementClass;
+import static com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively;
 
 @Component
 public class RediSearchIndexer {
@@ -233,7 +235,7 @@ public class RediSearchIndexer {
         // Set / List
         //
         else if (Set.class.isAssignableFrom(fieldType) || List.class.isAssignableFrom(fieldType)) {
-          Optional<Class<?>> maybeCollectionType = com.redis.om.spring.util.ObjectUtils.getCollectionElementType(field);
+          Optional<Class<?>> maybeCollectionType = getCollectionElementClass(field);
 
           if (maybeCollectionType.isPresent()) {
             // https://redis.io/docs/stack/search/indexing_json/#index-limitations
@@ -274,8 +276,7 @@ public class RediSearchIndexer {
         // Recursively explore the fields for Index annotated fields
         //
         else {
-          for (java.lang.reflect.Field subfield : com.redis.om.spring.util.ObjectUtils
-              .getDeclaredFieldsTransitively(field.getType())) {
+          for (java.lang.reflect.Field subfield : getDeclaredFieldsTransitively(field.getType())) {
             String subfieldPrefix = (prefix == null || prefix.isBlank()) ? field.getName()
                 : String.join(".", prefix, field.getName());
             fields.addAll(findIndexFields(subfield, subfieldPrefix, isDocument));
@@ -562,8 +563,7 @@ public class RediSearchIndexer {
       }
       for (java.lang.reflect.Field subField : subDeclaredFields) {
 
-        Optional<Class<?>> maybeCollectionType = com.redis.om.spring.util.ObjectUtils
-            .getCollectionElementType(subField);
+        Optional<Class<?>> maybeCollectionType = getCollectionElementClass(subField);
 
         if (subField.isAnnotationPresent(TagIndexed.class)) {
           TagIndexed ti = subField.getAnnotation(TagIndexed.class);

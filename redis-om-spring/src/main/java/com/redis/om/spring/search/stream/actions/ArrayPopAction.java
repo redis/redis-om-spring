@@ -21,7 +21,7 @@ public class ArrayPopAction<E, R> extends BaseAbstractAction implements Function
   @Override
   public R apply(E entity) {
     Field f = field.getField();
-    Optional<Class<?>> maybeClass = ObjectUtils.getCollectionElementType(f);
+    Optional<Class<?>> maybeClass = ObjectUtils.getCollectionElementClass(f);
     if (maybeClass.isPresent()) {
       return (R) json.arrPop(getKey(entity), maybeClass.get(), Path.of("." + f.getName()), index);
     } else {
