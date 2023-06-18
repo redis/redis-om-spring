@@ -12,7 +12,7 @@ public abstract class AbstractTuple extends BasicAbstractTuple<AbstractTuple, Ob
 
   @Override
   protected boolean isNullable() {
-    return false;
+    return true;
   }
 
   @Override
