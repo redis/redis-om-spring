@@ -305,21 +305,27 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
       List<Object> mappedResults = new ArrayList<>();
       returning.forEach(foi -> {
         String field = foi.getSearchAlias();
-        Object value = SafeEncoder.encode((byte[])props.get(entitySearchStream.isDocument() ? "$." + field : field));
+        var rawValue = props.get(entitySearchStream.isDocument() ? "$." + field : field);
+        Object value = rawValue != null ? SafeEncoder.encode((byte[])rawValue) : null;
         Class<?> targetClass = foi.getTargetClass();
-        if (targetClass == Date.class) {
-          mappedResults.add(new Date(Long.parseLong(value.toString())));
-        } else if (targetClass == Point.class) {
-          StringTokenizer st = new StringTokenizer(value.toString(), ",");
-          String lon = st.nextToken();
-          String lat = st.nextToken();
+        if (value != null) {
+          if (targetClass == Date.class) {
+            mappedResults.add(new Date(Long.parseLong(value.toString())));
+          } else if (targetClass == Point.class) {
+            StringTokenizer st = new StringTokenizer(value.toString(), ",");
+            String lon = st.nextToken();
+            String lat = st.nextToken();
 
-          mappedResults.add(new Point(Double.parseDouble(lon), Double.parseDouble(lat)));
-        } else if (targetClass == String.class) {
-          mappedResults.add(value.toString());
+            mappedResults.add(new Point(Double.parseDouble(lon), Double.parseDouble(lat)));
+          } else if (targetClass == String.class) {
+            mappedResults.add(value.toString());
+          } else {
+            mappedResults.add(gson.fromJson(value.toString(), targetClass));
+          }
         } else {
-          mappedResults.add(gson.fromJson(value.toString(), targetClass));
+          mappedResults.add(null);
         }
+
       });
 
       if (returning.size() > 1) {

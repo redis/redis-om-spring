@@ -2235,10 +2235,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
   @Test
   void testEntityWithoutIdThrowsException() {
-    NullPointerException exception = Assertions.assertThrows(NullPointerException.class, () -> Tuples.of(0, 1, null));
-
-    String expectedErrorMessage = "com.redis.om.spring.tuple.impl.TripleImpl cannot hold null values.";
-    Assertions.assertEquals(expectedErrorMessage, exception.getMessage());
+    final Triple<Integer, Integer, String> triple = Tuples.of(0, 1, null);
+    assertThat(triple).hasToString("TripleImpl (0, 1, null)");
   }
 
   @Test

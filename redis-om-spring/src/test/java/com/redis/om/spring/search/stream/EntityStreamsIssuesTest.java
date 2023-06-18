@@ -2,6 +2,7 @@ package com.redis.om.spring.search.stream;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.*;
+import com.redis.om.spring.tuple.Fields;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +23,10 @@ import static org.junit.jupiter.api.Assertions.assertAll;
   @Autowired Doc2Repository doc2Repository;
   @Autowired DeepListRepository deepListRepository;
   @Autowired DocWithLongRepository docWithLongRepository;
+  @Autowired PersonRepository personRepository;
 
   @Autowired EntityStream entityStream;
+
 
   @BeforeEach void beforeEach() throws IOException {
     // Load Sample Docs
@@ -289,5 +292,21 @@ import static org.junit.jupiter.api.Assertions.assertAll;
         () -> assertThat(results).hasSize(5),
         () -> assertThat(results).extracting("id").containsExactly("doc-1", "doc-2", "doc-3", "doc-4", "doc-6")
     );
+  }
+
+  // issue gh-264 SCENARIO 1
+  @Test
+  void testMapEntityStreamsReturnNullValue() {
+    Person personWithoutEmail = new Person();
+    personWithoutEmail.setName("PersonWithoutEmail");
+    personWithoutEmail.setEmail(null);
+    personRepository.save(personWithoutEmail);
+
+    var result = entityStream.of(Person.class)
+            .filter(Person$.NAME.eq("PersonWithoutEmail"))
+            .map(Fields.of(Person$.NAME, Person$.EMAIL)) // should handle empty email as mapped return value
+            .collect(Collectors.toList()).stream().findFirst().get();
+    assertThat(result.getFirst()).isEqualTo("PersonWithoutEmail");
+    assertThat(result.getSecond()).isEqualTo(null);
   }
 }
