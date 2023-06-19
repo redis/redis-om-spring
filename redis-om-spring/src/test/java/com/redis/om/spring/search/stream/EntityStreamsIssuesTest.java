@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
   @Autowired DeepListRepository deepListRepository;
   @Autowired DocWithLongRepository docWithLongRepository;
   @Autowired PersonRepository personRepository;
+  @Autowired DocWithBooleanRepository docWithBooleanRepository;
 
   @Autowired EntityStream entityStream;
 
@@ -318,5 +319,61 @@ import static org.junit.jupiter.api.Assertions.assertAll;
             .map(DeepNest$.NEST_LEVEL1_NEST_LEVEL2_NAME) // should handle nested property as mapped return value
             .collect(Collectors.toList());
     assertThat(results).containsOnly("nl-2-2");
+  }
+
+  // issue gh-265 - indexed boolean
+  @Test
+  void testMapEntityStreamsReturnIndexedBooleanValue() {
+    DocWithBoolean docWithBoolean = new DocWithBoolean();
+    docWithBoolean.setIndexedBoolean(true);
+    docWithBooleanRepository.save(docWithBoolean);
+
+    var result = entityStream.of(DocWithBoolean.class)
+            .filter(DocWithBoolean$.ID.eq(docWithBoolean.getId()))
+            .map(DocWithBoolean$.INDEXED_BOOLEAN) // should handle returned indexed boolean value, but fails
+            .collect(Collectors.toList());
+    assertThat(result).containsOnly(true);
+  }
+
+  // issue gh-265 - indexed boolean primitive
+  @Test
+  void testMapEntityStreamsReturnIndexedBooleanPrimitiveValue() {
+    DocWithBoolean docWithBoolean = new DocWithBoolean();
+    docWithBoolean.setIndexedPrimitiveBoolean(true);
+    docWithBooleanRepository.save(docWithBoolean);
+
+    var result = entityStream.of(DocWithBoolean.class)
+            .filter(DocWithBoolean$.ID.eq(docWithBoolean.getId()))
+            .map(DocWithBoolean$.INDEXED_PRIMITIVE_BOOLEAN) // should handle returned indexed boolean primitive value, but fails
+            .collect(Collectors.toList());
+    assertThat(result).containsOnly(true);
+  }
+
+  // issue gh-265 - non indexed boolean
+  @Test
+  void testMapEntityStreamsReturnNonIndexedBooleanValue() {
+    DocWithBoolean docWithBoolean = new DocWithBoolean();
+    docWithBoolean.setNonIndexedBoolean(true);
+    docWithBooleanRepository.save(docWithBoolean);
+
+    var result = entityStream.of(DocWithBoolean.class)
+            .filter(DocWithBoolean$.ID.eq(docWithBoolean.getId()))
+            .map(DocWithBoolean$.NON_INDEXED_BOOLEAN) // should handle returned non indexed boolean value, succeeds
+            .collect(Collectors.toList());
+    assertThat(result).containsOnly(true);
+  }
+
+  // issue gh-265 - non indexed boolean primitive
+  @Test
+  void testMapEntityStreamsReturnNonIndexedBooleanPrimitiveValue() {
+    DocWithBoolean docWithBoolean = new DocWithBoolean();
+    docWithBoolean.setNonIndexedPrimitiveBoolean(true);
+    docWithBooleanRepository.save(docWithBoolean);
+
+    var result = entityStream.of(DocWithBoolean.class)
+            .filter(DocWithBoolean$.ID.eq(docWithBoolean.getId()))
+            .map(DocWithBoolean$.NON_INDEXED_PRIMITIVE_BOOLEAN) // should handle returned non indexed primitive boolean primitive value, but fails
+            .collect(Collectors.toList());
+    assertThat(result).containsOnly(true);
   }
 }

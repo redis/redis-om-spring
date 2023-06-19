@@ -28,6 +28,9 @@ import java.util.Map.Entry;
 import java.util.function.*;
 import java.util.stream.*;
 
+import static com.redis.om.spring.util.ObjectUtils.isPrimitiveOfType;
+import static org.springframework.util.ClassUtils.isPrimitiveWrapper;
+
 public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
 
   @SuppressWarnings("unused")
@@ -320,6 +323,8 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
             mappedResults.add(new Point(Double.parseDouble(lon), Double.parseDouble(lat)));
           } else if (targetClass == String.class) {
             mappedResults.add(value.toString());
+          } else if (targetClass == Boolean.class || isPrimitiveOfType(targetClass, Boolean.class)) {
+            mappedResults.add(value.toString().equals("1"));
           } else {
             mappedResults.add(gson.fromJson(value.toString(), targetClass));
           }
@@ -348,6 +353,12 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
       returning.forEach(foi -> {
         String getterName = "get" + ObjectUtils.ucfirst(foi.getSearchAlias());
         Method getter = ReflectionUtils.findMethod(entitySearchStream.getEntityClass(), getterName);
+        // No "getXXX", maybe there is a "isXXX"
+        if (getter == null) {
+          getterName = "is" + ObjectUtils.ucfirst(foi.getSearchAlias());
+          getter = ReflectionUtils.findMethod(entitySearchStream.getEntityClass(), getterName);
+        }
+        //TODO: if getter is still null then field access?
         mappedResults.add(ReflectionUtils.invokeMethod(getter, entity));
       });
 

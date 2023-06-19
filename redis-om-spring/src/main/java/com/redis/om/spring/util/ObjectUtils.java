@@ -31,6 +31,8 @@ import java.util.*;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
+import static org.springframework.util.ClassUtils.isPrimitiveWrapper;
+import static org.springframework.util.ClassUtils.resolvePrimitiveIfNecessary;
 
 public class ObjectUtils {
   public static String getDistanceAsRedisString(Distance distance) {
@@ -415,6 +417,10 @@ public class ObjectUtils {
         throw new IllegalArgumentException("Type not instantiatable: " + rawType);
       }
     }
+  }
+
+  public static boolean isPrimitiveOfType(Class<?> clazz, Class<?> wrapper) {
+    return clazz.isPrimitive() && resolvePrimitiveIfNecessary(clazz) == wrapper;
   }
 
 
