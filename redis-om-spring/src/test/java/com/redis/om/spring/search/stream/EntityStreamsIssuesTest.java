@@ -309,4 +309,14 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     assertThat(result.getFirst()).isEqualTo("PersonWithoutEmail");
     assertThat(result.getSecond()).isEqualTo(null);
   }
+
+  // issue gh-264 SCENARIO 2
+  @Test
+  void testMapEntityStreamsReturnNestedField() {
+    var results = entityStream.of(DeepNest.class)
+            .filter(DeepNest$.NEST_LEVEL1_NEST_LEVEL2_NAME.eq("nl-2-2"))
+            .map(DeepNest$.NEST_LEVEL1_NEST_LEVEL2_NAME) // should handle nested property as mapped return value
+            .collect(Collectors.toList());
+    assertThat(results).containsOnly("nl-2-2");
+  }
 }

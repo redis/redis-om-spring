@@ -104,6 +104,10 @@ public class ObjectUtils {
     return Collection.class.isAssignableFrom(field.getType()) || Iterable.class.isAssignableFrom(field.getType());
   }
 
+  public static boolean isCollection(Class<?> cls) {
+    return Collection.class.isAssignableFrom(cls) || Iterable.class.isAssignableFrom(cls);
+  }
+
   public static Optional<Field> getIdFieldForEntityClass(Class<?> cl) {
     return getDeclaredFieldsTransitively(cl).stream().filter(f -> f.isAnnotationPresent(Id.class)).findFirst();
   }

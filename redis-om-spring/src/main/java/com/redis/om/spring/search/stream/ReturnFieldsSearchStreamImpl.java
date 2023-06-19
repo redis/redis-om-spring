@@ -272,7 +272,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
         resolvedStream = (Stream<T>) searchResult.getDocuments().stream().map(Document::getId).map(key -> key.substring(idBegin));
       } else {
         String[] returnFields = returning.stream() //
-            .map(foi -> entitySearchStream.isDocument() ? "$." + foi.getSearchAlias() : foi.getSearchAlias()) //
+            .map(foi -> ObjectUtils.isCollection(foi.getTargetClass()) ? "$." + foi.getSearchAlias() : foi.getSearchAlias())
             .toArray(String[]::new);
 
         boolean resultSetHasNonIndexedFields = returning.stream().anyMatch(foi -> !foi.isIndexed());
@@ -305,9 +305,10 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
       List<Object> mappedResults = new ArrayList<>();
       returning.forEach(foi -> {
         String field = foi.getSearchAlias();
-        var rawValue = props.get(entitySearchStream.isDocument() ? "$." + field : field);
-        Object value = rawValue != null ? SafeEncoder.encode((byte[])rawValue) : null;
         Class<?> targetClass = foi.getTargetClass();
+        var rawValue = props.get(ObjectUtils.isCollection(targetClass) ? "$." + field : field);
+        Object value = rawValue != null ? SafeEncoder.encode((byte[])rawValue) : null;
+
         if (value != null) {
           if (targetClass == Date.class) {
             mappedResults.add(new Date(Long.parseLong(value.toString())));
