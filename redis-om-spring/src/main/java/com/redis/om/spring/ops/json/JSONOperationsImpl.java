@@ -1,8 +1,7 @@
 package com.redis.om.spring.ops.json;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.redis.om.spring.client.RedisModulesClient;
+import com.redis.om.spring.serialization.gson.ReferenceAwareGsonBuilder;
 import org.springframework.lang.Nullable;
 import redis.clients.jedis.json.JsonSetParams;
 import redis.clients.jedis.json.Path;
@@ -14,10 +13,10 @@ import java.util.Objects;
 
 public class JSONOperationsImpl<K> implements JSONOperations<K> {
 
-  private final GsonBuilder builder;
+  private final ReferenceAwareGsonBuilder builder;
   final RedisModulesClient client;
 
-  public JSONOperationsImpl(RedisModulesClient client, GsonBuilder builder) {
+  public JSONOperationsImpl(RedisModulesClient client, ReferenceAwareGsonBuilder builder) {
     this.client = client;
     this.builder = builder;
   }
@@ -35,12 +34,14 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
 
   @Override
   public <T> T get(K key, Class<T> clazz) {
-    return builder.create().fromJson(client.clientForJSON().jsonGetAsPlainString(key.toString(), Path.ROOT_PATH), clazz);
+    builder.processEntity(clazz);
+    return builder.gson().fromJson(client.clientForJSON().jsonGetAsPlainString(key.toString(), Path.ROOT_PATH), clazz);
   }
 
   @Override
   public <T> T get(K key, Class<T> clazz, Path path) {
-    return builder.create().fromJson(client.clientForJSON().jsonGetAsPlainString(key.toString(), path), clazz);
+    builder.processEntity(clazz);
+    return builder.gson().fromJson(client.clientForJSON().jsonGetAsPlainString(key.toString(), path), clazz);
   }
 
   @SafeVarargs
@@ -56,23 +57,23 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
 
   @SafeVarargs @Override
   public final <T> List<T> mget(Class<T> clazz, K... keys) {
-    Gson gson = builder.create();
+    builder.processEntity(clazz);
     return client.clientForJSON().jsonMGet(getKeysAsString(keys))
         .stream()
         .filter(Objects::nonNull)
         .map(jsonArr -> jsonArr.get(0))
         .map(Object::toString)
-        .map(str -> gson.fromJson(str, clazz))
+        .map(str -> builder.gson().fromJson(str, clazz))
         .toList();
   }
 
   @SafeVarargs @Override
   public final <T> List<T> mget(Path2 path, Class<T> clazz, K... keys) {
-    Gson gson = builder.create();
+    builder.processEntity(clazz);
     return client.clientForJSON().jsonMGet(path, getKeysAsString(keys))
         .stream()
         .map(Object::toString)
-        .map(str -> gson.fromJson(str, clazz))
+        .map(str -> builder.gson().fromJson(str, clazz))
         .toList();
   }
 
@@ -83,8 +84,7 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
 
   @Override
   public void set(K key, Object object) {
-    Gson gson = builder.create();
-    client.clientForJSON().jsonSetWithPlainString(key.toString(), Path.ROOT_PATH, gson.toJson(object));
+    client.clientForJSON().jsonSetWithPlainString(key.toString(), Path.ROOT_PATH, builder.gson().toJson(object));
   }
 
   @Override

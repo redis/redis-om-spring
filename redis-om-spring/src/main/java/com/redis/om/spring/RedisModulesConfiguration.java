@@ -17,7 +17,6 @@ import ai.djl.translate.Translator;
 import com.github.f4b6a3.ulid.Ulid;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
 import com.redis.om.spring.annotations.Bloom;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.client.RedisModulesClient;
@@ -43,7 +42,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.data.annotation.Reference;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisHash;
@@ -60,9 +58,13 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static com.redis.om.spring.util.ObjectUtils.*;
+import static com.redis.om.spring.util.ObjectUtils.getBeanDefinitionsFor;
+import static com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively;
 
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({RedisProperties.class, RedisOMSpringProperties.class})
@@ -94,6 +96,11 @@ public class RedisModulesConfiguration {
     return builder;
   }
 
+  @Bean(name = "referenceAwareGsonBuilder")
+  ReferenceAwareGsonBuilder referenceAwareGsonBuilder(GsonBuilder gsonBuilder, ApplicationContext ac) {
+    return new ReferenceAwareGsonBuilder(gsonBuilder, ac);
+  }
+
   @Bean(name = "redisModulesClient")
   @Lazy
   RedisModulesClient redisModulesClient( //
@@ -109,7 +116,7 @@ public class RedisModulesConfiguration {
   RedisModulesOperations<?> redisModulesOperations( //
           RedisModulesClient rmc, //
           StringRedisTemplate template, //
-          @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder) {
+          ReferenceAwareGsonBuilder gsonBuilder) {
     return new RedisModulesOperations<>(rmc, template, gsonBuilder);
   }
 
@@ -154,7 +161,7 @@ public class RedisModulesConfiguration {
   }
 
   @Bean(name = "djlFaceDetectionTranslator")
-  public Translator<Image, DetectedObjects> faceDetectionTranslator(RedisOMSpringProperties properties) {
+  public Translator<Image, DetectedObjects> faceDetectionTranslator() {
     double confThresh = 0.85f;
     double nmsThresh = 0.45f;
     double[] variance = {0.1f, 0.2f};
@@ -183,7 +190,7 @@ public class RedisModulesConfiguration {
       @Nullable @Qualifier("djlFaceDetectionModelCriteria") Criteria<Image, DetectedObjects> criteria,
       RedisOMSpringProperties properties) {
     try {
-      return properties.getDjl().isEnabled() ? ModelZoo.loadModel(criteria) : null;
+      return properties.getDjl().isEnabled() && (criteria != null) ? ModelZoo.loadModel(criteria) : null;
     } catch (IOException | ModelNotFoundException | MalformedModelException ex) {
       logger.warn("Error retrieving default DJL face detection model", ex);
       return null;
@@ -191,7 +198,7 @@ public class RedisModulesConfiguration {
   }
 
   @Bean(name = "djlFaceEmbeddingTranslator")
-  public Translator<Image, float[]> faceEmbeddingTranslator(RedisOMSpringProperties properties) {
+  public Translator<Image, float[]> faceEmbeddingTranslator() {
     return new FaceFeatureTranslator();
   }
 
@@ -214,7 +221,7 @@ public class RedisModulesConfiguration {
       @Nullable @Qualifier("djlFaceEmbeddingModelCriteria") Criteria<Image, float[]> criteria, //
       RedisOMSpringProperties properties) {
     try {
-      return properties.getDjl().isEnabled() ? ModelZoo.loadModel(criteria) : null;
+      return properties.getDjl().isEnabled() && (criteria != null) ? ModelZoo.loadModel(criteria) : null;
     } catch (Exception e) {
       logger.warn("Error retrieving default DJL face embeddings model", e);
       return null;
@@ -225,7 +232,7 @@ public class RedisModulesConfiguration {
   public ZooModel<Image, byte[]> imageModel(
       @Nullable @Qualifier("djlImageEmbeddingModelCriteria") Criteria<Image, byte[]> criteria, RedisOMSpringProperties properties)
       throws MalformedModelException, ModelNotFoundException, IOException {
-    return properties.getDjl().isEnabled() ? ModelZoo.loadModel(criteria) : null;
+    return properties.getDjl().isEnabled() && (criteria != null) ? ModelZoo.loadModel(criteria) : null;
   }
 
   @Bean(name = "djlDefaultImagePipeline")
@@ -255,7 +262,7 @@ public class RedisModulesConfiguration {
       try {
         InetAddress.getByName("www.huggingface.co").isReachable(5000);
         return HuggingFaceTokenizer.newInstance(properties.getDjl().getSentenceTokenizerModel(), options);
-      } catch (IOException ex) {
+      } catch (IOException ioe) {
         logger.warn("Error retrieving default DJL sentence tokenizer");
         return null;
       }
@@ -317,41 +324,6 @@ public class RedisModulesConfiguration {
   @Bean(name = "streamingQueryBuilder")
   EntityStream streamingQueryBuilder(RedisModulesOperations<?> redisModulesOperations, Gson gson) {
     return new EntityStreamImpl(redisModulesOperations, gson);
-  }
-
-  @EventListener(ContextRefreshedEvent.class)
-  public void registerGsonDocumentReferenceDeserializers(ContextRefreshedEvent cre) {
-    logger.info("Registering GSon document reference deserializers......");
-
-    ApplicationContext ac = cre.getApplicationContext();
-    GsonBuilder builder = (GsonBuilder) ac.getBean("omGsonBuilder");
-
-    Set<BeanDefinition> beanDefs = new HashSet<>(getBeanDefinitionsFor(ac, Document.class));
-    for (BeanDefinition beanDef : beanDefs) {
-      try {
-        Class<?> cl = Class.forName(beanDef.getBeanClassName());
-        final List<java.lang.reflect.Field> allClassFields = getDeclaredFieldsTransitively(cl);
-        for (java.lang.reflect.Field field : allClassFields) {
-          if (field.isAnnotationPresent(Reference.class)) {
-            logger.info(String.format("Registering reference type adapter for %s", field.getType().getName()));
-            if (isCollection(field)) {
-              var maybeCollectionElementType = getCollectionElementType(field);
-              if (maybeCollectionElementType.isPresent()) {
-                TypeToken<?> typeToken = TypeToken.getParameterized(field.getType(), maybeCollectionElementType.get());
-                builder.registerTypeAdapter(typeToken.getType(), new ReferenceDeserializer(field));
-              } else {
-                builder.registerTypeAdapter(field.getType(), new ReferenceDeserializer(field));
-              }
-            } else {
-              builder.registerTypeAdapter(field.getType(), new ReferenceDeserializer(field));
-            }
-          }
-        }
-      } catch (ClassNotFoundException e) {
-        logger.debug(
-            String.format("Error processing references in %s: %s", beanDef.getBeanClassName(), e.getMessage()));
-      }
-    }
   }
 
   @EventListener(ContextRefreshedEvent.class)
