@@ -7,15 +7,16 @@ import com.redis.om.spring.ops.json.JSONOperationsImpl;
 import com.redis.om.spring.ops.pds.*;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.ops.search.SearchOperationsImpl;
+import com.redis.om.spring.serialization.gson.ReferenceAwareGsonBuilder;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 public class RedisModulesOperations<K> {
 
-  private final GsonBuilder gsonBuilder;
+  private final ReferenceAwareGsonBuilder gsonBuilder;
   private final RedisModulesClient client;
   private final StringRedisTemplate template;
 
-  public RedisModulesOperations(RedisModulesClient client, StringRedisTemplate template, GsonBuilder gsonBuilder) {
+  public RedisModulesOperations(RedisModulesClient client, StringRedisTemplate template, ReferenceAwareGsonBuilder gsonBuilder) {
     this.client = client;
     this.template = template;
     this.gsonBuilder = gsonBuilder;

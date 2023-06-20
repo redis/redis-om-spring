@@ -4,12 +4,10 @@ import com.google.gson.*;
 import com.google.gson.internal.ConstructorConstructor;
 import com.google.gson.internal.ObjectConstructor;
 import com.google.gson.reflect.TypeToken;
-import com.redis.om.spring.ApplicationContextProvider;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.util.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.context.ApplicationContext;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -22,10 +20,13 @@ public class ReferenceDeserializer implements JsonDeserializer<Object> {
   private final Class<?> type;
   private final ObjectConstructor<?> objectConstructor;
 
-  public ReferenceDeserializer(Field field) {
+  private final JSONOperations<String> ops;
+
+  public ReferenceDeserializer(Field field, JSONOperations<?> ops) {
+    this.ops = (JSONOperations<String>) ops;
     Map<Type, InstanceCreator<?>> instanceCreators = new HashMap<>();
     ConstructorConstructor constructorConstructor = new ConstructorConstructor(instanceCreators, true,
-        Collections.<ReflectionAccessFilter>emptyList());
+        Collections.emptyList());
     if (ObjectUtils.isCollection(field)) {
       Optional<Class<?>> collectionType = ObjectUtils.getCollectionElementClass(field);
       if (collectionType.isPresent()) {
@@ -44,8 +45,6 @@ public class ReferenceDeserializer implements JsonDeserializer<Object> {
       throws JsonParseException {
     Object reference = null;
     JsonObject jsonObject;
-    ApplicationContext ac = ApplicationContextProvider.getApplicationContext();
-    JSONOperations<String> ops = (JSONOperations<String>) ac.getBean("redisJSONOperations");
     if (json.isJsonPrimitive()) {
       String referenceKey = ObjectUtils.unQuote(json.toString());
       String referenceJSON = ops.get(referenceKey);
