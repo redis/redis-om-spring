@@ -26,6 +26,7 @@ import com.redis.om.spring.ops.pds.BloomOperations;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.EntityStreamImpl;
 import com.redis.om.spring.serialization.gson.*;
+import com.redis.om.spring.vectorize.DefaultFeatureExtractor;
 import com.redis.om.spring.vectorize.FeatureExtractor;
 import com.redis.om.spring.vectorize.face.FaceDetectionTranslator;
 import com.redis.om.spring.vectorize.face.FaceFeatureTranslator;
@@ -276,10 +277,9 @@ public class RedisModulesConfiguration {
       @Nullable @Qualifier("djlImageFactory") ImageFactory imageFactory,
       @Nullable @Qualifier("djlDefaultImagePipeline") Pipeline defaultImagePipeline,
       @Nullable @Qualifier("djlSentenceTokenizer") HuggingFaceTokenizer sentenceTokenizer,
-      @Nullable @Qualifier("redisTemplate") RedisTemplate<?, ?> redisTemplate,
       RedisOMSpringProperties properties,
       ApplicationContext ac) {
-    return properties.getDjl().isEnabled() ? new FeatureExtractor(redisTemplate, ac, imageEmbeddingModel, faceEmbeddingModel, imageFactory, defaultImagePipeline, sentenceTokenizer) : null;
+    return properties.getDjl().isEnabled() ? new DefaultFeatureExtractor( ac, imageEmbeddingModel, faceEmbeddingModel, imageFactory, defaultImagePipeline, sentenceTokenizer) : null;
   }
 
   @Bean(name = "redisJSONKeyValueAdapter")
