@@ -40,7 +40,8 @@ public class GreaterThanOrEqualPredicate<E, T> extends BaseAbstractPredicate<E, 
       return QueryBuilders.intersect(root).add(getSearchAlias(), Values.ge(unixTime));
     } else if (cls == LocalDateTime.class) {
       LocalDateTime localDateTime = (LocalDateTime) getValue();
-      Instant instant = localDateTime.toInstant(ZoneOffset.of(ZoneId.systemDefault().getId()));
+     // Instant instant = localDateTime.toInstant(ZoneOffset.of(ZoneId.systemDefault().getId()));
+      Instant instant = ZonedDateTime.of(localDateTime, ZoneId.systemDefault()).toInstant();
       long unixTime = instant.getEpochSecond();
       return QueryBuilders.intersect(root).add(getSearchAlias(), Values.ge(unixTime));
     } else if (cls == Instant.class) {
