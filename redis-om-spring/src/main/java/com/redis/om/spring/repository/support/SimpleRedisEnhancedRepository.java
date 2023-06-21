@@ -3,6 +3,7 @@ package com.redis.om.spring.repository.support;
 import com.google.common.collect.Lists;
 import com.redis.om.spring.RediSearchIndexer;
 import com.redis.om.spring.RedisEnhancedKeyValueAdapter;
+import com.redis.om.spring.RedisOMSpringProperties;
 import com.redis.om.spring.audit.EntityAuditor;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.id.ULIDIdentifierGenerator;
@@ -23,6 +24,7 @@ import org.springframework.data.redis.core.PartialUpdate;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.convert.RedisData;
 import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
+import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.repository.core.EntityInformation;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
@@ -56,11 +58,12 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
 
   @SuppressWarnings("unchecked")
   public SimpleRedisEnhancedRepository( //
-      EntityInformation<T, ID> metadata, //
-      KeyValueOperations operations, //
-      @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo, //
-      RediSearchIndexer indexer, //
-      FeatureExtractor featureExtractor //
+    EntityInformation<T, ID> metadata, //
+    KeyValueOperations operations, //
+    @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo, //
+    RediSearchIndexer indexer, //
+    FeatureExtractor featureExtractor, //
+    RedisOMSpringProperties properties //
   ) {
     super(metadata, operations);
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
@@ -69,7 +72,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     this.indexer = indexer;
     this.mappingConverter = new MappingRedisOMConverter(null,
         new ReferenceResolverImpl(modulesOperations.getTemplate()));
-    this.enhancedKeyValueAdapter = new RedisEnhancedKeyValueAdapter(rmo.getTemplate(), rmo, indexer, featureExtractor);
+    this.enhancedKeyValueAdapter = new RedisEnhancedKeyValueAdapter(rmo.getTemplate(), rmo, indexer, featureExtractor, properties);
     this.generator = ULIDIdentifierGenerator.INSTANCE;
     this.auditor = new EntityAuditor(modulesOperations.getTemplate());
     this.featureExtractor = featureExtractor;

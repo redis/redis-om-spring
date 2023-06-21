@@ -314,10 +314,11 @@ public class RedisModulesConfiguration {
       RedisModulesOperations<?> redisModulesOperations, //
       RedisMappingContext mappingContext, //
       RediSearchIndexer indexer, //
+      RedisOMSpringProperties properties, //
       @Nullable @Qualifier("featureExtractor") FeatureExtractor featureExtractor
   ) {
     return new CustomRedisKeyValueTemplate(
-        new RedisEnhancedKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, featureExtractor), //
+        new RedisEnhancedKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, featureExtractor, properties), //
         mappingContext);
   }
 
