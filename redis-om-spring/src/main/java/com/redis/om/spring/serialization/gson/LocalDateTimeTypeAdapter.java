@@ -6,6 +6,7 @@ import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 /**
  * NOTE: This Adapter will lose nanosecond precision on LocalDateTimes
@@ -16,7 +17,7 @@ public class LocalDateTimeTypeAdapter  implements JsonSerializer<LocalDateTime>,
 
   @Override
   public JsonElement serialize(LocalDateTime localDateTime, Type typeOfSrc, JsonSerializationContext context) {
-    Instant instant = localDateTime.atZone(ZoneId.systemDefault()).toInstant(); 
+    Instant instant = ZonedDateTime.of(localDateTime, ZoneId.systemDefault()).toInstant();
     long timeInMillis = instant.toEpochMilli(); 
     return new JsonPrimitive(timeInMillis);
   }
