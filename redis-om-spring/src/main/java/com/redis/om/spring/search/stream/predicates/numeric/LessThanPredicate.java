@@ -2,6 +2,7 @@ package com.redis.om.spring.search.stream.predicates.numeric;
 
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
+import com.redis.om.spring.search.stream.predicates.jedis.JedisValues;
 import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import redis.clients.jedis.search.querybuilder.Values;
@@ -26,27 +27,17 @@ public class LessThanPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
-    if (isEmpty(getValue())) return root;
+    if (isEmpty(getValue()))
+      return root;
     Class<?> cls = value.getClass();
     if (cls == LocalDate.class) {
-      LocalDate localDate = (LocalDate) getValue();
-      Instant instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
-      long unixTime = instant.getEpochSecond();
-      return QueryBuilders.intersect(root).add(getSearchAlias(), Values.lt(unixTime));
+      return QueryBuilders.intersect(root).add(getSearchAlias(), JedisValues.lt((LocalDate) getValue()));
     } else if (cls == Date.class) {
-      Date date = (Date) getValue();
-      Instant instant = date.toInstant();
-      long unixTime = instant.getEpochSecond();
-      return QueryBuilders.intersect(root).add(getSearchAlias(), Values.lt(unixTime));
+      return QueryBuilders.intersect(root).add(getSearchAlias(), JedisValues.lt((Date) getValue()));
     } else if (cls == LocalDateTime.class) {
-      LocalDateTime localDateTime = (LocalDateTime) getValue();
-      Instant instant = localDateTime.toInstant(ZoneOffset.of(ZoneId.systemDefault().getId()));
-      long unixTime = instant.getEpochSecond();
-      return QueryBuilders.intersect(root).add(getSearchAlias(), Values.lt(unixTime));
+      return QueryBuilders.intersect(root).add(getSearchAlias(), JedisValues.lt((LocalDateTime) getValue()));
     } else if (cls == Instant.class) {
-      Instant instant = (Instant) getValue();
-      long unixTime = instant.getEpochSecond();
-      return QueryBuilders.intersect(root).add(getSearchAlias(), Values.lt(unixTime));
+      return QueryBuilders.intersect(root).add(getSearchAlias(), JedisValues.lt((Instant) getValue()));
     } else if (cls == Integer.class) {
       return QueryBuilders.intersect(root).add(getSearchAlias(), Values.lt(Integer.parseInt(getValue().toString())));
     } else if (cls == Long.class) {

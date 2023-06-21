@@ -2,6 +2,7 @@ package com.redis.om.spring.search.stream.predicates.numeric;
 
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
+import com.redis.om.spring.search.stream.predicates.jedis.JedisValues;
 import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import redis.clients.jedis.search.querybuilder.QueryNode;
@@ -28,7 +29,8 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
-    if (isEmpty(getValues())) return root;
+    if (isEmpty(getValues()))
+      return root;
     QueryNode or = QueryBuilders.union();
 
     Class<?> cls = values.get(0).getClass();
@@ -39,24 +41,13 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
       } else if (cls == Long.class) {
         or.add(getSearchAlias(), Values.eq(Long.parseLong(value.toString())));
       } else if (cls == LocalDate.class) {
-        LocalDate localDate = (LocalDate) value;
-        Instant instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
-        long unixTime = instant.getEpochSecond();
-        or.add(getSearchAlias(), Values.eq(unixTime));
+        or.add(getSearchAlias(), JedisValues.eq((LocalDate) value));
       } else if (cls == Date.class) {
-        Date date = (Date) value;
-        Instant instant = date.toInstant();
-        long unixTime = instant.getEpochSecond();
-        or.add(getSearchAlias(), Values.eq(unixTime));
+        or.add(getSearchAlias(), JedisValues.eq((Date) value));
       } else if (cls == LocalDateTime.class) {
-        LocalDateTime localDateTime = (LocalDateTime) value;
-        Instant instant = localDateTime.toInstant(ZoneOffset.of(ZoneId.systemDefault().getId()));
-        long unixTime = instant.getEpochSecond();
-        or.add(getSearchAlias(), Values.eq(unixTime));
+        or.add(getSearchAlias(), JedisValues.eq((LocalDateTime) value));
       } else if (cls == Instant.class) {
-        Instant instant = (Instant) value;
-        long unixTime = instant.getEpochSecond();
-        or.add(getSearchAlias(), Values.eq(unixTime));
+        or.add(getSearchAlias(), JedisValues.eq((Instant) value));
       } else {
         or.add(getSearchAlias(), Values.eq(Double.parseDouble(value.toString())));
       }

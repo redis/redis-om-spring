@@ -8,8 +8,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -25,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
   @Autowired DocWithLongRepository docWithLongRepository;
   @Autowired PersonRepository personRepository;
   @Autowired DocWithBooleanRepository docWithBooleanRepository;
+  @Autowired DocWithDateRepository docWithDateRepository;
 
   @Autowired EntityStream entityStream;
 
@@ -375,5 +380,35 @@ import static org.junit.jupiter.api.Assertions.assertAll;
             .map(DocWithBoolean$.NON_INDEXED_PRIMITIVE_BOOLEAN) // should handle returned non indexed primitive boolean primitive value, but fails
             .collect(Collectors.toList());
     assertThat(result).containsOnly(true);
+  }
+
+  // issue gh-270
+  @Test
+  void testOnOrAfterDateFilter() throws ParseException {
+    SimpleDateFormat formatter = new SimpleDateFormat("MM-dd-yyyy", Locale.ENGLISH);
+
+    Date date1 = formatter.parse("01-01-1972");
+    Date date2 = formatter.parse("01-02-1972");
+    Date date3 = formatter.parse("01-03-1972");
+    Date date4 = formatter.parse("01-04-1972");
+    Date date5 = formatter.parse("01-05-1972");
+    Date date6 = formatter.parse("01-06-1972");
+    Date date7 = formatter.parse("01-07-1972");
+    Date date8 = formatter.parse("01-08-1972");
+    Date date9 = formatter.parse("01-09-1972");
+
+    DocWithDate dwd1 = DocWithDate.of("one", date1);
+    DocWithDate dwd2 = DocWithDate.of("two", date3);
+    DocWithDate dwd3 = DocWithDate.of("three", date5);
+    DocWithDate dwd4 = DocWithDate.of("four", date7);
+    DocWithDate dwd5 = DocWithDate.of("five", date9);
+
+    docWithDateRepository.saveAll(List.of(dwd1, dwd2, dwd3, dwd4, dwd5));
+
+    var results = entityStream.of(DocWithDate.class)
+            .filter(DocWithDate$.DATE.onOrAfter(date4))
+            .map(DocWithDate$.ID)
+            .collect(Collectors.toList());
+    assertThat(results).containsOnly("three", "four", "five");
   }
 }
