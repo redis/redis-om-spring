@@ -14,7 +14,7 @@ import org.springframework.test.context.TestPropertySource;
 public abstract class AbstractBaseEnhancedRedisTest extends AbstractBaseOMTest {
   @SpringBootApplication
   @Configuration
-  @EnableRedisEnhancedRepositories(basePackages = { "com.redis.om.spring.annotations.hash.fixtures" })
+  @EnableRedisEnhancedRepositories(basePackages = { "com.redis.om.spring.annotations.hash.fixtures", "com.redis.om.spring.repository" })
   static class Config extends TestConfig {
   }
 }
