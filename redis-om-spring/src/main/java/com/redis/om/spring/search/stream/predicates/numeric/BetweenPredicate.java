@@ -2,6 +2,7 @@ package com.redis.om.spring.search.stream.predicates.numeric;
 
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
+import com.redis.om.spring.search.stream.predicates.jedis.JedisValues;
 import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import redis.clients.jedis.search.querybuilder.Values;
@@ -36,40 +37,18 @@ public class BetweenPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   @Override
   public Node apply(Node root) {
     boolean paramsPresent = isNotEmpty(getMin()) && isNotEmpty(getMax());
-    if (!paramsPresent) return root;
+    if (!paramsPresent)
+      return root;
     Class<?> cls = min.getClass();
     if (cls == LocalDate.class) {
-      LocalDate minLocalDate = (LocalDate) min;
-      LocalDate maxLocalDate = (LocalDate) max;
-      Instant minInstant = minLocalDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
-      Instant maxInstant = maxLocalDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
-      long minUnixTime = minInstant.getEpochSecond();
-      long maxUnixTime = maxInstant.getEpochSecond();
-      return QueryBuilders.intersect(root).add(getSearchAlias(),
-          Values.between(Double.parseDouble(Long.toString(minUnixTime)), Double.parseDouble(Long.toString(maxUnixTime))));
+      return QueryBuilders.intersect(root).add(getSearchAlias(), JedisValues.between((LocalDate) min, (LocalDate) max));
     } else if (cls == Date.class) {
-      Date minLocalDate = (Date) min;
-      Date maxLocalDate = (Date) max;
-      Instant minInstant = minLocalDate.toInstant();
-      Instant maxInstant = maxLocalDate.toInstant();
-      long minUnixTime = minInstant.getEpochSecond();
-      long maxUnixTime = maxInstant.getEpochSecond();
-      return QueryBuilders.intersect(root).add(getSearchAlias(),
-          Values.between(Double.parseDouble(Long.toString(minUnixTime)), Double.parseDouble(Long.toString(maxUnixTime))));
+      return QueryBuilders.intersect(root).add(getSearchAlias(), JedisValues.between((Date) min, (Date) max));
     } else if (cls == LocalDateTime.class) {
-      LocalDateTime minLocalDateTime = (LocalDateTime) min;
-      LocalDateTime maxLocalDateTime = (LocalDateTime) max;
-
-      long minUnixTime = minLocalDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-      long maxUnixTime = maxLocalDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-
-      return QueryBuilders.intersect(root).add(getSearchAlias(), Values.between(minUnixTime, maxUnixTime));
+      return QueryBuilders.intersect(root)
+          .add(getSearchAlias(), JedisValues.between((LocalDateTime) min, (LocalDateTime) max));
     } else if (cls == Instant.class) {
-      Instant minInstant = (Instant) min;
-      Instant maxInstant = (Instant) max;
-      long minUnixTime = minInstant.getEpochSecond();
-      long maxUnixTime = maxInstant.getEpochSecond();
-      return QueryBuilders.intersect(root).add(getSearchAlias(), Values.between(minUnixTime, maxUnixTime));
+      return QueryBuilders.intersect(root).add(getSearchAlias(), JedisValues.between((Instant) min, (Instant) max));
     } else if (cls == Integer.class) {
       return QueryBuilders.intersect(root).add(getSearchAlias(),
           Values.between(Integer.parseInt(getMin().toString()), Integer.parseInt(getMax().toString())));
