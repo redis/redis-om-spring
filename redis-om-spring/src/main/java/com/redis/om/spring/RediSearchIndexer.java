@@ -666,7 +666,7 @@ public class RediSearchIndexer {
       java.lang.reflect.Field idField = maybeIdField.get();
       // Only auto-index the @Id if not already indexed by the user (gh-135)
       if (!idField.isAnnotationPresent(Indexed.class) && !idField.isAnnotationPresent(Searchable.class)
-          && (fields.stream().noneMatch(f -> f.name.equals(idField.getName())))) {
+          && (fields.stream().noneMatch(f -> f.name.equals(indexFieldNameForId(idField, isDocument, ""))))) {
         if (Number.class.isAssignableFrom(idField.getType())) {
           result = Optional.of(indexAsNumericFieldFor(maybeIdField.get(), isDocument, "", true, false));
         } else {
@@ -707,6 +707,10 @@ public class RediSearchIndexer {
 
       mappingContext.getMappingConfiguration().getKeyspaceConfiguration().addKeyspaceSettings(setting);
     }
+  }
+
+  private String indexFieldNameForId(java.lang.reflect.Field field, boolean isDocument, String prefix) {
+    return getFieldPrefix(prefix, isDocument) + field.getName();
   }
 
   private String getKey(String keyspace) {
