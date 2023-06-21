@@ -6,6 +6,7 @@ import redis.clients.jedis.search.querybuilder.RangeValue;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 public class LocalDateTimeRangeValue extends RangeValue {
   private final LocalDateTime from;
@@ -26,7 +27,7 @@ public class LocalDateTimeRangeValue extends RangeValue {
     } else if (localDateTime == LocalDateTime.MAX) {
       sb.append("inf");
     } else {
-      Instant instant = localDateTime.atZone(ZoneId.systemDefault()).toInstant();
+      Instant instant = ZonedDateTime.of(localDateTime, ZoneId.systemDefault()).toInstant();
       long timeInMillis = instant.toEpochMilli();
       sb.append(new JsonPrimitive(timeInMillis));
     }
