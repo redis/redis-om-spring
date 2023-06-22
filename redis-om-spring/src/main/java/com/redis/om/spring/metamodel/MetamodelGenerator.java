@@ -22,9 +22,12 @@ import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
+import javax.tools.Diagnostic.Kind;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.io.Writer;
@@ -65,7 +68,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
     processingEnvironment.getTypeUtils();
 
     messager = processingEnvironment.getMessager();
-    messager.printMessage(Diagnostic.Kind.NOTE, "Redis OM Spring Field Generator Processor");
+    messager.printMessage(Diagnostic.Kind.NOTE, "Redis OM Spring Entity Metamodel Generator");
 
     this.objectTypeElement = processingEnvironment.getElementUtils().getTypeElement("java.lang.Object");
   }
@@ -99,6 +102,8 @@ public final class MetamodelGenerator extends AbstractProcessor {
     final String entityName = ObjectUtils.shortName(annotatedElement.asType().toString());
     final String genEntityName = entityName + "$";
     TypeName entity = TypeName.get(annotatedElement.asType());
+
+    messager.printMessage(Diagnostic.Kind.NOTE, "Generating Entity Metamodel: " + qualifiedGenEntityName);
 
     Map<? extends Element, String> enclosedFields = getInstanceFields(annotatedElement);
 
@@ -232,7 +237,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
         targetCls = ClassUtils.forName(cls, MetamodelGenerator.class.getClassLoader());
       } catch (ClassNotFoundException cnfe) {
         messager.printMessage(Diagnostic.Kind.WARNING,
-            "Processing class " + entityName + " could not resolve " + cls + " while checking for nested indexables");
+            "Processing class " + entityName + " could not resolve " + cls + " while checking for nested @Indexed");
         fieldMetamodelSpec.addAll(processNestedIndexableFields(entity, chain));
       }
 
@@ -244,6 +249,8 @@ public final class MetamodelGenerator extends AbstractProcessor {
           case GEO -> targetInterceptor = GeoField.class;
           case VECTOR -> targetInterceptor = VectorField.class;
         }
+      } else if (indexed != null && targetCls == null && isEnum(processingEnv, fieldType)) {
+        targetInterceptor = TextTagField.class;
       } else if (targetCls != null) {
         //
         // Any Character class -> Tag Search Field
@@ -492,8 +499,6 @@ public final class MetamodelGenerator extends AbstractProcessor {
         .filter(ee -> ee.getEnclosedElements().stream().noneMatch(eee -> eee.getKind() == ElementKind.PARAMETER))
         // Todo: Filter out methods that returns void or Void
         .collect(Collectors.toMap(e -> e.getSimpleName().toString(), Function.identity()));
-
-    messager.printMessage(Diagnostic.Kind.NOTE, "getters size() ==> " + getters.size());
 
     final Set<String> isGetters = getters.values().stream()
         // todo: Filter out methods only returning boolean or Boolean
@@ -790,4 +795,14 @@ public final class MetamodelGenerator extends AbstractProcessor {
   private static final Set<String> JAVA_USED_WORDS_LOWER_CASE = Collections
       .unmodifiableSet(JAVA_USED_WORDS.stream().map(String::toLowerCase).collect(Collectors.toSet()));
 
+  private boolean isEnum(ProcessingEnvironment processingEnv, TypeMirror typeMirror) {
+    Types typeUtils = processingEnv.getTypeUtils();
+
+    Element element = typeUtils.asElement(typeMirror);
+    if (element != null) {
+      return element.getKind() == ElementKind.ENUM;
+    } else {
+      return false;
+    }
+  }
 }

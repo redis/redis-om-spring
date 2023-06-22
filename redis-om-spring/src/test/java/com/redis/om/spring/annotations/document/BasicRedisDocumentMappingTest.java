@@ -591,9 +591,9 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   }
 
   @Test void testEnumsAreIndexed() {
-    DocWithEnum doc1 = DocWithEnum.of(MyJavaEnum.VALUE_1);
-    DocWithEnum doc2 = DocWithEnum.of(MyJavaEnum.VALUE_2);
-    DocWithEnum doc3 = DocWithEnum.of(MyJavaEnum.VALUE_3);
+    DocWithEnum doc1 = DocWithEnum.of(MyJavaEnum.VALUE_1, MyJavaEnum.VALUE_1);
+    DocWithEnum doc2 = DocWithEnum.of(MyJavaEnum.VALUE_2, MyJavaEnum.VALUE_2);
+    DocWithEnum doc3 = DocWithEnum.of(MyJavaEnum.VALUE_3, MyJavaEnum.VALUE_3);
 
     docWithEnumRepository.saveAll(List.of(doc1, doc2, doc3));
 
