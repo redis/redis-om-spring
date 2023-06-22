@@ -2,6 +2,7 @@ package com.redis.om.spring.annotations.document.fixtures;
 
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.Indexed;
+import com.redis.om.spring.annotations.Searchable;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 
@@ -17,4 +18,8 @@ public class DocWithEnum {
   @Indexed
   @NonNull
   private MyJavaEnum enumProp;
+
+  @Searchable
+  @NonNull
+  private MyJavaEnum searchableEnumProp;
 }
