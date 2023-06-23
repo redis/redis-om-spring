@@ -1,15 +1,13 @@
 package com.redis.om.spring.repository.query.autocomplete;
 
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-@Setter
-@NoArgsConstructor
 public class AutoCompleteOptions {
   private boolean fuzzy = false;
   private int limit = 5;
   private boolean withScore = false;
   private boolean withPayload = false;
+
+  public AutoCompleteOptions() {
+  }
 
   public static AutoCompleteOptions get() {
     return new AutoCompleteOptions();
@@ -42,11 +40,28 @@ public class AutoCompleteOptions {
   public boolean isWithScore() {
     return withScore;
   }
+
   public boolean isWithPayload() {
     return withPayload;
   }
 
   public int getLimit() {
     return limit;
+  }
+
+  public void setFuzzy(boolean fuzzy) {
+    this.fuzzy = fuzzy;
+  }
+
+  public void setLimit(int limit) {
+    this.limit = limit;
+  }
+
+  public void setWithScore(boolean withScore) {
+    this.withScore = withScore;
+  }
+
+  public void setWithPayload(boolean withPayload) {
+    this.withPayload = withPayload;
   }
 }

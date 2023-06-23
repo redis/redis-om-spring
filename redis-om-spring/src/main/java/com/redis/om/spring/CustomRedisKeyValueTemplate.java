@@ -1,7 +1,6 @@
 package com.redis.om.spring;
 
 import com.redis.om.spring.id.ULIDIdentifierGenerator;
-import lombok.NonNull;
 import org.springframework.data.keyvalue.core.KeyValueTemplate;
 import org.springframework.data.redis.core.RedisKeyValueAdapter;
 import org.springframework.data.redis.core.RedisKeyValueTemplate;
@@ -47,7 +46,7 @@ public class CustomRedisKeyValueTemplate extends KeyValueTemplate {
    * org.springframework.data.keyvalue.core.KeyValueTemplate#getMappingContext(
    * ) */
   @Override
-  public @NonNull RedisMappingContext getMappingContext() {
+  public  RedisMappingContext getMappingContext() {
     return (RedisMappingContext) super.getMappingContext();
   }
 

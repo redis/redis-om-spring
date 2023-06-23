@@ -3,7 +3,6 @@ package com.redis.om.spring.search.stream;
 import com.google.gson.Gson;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.util.ObjectUtils;
-import lombok.NonNull;
 import org.springframework.data.domain.*;
 import org.springframework.util.Assert;
 import redis.clients.jedis.search.aggr.AggregationResult;
@@ -60,7 +59,7 @@ public class AggregationPage<E> implements Slice<E>, Serializable {
   }
 
   @Override
-  public @NonNull List<E> getContent() {
+  public  List<E> getContent() {
     return resolveContent();
   }
 
@@ -70,7 +69,7 @@ public class AggregationPage<E> implements Slice<E>, Serializable {
   }
 
   @Override
-  public @NonNull Sort getSort() {
+  public  Sort getSort() {
     return pageable.getSort();
   }
 
@@ -90,17 +89,17 @@ public class AggregationPage<E> implements Slice<E>, Serializable {
   }
 
   @Override
-  public @NonNull Pageable nextPageable() {
+  public  Pageable nextPageable() {
     Pageable next = PageRequest.of(getNumber() + 1, pageable.getPageSize(), pageable.getSort());
     return hasNext() ? new AggregationPageable(next, resolveAggregation().getCursorId()) : Pageable.unpaged();
   }
 
   @Override
-  public <U> @NonNull Slice<U> map(Function<? super E, ? extends U> converter) {
+  public <U>  Slice<U> map(Function<? super E, ? extends U> converter) {
     return new SliceImpl<>(getConvertedContent(converter), pageable, hasNext());
   }
 
-  @NonNull
+  
   @Override
   public Iterator<E> iterator() {
     return resolveContent().iterator();
@@ -113,7 +112,7 @@ public class AggregationPage<E> implements Slice<E>, Serializable {
   }
 
   @Override
-  public @NonNull Pageable previousPageable() {
+  public  Pageable previousPageable() {
     return Pageable.unpaged();
   }
   // END - Unsupported operations
