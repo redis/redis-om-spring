@@ -34,10 +34,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.redis.om.spring.util.ObjectUtils.getBeanDefinitionsFor;
-import static com.redis.om.spring.util.ObjectUtils.getIdFieldForEntityClass;
-import static com.redis.om.spring.util.ObjectUtils.getCollectionElementClass;
-import static com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively;
+import static com.redis.om.spring.util.ObjectUtils.*;
 
 @Component
 public class RediSearchIndexer {

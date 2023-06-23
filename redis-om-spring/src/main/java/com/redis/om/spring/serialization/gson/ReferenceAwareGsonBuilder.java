@@ -7,7 +7,6 @@ import com.redis.om.spring.ops.json.JSONOperations;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.data.annotation.Reference;
 import org.springframework.stereotype.Component;
 

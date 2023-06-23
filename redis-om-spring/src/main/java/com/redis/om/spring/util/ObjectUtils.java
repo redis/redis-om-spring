@@ -31,7 +31,6 @@ import java.util.*;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
-import static org.springframework.util.ClassUtils.isPrimitiveWrapper;
 import static org.springframework.util.ClassUtils.resolvePrimitiveIfNecessary;
 
 public class ObjectUtils {

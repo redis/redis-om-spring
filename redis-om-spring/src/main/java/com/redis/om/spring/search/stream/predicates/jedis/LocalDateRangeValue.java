@@ -6,7 +6,6 @@ import redis.clients.jedis.search.querybuilder.RangeValue;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Date;
 
 public class LocalDateRangeValue extends RangeValue {
   private final LocalDate from;

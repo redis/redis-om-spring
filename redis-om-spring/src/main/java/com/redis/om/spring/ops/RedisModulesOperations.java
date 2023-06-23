@@ -1,6 +1,5 @@
 package com.redis.om.spring.ops;
 
-import com.google.gson.GsonBuilder;
 import com.redis.om.spring.client.RedisModulesClient;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.json.JSONOperationsImpl;

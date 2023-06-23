@@ -8,6 +8,7 @@ import org.springframework.data.geo.Point;
 import redis.clients.jedis.search.querybuilder.GeoValue;
 import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
+
 import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
 
 public class NearPredicate<E, T> extends BaseAbstractPredicate<E, T> {

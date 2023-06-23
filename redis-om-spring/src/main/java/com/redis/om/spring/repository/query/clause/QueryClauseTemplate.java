@@ -1,19 +1,47 @@
 package com.redis.om.spring.repository.query.clause;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.repository.query.parser.Part;
+import redis.clients.jedis.search.Schema;
 import redis.clients.jedis.search.Schema.FieldType;
 
-@Getter
-@RequiredArgsConstructor(staticName = "of")
 public class QueryClauseTemplate {
-  @NonNull private FieldType indexType;
-  @NonNull private Part.Type queryPartType;
   
-  @NonNull @EqualsAndHashCode.Exclude private String querySegmentTemplate;
-  @NonNull private Integer numberOfArguments;
+  private FieldType indexType;
+  
+  private Part.Type queryPartType;
+
+  
+  private String querySegmentTemplate;
+  
+  private Integer numberOfArguments;
+
+  private QueryClauseTemplate( Schema.FieldType indexType,  Part.Type queryPartType,
+       String querySegmentTemplate,  Integer numberOfArguments) {
+    this.indexType = indexType;
+    this.queryPartType = queryPartType;
+    this.querySegmentTemplate = querySegmentTemplate;
+    this.numberOfArguments = numberOfArguments;
+  }
+
+  public static QueryClauseTemplate of( Schema.FieldType indexType,  Part.Type queryPartType,
+       String querySegmentTemplate,  Integer numberOfArguments) {
+    return new QueryClauseTemplate(indexType, queryPartType, querySegmentTemplate, numberOfArguments);
+  }
+
+  public  FieldType getIndexType() {
+    return this.indexType;
+  }
+
+  public  Part.Type getQueryPartType() {
+    return this.queryPartType;
+  }
+
+  public  String getQuerySegmentTemplate() {
+    return this.querySegmentTemplate;
+  }
+
+  public  Integer getNumberOfArguments() {
+    return this.numberOfArguments;
+  }
 }
 

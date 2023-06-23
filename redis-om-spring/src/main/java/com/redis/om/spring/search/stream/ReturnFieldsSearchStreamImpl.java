@@ -29,7 +29,6 @@ import java.util.function.*;
 import java.util.stream.*;
 
 import static com.redis.om.spring.util.ObjectUtils.isPrimitiveOfType;
-import static org.springframework.util.ClassUtils.isPrimitiveWrapper;
 
 public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
 
