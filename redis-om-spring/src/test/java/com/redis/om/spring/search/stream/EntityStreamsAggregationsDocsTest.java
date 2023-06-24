@@ -867,7 +867,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
     List<Triple<String,Double,Integer>> totalOrderQuanties = stream //
         .filter(PizzaOrder$.DATE.onOrAfter(Instant.parse("2020-01-30T00:00:00.00Z"))) //
         .filter(PizzaOrder$.DATE.before(Instant.parse("2022-01-30T00:00:00.00Z"))) //
-        .apply("timefmt(@date, '%Y-%m-%d') ", "_id") //
+        .apply("timefmt(@date / 1000, '%Y-%m-%d') ", "_id") //
         .apply("@price * @quantity", "total") //
         .groupBy(Alias.of("_id")) //
         .reduce(ReducerFunction.SUM,  "@total").as("totalOrderValue") //

@@ -6,6 +6,7 @@ import org.springframework.data.geo.Point;
 import redis.clients.jedis.search.Schema.FieldType;
 
 import java.lang.reflect.Field;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -71,7 +72,7 @@ public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicat
       // Any Numeric class -> Numeric Search Field
       //
       else if (Number.class.isAssignableFrom(field.getType()) || (field.getType() == LocalDateTime.class)
-          || (field.getType() == LocalDate.class) || (field.getType() == Date.class)) {
+          || (field.getType() == LocalDate.class) || (field.getType() == Date.class) || (field.getType() == Instant.class)) {
         result = FieldType.NUMERIC;
       }
       //

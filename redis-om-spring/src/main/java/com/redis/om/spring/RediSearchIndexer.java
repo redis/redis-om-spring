@@ -31,6 +31,7 @@ import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -225,7 +226,7 @@ public class RediSearchIndexer {
         //
         else if (Number.class.isAssignableFrom(fieldType) || (fieldType == LocalDateTime.class)
             || (field.getType() == LocalDate.class) || (field.getType() == Date.class)
-            || (field.getType() == Instant.class)) {
+            || (field.getType() == Instant.class) || (field.getType() == OffsetDateTime.class)) {
           fields.add(indexAsNumericFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.noindex()));
         }
         //

@@ -123,7 +123,7 @@ import static org.assertj.core.api.Assertions.assertThat;
     String redisGeo = "33.62826024782707,-111.83592170193586";
     
     // Instant
-    long instantInMillis = instant.getEpochSecond();
+    long instantInMillis = instant.toEpochMilli();
 
     JsonObject rawJSON = ops.get(KitchenSink.class.getName() + ":" + ks.getId(), JsonObject.class);
 
