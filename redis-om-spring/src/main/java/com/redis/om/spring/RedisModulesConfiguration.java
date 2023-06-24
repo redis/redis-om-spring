@@ -288,7 +288,7 @@ public class RedisModulesConfiguration {
       RedisModulesOperations<?> redisModulesOperations, //
       RedisMappingContext mappingContext, //
       RediSearchIndexer indexer, //
-      GsonBuilder gsonBuilder, //
+      @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder, //
       RedisOMSpringProperties properties //
   ) {
     return new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, gsonBuilder, properties);
@@ -300,7 +300,7 @@ public class RedisModulesConfiguration {
       RedisModulesOperations<?> redisModulesOperations, //
       RedisMappingContext mappingContext, //
       RediSearchIndexer indexer, //
-      GsonBuilder gsonBuilder, //
+      @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder, //
       RedisOMSpringProperties properties //
   ) {
     return new CustomRedisKeyValueTemplate(
@@ -323,8 +323,11 @@ public class RedisModulesConfiguration {
   }
 
   @Bean(name = "streamingQueryBuilder")
-  EntityStream streamingQueryBuilder(RedisModulesOperations<?> redisModulesOperations, Gson gson) {
-    return new EntityStreamImpl(redisModulesOperations, gson);
+  EntityStream streamingQueryBuilder(
+      RedisModulesOperations<?> redisModulesOperations,
+      @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder
+  ) {
+    return new EntityStreamImpl(redisModulesOperations, gsonBuilder);
   }
 
   @EventListener(ContextRefreshedEvent.class)

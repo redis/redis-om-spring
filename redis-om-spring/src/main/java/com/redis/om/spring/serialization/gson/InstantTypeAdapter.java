@@ -9,14 +9,14 @@ public class InstantTypeAdapter implements JsonSerializer<Instant>, JsonDeserial
 
   @Override
   public JsonElement serialize(Instant instant, Type typeOfSrc, JsonSerializationContext context) {
-    long timeInMillis = instant.getEpochSecond();
+    long timeInMillis = instant.toEpochMilli();
     return new JsonPrimitive(timeInMillis);
   }
 
   @Override
   public Instant deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
       throws JsonParseException {
-    return Instant.ofEpochSecond(json.getAsLong());
+    return Instant.ofEpochMilli(json.getAsLong());
   }
 
   public static InstantTypeAdapter getInstance() {

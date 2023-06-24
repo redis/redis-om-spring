@@ -24,7 +24,7 @@ public class InstantRangeValue extends RangeValue {
     } else if (instant == Instant.MAX) {
       sb.append("inf");
     } else {
-      long timeInMillis = instant.getEpochSecond();
+      long timeInMillis = instant.toEpochMilli();
       sb.append(new JsonPrimitive(timeInMillis));
     }
 

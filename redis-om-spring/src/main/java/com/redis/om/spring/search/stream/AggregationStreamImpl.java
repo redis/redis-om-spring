@@ -46,7 +46,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
       this.field = field;
     }
 
-    public static ReducerFieldPair of( Reducer reducer, MetamodelField<?, ?> field) {
+    public static ReducerFieldPair of(Reducer reducer, MetamodelField<?, ?> field) {
       return new ReducerFieldPair(reducer, field);
     }
 
