@@ -89,7 +89,7 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
 
   @Override
   public void set(K key, Object object, Path path) {
-    client.clientForJSON().jsonSet(key.toString(), path, object);
+    client.clientForJSON().jsonSetWithPlainString(key.toString(), path, builder.gson().toJson(object));
   }
 
   @Override
