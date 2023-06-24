@@ -12,6 +12,7 @@ import org.springframework.data.redis.connection.RedisGeoCommands;
 import redis.clients.jedis.json.Path;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +35,9 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
 
   @Autowired
   DocWithEnumRepository docWithEnumRepository;
+
+  @Autowired
+  SomeDocumentRepository someDocumentRepository;
 
   @BeforeEach
   void cleanUp() {
@@ -115,6 +119,18 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
     Optional<Company> maybeRedis = repository.findById(redisInc.getId());
 
     assertThat(maybeRedis).isPresent().map(Company::getName).contains("Redis");
+  }
+
+  @Test
+  void testUpdateLocalDateTimeField() {
+    var now = LocalDateTime.now();
+    SomeDocument docWithDateTime = new SomeDocument();
+    docWithDateTime.setDocumentCreationDate(now);
+    docWithDateTime = someDocumentRepository.save(docWithDateTime);
+
+    someDocumentRepository.updateField(docWithDateTime, SomeDocument$.DOCUMENT_CREATION_DATE, now.minusDays(5));
+
+    assertThat(someDocumentRepository.findById(docWithDateTime.getId()).get().getDocumentCreationDate()).isEqualToIgnoringNanos(now.minusDays(5));
   }
 
   @Test
