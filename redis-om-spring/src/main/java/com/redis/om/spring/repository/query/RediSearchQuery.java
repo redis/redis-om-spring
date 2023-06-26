@@ -1,6 +1,7 @@
 package com.redis.om.spring.repository.query;
 
 import com.google.gson.Gson;
+import com.redis.om.spring.RedisOMSpringProperties;
 import com.redis.om.spring.annotations.*;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
@@ -50,6 +51,7 @@ public class RediSearchQuery implements RepositoryQuery {
 
   private final QueryMethod queryMethod;
   private final String searchIndex;
+  private final RedisOMSpringProperties redisOMSpringProperties;
 
   private RediSearchQueryType type;
   private String value;
@@ -94,7 +96,8 @@ public class RediSearchQuery implements RepositoryQuery {
       KeyValueOperations keyValueOperations, //
       RedisModulesOperations<?> rmo, //
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
-      Gson gson //
+      Gson gson, //
+      RedisOMSpringProperties redisOMSpringProperties //
   ) {
     logger.info(String.format("Creating %s query method", queryMethod.getName()));
 
@@ -103,6 +106,7 @@ public class RediSearchQuery implements RepositoryQuery {
     this.searchIndex = this.queryMethod.getEntityInformation().getJavaType().getName() + "Idx";
     this.domainType = this.queryMethod.getEntityInformation().getJavaType();
     this.gson = gson;
+    this.redisOMSpringProperties = redisOMSpringProperties;
 
     bloomQueryExecutor = new BloomQueryExecutor(this, modulesOperations);
     autoCompleteQueryExecutor = new AutoCompleteQueryExecutor(this, modulesOperations);
@@ -161,7 +165,7 @@ public class RediSearchQuery implements RepositoryQuery {
               case TOLIST -> r = Reducers.to_list(arg0);
               case FIRST_VALUE -> {
                 if (reducer.args().length > 1) {
-                  String arg1 = reducer.args().length > 1 ? reducer.args()[1] : null;
+                  String arg1 = reducer.args()[1];
                   String arg2 = reducer.args().length > 2 ? reducer.args()[2] : null;
                   SortOrder order = arg2 != null && arg2.equalsIgnoreCase("ASC") ? SortOrder.ASC : SortOrder.DESC;
                   SortedField sortedField = new SortedField(arg1, order);
@@ -391,7 +395,7 @@ public class RediSearchQuery implements RepositoryQuery {
     }
 
     if ((limit != null && limit != Integer.MIN_VALUE) || (offset != null && offset != Integer.MIN_VALUE)) {
-      query.limit(offset != null ? offset : 10, limit != null ? limit : 0);
+      query.limit(offset != null ? offset : 0, limit != null ? limit : redisOMSpringProperties.getRepository().getQuery().getLimit());
     }
 
     if ((sortBy != null && !sortBy.isBlank())) {

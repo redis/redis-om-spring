@@ -1,5 +1,6 @@
 package com.redis.om.spring.repository.query;
 
+import com.redis.om.spring.RedisOMSpringProperties;
 import com.redis.om.spring.annotations.*;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.ops.RedisModulesOperations;
@@ -50,6 +51,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
   private final QueryMethod queryMethod;
   private final String searchIndex;
+  private final RedisOMSpringProperties redisOMSpringProperties;
 
   private RediSearchQueryType type;
   private String value;
@@ -60,7 +62,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   private Integer limit;
   private String sortBy;
   private Boolean sortAscending;
-  private boolean hasLanguageParameter;
+  private final boolean hasLanguageParameter;
 
   // aggregation fields
   private final List<Entry<String, String>> aggregationLoad = new ArrayList<>();
@@ -88,19 +90,22 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   private boolean isANDQuery = false;
 
   @SuppressWarnings("unchecked")
-  public RedisEnhancedQuery(QueryMethod queryMethod, //
+  public RedisEnhancedQuery(
+      QueryMethod queryMethod, //
       RepositoryMetadata metadata, //
       QueryMethodEvaluationContextProvider evaluationContextProvider, //
       KeyValueOperations keyValueOperations, //
       RedisOperations<?, ?> redisOperations, //
       RedisModulesOperations<?> rmo, //
-      Class<? extends AbstractQueryCreator<?, ?>> queryCreator) {
+      Class<? extends AbstractQueryCreator<?, ?>> queryCreator,
+      RedisOMSpringProperties redisOMSpringProperties) {
     logger.info(String.format("Creating query %s", queryMethod.getName()));
 
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.queryMethod = queryMethod;
     this.searchIndex = this.queryMethod.getEntityInformation().getJavaType().getName() + "Idx";
     this.domainType = this.queryMethod.getEntityInformation().getJavaType();
+    this.redisOMSpringProperties = redisOMSpringProperties;
 
     this.mappingConverter = new MappingRedisOMConverter(null, new ReferenceResolverImpl(redisOperations));
 
@@ -160,7 +165,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
               case TOLIST -> r = Reducers.to_list(arg0);
               case FIRST_VALUE -> {
                 if (reducer.args().length > 1) {
-                  String arg1 = reducer.args().length > 1 ? reducer.args()[1] : null;
+                  String arg1 = reducer.args()[1];
                   String arg2 = reducer.args().length > 2 ? reducer.args()[2] : null;
                   SortOrder order = arg2 != null && arg2.equalsIgnoreCase("ASC") ? SortOrder.ASC : SortOrder.DESC;
                   SortedField sortedField = new SortedField(arg1, order);
@@ -389,7 +394,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     }
 
     if ((limit != null && limit != Integer.MIN_VALUE) || (offset != null && offset != Integer.MIN_VALUE)) {
-      query.limit(offset != null ? offset : 10, limit != null ? limit : 0);
+      query.limit(offset != null ? offset : 0, limit != null ? limit : redisOMSpringProperties.getRepository().getQuery().getLimit());
     }
 
     if ((sortBy != null && !sortBy.isBlank())) {

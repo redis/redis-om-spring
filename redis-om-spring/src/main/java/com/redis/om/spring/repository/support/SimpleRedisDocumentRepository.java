@@ -3,6 +3,7 @@ package com.redis.om.spring.repository.support;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.redis.om.spring.RediSearchIndexer;
+import com.redis.om.spring.RedisOMSpringProperties;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.id.ULIDIdentifierGenerator;
 import com.redis.om.spring.metamodel.MetamodelField;
@@ -53,6 +54,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
 
+import static com.redis.om.spring.RedisOMSpringProperties.MAXSEARCHRESULTS;
 import static redis.clients.jedis.json.JsonProtocol.JsonCommand;
 
 public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueRepository<T, ID>
@@ -65,7 +67,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   protected final RediSearchIndexer indexer;
   protected final MappingRedisOMConverter mappingConverter;
   private final ULIDIdentifierGenerator generator;
-
+  private final RedisOMSpringProperties properties;
   private final RedisMappingContext mappingContext;
 
   @SuppressWarnings("unchecked")
@@ -75,7 +77,8 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo, //
       RediSearchIndexer keyspaceToIndexMap, //
       RedisMappingContext mappingContext,
-      Gson gson) {
+      Gson gson,
+      RedisOMSpringProperties properties) {
     super(metadata, operations);
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.metadata = metadata;
@@ -86,6 +89,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     this.generator = ULIDIdentifierGenerator.INSTANCE;
     this.gson = gson;
     this.mappingContext = mappingContext;
+    this.properties = properties;
   }
 
   @Override
@@ -99,6 +103,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       String idField = maybeIdField.map(Field::getName).orElse("id");
 
       Query query = new Query("*");
+      query.limit(0, properties.getRepository().getQuery().getLimit());
       query.returnFields(idField);
       SearchResult searchResult = searchOps.search(query);
 

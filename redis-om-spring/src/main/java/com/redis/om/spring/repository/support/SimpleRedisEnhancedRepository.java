@@ -39,10 +39,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static com.redis.om.spring.RedisOMSpringProperties.MAXSEARCHRESULTS;
+
 public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueRepository<T, ID>
     implements RedisEnhancedRepository<T, ID> {
-  
-  private static final Integer MAX_LIMIT = 10000;
 
   protected final RedisModulesOperations<String> modulesOperations;
   protected final EntityInformation<T, ID> metadata;
@@ -54,6 +54,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   protected final FeatureExtractor featureExtractor;
 
   private final ULIDIdentifierGenerator generator;
+  private final RedisOMSpringProperties properties;
 
   @SuppressWarnings("unchecked")
   public SimpleRedisEnhancedRepository( //
@@ -75,6 +76,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     this.generator = ULIDIdentifierGenerator.INSTANCE;
     this.auditor = new EntityAuditor(modulesOperations.getTemplate());
     this.featureExtractor = featureExtractor;
+    this.properties = properties;
   }
 
   @SuppressWarnings("unchecked")
@@ -89,6 +91,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
       String idField = maybeIdField.map(Field::getName).orElse("id");
       
       Query query = new Query("*");
+      query.limit(0, MAXSEARCHRESULTS);
       query.returnFields(idField);
       SearchResult searchResult = searchOps.search(query);
   
@@ -159,7 +162,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
 
     Assert.notNull(sort, "Sort must not be null!");
     
-    Pageable pageRequest = PageRequest.of(0, MAX_LIMIT, sort);
+    Pageable pageRequest = PageRequest.of(0, properties.getRepository().getQuery().getLimit(), sort);
 
     return findAll(pageRequest).toList();
   }

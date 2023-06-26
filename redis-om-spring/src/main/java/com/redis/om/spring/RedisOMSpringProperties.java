@@ -7,6 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
     prefix = "redis.om.spring", ignoreInvalidFields = true
 )
 public class RedisOMSpringProperties {
+    public static int MAXSEARCHRESULTS = 10000;
     // repository properties
     private final Repository repository = new Repository();
 
@@ -22,7 +23,7 @@ public class RedisOMSpringProperties {
         }
 
         public static class Query {
-            private int limit = 10000;
+            private int limit = MAXSEARCHRESULTS;
 
             public int getLimit() {
                 return limit;
