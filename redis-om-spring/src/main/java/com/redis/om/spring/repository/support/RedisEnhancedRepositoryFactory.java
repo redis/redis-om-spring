@@ -46,7 +46,6 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
   private final Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
   private final Class<? extends RepositoryQuery> repositoryQueryType;
   private final FeatureExtractor featureExtractor;
-
   private final RedisOMSpringProperties properties;
 
   /**
@@ -180,7 +179,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
   protected Optional<QueryLookupStrategy> getQueryLookupStrategy(@Nullable Key key,
       QueryMethodEvaluationContextProvider evaluationContextProvider) {
     return Optional.of(new RedisEnhancedQueryLookupStrategy(key, evaluationContextProvider, this.keyValueOperations,
-        this.redisOperations, this.rmo, this.queryCreator, this.repositoryQueryType));
+        this.redisOperations, this.rmo, this.properties, this.queryCreator, this.repositoryQueryType));
   }
 
   /**
@@ -196,6 +195,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
 
     private final Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
     private final Class<? extends RepositoryQuery> repositoryQueryType;
+    private final RedisOMSpringProperties properties;
 
     /**
      * @param key
@@ -209,6 +209,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
                                             KeyValueOperations keyValueOperations, //
                                             RedisOperations<?, ?> redisOperations, //
                                             RedisModulesOperations<?> rmo, //
+                                            RedisOMSpringProperties properties, //
                                             Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
                                             Class<? extends RepositoryQuery> repositoryQueryType) {
 
@@ -216,6 +217,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
       Assert.notNull(keyValueOperations, "KeyValueOperations must not be null!");
       Assert.notNull(redisOperations, "RedisOperations must not be null!");
       Assert.notNull(rmo, "RedisModulesOperations must not be null!");
+      Assert.notNull(properties, "RedisOMSpringProperties must not be null!");
       Assert.notNull(queryCreator, "Query creator type must not be null!");
       Assert.notNull(repositoryQueryType, "RepositoryQueryType type must not be null!");
 
@@ -223,6 +225,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
       this.keyValueOperations = keyValueOperations;
       this.redisOperations = redisOperations;
       this.rmo = rmo;
+      this.properties = properties;
       this.queryCreator = queryCreator;
       this.repositoryQueryType = repositoryQueryType;
     }
@@ -242,16 +245,24 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
       QueryMethod queryMethod = new QueryMethod(method, metadata, factory);
 
       Constructor<? extends KeyValuePartTreeQuery> constructor = (Constructor<? extends KeyValuePartTreeQuery>) ClassUtils
-          .getConstructorIfAvailable(this.repositoryQueryType, QueryMethod.class, RepositoryMetadata.class,
-              QueryMethodEvaluationContextProvider.class, KeyValueOperations.class, RedisOperations.class,
-              RedisModulesOperations.class, Class.class);
+          .getConstructorIfAvailable( //
+              this.repositoryQueryType, //
+              QueryMethod.class, //
+              RepositoryMetadata.class, //
+              QueryMethodEvaluationContextProvider.class, //
+              KeyValueOperations.class, //
+              RedisOperations.class, //
+              RedisModulesOperations.class, //
+              Class.class, //
+              RedisOMSpringProperties.class
+          );
 
       Assert.state(constructor != null, String.format(
-          "Constructor %s(QueryMethod, EvaluationContextProvider, KeyValueOperations, RedisOperations, RedisModulesOperations, Class) not available!",
+          "Constructor %s(QueryMethod, EvaluationContextProvider, KeyValueOperations, RedisOperations, RedisModulesOperations, Class, RedisOMSpringProperties) not available!",
           ClassUtils.getShortName(this.repositoryQueryType)));
 
       return BeanUtils.instantiateClass(constructor, queryMethod, metadata, evaluationContextProvider,
-          this.keyValueOperations, this.redisOperations, this.rmo, this.queryCreator);
+          this.keyValueOperations, this.redisOperations, this.rmo, this.queryCreator, this.properties);
     }
   }
 }
