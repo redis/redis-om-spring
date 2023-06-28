@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  redis-master:
+    image: redis/redis-stack-server
+  redis-sentinel:
+    image: redis/redis-stack-server
+    command: redis-sentinel /usr/local/etc/redis/sentinel.conf
+    volumes:
+      - ./sentinel.conf:/usr/local/etc/redis/sentinel.conf
+    environment:
+      - REDIS_MASTER_HOST=redis-master
+    depends_on:
+      - redis-master
+    ports:
+      - "26379:26379"
+
