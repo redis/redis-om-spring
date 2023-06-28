@@ -1,6 +1,8 @@
 package com.redis.om.spring.client;
 
 import com.google.gson.GsonBuilder;
+import com.redis.om.spring.EnhancedRedisQueryEngine;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
@@ -13,14 +15,17 @@ import redis.clients.jedis.bloom.commands.CuckooFilterCommands;
 import redis.clients.jedis.bloom.commands.TopKFilterCommands;
 import redis.clients.jedis.json.RedisJsonCommands;
 import redis.clients.jedis.search.RediSearchCommands;
+import org.apache.commons.logging.Log;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class RedisModulesClient {
-
   private final GsonBuilder builder;
   private final UnifiedJedis unifiedJedis;
+
+  private static final Log logger = LogFactory.getLog(RedisModulesClient.class);
 
   public RedisModulesClient(JedisConnectionFactory jedisConnectionFactory, GsonBuilder builder) {
     this.jedisConnectionFactory = jedisConnectionFactory;
@@ -52,15 +57,37 @@ public class RedisModulesClient {
     return unifiedJedis;
   }
 
-  private UnifiedJedis getUnifiedJedis() {
-    var cc = jedisConnectionFactory.getClientConfiguration();
-    var hostAndPort = new HostAndPort(jedisConnectionFactory.getHostName(), jedisConnectionFactory.getPort());
-    var jedisClientConfig = createClientConfig(jedisConnectionFactory.getDatabase(),
-        jedisConnectionFactory.getStandaloneConfiguration().getUsername(),
-        jedisConnectionFactory.getStandaloneConfiguration().getPassword(), cc);
 
-    return new JedisPooled(Objects.requireNonNull(jedisConnectionFactory.getPoolConfig()), hostAndPort,
-        jedisClientConfig);
+  private UnifiedJedis getUnifiedJedis() {
+
+    var config = jedisConnectionFactory.getSentinelConfiguration();
+    if (config != null) {
+      var master = config.getMaster().getName();
+      var sentinels = config.getSentinels().stream().map(node -> {
+        return new HostAndPort(node.getHost(), node.getPort());
+      }).collect(Collectors.toSet());
+      var password = config.getPassword();
+      var sentinelPassword = config.getSentinelPassword();
+      var username = config.getUsername();
+      var masterClientConfig = createClientConfig(jedisConnectionFactory.getDatabase(),
+              username,
+              password, jedisConnectionFactory.getClientConfiguration());
+      var sentinelClientConfig = createClientConfig(jedisConnectionFactory.getDatabase(),
+              username,
+              sentinelPassword, jedisConnectionFactory.getClientConfiguration());
+      logger.info("Use sentinel pool, connect to " + master);
+      return new JedisSentineled(master, masterClientConfig, sentinels, sentinelClientConfig);
+
+    } else {
+      var cc = jedisConnectionFactory.getClientConfiguration();
+      var hostAndPort = new HostAndPort(jedisConnectionFactory.getHostName(), jedisConnectionFactory.getPort());
+      var jedisClientConfig = createClientConfig(jedisConnectionFactory.getDatabase(),
+              jedisConnectionFactory.getStandaloneConfiguration().getUsername(),
+              jedisConnectionFactory.getStandaloneConfiguration().getPassword(), cc);
+      logger.info("Use standalone pool");
+      return new JedisPooled(Objects.requireNonNull(jedisConnectionFactory.getPoolConfig()), hostAndPort,
+              jedisClientConfig);
+    }
   }
 
   public Optional<Jedis> getJedis() {
@@ -71,7 +98,7 @@ public class RedisModulesClient {
       return Optional.empty();
     }
   }
-  
+
   public Optional<JedisCluster> getJedisCluster() {
     Object nativeConnection = jedisConnectionFactory.getConnection().getNativeConnection();
     if (nativeConnection instanceof JedisCluster jedisCluster) {
