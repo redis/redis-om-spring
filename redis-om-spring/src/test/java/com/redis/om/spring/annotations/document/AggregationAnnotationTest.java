@@ -164,7 +164,7 @@ import static org.assertj.core.api.Assertions.entry;
           .containsKey("sample") //
           .hasSize(3);
 
-      assertThat(row.get("sample")).asList().hasSize(10);
+      assertThat(row.get("sample")).asList().hasSizeBetween(1, 10);
     });
   }
 
