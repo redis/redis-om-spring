@@ -38,7 +38,7 @@ public class ReferenceAwareGsonBuilder {
             final List<java.lang.reflect.Field> allClassFields = getDeclaredFieldsTransitively(clazz);
             for (java.lang.reflect.Field field : allClassFields) {
                 if (field.isAnnotationPresent(Reference.class)) {
-                    logger.info(String.format("Registering reference type adapter for %s", field.getType().getName()));
+                    logger.debug(String.format("Registering reference type adapter for %s", field.getType().getName()));
                     processField(field);
                 }
             }

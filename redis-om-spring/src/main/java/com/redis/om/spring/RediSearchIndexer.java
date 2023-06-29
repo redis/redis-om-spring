@@ -155,6 +155,65 @@ public class RediSearchIndexer {
     }
   }
 
+  public void dropAndRecreateIndexFor(Class<?> cl) {
+    String indexName = "";
+
+    try {
+      indexName = cl.getName() + "Idx";
+      logger.info(String.format("Dropping index @%s for class: %s", indexName, cl.getName()));
+      SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
+      opsForSearch.dropIndex();
+
+      String entityPrefix = getEntityPrefix(cl);
+
+      if (cl.isAnnotationPresent(Document.class)) {
+        Document document = cl.getAnnotation(Document.class);
+        if (ObjectUtils.isNotEmpty(document.value())) {
+          entityPrefix = document.value();
+        }
+      } else if (cl.isAnnotationPresent(RedisHash.class)) {
+        RedisHash hash = cl.getAnnotation(RedisHash.class);
+        if (ObjectUtils.isNotEmpty(hash.value())) {
+          entityPrefix = hash.value();
+        }
+      }
+
+      removeKeySpaceMapping(entityPrefix, cl);
+      createIndexFor(cl);
+    } catch (Exception e) {
+      logger.warn(String.format(SKIPPING_INDEX_CREATION, indexName, e.getMessage()));
+    }
+  }
+
+  public void dropIndexFor(Class<?> cl) {
+    String indexName = "";
+
+    try {
+      indexName = cl.getName() + "Idx";
+      logger.info(String.format("Dropping index @%s for class: %s", indexName, cl.getName()));
+      SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
+      opsForSearch.dropIndex();
+
+      String entityPrefix = getEntityPrefix(cl);
+
+      if (cl.isAnnotationPresent(Document.class)) {
+        Document document = cl.getAnnotation(Document.class);
+        if (ObjectUtils.isNotEmpty(document.value())) {
+          entityPrefix = document.value();
+        }
+      } else if (cl.isAnnotationPresent(RedisHash.class)) {
+        RedisHash hash = cl.getAnnotation(RedisHash.class);
+        if (ObjectUtils.isNotEmpty(hash.value())) {
+          entityPrefix = hash.value();
+        }
+      }
+
+      removeKeySpaceMapping(entityPrefix, cl);
+    } catch (Exception e) {
+      logger.warn(String.format(SKIPPING_INDEX_CREATION, indexName, e.getMessage()));
+    }
+  }
+
   public Optional<String> getIndexName(String keyspace) {
     Class<?> entityClass = keyspaceToEntityClass.get(getKey(keyspace));
     if (entityClass != null) {
