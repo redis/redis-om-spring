@@ -1,6 +1,7 @@
 package com.redis.om.spring.repository.query;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.redis.om.spring.RedisOMSpringProperties;
 import com.redis.om.spring.annotations.*;
 import com.redis.om.spring.ops.RedisModulesOperations;
@@ -86,7 +87,7 @@ public class RediSearchQuery implements RepositoryQuery {
 
   private final BloomQueryExecutor bloomQueryExecutor;
   private final AutoCompleteQueryExecutor autoCompleteQueryExecutor;
-  private final Gson gson;
+  private final GsonBuilder gsonBuilder;
 
   @SuppressWarnings("unchecked")
   public RediSearchQuery(//
@@ -96,7 +97,7 @@ public class RediSearchQuery implements RepositoryQuery {
       KeyValueOperations keyValueOperations, //
       RedisModulesOperations<?> rmo, //
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
-      Gson gson, //
+      GsonBuilder gsonBuilder, //
       RedisOMSpringProperties redisOMSpringProperties //
   ) {
     logger.info(String.format("Creating %s query method", queryMethod.getName()));
@@ -105,7 +106,7 @@ public class RediSearchQuery implements RepositoryQuery {
     this.queryMethod = queryMethod;
     this.searchIndex = this.queryMethod.getEntityInformation().getJavaType().getName() + "Idx";
     this.domainType = this.queryMethod.getEntityInformation().getJavaType();
-    this.gson = gson;
+    this.gsonBuilder = gsonBuilder;
     this.redisOMSpringProperties = redisOMSpringProperties;
 
     bloomQueryExecutor = new BloomQueryExecutor(this, modulesOperations);
@@ -429,6 +430,7 @@ public class RediSearchQuery implements RepositoryQuery {
     if (queryMethod.getReturnedObjectType() == SearchResult.class) {
       result = searchResult;
     } else if (queryMethod.isPageQuery()) {
+      Gson gson = gsonBuilder.create();
       List<Object> content = searchResult.getDocuments().stream()
           .map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), queryMethod.getReturnedObjectType()))
           .collect(Collectors.toList());
@@ -440,11 +442,13 @@ public class RediSearchQuery implements RepositoryQuery {
 
     } else if (queryMethod.isQueryForEntity() && !queryMethod.isCollectionQuery()) {
       if (!searchResult.getDocuments().isEmpty()) {
+        Gson gson = gsonBuilder.create();
         Document doc = searchResult.getDocuments().get(0);
         Object json = doc != null ? SafeEncoder.encode((byte[])doc.get("$")) : "";
         result = gson.fromJson(json.toString(), queryMethod.getReturnedObjectType());
       }
     } else if (queryMethod.isQueryForEntity() && queryMethod.isCollectionQuery()) {
+      Gson gson = gsonBuilder.create();
       result = searchResult.getDocuments().stream()
           .map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), queryMethod.getReturnedObjectType()))
           .collect(Collectors.toList());

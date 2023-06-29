@@ -2,6 +2,7 @@ package com.redis.om.spring.repository.support;
 
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.redis.om.spring.RediSearchIndexer;
 import com.redis.om.spring.RedisOMSpringProperties;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
@@ -60,7 +61,7 @@ import static redis.clients.jedis.json.JsonProtocol.JsonCommand;
 public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueRepository<T, ID>
     implements RedisDocumentRepository<T, ID> {
 
-  private final Gson gson;
+  private final GsonBuilder gsonBuilder;
   protected final RedisModulesOperations<String> modulesOperations;
   protected final EntityInformation<T, ID> metadata;
   protected final KeyValueOperations operations;
@@ -77,7 +78,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo, //
       RediSearchIndexer keyspaceToIndexMap, //
       RedisMappingContext mappingContext,
-      Gson gson,
+      GsonBuilder gsonBuilder,
       RedisOMSpringProperties properties) {
     super(metadata, operations);
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
@@ -87,7 +88,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     this.mappingConverter = new MappingRedisOMConverter(null,
         new ReferenceResolverImpl(modulesOperations.getTemplate()));
     this.generator = ULIDIdentifierGenerator.INSTANCE;
-    this.gson = gson;
+    this.gsonBuilder = gsonBuilder;
     this.mappingContext = mappingContext;
     this.properties = properties;
   }
@@ -98,6 +99,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     Optional<String> maybeSearchIndex = indexer.getIndexName(keyspace);
     List<ID> result = List.of();
     if (maybeSearchIndex.isPresent()) {
+      Gson gson = gsonBuilder.create();
       SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
       Optional<Field> maybeIdField = ObjectUtils.getIdFieldForEntityClass(metadata.getJavaType());
       String idField = maybeIdField.map(Field::getName).orElse("id");
@@ -158,7 +160,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
     try (Jedis jedis = modulesOperations.getClient().getJedis().get()) {
       Pipeline pipeline = jedis.pipelined();
-
+      Gson gson = gsonBuilder.create();
       for (S entity : entities) {
         boolean isNew = metadata.isNew(entity);
 
@@ -181,7 +183,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
         List<byte[]> args = new ArrayList<>(4);
         args.add(objectKey);
         args.add(SafeEncoder.encode(Path.ROOT_PATH.toString()));
-        args.add(SafeEncoder.encode(this.gson.toJson(entity)));
+        args.add(SafeEncoder.encode(gson.toJson(entity)));
         pipeline.sendCommand(JsonCommand.SET, args.toArray(new byte[args.size()][]));
 
         processReferenceAnnotations(objectKey, entity, pipeline);
@@ -198,6 +200,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
   @Override public Iterable<T> bulkLoad(String file) throws IOException {
     try (Reader reader = Files.newBufferedReader(Paths.get(file))) {
+      Gson gson = gsonBuilder.create();
       List<T> entities = gson.fromJson(reader, new GsonListOfType<>(metadata.getJavaType()));
       return saveAll(entities);
     }
@@ -249,6 +252,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       fields.forEach(f -> {
         var referencedValue = accessor.getPropertyValue(f.getName());
         if (referencedValue != null) {
+          Gson gson = gsonBuilder.create();
           if (referencedValue instanceof Collection<?> referenceValues) {
             List<String> referenceKeys = new ArrayList<>();
             referenceValues.forEach(r -> {
@@ -262,7 +266,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
             List<byte[]> args = new ArrayList<>(4);
             args.add(objectKey);
             args.add(SafeEncoder.encode(Path.of("$." + f.getName()).toString()));
-            args.add(SafeEncoder.encode(this.gson.toJson(referenceKeys)));
+            args.add(SafeEncoder.encode(gson.toJson(referenceKeys)));
             pipeline.sendCommand(JsonCommand.SET, args.toArray(new byte[args.size()][]));
 
           } else {
@@ -273,7 +277,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
               List<byte[]> args = new ArrayList<>(4);
               args.add(objectKey);
               args.add(SafeEncoder.encode(Path.of("$." + f.getName()).toString()));
-              args.add(SafeEncoder.encode(this.gson.toJson(referenceKey)));
+              args.add(SafeEncoder.encode(gson.toJson(referenceKey)));
               pipeline.sendCommand(JsonCommand.SET, args.toArray(new byte[args.size()][]));
             }
           }

@@ -1,6 +1,7 @@
 package com.redis.om.spring.repository.support;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.redis.om.spring.RediSearchIndexer;
 import com.redis.om.spring.RedisOMSpringProperties;
 import com.redis.om.spring.ops.RedisModulesOperations;
@@ -24,7 +25,7 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
   @Autowired
   private @Nullable RedisMappingContext mappingContext;
   @Autowired
-  private Gson gson;
+  private GsonBuilder gsonBuilder;
   @Autowired
   private RedisOMSpringProperties properties;
 
@@ -46,7 +47,7 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
       Class<? extends RepositoryQuery> repositoryQueryType //
   ) {
     return new RedisDocumentRepositoryFactory(operations, rmo, indexer, queryCreator, repositoryQueryType,
-        this.mappingContext, this.gson, this.properties);
+        this.mappingContext, this.gsonBuilder, this.properties);
   }
 
   @Override
