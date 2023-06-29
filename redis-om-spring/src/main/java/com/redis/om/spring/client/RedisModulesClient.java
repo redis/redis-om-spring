@@ -1,7 +1,7 @@
 package com.redis.om.spring.client;
 
 import com.google.gson.GsonBuilder;
-import com.redis.om.spring.EnhancedRedisQueryEngine;
+import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.data.redis.connection.RedisPassword;
 import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
@@ -15,7 +15,6 @@ import redis.clients.jedis.bloom.commands.CuckooFilterCommands;
 import redis.clients.jedis.bloom.commands.TopKFilterCommands;
 import redis.clients.jedis.json.RedisJsonCommands;
 import redis.clients.jedis.search.RediSearchCommands;
-import org.apache.commons.logging.Log;
 
 import java.util.Objects;
 import java.util.Optional;

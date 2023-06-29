@@ -1,12 +1,3 @@
-/*
- * Copyright (c) 2023. Memorial Sloan Kettering Cancer Center (MSKCC)
- * All rights reserved.
- * Unauthorized copying of this file, via any medium is strictly prohibited.
- * MSKCC PROPRIETARY/CONFIDENTIAL.
- * Use is subject to license terms.
- *
- */
-
 package com.redis.om.spring.client;
 
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
