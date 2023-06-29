@@ -127,91 +127,15 @@ public class RediSearchIndexer {
   }
 
   public void dropIndexAndDocumentsFor(Class<?> cl) {
-    String indexName = "";
-
-    try {
-      indexName = cl.getName() + "Idx";
-      logger.info(String.format("Dropping index @%s for class: %s", indexName, cl.getName()));
-      SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
-      opsForSearch.dropIndexAndDocuments();
-
-      String entityPrefix = getEntityPrefix(cl);
-
-      if (cl.isAnnotationPresent(Document.class)) {
-        Document document = cl.getAnnotation(Document.class);
-        if (ObjectUtils.isNotEmpty(document.value())) {
-          entityPrefix = document.value();
-        }
-      } else if (cl.isAnnotationPresent(RedisHash.class)) {
-        RedisHash hash = cl.getAnnotation(RedisHash.class);
-        if (ObjectUtils.isNotEmpty(hash.value())) {
-          entityPrefix = hash.value();
-        }
-      }
-
-      removeKeySpaceMapping(entityPrefix, cl);
-    } catch (Exception e) {
-      logger.warn(String.format(SKIPPING_INDEX_CREATION, indexName, e.getMessage()));
-    }
+    dropIndex(cl, true, false);
   }
 
   public void dropAndRecreateIndexFor(Class<?> cl) {
-    String indexName = "";
-
-    try {
-      indexName = cl.getName() + "Idx";
-      logger.info(String.format("Dropping index @%s for class: %s", indexName, cl.getName()));
-      SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
-      opsForSearch.dropIndex();
-
-      String entityPrefix = getEntityPrefix(cl);
-
-      if (cl.isAnnotationPresent(Document.class)) {
-        Document document = cl.getAnnotation(Document.class);
-        if (ObjectUtils.isNotEmpty(document.value())) {
-          entityPrefix = document.value();
-        }
-      } else if (cl.isAnnotationPresent(RedisHash.class)) {
-        RedisHash hash = cl.getAnnotation(RedisHash.class);
-        if (ObjectUtils.isNotEmpty(hash.value())) {
-          entityPrefix = hash.value();
-        }
-      }
-
-      removeKeySpaceMapping(entityPrefix, cl);
-      createIndexFor(cl);
-    } catch (Exception e) {
-      logger.warn(String.format(SKIPPING_INDEX_CREATION, indexName, e.getMessage()));
-    }
+    dropIndex(cl, false, true);
   }
 
   public void dropIndexFor(Class<?> cl) {
-    String indexName = "";
-
-    try {
-      indexName = cl.getName() + "Idx";
-      logger.info(String.format("Dropping index @%s for class: %s", indexName, cl.getName()));
-      SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
-      opsForSearch.dropIndex();
-
-      String entityPrefix = getEntityPrefix(cl);
-
-      if (cl.isAnnotationPresent(Document.class)) {
-        Document document = cl.getAnnotation(Document.class);
-        if (ObjectUtils.isNotEmpty(document.value())) {
-          entityPrefix = document.value();
-        }
-      } else if (cl.isAnnotationPresent(RedisHash.class)) {
-        RedisHash hash = cl.getAnnotation(RedisHash.class);
-        if (ObjectUtils.isNotEmpty(hash.value())) {
-          entityPrefix = hash.value();
-        }
-      }
-
-      removeKeySpaceMapping(entityPrefix, cl);
-    } catch (Exception e) {
-      logger.warn(String.format(SKIPPING_INDEX_CREATION, indexName, e.getMessage()));
-    }
+    dropIndex(cl, false, false);
   }
 
   public Optional<String> getIndexName(String keyspace) {
@@ -252,9 +176,12 @@ public class RediSearchIndexer {
   public String getKeyspaceForEntityClass(Class<?> entityClass) {
     String keyspace = entityClassToKeySpace.get(entityClass);
     if (keyspace == null) {
-      keyspace = mappingContext.getPersistentEntity(entityClass).getKeySpace() + ":";
+      var persistentEntity = mappingContext.getPersistentEntity(entityClass);
+      if (persistentEntity != null) {
+        String entityKeySpace = persistentEntity.getKeySpace();
+        keyspace = (entityKeySpace != null ? entityKeySpace : entityClass.getName()) + ":";
+      }
     }
-
     return keyspace;
   }
 
@@ -690,6 +617,46 @@ public class RediSearchIndexer {
     return entityPrefix;
   }
 
+  private void dropIndex(Class<?> cl, boolean dropDocuments, boolean recreateIndex) {
+    String indexName = generateIndexName(cl);
+    try {
+      SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
+      if (dropDocuments) {
+        opsForSearch.dropIndexAndDocuments();
+      } else {
+        opsForSearch.dropIndex();
+      }
+      String entityPrefix = generateEntityPrefix(cl);
+      removeKeySpaceMapping(entityPrefix, cl);
+      if (recreateIndex) {
+        createIndexFor(cl);
+      }
+    } catch (Exception e) {
+      logger.warn(String.format(SKIPPING_INDEX_CREATION, indexName, e.getMessage()));
+    }
+  }
+
+  private String generateIndexName(Class<?> cl) {
+    String indexName = cl.getName() + "Idx";
+    logger.info(String.format("Dropping index @%s for class: %s", indexName, cl.getName()));
+    return indexName;
+  }
+
+  private String generateEntityPrefix(Class<?> cl) {
+    String entityPrefix = getEntityPrefix(cl);
+    if (cl.isAnnotationPresent(Document.class)) {
+      Document document = cl.getAnnotation(Document.class);
+      if (ObjectUtils.isNotEmpty(document.value())) {
+        entityPrefix = document.value();
+      }
+    } else if (cl.isAnnotationPresent(RedisHash.class)) {
+      RedisHash hash = cl.getAnnotation(RedisHash.class);
+      if (ObjectUtils.isNotEmpty(hash.value())) {
+        entityPrefix = hash.value();
+      }
+    }
+    return entityPrefix;
+  }
 
   private Optional<IndexDefinition.Type> determineIndexTarget(Class<?> cl) {
     if (cl.isAnnotationPresent(Document.class)) {
