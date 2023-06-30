@@ -1,9 +1,8 @@
 package com.redis.om.spring.repository.support;
 
-import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.redis.om.spring.RediSearchIndexer;
-import com.redis.om.spring.RedisOMSpringProperties;
+import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.query.RediSearchQuery;
 import org.springframework.beans.BeanUtils;
@@ -42,7 +41,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
   private final RediSearchIndexer indexer;
   private final GsonBuilder gsonBuilder;
   private final RedisMappingContext mappingContext;
-  private final RedisOMSpringProperties properties;
+  private final RedisOMProperties properties;
 
   /**
    * Creates a new {@link KeyValueRepositoryFactory} for the given
@@ -60,7 +59,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
       RediSearchIndexer keyspaceToIndexMap, //
       RedisMappingContext mappingContext, //
       GsonBuilder gsonBuilder, //
-      RedisOMSpringProperties properties //
+      RedisOMProperties properties //
   ) {
     this(keyValueOperations, rmo, keyspaceToIndexMap, DEFAULT_QUERY_CREATOR, mappingContext, gsonBuilder, properties);
   }
@@ -83,7 +82,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
       RedisMappingContext mappingContext, //
       GsonBuilder gsonBuilder, //
-      RedisOMSpringProperties properties //
+      RedisOMProperties properties //
   ) {
 
     this(keyValueOperations, rmo, keyspaceToIndexMap, queryCreator, RediSearchQuery.class, mappingContext, gsonBuilder, properties);
@@ -109,7 +108,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
       Class<? extends RepositoryQuery> repositoryQueryType, //
       RedisMappingContext mappingContext, //
       GsonBuilder gsonBuilder, //
-      RedisOMSpringProperties properties //
+      RedisOMProperties properties //
   ) {
 
     super(keyValueOperations, queryCreator, repositoryQueryType);
@@ -151,7 +150,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
     private final KeyValueOperations keyValueOperations;
     private final RedisModulesOperations<?> rmo;
     private final GsonBuilder gsonBuilder;
-    private final RedisOMSpringProperties properties;
+    private final RedisOMProperties properties;
 
     private final Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
     private final Class<? extends RepositoryQuery> repositoryQueryType;
@@ -165,7 +164,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
         QueryMethodEvaluationContextProvider evaluationContextProvider, //
         KeyValueOperations keyValueOperations, //
         RedisModulesOperations<?> rmo, //
-        RedisOMSpringProperties properties, //
+        RedisOMProperties properties, //
         Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
         Class<? extends RepositoryQuery> repositoryQueryType, //
         GsonBuilder gsonBuilder) {
@@ -213,7 +212,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
               RedisModulesOperations.class, //
               Class.class, //
               GsonBuilder.class, //
-              RedisOMSpringProperties.class
+              RedisOMProperties.class
           );
 
       Assert.state(constructor != null, String.format(

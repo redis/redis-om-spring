@@ -2,7 +2,7 @@ package com.redis.om.spring.repository.query;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.redis.om.spring.RedisOMSpringProperties;
+import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.annotations.*;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
@@ -52,7 +52,7 @@ public class RediSearchQuery implements RepositoryQuery {
 
   private final QueryMethod queryMethod;
   private final String searchIndex;
-  private final RedisOMSpringProperties redisOMSpringProperties;
+  private final RedisOMProperties redisOMProperties;
 
   private RediSearchQueryType type;
   private String value;
@@ -98,7 +98,7 @@ public class RediSearchQuery implements RepositoryQuery {
       RedisModulesOperations<?> rmo, //
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
       GsonBuilder gsonBuilder, //
-      RedisOMSpringProperties redisOMSpringProperties //
+      RedisOMProperties redisOMProperties //
   ) {
     logger.info(String.format("Creating %s query method", queryMethod.getName()));
 
@@ -107,7 +107,7 @@ public class RediSearchQuery implements RepositoryQuery {
     this.searchIndex = this.queryMethod.getEntityInformation().getJavaType().getName() + "Idx";
     this.domainType = this.queryMethod.getEntityInformation().getJavaType();
     this.gsonBuilder = gsonBuilder;
-    this.redisOMSpringProperties = redisOMSpringProperties;
+    this.redisOMProperties = redisOMProperties;
 
     bloomQueryExecutor = new BloomQueryExecutor(this, modulesOperations);
     autoCompleteQueryExecutor = new AutoCompleteQueryExecutor(this, modulesOperations);
@@ -400,9 +400,9 @@ public class RediSearchQuery implements RepositoryQuery {
     if (needsLimit) {
       if ((limit != null && limit != Integer.MIN_VALUE) || (offset != null && offset != Integer.MIN_VALUE)) {
         query.limit(offset != null ? offset : 0,
-            limit != null ? limit : redisOMSpringProperties.getRepository().getQuery().getLimit());
+            limit != null ? limit : redisOMProperties.getRepository().getQuery().getLimit());
       } else {
-        query.limit(0, redisOMSpringProperties.getRepository().getQuery().getLimit());
+        query.limit(0, redisOMProperties.getRepository().getQuery().getLimit());
       }
     }
 
@@ -547,7 +547,7 @@ public class RediSearchQuery implements RepositoryQuery {
       if ((limit != null) || (offset != null)) {
         aggregation.limit(offset != null ? offset : 0, limit != null ? limit : 0);
       } else {
-        aggregation.limit(0, redisOMSpringProperties.getRepository().getQuery().getLimit());
+        aggregation.limit(0, redisOMProperties.getRepository().getQuery().getLimit());
       }
     }
 

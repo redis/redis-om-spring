@@ -40,7 +40,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   private final RediSearchIndexer indexer;
   private final EntityAuditor auditor;
   private final FeatureExtractor featureExtractor;
-  private final RedisOMSpringProperties redisOMSpringProperties;
+  private final RedisOMProperties redisOMProperties;
 
   /**
    * Creates new {@link RedisKeyValueAdapter} with default
@@ -55,9 +55,9 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       RedisModulesOperations<?> rmo, //
       RediSearchIndexer indexer, //
       FeatureExtractor featureExtractor, //
-      RedisOMSpringProperties redisOMSpringProperties
+      RedisOMProperties redisOMProperties
   ) {
-    this(redisOps, rmo, new RedisMappingContext(), indexer, featureExtractor, redisOMSpringProperties);
+    this(redisOps, rmo, new RedisMappingContext(), indexer, featureExtractor, redisOMProperties);
   }
 
   /**
@@ -75,9 +75,9 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       RedisMappingContext mappingContext, //
       RediSearchIndexer indexer, //
       FeatureExtractor featureExtractor, //
-      RedisOMSpringProperties redisOMSpringProperties
+      RedisOMProperties redisOMProperties
   ) {
-    this(redisOps, rmo, mappingContext, new RedisOMCustomConversions(), indexer, featureExtractor, redisOMSpringProperties);
+    this(redisOps, rmo, mappingContext, new RedisOMCustomConversions(), indexer, featureExtractor, redisOMProperties);
   }
 
   /**
@@ -97,7 +97,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       @Nullable CustomConversions customConversions, //
       RediSearchIndexer indexer, //
       FeatureExtractor featureExtractor, //
-      RedisOMSpringProperties redisOMSpringProperties
+      RedisOMProperties redisOMProperties
   ) {
     super(redisOps, mappingContext, customConversions);
 
@@ -116,7 +116,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     this.indexer = indexer;
     this.auditor = new EntityAuditor(this.redisOperations);
     this.featureExtractor = featureExtractor;
-    this.redisOMSpringProperties = redisOMSpringProperties;
+    this.redisOMProperties = redisOMProperties;
   }
 
   /*
@@ -278,7 +278,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       offset = Math.max(0, offset);
       int limit = rows;
       if (limit <= 0) {
-        limit = redisOMSpringProperties.getRepository().getQuery().getLimit();
+        limit = redisOMProperties.getRepository().getQuery().getLimit();
       }
       query.limit(Math.toIntExact(offset), limit);
       SearchResult searchResult = searchOps.search(query);

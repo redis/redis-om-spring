@@ -1,9 +1,8 @@
 package com.redis.om.spring.repository.support;
 
-import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.redis.om.spring.RediSearchIndexer;
-import com.redis.om.spring.RedisOMSpringProperties;
+import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
@@ -27,7 +26,7 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
   @Autowired
   private GsonBuilder gsonBuilder;
   @Autowired
-  private RedisOMSpringProperties properties;
+  private RedisOMProperties properties;
 
   /**
    * Creates a new {@link RedisDocumentRepositoryFactoryBean} for the given
