@@ -10,6 +10,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.ApplicationContext;
+import org.springframework.data.annotation.Reference;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.TimeToLive;
@@ -67,6 +68,7 @@ public class RediSearchIndexer {
     for (BeanDefinition beanDef : beanDefs) {
       try {
         Class<?> cl = Class.forName(beanDef.getBeanClassName());
+        logger.info(String.format("Creating index for %s annotated Entity...", cl.getSimpleName()));
         createIndexFor(cl);
       } catch (ClassNotFoundException e) {
         logger.warn(
@@ -199,7 +201,17 @@ public class RediSearchIndexer {
 
       Class<?> fieldType = ClassUtils.resolvePrimitiveIfNecessary(field.getType());
 
-      if (indexed.schemaFieldType() == SchemaFieldType.AUTODETECT) {
+      // Processed @Reference @Indexed fields: Create schema field for the ID
+      if (field.isAnnotationPresent(Reference.class)) {
+        logger.debug("🪲Found @Reference field " + field.getName() + " in " + field.getDeclaringClass().getSimpleName());
+        var maybeReferenceIdField = getIdFieldForEntityClass(fieldType);
+        if (maybeReferenceIdField.isPresent()) {
+          var idFieldToIndex = maybeReferenceIdField.get();
+          createIndexedFieldForReferenceIdField(field.getDeclaringClass(), idFieldToIndex, isDocument).ifPresent(fields::add);
+        } else {
+          logger.warn("Couldn't find ID field for reference" + field.getName() + " in " + field.getDeclaringClass().getSimpleName());
+        }
+      } else if (indexed.schemaFieldType() == SchemaFieldType.AUTODETECT) {
         //
         // Any Character class, Enums or Boolean -> Tag Search Field
         //
@@ -698,6 +710,18 @@ public class RediSearchIndexer {
         }
       }
     }
+    return result;
+  }
+
+  private Optional<Field> createIndexedFieldForReferenceIdField(Class<?> cl, java.lang.reflect.Field referenceIdField, boolean isDocument) {
+    Optional<Field> result = Optional.empty();
+
+    if (Number.class.isAssignableFrom(referenceIdField.getType())) {
+      result = Optional.of(indexAsNumericFieldFor(referenceIdField, isDocument, "", true, false));
+    } else {
+      result = Optional.of(indexAsTagFieldFor(referenceIdField, isDocument, "", false, "|", Integer.MIN_VALUE));
+    }
+
     return result;
   }
 
