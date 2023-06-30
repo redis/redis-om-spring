@@ -8,6 +8,7 @@ import redis.clients.jedis.json.Path;
 import redis.clients.jedis.json.Path2;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -47,34 +48,34 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
   @SafeVarargs
   @Override
   public final List<String> mget(K... keys) {
-    return client.clientForJSON().jsonMGet(getKeysAsString(keys))
+    return (keys.length > 0) ? client.clientForJSON().jsonMGet(getKeysAsString(keys))
         .stream()
         .filter(Objects::nonNull)
         .map(jsonArr -> jsonArr.get(0))
         .map(Object::toString)
-        .toList();
+        .toList() : List.of();
   }
 
   @SafeVarargs @Override
   public final <T> List<T> mget(Class<T> clazz, K... keys) {
     builder.processEntity(clazz);
-    return client.clientForJSON().jsonMGet(getKeysAsString(keys))
+    return (keys.length > 0) ? client.clientForJSON().jsonMGet(getKeysAsString(keys))
         .stream()
         .filter(Objects::nonNull)
         .map(jsonArr -> jsonArr.get(0))
         .map(Object::toString)
         .map(str -> builder.gson().fromJson(str, clazz))
-        .toList();
+        .toList() : List.of();
   }
 
   @SafeVarargs @Override
   public final <T> List<T> mget(Path2 path, Class<T> clazz, K... keys) {
     builder.processEntity(clazz);
-    return client.clientForJSON().jsonMGet(path, getKeysAsString(keys))
+    return (keys.length > 0) ? client.clientForJSON().jsonMGet(path, getKeysAsString(keys))
         .stream()
         .map(Object::toString)
         .map(str -> builder.gson().fromJson(str, clazz))
-        .toList();
+        .toList() : List.of();
   }
 
   @Override
