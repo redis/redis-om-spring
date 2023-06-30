@@ -1,6 +1,6 @@
 package com.redis.om.spring.repository.query;
 
-import com.redis.om.spring.RedisOMSpringProperties;
+import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.annotations.*;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.ops.RedisModulesOperations;
@@ -51,7 +51,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
   private final QueryMethod queryMethod;
   private final String searchIndex;
-  private final RedisOMSpringProperties redisOMSpringProperties;
+  private final RedisOMProperties redisOMProperties;
 
   private RediSearchQueryType type;
   private String value;
@@ -98,14 +98,14 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       RedisOperations<?, ?> redisOperations, //
       RedisModulesOperations<?> rmo, //
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator,
-      RedisOMSpringProperties redisOMSpringProperties) {
+      RedisOMProperties redisOMProperties) {
     logger.info(String.format("Creating query %s", queryMethod.getName()));
 
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.queryMethod = queryMethod;
     this.searchIndex = this.queryMethod.getEntityInformation().getJavaType().getName() + "Idx";
     this.domainType = this.queryMethod.getEntityInformation().getJavaType();
-    this.redisOMSpringProperties = redisOMSpringProperties;
+    this.redisOMProperties = redisOMProperties;
 
     this.mappingConverter = new MappingRedisOMConverter(null, new ReferenceResolverImpl(redisOperations));
 
@@ -394,7 +394,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     }
 
     if ((limit != null && limit != Integer.MIN_VALUE) || (offset != null && offset != Integer.MIN_VALUE)) {
-      query.limit(offset != null ? offset : 0, limit != null ? limit : redisOMSpringProperties.getRepository().getQuery().getLimit());
+      query.limit(offset != null ? offset : 0, limit != null ? limit : redisOMProperties.getRepository().getQuery().getLimit());
     }
 
     if ((sortBy != null && !sortBy.isBlank())) {

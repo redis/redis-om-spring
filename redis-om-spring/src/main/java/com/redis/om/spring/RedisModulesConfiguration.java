@@ -15,7 +15,6 @@ import ai.djl.repository.zoo.ZooModel;
 import ai.djl.translate.Pipeline;
 import ai.djl.translate.Translator;
 import com.github.f4b6a3.ulid.Ulid;
-import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.redis.om.spring.annotations.Bloom;
 import com.redis.om.spring.annotations.Document;
@@ -68,7 +67,7 @@ import static com.redis.om.spring.util.ObjectUtils.getBeanDefinitionsFor;
 import static com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively;
 
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties({RedisProperties.class, RedisOMSpringProperties.class})
+@EnableConfigurationProperties({RedisProperties.class, RedisOMProperties.class})
 @EnableAspectJAutoProxy
 @ComponentScan("com.redis.om.spring.bloom")
 @ComponentScan("com.redis.om.spring.autocomplete")
@@ -153,7 +152,7 @@ public class RedisModulesConfiguration {
   }
 
   @Bean(name = "djlImageEmbeddingModelCriteria")
-  public Criteria<Image, byte[]> imageEmbeddingModelCriteria(RedisOMSpringProperties properties) {
+  public Criteria<Image, byte[]> imageEmbeddingModelCriteria(RedisOMProperties properties) {
     return properties.getDjl().isEnabled() ? Criteria.builder()
         .setTypes(Image.class, byte[].class) //
         .optEngine(properties.getDjl().getImageEmbeddingModelEngine())  //
@@ -175,7 +174,7 @@ public class RedisModulesConfiguration {
   @Bean(name = "djlFaceDetectionModelCriteria")
   public Criteria<Image, DetectedObjects> faceDetectionModelCriteria( //
       @Qualifier("djlFaceDetectionTranslator") Translator<Image, DetectedObjects> translator, //
-      RedisOMSpringProperties properties) {
+      RedisOMProperties properties) {
 
     return properties.getDjl().isEnabled() ? Criteria.builder()
         .setTypes(Image.class, DetectedObjects.class) //
@@ -189,7 +188,7 @@ public class RedisModulesConfiguration {
   @Bean(name = "djlFaceDetectionModel")
   public ZooModel<Image, DetectedObjects> faceDetectionModel(
       @Nullable @Qualifier("djlFaceDetectionModelCriteria") Criteria<Image, DetectedObjects> criteria,
-      RedisOMSpringProperties properties) {
+      RedisOMProperties properties) {
     try {
       return properties.getDjl().isEnabled() && (criteria != null) ? ModelZoo.loadModel(criteria) : null;
     } catch (IOException | ModelNotFoundException | MalformedModelException ex) {
@@ -206,7 +205,7 @@ public class RedisModulesConfiguration {
   @Bean(name = "djlFaceEmbeddingModelCriteria")
   public Criteria<Image, float[]> faceEmbeddingModelCriteria( //
       @Qualifier("djlFaceEmbeddingTranslator") Translator<Image, float[]> translator, //
-      RedisOMSpringProperties properties) {
+      RedisOMProperties properties) {
 
     return properties.getDjl().isEnabled() ? Criteria.builder() //
             .setTypes(Image.class, float[].class)
@@ -220,7 +219,7 @@ public class RedisModulesConfiguration {
   @Bean(name = "djlFaceEmbeddingModel")
   public ZooModel<Image, float[]> faceEmbeddingModel(
       @Nullable @Qualifier("djlFaceEmbeddingModelCriteria") Criteria<Image, float[]> criteria, //
-      RedisOMSpringProperties properties) {
+      RedisOMProperties properties) {
     try {
       return properties.getDjl().isEnabled() && (criteria != null) ? ModelZoo.loadModel(criteria) : null;
     } catch (Exception e) {
@@ -231,13 +230,13 @@ public class RedisModulesConfiguration {
 
   @Bean(name = "djlImageEmbeddingModel")
   public ZooModel<Image, byte[]> imageModel(
-      @Nullable @Qualifier("djlImageEmbeddingModelCriteria") Criteria<Image, byte[]> criteria, RedisOMSpringProperties properties)
+      @Nullable @Qualifier("djlImageEmbeddingModelCriteria") Criteria<Image, byte[]> criteria, RedisOMProperties properties)
       throws MalformedModelException, ModelNotFoundException, IOException {
     return properties.getDjl().isEnabled() && (criteria != null) ? ModelZoo.loadModel(criteria) : null;
   }
 
   @Bean(name = "djlDefaultImagePipeline")
-  public Pipeline defaultImagePipeline(RedisOMSpringProperties properties) {
+  public Pipeline defaultImagePipeline(RedisOMProperties properties) {
     if (properties.getDjl().isEnabled()) {
       Pipeline pipeline = new Pipeline();
       if (properties.getDjl().isDefaultImagePipelineCenterCrop()) {
@@ -253,7 +252,7 @@ public class RedisModulesConfiguration {
   }
 
   @Bean(name = "djlSentenceTokenizer")
-  public HuggingFaceTokenizer sentenceTokenizer(RedisOMSpringProperties properties) {
+  public HuggingFaceTokenizer sentenceTokenizer(RedisOMProperties properties) {
     if (properties.getDjl().isEnabled()) {
       Map<String, String> options = Map.of( //
           "maxLength", properties.getDjl().getSentenceTokenizerMaxLength(), //
@@ -277,7 +276,7 @@ public class RedisModulesConfiguration {
       @Nullable @Qualifier("djlImageFactory") ImageFactory imageFactory,
       @Nullable @Qualifier("djlDefaultImagePipeline") Pipeline defaultImagePipeline,
       @Nullable @Qualifier("djlSentenceTokenizer") HuggingFaceTokenizer sentenceTokenizer,
-      RedisOMSpringProperties properties,
+      RedisOMProperties properties,
       ApplicationContext ac) {
     return properties.getDjl().isEnabled() ? new DefaultFeatureExtractor( ac, imageEmbeddingModel, faceEmbeddingModel, imageFactory, defaultImagePipeline, sentenceTokenizer) : null;
   }
@@ -289,7 +288,7 @@ public class RedisModulesConfiguration {
       RedisMappingContext mappingContext, //
       RediSearchIndexer indexer, //
       @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder, //
-      RedisOMSpringProperties properties //
+      RedisOMProperties properties //
   ) {
     return new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, gsonBuilder, properties);
   }
@@ -301,7 +300,7 @@ public class RedisModulesConfiguration {
       RedisMappingContext mappingContext, //
       RediSearchIndexer indexer, //
       @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder, //
-      RedisOMSpringProperties properties //
+      RedisOMProperties properties //
   ) {
     return new CustomRedisKeyValueTemplate(
         new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, gsonBuilder, properties),
@@ -314,7 +313,7 @@ public class RedisModulesConfiguration {
       RedisModulesOperations<?> redisModulesOperations, //
       RedisMappingContext mappingContext, //
       RediSearchIndexer indexer, //
-      RedisOMSpringProperties properties, //
+      RedisOMProperties properties, //
       @Nullable @Qualifier("featureExtractor") FeatureExtractor featureExtractor
   ) {
     return new CustomRedisKeyValueTemplate(

@@ -4,7 +4,7 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.redis.om.spring.RediSearchIndexer;
-import com.redis.om.spring.RedisOMSpringProperties;
+import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.id.ULIDIdentifierGenerator;
 import com.redis.om.spring.metamodel.MetamodelField;
@@ -55,7 +55,6 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
 
-import static com.redis.om.spring.RedisOMSpringProperties.MAXSEARCHRESULTS;
 import static redis.clients.jedis.json.JsonProtocol.JsonCommand;
 
 public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueRepository<T, ID>
@@ -68,7 +67,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   protected final RediSearchIndexer indexer;
   protected final MappingRedisOMConverter mappingConverter;
   private final ULIDIdentifierGenerator generator;
-  private final RedisOMSpringProperties properties;
+  private final RedisOMProperties properties;
   private final RedisMappingContext mappingContext;
 
   @SuppressWarnings("unchecked")
@@ -79,7 +78,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       RediSearchIndexer keyspaceToIndexMap, //
       RedisMappingContext mappingContext,
       GsonBuilder gsonBuilder,
-      RedisOMSpringProperties properties) {
+      RedisOMProperties properties) {
     super(metadata, operations);
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.metadata = metadata;

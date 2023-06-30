@@ -1,7 +1,7 @@
 package com.redis.om.spring.repository.support;
 
 import com.redis.om.spring.RediSearchIndexer;
-import com.redis.om.spring.RedisOMSpringProperties;
+import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.query.RedisEnhancedQuery;
 import com.redis.om.spring.vectorize.FeatureExtractor;
@@ -29,7 +29,7 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
   private @Nullable Class<? extends RepositoryQuery> repositoryQueryType;
   private @Nullable FeatureExtractor featureExtractor;
 
-  private RedisOMSpringProperties properties;
+  private RedisOMProperties properties;
 
   /**
    * Creates a new {@link RedisRepositoryFactoryBean} for the given repository
@@ -46,7 +46,7 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
       RedisModulesOperations<?> rmo, //
       RediSearchIndexer indexer, //
       FeatureExtractor featureExtractor, //
-      RedisOMSpringProperties properties
+      RedisOMProperties properties
   ) {
     super(repositoryInterface);
     setRedisModulesOperations(rmo);
@@ -97,7 +97,7 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
     this.redisOperations = redisOperations;
   }
 
-  public void setRedisOMSpringProperties(RedisOMSpringProperties properties) {
+  public void setRedisOMSpringProperties(RedisOMProperties properties) {
     Assert.notNull(redisOperations, "RedisOMSpringProperties must not be null!");
     this.properties = properties;
   }

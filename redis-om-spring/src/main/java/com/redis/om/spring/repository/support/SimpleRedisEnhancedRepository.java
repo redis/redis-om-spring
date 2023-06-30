@@ -3,7 +3,7 @@ package com.redis.om.spring.repository.support;
 import com.google.common.collect.Lists;
 import com.redis.om.spring.RediSearchIndexer;
 import com.redis.om.spring.RedisEnhancedKeyValueAdapter;
-import com.redis.om.spring.RedisOMSpringProperties;
+import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.audit.EntityAuditor;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.id.ULIDIdentifierGenerator;
@@ -39,7 +39,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static com.redis.om.spring.RedisOMSpringProperties.MAXSEARCHRESULTS;
+import static com.redis.om.spring.RedisOMProperties.MAX_SEARCH_RESULTS;
 
 public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueRepository<T, ID>
     implements RedisEnhancedRepository<T, ID> {
@@ -54,7 +54,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   protected final FeatureExtractor featureExtractor;
 
   private final ULIDIdentifierGenerator generator;
-  private final RedisOMSpringProperties properties;
+  private final RedisOMProperties properties;
 
   @SuppressWarnings("unchecked")
   public SimpleRedisEnhancedRepository( //
@@ -63,7 +63,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo, //
     RediSearchIndexer indexer, //
     FeatureExtractor featureExtractor, //
-    RedisOMSpringProperties properties //
+    RedisOMProperties properties //
   ) {
     super(metadata, operations);
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
@@ -91,7 +91,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
       String idField = maybeIdField.map(Field::getName).orElse("id");
       
       Query query = new Query("*");
-      query.limit(0, MAXSEARCHRESULTS);
+      query.limit(0, MAX_SEARCH_RESULTS);
       query.returnFields(idField);
       SearchResult searchResult = searchOps.search(query);
   

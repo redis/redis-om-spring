@@ -1,7 +1,7 @@
 package com.redis.om.spring.repository.support;
 
 import com.redis.om.spring.RediSearchIndexer;
-import com.redis.om.spring.RedisOMSpringProperties;
+import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.query.RedisEnhancedQuery;
 import com.redis.om.spring.vectorize.FeatureExtractor;
@@ -46,7 +46,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
   private final Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
   private final Class<? extends RepositoryQuery> repositoryQueryType;
   private final FeatureExtractor featureExtractor;
-  private final RedisOMSpringProperties properties;
+  private final RedisOMProperties properties;
 
   /**
    * Creates a new {@link KeyValueRepositoryFactory} for the given
@@ -63,7 +63,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
       RedisModulesOperations<?> rmo, //
       RediSearchIndexer indexer, //
       FeatureExtractor featureExtractor, //
-      RedisOMSpringProperties properties
+      RedisOMProperties properties
   ) {
     this(keyValueOperations, redisOperations, rmo, indexer, featureExtractor, DEFAULT_QUERY_CREATOR, properties);
   }
@@ -85,7 +85,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
                                          RediSearchIndexer indexer, //
                                          FeatureExtractor featureExtractor, //
                                          Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
-                                         RedisOMSpringProperties properties ) {
+                                         RedisOMProperties properties ) {
 
     this(keyValueOperations, redisOperations, rmo, indexer, featureExtractor, queryCreator, RedisEnhancedQuery.class, properties);
   }
@@ -109,7 +109,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
                                          FeatureExtractor featureExtractor, //
                                          Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
                                          Class<? extends RepositoryQuery> repositoryQueryType, //
-                                         RedisOMSpringProperties properties
+                                         RedisOMProperties properties
                                          ) {
 
     Assert.notNull(keyValueOperations, "KeyValueOperations must not be null!");
@@ -195,7 +195,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
 
     private final Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
     private final Class<? extends RepositoryQuery> repositoryQueryType;
-    private final RedisOMSpringProperties properties;
+    private final RedisOMProperties properties;
 
     /**
      * @param key
@@ -209,7 +209,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
                                             KeyValueOperations keyValueOperations, //
                                             RedisOperations<?, ?> redisOperations, //
                                             RedisModulesOperations<?> rmo, //
-                                            RedisOMSpringProperties properties, //
+                                            RedisOMProperties properties, //
                                             Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
                                             Class<? extends RepositoryQuery> repositoryQueryType) {
 
@@ -254,7 +254,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
               RedisOperations.class, //
               RedisModulesOperations.class, //
               Class.class, //
-              RedisOMSpringProperties.class
+              RedisOMProperties.class
           );
 
       Assert.state(constructor != null, String.format(
