@@ -14,6 +14,7 @@ import com.redis.om.spring.tuple.Tuples;
 import com.redis.om.spring.util.ObjectUtils;
 import com.squareup.javapoet.*;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Reference;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.core.RedisHash;
 import org.springframework.util.ClassUtils;
@@ -226,8 +227,12 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
     var indexed = field.getAnnotation(Indexed.class);
     var searchable = field.getAnnotation(Searchable.class);
+    var reference = field.getAnnotation(Reference.class);
 
-    if (searchable != null) {
+    if (indexed != null && reference != null) {
+      targetInterceptor = ReferenceField.class;
+    }
+    else if (searchable != null) {
       targetInterceptor = TextField.class;
     } else if (indexed != null || field.getAnnotation(Id.class) != null) {
       try {
