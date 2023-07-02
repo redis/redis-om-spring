@@ -1,13 +1,12 @@
 package com.redis.om.spring.search.stream;
 
-import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.redis.om.spring.ops.RedisModulesOperations;
 
 public class EntityStreamImpl implements EntityStream {
 
-  final RedisModulesOperations<String> modulesOperations;
-  final GsonBuilder gsonBuilder;
+  private final RedisModulesOperations<String> modulesOperations;
+  private final GsonBuilder gsonBuilder;
 
   @SuppressWarnings("unchecked")
   public EntityStreamImpl(RedisModulesOperations<?> rmo, GsonBuilder gsonBuilder) {
@@ -17,7 +16,7 @@ public class EntityStreamImpl implements EntityStream {
 
   @Override
   public <E> SearchStream<E> of(Class<E> entityClass) {
-    return new SearchStreamImpl<>(entityClass, modulesOperations, gsonBuilder.create());
+    return new SearchStreamImpl<>(entityClass, modulesOperations, gsonBuilder);
   }
 
 }

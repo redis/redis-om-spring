@@ -48,7 +48,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     this.entitySearchStream = entitySearchStream;
     this.returning = returning;
     this.gson = gson;
-    useNoContent = returning.size() == 1 && returning.get(0).getSearchFieldAccessor().getField().isAnnotationPresent(Id.class);
+    this.useNoContent = returning.size() == 1 && returning.get(0).getSearchFieldAccessor().getField().isAnnotationPresent(Id.class);
   }
 
   @Override

@@ -66,7 +66,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
     processingEnvironment.getTypeUtils();
 
     messager = processingEnvironment.getMessager();
-    messager.printMessage(Diagnostic.Kind.NOTE, "Redis OM Spring Entity Metamodel Generator");
+    messager.printMessage(Diagnostic.Kind.NOTE, "🍃 Redis OM Spring Entity Metamodel Generator");
 
     this.objectTypeElement = processingEnvironment.getElementUtils().getTypeElement("java.lang.Object");
   }

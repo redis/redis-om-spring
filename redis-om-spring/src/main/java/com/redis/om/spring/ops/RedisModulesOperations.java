@@ -1,21 +1,21 @@
 package com.redis.om.spring.ops;
 
+import com.google.gson.GsonBuilder;
 import com.redis.om.spring.client.RedisModulesClient;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.json.JSONOperationsImpl;
 import com.redis.om.spring.ops.pds.*;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.ops.search.SearchOperationsImpl;
-import com.redis.om.spring.serialization.gson.ReferenceAwareGsonBuilder;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 public class RedisModulesOperations<K> {
 
-  private final ReferenceAwareGsonBuilder gsonBuilder;
+  private final GsonBuilder gsonBuilder;
   private final RedisModulesClient client;
   private final StringRedisTemplate template;
 
-  public RedisModulesOperations(RedisModulesClient client, StringRedisTemplate template, ReferenceAwareGsonBuilder gsonBuilder) {
+  public RedisModulesOperations(RedisModulesClient client, StringRedisTemplate template, GsonBuilder gsonBuilder) {
     this.client = client;
     this.template = template;
     this.gsonBuilder = gsonBuilder;
