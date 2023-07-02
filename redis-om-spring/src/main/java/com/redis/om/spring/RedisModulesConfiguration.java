@@ -96,11 +96,6 @@ public class RedisModulesConfiguration {
     return builder;
   }
 
-  @Bean(name = "referenceAwareGsonBuilder")
-  ReferenceAwareGsonBuilder referenceAwareGsonBuilder(GsonBuilder gsonBuilder, ApplicationContext ac) {
-    return new ReferenceAwareGsonBuilder(gsonBuilder, ac);
-  }
-
   @Bean(name = "redisModulesClient")
   @Lazy
   RedisModulesClient redisModulesClient( //
@@ -116,7 +111,7 @@ public class RedisModulesConfiguration {
   RedisModulesOperations<?> redisModulesOperations( //
           RedisModulesClient rmc, //
           StringRedisTemplate template, //
-          ReferenceAwareGsonBuilder gsonBuilder) {
+          @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder) {
     return new RedisModulesOperations<>(rmc, template, gsonBuilder);
   }
 
@@ -365,5 +360,17 @@ public class RedisModulesConfiguration {
         logger.debug("Error during processing of @Bloom annotation: ", e);
       }
     }
+  }
+
+  @EventListener(ContextRefreshedEvent.class)
+  public void registerReferenceSerializer(ContextRefreshedEvent cre) {
+    logger.info("Registering Reference Serializers......");
+
+    ApplicationContext ac = cre.getApplicationContext();
+    GsonBuilder gsonBuilder = (GsonBuilder)ac.getBean("omGsonBuilder");
+    GsonReferenceSerializerRegistrar registrar = new GsonReferenceSerializerRegistrar(gsonBuilder, ac);
+
+    registrar.registerReferencesFor(Document.class);
+    registrar.registerReferencesFor(RedisHash.class);
   }
 }

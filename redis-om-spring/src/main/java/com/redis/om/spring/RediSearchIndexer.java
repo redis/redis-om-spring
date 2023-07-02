@@ -95,8 +95,7 @@ public class RediSearchIndexer {
       indexName = cl.getName() + "Idx";
       logger.info(String.format("Found @%s annotated class: %s", idxType, cl.getName()));
 
-      final List<java.lang.reflect.Field> allClassFields = com.redis.om.spring.util.ObjectUtils
-          .getDeclaredFieldsTransitively(cl);
+      final List<java.lang.reflect.Field> allClassFields = getDeclaredFieldsTransitively(cl);
 
       List<Field> fields = processIndexedFields(allClassFields, isDocument);
       maybeScoreField = getDocumentScoreField(allClassFields, isDocument);
@@ -141,16 +140,11 @@ public class RediSearchIndexer {
   }
 
   public Optional<String> getIndexName(String keyspace) {
-    Class<?> entityClass = keyspaceToEntityClass.get(getKey(keyspace));
-    if (entityClass != null) {
-      return Optional.of(entityClass.getName() + "Idx");
-    } else {
-      return Optional.empty();
-    }
+    return getIndexName(keyspaceToEntityClass.get(getKeyspace(keyspace)));
   }
 
   public Optional<String> getIndexName(Class<?> entityClass) {
-    if (entityClassToKeySpace.containsKey(entityClass)) {
+    if (entityClass != null && entityClassToKeySpace.containsKey(entityClass)) {
       return Optional.of(entityClass.getName() + "Idx");
     } else {
       return Optional.empty();
@@ -158,21 +152,21 @@ public class RediSearchIndexer {
   }
 
   public void addKeySpaceMapping(String keyspace, Class<?> entityClass) {
-    String key = getKey(keyspace);
+    String key = getKeyspace(keyspace);
     keyspaceToEntityClass.put(key, entityClass);
     entityClassToKeySpace.put(entityClass, key);
     indexedEntityClasses.add(entityClass);
   }
 
   public void removeKeySpaceMapping(String keyspace, Class<?> entityClass) {
-    String key = getKey(keyspace);
+    String key = getKeyspace(keyspace);
     keyspaceToEntityClass.remove(key);
     entityClassToKeySpace.remove(entityClass);
     indexedEntityClasses.remove(entityClass);
   }
 
   public Class<?> getEntityClassForKeyspace(String keyspace) {
-    return keyspaceToEntityClass.get(getKey(keyspace));
+    return keyspaceToEntityClass.get(getKeyspace(keyspace));
   }
 
   public String getKeyspaceForEntityClass(Class<?> entityClass) {
@@ -207,7 +201,7 @@ public class RediSearchIndexer {
         var maybeReferenceIdField = getIdFieldForEntityClass(fieldType);
         if (maybeReferenceIdField.isPresent()) {
           var idFieldToIndex = maybeReferenceIdField.get();
-          createIndexedFieldForReferenceIdField(field.getDeclaringClass(), idFieldToIndex, isDocument).ifPresent(fields::add);
+          createIndexedFieldForReferenceIdField(field, idFieldToIndex, isDocument).ifPresent(fields::add);
         } else {
           logger.warn("Couldn't find ID field for reference" + field.getName() + " in " + field.getDeclaringClass().getSimpleName());
         }
@@ -713,13 +707,20 @@ public class RediSearchIndexer {
     return result;
   }
 
-  private Optional<Field> createIndexedFieldForReferenceIdField(Class<?> cl, java.lang.reflect.Field referenceIdField, boolean isDocument) {
-    Optional<Field> result = Optional.empty();
+  private Optional<Field> createIndexedFieldForReferenceIdField( //
+      java.lang.reflect.Field referenceIdField, //
+      java.lang.reflect.Field idFieldToIndex, boolean isDocument) {
+    Optional<Field> result;
+
+    String fieldPrefix = getFieldPrefix("", isDocument);
+    FieldName fieldName = FieldName.of(fieldPrefix + referenceIdField.getName());
+
+    fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(referenceIdField, ""));
 
     if (Number.class.isAssignableFrom(referenceIdField.getType())) {
-      result = Optional.of(indexAsNumericFieldFor(referenceIdField, isDocument, "", true, false));
+      result = Optional.of(new Field(fieldName, FieldType.NUMERIC, true, false));
     } else {
-      result = Optional.of(indexAsTagFieldFor(referenceIdField, isDocument, "", false, "|", Integer.MIN_VALUE));
+      result = Optional.of(new TagField(fieldName, "|", true));
     }
 
     return result;
@@ -757,7 +758,7 @@ public class RediSearchIndexer {
     }
   }
 
-  private String getKey(String keyspace) {
+  private String getKeyspace(String keyspace) {
     return keyspace.endsWith(":") ? keyspace : keyspace + ":";
   }
 

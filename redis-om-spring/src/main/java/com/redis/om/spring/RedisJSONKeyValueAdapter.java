@@ -37,6 +37,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+import static com.redis.om.spring.util.ObjectUtils.getKey;
+
 public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private static final Log logger = LogFactory.getLog(RedisJSONKeyValueAdapter.class);
   private final JSONOperations<?> redisJSONOperations;
@@ -299,10 +301,6 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
         }
       });
     }
-  }
-
-  protected String getKey(String keyspace, Object id) {
-    return String.format("%s:%s", keyspace, id);
   }
 
   private Optional<Long> getTTLForEntity(Object entity) {

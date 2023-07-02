@@ -1,6 +1,7 @@
 package com.redis.om.spring.search.stream;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.metamodel.MetamodelField;
@@ -52,7 +53,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private final String searchIndex;
   private final Class<E> entityClass;
   private Node rootNode = QueryBuilders.union();
-  private final Gson gson;
+  private final GsonBuilder gsonBuilder;
+  private Gson gson;
   private Long limit;
   private Long skip;
   private SortedField sortBy;
@@ -65,20 +67,20 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private final MappingRedisOMConverter mappingConverter;
   private int dialect = 1;
 
-  public SearchStreamImpl(Class<E> entityClass, RedisModulesOperations<String> modulesOperations, Gson gson) {
+  public SearchStreamImpl(Class<E> entityClass, RedisModulesOperations<String> modulesOperations, GsonBuilder gsonBuilder) {
     this.modulesOperations = modulesOperations;
     this.entityClass = entityClass;
-    searchIndex = entityClass.getName() + "Idx";
-    search = modulesOperations.opsForSearch(searchIndex);
-    json = modulesOperations.opsForJSON();
-    this.gson = gson;
+    this.searchIndex = entityClass.getName() + "Idx";
+    this.search = modulesOperations.opsForSearch(searchIndex);
+    this.json = modulesOperations.opsForJSON();
+    this.gsonBuilder = gsonBuilder;
     Optional<Field> maybeIdField = ObjectUtils.getIdFieldForEntityClass(entityClass);
     if (maybeIdField.isPresent()) {
-      idField = maybeIdField.get();
+      this.idField = maybeIdField.get();
     } else {
       throw new IllegalArgumentException(entityClass.getName() + " does not appear to have an ID field");
     }
-    isDocument = entityClass.isAnnotationPresent(Document.class);
+    this.isDocument = entityClass.isAnnotationPresent(Document.class);
     this.mappingConverter = new MappingRedisOMConverter(null,
         new ReferenceResolverImpl(modulesOperations.getTemplate()));
   }
@@ -158,7 +160,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       return new WrapperSearchStream<>(resolveStream().map(mapper));
     }
 
-    return new ReturnFieldsSearchStreamImpl<>(this, returning, gson);
+    return new ReturnFieldsSearchStreamImpl<>(this, returning, getGson());
   }
 
   @Override
@@ -409,8 +411,9 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   private List<E> toEntityList(SearchResult searchResult) {
+    Gson g = getGson();
     if (isDocument) {
-      return searchResult.getDocuments().stream().map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), entityClass)).toList();
+      return searchResult.getDocuments().stream().map(d -> g.fromJson(SafeEncoder.encode((byte[])d.get("$")), entityClass)).toList();
     } else {
       return searchResult.getDocuments().stream().map(d -> (E)ObjectUtils.documentToObject(d, entityClass, mappingConverter)).toList();
     }
@@ -474,13 +477,13 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @SafeVarargs @Override
   public final <R> AggregationStream<R> groupBy(MetamodelField<E, ?>... fields) {
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
-    return new AggregationStreamImpl<>(searchIndex, modulesOperations, gson, entityClass, query, fields);
+    return new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(), entityClass, query, fields);
   }
 
   @Override
   public <R> AggregationStream<R> apply(String expression, String alias) {
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
-    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, gson, entityClass, query);
+    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(), entityClass, query);
     aggregationStream.apply(expression, alias);
     return aggregationStream;
   }
@@ -488,7 +491,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @SafeVarargs @Override
   public final <R> AggregationStream<R> load(MetamodelField<E, ?>... fields) {
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
-    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, gson, entityClass, query);
+    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(), entityClass, query);
     aggregationStream.load(fields);
     return aggregationStream;
   }
@@ -496,7 +499,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @Override
   public <R> AggregationStream<R> loadAll() {
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
-    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, gson, entityClass, query);
+    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(), entityClass, query);
     aggregationStream.loadAll();
     return aggregationStream;
   }
@@ -504,7 +507,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @Override
   public <R> AggregationStream<R> cursor(int count, Duration timeout) {
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
-    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, gson, entityClass, query);
+    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(), entityClass, query);
     aggregationStream.cursor(count, timeout);
     return aggregationStream;
   }
@@ -545,7 +548,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     if (pageable.getClass().isAssignableFrom(AggregationPageable.class)) {
       AggregationPageable ap = (AggregationPageable) pageable;
       AggregationResult ar = search.cursorRead(ap.getCursorId(), pageable.getPageSize());
-      return new AggregationPage<>(ar, pageable, entityClass, gson, mappingConverter, isDocument);
+      return new AggregationPage<>(ar, pageable, entityClass, getGson(), mappingConverter, isDocument);
     } else {
       return Page.empty(pageable);
     }
@@ -553,6 +556,12 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   public boolean isDocument() {
     return isDocument;
+  }
+  private Gson getGson() {
+    if (gson == null) {
+      gson = gsonBuilder.create();
+    }
+    return gson;
   }
 
 }

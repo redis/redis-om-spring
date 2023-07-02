@@ -422,6 +422,10 @@ public class ObjectUtils {
     return clazz.isPrimitive() && resolvePrimitiveIfNecessary(clazz) == wrapper;
   }
 
+  public static String getKey(String keyspace, Object id) {
+    String format = keyspace.endsWith(":") ? "%s%s" : "%s:%s";
+    return String.format(format, keyspace, id);
+  }
 
   private ObjectUtils() {
   }

@@ -2,13 +2,17 @@ package com.redis.om.spring.annotations.document;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.*;
+import com.redis.om.spring.search.stream.EntityStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ReferenceTest extends AbstractBaseDocumentTest {
   @Autowired
@@ -22,6 +26,9 @@ class ReferenceTest extends AbstractBaseDocumentTest {
 
   @Autowired
   StatesRepository statesRepository;
+
+  @Autowired
+  EntityStream entityStream;
 
   @BeforeEach
   void prepare() {
@@ -69,6 +76,24 @@ class ReferenceTest extends AbstractBaseDocumentTest {
   }
 
   @Test
+  void testMultilevelReferencesWithEntityStreams() {
+    List<City> cities = entityStream //
+        .of(City.class) //
+        .filter(City$.ID.eq("Scottsdale")) //
+        .collect(Collectors.toList());
+
+    assertThat(cities).hasSize(1);
+
+    var scottsdale = cities.get(0);
+    var arizona = scottsdale.getState();
+    assertThat(arizona).isNotNull();
+    assertThat(arizona.getId()).isEqualTo("AZ");
+    var us = arizona.getCountry();
+    assertThat(us).isNotNull();
+    assertThat(us.getId()).isEqualTo("USA");
+  }
+
+  @Test
   void testReferencedClassCanBeDeserializedWithFullPayload() {
     var maybeUSA = countryRepository.findById("USA");
     assertThat(maybeUSA).isPresent();
@@ -76,11 +101,38 @@ class ReferenceTest extends AbstractBaseDocumentTest {
   }
 
   @Test
+  void testReferencedClassCanBeDeserializedWithFullPayloadWithEntityStreams() {
+    List<Country> countries = entityStream //
+        .of(Country.class) //
+        .filter(Country$.ID.eq("USA")) //
+        .collect(Collectors.toList());
+
+    assertThat(countries).hasSize(1);
+    Country usa = countries.get(0);
+    assertThat(usa.getId()).isEqualTo("USA");
+  }
+
+
+  @Test
   void testReferencedClassWithReferencesCanBeDeserializedWithFullPayload() {
     var maybeArizona = stateRepository.findById("AZ");
     assertThat(maybeArizona).isPresent();
     assertThat(maybeArizona.get().getId()).isEqualTo("AZ");
     assertThat(maybeArizona.get().getCountry().getId()).isEqualTo("USA");
+  }
+
+  @Test
+  void testReferencedClassWithReferencesCanBeDeserializedWithFullPayloadWithEntityStreams() {
+    List<State> states = entityStream //
+        .of(State.class) //
+        .filter(State$.ID.eq("AZ")) //
+        .collect(Collectors.toList());
+
+    assertThat(states).hasSize(1);
+    State arizona = states.get(0);
+
+    assertThat(arizona.getId()).isEqualTo("AZ");
+    assertThat(arizona.getCountry().getId()).isEqualTo("USA");
   }
 
   @Test
@@ -99,5 +151,79 @@ class ReferenceTest extends AbstractBaseDocumentTest {
     assertThat(maybeStates.get().getId()).isEqualTo("East Of Mississippi");
     assertThat(maybeStates.get().getStates()).hasSize(2);
     assertThat(maybeStates.get().getStates()).contains(oh, ga);
+  }
+
+  @Test
+  void testReferenceCollectionDeserializationWithEntityStreams() {
+    var maybeOh = stateRepository.findById("OH");
+    var maybeGa = stateRepository.findById("GA");
+
+    assertThat(maybeOh).isPresent();
+    assertThat(maybeGa).isPresent();
+
+    var oh = maybeOh.get();
+    var ga = maybeGa.get();
+
+    List<States> states = entityStream //
+        .of(States.class) //
+        .filter(States$.ID.eq("East\\ Of\\ Mississippi")) //
+        .collect(Collectors.toList());
+
+    assertThat(states).hasSize(1);
+    States eom = states.get(0);
+
+    assertThat(eom.getId()).isEqualTo("East Of Mississippi");
+    assertThat(eom.getStates()).hasSize(2);
+    assertThat(eom.getStates()).contains(oh, ga);
+  }
+
+  @Test
+  void testFindEntitiesByReferenceEq() {
+    var maybeOh = stateRepository.findById("OH");
+    var maybeColumbus = cityRepository.findById("Columbus");
+    var maybeCleveland = cityRepository.findById("Cleveland");
+    var maybeCincinnati = cityRepository.findById("Cincinnati");
+
+    assertThat(maybeOh).isPresent();
+    var oh = maybeOh.get();
+    assertThat(maybeColumbus).isPresent();
+    var columbus = maybeColumbus.get();
+    assertThat(maybeCleveland).isPresent();
+    var cleveland = maybeCleveland.get();
+    assertThat(maybeCincinnati).isPresent();
+    var cincinnati = maybeCincinnati.get();
+
+    List<City> ohioCities = entityStream //
+        .of(City.class) //
+        .filter(City$.STATE.eq(oh)) //
+        .collect(Collectors.toList());
+
+    assertThat(ohioCities).hasSize(3);
+    assertThat(ohioCities).containsExactlyInAnyOrder(cincinnati, cleveland, columbus);
+  }
+
+  @Test
+  void testFindEntitiesByReferenceNotEq() {
+    var maybeOh = stateRepository.findById("OH");
+    var maybeColumbus = cityRepository.findById("Columbus");
+    var maybeCleveland = cityRepository.findById("Cleveland");
+    var maybeCincinnati = cityRepository.findById("Cincinnati");
+
+    assertThat(maybeOh).isPresent();
+    var oh = maybeOh.get();
+    assertThat(maybeColumbus).isPresent();
+    var columbus = maybeColumbus.get();
+    assertThat(maybeCleveland).isPresent();
+    var cleveland = maybeCleveland.get();
+    assertThat(maybeCincinnati).isPresent();
+    var cincinnati = maybeCincinnati.get();
+
+    List<City> ohioCities = entityStream //
+        .of(City.class) //
+        .filter(City$.STATE.notEq(oh)) //
+        .collect(Collectors.toList());
+
+    assertThat(ohioCities).hasSize(15);
+    assertThat(ohioCities).doesNotContain(cincinnati, cleveland, columbus);
   }
 }

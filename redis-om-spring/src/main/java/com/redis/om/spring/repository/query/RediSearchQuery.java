@@ -88,6 +88,7 @@ public class RediSearchQuery implements RepositoryQuery {
   private final BloomQueryExecutor bloomQueryExecutor;
   private final AutoCompleteQueryExecutor autoCompleteQueryExecutor;
   private final GsonBuilder gsonBuilder;
+  private Gson gson;
 
   @SuppressWarnings("unchecked")
   public RediSearchQuery(//
@@ -437,7 +438,7 @@ public class RediSearchQuery implements RepositoryQuery {
     if (queryMethod.getReturnedObjectType() == SearchResult.class) {
       result = searchResult;
     } else if (queryMethod.isPageQuery()) {
-      Gson gson = gsonBuilder.create();
+      Gson gson = getGson();
       List<Object> content = searchResult.getDocuments().stream()
           .map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), queryMethod.getReturnedObjectType()))
           .collect(Collectors.toList());
@@ -449,13 +450,13 @@ public class RediSearchQuery implements RepositoryQuery {
 
     } else if (queryMethod.isQueryForEntity() && !queryMethod.isCollectionQuery()) {
       if (!searchResult.getDocuments().isEmpty()) {
-        Gson gson = gsonBuilder.create();
+        Gson gson = getGson();
         Document doc = searchResult.getDocuments().get(0);
         Object json = doc != null ? SafeEncoder.encode((byte[])doc.get("$")) : "";
         result = gson.fromJson(json.toString(), queryMethod.getReturnedObjectType());
       }
     } else if (queryMethod.isQueryForEntity() && queryMethod.isCollectionQuery()) {
-      Gson gson = gsonBuilder.create();
+      Gson gson = getGson();
       result = searchResult.getDocuments().stream()
           .map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), queryMethod.getReturnedObjectType()))
           .collect(Collectors.toList());
@@ -643,5 +644,12 @@ public class RediSearchQuery implements RepositoryQuery {
     logger.debug(String.format("query: %s", preparedQuery));
 
     return preparedQuery.toString();
+  }
+
+  private Gson getGson() {
+    if (gson == null) {
+      gson = gsonBuilder.create();
+    }
+    return gson;
   }
 }
