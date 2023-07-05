@@ -2,6 +2,7 @@ package com.redis.om.spring;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import com.redis.om.spring.convert.RedisOMCustomConversions;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
@@ -9,11 +10,12 @@ import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.util.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.PropertyAccessor;
-import org.springframework.beans.PropertyAccessorFactory;
+import org.springframework.beans.*;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Reference;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisKeyValueAdapter;
 import org.springframework.data.redis.core.RedisOperations;
@@ -38,6 +40,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static com.redis.om.spring.util.ObjectUtils.getKey;
+import static com.redis.om.spring.util.ObjectUtils.isPrimitiveOfType;
 
 public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private static final Log logger = LogFactory.getLog(RedisJSONKeyValueAdapter.class);
@@ -87,6 +90,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
 
     String key = getKey(keyspace, id);
 
+    processVersion(key, item);
     processAuditAnnotations(key, item);
     Optional<Long> maybeTtl = getTTLForEntity(item);
 
@@ -303,9 +307,42 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     }
   }
 
+  private void processVersion(String key, Object item) {
+    List<Field> fields = ObjectUtils.getFieldsWithAnnotation(item.getClass(), Version.class);
+    if (fields.size() == 1) {
+      BeanWrapper wrapper = new BeanWrapperImpl(item);
+      Field versionField = fields.get(0);
+      String property = versionField.getName();
+      if ((versionField.getType() == Integer.class || isPrimitiveOfType(versionField.getType(), Integer.class)) ||
+         (versionField.getType() == Long.class || isPrimitiveOfType(versionField.getType(), Long.class))) {
+        Number version = (Number) wrapper.getPropertyValue(property);
+        Number dbVersion = getEntityVersion(key, property);
+
+        if (dbVersion != null && version != null && dbVersion.longValue() != version.longValue()) {
+          throw new OptimisticLockingFailureException(
+              String.format("Cannot insert/update entity %s with version %s as it already exists", item,
+                  version));
+        } else {
+          Number nextVersion = version == null ? 0 : version.longValue() + 1;
+          try {
+            wrapper.setPropertyValue(property, nextVersion);
+          } catch (NotWritablePropertyException nwpe) {
+            versionField.setAccessible(true);
+            try {
+              versionField.set(item, nextVersion);
+            } catch (IllegalAccessException iae) {
+              // throw the original exception?
+              throw new RuntimeException(nwpe);
+            }
+          }
+        }
+      }
+    }
+  }
+
   private Optional<Long> getTTLForEntity(Object entity) {
-    Class entityClass = entity.getClass();
-    Class entityClassKey;
+    Class<?> entityClass = entity.getClass();
+    Class<?> entityClassKey;
     try {
       entityClassKey = ClassLoader.getSystemClassLoader().loadClass(entity.getClass().getTypeName());
     } catch (ClassNotFoundException e) {
@@ -336,5 +373,12 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       }
     }
     return Optional.empty();
+  }
+
+  private Number getEntityVersion(String key, String versionProperty) {
+    JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
+    Class<?> type = new TypeToken<Long[]>() {}.getRawType();
+    Long[] dbVersionArray = (Long[]) ops.get(key, type, Path.of("$." + versionProperty));
+    return dbVersionArray != null ? dbVersionArray[0] : null;
   }
 }
