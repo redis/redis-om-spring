@@ -32,4 +32,6 @@ public interface RedisDocumentRepository<T, ID> extends KeyValueRepository<T, ID
   Long getExpiration(ID id);
 
   Iterable<T> bulkLoad(String file) throws IOException;
+
+  <S extends T> S update(S entity);
 }

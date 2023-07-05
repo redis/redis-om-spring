@@ -3,22 +3,25 @@ package com.redis.om.spring.repository.support;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import com.redis.om.spring.RediSearchIndexer;
 import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.id.ULIDIdentifierGenerator;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.RedisDocumentRepository;
 import com.redis.om.spring.serialization.gson.GsonListOfType;
 import com.redis.om.spring.util.ObjectUtils;
-import org.springframework.beans.PropertyAccessor;
-import org.springframework.beans.PropertyAccessorFactory;
+import org.springframework.beans.*;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Reference;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -55,6 +58,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
 
+import static com.redis.om.spring.util.ObjectUtils.isPrimitiveOfType;
 import static redis.clients.jedis.json.JsonProtocol.JsonCommand;
 
 public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueRepository<T, ID>
@@ -206,6 +210,17 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   }
 
   @Override
+  public <S extends T> S update(S entity) {
+    return this.operations.update(this.metadata.getRequiredId(entity), entity);
+  }
+
+  public void delete(T entity) {
+    Assert.notNull(entity, "The given entity must not be null");
+    checkVersion(entity);
+    this.operations.delete(entity);
+  }
+
+  @Override
   public  List<T> findAllById(Iterable<ID> ids) {
     String[] keys = StreamSupport.stream(ids.spliterator(), false).map(this::getKey).toArray(String[]::new);
 
@@ -317,4 +332,30 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     return Optional.empty();
   }
 
+  private void checkVersion(T entity) {
+    List<Field> fields = ObjectUtils.getFieldsWithAnnotation(entity.getClass(), Version.class);
+    if (fields.size() == 1) {
+      BeanWrapper wrapper = new BeanWrapperImpl(entity);
+      Field versionField = fields.get(0);
+      String property = versionField.getName();
+      if ((versionField.getType() == Integer.class || isPrimitiveOfType(versionField.getType(), Integer.class)) ||
+          (versionField.getType() == Long.class || isPrimitiveOfType(versionField.getType(), Long.class))) {
+        Number version = (Number) wrapper.getPropertyValue(property);
+        Number dbVersion = getEntityVersion(getKey(this.metadata.getRequiredId(entity)), property);
+
+        if (dbVersion != null && version != null && dbVersion.longValue() != version.longValue()) {
+          throw new OptimisticLockingFailureException(
+              String.format("Cannot delete entity %s with version %s as it is outdated", entity,
+                  version));
+        }
+      }
+    }
+  }
+
+  private Number getEntityVersion(String key, String versionProperty) {
+    JSONOperations<String> ops = modulesOperations.opsForJSON();
+    Class<?> type = new TypeToken<Long[]>() {}.getRawType();
+    Long[] dbVersionArray = (Long[]) ops.get(key, type, Path.of("$." + versionProperty));
+    return dbVersionArray != null ? dbVersionArray[0] : null;
+  }
 }
