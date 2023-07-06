@@ -609,7 +609,9 @@ public class RediSearchIndexer {
 
           continue;
         }
-        getNestedField(fieldPrefix + tempPrefix, subField, prefix, fieldList);
+        if (subField.isAnnotationPresent(Indexed.class)) {
+          getNestedField(fieldPrefix + tempPrefix, subField, prefix, fieldList);
+        }
       }
     }
     return fieldList;
