@@ -27,6 +27,7 @@ import com.redis.om.spring.search.stream.EntityStreamImpl;
 import com.redis.om.spring.serialization.gson.*;
 import com.redis.om.spring.vectorize.DefaultFeatureExtractor;
 import com.redis.om.spring.vectorize.FeatureExtractor;
+import com.redis.om.spring.vectorize.NoopFeatureExtractor;
 import com.redis.om.spring.vectorize.face.FaceDetectionTranslator;
 import com.redis.om.spring.vectorize.face.FaceFeatureTranslator;
 import org.apache.commons.lang3.ObjectUtils;
@@ -273,7 +274,7 @@ public class RedisModulesConfiguration {
       @Nullable @Qualifier("djlSentenceTokenizer") HuggingFaceTokenizer sentenceTokenizer,
       RedisOMProperties properties,
       ApplicationContext ac) {
-    return properties.getDjl().isEnabled() ? new DefaultFeatureExtractor( ac, imageEmbeddingModel, faceEmbeddingModel, imageFactory, defaultImagePipeline, sentenceTokenizer) : null;
+    return properties.getDjl().isEnabled() ? new DefaultFeatureExtractor( ac, imageEmbeddingModel, faceEmbeddingModel, imageFactory, defaultImagePipeline, sentenceTokenizer) : new NoopFeatureExtractor();
   }
 
   @Bean(name = "redisJSONKeyValueAdapter")
