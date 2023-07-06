@@ -195,8 +195,10 @@ public class RediSearchIndexer {
 
       Class<?> fieldType = ClassUtils.resolvePrimitiveIfNecessary(field.getType());
 
-      // Processed @Reference @Indexed fields: Create schema field for the ID
       if (field.isAnnotationPresent(Reference.class)) {
+        //
+        // @Reference @Indexed fields: Create schema field for the reference entity @Id field
+        //
         logger.debug("🪲Found @Reference field " + field.getName() + " in " + field.getDeclaringClass().getSimpleName());
         var maybeReferenceIdField = getIdFieldForEntityClass(fieldType);
         if (maybeReferenceIdField.isPresent()) {
@@ -695,7 +697,10 @@ public class RediSearchIndexer {
     if (maybeIdField.isPresent()) {
       java.lang.reflect.Field idField = maybeIdField.get();
       // Only auto-index the @Id if not already indexed by the user (gh-135)
-      if (!idField.isAnnotationPresent(Indexed.class) && !idField.isAnnotationPresent(Searchable.class)
+      if (!idField.isAnnotationPresent(Indexed.class)
+          && !idField.isAnnotationPresent(Searchable.class)
+          && !idField.isAnnotationPresent(TagIndexed.class)
+          && !idField.isAnnotationPresent(TextIndexed.class)
           && (fields.stream().noneMatch(f -> f.name.equals(idField.getName())))) {
         if (Number.class.isAssignableFrom(idField.getType())) {
           result = Optional.of(indexAsNumericFieldFor(maybeIdField.get(), isDocument, "", true, false));
