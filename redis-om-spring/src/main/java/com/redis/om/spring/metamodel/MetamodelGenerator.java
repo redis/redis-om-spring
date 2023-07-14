@@ -2,10 +2,7 @@ package com.redis.om.spring.metamodel;
 
 import com.github.f4b6a3.ulid.Ulid;
 import com.google.auto.service.AutoService;
-import com.redis.om.spring.annotations.Document;
-import com.redis.om.spring.annotations.Indexed;
-import com.redis.om.spring.annotations.SchemaFieldType;
-import com.redis.om.spring.annotations.Searchable;
+import com.redis.om.spring.annotations.*;
 import com.redis.om.spring.metamodel.indexed.*;
 import com.redis.om.spring.metamodel.nonindexed.*;
 import com.redis.om.spring.tuple.Pair;
@@ -30,8 +27,6 @@ import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Field;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -39,8 +34,6 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static java.util.Objects.requireNonNull;
 
 @SupportedAnnotationTypes(value = {"com.redis.om.spring.annotations.Document","org.springframework.data.redis.core.RedisHash"})
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
@@ -152,7 +145,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
         if (i != 0) {
           sb.append(".getType()");
         }
-        String formattedString = String.format("com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(%s, \"%s\")", sb.toString(), element.getSimpleName());
+        String formattedString = String.format("com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(%s, \"%s\")", sb, element.getSimpleName());
         sb.setLength(0); // clear the builder
         sb.append(formattedString);
       }
@@ -203,6 +196,11 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
     boolean fieldIsIndexed = (field.getAnnotation(Searchable.class) != null)
         || (field.getAnnotation(Indexed.class) != null)
+        || (field.getAnnotation(TextIndexed.class) != null)
+        || (field.getAnnotation(TagIndexed.class) != null)
+        || (field.getAnnotation(NumericIndexed.class) != null)
+        || (field.getAnnotation(GeoIndexed.class) != null)
+        || (field.getAnnotation(VectorIndexed.class) != null)
         || (field.getAnnotation(Id.class) != null);
 
     String chainedFieldName = chain.stream().map(Element::getSimpleName).collect(Collectors.joining("_"));
@@ -229,10 +227,16 @@ public final class MetamodelGenerator extends AbstractProcessor {
     var searchable = field.getAnnotation(Searchable.class);
     var reference = field.getAnnotation(Reference.class);
 
+    var textIndexed = field.getAnnotation(TextIndexed.class);
+    var tagIndexed = field.getAnnotation(TagIndexed.class);
+    var numericIndexed = field.getAnnotation(NumericIndexed.class);
+    var geoIndexed = field.getAnnotation(GeoIndexed.class);
+    var vectorIndexed = field.getAnnotation(VectorIndexed.class);
+
     if (indexed != null && reference != null) {
       targetInterceptor = ReferenceField.class;
     }
-    else if (searchable != null) {
+    else if (searchable != null || textIndexed != null) {
       targetInterceptor = TextField.class;
     } else if (indexed != null || field.getAnnotation(Id.class) != null) {
       try {
@@ -243,7 +247,15 @@ public final class MetamodelGenerator extends AbstractProcessor {
         fieldMetamodelSpec.addAll(processNestedIndexableFields(entity, chain));
       }
 
-      if (indexed != null && indexed.schemaFieldType() != SchemaFieldType.AUTODETECT) {
+      if (tagIndexed != null) {
+        targetInterceptor = TextTagField.class;
+      } else if (numericIndexed != null) {
+        targetInterceptor = NumericField.class;
+      } else if (geoIndexed != null) {
+        targetInterceptor = GeoField.class;
+      } else if (vectorIndexed != null) {
+        targetInterceptor = VectorField.class;
+      } else if (indexed != null && indexed.schemaFieldType() != SchemaFieldType.AUTODETECT) {
         // here we do the non autodetect annotated fields
         switch (indexed.schemaFieldType()) {
           case TAG -> targetInterceptor = TextTagField.class;
@@ -411,12 +423,12 @@ public final class MetamodelGenerator extends AbstractProcessor {
         if (i != 0) {
           sb.append(".getType()");
         }
-        String formattedString = String.format("com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(%s, \"%s\")", sb.toString(), element.getSimpleName());
+        String formattedString = String.format("com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(%s, \"%s\")", sb, element.getSimpleName());
         sb.setLength(0); // clear the buffer
         sb.append(formattedString);
       }
       FieldSpec fieldSpec = ogfs.fieldSpec();
-      blockBuilder.addStatement("$L = " + sb.toString(), fieldSpec.name, entity);
+      blockBuilder.addStatement("$L = " + sb, fieldSpec.name, entity);
     }
 
     for (CodeBlock initCodeBlock : initCodeBlocks) {
@@ -456,7 +468,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
     TypeName generatedTypeName = ClassName.bestGuess(qualifiedGenEntityName);
 
-    return generateFieldMetamodel(chain, chainedFieldName, generatedTypeName, true);
+    return generateFieldMetamodel(chain, chainedFieldName, generatedTypeName);
   }
 
   private List<Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock>> processNestedIndexableFields(TypeName entity,
@@ -590,7 +602,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
     final String fieldName = field.getSimpleName().toString();
     final String getterPrefix = isGetters.contains(fieldName) ? IS_PREFIX : GET_PREFIX;
 
-    final String standardJavaName = javaNameFromExternal(fieldName);
+    final String standardJavaName = ObjectUtils.javaNameFromExternal(fieldName);
 
     final String standardGetterName = getterPrefix + standardJavaName;
 
@@ -616,50 +628,6 @@ public final class MetamodelGenerator extends AbstractProcessor {
         + ".class, \"" + fieldName + "\");}";
   }
 
-  /**
-   * Returns a static field name representation of the specified camel-cased
-   * string.
-   *
-   * @param externalName the string
-   * @return the static field name representation
-   */
-  public static String staticField(final String externalName) {
-    requireNonNull(externalName);
-    return ObjectUtils.toUnderscoreSeparated(javaNameFromExternal(externalName)).toUpperCase();
-  }
-
-  public static String javaNameFromExternal(final String externalName) {
-    requireNonNull(externalName);
-    return MetamodelGenerator
-        .replaceIfIllegalJavaIdentifierCharacter(replaceIfJavaUsedWord(nameFromExternal(externalName)));
-  }
-
-  public static String nameFromExternal(final String externalName) {
-    requireNonNull(externalName);
-    String result = ObjectUtils.unQuote(externalName.trim()); // Trim if there are initial spaces or trailing spaces...
-    /* CamelCase
-     * http://stackoverflow.com/questions/4050381/regular-expression-for-checking-if
-     * -capital-letters-are-found-consecutively-in-a [A-Z] -> \p{Lu} [^A-Za-z0-9] ->
-     * [^\pL0-90-9] */
-    result = Stream.of(result.replaceAll("(\\p{Lu}+)", "_$1").split("[^\\pL\\d]")).map(String::toLowerCase)
-        .map(ObjectUtils::ucfirst).collect(Collectors.joining());
-    return result;
-  }
-
-  public static String replaceIfJavaUsedWord(final String word) {
-    requireNonNull(word);
-    // We need to replace regardless of case because we do not know how the returned
-    // string is to be used
-    if (JAVA_USED_WORDS_LOWER_CASE.contains(word.toLowerCase())) {
-      // If it is a java reserved/literal/class, add a "_" at the end to avoid naming
-      // conflicts
-      return word + "_";
-    }
-    return word;
-  }
-
-  public static final Character REPLACEMENT_CHARACTER = '_';
-
   private Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> generateFieldMetamodel( //
       TypeName entity, //
       List<Element> chain, //
@@ -669,7 +637,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
       boolean fieldIsIndexed, //
       String collectionPrefix //
   ) {
-    String fieldAccessor = staticField(chainFieldName);
+    String fieldAccessor = ObjectUtils.staticField(chainFieldName);
 
     FieldSpec objectField = FieldSpec //
         .builder(Field.class, chainFieldName).addModifiers(Modifier.PUBLIC, Modifier.STATIC) //
@@ -705,10 +673,9 @@ public final class MetamodelGenerator extends AbstractProcessor {
   private Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> generateFieldMetamodel(
       List<Element> chain, //
       String chainFieldName, //
-      TypeName interceptor, //
-      boolean fieldIsIndexed //
+      TypeName interceptor //
   ) {
-    String fieldAccessor = staticField(chainFieldName);
+    String fieldAccessor = ObjectUtils.staticField(chainFieldName);
 
     FieldSpec objectField = FieldSpec.builder(Field.class, chainFieldName).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
         .build();
@@ -720,7 +687,8 @@ public final class MetamodelGenerator extends AbstractProcessor {
     String searchSchemaAlias = chain.stream().map(e -> e.getSimpleName().toString()).collect(Collectors.joining("_"));
 
     CodeBlock aFieldInit = CodeBlock.builder()
-        .addStatement("$L = new $T(new $T(\"$L\", $L),$L)", fieldAccessor, interceptor, SearchFieldAccessor.class, searchSchemaAlias, chainFieldName, fieldIsIndexed).build();
+        .addStatement("$L = new $T(new $T(\"$L\", $L),$L)", fieldAccessor, interceptor, SearchFieldAccessor.class, searchSchemaAlias, chainFieldName,
+            true).build();
 
     return Tuples.of(ogf, aField, aFieldInit);
   }
@@ -737,65 +705,6 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
     return Tuples.of(aField, aFieldInit);
   }
-
-  public static String replaceIfIllegalJavaIdentifierCharacter(final String word) {
-    requireNonNull(word);
-    if (word.isEmpty()) {
-      return REPLACEMENT_CHARACTER.toString(); // No name is translated to REPLACEMENT_CHARACTER only
-    }
-    final StringBuilder sb = new StringBuilder();
-    for (int i = 0; i < word.length(); i++) {
-      char c = word.charAt(i);
-      if (i == 0) {
-        if (Character.isJavaIdentifierStart(c)) {
-          // Fine! Just add the first character
-          sb.append(c);
-        } else if (Character.isJavaIdentifierPart(c)) {
-          // Not ok as the first, but ok otherwise. Add the replacement before it
-          sb.append(REPLACEMENT_CHARACTER).append(c);
-        } else {
-          // Cannot be used as a java identifier. Replace it
-          sb.append(REPLACEMENT_CHARACTER);
-        }
-      } else if (Character.isJavaIdentifierPart(c)) {
-        // Fine! Just add it
-        sb.append(c);
-      } else {
-        // Cannot be used as a java identifier. Replace it
-        sb.append(REPLACEMENT_CHARACTER);
-      }
-
-    }
-    return sb.toString();
-  }
-
-  static final Set<String> JAVA_LITERAL_WORDS = Set.of("true", "false", "null");
-
-  // Java reserved keywords
-  static final Set<String> JAVA_RESERVED_WORDS = Collections.unmodifiableSet(Stream.of(
-      // Unused
-      "const", "goto",
-      // The real ones...
-      "abstract", "continue", "for", "new", "switch", "assert", "default", "goto", "package", "synchronized", "boolean",
-      "do", "if", "private", "this", "break", "double", "implements", "protected", "throw", "byte", "else", "import",
-      "public", "throws", "case", "enum", "instanceof", "return", "transient", "catch", "extends", "int", "short",
-      "try", "char", "final", "interface", "static", "void", "class", "finally", "long", "strictfp", "volatile",
-      "const", "float", "native", "super", "while").collect(Collectors.toSet()));
-
-  static final Set<Class<?>> JAVA_BUILT_IN_CLASSES = Set.of(Boolean.class, Byte.class, Character.class, Double.class,
-      Float.class, Integer.class, Long.class, Object.class, Short.class, String.class, BigDecimal.class,
-      BigInteger.class, boolean.class, byte.class, char.class, double.class, float.class, int.class, long.class,
-      short.class);
-
-  private static final Set<String> JAVA_BUILT_IN_CLASS_WORDS = Collections
-      .unmodifiableSet(JAVA_BUILT_IN_CLASSES.stream().map(Class::getSimpleName).collect(Collectors.toSet()));
-
-  private static final Set<String> JAVA_USED_WORDS = Collections
-      .unmodifiableSet(Stream.of(JAVA_LITERAL_WORDS, JAVA_RESERVED_WORDS, JAVA_BUILT_IN_CLASS_WORDS)
-          .flatMap(Collection::stream).collect(Collectors.toSet()));
-
-  private static final Set<String> JAVA_USED_WORDS_LOWER_CASE = Collections
-      .unmodifiableSet(JAVA_USED_WORDS.stream().map(String::toLowerCase).collect(Collectors.toSet()));
 
   private boolean isEnum(ProcessingEnvironment processingEnv, TypeMirror typeMirror) {
     Types typeUtils = processingEnv.getTypeUtils();

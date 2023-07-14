@@ -1,24 +1,26 @@
 package com.redis.om.spring.annotations.document.fixtures;
 
 import com.redis.om.spring.annotations.Document;
-import com.redis.om.spring.annotations.Indexed;
+import com.redis.om.spring.annotations.Searchable;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 
 @Data
 @RequiredArgsConstructor(staticName = "of")
-@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor(force = true)
 @Document
-public class DeepNest {
+public class Doc3 {
   @Id
   private String id;
 
-  @Indexed
+  @Searchable(sortable = true)
   @NonNull
-  private String name;
+  private String first;
 
-  @Indexed
-  @NonNull
-  private NestLevel1 nestLevel1;
+  @Searchable(sortable = true)
+  private String second;
+
+  @Searchable(sortable = true)
+  private String third;
 }

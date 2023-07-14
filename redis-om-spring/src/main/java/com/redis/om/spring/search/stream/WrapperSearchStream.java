@@ -4,8 +4,10 @@ import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.indexed.NumericField;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
+import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
 import java.time.Duration;
@@ -87,6 +89,12 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
   }
 
   @Override
+  public SearchStream<E> filter(Example<E> example) {
+    // NO-OP
+    return this;
+  }
+
+  @Override
   public <R> SearchStream<R> map(Function<? super E, ? extends R> mapper) {
     return new WrapperSearchStream<>(backingStream.map(mapper));
   }
@@ -134,6 +142,11 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
   @Override
   public SearchStream<E> sorted(Comparator<? super E> comparator, SortOrder order) {
     return new WrapperSearchStream<>(backingStream.sorted(comparator));
+  }
+
+  @Override
+  public SearchStream<E> sorted(Sort sort) {
+    throw new UnsupportedOperationException("sorted(Sort) is not supported on a WrappedSearchStream");
   }
 
   @Override
@@ -293,6 +306,22 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
   @Override
   public Slice<E> getSlice(Pageable pageable) {
     throw new UnsupportedOperationException("getPage is not supported on a WrappedSearchStream");
+  }
+
+  @Override
+  public <R> SearchStream<E> project(Function<? super E, ? extends R> field) {
+    throw new UnsupportedOperationException("project is not supported on a WrappedSearchStream");
+  }
+
+  @SafeVarargs
+  @Override
+  public final <R> SearchStream<E> project(MetamodelField<? super E, ? extends R>... field) {
+    throw new UnsupportedOperationException("project is not supported on a WrappedSearchStream");
+  }
+
+  @Override
+  public String backingQuery() {
+    throw new UnsupportedOperationException("backingQuery is not supported on a WrappedSearchStream");
   }
 
 }

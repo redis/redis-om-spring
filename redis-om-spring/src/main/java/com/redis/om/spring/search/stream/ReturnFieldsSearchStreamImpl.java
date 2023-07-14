@@ -7,13 +7,15 @@ import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
 import com.redis.om.spring.tuple.Tuple;
 import com.redis.om.spring.tuple.Tuples;
+import com.redis.om.spring.util.SearchResultRawResponseToObjectConverter;
 import com.redis.om.spring.util.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.data.geo.Point;
+import org.springframework.data.domain.Sort;
 import org.springframework.util.ReflectionUtils;
 import redis.clients.jedis.search.Document;
 import redis.clients.jedis.search.Query;
@@ -27,8 +29,6 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.*;
 import java.util.stream.*;
-
-import static com.redis.om.spring.util.ObjectUtils.isPrimitiveOfType;
 
 public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
 
@@ -113,6 +113,11 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   }
 
   @Override
+  public SearchStream<T> filter(Example<T> example) {
+    throw new UnsupportedOperationException("Filter on Example predicate is not supported on mapped stream");
+  }
+
+  @Override
   public <R> SearchStream<R> map(Function<? super T, ? extends R> mapper) {
     return new WrapperSearchStream<>(resolveStream()).map(mapper);
   }
@@ -160,6 +165,11 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   @Override
   public SearchStream<T> sorted(Comparator<? super T> comparator, SortOrder order) {
     return sorted(comparator);
+  }
+
+  @Override
+  public SearchStream<T> sorted(Sort sort) {
+    throw new UnsupportedOperationException("sorted(Sort) is not supported on a ReturnFieldSearchStream");
   }
 
   @Override
@@ -282,7 +292,12 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
         if (resultSetHasNonIndexedFields) {
           SearchResult searchResult = entitySearchStream.getOps().search(query);
 
-          List<E> entities = searchResult.getDocuments().stream().map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), entitySearchStream.getEntityClass())).toList();
+          List<E> entities = searchResult
+              .getDocuments() //
+              .stream() //
+              .map(d -> { //
+                return gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), entitySearchStream.getEntityClass()); //
+              }).toList();
 
           results = toResultTuple(entities, returnFields);
 
@@ -309,28 +324,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
         String field = foi.getSearchAlias();
         Class<?> targetClass = foi.getTargetClass();
         var rawValue = props.get(ObjectUtils.isCollection(targetClass) ? "$." + field : field);
-        Object value = rawValue != null ? SafeEncoder.encode((byte[])rawValue) : null;
-
-        if (value != null) {
-          if (targetClass == Date.class) {
-            mappedResults.add(new Date(Long.parseLong(value.toString())));
-          } else if (targetClass == Point.class) {
-            StringTokenizer st = new StringTokenizer(value.toString(), ",");
-            String lon = st.nextToken();
-            String lat = st.nextToken();
-
-            mappedResults.add(new Point(Double.parseDouble(lon), Double.parseDouble(lat)));
-          } else if (targetClass == String.class) {
-            mappedResults.add(value.toString());
-          } else if (targetClass == Boolean.class || isPrimitiveOfType(targetClass, Boolean.class)) {
-            mappedResults.add(value.toString().equals("1"));
-          } else {
-            mappedResults.add(gson.fromJson(value.toString(), targetClass));
-          }
-        } else {
-          mappedResults.add(null);
-        }
-
+        mappedResults.add(SearchResultRawResponseToObjectConverter.process(rawValue, targetClass, gson));
       });
 
       if (returning.size() > 1) {
@@ -428,6 +422,22 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   @Override
   public Slice<T> getSlice(Pageable pageable) {
     throw new UnsupportedOperationException("getPage is not supported on a ReturnFieldSearchStream");
+  }
+
+  @Override
+  public <R> SearchStream<T> project(Function<? super T, ? extends R> field) {
+    throw new UnsupportedOperationException("project is not supported on a ReturnFieldSearchStream");
+  }
+
+  @SafeVarargs
+  @Override
+  public final <R> SearchStream<T> project(MetamodelField<? super T, ? extends R>... field) {
+    throw new UnsupportedOperationException("project is not supported on a ReturnFieldSearchStream");
+  }
+
+  @Override
+  public String backingQuery() {
+    return entitySearchStream.backingQuery();
   }
 
 }

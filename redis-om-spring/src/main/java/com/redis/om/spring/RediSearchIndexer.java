@@ -185,6 +185,10 @@ public class RediSearchIndexer {
     return indexedEntityClasses.contains(entityClass);
   }
 
+  public Schema getSchemaFor(Class<?> entityClass) {
+    return entityClassToSchema.get(entityClass);
+  }
+
   private List<Field> findIndexFields(java.lang.reflect.Field field, String prefix, boolean isDocument) {
     List<Field> fields = new ArrayList<>();
 
@@ -200,13 +204,7 @@ public class RediSearchIndexer {
         // @Reference @Indexed fields: Create schema field for the reference entity @Id field
         //
         logger.debug("🪲Found @Reference field " + field.getName() + " in " + field.getDeclaringClass().getSimpleName());
-        var maybeReferenceIdField = getIdFieldForEntityClass(fieldType);
-        if (maybeReferenceIdField.isPresent()) {
-          var idFieldToIndex = maybeReferenceIdField.get();
-          createIndexedFieldForReferenceIdField(field, idFieldToIndex, isDocument).ifPresent(fields::add);
-        } else {
-          logger.warn("Couldn't find ID field for reference" + field.getName() + " in " + field.getDeclaringClass().getSimpleName());
-        }
+        createIndexedFieldForReferenceIdField(field, isDocument).ifPresent(fields::add);
       } else if (indexed.schemaFieldType() == SchemaFieldType.AUTODETECT) {
         //
         // Any Character class, Enums or Boolean -> Tag Search Field
@@ -337,13 +335,11 @@ public class RediSearchIndexer {
     String fieldPostfix = (isDocument && typeInfo.isCollectionLike() && !field.isAnnotationPresent(JsonAdapter.class))
         ? "[*]"
         : "";
-    FieldName fieldName = FieldName.of(fieldPrefix + field.getName() + fieldPostfix);
+    String name = fieldPrefix + field.getName() + fieldPostfix;
+    String alias = ObjectUtils.isEmpty(ti.alias()) ? QueryUtils.searchIndexFieldAliasFor(field, prefix) : ti.alias();
 
-    if (!ObjectUtils.isEmpty(ti.alias())) {
-      fieldName = fieldName.as(ti.alias());
-    } else {
-      fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
-    }
+    FieldName fieldName = FieldName.of(name);
+    fieldName = fieldName.as(alias);
 
     return new TagField(fieldName, ti.separator(), false);
   }
@@ -384,13 +380,10 @@ public class RediSearchIndexer {
       }
     }
 
-    VectorField vectorField = new VectorField(fieldName, indexed.algorithm(), attributes);
+    String alias = ObjectUtils.isEmpty(indexed.alias()) ? QueryUtils.searchIndexFieldAliasFor(field, prefix) : indexed.alias();
 
-    if (!ObjectUtils.isEmpty(indexed.alias())) {
-      vectorField.as(indexed.alias());
-    } else {
-      vectorField.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
-    }
+    VectorField vectorField = new VectorField(fieldName, indexed.algorithm(), attributes);
+    vectorField.as(alias);
 
     return vectorField;
   }
@@ -431,13 +424,10 @@ public class RediSearchIndexer {
       }
     }
 
-    VectorField vectorField = new VectorField(fieldName, vi.algorithm(), attributes);
+    String alias = ObjectUtils.isEmpty(vi.alias()) ? QueryUtils.searchIndexFieldAliasFor(field, prefix) : vi.alias();
 
-    if (!ObjectUtils.isEmpty(vi.alias())) {
-      vectorField.as(vi.alias());
-    } else {
-      vectorField.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
-    }
+    VectorField vectorField = new VectorField(fieldName, vi.algorithm(), attributes);
+    vectorField.as(alias);
 
     return vectorField;
   }
@@ -450,22 +440,20 @@ public class RediSearchIndexer {
     String fieldPostfix = (isDocument && typeInfo.isCollectionLike() && !field.isAnnotationPresent(JsonAdapter.class))
         ? index
         : "";
-    FieldName fieldName = FieldName.of(fieldPrefix + field.getName() + fieldPostfix);
-
-    fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
+    String name = fieldPrefix + field.getName() + fieldPostfix;
+    String alias = QueryUtils.searchIndexFieldAliasFor(field, prefix);
+    FieldName fieldName = FieldName.of(name);
+    fieldName = fieldName.as(alias);
 
     return new TagField(fieldName, separator.isBlank() ? null : separator, sortable);
   }
 
   private Field indexAsTextFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, TextIndexed ti) {
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
-    FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
-
-    if (!ObjectUtils.isEmpty(ti.alias())) {
-      fieldName = fieldName.as(ti.alias());
-    } else {
-      fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
-    }
+    String name = fieldPrefix + field.getName();
+    String alias = ObjectUtils.isEmpty(ti.alias()) ? QueryUtils.searchIndexFieldAliasFor(field, prefix) : ti.alias();
+    FieldName fieldName = FieldName.of(name);
+    fieldName = fieldName.as(alias);
 
     String phonetic = ObjectUtils.isEmpty(ti.phonetic()) ? null : ti.phonetic();
 
@@ -474,13 +462,11 @@ public class RediSearchIndexer {
 
   private Field indexAsTextFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, Searchable ti) {
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
-    FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
+    String name = fieldPrefix + field.getName();
+    String alias = ObjectUtils.isEmpty(ti.alias()) ? QueryUtils.searchIndexFieldAliasFor(field, prefix) : ti.alias();
+    FieldName fieldName = FieldName.of(name);
+    fieldName = fieldName.as(alias);
 
-    if (!ObjectUtils.isEmpty(ti.alias())) {
-      fieldName = fieldName.as(ti.alias());
-    } else {
-      fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
-    }
     String phonetic = ObjectUtils.isEmpty(ti.phonetic()) ? null : ti.phonetic();
 
     return new TextField(fieldName, ti.weight(), ti.sortable(), ti.nostem(), ti.noindex(), phonetic);
@@ -488,13 +474,10 @@ public class RediSearchIndexer {
 
   private Field indexAsGeoFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, GeoIndexed gi) {
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
-    FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
-
-    if (!ObjectUtils.isEmpty(gi.alias())) {
-      fieldName = fieldName.as(gi.alias());
-    } else {
-      fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
-    }
+    String name = fieldPrefix + field.getName();
+    String alias = ObjectUtils.isEmpty(gi.alias()) ? QueryUtils.searchIndexFieldAliasFor(field, prefix) : gi.alias();
+    FieldName fieldName = FieldName.of(name);
+    fieldName = fieldName.as(alias);
 
     return new Field(fieldName, FieldType.GEO);
   }
@@ -502,13 +485,10 @@ public class RediSearchIndexer {
   private Field indexAsNumericFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix,
       NumericIndexed ni) {
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
-    FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
-
-    if (!ObjectUtils.isEmpty(ni.alias())) {
-      fieldName = fieldName.as(ni.alias());
-    } else {
-      fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
-    }
+    String name = fieldPrefix + field.getName();
+    String alias = ObjectUtils.isEmpty(ni.alias()) ? QueryUtils.searchIndexFieldAliasFor(field, prefix) : ni.alias();
+    FieldName fieldName = FieldName.of(name);
+    fieldName = fieldName.as(alias);
 
     return new Field(fieldName, FieldType.NUMERIC);
   }
@@ -516,18 +496,20 @@ public class RediSearchIndexer {
   private Field indexAsNumericFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix,
       boolean sortable, boolean noIndex) {
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
-    FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
-
-    fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
+    String name = fieldPrefix + field.getName();
+    String alias = QueryUtils.searchIndexFieldAliasFor(field, prefix);
+    FieldName fieldName = FieldName.of(name);
+    fieldName = fieldName.as(alias);
 
     return new Field(fieldName, FieldType.NUMERIC, sortable, noIndex);
   }
 
   private Field indexAsGeoFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix) {
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
-    FieldName fieldName = FieldName.of(fieldPrefix + field.getName());
-
-    fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(field, prefix));
+    String name = fieldPrefix + field.getName();
+    String alias = QueryUtils.searchIndexFieldAliasFor(field, prefix);
+    FieldName fieldName = FieldName.of(name);
+    fieldName = fieldName.as(alias);
 
     return new Field(fieldName, FieldType.GEO);
   }
@@ -716,7 +698,7 @@ public class RediSearchIndexer {
 
   private Optional<Field> createIndexedFieldForReferenceIdField( //
       java.lang.reflect.Field referenceIdField, //
-      java.lang.reflect.Field idFieldToIndex, boolean isDocument) {
+      boolean isDocument) {
     Optional<Field> result;
 
     String fieldPrefix = getFieldPrefix("", isDocument);

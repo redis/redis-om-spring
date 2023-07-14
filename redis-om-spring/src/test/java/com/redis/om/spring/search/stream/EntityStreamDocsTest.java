@@ -3,6 +3,7 @@ package com.redis.om.spring.search.stream;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.annotations.document.fixtures.Doc3Repository;
 import com.redis.om.spring.annotations.document.fixtures.*;
 import com.redis.om.spring.tuple.Fields;
 import com.redis.om.spring.tuple.Pair;
@@ -36,6 +37,8 @@ import static org.junit.jupiter.api.Assertions.*;
   @Autowired NiCompanyRepository nicRepository;
 
   @Autowired EntityStream entityStream;
+
+  @Autowired Doc3Repository doc3Repository;
 
   String redisId;
   String microsoftId;
@@ -110,6 +113,24 @@ import static org.junit.jupiter.api.Assertions.*;
       niTesla.setTags(List.of("innovative", "futuristic", "ai"));
 
       nicRepository.saveAll(List.of(niRedis, niMicrosoft, niTesla));
+    }
+
+    // entity with nullable properties for projection testing
+    if (doc3Repository.count() == 0) {
+      var doc31 = Doc3.of("doc3.1");
+      doc31.setSecond("doc3.1 second");
+      doc31.setThird("doc3.1 third");
+      var doc32 = Doc3.of("doc3.2");
+      doc32.setSecond("doc3.2 second");
+      doc32.setThird("doc3.2 third");
+      var doc33 = Doc3.of("doc3.3");
+      doc33.setSecond("doc3.3 second");
+      doc33.setThird("doc3.3 third");
+      var doc34 = Doc3.of("doc3.4");
+      doc34.setSecond("doc3.4 second");
+      doc34.setThird("doc3.4 third");
+
+      doc3Repository.saveAll(List.of(doc31, doc32, doc33, doc34));
     }
   }
 
@@ -2389,5 +2410,25 @@ import static org.junit.jupiter.api.Assertions.*;
 
     List<String> names = companies.stream().map(Company::getName).collect(Collectors.toList());
     assertThat(names).contains("RedisInc");
+  }
+
+  @Test void testProjectProperties() {
+    List<Doc3> docs = entityStream //
+        .of(Doc3.class) //
+        .sorted(Doc3$.FIRST, SortOrder.DESC) //
+        .project(Fields.of(Doc3$.FIRST, Doc3$.THIRD)) //
+        .collect(Collectors.toList());
+
+    assertEquals(4, docs.size());
+
+    docs.forEach(d -> {
+      // projection fields are not null
+      assertThat(d.getFirst()).isNotNull();
+      assertThat(d.getThird()).isNotNull();
+      // non-projection nullable fields are null
+      assertThat(d.getSecond()).isNull();
+      // id is always projected
+      assertThat(d.getId()).isNotNull();
+    });
   }
 }

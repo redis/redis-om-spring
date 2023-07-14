@@ -320,9 +320,10 @@ public class RedisModulesConfiguration {
   @Bean(name = "streamingQueryBuilder")
   EntityStream streamingQueryBuilder(
       RedisModulesOperations<?> redisModulesOperations,
-      @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder
+      @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder,
+      RediSearchIndexer indexer
   ) {
-    return new EntityStreamImpl(redisModulesOperations, gsonBuilder);
+    return new EntityStreamImpl(redisModulesOperations, gsonBuilder, indexer);
   }
 
   @EventListener(ContextRefreshedEvent.class)
@@ -348,7 +349,6 @@ public class RedisModulesConfiguration {
       try {
         Class<?> cl = Class.forName(beanDef.getBeanClassName());
         for (java.lang.reflect.Field field : getDeclaredFieldsTransitively(cl)) {
-          // Text
           if (field.isAnnotationPresent(Bloom.class)) {
             Bloom bloom = field.getAnnotation(Bloom.class);
             BloomOperations<String> ops = rmo.opsForBloom();

@@ -4,8 +4,10 @@ import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.indexed.NumericField;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
+import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
 import java.time.Duration;
@@ -22,6 +24,8 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
   SearchStream<E> filter(Predicate<?> predicate);
 
   SearchStream<E> filter(String freeText);
+
+  SearchStream<E> filter(Example<E> example);
 
   <R> SearchStream<R> map(Function<? super E, ? extends R> field);
 
@@ -44,6 +48,7 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
   SearchStream<E> sorted(Comparator<? super E> comparator);
 
   SearchStream<E> sorted(Comparator<? super E> comparator, SortOrder order);
+  SearchStream<E> sorted(Sort sort);
 
   SearchStream<E> peek(Consumer<? super E> action);
 
@@ -108,4 +113,10 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
   SearchOperations<String> getSearchOperations();
 
   Slice<E> getSlice(Pageable pageable);
+
+  <R> SearchStream<E> project(Function<? super E, ? extends R> field);
+  @SuppressWarnings("unchecked")
+  <R> SearchStream<E> project(MetamodelField<? super E, ? extends R> ...field);
+
+  String backingQuery();
 }

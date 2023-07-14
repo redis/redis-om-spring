@@ -1,5 +1,6 @@
 package com.redis.om.spring.util;
 
+import com.google.common.collect.Sets;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.AutoComplete;
 import com.redis.om.spring.annotations.AutoCompletePayload;
@@ -9,6 +10,10 @@ import com.redis.om.spring.annotations.document.fixtures.*;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
@@ -27,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 @SuppressWarnings({ "ConstantConditions", "SpellCheckingInspection" }) class ObjectUtilsTest extends AbstractBaseDocumentTest {
 
   @Autowired
-  CompanyRepository companyRepository; 
+  CompanyRepository companyRepository;
 
   @Autowired
   DocWithCustomNameIdRepository docWithCustomNameIdRepository;
@@ -104,9 +109,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     assertThat(ObjectUtils.getTargetClassName(lofs.getClass().getTypeName())).isEqualTo(ArrayList.class.getTypeName());
     assertThat(ObjectUtils.getTargetClassName(inta.getClass().getTypeName())).isEqualTo(int[].class.getTypeName());
     assertThat(ObjectUtils.getTargetClassName(typeName)).isEqualTo(boolean.class.getTypeName());
-    assertThat(
-        ObjectUtils.getTargetClassName("java.util.List<com.redis.om.spring.annotations.document.fixtures.Attribute>"))
-            .isEqualTo(List.class.getTypeName());
+    assertThat(ObjectUtils.getTargetClassName(
+        "java.util.List<com.redis.om.spring.annotations.document.fixtures.Attribute>")).isEqualTo(List.class.getTypeName());
   }
 
   @Test
@@ -258,8 +262,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
   void testUnQuote() {
     assertThat(ObjectUtils.unQuote("\"Spam\"")).isEqualTo("Spam");
     assertThat(ObjectUtils.unQuote("Spam")).isEqualTo("Spam");
-    assertThat(ObjectUtils.unQuote("\"The quick \\\"brown\\\" fox \\\"jumps\\\" over the lazy dog\""))
-        .isEqualTo("The quick \\\"brown\\\" fox \\\"jumps\\\" over the lazy dog");
+    assertThat(ObjectUtils.unQuote("\"The quick \\\"brown\\\" fox \\\"jumps\\\" over the lazy dog\"")).isEqualTo(
+        "The quick \\\"brown\\\" fox \\\"jumps\\\" over the lazy dog");
   }
 
   @Test
@@ -273,9 +277,9 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     assertThat(ObjectUtils.toUnderscoreSeparated("someValue")).isEqualTo("some_value");
     assertThat(ObjectUtils.toUnderscoreSeparated("someOtherValue")).isEqualTo("some_other_value");
   }
-  
+
   @Test
-  void testIsPropertyAnnotatedWith() {    
+  void testIsPropertyAnnotatedWith() {
     assertThat(ObjectUtils.isPropertyAnnotatedWith(Address.class, "city", Indexed.class)).isTrue();
     assertThat(ObjectUtils.isPropertyAnnotatedWith(Address.class, "city", Searchable.class)).isFalse();
     assertThat(ObjectUtils.isPropertyAnnotatedWith(Address.class, "street", Searchable.class)).isTrue();
@@ -287,5 +291,107 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     assertThat(ObjectUtils.isPropertyAnnotatedWith(Airport.class, "state", AutoCompletePayload.class)).isTrue();
     assertThat(ObjectUtils.isPropertyAnnotatedWith(Airport.class, "state", Searchable.class)).isFalse();
     assertThat(ObjectUtils.isPropertyAnnotatedWith(Airport.class, "nonExistentField", Searchable.class)).isFalse();
+  }
+
+  @Test
+  void testGetValueByPath() {
+    Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "stack@redis.com");
+    redis.setId("8675309");
+    redis.setMetaList(Set.of(CompanyMeta.of("RD", 100, Set.of("RedisTag", "CommonTag"))));
+    redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
+
+    Set<Employee> employees = Sets.newHashSet(Employee.of("Brian Sam-Bodden"), Employee.of("Guy Royse"),
+        Employee.of("Justin Castilla"));
+    redis.setEmployees(employees);
+
+    String id = (String) ObjectUtils.getValueByPath(redis, "$.id");
+    String name = (String) ObjectUtils.getValueByPath(redis, "$.name");
+    Integer yearFounded = (Integer) ObjectUtils.getValueByPath(redis, "$.yearFounded");
+    LocalDate lastValuation = (LocalDate) ObjectUtils.getValueByPath(redis, "$.lastValuation");
+    Point location = (Point) ObjectUtils.getValueByPath(redis, "$.location");
+    Set<String> tags = (Set<String>) ObjectUtils.getValueByPath(redis, "$.tags[*]");
+    String email = (String) ObjectUtils.getValueByPath(redis, "$.email");
+    boolean publiclyListed = (boolean) ObjectUtils.getValueByPath(redis, "$.publiclyListed");
+    Collection<Integer> metaList_numberValue = (Collection<Integer>) ObjectUtils.getValueByPath(redis, "$.metaList[0:].numberValue");
+    Collection<String> metaList_stringValue = (Collection<String>) ObjectUtils.getValueByPath(redis, "$.metaList[0:].stringValue");
+    Collection<String> employees_name = (Collection<String>) ObjectUtils.getValueByPath(redis, "$.employees[0:].name");
+
+    assertAll( //
+        () -> assertThat(id).isEqualTo(redis.getId()),
+        () -> assertThat(name).isEqualTo(redis.getName()),
+        () -> assertThat(yearFounded).isEqualTo(redis.getYearFounded()),
+        () -> assertThat(lastValuation).isEqualTo(redis.getLastValuation()),
+        () -> assertThat(location).isEqualTo(redis.getLocation()),
+        () -> assertThat(tags).isEqualTo(redis.getTags()),
+        () -> assertThat(email).isEqualTo(redis.getEmail()),
+        () -> assertThat(publiclyListed).isEqualTo(redis.isPubliclyListed()),
+        () -> assertThat(metaList_numberValue).containsExactlyElementsOf(redis.getMetaList().stream().map(CompanyMeta::getNumberValue).toList()),
+        () -> assertThat(metaList_stringValue).containsExactlyElementsOf(redis.getMetaList().stream().map(CompanyMeta::getStringValue).toList()),
+        () -> assertThat(employees_name).containsExactlyElementsOf(redis.getEmployees().stream().map(Employee::getName).toList())
+    );
+  }
+
+  @Test
+  void testFlattenCollection() {
+    var nested = List.of(List.of(List.of("a", "b")), List.of("c", "d"), "e", List.of(List.of(List.of("f"))));
+    var flatten = ObjectUtils.flattenCollection(nested);
+    assertThat(flatten).containsExactly("a", "b", "c", "d", "e", "f");
+  }
+
+  @Test
+  void testPageFromSlice() {
+    List<String> strings = List.of("Pantufla", "Mondongo", "Latifundio", "Alcachofa");
+    Slice<String> slice = new SliceImpl<>(strings);
+
+    Page<String> page = ObjectUtils.pageFromSlice(slice);
+
+    assertThat(page.getContent()).hasSize(4);
+    assertThat(page.getContent().get(0)).isEqualTo("Pantufla");
+    assertThat(page.getNumber()).isEqualTo(slice.getNumber());
+    assertThat(page.getSize()).isEqualTo(slice.getSize());
+    assertThat(page.getNumberOfElements()).isEqualTo(slice.getNumberOfElements());
+    assertThat(page.getSort()).isEqualTo(slice.getSort());
+    assertThat(page.hasContent()).isEqualTo(slice.hasContent());
+    assertThat(page.hasNext()).isEqualTo(slice.hasNext());
+    assertThat(page.hasPrevious()).isEqualTo(slice.hasPrevious());
+    assertThat(page.isFirst()).isEqualTo(slice.isFirst());
+    assertThat(page.isLast()).isEqualTo(slice.isLast());
+    assertThat(page.nextPageable()).isEqualTo(slice.nextPageable());
+    assertThat(page.previousPageable()).isEqualTo(slice.previousPageable());
+    assertThat(page.getTotalPages()).isEqualTo(-1);
+    assertThat(page.getPageable()).isEqualTo(Pageable.ofSize(4));
+  }
+
+  @Test
+  public void testEmptyString() {
+    String result = ObjectUtils.replaceIfIllegalJavaIdentifierCharacter("");
+    assertThat(result).isEqualTo(ObjectUtils.REPLACEMENT_CHARACTER.toString());
+  }
+
+  @Test
+  public void testValidIdentifier() {
+    String input = "validIdentifier";
+    String result = ObjectUtils.replaceIfIllegalJavaIdentifierCharacter(input);
+    assertThat(result).isEqualTo(input);
+  }
+
+  @Test
+  public void testInvalidStartCharacter() {
+    String result = ObjectUtils.replaceIfIllegalJavaIdentifierCharacter("1invalid");
+    assertThat(result).startsWith(ObjectUtils.REPLACEMENT_CHARACTER.toString());
+  }
+
+  @Test
+  public void testInvalidPartCharacter() {
+    String result = ObjectUtils.replaceIfIllegalJavaIdentifierCharacter("invalid*identifier");
+    assertThat(result).isEqualTo("invalid" + ObjectUtils.REPLACEMENT_CHARACTER.toString() + "identifier");
+  }
+
+  @Test
+  public void testCompletelyInvalidString() {
+    String result = ObjectUtils.replaceIfIllegalJavaIdentifierCharacter("!@#*%^&*()");
+    String expected = "__________";
+    assertThat(result).isEqualTo(expected);
   }
 }

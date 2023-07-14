@@ -13,18 +13,22 @@ import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.RedisDocumentRepository;
+import com.redis.om.spring.search.stream.EntityStream;
+import com.redis.om.spring.search.stream.EntityStreamImpl;
+import com.redis.om.spring.search.stream.FluentQueryByExample;
 import com.redis.om.spring.serialization.gson.GsonListOfType;
 import com.redis.om.spring.util.ObjectUtils;
-import org.springframework.beans.*;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
+import org.springframework.beans.PropertyAccessor;
+import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Reference;
 import org.springframework.data.annotation.Version;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.core.mapping.KeyValuePersistentEntity;
 import org.springframework.data.keyvalue.repository.support.SimpleKeyValueRepository;
@@ -35,6 +39,7 @@ import org.springframework.data.redis.core.convert.RedisData;
 import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.repository.core.EntityInformation;
+import org.springframework.data.repository.query.FluentQuery.FetchableFluentQuery;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
@@ -56,9 +61,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static com.redis.om.spring.util.ObjectUtils.isPrimitiveOfType;
+import static com.redis.om.spring.util.ObjectUtils.pageFromSlice;
 import static redis.clients.jedis.json.JsonProtocol.JsonCommand;
 
 public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueRepository<T, ID>
@@ -73,13 +81,14 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   private final ULIDIdentifierGenerator generator;
   private final RedisOMProperties properties;
   private final RedisMappingContext mappingContext;
+  private final EntityStream entityStream;
 
   @SuppressWarnings("unchecked")
   public SimpleRedisDocumentRepository( //
       EntityInformation<T, ID> metadata, //
       KeyValueOperations operations, //
       @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo, //
-      RediSearchIndexer keyspaceToIndexMap, //
+      RediSearchIndexer indexer, //
       RedisMappingContext mappingContext,
       GsonBuilder gsonBuilder,
       RedisOMProperties properties) {
@@ -87,37 +96,31 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.metadata = metadata;
     this.operations = operations;
-    this.indexer = keyspaceToIndexMap;
+    this.indexer = indexer;
     this.mappingConverter = new MappingRedisOMConverter(null,
         new ReferenceResolverImpl(modulesOperations.getTemplate()));
     this.generator = ULIDIdentifierGenerator.INSTANCE;
     this.gsonBuilder = gsonBuilder;
     this.mappingContext = mappingContext;
     this.properties = properties;
+    this.entityStream = new EntityStreamImpl(modulesOperations, modulesOperations.getGsonBuilder(), indexer);
   }
 
   @Override
   public Iterable<ID> getIds() {
-    String keyspace = indexer.getKeyspaceForEntityClass(metadata.getJavaType());
-    Optional<String> maybeSearchIndex = indexer.getIndexName(keyspace);
     List<ID> result = List.of();
-    if (maybeSearchIndex.isPresent()) {
-      Gson gson = gsonBuilder.create();
-      SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
-      Optional<Field> maybeIdField = ObjectUtils.getIdFieldForEntityClass(metadata.getJavaType());
-      String idField = maybeIdField.map(Field::getName).orElse("id");
+    Gson gson = gsonBuilder.create();
+    Optional<Field> maybeIdField = ObjectUtils.getIdFieldForEntityClass(metadata.getJavaType());
+    String idField = maybeIdField.map(Field::getName).orElse("id");
 
-      Query query = new Query("*");
-      query.limit(0, properties.getRepository().getQuery().getLimit());
-      query.returnFields(idField);
-      SearchResult searchResult = searchOps.search(query);
+    Query query = new Query("*");
+    query.limit(0, properties.getRepository().getQuery().getLimit());
+    query.returnFields(idField);
+    SearchResult searchResult = getSearchOps().search(query);
 
-      result = searchResult.getDocuments().stream()
-          .map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get(idField)), metadata.getIdType()))
-          .toList();
-    }
-
-    return result;
+    return searchResult.getDocuments().stream()
+        .map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get(idField)), metadata.getIdType()))
+        .toList();
   }
 
   @Override
@@ -137,7 +140,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
   @Override
   public void updateField(T entity, MetamodelField<T, ?> field, Object value) {
-    modulesOperations.opsForJSON().set(getKey(metadata.getId(entity)), value,
+    modulesOperations.opsForJSON().set(getKey(Objects.requireNonNull(metadata.getId(entity))), value,
         Path.of("$." + field.getSearchAlias()));
   }
 
@@ -169,12 +172,13 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
         KeyValuePersistentEntity<?, ?> keyValueEntity = mappingConverter.getMappingContext()
             .getRequiredPersistentEntity(ClassUtils.getUserClass(entity));
-        Object id = isNew ? generator.generateIdentifierOfType(keyValueEntity.getIdProperty().getTypeInformation())
-            : keyValueEntity.getPropertyAccessor(entity).getProperty(keyValueEntity.getIdProperty());
+        Object id = isNew ? generator.generateIdentifierOfType(Objects.requireNonNull(keyValueEntity.getIdProperty()).getTypeInformation())
+            : keyValueEntity.getPropertyAccessor(entity).getProperty(
+            Objects.requireNonNull(keyValueEntity.getIdProperty()));
         keyValueEntity.getPropertyAccessor(entity).setProperty(keyValueEntity.getIdProperty(), id);
 
         String keyspace = keyValueEntity.getKeySpace();
-        byte[] objectKey = createKey(keyspace, id.toString());
+        byte[] objectKey = createKey(keyspace, Objects.requireNonNull(id).toString());
 
         processAuditAnnotations(entity, isNew);
 
@@ -309,23 +313,21 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
         Method ttlGetter;
         try {
           Field fld = ReflectionUtils.findField(entity.getClass(), settings.getTimeToLivePropertyName());
-          ttlGetter = ObjectUtils.getGetterForField(entity.getClass(), fld);
-          Long ttlPropertyValue = ((Number) ReflectionUtils.invokeMethod(ttlGetter, entity)).longValue();
+          ttlGetter = ObjectUtils.getGetterForField(entity.getClass(), Objects.requireNonNull(fld));
+          long ttlPropertyValue = ((Number) Objects.requireNonNull(ReflectionUtils.invokeMethod(ttlGetter, entity))).longValue();
 
           ReflectionUtils.invokeMethod(ttlGetter, entity);
 
-          if (ttlPropertyValue != null) {
-            TimeToLive ttl = fld.getAnnotation(TimeToLive.class);
-            if (!ttl.unit().equals(TimeUnit.SECONDS)) {
-              return Optional.of(TimeUnit.SECONDS.convert(ttlPropertyValue, ttl.unit()));
-            } else {
-              return Optional.of(ttlPropertyValue);
-            }
+          TimeToLive ttl = fld.getAnnotation(TimeToLive.class);
+          if (!ttl.unit().equals(TimeUnit.SECONDS)) {
+            return Optional.of(TimeUnit.SECONDS.convert(ttlPropertyValue, ttl.unit()));
+          } else {
+            return Optional.of(ttlPropertyValue);
           }
         } catch (SecurityException | IllegalArgumentException e) {
           return Optional.empty();
         }
-      } else if (settings != null && settings.getTimeToLive() != null && settings.getTimeToLive() > 0) {
+      } else if (settings.getTimeToLive() != null && settings.getTimeToLive() > 0) {
         return Optional.of(settings.getTimeToLive());
       }
     }
@@ -358,4 +360,144 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     Long[] dbVersionArray = (Long[]) ops.get(key, type, Path.of("$." + versionProperty));
     return dbVersionArray != null ? dbVersionArray[0] : null;
   }
+
+  // -------------------------------------------------------------------------
+  // Query By Example Fluent API - QueryByExampleExecutor
+  // -------------------------------------------------------------------------
+
+  @Override
+  public <S extends T> Optional<S> findOne(Example<S> example) {
+    return entityStream.of(example.getProbeType()).filter(example).findFirst();
+  }
+
+  @Override
+  public <S extends T> Iterable<S> findAll(Example<S> example) {
+    return entityStream.of(example.getProbeType()).filter(example).collect(Collectors.toList());
+  }
+
+  @Override
+  public <S extends T> Iterable<S> findAll(Example<S> example, Sort sort) {
+    return entityStream.of(example.getProbeType()).filter(example).sorted(sort).collect(Collectors.toList());
+  }
+
+  @Override
+  public <S extends T> Page<S> findAll(Example<S> example, Pageable pageable) {
+    return pageFromSlice(entityStream.of(example.getProbeType()).filter(example).getSlice(pageable));
+  }
+
+  @Override
+  public <S extends T> long count(Example<S> example) {
+    return entityStream.of(example.getProbeType()).filter(example).count();
+  }
+
+  @Override
+  public <S extends T> boolean exists(Example<S> example) {
+    return count(example) > 0;
+  }
+
+  // -------------------------------------------------------------------------
+  // Query By Example Fluent API - QueryByExampleExecutor
+  // -------------------------------------------------------------------------
+
+  @Override
+  public <S extends T, R> R findBy(Example<S> example, Function<FetchableFluentQuery<S>, R> queryFunction) {
+    Assert.notNull(example, "Example must not be null");
+    Assert.notNull(queryFunction, "Query function must not be null");
+
+    return queryFunction.apply(new FluentQueryByExample<>(example, example.getProbeType(), entityStream, getSearchOps()));
+  }
+
+  private SearchOperations<String> getSearchOps() {
+    String keyspace = indexer.getKeyspaceForEntityClass(metadata.getJavaType());
+    Optional<String> maybeSearchIndex = indexer.getIndexName(keyspace);
+    return modulesOperations.opsForSearch(maybeSearchIndex.get());
+  }
+
+//  static class FluentQueryByExample<T> implements FluentQuery.FetchableFluentQuery<T> {
+//    private final SearchStream<T> searchStream;
+//    private final Class<T> probeType;
+//
+//    private final SearchOperations<String> searchOps;
+//
+//    public FluentQueryByExample( //
+//        Example<T> example, //
+//        Class<T> probeType, //
+//        EntityStream entityStream, //
+//        SearchOperations<String> searchOps //
+//    ) {
+//      this.probeType = probeType;
+//      this.searchOps = searchOps;
+//      this.searchStream = entityStream.of(probeType);
+//      searchStream.filter(example);
+//    }
+//
+//    @Override
+//    public FetchableFluentQuery<T> sortBy(Sort sort) {
+//      searchStream.sorted(sort);
+//      return this;
+//    }
+//
+//    @Override
+//    public <R> FetchableFluentQuery<R> as(Class<R> resultType) {
+//      throw new UnsupportedOperationException("`as` is not supported on a Redis Repositories");
+//    }
+//
+//    @Override
+//    public FetchableFluentQuery<T> project(Collection<String> properties) {
+//      List<MetamodelField<?, ?>> metamodelFields = MetamodelUtils.getMetamodelFieldsForProperties(probeType,
+//          properties);
+//      metamodelFields.forEach(mmf ->  searchStream.project((MetamodelField<? super T, ?>) mmf));
+//      return this;
+//    }
+//
+//    @Override
+//    public T oneValue() {
+//      var result = searchStream.collect(Collectors.toList());
+//
+//      if (org.springframework.util.ObjectUtils.isEmpty(result)) {
+//        return null;
+//      }
+//
+//      if (result.size() > 1) {
+//        throw new IncorrectResultSizeDataAccessException("Query returned non unique result", 1);
+//      }
+//
+//      return result.iterator().next();
+//    }
+//
+//    @Override
+//    public T firstValue() {
+//      return searchStream.findFirst().orElse(null);
+//    }
+//
+//    @Override
+//    public List<T> all() {
+//      return searchStream.collect(Collectors.toList());
+//    }
+//
+//    @Override
+//    public Page<T> page(Pageable pageable) {
+//      Query query = (searchStream.backingQuery().isBlank()) ? new Query() : new Query(searchStream.backingQuery());
+//      query.limit(0, 0);
+//      SearchResult searchResult = searchOps.search(query);
+//      var count = searchResult.getTotalResults();
+//      var pageContents = searchStream.limit(pageable.getPageSize()).skip(pageable.getOffset()).collect(Collectors.toList());
+//      return new PageImpl<>(pageContents, pageable, count);
+//    }
+//
+//    @Override
+//    public Stream<T> stream() {
+//      return all().stream();
+//    }
+//
+//    @Override
+//    public long count() {
+//      return searchStream.count();
+//    }
+//
+//    @Override
+//    public boolean exists() {
+//      return searchStream.count() > 0;
+//    }
+//  }
 }
