@@ -52,4 +52,8 @@ public class RedisModulesOperations<K> {
   public RedisModulesClient getClient() {
     return client;
   }
+
+  public GsonBuilder getGsonBuilder() {
+    return gsonBuilder;
+  }
 }

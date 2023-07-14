@@ -11,11 +11,18 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
 import org.springframework.data.redis.core.convert.Bucket;
 import org.springframework.data.redis.core.convert.RedisData;
 import org.springframework.data.util.Pair;
+import org.springframework.expression.Expression;
+import org.springframework.expression.ExpressionParser;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.util.ReflectionUtils;
 import redis.clients.jedis.args.GeoUnit;
 import redis.clients.jedis.search.Document;
@@ -25,10 +32,14 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
 import static org.springframework.util.ClassUtils.resolvePrimitiveIfNecessary;
@@ -127,7 +138,7 @@ public class ObjectUtils {
   public static Object getIdFieldForEntity(Field idField, Object entity) {
     String getterName = "get" + ObjectUtils.ucfirst(idField.getName());
     Method getter = ReflectionUtils.findMethod(entity.getClass(), getterName);
-    return ReflectionUtils.invokeMethod(getter, entity);
+    return ReflectionUtils.invokeMethod(requireNonNull(getter), entity);
   }
 
   public static Method getGetterForField(Class<?> cls, Field field) {
@@ -138,6 +149,12 @@ public class ObjectUtils {
   public static Method getSetterForField(Class<?> cls, Field field) {
     String setterName = "set" + ucfirst(field.getName());
     return ReflectionUtils.findMethod(cls, setterName, field.getType());
+  }
+
+  public static Object getValueForField(Field field, Object entity) {
+    String getterName = "get" + ObjectUtils.ucfirst(field.getName());
+    Method getter = ReflectionUtils.findMethod(entity.getClass(), getterName);
+    return getter != null ? ReflectionUtils.invokeMethod(getter, entity) : null;
   }
 
   /**
@@ -397,7 +414,7 @@ public class ObjectUtils {
     return floatArrayToByteArray(floats);
   }
 
-  public static Collection instantiateCollection(Type type) {
+  public static Collection<?> instantiateCollection(Type type) {
     Class<?> rawType = (Class<?>) ((ParameterizedType) type).getRawType();
     if (rawType.isInterface()) {
       if (List.class.isAssignableFrom(rawType)) {
@@ -426,6 +443,241 @@ public class ObjectUtils {
     String format = keyspace.endsWith(":") ? "%s%s" : "%s:%s";
     return String.format(format, keyspace, id);
   }
+
+  public static <T> Page<T> pageFromSlice(Slice<T> slice) {
+    return new Page<>() {
+      @Override
+      public int getTotalPages() {
+        return -1;
+      }
+
+      @Override
+      public long getTotalElements() {
+        return -1;
+      }
+
+      @Override
+      public <U> Page<U> map(Function<? super T, ? extends U> converter) {
+        return pageFromSlice(slice.map(converter));
+      }
+
+      @Override
+      public int getNumber() {
+        return slice.getNumber();
+      }
+
+      @Override
+      public int getSize() {
+        return slice.getSize();
+      }
+
+      @Override
+      public int getNumberOfElements() {
+        return slice.getNumberOfElements();
+      }
+
+      @Override
+      public List<T> getContent() {
+        return slice.getContent();
+      }
+
+      @Override
+      public boolean hasContent() {
+        return slice.hasContent();
+      }
+
+      @Override
+      public Sort getSort() {
+        return slice.getSort();
+      }
+
+      @Override
+      public boolean isFirst() {
+        return slice.isFirst();
+      }
+
+      @Override
+      public boolean isLast() {
+        return slice.isLast();
+      }
+
+      @Override
+      public boolean hasNext() {
+        return slice.hasNext();
+      }
+
+      @Override
+      public boolean hasPrevious() {
+        return slice.hasPrevious();
+      }
+
+      @Override
+      public Pageable nextPageable() {
+        return slice.nextPageable();
+      }
+
+      @Override
+      public Pageable previousPageable() {
+        return slice.previousPageable();
+      }
+
+      @Override
+      public Iterator<T> iterator() {
+        return slice.iterator();
+      }
+    };
+  }
+
+  private static final ExpressionParser SPEL_EXPRESSION_PARSER = new SpelExpressionParser();
+
+  public static Object getValueByPath(Object target, String path) {
+    // Remove JSONPath prefix
+    String safeSpelPath = path.replace("$.", "");
+    // does the expression have any arrays
+    boolean hasNestedObject = path.contains("[0:]");
+
+    Object value = null;
+
+    if (!hasNestedObject) {
+      safeSpelPath = safeSpelPath //
+          .replace(".", "?.") //
+          .replace("[*]", "") //
+          .replace(".", "?.");
+
+      value = SPEL_EXPRESSION_PARSER.parseExpression(safeSpelPath).getValue(target);
+    } else {
+      String[] tempParts = safeSpelPath.split("\\[0:\\]", 2);
+      String[] parts = tempParts[1].split("\\.", 2);
+      String leftPath = tempParts[0].replace(".", "?.");
+      String rightPath = parts[1].replace(".", "?.");
+
+      Expression leftExp = SPEL_EXPRESSION_PARSER.parseExpression(leftPath);
+      Expression rightExp = SPEL_EXPRESSION_PARSER.parseExpression(rightPath);
+      Collection left = (Collection) leftExp.getValue(target);
+      if (left != null && !left.isEmpty()) {
+        value = flattenCollection(left.stream().map(rightExp::getValue).toList());
+      }
+    }
+
+    return value;
+  }
+
+  public static Collection<Object> flattenCollection(Collection<Object> inputCollection) {
+    List<Object> flatList = new ArrayList<>();
+
+    for (Object element : inputCollection) {
+      if (element instanceof Collection) {
+        flatList.addAll(flattenCollection((Collection<Object>) element));
+      } else {
+        flatList.add(element);
+      }
+    }
+
+    return flatList;
+  }
+
+  public static String replaceIfIllegalJavaIdentifierCharacter(final String word) {
+    requireNonNull(word);
+    if (word.isEmpty()) {
+      return REPLACEMENT_CHARACTER.toString(); // No name is translated to REPLACEMENT_CHARACTER only
+    }
+    final StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < word.length(); i++) {
+      char c = word.charAt(i);
+      if (i == 0) {
+        if (Character.isJavaIdentifierStart(c)) {
+          // Fine! Just add the first character
+          sb.append(c);
+        } else if (Character.isJavaIdentifierPart(c)) {
+          // Not ok as the first, but ok otherwise. Add the replacement before it
+          sb.append(REPLACEMENT_CHARACTER).append(c);
+        } else {
+          // Cannot be used as a java identifier. Replace it
+          sb.append(REPLACEMENT_CHARACTER);
+        }
+      } else if (Character.isJavaIdentifierPart(c)) {
+        // Fine! Just add it
+        sb.append(c);
+      } else {
+        // Cannot be used as a java identifier. Replace it
+        sb.append(REPLACEMENT_CHARACTER);
+      }
+
+    }
+    return sb.toString();
+  }
+
+  static final Set<String> JAVA_LITERAL_WORDS = Set.of("true", "false", "null");
+
+  // Java reserved keywords
+  static final Set<String> JAVA_RESERVED_WORDS = Collections.unmodifiableSet(Stream.of(
+      // Unused
+      "const", "goto",
+      // The real ones...
+      "abstract", "continue", "for", "new", "switch", "assert", "default", "goto", "package", "synchronized", "boolean",
+      "do", "if", "private", "this", "break", "double", "implements", "protected", "throw", "byte", "else", "import",
+      "public", "throws", "case", "enum", "instanceof", "return", "transient", "catch", "extends", "int", "short",
+      "try", "char", "final", "interface", "static", "void", "class", "finally", "long", "strictfp", "volatile",
+      "const", "float", "native", "super", "while").collect(Collectors.toSet()));
+
+  static final Set<Class<?>> JAVA_BUILT_IN_CLASSES = Set.of(Boolean.class, Byte.class, Character.class, Double.class,
+      Float.class, Integer.class, Long.class, Object.class, Short.class, String.class, BigDecimal.class,
+      BigInteger.class, boolean.class, byte.class, char.class, double.class, float.class, int.class, long.class,
+      short.class);
+
+  private static final Set<String> JAVA_BUILT_IN_CLASS_WORDS = Collections
+      .unmodifiableSet(JAVA_BUILT_IN_CLASSES.stream().map(Class::getSimpleName).collect(Collectors.toSet()));
+
+  private static final Set<String> JAVA_USED_WORDS = Collections
+      .unmodifiableSet(Stream.of(JAVA_LITERAL_WORDS, JAVA_RESERVED_WORDS, JAVA_BUILT_IN_CLASS_WORDS)
+          .flatMap(Collection::stream).collect(Collectors.toSet()));
+
+  private static final Set<String> JAVA_USED_WORDS_LOWER_CASE = Collections
+      .unmodifiableSet(JAVA_USED_WORDS.stream().map(String::toLowerCase).collect(Collectors.toSet()));
+
+  /**
+   * Returns a static field name representation of the specified camel-cased
+   * string.
+   *
+   * @param externalName the string
+   * @return the static field name representation
+   */
+  public static String staticField(final String externalName) {
+    requireNonNull(externalName);
+    return ObjectUtils.toUnderscoreSeparated(javaNameFromExternal(externalName)).toUpperCase();
+  }
+
+  public static String javaNameFromExternal(final String externalName) {
+    requireNonNull(externalName);
+    return ObjectUtils
+        .replaceIfIllegalJavaIdentifierCharacter(replaceIfJavaUsedWord(nameFromExternal(externalName)));
+  }
+
+  public static String nameFromExternal(final String externalName) {
+    requireNonNull(externalName);
+    String result = ObjectUtils.unQuote(externalName.trim()); // Trim if there are initial spaces or trailing spaces...
+    /* CamelCase
+     * http://stackoverflow.com/questions/4050381/regular-expression-for-checking-if
+     * -capital-letters-are-found-consecutively-in-a [A-Z] -> \p{Lu} [^A-Za-z0-9] ->
+     * [^\pL0-90-9] */
+    result = Stream.of(result.replaceAll("(\\p{Lu}+)", "_$1").split("[^\\pL\\d]")).map(String::toLowerCase)
+        .map(ObjectUtils::ucfirst).collect(Collectors.joining());
+    return result;
+  }
+
+  public static String replaceIfJavaUsedWord(final String word) {
+    requireNonNull(word);
+    // We need to replace regardless of case because we do not know how the returned
+    // string is to be used
+    if (JAVA_USED_WORDS_LOWER_CASE.contains(word.toLowerCase())) {
+      // If it is a java reserved/literal/class, add a "_" at the end to avoid naming
+      // conflicts
+      return word + "_";
+    }
+    return word;
+  }
+
+  public static final Character REPLACEMENT_CHARACTER = '_';
 
   private ObjectUtils() {
   }
