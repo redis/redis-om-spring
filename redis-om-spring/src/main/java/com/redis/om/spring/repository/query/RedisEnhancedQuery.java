@@ -547,7 +547,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       if (queryMethod.getReturnedObjectType() == Map.class) {
         content = aggregationResult.getResults().stream().map(m -> m.entrySet().stream() //
             .map(e -> new AbstractMap.SimpleEntry<>(e.getKey(),
-                e.getValue() != null ? new String((byte[]) e.getValue()) : "")) //
+                e.getValue() != null ? e.getValue().toString() : "")) //
             .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue)) //
         ).collect(Collectors.toList());
       }

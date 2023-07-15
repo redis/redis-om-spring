@@ -287,7 +287,7 @@ public class ObjectUtils {
   public static Object mapToObject(Map<String,Object> properties, Class<?> returnedObjectType,
       MappingRedisOMConverter mappingConverter) {
     Bucket b = new Bucket();
-    properties.forEach((k,v) -> b.put(k, (byte[]) v));
+    properties.forEach((k,v) -> b.put(k, v.toString().getBytes()));
 
     return mappingConverter.read(returnedObjectType, new RedisData(b));
   }

@@ -147,7 +147,7 @@ public class AggregationPage<E> implements Slice<E>, Serializable {
 
   List<E> toEntityList(AggregationResult aggregationResult) {
     if (isDocument) {
-      return aggregationResult.getResults().stream().map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), entityClass)).toList();
+      return aggregationResult.getResults().stream().map(d -> gson.fromJson(d.get("$").toString(), entityClass)).toList();
     } else {
       return aggregationResult.getResults().stream().map(h -> (E) ObjectUtils.mapToObject(h, entityClass, mappingConverter)).toList();
     }
