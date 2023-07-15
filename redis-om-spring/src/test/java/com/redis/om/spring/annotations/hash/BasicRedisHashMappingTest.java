@@ -143,7 +143,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
   void testAggregationAnnotation01() {
     AggregationResult results = personRepo.allNamesInUppercase();
     List<String> upcasedNames = results.getResults().stream().map(m -> m.get("upcasedName"))
-        .map(o -> new String((byte[]) o)).collect(Collectors.toList());
+        .map(Object::toString).toList();
     assertThat(upcasedNames).containsExactlyInAnyOrder("JOHN CLEESE", //
         "GRAHAM CHAPMAN", //
         "TERRY GILLIAM", //

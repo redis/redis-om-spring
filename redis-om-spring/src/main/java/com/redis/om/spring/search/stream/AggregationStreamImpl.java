@@ -349,28 +349,28 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
       for (int i = 0; i < labels.length; i++) {
         Object raw = m.get(labels[i]);
         if (contentTypes[i] == String.class) {
-          mappedValues.add(raw != null ? new String((byte[]) raw) : "");
+          mappedValues.add(raw != null ? raw : "");
         } else if (contentTypes[i] == Long.class) {
-          mappedValues.add(raw != null ? Long.parseLong(new String((byte[]) raw)) : 0L);
+          mappedValues.add(raw != null ? Long.parseLong(raw.toString()) : 0L);
         } else if (contentTypes[i] == Integer.class) {
-          mappedValues.add(raw != null ? Integer.parseInt(new String((byte[]) raw)) : 0);
+          mappedValues.add(raw != null ? Integer.parseInt(raw.toString()) : 0);
         } else if (contentTypes[i] == Double.class) {
-          mappedValues.add(raw != null ? Double.parseDouble(new String((byte[]) raw)) : 0);
+          mappedValues.add(raw != null ? Double.parseDouble(raw.toString()) : 0);
         } else if (contentTypes[i] == List.class && List.class.isAssignableFrom(raw.getClass())) {
           Class<?> listContents = returnFieldsTypeHints.get(labels[i]);
           List<?> rawList = (List<?>) raw;
           if (listContents != null) {
             if (listContents == String.class) {
-              mappedValues.add(rawList.stream().map(e -> e != null ? new String((byte[]) e) : "").toList());
+              mappedValues.add(rawList.stream().map(e -> e != null ? e : "").toList());
             } else if (listContents == Long.class) {
               mappedValues.add(
-                  rawList.stream().map(e -> e != null ? Long.parseLong(new String((byte[]) e)) : 0L).toList());
+                  rawList.stream().map(e -> e != null ? Long.parseLong(e.toString()) : 0L).toList());
             } else if (listContents == Integer.class) {
               mappedValues.add(
-                  rawList.stream().map(e -> e != null ? Integer.parseInt(new String((byte[]) e)) : 0).toList());
+                  rawList.stream().map(e -> e != null ? Integer.parseInt(e.toString()) : 0).toList());
             } else if (listContents == Double.class) {
               mappedValues.add(
-                  rawList.stream().map(e -> e != null ? Double.parseDouble(new String((byte[]) e)) : 0).toList());
+                  rawList.stream().map(e -> e != null ? Double.parseDouble(e.toString()) : 0).toList());
             } else {
               mappedValues.add(rawList);
             }
@@ -497,7 +497,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
   List<E> toEntityList(AggregationResult aggregationResult) {
     if (isDocument) {
       return aggregationResult.getResults().stream()
-          .map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get("$")), entityClass)).toList();
+          .map(d -> gson.fromJson(d.get("$").toString(), entityClass)).toList();
     } else {
       return aggregationResult.getResults().stream().map(h -> (E) ObjectUtils.mapToObject(h, entityClass, mappingConverter)).toList();
     }
