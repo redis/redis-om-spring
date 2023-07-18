@@ -31,7 +31,7 @@
     <dependency>
       <groupId>com.redis.om</groupId>
       <artifactId>redis-om-spring</artifactId>
-      <version>0.8.5</version>
+      <version>0.8.6-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -141,7 +141,7 @@
             <path>
               <groupId>com.redis.om</groupId>
               <artifactId>redis-om-spring</artifactId>
-              <version>0.8.5</version>
+              <version>0.8.6-SNAPSHOT</version>
             </path>
           </annotationProcessorPaths>
         </configuration>
