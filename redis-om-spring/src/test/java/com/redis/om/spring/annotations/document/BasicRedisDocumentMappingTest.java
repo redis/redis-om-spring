@@ -39,10 +39,20 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   @Autowired
   SomeDocumentRepository someDocumentRepository;
 
+  @Autowired
+  DeepNestRepository deepNestRepository;
+
   @BeforeEach
   void cleanUp() {
     flushSearchIndexFor(Company.class);
     flushSearchIndexFor(DocWithSets.class);
+
+    if (deepNestRepository.count() == 0) {
+      DeepNest dn1 = DeepNest.of("dn-1", NestLevel1.of("nl-1-1", "Louis, I think this is the beginning of a beautiful friendship.", NestLevel2.of("nl-2-1", "Here's looking at you, kid.")));
+      DeepNest dn2 = DeepNest.of("dn-2", NestLevel1.of("nl-1-2", "Whoever you are, I have always depended on the kindness of strangers.", NestLevel2.of("nl-2-2", "Hey, you hens! Cut out the cackling in there!")));
+      DeepNest dn3 = DeepNest.of("dn-3", NestLevel1.of("nl-1-3", "A good body with a dull brain is as cheap as life itself.", NestLevel2.of("nl-2-3", "I'm Spartacus!")));
+      deepNestRepository.saveAll(List.of(dn1, dn2, dn3));
+    }
   }
 
   @Test
@@ -621,6 +631,20 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
         () -> assertThat(onlyVal1).containsExactly(doc1), //
         () -> assertThat(onlyVal2).containsExactly(doc2), //
         () -> assertThat(onlyVal3).containsExactly(doc3)  //
+    );
+  }
+
+  @Test
+  void testUpdateDeepNestedField() {
+    Optional<DeepNest> dn1 = deepNestRepository.findFirstByNameIs("dn-1");
+    assertTrue(dn1.isPresent());
+    deepNestRepository.updateField(dn1.get(), DeepNest$.NEST_LEVEL1_NEST_LEVEL2_NAME, "dos-uno");
+
+    Optional<DeepNest> dn1After = deepNestRepository.findFirstByNameIs("dn-1");
+
+    assertAll( //
+        () -> assertTrue(dn1After.isPresent()), //
+        () -> assertEquals("dos-uno", dn1After.get().getNestLevel1().getNestLevel2().getName()) //
     );
   }
 }
