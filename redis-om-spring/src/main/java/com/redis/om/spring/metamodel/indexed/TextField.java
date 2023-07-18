@@ -39,12 +39,12 @@ public class TextField<E, T> extends MetamodelField<E, T> {
     return new NotLikePredicate<>(searchFieldAccessor,value);
   }
   
-  public LikePredicate<E,T> containing(T value) {
-    return new LikePredicate<>(searchFieldAccessor,value);
+  public ContainingPredicate<E,T> containing(T value) {
+    return new ContainingPredicate<>(searchFieldAccessor,value);
   }
   
-  public NotLikePredicate<E,T> notContaining(T value) {
-    return new NotLikePredicate<>(searchFieldAccessor,value);
+  public NotContainingPredicate<E,T> notContaining(T value) {
+    return new NotContainingPredicate<>(searchFieldAccessor,value);
   }
 
   @SuppressWarnings("unchecked")
