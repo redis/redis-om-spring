@@ -260,7 +260,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
   }
 
   @Test
-  void testMaxQueryReturnDefaultsTo10() {
+  void testMaxQueryReturnMaxDefaultsTo10000() {
     final List<Company> bunchOfCompanies = new ArrayList<>();
     IntStream.range(1, 100).forEach(i -> {
       Company c = Company.of("Company" + i, 2022, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
@@ -275,7 +275,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
 
     //noinspection ResultOfMethodCallIgnored
     assertAll( //
-        () -> assertThat(publiclyListed).hasSize(10), //
+        () -> assertThat(publiclyListed).hasSize(49), //
         () -> assertThat(publiclyListed).allSatisfy(Company::isPubliclyListed) //
     );
   }

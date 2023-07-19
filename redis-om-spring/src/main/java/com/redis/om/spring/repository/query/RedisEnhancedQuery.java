@@ -375,6 +375,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
     Optional<Pageable> maybePageable = Optional.empty();
 
+    boolean needsLimit = true;
     if (queryMethod.isPageQuery()) {
       maybePageable = Arrays.stream(parameters).filter(Pageable.class::isInstance).map(Pageable.class::cast)
           .findFirst();
@@ -383,6 +384,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
         Pageable pageable = maybePageable.get();
         if (!pageable.isUnpaged()) {
           query.limit(Math.toIntExact(pageable.getOffset()), pageable.getPageSize());
+          needsLimit = false;
 
           if (pageable.getSort() != null) {
             for (Order order : pageable.getSort()) {
@@ -393,8 +395,13 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       }
     }
 
-    if ((limit != null && limit != Integer.MIN_VALUE) || (offset != null && offset != Integer.MIN_VALUE)) {
-      query.limit(offset != null ? offset : 0, limit != null ? limit : redisOMProperties.getRepository().getQuery().getLimit());
+    if (needsLimit) {
+      if ((limit != null && limit != Integer.MIN_VALUE) || (offset != null && offset != Integer.MIN_VALUE)) {
+        query.limit(offset != null ? offset : 0,
+            limit != null ? limit : redisOMProperties.getRepository().getQuery().getLimit());
+      } else {
+        query.limit(0, redisOMProperties.getRepository().getQuery().getLimit());
+      }
     }
 
     if ((sortBy != null && !sortBy.isBlank())) {
@@ -492,6 +499,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     // sort by
     Optional<Pageable> maybePageable = Optional.empty();
 
+    boolean needsLimit = true;
     if (queryMethod.isPageQuery()) {
       maybePageable = Arrays.stream(parameters).filter(Pageable.class::isInstance).map(Pageable.class::cast)
           .findFirst();
@@ -500,6 +508,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
         Pageable pageable = maybePageable.get();
         if (!pageable.isUnpaged()) {
           aggregation.limit(Math.toIntExact(pageable.getOffset()), pageable.getPageSize());
+          needsLimit = false;
 
           // sort by
           if (pageable.getSort() != null) {
@@ -531,8 +540,12 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     }
 
     // limit
-    if ((limit != null) || (offset != null)) {
-      aggregation.limit(offset != null ? offset : 0, limit != null ? limit : 0);
+    if (needsLimit) {
+      if ((limit != null) || (offset != null)) {
+        aggregation.limit(offset != null ? offset : 0, limit != null ? limit : 0);
+      } else {
+        aggregation.limit(0, redisOMProperties.getRepository().getQuery().getLimit());
+      }
     }
 
     // execute the aggregation
