@@ -17,11 +17,13 @@ import ai.djl.translate.Translator;
 import com.github.f4b6a3.ulid.Ulid;
 import com.google.gson.GsonBuilder;
 import com.redis.om.spring.annotations.Bloom;
+import com.redis.om.spring.annotations.Cuckoo;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.client.RedisModulesClient;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.pds.BloomOperations;
+import com.redis.om.spring.ops.pds.CuckooFilterOperations;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.EntityStreamImpl;
 import com.redis.om.spring.serialization.gson.*;
@@ -52,6 +54,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.lang.Nullable;
+import redis.clients.jedis.bloom.CFReserveParams;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -71,6 +74,7 @@ import static com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively
 @EnableConfigurationProperties({RedisProperties.class, RedisOMProperties.class})
 @EnableAspectJAutoProxy
 @ComponentScan("com.redis.om.spring.bloom")
+@ComponentScan("com.redis.om.spring.cuckoo")
 @ComponentScan("com.redis.om.spring.autocomplete")
 @ComponentScan("com.redis.om.spring.metamodel")
 public class RedisModulesConfiguration {
@@ -124,6 +128,11 @@ public class RedisModulesConfiguration {
   @Bean(name = "redisBloomOperations")
   BloomOperations<?> redisBloomOperations(RedisModulesOperations<?> redisModulesOperations) {
     return redisModulesOperations.opsForBloom();
+  }
+
+  @Bean(name = "redisCuckooOperations")
+  CuckooFilterOperations<?> redisCuckooFilterOperations(RedisModulesOperations<?> redisModulesOperations) {
+    return redisModulesOperations.opsForCuckoFilter();
   }
 
   @Bean(name = "redisTemplate")
@@ -355,6 +364,36 @@ public class RedisModulesConfiguration {
             String filterName = !ObjectUtils.isEmpty(bloom.name()) ? bloom.name()
                 : String.format("bf:%s:%s", cl.getSimpleName(), field.getName());
             ops.createFilter(filterName, bloom.capacity(), bloom.errorRate());
+          }
+        }
+      } catch (Exception e) {
+        logger.debug("Error during processing of @Bloom annotation: ", e);
+      }
+    }
+  }
+
+  @EventListener(ContextRefreshedEvent.class)
+  public void processCuckoo(ContextRefreshedEvent cre) {
+    ApplicationContext ac = cre.getApplicationContext();
+    @SuppressWarnings("unchecked")
+    RedisModulesOperations<String> rmo = (RedisModulesOperations<String>) ac.getBean("redisModulesOperations");
+
+    Set<BeanDefinition> beanDefs = getBeanDefinitionsFor(ac, Document.class, RedisHash.class);
+
+    for (BeanDefinition beanDef : beanDefs) {
+      try {
+        Class<?> cl = Class.forName(beanDef.getBeanClassName());
+        for (java.lang.reflect.Field field : getDeclaredFieldsTransitively(cl)) {
+          if (field.isAnnotationPresent(Cuckoo.class)) {
+            Cuckoo cuckoo = field.getAnnotation(Cuckoo.class);
+            CuckooFilterOperations<String> ops = rmo.opsForCuckoFilter();
+            String filterName = !ObjectUtils.isEmpty(cuckoo.name()) ? cuckoo.name()
+                : String.format("cf:%s:%s", cl.getSimpleName(), field.getName());
+            CFReserveParams params = CFReserveParams.reserveParams()
+                .bucketSize(cuckoo.bucketSize())
+                .expansion(cuckoo.expansion())
+                .maxIterations(cuckoo.maxIterations());
+            ops.createFilter(filterName, cuckoo.capacity(), params);
           }
         }
       } catch (Exception e) {
