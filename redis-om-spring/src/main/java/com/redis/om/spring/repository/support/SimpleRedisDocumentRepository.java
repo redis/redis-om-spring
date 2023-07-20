@@ -140,7 +140,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   @Override
   public void updateField(T entity, MetamodelField<T, ?> field, Object value) {
     modulesOperations.opsForJSON().set(getKey(Objects.requireNonNull(metadata.getId(entity))), value,
-        Path.of("$." + field.getSearchAlias().replace("_", ".")));
+        Path.of(field.getJSONPath()));
   }
 
   @SuppressWarnings("unchecked")
@@ -148,7 +148,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   public <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field) {
     String[] keys = StreamSupport.stream(ids.spliterator(), false).map(this::getKey).toArray(String[]::new);
     return (Iterable<F>) modulesOperations.opsForJSON()
-        .mget(Path2.of("$." + field.getSearchAlias()), List.class, keys).stream().flatMap(List::stream)
+        .mget(Path2.of(field.getJSONPath()), List.class, keys).stream().flatMap(List::stream)
         .toList();
   }
 

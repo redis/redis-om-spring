@@ -653,15 +653,18 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
     String searchSchemaAlias = chain.stream().map(e -> e.getSimpleName().toString()).collect(Collectors.joining("_"));
     searchSchemaAlias = collectionPrefix != null ? collectionPrefix + "_" + searchSchemaAlias : searchSchemaAlias;
+    String jsonPath = chain.stream().map(e -> e.getSimpleName().toString()).collect(Collectors.joining("."));
+    jsonPath = "$." +  (collectionPrefix != null ? collectionPrefix + "." + jsonPath : jsonPath);
 
     CodeBlock aFieldInit = CodeBlock //
         .builder() //
         .addStatement( //
-            "$L = new $T(new $T(\"$L\", $L),$L)", //
+            "$L = new $T(new $T(\"$L\", \"$L\", $L),$L)", //
             fieldAccessor, //
             interceptor, //
             SearchFieldAccessor.class, //
             searchSchemaAlias, //
+            jsonPath, //
             chainFieldName, //
             fieldIsIndexed //
         ) //
@@ -685,9 +688,10 @@ public final class MetamodelGenerator extends AbstractProcessor {
         .build();
 
     String searchSchemaAlias = chain.stream().map(e -> e.getSimpleName().toString()).collect(Collectors.joining("_"));
+    String jsonPath = "$." + chain.stream().map(e -> e.getSimpleName().toString()).collect(Collectors.joining("."));
 
     CodeBlock aFieldInit = CodeBlock.builder()
-        .addStatement("$L = new $T(new $T(\"$L\", $L),$L)", fieldAccessor, interceptor, SearchFieldAccessor.class, searchSchemaAlias, chainFieldName,
+        .addStatement("$L = new $T(new $T(\"$L\", \"$L\", $L),$L)", fieldAccessor, interceptor, SearchFieldAccessor.class, searchSchemaAlias, jsonPath, chainFieldName,
             true).build();
 
     return Tuples.of(ogf, aField, aFieldInit);

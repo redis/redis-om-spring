@@ -643,6 +643,7 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
     Optional<DeepNest> dn1After = deepNestRepository.findFirstByNameIs("dn-1");
 
     assertAll( //
+        () -> assertThat(dn1.get().getName()).isNotEqualTo("dos-uno"), //
         () -> assertTrue(dn1After.isPresent()), //
         () -> assertEquals("dos-uno", dn1After.get().getNestLevel1().getNestLevel2().getName()) //
     );

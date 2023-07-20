@@ -58,6 +58,10 @@ public class MetamodelField<E, T> implements Comparator<E>, Function<E,T> {
     return searchFieldAccessor != null ? searchFieldAccessor.getTargetClass() : targetClass;
   }
 
+  public String getJSONPath() {
+    return searchFieldAccessor != null ? searchFieldAccessor.getJsonPath() : "";
+  }
+
   public Order asc() {
     return Order.asc("@" + getSearchAlias());
   }

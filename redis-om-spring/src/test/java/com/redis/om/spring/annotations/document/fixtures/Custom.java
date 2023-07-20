@@ -21,4 +21,7 @@ public class Custom {
   
   @Indexed
   private boolean taken;
+
+  @Indexed
+  private NestLevel1 nest_level1;
 }
