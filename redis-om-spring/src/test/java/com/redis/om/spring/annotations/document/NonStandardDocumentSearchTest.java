@@ -30,6 +30,8 @@ import static org.junit.jupiter.api.Assertions.*;
   @BeforeEach
   void loadTestData() {
     Custom c1 = Custom.of("foofoo");
+    var nl1 = NestLevel1.of("nl-1-1", "Louis, I think this is the beginning of a beautiful friendship.", NestLevel2.of("nl-2-1", "Here's looking at you, kid."));
+    c1.setNest_level1(nl1);
     Custom c2 = Custom.of("barbar");
     Custom c3 = Custom.of("bazbaz");
     c2.setTaken(true);
@@ -92,6 +94,21 @@ import static org.junit.jupiter.api.Assertions.*;
 
     assertAll( //
         () -> assertTrue(maybeC1After.isPresent()), () -> assertEquals("fufoo", maybeC1After.get().getName()) //
+    );
+  }
+
+  @Test
+  void testUpdateDeepNestedNonJavaCompliantNamedField() {
+    Optional<Custom> dn1 = repository.findById(id1);
+    assertTrue(dn1.isPresent());
+    repository.updateField(dn1.get(), Custom$.NEST_LEVEL1_NEST_LEVEL2_NAME, "dos-uno");
+
+    Optional<Custom> dn1After = repository.findById(id1);
+
+    assertAll( //
+        () -> assertThat(dn1.get().getName()).isNotEqualTo("dos-uno"), //
+        () -> assertTrue(dn1After.isPresent()), //
+        () -> assertEquals("dos-uno", dn1After.get().getNest_level1().getNestLevel2().getName()) //
     );
   }
 
