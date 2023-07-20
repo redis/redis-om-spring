@@ -9,6 +9,7 @@ import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.query.autocomplete.AutoCompleteQueryExecutor;
 import com.redis.om.spring.repository.query.bloom.BloomQueryExecutor;
 import com.redis.om.spring.repository.query.clause.QueryClause;
+import com.redis.om.spring.repository.query.cuckoo.CuckooQueryExecutor;
 import com.redis.om.spring.util.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -86,6 +87,7 @@ public class RediSearchQuery implements RepositoryQuery {
   private boolean isANDQuery = false;
 
   private final BloomQueryExecutor bloomQueryExecutor;
+  private final CuckooQueryExecutor cuckooQueryExecutor;
   private final AutoCompleteQueryExecutor autoCompleteQueryExecutor;
   private final GsonBuilder gsonBuilder;
   private Gson gson;
@@ -111,6 +113,7 @@ public class RediSearchQuery implements RepositoryQuery {
     this.redisOMProperties = redisOMProperties;
 
     bloomQueryExecutor = new BloomQueryExecutor(this, modulesOperations);
+    cuckooQueryExecutor = new CuckooQueryExecutor(this, modulesOperations);
     autoCompleteQueryExecutor = new AutoCompleteQueryExecutor(this, modulesOperations);
 
     Class<?> repoClass = metadata.getRepositoryInterface();
@@ -347,9 +350,12 @@ public class RediSearchQuery implements RepositoryQuery {
   @Override
   public Object execute(Object[] parameters) {
     Optional<String> maybeBloomFilter = bloomQueryExecutor.getBloomFilter();
+    Optional<String> maybeCuckooFilter = cuckooQueryExecutor.getCuckooFilter();
 
     if (maybeBloomFilter.isPresent()) {
       return bloomQueryExecutor.executeBloomQuery(parameters, maybeBloomFilter.get());
+    } else if (maybeCuckooFilter.isPresent()) {
+      return cuckooQueryExecutor.executeCuckooQuery(parameters, maybeCuckooFilter.get());
     } else if (type == RediSearchQueryType.QUERY) {
       return executeQuery(parameters);
     } else if (type == RediSearchQueryType.AGGREGATION) {
