@@ -3,7 +3,10 @@ package com.redis.om.spring.annotations.hash;
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
 import com.redis.om.spring.annotations.hash.fixtures.Direccion;
 import com.redis.om.spring.annotations.hash.fixtures.WithAlias;
+import com.redis.om.spring.annotations.hash.fixtures.WithAlias$;
 import com.redis.om.spring.annotations.hash.fixtures.WithAliasRepository;
+import com.redis.om.spring.search.stream.EntityStream;
+import com.redis.om.spring.search.stream.SearchStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,10 +14,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.Point;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SuppressWarnings("SpellCheckingInspection") class RedisHashWithAliasTest extends AbstractBaseEnhancedRedisTest {
@@ -23,6 +29,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
   String id1;
   @SuppressWarnings("unused") String id2;
+
+  @Autowired
+  EntityStream entityStream;
 
   @BeforeEach
   void loadTestData() {
@@ -63,6 +72,32 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     WithAlias alsoDoc1 = alsoMaybeDoc1.get();
 
     assertThat(alsoDoc1.getText()).isEqualTo(doc1.getText());
+  }
+
+  @Test
+  void testGetByAliasedProperty() {
+    SearchStream<WithAlias> stream = entityStream.of(WithAlias.class);
+    List<WithAlias> docs = stream //
+        .filter(WithAlias$.TEXT.eq("Oye man")) //
+        .collect(Collectors.toList());
+
+    assertAll( //
+        () -> assertThat(docs).hasSize(1),
+        () -> assertThat(docs).extracting("text").containsOnly("Oye man")
+    );
+  }
+
+  @Test
+  void testGetByTagAliasedProperty() {
+    SearchStream<WithAlias> stream = entityStream.of(WithAlias.class);
+    List<WithAlias> docs = stream //
+        .filter(WithAlias$.TAGS.in("articulo", "article")) //
+        .collect(Collectors.toList());
+
+    assertAll( //
+        () -> assertThat(docs).hasSize(2),
+        () -> assertThat(docs).extracting("text").containsOnly("Epa chamo", "Oye man")
+    );
   }
 
 }
