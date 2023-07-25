@@ -135,7 +135,7 @@ public class RedisModulesConfiguration {
     return redisModulesOperations.opsForCuckoFilter();
   }
 
-  @Bean(name = "redisTemplate")
+  @Bean(name = "redisOmTemplate")
   @Primary
   public RedisTemplate<?, ?> redisTemplate(JedisConnectionFactory connectionFactory) {
     RedisTemplate<?, ?> template = new RedisTemplate<>();
