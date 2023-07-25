@@ -686,7 +686,16 @@ public class RediSearchIndexer {
           && !idField.isAnnotationPresent(TagIndexed.class)
           && !idField.isAnnotationPresent(TextIndexed.class)
           && (fields.stream().noneMatch(f -> f.name.equals(idField.getName())))) {
-        if (Number.class.isAssignableFrom(idField.getType())) {
+        Class<?> idClass = idField.getType();
+        if (idField.getType().isPrimitive()) {
+          String cls = com.redis.om.spring.util.ObjectUtils.getTargetClassName(idClass.getName());
+          Class<?> primitive = ClassUtils.resolvePrimitiveClassName(cls);
+          if (primitive != null) {
+            idClass = ClassUtils.resolvePrimitiveIfNecessary(primitive);
+          }
+        }
+
+        if (Number.class.isAssignableFrom(idClass)) {
           result = Optional.of(indexAsNumericFieldFor(maybeIdField.get(), isDocument, "", true, false));
         } else {
           result = Optional.of(indexAsTagFieldFor(maybeIdField.get(), isDocument, "", false, "|", Integer.MIN_VALUE));
@@ -706,8 +715,25 @@ public class RediSearchIndexer {
 
     fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(referenceIdField, ""));
 
-    if (Number.class.isAssignableFrom(referenceIdField.getType())) {
-      result = Optional.of(new Field(fieldName, FieldType.NUMERIC, true, false));
+    Class<?> refClass = referenceIdField.getType();
+    Optional<java.lang.reflect.Field> maybeIdField = getIdFieldForEntityClass(refClass);
+
+    if (maybeIdField.isPresent()) {
+      java.lang.reflect.Field idField = maybeIdField.get();
+      Class<?> idClass = idField.getType();
+      if (idField.getType().isPrimitive()) {
+        String cls = com.redis.om.spring.util.ObjectUtils.getTargetClassName(idClass.getName());
+        Class<?> primitive = ClassUtils.resolvePrimitiveClassName(cls);
+        if (primitive != null) {
+          idClass = ClassUtils.resolvePrimitiveIfNecessary(primitive);
+        }
+      }
+
+      if (Number.class.isAssignableFrom(idClass)) {
+        result = Optional.of(new Field(fieldName, FieldType.NUMERIC, true, false));
+      } else {
+        result = Optional.of(new TagField(fieldName, "|", true));
+      }
     } else {
       result = Optional.of(new TagField(fieldName, "|", true));
     }
