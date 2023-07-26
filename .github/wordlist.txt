@@ -4,6 +4,9 @@ CodeQL
 De
 ec
 embeddings
+EntityStreams
+ExampleMatcher
+FetchableFluentQuery
 github
 Gradle
 gradle
@@ -18,6 +21,7 @@ Lexicographically
 Lio
 localhost
 metamodel
+QBE
 QL
 rds
 Redis
