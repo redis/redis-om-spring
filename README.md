@@ -314,8 +314,8 @@ The `EntityStream` is injected into the `PeopleService` using `@Autowired`. We c
 #### 👭 Entity Meta-model
 
 To produce more elaborate queries, you're provided with a generated metamodel, which is a class with the same name as your model but ending with a dollar sign. In the
-example below, our entity model is `Person` therefore we get a metamodel named `Person$`. With the meta-model you have access to the operations related to the
-underlying search engine field. For example, in the example we have an `age` property which is an integer. Therefore our metamodel has an `AGE` property which has
+example below, our entity model is `Person` therefore we get a metamodel named `Person$`. With the metamodel you have access to the operations related to the
+underlying search engine field. For example, in the example we have an `age` property which is an integer. Therefore, our metamodel has an `AGE` property which has
 numeric operations we can use with the stream's `filter` method such as `between`.
 
 ```java
@@ -330,6 +330,42 @@ public Iterable<Person> findByAgeBetween(int minAge, int maxAge) {
 ```
 
 In this example we also make use of the Streams `sorted` method to declare that our stream will be sorted by the `Person$.AGE` in `ASC`ending order.
+
+Check out the full set of tests for [EntityStreams](https://github.com/redis/redis-om-spring/tree/main/redis-om-spring/src/test/java/com/redis/om/spring/search/stream)
+
+### 👯‍️ Querying by Example (QBE)
+
+Query by Example (QBE) is a user-friendly querying technique with a simple interface. It allows dynamic query creation 
+and does not require you to write queries that contain field names. In fact, Query by Example does not require you to 
+write queries by using store-specific query languages at all.
+
+#### QBE Usage
+
+The Query by Example API consists of four parts:
+* **Probe**: The actual example of a domain object with populated fields.
+* **ExampleMatcher**: The `ExampleMatcher` carries details on how to match particular fields. It can be reused across multiple `Examples`.
+* **Example**: An Example consists of the probe and the ExampleMatcher. It is used to create the query.
+* **FetchableFluentQuery**: A `FetchableFluentQuery` offers a fluent API, that allows further customization of a query derived from an `Example`. 
+  Using the fluent API lets you specify ordering projection and result processing for your query.
+
+Query by Example is well suited for several use cases:
+
+* Querying your data store with a set of static or dynamic constraints.
+* Frequent refactoring of the domain objects without worrying about breaking existing queries.
+* Working independently of the underlying data store API.
+
+For example, if you have an `@Document` or `@RedisHash` annotated entity you can create an instance, partially populate its
+properties, create an `Example` from it, and used the `findAll` method to query for similar entities:
+
+```java
+MyDoc template = new MyDoc();
+template.setTitle("hello world");
+template.setTag(Set.of("artigo"));
+
+Example<MyDoc> example = Example.of(template, ExampleMatcher.matchingAny());
+
+Iterable<MyDoc> allMatches = repository.findAll(example);
+```
 
 ## 💻 Maven configuration
 
@@ -360,7 +396,7 @@ inherited from the parent poms):
       <path>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-configuration-processor</artifactId>
-        <version>3.0.6</version>
+        <version>3.1.2</version>
       </path>
       <path>
         <groupId>org.projectlombok</groupId>
@@ -370,7 +406,7 @@ inherited from the parent poms):
       <path>
         <groupId>com.redis.om</groupId>
         <artifactId>redis-om-spring</artifactId>
-        <version>0.8.2</version>
+        <version>0.8.6</version>
       </path>
     </annotationProcessorPaths>
   </configuration>
@@ -416,7 +452,7 @@ repositories {
 ### Dependency
 ```groovy
 ext {
-  redisOmVersion = '0.8.3-SNAPSHOT'
+  redisOmVersion = '0.8.7-SNAPSHOT'
 }
 
 dependencies {
@@ -512,7 +548,7 @@ Redis OM uses the [MIT license][license-url].
 [badge-codeql-page]: https://github.com/redis/redis-om-spring/actions/workflows/codeql-analysis.yml
 [license-image]: https://img.shields.io/github/license/redis/redis-om-spring
 [license-url]: LICENSE
-[sdr-badge-releases]: https://img.shields.io/maven-central/v/org.springframework.data/spring-data-redis/3.0.1
+[sdr-badge-releases]: https://img.shields.io/maven-central/v/org.springframework.data/spring-data-redis/3.1.2
 [discord-shield]: https://img.shields.io/discord/697882427875393627?style=social&logo=discord
 [twitch-shield]: https://img.shields.io/twitch/status/redisinc?style=social
 [twitter-shield]: https://img.shields.io/twitter/follow/redisinc?style=social
