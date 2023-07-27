@@ -211,7 +211,7 @@ public class RediSearchIndexer {
         //
         if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class) || (fieldType.isEnum())) {
           fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
-              indexed.arrayIndex()));
+              indexed.arrayIndex(), indexed.alias()));
         }
         //
         // Any Numeric class -> Numeric Search Field
@@ -219,7 +219,7 @@ public class RediSearchIndexer {
         else if (Number.class.isAssignableFrom(fieldType) || (fieldType == LocalDateTime.class)
             || (field.getType() == LocalDate.class) || (field.getType() == Date.class)
             || (field.getType() == Instant.class) || (field.getType() == OffsetDateTime.class)) {
-          fields.add(indexAsNumericFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.noindex()));
+          fields.add(indexAsNumericFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.noindex(), indexed.alias()));
         }
         //
         // Set / List
@@ -238,13 +238,12 @@ public class RediSearchIndexer {
 
             if (CharSequence.class.isAssignableFrom(collectionType) || (collectionType == Boolean.class)) {
               fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
-                  indexed.arrayIndex()));
-              // Index nested fields
+                  indexed.arrayIndex(), indexed.alias()));
             } else if (isDocument) {
               if (Number.class.isAssignableFrom(collectionType)) {
-                fields.add(indexAsNumericFieldFor(field, true, prefix, indexed.sortable(), indexed.noindex()));
+                fields.add(indexAsNumericFieldFor(field, true, prefix, indexed.sortable(), indexed.noindex(), indexed.alias()));
               } else if (collectionType == Point.class) {
-                fields.add(indexAsGeoFieldFor(field, true, prefix));
+                fields.add(indexAsGeoFieldFor(field, true, prefix, indexed.alias()));
               } else {
                 // Index nested JSON fields
                 logger.debug(String.format("Found nested field on field of type: %s", field.getType()));
@@ -260,7 +259,7 @@ public class RediSearchIndexer {
         // Point
         //
         else if (fieldType == Point.class) {
-          fields.add(indexAsGeoFieldFor(field, isDocument, prefix));
+          fields.add(indexAsGeoFieldFor(field, isDocument, prefix, indexed.alias()));
         }
         //
         // Recursively explore the fields for Index annotated fields
@@ -276,10 +275,10 @@ public class RediSearchIndexer {
         switch (indexed.schemaFieldType()) {
           case TAG ->
             fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
-                indexed.arrayIndex()));
+                indexed.arrayIndex(), indexed.alias()));
           case NUMERIC ->
-            fields.add(indexAsNumericFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.noindex()));
-          case GEO -> fields.add(indexAsGeoFieldFor(field, true, prefix));
+            fields.add(indexAsNumericFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.noindex(), indexed.alias()));
+          case GEO -> fields.add(indexAsGeoFieldFor(field, true, prefix, indexed.alias()));
           case VECTOR -> fields.add(indexAsVectorFieldFor(field, isDocument, prefix, indexed));
           case NESTED -> {
             for (java.lang.reflect.Field subfield : com.redis.om.spring.util.ObjectUtils
@@ -433,7 +432,7 @@ public class RediSearchIndexer {
   }
 
   private Field indexAsTagFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, boolean sortable,
-      String separator, int arrayIndex) {
+      String separator, int arrayIndex, String annotationAlias) {
     TypeInformation<?> typeInfo = TypeInformation.of(field.getType());
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
     String index = (arrayIndex != Integer.MIN_VALUE) ? ".[" + arrayIndex + "]" : "[*]";
@@ -441,7 +440,7 @@ public class RediSearchIndexer {
         ? index
         : "";
     String name = fieldPrefix + field.getName() + fieldPostfix;
-    String alias = QueryUtils.searchIndexFieldAliasFor(field, prefix);
+    String alias = (annotationAlias == null || annotationAlias.isBlank()) ? QueryUtils.searchIndexFieldAliasFor(field, prefix) : annotationAlias;
     FieldName fieldName = FieldName.of(name);
     fieldName = fieldName.as(alias);
 
@@ -494,20 +493,20 @@ public class RediSearchIndexer {
   }
 
   private Field indexAsNumericFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix,
-      boolean sortable, boolean noIndex) {
+      boolean sortable, boolean noIndex, String annotationAlias) {
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
     String name = fieldPrefix + field.getName();
-    String alias = QueryUtils.searchIndexFieldAliasFor(field, prefix);
+    String alias = (annotationAlias == null || annotationAlias.isBlank()) ? QueryUtils.searchIndexFieldAliasFor(field, prefix) : annotationAlias;
     FieldName fieldName = FieldName.of(name);
     fieldName = fieldName.as(alias);
 
     return new Field(fieldName, FieldType.NUMERIC, sortable, noIndex);
   }
 
-  private Field indexAsGeoFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix) {
+  private Field indexAsGeoFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, String annotationAlias) {
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
     String name = fieldPrefix + field.getName();
-    String alias = QueryUtils.searchIndexFieldAliasFor(field, prefix);
+    String alias = (annotationAlias == null || annotationAlias.isBlank()) ? QueryUtils.searchIndexFieldAliasFor(field, prefix) : annotationAlias;
     FieldName fieldName = FieldName.of(name);
     fieldName = fieldName.as(alias);
 
@@ -695,10 +694,11 @@ public class RediSearchIndexer {
           }
         }
 
+        //TODO: determine if we need to pass the alias
         if (Number.class.isAssignableFrom(idClass)) {
-          result = Optional.of(indexAsNumericFieldFor(maybeIdField.get(), isDocument, "", true, false));
+          result = Optional.of(indexAsNumericFieldFor(maybeIdField.get(), isDocument, "", true, false, null));
         } else {
-          result = Optional.of(indexAsTagFieldFor(maybeIdField.get(), isDocument, "", false, "|", Integer.MIN_VALUE));
+          result = Optional.of(indexAsTagFieldFor(maybeIdField.get(), isDocument, "", false, "|", Integer.MIN_VALUE, null));
         }
       }
     }
