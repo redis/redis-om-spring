@@ -121,7 +121,7 @@ In `applications.properties`:
 spring.data.redis.host=your.cloud.db.redislabs.com                                                                                                                                                                                                                    |
 spring.data.redis.port=12345
 spring.data.redis.password=xxxxxxxx
-spring.data.redis.username=default 
+spring.data.redis.username=default
 ```
 
 In `applications.yaml`:
@@ -133,7 +133,7 @@ spring:
       host: your.cloud.db.redislabs.com
       port: 12345
       password: xxxxxxxx
-      username: default 
+      username: default
 ```
 
 ### The SpringBoot App
@@ -335,8 +335,8 @@ Check out the full set of tests for [EntityStreams](https://github.com/redis/red
 
 ### 👯‍️ Querying by Example (QBE)
 
-Query by Example (QBE) is a user-friendly querying technique with a simple interface. It allows dynamic query creation 
-and does not require you to write queries that contain field names. In fact, Query by Example does not require you to 
+Query by Example (QBE) is a user-friendly querying technique with a simple interface. It allows dynamic query creation
+and does not require you to write queries that contain field names. In fact, Query by Example does not require you to
 write queries by using store-specific query languages at all.
 
 #### QBE Usage
@@ -345,7 +345,7 @@ The Query by Example API consists of four parts:
 * **Probe**: The actual example of a domain object with populated fields.
 * **ExampleMatcher**: The `ExampleMatcher` carries details on how to match particular fields. It can be reused across multiple `Examples`.
 * **Example**: An Example consists of the probe and the ExampleMatcher. It is used to create the query.
-* **FetchableFluentQuery**: A `FetchableFluentQuery` offers a fluent API, that allows further customization of a query derived from an `Example`. 
+* **FetchableFluentQuery**: A `FetchableFluentQuery` offers a fluent API, that allows further customization of a query derived from an `Example`.
   Using the fluent API lets you specify ordering projection and result processing for your query.
 
 Query by Example is well suited for several use cases:
@@ -406,7 +406,7 @@ inherited from the parent poms):
       <path>
         <groupId>com.redis.om</groupId>
         <artifactId>redis-om-spring</artifactId>
-        <version>0.8.6</version>
+        <version>0.8.7-SNAPSHOT</version>
       </path>
     </annotationProcessorPaths>
   </configuration>
@@ -467,7 +467,7 @@ The Redis OM documentation is available [here](docs/index.md).
 
 ## Demos
 
-### Embedded Demos 
+### Embedded Demos
 
 These can be found in the `/demos` folder:
 
@@ -494,7 +494,7 @@ These can be found in the `/demos` folder:
   - Repo: https://github.com/redis-developer/redis-om-spring-skeleton-app
 
 - **redis-om-spring-react-todomvc**:
-  - Redis OM Spring to build a RESTful API that satisfies the simple web API spec set by 
+  - Redis OM Spring to build a RESTful API that satisfies the simple web API spec set by
     the Todo-Backend project using JSON Documents stored in Redis.
   - Repo: https://github.com/redis-developer/redis-om-spring-react-todomvc
 
