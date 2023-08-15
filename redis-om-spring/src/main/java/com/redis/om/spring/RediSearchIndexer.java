@@ -538,11 +538,14 @@ public class RediSearchIndexer {
 
         Optional<Class<?>> maybeCollectionType = getCollectionElementClass(subField);
 
+        String suffix = (maybeCollectionType.isPresent() && (CharSequence.class.isAssignableFrom(maybeCollectionType.get())
+            || (maybeCollectionType.get() == Boolean.class))) ? "[*]" : "";
+
         if (subField.isAnnotationPresent(TagIndexed.class)) {
           TagIndexed ti = subField.getAnnotation(TagIndexed.class);
           tempPrefix = field.getName() + "[0:].";
 
-          FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName());
+          FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName() + suffix);
           fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(subField, prefix));
 
           logger.info(String.format("Creating nested relationships: %s -> %s", field.getName(), subField.getName()));
@@ -557,7 +560,7 @@ public class RediSearchIndexer {
             Indexed indexed = subField.getAnnotation(Indexed.class);
             tempPrefix = field.getName() + "[0:].";
 
-            FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName());
+            FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName() + suffix);
             fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(subField, prefix));
 
             logger.info(String.format("Creating nested relationships: %s -> %s", field.getName(), subField.getName()));
@@ -568,7 +571,7 @@ public class RediSearchIndexer {
           else if (Number.class.isAssignableFrom(subField.getType()) || (subField.getType() == LocalDateTime.class)
               || (subField.getType() == LocalDate.class) || (subField.getType() == Date.class)) {
 
-            FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName());
+            FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName() + suffix);
             fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(subField, prefix));
             logger.info(String.format("Creating nested relationships: %s -> %s", field.getName(), subField.getName()));
             fieldList.add(new Field(fieldName, FieldType.NUMERIC));
@@ -577,7 +580,7 @@ public class RediSearchIndexer {
           Searchable searchable = subField.getAnnotation(Searchable.class);
           tempPrefix = field.getName() + "[0:].";
 
-          FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName());
+          FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName() + suffix);
           fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(subField, prefix));
 
           logger

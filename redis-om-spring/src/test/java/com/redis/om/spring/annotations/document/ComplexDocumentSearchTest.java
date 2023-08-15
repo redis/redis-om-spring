@@ -4,6 +4,7 @@ import com.google.common.collect.Lists;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.*;
 import com.redis.om.spring.repository.query.Sort;
+import com.redis.om.spring.search.stream.EntityStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,8 +17,10 @@ import org.springframework.data.geo.Point;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 @SuppressWarnings("SpellCheckingInspection") class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
   Permit permit1;
@@ -27,9 +30,16 @@ import static org.assertj.core.api.Assertions.assertThat;
   @Autowired
   PermitRepository repository;
 
+  @Autowired
+  ComplexRepository complexRepository;
+
+  @Autowired
+  EntityStream es;
+
   @BeforeEach
   void setup() {
     repository.deleteAll();
+    complexRepository.deleteAll();
 
     // # Document 1
     Address address1 = Address.of("Lisbon", "25 de Abril");
@@ -91,6 +101,13 @@ import static org.assertj.core.api.Assertions.assertThat;
     permit3.setPermitTimestamp(LocalDateTime.of(2022, 8, 25, 0, 0));
 
     repository.saveAll(List.of(permit1, permit2, permit3));
+
+    // complex deep nested
+    Complex complex1 = Complex.of("complex1", List.of(HasAList.of(List.of("Nudiustertian", "Comeuppance", "Yarborough")), HasAList.of(List.of("Sialoquent", "Pauciloquent", "Bloviate"))));
+    Complex complex2 = Complex.of("complex2", List.of(HasAList.of(List.of("Quire", "Zoanthropy", "Flibbertigibbet")), HasAList.of(List.of("Taradiddle", "Malarkey", "Comeuppance"))));
+    Complex complex3 = Complex.of("complex3", List.of(HasAList.of(List.of("Pandiculation", "Taradiddle", "Ratoon")), HasAList.of(List.of("Yarborough", "Wabbit", "Erinaceous"))));
+
+    complexRepository.saveAll(List.of(complex1, complex2, complex3));
   }
 
   @Test
@@ -314,5 +331,35 @@ import static org.assertj.core.api.Assertions.assertThat;
     assertThat(result.getTotalPages()).isEqualTo(1);
     assertThat(result.getTotalElements()).isEqualTo(3);
     assertThat(result.getContent()).containsExactly(permit3,permit1,permit2);
+  }
+
+  @Test
+  void testListInsideAListTagSearch() {
+    List<Complex> withYarborough = es.of(Complex.class)
+        .filter(Complex$.MY_LIST.INNER_LIST.in("Yarborough"))
+        .collect(Collectors.toList());
+
+    assertAll( //
+        () -> assertThat(withYarborough.size()).isEqualTo(2), //
+        () -> assertThat(withYarborough).extracting("id").containsExactlyInAnyOrder("complex1", "complex3") //
+    );
+
+    List<Complex> withComeuppance = es.of(Complex.class)
+        .filter(Complex$.MY_LIST.INNER_LIST.in("Comeuppance"))
+        .collect(Collectors.toList());
+
+    assertAll( //
+        () -> assertThat(withComeuppance.size()).isEqualTo(2), //
+        () -> assertThat(withComeuppance).extracting("id").containsExactlyInAnyOrder("complex1", "complex2") //
+    );
+
+    List<Complex> withTaradiddle = es.of(Complex.class)
+        .filter(Complex$.MY_LIST.INNER_LIST.in("Taradiddle"))
+        .collect(Collectors.toList());
+
+    assertAll( //
+        () -> assertThat(withTaradiddle.size()).isEqualTo(2), //
+        () -> assertThat(withTaradiddle).extracting("id").containsExactlyInAnyOrder("complex2", "complex3") //
+    );
   }
 }

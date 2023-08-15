@@ -549,7 +549,8 @@ public class ObjectUtils {
       String[] tempParts = safeSpelPath.split("\\[0:\\]", 2);
       String[] parts = tempParts[1].split("\\.", 2);
       String leftPath = tempParts[0].replace(".", "?.");
-      String rightPath = parts[1].replace(".", "?.");
+      String rightPath = parts[1].replace(".", "?.") //
+                                 .replace("[*]", "");
 
       Expression leftExp = SPEL_EXPRESSION_PARSER.parseExpression(leftPath);
       Expression rightExp = SPEL_EXPRESSION_PARSER.parseExpression(rightPath);
