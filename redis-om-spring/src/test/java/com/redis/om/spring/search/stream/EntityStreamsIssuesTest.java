@@ -1,19 +1,23 @@
 package com.redis.om.spring.search.stream;
 
+import com.github.f4b6a3.ulid.Ulid;
+import com.github.f4b6a3.ulid.UlidCreator;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.*;
 import com.redis.om.spring.tuple.Fields;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.geo.Point;
 
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -23,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 @SuppressWarnings("SpellCheckingInspection") class EntityStreamsIssuesTest extends AbstractBaseDocumentTest {
   @Autowired SomeDocumentRepository someDocumentRepository;
   @Autowired DeepNestRepository deepNestRepository;
+  @Autowired DeepNestNonIndexedRepository deepNestNonIndexedRepository;
   @Autowired DocRepository docRepository;
   @Autowired Doc2Repository doc2Repository;
   @Autowired DeepListRepository deepListRepository;
@@ -30,9 +35,19 @@ import static org.junit.jupiter.api.Assertions.assertAll;
   @Autowired PersonRepository personRepository;
   @Autowired DocWithBooleanRepository docWithBooleanRepository;
   @Autowired DocWithDateRepository docWithDateRepository;
+  @Autowired KitchenSinkRepository kitchenSinkRepository;
 
   @Autowired EntityStream entityStream;
 
+  private LocalDate localDate;
+  private LocalDateTime localDateTime;
+  private OffsetDateTime localOffsetDateTime;
+  private Date date;
+  private Point point;
+  private Ulid ulid;
+  private Set<String> setThings;
+  private List<String> listThings;
+  private Instant instant;
 
   @BeforeEach void beforeEach() throws IOException {
     // Load Sample Docs
@@ -47,11 +62,16 @@ import static org.junit.jupiter.api.Assertions.assertAll;
         deepNestRepository.saveAll(List.of(dn1, dn2, dn3));
     }
 
+    if (deepNestNonIndexedRepository.count() == 0) {
+      DeepNestNonIndexed dnni1 = DeepNestNonIndexed.of("dn-1", NestLevelNonIndexed1.of("nl-1-1", "Louis, I think this is the beginning of a beautiful friendship.", NestLevelNonIndexed2.of("nl-2-1", "Here's looking at you, kid.")));
+      DeepNestNonIndexed dnni2 = DeepNestNonIndexed.of("dn-2", NestLevelNonIndexed1.of("nl-1-2", "Whoever you are, I have always depended on the kindness of strangers.", NestLevelNonIndexed2.of("nl-2-2", "Hey, you hens! Cut out the cackling in there!")));
+      DeepNestNonIndexed dnni3 = DeepNestNonIndexed.of("dn-3", NestLevelNonIndexed1.of("nl-1-3", "A good body with a dull brain is as cheap as life itself.", NestLevelNonIndexed2.of("nl-2-3", "I'm Spartacus!")));
+      deepNestNonIndexedRepository.saveAll(List.of(dnni1, dnni2, dnni3));
+    }
+
     if (doc2Repository.count() == 0) {
       List<Doc2> doc2s = new ArrayList<>();
-      IntStream.range(0, 31).forEach(i -> {
-          doc2s.add(Doc2.of(String.format("Marca%s Modelo %s", i, i), String.format("COLOR %s", i)));
-      });
+      IntStream.range(0, 31).forEach(i -> doc2s.add(Doc2.of(String.format("Marca%s Modelo %s", i, i), String.format("COLOR %s", i))));
       doc2Repository.saveAll(doc2s);
     }
 
@@ -86,6 +106,61 @@ import static org.junit.jupiter.api.Assertions.assertAll;
       docWithLongRepository.save(DocWithLong.of("doc-5", 5L));
       docWithLongRepository.save(DocWithLong.of("doc-6", 6L));
     }
+
+    kitchenSinkRepository.deleteAll();
+    localDate = LocalDate.now();
+    localDateTime = LocalDateTime.now();
+    localOffsetDateTime = OffsetDateTime.now();
+    date = new Date();
+    point = new Point(33.62826024782707, -111.83592170193586);
+    ulid = UlidCreator.getMonotonicUlid();
+    setThings = Set.of("thingOne", "thingTwo", "thingThree");
+    listThings = List.of("redFish", "blueFish");
+    instant = Instant.now();
+
+    KitchenSink ks = KitchenSink.builder() //
+        .localDate(localDate) //
+        .localDateTime(localDateTime) //
+        .localOffsetDateTime(localOffsetDateTime) //
+        .date(date) //
+        .point(point) //
+        .ulid(ulid) //
+        .setThings(setThings) //
+        .listThings(listThings) //
+        .instant(instant) //
+        .build();
+
+    ks.setId("ks0");
+
+    KitchenSink ks1 = KitchenSink.builder() //
+        .localDate(localDate) //
+        .localDateTime(localDateTime) //
+        .localOffsetDateTime(localOffsetDateTime) //
+        .date(date) //
+        .point(point) //
+        .ulid(ulid) //
+        .setThings(Set.of()) //
+        .listThings(List.of()) //
+        .instant(instant) //
+        .build();
+
+    ks1.setId("ks1");
+
+    KitchenSink ks2 = KitchenSink.builder() //
+        .localDate(localDate) //
+        .localDateTime(localDateTime) //
+        .localOffsetDateTime(localOffsetDateTime) //
+        .date(date) //
+        .point(point) //
+        .ulid(ulid) //
+        .instant(instant) //
+        .build();
+
+    ks2.setId("ks2");
+    ks2.setSetThings(null);
+    ks2.setListThings(null);
+
+    kitchenSinkRepository.saveAll(List.of(ks, ks1, ks2));
   }
 
   // issue gh-124 - return fields of type String with target String cause GSON MalformedJsonException
@@ -411,4 +486,151 @@ import static org.junit.jupiter.api.Assertions.assertAll;
             .collect(Collectors.toList());
     assertThat(results).containsOnly("three", "four", "five");
   }
+
+  // issue gh-327
+  @Test
+  void testNonIndexedReturnedFields() {
+    var allFields = Fields.of( //
+        KitchenSink$.LOCAL_DATE,
+        KitchenSink$.LOCAL_DATE_TIME,
+        KitchenSink$.DATE,
+        KitchenSink$.POINT,
+        KitchenSink$.ULID,
+        KitchenSink$.SET_THINGS,
+        KitchenSink$.LIST_THINGS);
+    var result = entityStream.of(KitchenSink.class)
+        .filter(KitchenSink$.ID.eq("ks0"))
+        .map(allFields)
+        .collect(Collectors.toList());
+
+    assertThat(result).hasSize(1);
+
+    var ksValues = result.get(0);
+
+    assertAll( //
+        () -> assertThat(ksValues.getFirst()).isEqualTo(localDate),
+        () -> assertThat(ksValues.getSecond()).isEqualToIgnoringNanos(localDateTime),
+        () -> assertThat(ksValues.getThird()).isEqualTo(date),
+        () -> assertThat(ksValues.getFourth()).isEqualTo(point),
+        () -> assertThat(ksValues.getFifth()).isEqualTo(ulid),
+        () -> assertThat(ksValues.getSixth()).containsExactlyInAnyOrderElementsOf(setThings),
+        () -> assertThat(ksValues.getSeventh()).containsExactlyInAnyOrderElementsOf(listThings)
+    );
+  }
+
+  @Test
+  void testNonIndexedReturnedFieldsWithEmptyCollections() {
+    var allFields = Fields.of( //
+        KitchenSink$.LOCAL_DATE,
+        KitchenSink$.LOCAL_DATE_TIME,
+        KitchenSink$.DATE,
+        KitchenSink$.POINT,
+        KitchenSink$.ULID,
+        KitchenSink$.SET_THINGS,
+        KitchenSink$.LIST_THINGS);
+    var result = entityStream.of(KitchenSink.class)
+        .filter(KitchenSink$.ID.eq("ks1"))
+        .map(allFields)
+        .collect(Collectors.toList());
+
+    assertThat(result).hasSize(1);
+
+    var ksValues = result.get(0);
+
+    assertAll( //
+        () -> assertThat(ksValues.getFirst()).isEqualTo(localDate),
+        () -> assertThat(ksValues.getSecond()).isEqualToIgnoringNanos(localDateTime),
+        () -> assertThat(ksValues.getThird()).isEqualTo(date),
+        () -> assertThat(ksValues.getFourth()).isEqualTo(point),
+        () -> assertThat(ksValues.getFifth()).isEqualTo(ulid),
+        () -> assertThat(ksValues.getSixth()).isNull(),
+        () -> assertThat(ksValues.getSeventh()).isNull()
+    );
+  }
+
+  @Test
+  void testNonIndexedReturnedFieldsWithNullCollections() {
+    var allFields = Fields.of( //
+        KitchenSink$.LOCAL_DATE,
+        KitchenSink$.LOCAL_DATE_TIME,
+        KitchenSink$.DATE,
+        KitchenSink$.POINT,
+        KitchenSink$.ULID,
+        KitchenSink$.SET_THINGS,
+        KitchenSink$.LIST_THINGS);
+
+    var result = entityStream.of(KitchenSink.class)
+        .filter(KitchenSink$.ID.eq("ks2"))
+        .map(allFields)
+        .collect(Collectors.toList());
+
+    assertThat(result).hasSize(1);
+
+    var ksValues = result.get(0);
+
+    assertAll( //
+        () -> assertThat(ksValues.getFirst()).isEqualTo(localDate),
+        () -> assertThat(ksValues.getSecond()).isEqualToIgnoringNanos(localDateTime),
+        () -> assertThat(ksValues.getThird()).isEqualTo(date),
+        () -> assertThat(ksValues.getFourth()).isEqualTo(point),
+        () -> assertThat(ksValues.getFifth()).isEqualTo(ulid),
+        () -> assertThat(ksValues.getSixth()).isNull(),
+        () -> assertThat(ksValues.getSeventh()).isNull()
+    );
+  }
+
+  @Test
+  void testReturnedFieldsDeepNested() {
+    var allFields = Fields.of( //
+        DeepNest$.NAME,
+        DeepNest$.NEST_LEVEL1_NAME,
+        DeepNest$.NEST_LEVEL1_BLOCK,
+        DeepNest$.NEST_LEVEL1_NEST_LEVEL2_NAME,
+        DeepNest$.NEST_LEVEL1_NEST_LEVEL2_BLOCK
+    );
+    var result = entityStream.of(DeepNest.class)
+        .filter(DeepNest$.NAME.eq("dn-1"))
+        .map(allFields)
+        .collect(Collectors.toList());
+
+    assertThat(result).hasSize(1);
+
+    var values = result.get(0);
+
+    assertAll( //
+        () -> assertThat(values.getFirst()).isEqualTo("dn-1"),
+        () -> assertThat(values.getSecond()).isEqualTo("nl-1-1"),
+        () -> assertThat(values.getThird()).isEqualTo("Louis, I think this is the beginning of a beautiful friendship."),
+        () -> assertThat(values.getFourth()).isEqualTo("nl-2-1"),
+        () -> assertThat(values.getFifth()).isEqualTo("Here's looking at you, kid.")
+    );
+  }
+
+  @Test
+  void testReturnedFieldsDeepNestedNonIndexed() {
+    var allFields = Fields.of( //
+        DeepNestNonIndexed$.NAME,
+        DeepNestNonIndexed$.NEST_LEVEL1_NAME,
+        DeepNestNonIndexed$.NEST_LEVEL1_BLOCK,
+        DeepNestNonIndexed$.NEST_LEVEL1_NEST_LEVEL2_NAME,
+        DeepNestNonIndexed$.NEST_LEVEL1_NEST_LEVEL2_BLOCK
+    );
+    var result = entityStream.of(DeepNestNonIndexed.class)
+        .filter(DeepNestNonIndexed$.NAME.eq("dn-1"))
+        .map(allFields)
+        .collect(Collectors.toList());
+
+    assertThat(result).hasSize(1);
+
+    var values = result.get(0);
+
+    assertAll( //
+        () -> assertThat(values.getFirst()).isEqualTo("dn-1"),
+        () -> assertThat(values.getSecond()).isEqualTo("nl-1-1"),
+        () -> assertThat(values.getThird()).isEqualTo("Louis, I think this is the beginning of a beautiful friendship."),
+        () -> assertThat(values.getFourth()).isEqualTo("nl-2-1"),
+        () -> assertThat(values.getFifth()).isEqualTo("Here's looking at you, kid.")
+    );
+  }
+
 }
