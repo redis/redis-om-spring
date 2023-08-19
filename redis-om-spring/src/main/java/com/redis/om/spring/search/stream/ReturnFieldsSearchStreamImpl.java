@@ -344,15 +344,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     entities.forEach(entity -> {
       List<Object> mappedResults = new ArrayList<>();
       returning.forEach(foi -> {
-        String getterName = "get" + ObjectUtils.ucfirst(foi.getSearchAlias());
-        Method getter = ReflectionUtils.findMethod(entitySearchStream.getEntityClass(), getterName);
-        // No "getXXX", maybe there is a "isXXX"
-        if (getter == null) {
-          getterName = "is" + ObjectUtils.ucfirst(foi.getSearchAlias());
-          getter = ReflectionUtils.findMethod(entitySearchStream.getEntityClass(), getterName);
-        }
-        //TODO: if getter is still null then field access?
-        mappedResults.add(ReflectionUtils.invokeMethod(getter, entity));
+        mappedResults.add(ObjectUtils.getValueByPath(entity, foi.getJSONPath()));
       });
 
       if (returning.size() > 1) {
