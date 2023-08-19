@@ -177,7 +177,7 @@ public class ObjectUtils {
   public static String withFirst(String input, Function<Character, String> callback) {
     if (input == null) {
       return null;
-    } else if (input.length() == 0) {
+    } else if (input.isEmpty()) {
       return "";
     } else {
       return String.join("", callback.apply(input.charAt(0)), input.subSequence(1, input.length()));
@@ -226,7 +226,7 @@ public class ObjectUtils {
     final String input = unQuote(javaName.trim());
     for (int i = 0; i < input.length(); i++) {
       final char c = input.charAt(i);
-      if (result.length() == 0) {
+      if (result.isEmpty()) {
         result.append(Character.toLowerCase(c));
       } else if (Character.isUpperCase(c)) {
         result.append("_").append(Character.toLowerCase(c));
@@ -540,7 +540,6 @@ public class ObjectUtils {
 
     if (!hasNestedObject) {
       safeSpelPath = safeSpelPath //
-          .replace(".", "?.") //
           .replace("[*]", "") //
           .replace(".", "?.");
 

@@ -31,6 +31,7 @@ import java.lang.reflect.Field;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -317,7 +318,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
                 // Any Date/Time Types
                 //
                 else if ((targetCls == LocalDateTime.class) || (targetCls == LocalDate.class) //
-                        || (targetCls == Date.class) || (targetCls == Instant.class)) {
+                        || (targetCls == Date.class) || (targetCls == Instant.class) || (targetCls == OffsetDateTime.class)) {
                     targetInterceptor = DateField.class;
                 }
                 //
@@ -362,8 +363,10 @@ public final class MetamodelGenerator extends AbstractProcessor {
                 searchSchemaAlias = indexed.alias();
             }
         } else {
+            var metamodel = field.getAnnotation(Metamodel.class);
             try {
                 targetCls = ClassUtils.forName(cls, MetamodelGenerator.class.getClassLoader());
+
                 //
                 // Any Character class
                 //
@@ -381,7 +384,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
                 //
                 else if (Number.class.isAssignableFrom(targetCls) || (targetCls == LocalDateTime.class)
                         || (targetCls == LocalDate.class) || (targetCls == Date.class)
-                        || (targetCls == Instant.class)) {
+                        || (targetCls == Instant.class) || (targetCls == OffsetDateTime.class)) {
                     targetInterceptor = NonIndexedNumericField.class;
                 }
                 //
@@ -397,8 +400,12 @@ public final class MetamodelGenerator extends AbstractProcessor {
                     targetInterceptor = NonIndexedGeoField.class;
                 }
             } catch (ClassNotFoundException cnfe) {
-                messager.printMessage(Diagnostic.Kind.WARNING,
-                        "Processing class " + entityName + " could not resolve " + cls);
+                if (metamodel != null) {
+                  messager.printMessage(Kind.NOTE,
+                      "Processing class " + entityName + ", generating nested class " + cls
+                        + " metamodel (@Metamodel)");
+                  fieldMetamodelSpec.addAll(processNestedIndexableFields(entity, chain));
+                }
             }
         }
 
@@ -539,8 +546,9 @@ public final class MetamodelGenerator extends AbstractProcessor {
         enclosedFields.forEach((field, getter) -> {
             boolean fieldIsIndexed = (field.getAnnotation(Indexed.class) != null)
                     || (field.getAnnotation(Searchable.class) != null);
+            boolean generateMetamodel = field.getAnnotation(Metamodel.class) != null;
 
-            if (fieldIsIndexed) {
+            if (fieldIsIndexed || generateMetamodel) {
                 List<Element> newChain = new ArrayList<>(chain);
                 newChain.add(field);
                 fieldMetamodels.addAll(processFieldMetamodel(entity, entityFieldName, newChain));
@@ -705,7 +713,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
                 .builder(interceptor, fieldAccessor).addModifiers(Modifier.PUBLIC, Modifier.STATIC) //
                 .build();
 
-        String alias = "";
+        String alias;
         if (!isEmpty(searchSchemaAlias)) {
             alias = searchSchemaAlias;
         } else {
