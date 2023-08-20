@@ -67,7 +67,7 @@
     <spring.test.version>6.0.11</spring.test.version>
     <testcontainers.redis.version>1.6.4</testcontainers.redis.version>
     <testcontainers.redis.junit.version>1.6.4</testcontainers.redis.junit.version>
-    <guava.version>32.0.0-jre</guava.version>
+    <guava.version>32.1.2-jre</guava.version>
     <ulid.version>5.2.0</ulid.version>
     <lombok.version>1.18.28</lombok.version>
     <commons-lang.version>3.12.0</commons-lang.version>
