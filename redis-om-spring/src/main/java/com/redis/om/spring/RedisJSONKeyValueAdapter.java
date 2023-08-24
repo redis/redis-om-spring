@@ -3,17 +3,17 @@ package com.redis.om.spring;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import com.redis.om.spring.audit.EntityAuditor;
 import com.redis.om.spring.convert.RedisOMCustomConversions;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.util.ObjectUtils;
+import com.redis.om.spring.vectorize.FeatureExtractor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.*;
 import org.springframework.dao.OptimisticLockingFailureException;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Reference;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.redis.core.RedisCallback;
@@ -34,9 +34,10 @@ import redis.clients.jedis.util.SafeEncoder;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static com.redis.om.spring.util.ObjectUtils.getKey;
@@ -50,6 +51,8 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private final RedisModulesOperations<String> modulesOperations;
   private final RediSearchIndexer indexer;
   private final GsonBuilder gsonBuilder;
+  private final EntityAuditor auditor;
+  private final FeatureExtractor featureExtractor;
   private final RedisOMProperties redisOMProperties;
 
   /**
@@ -62,16 +65,24 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    * @param keyspaceToIndexMap  must not be {@literal null}.
    */
   @SuppressWarnings("unchecked")
-  public RedisJSONKeyValueAdapter(RedisOperations<?, ?> redisOps, RedisModulesOperations<?> rmo,
-      RedisMappingContext mappingContext, RediSearchIndexer keyspaceToIndexMap, GsonBuilder gsonBuilder,
-      RedisOMProperties redisOMProperties) {
+  public RedisJSONKeyValueAdapter( //
+    RedisOperations<?, ?> redisOps, //
+    RedisModulesOperations<?> rmo, //
+    RedisMappingContext mappingContext, //
+    RediSearchIndexer keyspaceToIndexMap, //
+    GsonBuilder gsonBuilder, //
+    FeatureExtractor featureExtractor, //
+    RedisOMProperties redisOMProperties
+  ) {
     super(redisOps, mappingContext, new RedisOMCustomConversions());
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.redisJSONOperations = modulesOperations.opsForJSON();
     this.redisOperations = redisOps;
     this.mappingContext = mappingContext;
     this.indexer = keyspaceToIndexMap;
+    this.auditor = new EntityAuditor(this.redisOperations);
     this.gsonBuilder = gsonBuilder;
+    this.featureExtractor = featureExtractor;
     this.redisOMProperties = redisOMProperties;
   }
 
@@ -91,7 +102,8 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     String key = getKey(keyspace, id);
 
     processVersion(key, item);
-    processAuditAnnotations(key, item);
+    auditor.processEntity(key, item);
+    featureExtractor.processEntity(item);
     Optional<Long> maybeTtl = getTTLForEntity(item);
 
     ops.set(key, item);
@@ -254,27 +266,6 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
         .execute((RedisCallback<Boolean>) connection -> connection.keyCommands().exists(toBytes(getKey(keyspace, id))));
 
     return exists != null && exists;
-  }
-
-  private void processAuditAnnotations(String key, Object item) {
-    boolean isNew = (boolean) redisOperations
-        .execute((RedisCallback<Object>) connection -> !connection.keyCommands().exists(toBytes(key)));
-
-    var auditClass = isNew ? CreatedDate.class : LastModifiedDate.class;
-
-    List<Field> fields = ObjectUtils.getFieldsWithAnnotation(item.getClass(), auditClass);
-    if (!fields.isEmpty()) {
-      PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(item);
-      fields.forEach(f -> {
-        if (f.getType() == Date.class) {
-          accessor.setPropertyValue(f.getName(), new Date(System.currentTimeMillis()));
-        } else if (f.getType() == LocalDateTime.class) {
-          accessor.setPropertyValue(f.getName(), LocalDateTime.now());
-        } else if (f.getType() == LocalDate.class) {
-          accessor.setPropertyValue(f.getName(), LocalDate.now());
-        }
-      });
-    }
   }
 
   private void processReferences(String key, Object item) {

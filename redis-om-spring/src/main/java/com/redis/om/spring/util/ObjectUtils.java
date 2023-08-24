@@ -36,6 +36,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -407,11 +408,24 @@ public class ObjectUtils {
   }
 
   public static byte[] longArrayToByteArray(long[] input) {
+    return floatArrayToByteArray(longArrayToFloatArray(input));
+  }
+
+  public static float[] longArrayToFloatArray(long[] input) {
     float[] floats = new float[input.length];
     for (int i = 0; i < input.length; i++) {
       floats[i] = input[i];
     }
-    return floatArrayToByteArray(floats);
+    return floats;
+  }
+
+  public static float[] byteArrayToFloatArray(byte[] bytes) {
+    ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
+    byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+    FloatBuffer floatBuffer = byteBuffer.asFloatBuffer();
+    float[] floatArray = new float[floatBuffer.capacity()];
+    floatBuffer.get(floatArray);
+    return floatArray;
   }
 
   public static Collection<?> instantiateCollection(Type type) {

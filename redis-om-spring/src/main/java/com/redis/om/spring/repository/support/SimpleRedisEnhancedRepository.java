@@ -250,7 +250,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
         String keyspace = keyValueEntity.getKeySpace();
         byte[] objectKey = createKey(keyspace, id.toString());
 
-        // process entity pre-save mutation entities
+        // process entity pre-save mutation
         auditor.processEntity(entity, isNew);
         featureExtractor.processEntity(entity);
 

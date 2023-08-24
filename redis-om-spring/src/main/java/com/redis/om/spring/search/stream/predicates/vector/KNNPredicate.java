@@ -7,12 +7,21 @@ import redis.clients.jedis.search.querybuilder.Node;
 public class KNNPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   private final int k;
-  private final byte[] blobAttribute;
+  private final byte[] blob;
+  private final float[] floats;
 
-  public KNNPredicate(SearchFieldAccessor field, int k, byte[] blobAttribute) {
+  public KNNPredicate(SearchFieldAccessor field, int k, byte[] blob) {
     super(field);
     this.k = k;
-    this.blobAttribute = blobAttribute;
+    this.blob = blob;
+    this.floats = null;
+  }
+
+  public KNNPredicate(SearchFieldAccessor field, int k, float[] floats) {
+    super(field);
+    this.k = k;
+    this.blob = null;
+    this.floats = floats;
   }
 
   public int getK() {
@@ -20,7 +29,11 @@ public class KNNPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   }
 
   public byte[] getBlobAttribute() {
-    return blobAttribute;
+    return blob;
+  }
+
+  public float[] getDoublesAttribute() {
+    return floats;
   }
 
   public String getBlobAttributeName() {

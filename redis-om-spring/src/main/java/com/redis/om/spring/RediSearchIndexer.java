@@ -347,11 +347,7 @@ public class RediSearchIndexer {
       Indexed indexed) {
     TypeInformation<?> typeInfo = TypeInformation.of(field.getType());
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
-
-    String fieldPostfix = (isDocument && typeInfo.isCollectionLike() && !field.isAnnotationPresent(JsonAdapter.class))
-        ? "[*]"
-        : "";
-    String fieldName = fieldPrefix + field.getName() + fieldPostfix;
+    String fieldName = fieldPrefix + field.getName();
 
     Map<String, Object> attributes = new HashMap<>();
     attributes.put("TYPE", indexed.type().toString());

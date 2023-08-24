@@ -6,15 +6,19 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public interface FeatureExtractor {
-    void processEntity(byte[] redisKey, Object item);
+  byte[] getImageEmbeddingsAsByteArrayFor(InputStream is);
 
-    byte[] getImageEmbeddingsFor(InputStream is);
+  float[] getImageEmbeddingsAsFloatArrayFor(InputStream is);
 
-    byte[] getFacialImageEmbeddingsFor(InputStream is) throws IOException, TranslateException;
+  byte[] getFacialImageEmbeddingsAsByteArrayFor(InputStream is) throws IOException, TranslateException;
 
-    byte[] getSentenceEmbeddingsFor(String text);
+  float[] getFacialImageEmbeddingsAsFloatArrayFor(InputStream is) throws IOException, TranslateException;
 
-    void processEntity(Object item);
+  byte[] getSentenceEmbeddingsAsByteArrayFor(String text);
 
-    boolean isReady();
+  float[] getSentenceEmbeddingAsFloatArrayFor(String text);
+
+  void processEntity(Object item);
+
+  boolean isReady();
 }
