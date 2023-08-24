@@ -12,4 +12,8 @@ public class VectorField <E, T> extends MetamodelField<E, T> {
   public KNNPredicate<E,T> knn(int k, byte[] blobAttribute) {
     return new KNNPredicate<>(searchFieldAccessor,k, blobAttribute);
   }
+
+  public KNNPredicate<E,T> knn(int k, float[] blobAttribute) {
+    return new KNNPredicate<>(searchFieldAccessor,k, blobAttribute);
+  }
 }

@@ -63,7 +63,7 @@ import static org.assertj.core.api.Assertions.assertThat;
     point = new Point(-111.83592170193586,33.62826024782707);
     ulid = UlidCreator.getMonotonicUlid();
     byteArray = "Hello World!".getBytes();
-    byteArray2 = featureExtractor.getImageEmbeddingsFor( //
+    byteArray2 = featureExtractor.getImageEmbeddingsAsByteArrayFor( //
         applicationContext.getResource("classpath:/images/cat.jpg").getInputStream()
     );
 

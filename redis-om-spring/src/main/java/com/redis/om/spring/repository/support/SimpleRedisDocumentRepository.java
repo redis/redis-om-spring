@@ -6,6 +6,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.redis.om.spring.RediSearchIndexer;
 import com.redis.om.spring.RedisOMProperties;
+import com.redis.om.spring.audit.EntityAuditor;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.id.ULIDIdentifierGenerator;
 import com.redis.om.spring.metamodel.MetamodelField;
@@ -18,6 +19,7 @@ import com.redis.om.spring.search.stream.EntityStreamImpl;
 import com.redis.om.spring.search.stream.FluentQueryByExample;
 import com.redis.om.spring.serialization.gson.GsonListOfType;
 import com.redis.om.spring.util.ObjectUtils;
+import com.redis.om.spring.vectorize.FeatureExtractor;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.PropertyAccessor;
@@ -82,6 +84,8 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   private final RedisOMProperties properties;
   private final RedisMappingContext mappingContext;
   private final EntityStream entityStream;
+  protected final EntityAuditor auditor;
+  protected final FeatureExtractor featureExtractor;
 
   @SuppressWarnings("unchecked")
   public SimpleRedisDocumentRepository( //
@@ -91,6 +95,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       RediSearchIndexer indexer, //
       RedisMappingContext mappingContext,
       GsonBuilder gsonBuilder,
+      FeatureExtractor featureExtractor, //
       RedisOMProperties properties) {
     super(metadata, operations);
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
@@ -102,6 +107,8 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     this.generator = ULIDIdentifierGenerator.INSTANCE;
     this.gsonBuilder = gsonBuilder;
     this.mappingContext = mappingContext;
+    this.auditor = new EntityAuditor(modulesOperations.getTemplate());
+    this.featureExtractor = featureExtractor;
     this.properties = properties;
     this.entityStream = new EntityStreamImpl(modulesOperations, modulesOperations.getGsonBuilder(), indexer);
   }
@@ -179,7 +186,9 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
         String keyspace = keyValueEntity.getKeySpace();
         byte[] objectKey = createKey(keyspace, Objects.requireNonNull(id).toString());
 
-        processAuditAnnotations(entity, isNew);
+        // process entity pre-save mutation
+        auditor.processEntity(entity, isNew);
+        featureExtractor.processEntity(entity);
 
         Optional<Long> maybeTtl = getTTLForEntity(entity);
 
@@ -242,24 +251,6 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
   public byte[] createKey(String keyspace, String id) {
     return this.mappingConverter.toBytes(keyspace + ":" + id);
-  }
-
-  private void processAuditAnnotations(Object item, boolean isNew) {
-    var auditClass = isNew ? CreatedDate.class : LastModifiedDate.class;
-
-    List<Field> fields = com.redis.om.spring.util.ObjectUtils.getFieldsWithAnnotation(item.getClass(), auditClass);
-    if (!fields.isEmpty()) {
-      PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(item);
-      fields.forEach(f -> {
-        if (f.getType() == Date.class) {
-          accessor.setPropertyValue(f.getName(), new Date(System.currentTimeMillis()));
-        } else if (f.getType() == LocalDateTime.class) {
-          accessor.setPropertyValue(f.getName(), LocalDateTime.now());
-        } else if (f.getType() == LocalDate.class) {
-          accessor.setPropertyValue(f.getName(), LocalDate.now());
-        }
-      });
-    }
   }
 
   private void processReferenceAnnotations(byte[] objectKey, Object entity, Pipeline pipeline) {

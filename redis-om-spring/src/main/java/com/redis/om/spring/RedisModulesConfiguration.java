@@ -293,9 +293,10 @@ public class RedisModulesConfiguration {
       RedisMappingContext mappingContext, //
       RediSearchIndexer indexer, //
       @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder, //
-      RedisOMProperties properties //
+      RedisOMProperties properties, //
+      @Nullable @Qualifier("featureExtractor") FeatureExtractor featureExtractor
   ) {
-    return new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, gsonBuilder, properties);
+    return new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, gsonBuilder, featureExtractor, properties);
   }
 
   @Bean(name = "redisJSONKeyValueTemplate")
@@ -305,10 +306,11 @@ public class RedisModulesConfiguration {
       RedisMappingContext mappingContext, //
       RediSearchIndexer indexer, //
       @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder, //
-      RedisOMProperties properties //
+      RedisOMProperties properties, //
+      @Nullable @Qualifier("featureExtractor") FeatureExtractor featureExtractor
   ) {
     return new CustomRedisKeyValueTemplate(
-        new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, gsonBuilder, properties),
+        new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, gsonBuilder, featureExtractor, properties),
         mappingContext);
   }
 

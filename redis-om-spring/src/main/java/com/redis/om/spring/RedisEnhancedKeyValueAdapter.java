@@ -134,7 +134,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     } else {
       byte[] redisKey = createKey(keyspace, converter.getConversionService().convert(id, String.class));
       auditor.processEntity(redisKey, item);
-      featureExtractor.processEntity(redisKey, item);
+      featureExtractor.processEntity(item);
 
       rdo = new RedisData();
       converter.write(item, rdo);

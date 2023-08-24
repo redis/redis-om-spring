@@ -6,24 +6,35 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public class NoopFeatureExtractor implements FeatureExtractor {
-  @Override
-  public void processEntity(byte[] redisKey, Object item) {
-    // NOOP
-  }
 
   @Override
-  public byte[] getImageEmbeddingsFor(InputStream is) {
+  public byte[] getImageEmbeddingsAsByteArrayFor(InputStream is) {
     return new byte[0];
   }
 
   @Override
-  public byte[] getFacialImageEmbeddingsFor(InputStream is) throws IOException, TranslateException {
+  public float[] getImageEmbeddingsAsFloatArrayFor(InputStream is) {
+    return new float[0];
+  }
+
+  @Override
+  public byte[] getFacialImageEmbeddingsAsByteArrayFor(InputStream is) throws IOException, TranslateException {
     return new byte[0];
   }
 
   @Override
-  public byte[] getSentenceEmbeddingsFor(String text) {
+  public float[] getFacialImageEmbeddingsAsFloatArrayFor(InputStream is) throws IOException, TranslateException {
+    return new float[0];
+  }
+
+  @Override
+  public byte[] getSentenceEmbeddingsAsByteArrayFor(String text) {
     return new byte[0];
+  }
+
+  @Override
+  public float[] getSentenceEmbeddingAsFloatArrayFor(String text) {
+    return new float[0];
   }
 
   @Override

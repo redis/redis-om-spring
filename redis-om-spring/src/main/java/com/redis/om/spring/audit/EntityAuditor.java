@@ -26,6 +26,10 @@ public class EntityAuditor {
         processEntity(item, isNew);
   }
 
+  public void processEntity(String redisKey, Object item) {
+    processEntity(redisKey.getBytes(), item);
+  }
+
   public void processEntity(Object item, boolean isNew) {
     var auditClass = isNew ? CreatedDate.class : LastModifiedDate.class;
 

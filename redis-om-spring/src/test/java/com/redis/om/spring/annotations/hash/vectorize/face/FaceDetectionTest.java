@@ -1,4 +1,4 @@
-package com.redis.om.spring.annotations.vectorize.face;
+package com.redis.om.spring.annotations.hash.vectorize.face;
 
 import ai.djl.inference.Predictor;
 import ai.djl.modality.cv.Image;

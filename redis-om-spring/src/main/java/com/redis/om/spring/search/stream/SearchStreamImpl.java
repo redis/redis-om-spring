@@ -16,8 +16,8 @@ import com.redis.om.spring.search.stream.predicates.vector.KNNPredicate;
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.TupleMapper;
-import com.redis.om.spring.util.SearchResultRawResponseToObjectConverter;
 import com.redis.om.spring.util.ObjectUtils;
+import com.redis.om.spring.util.SearchResultRawResponseToObjectConverter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeanUtils;
@@ -42,6 +42,7 @@ import java.util.function.*;
 import java.util.stream.*;
 
 import static com.redis.om.spring.metamodel.MetamodelUtils.getMetamodelForIdField;
+import static com.redis.om.spring.util.ObjectUtils.floatArrayToByteArray;
 import static java.util.stream.Collectors.toCollection;
 
 public class SearchStreamImpl<E> implements SearchStream<E> {
@@ -410,7 +411,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
     if (knnPredicate != null) {
       query = new Query(knnPredicate.apply(rootNode).toString());
-      query.addParam(knnPredicate.getBlobAttributeName(), knnPredicate.getBlobAttribute());
+      query.addParam(knnPredicate.getBlobAttributeName(), knnPredicate.getBlobAttribute() != null ? knnPredicate.getBlobAttribute() : floatArrayToByteArray(knnPredicate.getDoublesAttribute()));
       query.addParam("K", knnPredicate.getK());
       query.dialect(2);
     } else {
