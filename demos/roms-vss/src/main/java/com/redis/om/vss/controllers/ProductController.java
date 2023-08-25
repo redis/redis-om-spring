@@ -65,7 +65,7 @@ public class ProductController {
 
     List<Product> products = stream.collect(Collectors.toList());
 
-    if (products.size() == 0) {
+    if (products.isEmpty()) {
       skip = 0;
     }
 
