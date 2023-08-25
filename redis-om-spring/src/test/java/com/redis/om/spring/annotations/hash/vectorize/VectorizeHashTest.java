@@ -108,4 +108,27 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
         "cat", "catdog", "cat2", "face", "face2" //
     );
   }
+
+  @Test
+  @EnabledIf(
+    expression = "#{@featureExtractor.isReady()}", //
+    loadContext = true //
+    )
+  void testKnnHybridSentenceSimilaritySearch() {
+    Product cat = repository.findFirstByName("cat").get();
+    int K = 5;
+
+    SearchStream<Product> stream = entityStream.of(Product.class);
+
+    List<Product> results = stream //
+      .filter(Product$.NAME.startsWith("cat")) //
+      .filter(Product$.SENTENCE_EMBEDDING.knn(K, cat.getSentenceEmbedding())) //
+      .sorted(Product$._SENTENCE_EMBEDDING_SCORE) //
+      .limit(K) //
+      .collect(Collectors.toList());
+
+    assertThat(results).hasSize(3).map(Product::getName).containsExactly( //
+      "cat", "catdog", "cat2" //
+    );
+  }
 }
