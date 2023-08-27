@@ -1,10 +1,12 @@
 package com.redis.om.spring;
 
+import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.JsonAdapter;
 import com.redis.om.spring.annotations.*;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.query.QueryUtils;
+import com.redis.om.spring.serialization.gson.EnumTypeAdapter;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -50,14 +52,16 @@ public class RediSearchIndexer {
   private final ApplicationContext ac;
   private final RedisModulesOperations<String> rmo;
   private final RedisMappingContext mappingContext;
+  private final GsonBuilder gsonBuilder;
 
   private static final String SKIPPING_INDEX_CREATION = "Skipping index creation for %s because %s";
 
   @SuppressWarnings("unchecked")
-  public RediSearchIndexer(ApplicationContext ac) {
+  public RediSearchIndexer(ApplicationContext ac, GsonBuilder gsonBuilder) {
     this.ac = ac;
     rmo = (RedisModulesOperations<String>) ac.getBean("redisModulesOperations");
     mappingContext = (RedisMappingContext) ac.getBean("keyValueMappingContext");
+    this.gsonBuilder = gsonBuilder;
   }
 
   public void createIndicesFor(Class<?> cls) {
@@ -207,11 +211,24 @@ public class RediSearchIndexer {
         createIndexedFieldForReferenceIdField(field, isDocument).ifPresent(fields::add);
       } else if (indexed.schemaFieldType() == SchemaFieldType.AUTODETECT) {
         //
-        // Any Character class, Enums or Boolean -> Tag Search Field
+        // Any Character class or Boolean -> Tag Search Field
         //
-        if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class) || (fieldType.isEnum())) {
+        if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class)) {
           fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
               indexed.arrayIndex(), indexed.alias()));
+        }
+        //
+        // Any Enum marked with @Enumerated -> Numeric Search Field, else  -> Tag Search Field
+        //
+        else if (fieldType.isEnum()) {
+          if (field.isAnnotationPresent(Enumerated.class)) {
+            fields.add(indexAsNumericFieldFor(field, isDocument, prefix, indexed.sortable(),
+                    indexed.noindex(), indexed.alias()));
+            gsonBuilder.registerTypeAdapter(fieldType, EnumTypeAdapter.of(fieldType));
+          } else {
+            fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(),
+                    indexed.separator(), indexed.arrayIndex(), indexed.alias()));
+          }
         }
         //
         // Any Numeric class -> Numeric Search Field
@@ -322,6 +339,11 @@ public class RediSearchIndexer {
     else if (field.isAnnotationPresent(VectorIndexed.class)) {
       VectorIndexed vi = field.getAnnotation(VectorIndexed.class);
       fields.add(indexAsVectorFieldFor(field, isDocument, prefix, vi));
+    }
+    // enum without @indexed
+    else if (field.isAnnotationPresent(Enumerated.class)) {
+      Class<?> fieldType = ClassUtils.resolvePrimitiveIfNecessary(field.getType());
+      gsonBuilder.registerTypeAdapter(fieldType, EnumTypeAdapter.of(fieldType));
     }
 
     return fields;
@@ -444,11 +466,8 @@ public class RediSearchIndexer {
   }
 
   private Field indexAsTextFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, TextIndexed ti) {
-    String fieldPrefix = getFieldPrefix(prefix, isDocument);
-    String name = fieldPrefix + field.getName();
-    String alias = ObjectUtils.isEmpty(ti.alias()) ? QueryUtils.searchIndexFieldAliasFor(field, prefix) : ti.alias();
-    FieldName fieldName = FieldName.of(name);
-    fieldName = fieldName.as(alias);
+    var fieldName = getFieldName(field, isDocument, prefix, ObjectUtils.isEmpty(ti.alias())
+            ? QueryUtils.searchIndexFieldAliasFor(field, prefix) : ti.alias());
 
     String phonetic = ObjectUtils.isEmpty(ti.phonetic()) ? null : ti.phonetic();
 
@@ -456,11 +475,8 @@ public class RediSearchIndexer {
   }
 
   private Field indexAsTextFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, Searchable ti) {
-    String fieldPrefix = getFieldPrefix(prefix, isDocument);
-    String name = fieldPrefix + field.getName();
-    String alias = ObjectUtils.isEmpty(ti.alias()) ? QueryUtils.searchIndexFieldAliasFor(field, prefix) : ti.alias();
-    FieldName fieldName = FieldName.of(name);
-    fieldName = fieldName.as(alias);
+    var fieldName = getFieldName(field, isDocument, prefix,  ObjectUtils.isEmpty(ti.alias())
+            ? QueryUtils.searchIndexFieldAliasFor(field, prefix) : ti.alias());
 
     String phonetic = ObjectUtils.isEmpty(ti.phonetic()) ? null : ti.phonetic();
 
@@ -468,43 +484,31 @@ public class RediSearchIndexer {
   }
 
   private Field indexAsGeoFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, GeoIndexed gi) {
-    String fieldPrefix = getFieldPrefix(prefix, isDocument);
-    String name = fieldPrefix + field.getName();
-    String alias = ObjectUtils.isEmpty(gi.alias()) ? QueryUtils.searchIndexFieldAliasFor(field, prefix) : gi.alias();
-    FieldName fieldName = FieldName.of(name);
-    fieldName = fieldName.as(alias);
+    var fieldName = getFieldName(field, isDocument, prefix, ObjectUtils.isEmpty(gi.alias())
+            ? QueryUtils.searchIndexFieldAliasFor(field, prefix) : gi.alias());
 
     return new Field(fieldName, FieldType.GEO);
   }
 
   private Field indexAsNumericFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix,
       NumericIndexed ni) {
-    String fieldPrefix = getFieldPrefix(prefix, isDocument);
-    String name = fieldPrefix + field.getName();
-    String alias = ObjectUtils.isEmpty(ni.alias()) ? QueryUtils.searchIndexFieldAliasFor(field, prefix) : ni.alias();
-    FieldName fieldName = FieldName.of(name);
-    fieldName = fieldName.as(alias);
+    var fieldName = getFieldName(field, isDocument, prefix, ObjectUtils.isEmpty(ni.alias())
+            ? QueryUtils.searchIndexFieldAliasFor(field, prefix) : ni.alias());
 
     return new Field(fieldName, FieldType.NUMERIC);
   }
 
   private Field indexAsNumericFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix,
       boolean sortable, boolean noIndex, String annotationAlias) {
-    String fieldPrefix = getFieldPrefix(prefix, isDocument);
-    String name = fieldPrefix + field.getName();
     String alias = (annotationAlias == null || annotationAlias.isBlank()) ? QueryUtils.searchIndexFieldAliasFor(field, prefix) : annotationAlias;
-    FieldName fieldName = FieldName.of(name);
-    fieldName = fieldName.as(alias);
+    var fieldName = getFieldName(field, isDocument, prefix, alias);
 
     return new Field(fieldName, FieldType.NUMERIC, sortable, noIndex);
   }
 
   private Field indexAsGeoFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, String annotationAlias) {
-    String fieldPrefix = getFieldPrefix(prefix, isDocument);
-    String name = fieldPrefix + field.getName();
     String alias = (annotationAlias == null || annotationAlias.isBlank()) ? QueryUtils.searchIndexFieldAliasFor(field, prefix) : annotationAlias;
-    FieldName fieldName = FieldName.of(name);
-    fieldName = fieldName.as(alias);
+    var fieldName = getFieldName(field, isDocument, prefix, alias);
 
     return new Field(fieldName, FieldType.GEO);
   }
@@ -512,6 +516,15 @@ public class RediSearchIndexer {
   private List<Field> indexAsNestedFieldFor(java.lang.reflect.Field field, String prefix) {
     String fieldPrefix = getFieldPrefix(prefix, true);
     return getNestedField(fieldPrefix, field, prefix, null);
+  }
+
+  private FieldName getFieldName(java.lang.reflect.Field field, boolean isDocument, String prefix,
+                                 String alias) {
+    String fieldPrefix = getFieldPrefix(prefix, isDocument);
+    String name = fieldPrefix + field.getName();
+    FieldName fieldName = FieldName.of(name);
+    fieldName = fieldName.as(alias);
+    return fieldName;
   }
 
   private List<Field> getNestedField(String fieldPrefix, java.lang.reflect.Field field, String prefix,
