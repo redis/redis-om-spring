@@ -144,6 +144,10 @@ public final class MetamodelGenerator extends AbstractProcessor {
         interceptors.add(keyAccessor.getFirst());
         initCodeBlocks.add(keyAccessor.getSecond());
 
+        Pair<FieldSpec, CodeBlock> thisAccessor = generateThisMetamodelField(entity);
+        interceptors.add(thisAccessor.getFirst());
+        initCodeBlocks.add(thisAccessor.getSecond());
+
         CodeBlock.Builder blockBuilder = CodeBlock.builder();
 
         boolean hasFields = !fields.isEmpty();
@@ -779,6 +783,21 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
         CodeBlock aFieldInit = CodeBlock.builder()
                 .addStatement("$L = new $T(\"$L\", $T.class, $L)", name, interceptor, alias, type, true).build();
+
+        return Tuples.of(aField, aFieldInit);
+    }
+
+    private Pair<FieldSpec, CodeBlock> generateThisMetamodelField(TypeName entity) {
+        String name = "_THIS";
+        String alias = "__this";
+        TypeName interceptor = ParameterizedTypeName.get(ClassName.get(MetamodelField.class), entity,
+          entity);
+
+        FieldSpec aField = FieldSpec.builder(interceptor, name).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+          .build();
+
+        CodeBlock aFieldInit = CodeBlock.builder()
+          .addStatement("$L = new $T(\"$L\", $T.class, $L)", name, interceptor, alias, entity, true).build();
 
         return Tuples.of(aField, aFieldInit);
     }

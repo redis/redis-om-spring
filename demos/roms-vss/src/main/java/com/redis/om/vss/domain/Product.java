@@ -67,7 +67,7 @@ public class Product {
       algorithm = VectorAlgo.HNSW, //
       type = VectorType.FLOAT32, //
       dimension = 512, //
-      distanceMetric = DistanceMetric.L2, //
+      distanceMetric = DistanceMetric.COSINE, //
       initialCapacity = 10
   )
   private byte[] imageEmbedding;
@@ -81,7 +81,7 @@ public class Product {
       algorithm = VectorAlgo.HNSW, //
       type = VectorType.FLOAT32, //
       dimension = 768, //
-      distanceMetric = DistanceMetric.L2, //
+      distanceMetric = DistanceMetric.COSINE, //
       initialCapacity = 10
   )
   private byte[] sentenceEmbedding;

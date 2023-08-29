@@ -177,7 +177,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       return new WrapperSearchStream<>(resolveStream().map(mapper));
     }
 
-    return new ReturnFieldsSearchStreamImpl<>(this, returning, getGson());
+    return new ReturnFieldsSearchStreamImpl<>(this, returning, mappingConverter, getGson(), isDocument);
   }
 
   @Override

@@ -2,9 +2,12 @@ package com.redis.om.vss.controllers;
 
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.SearchStream;
+import com.redis.om.spring.tuple.Fields;
+import com.redis.om.spring.tuple.Pair;
 import com.redis.om.vss.domain.Product;
 import com.redis.om.vss.domain.Product$;
 import com.redis.om.vss.repositories.ProductRepository;
+import com.redis.om.vss.ui.ProductsPageModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +27,7 @@ import java.util.stream.Collectors;
 public class ProductController {
   Logger logger = LoggerFactory.getLogger(ProductController.class);
 
-  private static int K = 15;
+  private static final int K = 15;
 
   @Autowired
   private ProductRepository repository;
@@ -40,7 +43,10 @@ public class ProductController {
         .limit(K) //
         .collect(Collectors.toList());
 
-    setModelProperties(model, products);
+    ProductsPageModel.of()
+      .model(model) //
+      .products(products) //
+      .build().apply();
 
     return "index";
   }
@@ -69,7 +75,12 @@ public class ProductController {
       skip = 0;
     }
 
-    setModelProperties(model, products, Optional.of(skip), gender, category);
+    ProductsPageModel.of()
+      .model(model) //
+      .products(products) //
+      .category(category.orElse(null)) //
+      .skip(skip) //
+      .build().apply();
 
     return "fragments :: root";
   }
@@ -91,13 +102,24 @@ public class ProductController {
 
       applyFilters(stream, gender, category);
 
-      List<Product> products = stream
+      List<Pair<Product,Double>> productsAndScores = stream
           .filter(Product$.SENTENCE_EMBEDDING.knn(K, product.getSentenceEmbedding())) //
           .sorted(Product$._SENTENCE_EMBEDDING_SCORE) //
           .limit(K) //
+          .map(Fields.of(Product$._THIS, Product$._SENTENCE_EMBEDDING_SCORE)) //
           .collect(Collectors.toList());
 
-      setModelProperties(model, products, skip, gender, category);
+      List<Product> products = productsAndScores.stream().map(Pair::getFirst).toList();
+      List<Double> scores = productsAndScores.stream().map(Pair::getSecond).map(d -> 100.0 * (1 - d/2)).toList();
+
+      ProductsPageModel.of()
+        .model(model) //
+        .products(products) //
+        .scores(scores) //
+        .category(category.orElse(null)) //
+        .gender(gender.orElse(null)) //
+        .skip(skip.orElse(null)) //
+        .build().apply();
     } else {
       logger.warn("🔎 vss :: There is no product with id {}", id);
     }
@@ -122,13 +144,24 @@ public class ProductController {
 
       applyFilters(stream, gender, category);
 
-      List<Product> products = stream
-          .filter(Product$.IMAGE_EMBEDDING.knn(K, product.getImageEmbedding())) //
-          .sorted(Product$._IMAGE_EMBEDDING_SCORE) //
-          .limit(K) //
-          .collect(Collectors.toList());
+      List<Pair<Product,Double>> productsAndScores = stream
+        .filter(Product$.IMAGE_EMBEDDING.knn(K, product.getImageEmbedding())) //
+        .sorted(Product$._IMAGE_EMBEDDING_SCORE) //
+        .limit(K) //
+        .map(Fields.of(Product$._THIS, Product$._IMAGE_EMBEDDING_SCORE)) //
+        .collect(Collectors.toList());
 
-      setModelProperties(model, products, skip, gender, category);
+      List<Product> products = productsAndScores.stream().map(Pair::getFirst).toList();
+      List<Double> scores = productsAndScores.stream().map(Pair::getSecond).map(d -> 100.0 * (1 - d/2)).toList();
+
+      ProductsPageModel.of()
+        .model(model) //
+        .products(products) //
+        .scores(scores) //
+        .category(category.orElse(null)) //
+        .gender(gender.orElse(null)) //
+        .skip(skip.orElse(null)) //
+        .build().apply();
     } else {
       logger.warn("🔎 vss :: There is no product with id {}", id);
     }
@@ -145,44 +178,17 @@ public class ProductController {
   ) {
     logger.info("🔎️ :: Setting Filters. Gender → {}, Category → {}", gender, category);
 
-    setModelProperties(model, skip, gender, category);
+    ProductsPageModel.of()
+      .model(model) //
+      .category(category.orElse(null)) //
+      .gender(gender.orElse(null)) //
+      .skip(skip.orElse(null)) //
+      .build().apply();
 
     return "fragments :: filters";
   }
 
-  private void setModelProperties(Model model, List<Product> products) {
-    setModelProperties(model, Optional.of(products), Optional.empty(),Optional.empty(), Optional.empty());
-  }
-
-  private void setModelProperties(Model model, Optional<Long> skip, Optional<String> gender, Optional<String> category) {
-    setModelProperties(model, Optional.empty(), skip, gender, category);
-  }
-
-  private void setModelProperties(Model model, List<Product> products, Optional<Long> skip, Optional<String> gender, Optional<String> category) {
-    setModelProperties(model, Optional.of(products), skip, gender, category);
-  }
-
-  private void setModelProperties(Model model, Optional<List<Product>> products, Optional<Long> skip, Optional<String> gender, Optional<String> category) {
-    model.addAttribute("totalNumberOfProducts", repository.count());
-
-    if (skip.isPresent()) {
-      model.addAttribute("skip", skip.get());
-    }
-
-    if (products.isPresent()) {
-      model.addAttribute("products", products.get());
-    }
-
-    if (gender.isPresent() && !gender.get().equalsIgnoreCase("all")) {
-      model.addAttribute("gender", gender.get());
-    }
-
-    if (category.isPresent() && !category.get().equalsIgnoreCase("all")) {
-      model.addAttribute("category", category.get());
-    }
-  }
-
-  private SearchStream<Product> applyFilters(SearchStream<Product> stream, Optional<String> gender, Optional<String> category) {
+  private void applyFilters(SearchStream<Product> stream, Optional<String> gender, Optional<String> category) {
 
     if (gender.isPresent() && !gender.get().equalsIgnoreCase("all")) {
       stream.filter(Product$.GENDER.eq(gender.get()));
@@ -192,7 +198,6 @@ public class ProductController {
       stream.filter(Product$.MASTER_CATEGORY.eq(category.get()));
     }
 
-    return stream;
   }
 
 }

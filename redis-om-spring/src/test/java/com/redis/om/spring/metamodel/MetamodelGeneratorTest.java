@@ -321,18 +321,21 @@ class MetamodelGeneratorTest {
 
     var expected = """
     package valid;
-    
-    import com.redis.om.spring.metamodel.MetamodelField;
-    import java.lang.String;
-
-    public final class IdOnly$ {
-      public static MetamodelField<IdOnly, String> _KEY;
-
-      static {
-        _KEY = new MetamodelField<IdOnly, String>("__key", String.class, true);
-      }
-    }
-    """;
+     
+     import com.redis.om.spring.metamodel.MetamodelField;
+     import java.lang.String;
+     
+     public final class IdOnly$ {
+       public static MetamodelField<IdOnly, String> _KEY;
+     
+       public static MetamodelField<IdOnly, IdOnly> _THIS;
+     
+       static {
+         _KEY = new MetamodelField<IdOnly, String>("__key", String.class, true);
+         _THIS = new MetamodelField<IdOnly, IdOnly>("__this", IdOnly.class, true);
+       }
+     }
+     """;
 
     assertThat(fileContents).containsIgnoringWhitespaces(expected);
   }

@@ -11,6 +11,8 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.util.Comparator;
+
 import static com.redis.testcontainers.RedisStackContainer.DEFAULT_IMAGE_NAME;
 
 @SuppressWarnings("SpellCheckingInspection") @Testcontainers(disabledWithoutDocker = true)
@@ -47,5 +49,12 @@ public abstract class AbstractBaseOMTest {
     indexer.dropIndexAndDocumentsFor(entityClass);
     indexer.createIndexFor(entityClass);
   }
+
+  protected Comparator<Double> closeToComparator = new Comparator<Double>() {
+    @Override
+    public int compare(Double o1, Double o2) {
+      return Math.abs(o1.doubleValue() - o2.doubleValue()) < 0.001 ? 0 : -1;
+    }
+  };
 
 }

@@ -6,6 +6,8 @@ import com.redis.om.spring.annotations.document.fixtures.Product$;
 import com.redis.om.spring.annotations.document.fixtures.ProductRepository;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.SearchStream;
+import com.redis.om.spring.tuple.Fields;
+import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.vectorize.FeatureExtractor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -83,8 +85,9 @@ class VectorizeDocumentTest extends AbstractBaseDocumentTest {
         .limit(K) //
         .collect(Collectors.toList());
 
-    assertThat(results).hasSize(5).map(Product::getName).containsExactly("cat", "cat2",
-        "face", "face2", "catdog");
+    assertThat(results).hasSize(5).map(Product::getName).containsExactly( //
+       "cat", "cat2", "catdog", "face", "face2" //
+    );
   }
 
   @Test
@@ -105,7 +108,7 @@ class VectorizeDocumentTest extends AbstractBaseDocumentTest {
         .collect(Collectors.toList());
 
     assertThat(results).hasSize(5).map(Product::getName).containsExactly( //
-        "cat", "catdog", "cat2", "face", "face2" //
+      "cat", "cat2", "catdog", "face", "face2" //
     );
   }
 
@@ -128,7 +131,31 @@ class VectorizeDocumentTest extends AbstractBaseDocumentTest {
       .collect(Collectors.toList());
 
     assertThat(results).hasSize(3).map(Product::getName).containsExactly( //
-      "cat", "catdog", "cat2" //
+      "cat", "cat2", "catdog" //
+    );
+  }
+
+  @Test
+  @EnabledIf(
+    expression = "#{@featureExtractor.isReady()}", //
+    loadContext = true //
+    )
+  void testKnnSentenceSimilaritySearchWithScores() {
+    Product cat = repository.findFirstByName("cat").get();
+    int K = 5;
+
+    SearchStream<Product> stream = entityStream.of(Product.class);
+
+    List<Pair<Product,Double>> results = stream //
+      .filter(Product$.SENTENCE_EMBEDDING.knn(K, cat.getSentenceEmbedding())) //
+      .sorted(Product$._SENTENCE_EMBEDDING_SCORE) //
+      .limit(K) //
+      .map(Fields.of(Product$._THIS, Product$._SENTENCE_EMBEDDING_SCORE)) //
+      .collect(Collectors.toList());
+
+    assertAll( //
+      () -> assertThat(results).hasSize(5).map(Pair::getFirst).map(Product::getName).containsExactly( "cat", "cat2", "catdog", "face", "face2"), //
+      () -> assertThat(results).hasSize(5).map(Pair::getSecond).usingElementComparator(closeToComparator).containsExactly(0.0, 0.6704, 0.7162, 0.7705, 0.8107) //
     );
   }
 }

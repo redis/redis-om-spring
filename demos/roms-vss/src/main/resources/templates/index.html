@@ -6,7 +6,6 @@
     <meta charset="utf-8"/>
     <link rel="icon" th:href="@{/favicon.ico}"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<!--    <meta name="theme-color" content="#000000"/>-->
     <meta
             name="description"
             content="Redis vector similarity search demonstration"
@@ -31,6 +30,9 @@
 <script type="text/javascript">
 const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
 const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
+
+const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 
 function getGenderFilter() {
     const checkedBox = document.querySelectorAll('input[type="radio"][name="gender"]:checked')[0];
