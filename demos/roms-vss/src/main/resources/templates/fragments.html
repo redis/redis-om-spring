@@ -22,11 +22,11 @@
                  data-bs-toggle="dropdown"
                  href="#">About</a>
               <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="https://github.com/redis/redis-om-spring">Code</a></li>
-                <li><a class="dropdown-item" href="https://mlops.community/vector-similarity-search-from-basics-to-production/">Blog</a></li>
+                <li><a class="dropdown-item" href="https://github.com/redis/redis-om-spring" target="_blank">Code</a></li>
+                <li><a class="dropdown-item" href="https://mlops.community/vector-similarity-search-from-basics-to-production/" target="_blank">Blog</a></li>
                 <li><a class="dropdown-item" href="https://forms.gle/ANpHTe2Da5CVGHty7" target="_blank">Talk With Us</a></li>
                 <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="https://redis.io/docs/stack/search/reference/vectors/">
+                <li><a class="dropdown-item" href="https://redis.io/docs/stack/search/reference/vectors/" target="_blank">
                   Docs: Redis Vector Search
                 </a></li>
               </ul>
@@ -102,7 +102,12 @@
                             style="font-size: 12px;">By Image
                     </button>
                   </div>
-                  <div class="btn-group"></div>
+                  <span class="badge rounded-pill text-bg-primary"
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="bottom"
+                        data-bs-title="Similarity Score"
+                        th:if="${scores != null}"
+                        th:text="${#numbers.formatDecimal(scores.get(productStat.index),2,2)}">0.00</span>
                 </div>
               </div>
             </div>
