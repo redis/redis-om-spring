@@ -211,24 +211,12 @@ public class RediSearchIndexer {
         createIndexedFieldForReferenceIdField(field, isDocument).ifPresent(fields::add);
       } else if (indexed.schemaFieldType() == SchemaFieldType.AUTODETECT) {
         //
-        // Any Character class or Boolean -> Tag Search Field
+        // Any Character class, Boolean or Enum with AUTODETECT -> Tag Search Field
         //
-        if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class)) {
+        if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class) ||
+            (fieldType.isEnum())) {
           fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
               indexed.arrayIndex(), indexed.alias()));
-        }
-        //
-        // Any Enum marked with @Enumerated -> Numeric Search Field, else  -> Tag Search Field
-        //
-        else if (fieldType.isEnum()) {
-          if (field.isAnnotationPresent(Enumerated.class)) {
-            fields.add(indexAsNumericFieldFor(field, isDocument, prefix, indexed.sortable(),
-                    indexed.noindex(), indexed.alias()));
-            gsonBuilder.registerTypeAdapter(fieldType, EnumTypeAdapter.of(fieldType));
-          } else {
-            fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(),
-                    indexed.separator(), indexed.arrayIndex(), indexed.alias()));
-          }
         }
         //
         // Any Numeric class -> Numeric Search Field
@@ -305,6 +293,11 @@ public class RediSearchIndexer {
               fields.addAll(findIndexFields(subfield, subfieldPrefix, isDocument));
             }
           }
+          case ORDINAL -> {
+            fields.add(indexAsNumericFieldFor(field, isDocument, prefix, indexed.sortable(),
+                indexed.noindex(), indexed.alias()));
+            gsonBuilder.registerTypeAdapter(fieldType, EnumTypeAdapter.of(fieldType));
+          }
         }
       }
     }
@@ -339,11 +332,6 @@ public class RediSearchIndexer {
     else if (field.isAnnotationPresent(VectorIndexed.class)) {
       VectorIndexed vi = field.getAnnotation(VectorIndexed.class);
       fields.add(indexAsVectorFieldFor(field, isDocument, prefix, vi));
-    }
-    // enum without @indexed
-    else if (field.isAnnotationPresent(Enumerated.class)) {
-      Class<?> fieldType = ClassUtils.resolvePrimitiveIfNecessary(field.getType());
-      gsonBuilder.registerTypeAdapter(fieldType, EnumTypeAdapter.of(fieldType));
     }
 
     return fields;
