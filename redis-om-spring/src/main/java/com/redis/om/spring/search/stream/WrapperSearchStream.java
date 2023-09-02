@@ -4,6 +4,7 @@ import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.indexed.NumericField;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
+import com.redis.om.spring.tuple.Pair;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -322,6 +323,26 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
   @Override
   public String backingQuery() {
     throw new UnsupportedOperationException("backingQuery is not supported on a WrappedSearchStream");
+  }
+
+  @Override
+  public <R> SearchStream<E> summarize(Function<? super E, ? extends R> field) {
+    throw new UnsupportedOperationException("summarize is not supported on a WrappedSearchStream");
+  }
+
+  @Override
+  public <R> SearchStream<E> summarize(Function<? super E, ? extends R> field, SummarizeParams params) {
+    throw new UnsupportedOperationException("summarize is not supported on a WrappedSearchStream");
+  }
+
+  @Override
+  public <R> SearchStream<E> highlight(Function<? super E, ? extends R> field) {
+    throw new UnsupportedOperationException("highlight is not supported on a WrappedSearchStream");
+  }
+
+  @Override
+  public <R> SearchStream<E> highlight(Function<? super E, ? extends R> field, Pair<String,String> tags) {
+    throw new UnsupportedOperationException("highlight is not supported on a WrappedSearchStream");
   }
 
 }

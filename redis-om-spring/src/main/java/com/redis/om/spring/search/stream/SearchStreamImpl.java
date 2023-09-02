@@ -25,6 +25,7 @@ import org.springframework.data.domain.*;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
 import redis.clients.jedis.search.Query;
+import redis.clients.jedis.search.Query.HighlightTags;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.AggregationResult;
 import redis.clients.jedis.search.aggr.SortedField;
@@ -74,6 +75,12 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private int dialect = 1;
 
   private final List<MetamodelField<E, ?>> projections = new ArrayList<>();
+
+  private final List<MetamodelField<E, ?>> summaryFields = new ArrayList<>();
+  private SummarizeParams summarizeParams;
+  private final List<MetamodelField<E, ?>> highlightFields = new ArrayList<>();
+
+  private Pair<String,String> highlightTags;
 
   private final ExampleToNodeConverter<E> exampleToNodeConverter;
 
@@ -426,6 +433,36 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       query.setSortBy(sortField.getField(), sortField.getOrder().equals("ASC"));
     }
 
+    if (!summaryFields.isEmpty()) {
+      var fields = summaryFields.stream() //
+        .map(foi -> ObjectUtils.isCollection(foi.getTargetClass()) ? "$." + foi.getSearchAlias() : foi.getSearchAlias())
+        .collect(toCollection(ArrayList::new));
+
+      if (summarizeParams == null) {
+        query.summarizeFields(fields.toArray(String[]::new));
+      } else {
+        query.summarizeFields( //
+          summarizeParams.getFragSize(), //
+          summarizeParams.getFragsNum(), //
+          summarizeParams.getSeparator(), //
+          fields.toArray(String[]::new) //
+        );
+      }
+    }
+
+    if (!highlightFields.isEmpty()) {
+      var fields = highlightFields.stream() //
+        .map(foi -> ObjectUtils.isCollection(foi.getTargetClass()) ? "$." + foi.getSearchAlias() : foi.getSearchAlias())
+        .collect(toCollection(ArrayList::new));
+
+      if (highlightTags == null) {
+        query.highlightFields(fields.toArray(String[]::new));
+      } else {
+        HighlightTags tags = new HighlightTags(highlightTags.getFirst(),highlightTags.getSecond());
+        query.highlightFields(tags, fields.toArray(String[]::new));
+      }
+    }
+
     if (onlyIds) {
       query.returnFields(idField.getName());
     } else if (!projections.isEmpty()) {
@@ -650,6 +687,58 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @Override
   public String backingQuery() {
     return rootNode.toString();
+  }
+
+  @Override
+  public <R> SearchStream<E> summarize(Function<? super E, ? extends R> field) {
+    if (MetamodelField.class.isAssignableFrom(field.getClass())) {
+      @SuppressWarnings("unchecked")
+      MetamodelField<E, R> foi = (MetamodelField<E, R>) field;
+      summaryFields.add(foi);
+
+    } else if (TupleMapper.class.isAssignableFrom(field.getClass())) {
+      @SuppressWarnings("rawtypes")
+      AbstractTupleMapper tm = (AbstractTupleMapper) field;
+
+      IntStream.range(0, tm.degree()).forEach(i -> {
+        @SuppressWarnings("unchecked")
+        MetamodelField<E, ?> foi = (MetamodelField<E, ?>) tm.get(i);
+        summaryFields.add(foi);
+      });
+    }
+    return this;
+  }
+
+  @Override
+  public <R> SearchStream<E> summarize(Function<? super E, ? extends R> field, SummarizeParams summarizeParams) {
+    this.summarizeParams = summarizeParams;
+    return summarize(field);
+  }
+
+  @Override
+  public <R> SearchStream<E> highlight(Function<? super E, ? extends R> field) {
+    if (MetamodelField.class.isAssignableFrom(field.getClass())) {
+      @SuppressWarnings("unchecked")
+      MetamodelField<E, R> foi = (MetamodelField<E, R>) field;
+      highlightFields.add(foi);
+
+    } else if (TupleMapper.class.isAssignableFrom(field.getClass())) {
+      @SuppressWarnings("rawtypes")
+      AbstractTupleMapper tm = (AbstractTupleMapper) field;
+
+      IntStream.range(0, tm.degree()).forEach(i -> {
+        @SuppressWarnings("unchecked")
+        MetamodelField<E, ?> foi = (MetamodelField<E, ?>) tm.get(i);
+        highlightFields.add(foi);
+      });
+    }
+    return this;
+  }
+
+  @Override
+  public <R> SearchStream<E> highlight(Function<? super E, ? extends R> field, Pair<String,String> tags) {
+    highlightTags = tags;
+    return highlight(field);
   }
 
   public boolean isDocument() {

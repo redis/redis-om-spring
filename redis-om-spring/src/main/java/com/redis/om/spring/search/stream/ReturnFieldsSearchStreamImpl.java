@@ -6,6 +6,7 @@ import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.indexed.NumericField;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
+import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.Tuple;
 import com.redis.om.spring.tuple.Tuples;
 import com.redis.om.spring.util.ObjectUtils;
@@ -450,6 +451,26 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   @Override
   public String backingQuery() {
     return entitySearchStream.backingQuery();
+  }
+
+  @Override
+  public <R> SearchStream<T> summarize(Function<? super T, ? extends R> field) {
+    throw new UnsupportedOperationException("summarize is not supported on a ReturnFieldSearchStream");
+  }
+
+  @Override
+  public <R> SearchStream<T> summarize(Function<? super T, ? extends R> field, SummarizeParams params) {
+    throw new UnsupportedOperationException("summarize is not supported on a ReturnFieldSearchStream");
+  }
+
+  @Override
+  public <R> SearchStream<T> highlight(Function<? super T, ? extends R> field) {
+    throw new UnsupportedOperationException("highlight is not supported on a ReturnFieldSearchStream");
+  }
+
+  @Override
+  public <R> SearchStream<T> highlight(Function<? super T, ? extends R> field, Pair<String,String> tags) {
+    throw new UnsupportedOperationException("highlight is not supported on a ReturnFieldSearchStream");
   }
 
 }
