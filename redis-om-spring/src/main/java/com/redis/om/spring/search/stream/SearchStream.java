@@ -4,6 +4,7 @@ import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.indexed.NumericField;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
+import com.redis.om.spring.tuple.Pair;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -14,6 +15,7 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.*;
 import java.util.stream.*;
 
@@ -119,4 +121,11 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
   <R> SearchStream<E> project(MetamodelField<? super E, ? extends R> ...field);
 
   String backingQuery();
+
+  <R> SearchStream<E> summarize(Function<? super E, ? extends R> field);
+
+  <R> SearchStream<E> summarize(Function<? super E, ? extends R> field, SummarizeParams params);
+
+  <R> SearchStream<E> highlight(Function<? super E, ? extends R> field);
+  <R> SearchStream<E> highlight(Function<? super E, ? extends R> field, Pair<String,String> tags);
 }
