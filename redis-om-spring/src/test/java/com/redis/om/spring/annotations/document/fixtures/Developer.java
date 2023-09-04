@@ -3,6 +3,7 @@ package com.redis.om.spring.annotations.document.fixtures;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.SchemaFieldType;
+import com.redis.om.spring.annotations.SerializationHint;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,7 +23,7 @@ public class Developer {
   @Id
   private String id;
 
-  @Indexed(schemaFieldType = SchemaFieldType.ORDINAL)
+  @Indexed(serializationHint = SerializationHint.ORDINAL)
   private DeveloperType typeOrdinal;
 
   private DeveloperState state;

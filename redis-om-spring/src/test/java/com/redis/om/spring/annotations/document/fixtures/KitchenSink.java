@@ -41,6 +41,7 @@ public class KitchenSink {
   private Instant instant;
   @NonNull
   private OffsetDateTime localOffsetDateTime;
+
   @Singular
   @JsonAdapter(SetToStringAdapter.class)
   private Set<String> setThings;
