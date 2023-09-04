@@ -1,10 +1,7 @@
 package com.redis.om.spring.annotations.document.fixtures;
 
 import com.google.gson.annotations.JsonAdapter;
-import com.redis.om.spring.annotations.Document;
-import com.redis.om.spring.annotations.DocumentScore;
-import com.redis.om.spring.annotations.Indexed;
-import com.redis.om.spring.annotations.Searchable;
+import com.redis.om.spring.annotations.*;
 import com.redis.om.spring.serialization.gson.SetToStringAdapter;
 import lombok.*;
 import org.springframework.data.annotation.Id;

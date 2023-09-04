@@ -6,6 +6,5 @@ public enum SchemaFieldType {
   NUMERIC,
   GEO,
   VECTOR,
-  NESTED,
-  ORDINAL
+  NESTED
 }

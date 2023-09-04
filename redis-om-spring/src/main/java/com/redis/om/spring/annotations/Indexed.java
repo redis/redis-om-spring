@@ -13,6 +13,8 @@ public @interface Indexed {
   // by default, attempt to determine the schema field type from the Java datatype
   SchemaFieldType schemaFieldType() default SchemaFieldType.AUTODETECT;
 
+  SerializationHint serializationHint() default SerializationHint.NONE;
+
   String fieldName() default "";
 
   String alias() default "";

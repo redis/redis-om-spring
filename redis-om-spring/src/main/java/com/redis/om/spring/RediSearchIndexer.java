@@ -6,7 +6,7 @@ import com.redis.om.spring.annotations.*;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.query.QueryUtils;
-import com.redis.om.spring.serialization.gson.EnumTypeAdapter;
+import com.redis.om.spring.serialization.gson.*;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -213,10 +213,19 @@ public class RediSearchIndexer {
         //
         // Any Character class, Boolean or Enum with AUTODETECT -> Tag Search Field
         //
-        if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class) ||
-            (fieldType.isEnum())) {
+        if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class)) {
           fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
               indexed.arrayIndex(), indexed.alias()));
+        } else if (fieldType.isEnum()) {
+          switch (indexed.serializationHint()) {
+            case ORDINAL -> {
+              fields.add(indexAsNumericFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.noindex(),
+                indexed.alias()));
+              gsonBuilder.registerTypeAdapter(fieldType, EnumTypeAdapter.of(fieldType));
+            }
+            default -> fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
+              indexed.arrayIndex(), indexed.alias()));
+          }
         }
         //
         // Any Numeric class -> Numeric Search Field
@@ -292,11 +301,6 @@ public class RediSearchIndexer {
                   : String.join(".", prefix, field.getName());
               fields.addAll(findIndexFields(subfield, subfieldPrefix, isDocument));
             }
-          }
-          case ORDINAL -> {
-            fields.add(indexAsNumericFieldFor(field, isDocument, prefix, indexed.sortable(),
-                indexed.noindex(), indexed.alias()));
-            gsonBuilder.registerTypeAdapter(fieldType, EnumTypeAdapter.of(fieldType));
           }
         }
       }
