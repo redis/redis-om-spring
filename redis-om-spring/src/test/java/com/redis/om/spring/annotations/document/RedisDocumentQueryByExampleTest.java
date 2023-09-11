@@ -155,6 +155,26 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
   }
 
   @Test
+  void testFindAllByWithPageableAndSortAsc() {
+    Pageable pageRequest = PageRequest.of(0, 2,
+        Sort.by("title").ascending());
+    Page<MyDoc> content  = repository.findAll(pageRequest);
+
+    assertThat(content.getSize()).isEqualTo(2);
+    assertThat(content.getContent().get(0).getTitle()).isEqualTo("bonjour le monde");
+  }
+
+  @Test
+  void testFindAllByWithPageableAndSortDec() {
+    Pageable pageRequest = PageRequest.of(0, 2,
+        Sort.by("title").descending());
+    Page<MyDoc> content  = repository.findAll(pageRequest);
+
+    assertThat(content.getSize()).isEqualTo(2);
+    assertThat(content.getContent().get(0).getTitle()).isEqualTo("ola mundo");
+  }
+
+  @Test
   public void testFindAllByExampleShouldReturnEmptyListIfNotMatching() {
     MyDoc template = new MyDoc();
     template.setANumber(42);
