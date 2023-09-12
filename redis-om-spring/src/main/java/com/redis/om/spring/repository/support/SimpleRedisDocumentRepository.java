@@ -26,11 +26,10 @@ import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.OptimisticLockingFailureException;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Reference;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.domain.*;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.core.mapping.KeyValuePersistentEntity;
 import org.springframework.data.keyvalue.repository.support.SimpleKeyValueRepository;
@@ -59,8 +58,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -373,6 +370,49 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   @Override
   public <S extends T> Page<S> findAll(Example<S> example, Pageable pageable) {
     return pageFromSlice(entityStream.of(example.getProbeType()).filter(example).getSlice(pageable));
+  }
+
+  /* (non-Javadoc)
+   *
+   * @see
+   * org.springframework.data.repository.PagingAndSortingRepository#findAll(org.
+   * springframework.data.domain.Pageable) */
+  @Override
+  public Page<T> findAll(Pageable pageable) {
+    Assert.notNull(pageable, "Pageable must not be null!");
+
+    if (pageable.isUnpaged()) {
+      List<T> result = findAll(pageable.getSort());
+      return new PageImpl<>(result, Pageable.unpaged(), result.size());
+    }
+
+    if (indexer.indexExistsFor(metadata.getJavaType())) {
+      Optional<String> maybeSearchIndex = indexer.getIndexName(metadata.getJavaType());
+      if (maybeSearchIndex.isPresent()) {
+        String searchIndex = maybeSearchIndex.get();
+        SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
+        Query query = new Query("*");
+        query.limit(Math.toIntExact(pageable.getOffset()), pageable.getPageSize());
+
+        for (Order order : pageable.getSort()) {
+          query.setSortBy(order.getProperty(), order.isAscending());
+        }
+
+        SearchResult searchResult = searchOps.search(query);
+
+        @SuppressWarnings("unchecked")
+        List<T> content = (List<T>) searchResult.getDocuments().stream()
+            .map(d -> ObjectUtils.documentToObject(d, metadata.getJavaType(), mappingConverter))
+            .toList();
+
+        return new PageImpl<>(content, pageable, searchResult.getTotalResults());
+      } else {
+        return Page.empty();
+      }
+
+    } else {
+      return super.findAll(pageable);
+    }
   }
 
   @Override
