@@ -640,7 +640,8 @@ public class RediSearchQuery implements RepositoryQuery {
             v = parameters[index].toString();
           }
 
-          preparedQuery = new StringBuilder(preparedQuery.toString().replaceAll("\\$" + key, v));
+          String regex = "\\$" + key + "\\b";
+          preparedQuery = new StringBuilder(preparedQuery.toString().replaceAll(regex, v));
         }
         index++;
       }
