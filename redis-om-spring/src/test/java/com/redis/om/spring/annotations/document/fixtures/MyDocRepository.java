@@ -93,4 +93,8 @@ import java.util.Set;
   Iterable<MyDoc> findByLocation2Near(Point point, Distance distance);
 
   Iterable<MyDoc> findByaNumber(Integer anotherNumber);
+
+  @Query(value = "(@id:{$title}) | (@title:$title)")
+  List<MyDoc> searchByIdOrTitle(@Param("title") String title);
+
 }

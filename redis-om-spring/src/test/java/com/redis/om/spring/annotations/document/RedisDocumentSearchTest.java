@@ -352,4 +352,14 @@ import static org.junit.jupiter.api.Assertions.*;
     );
   }
 
+  @Test
+  void testQueryDoubleConditionWhileOneParam() {
+    Point point1 = new Point(-12.100, 4.640);
+    MyDoc doc1 = MyDoc.of( id1, point1, point1, 1);
+    repository.save(doc1);
+
+    List<MyDoc> result = repository.searchByIdOrTitle(id1);
+    assertThat(result).hasSize(2);
+  }
+
 }
