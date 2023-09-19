@@ -115,16 +115,16 @@ By default, Redis OM Spring connects to `localhost` at port `6379`. If
 your instance is running somewhere else, you can configure the connection
 in your `application.properties` or `application.yaml`:
 
-In `applications.properties`:
+In `application.properties`:
 
 ```
-spring.data.redis.host=your.cloud.db.redislabs.com                                                                                                                                                                                                                    |
+spring.data.redis.host=your.cloud.db.redislabs.com
 spring.data.redis.port=12345
 spring.data.redis.password=xxxxxxxx
 spring.data.redis.username=default
 ```
 
-In `applications.yaml`:
+In `application.yaml`:
 
 ```
 spring:
