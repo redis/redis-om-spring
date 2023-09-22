@@ -42,6 +42,9 @@ class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
   ComplexRepository complexRepository;
 
   @Autowired
+  ScheduledRepository scheduledRepository;
+
+  @Autowired
   WithNestedListOfUUIDsRepository withNestedListOfUUIDsRepository;
 
   @Autowired
@@ -513,5 +516,30 @@ class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
 
     List<String> ids3 = results3.stream().map(WithNestedListOfUlids::getId).collect(Collectors.toList());
     assertThat(ids3).isEmpty();
+  }
+
+  @Test
+  void testValidFilterMatch() {
+    int startOf2022 = 1;
+    int endOf2022 = 2;
+    int startOf2023 = 3;
+    int endOf2023 = 5;
+    int mid2023 = 4;
+
+    Scheduled scheduled1 = Scheduled.of("1", List.of(Filter.of(1L, startOf2023, endOf2023, "admin", "role"),
+        Filter.of(2L, startOf2022, endOf2022, "user", "role")));
+    Scheduled scheduled2 = Scheduled.of("2", List.of(Filter.of(3L, startOf2023, endOf2023, "user", "role")));
+
+    scheduledRepository.save(scheduled1);
+    scheduledRepository.save(scheduled2);
+
+    List<Scheduled> adminRolesValidAtTime = es.of(Scheduled.class) //
+        .filter(Scheduled$.FILTERS.VALID_FROM.lt(mid2023)) //
+        .filter(Scheduled$.FILTERS.TYPE.eq("role")) //
+        .filter(Scheduled$.FILTERS.VALUE.eq("admin")) //
+        .collect(Collectors.toList());
+
+    assertThat(adminRolesValidAtTime.size()).isEqualTo(1);
+
   }
 }
