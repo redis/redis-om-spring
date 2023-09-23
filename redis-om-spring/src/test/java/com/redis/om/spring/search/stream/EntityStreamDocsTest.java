@@ -2431,4 +2431,14 @@ import static org.junit.jupiter.api.Assertions.*;
       assertThat(d.getId()).isNotNull();
     });
   }
+
+  @Test void testMapAgainstEmptyResults() {
+    List<String> names = entityStream //
+      .of(Company.class) //
+      .filter(Company$.NAME.startsWith("Open"))
+      .map(Company$.ID)
+      .collect(Collectors.toList());
+
+    assertThat(names).isEmpty();
+  }
 }

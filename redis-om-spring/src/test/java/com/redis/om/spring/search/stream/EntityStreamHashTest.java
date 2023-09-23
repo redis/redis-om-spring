@@ -1520,4 +1520,14 @@ import static org.junit.jupiter.api.Assertions.*;
     List<String> names = companies.stream().map(Company::getName).collect(Collectors.toList());
     assertThat(names).contains("RedisInc");
   }
+
+  @Test void testMapAgainstEmptyResults() {
+    List<String> names = entityStream //
+      .of(Company.class) //
+      .filter(Company$.NAME.startsWith("Open"))
+      .map(Company$.ID)
+      .collect(Collectors.toList());
+
+    assertThat(names).isEmpty();
+  }
 }
