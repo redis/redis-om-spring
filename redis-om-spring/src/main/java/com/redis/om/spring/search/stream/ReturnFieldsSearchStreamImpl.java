@@ -289,9 +289,13 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
       if (useNoContent) {
         query.setNoContent();
         SearchResult searchResult = entitySearchStream.getOps().search(query);
-        String keySample = searchResult.getDocuments().get(0).getId();
-        int idBegin = keySample.indexOf(":") + 1;
-        resolvedStream = (Stream<T>) searchResult.getDocuments().stream().map(Document::getId).map(key -> key.substring(idBegin));
+        if (searchResult.getDocuments().size() > 0) {
+          String keySample = searchResult.getDocuments().get(0).getId();
+          int idBegin = keySample.indexOf(":") + 1;
+          resolvedStream = (Stream<T>) searchResult.getDocuments().stream().map(Document::getId).map(key -> key.substring(idBegin));
+        } else {
+          resolvedStream = (Stream<T>) Stream.empty();
+        }
       } else {
         boolean returningFullEntity = (returning.stream().anyMatch(foi -> foi.getSearchAlias().equalsIgnoreCase("__this")));
 
