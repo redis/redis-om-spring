@@ -3,7 +3,6 @@ package com.redis.om.spring;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.JsonAdapter;
 import com.redis.om.spring.annotations.*;
-import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.query.QueryUtils;
@@ -23,7 +22,9 @@ import org.springframework.data.redis.core.mapping.RedisPersistentEntity;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
-import redis.clients.jedis.search.*;
+import redis.clients.jedis.search.FTCreateParams;
+import redis.clients.jedis.search.FieldName;
+import redis.clients.jedis.search.IndexDataType;
 import redis.clients.jedis.search.schemafields.*;
 
 import java.lang.reflect.ParameterizedType;
