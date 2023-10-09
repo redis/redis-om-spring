@@ -772,7 +772,10 @@ public class RediSearchIndexer {
 
     if (cl.isAnnotationPresent(Document.class)) {
       Document document = cl.getAnnotation(Document.class);
-      //params.setAsync(document.async());
+      // params.setAsync(document.async()); // TODO:
+      if (document.async()) {
+        throw new UnsupportedOperationException("ASYNC is not supported.");
+      }
       Optional.ofNullable(document.filter()).filter(ObjectUtils::isNotEmpty).ifPresent(params::filter);
       Optional.ofNullable(document.language()).filter(ObjectUtils::isNotEmpty).ifPresent(lang -> params.language(lang.getValue()));
       Optional.ofNullable(document.languageField()).filter(ObjectUtils::isNotEmpty).ifPresent(params::languageField);
