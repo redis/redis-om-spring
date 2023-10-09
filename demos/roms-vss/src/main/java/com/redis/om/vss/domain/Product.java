@@ -12,7 +12,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
-import redis.clients.jedis.search.Schema.VectorField.VectorAlgo;
+import redis.clients.jedis.search.schemafields.VectorField.VectorAlgorithm;
 
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -64,7 +64,7 @@ public class Product {
 
   @Indexed(//
       schemaFieldType = SchemaFieldType.VECTOR, //
-      algorithm = VectorAlgo.HNSW, //
+      algorithm = VectorAlgorithm.HNSW, //
       type = VectorType.FLOAT32, //
       dimension = 512, //
       distanceMetric = DistanceMetric.COSINE, //
@@ -78,7 +78,7 @@ public class Product {
 
   @Indexed(//
       schemaFieldType = SchemaFieldType.VECTOR, //
-      algorithm = VectorAlgo.HNSW, //
+      algorithm = VectorAlgorithm.HNSW, //
       type = VectorType.FLOAT32, //
       dimension = 768, //
       distanceMetric = DistanceMetric.COSINE, //

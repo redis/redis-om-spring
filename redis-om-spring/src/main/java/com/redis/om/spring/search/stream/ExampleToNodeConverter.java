@@ -6,19 +6,16 @@ import com.redis.om.spring.search.stream.predicates.jedis.JedisValues;
 import com.redis.om.spring.util.ObjectUtils;
 import org.springframework.data.domain.Example;
 import org.springframework.data.geo.Point;
-import redis.clients.jedis.search.Schema;
 import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import redis.clients.jedis.search.querybuilder.QueryNode;
 import redis.clients.jedis.search.querybuilder.Values;
+import redis.clients.jedis.search.schemafields.*;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -35,9 +32,9 @@ public class ExampleToNodeConverter<E> {
   }
 
   private static final Pattern SCHEMA_FIELD_NAME_PATTERN = Pattern.compile("Field\\{name='(.*?)'");
-  private static Optional<String> getAliasForSchemaField(Schema.Field schemaField) {
+  private static Optional<String> getAliasForSchemaField(SchemaField schemaField) {
     Optional<String> alias = Optional.empty();
-    Matcher matcher = SCHEMA_FIELD_NAME_PATTERN.matcher(schemaField.toString());
+    Matcher matcher = SCHEMA_FIELD_NAME_PATTERN.matcher(schemaField.toString()); // TODO:
 
     if (matcher.find()) {
       String name = matcher.group(1);
@@ -52,25 +49,25 @@ public class ExampleToNodeConverter<E> {
 
   public Node processExample(Example<E> example, Node rootNode) {
     Class<?> entityClass = example.getProbeType();
-    final Schema schema = indexer.getSchemaFor(entityClass);
+    final List<SchemaField> schema = indexer.getSchemaFor(entityClass);
     final boolean matchingAll = example.getMatcher().isAllMatching();
     Set<String> toIgnore = example.getMatcher().getIgnoredPaths();
 
     if (schema != null) {
-      for (Schema.Field schemaField : schema.fields) {
+      for (SchemaField schemaField : schema) {
         Optional<String> maybeAlias = getAliasForSchemaField(schemaField);
-        final String fieldName = maybeAlias.orElseGet(() -> schemaField.name.replace("$.", ""));
+        final String fieldName = maybeAlias.orElseGet(() -> schemaField.name.replace("$.", "")); // TODO:
 
         if (!toIgnore.contains(fieldName)) {
-          Object value = ObjectUtils.getValueByPath(example.getProbe(), schemaField.name);
+          Object value = ObjectUtils.getValueByPath(example.getProbe(), schemaField.name); // TODO:
 
           if (value != null) {
             Class<?> cls = value.getClass();
-            switch (schemaField.type) {
+
               //
               // TAG Index Fields
               //
-              case TAG -> {
+              if (schemaField instanceof TagField) {
                 if (Iterable.class.isAssignableFrom(value.getClass())) {
                   Iterable<?> values = (Iterable<?>) value;
                   values = StreamSupport.stream(values.spliterator(), false) //
@@ -97,7 +94,7 @@ public class ExampleToNodeConverter<E> {
               //
               // TEXT Index Fields
               //
-              case TEXT -> {
+              else if (schemaField instanceof TextField) {
                 switch (example.getMatcher().getDefaultStringMatcher()) {
                   case DEFAULT, EXACT ->
                       rootNode = isNotEmpty(value) ? QueryBuilders.intersect(rootNode).add(fieldName, QueryUtils.escape(value.toString(), false)) : rootNode;
@@ -115,7 +112,7 @@ public class ExampleToNodeConverter<E> {
               //
               // GEO Index Fields
               //
-              case GEO -> {
+              else if (schemaField instanceof GeoField) {
                 double x, y;
                 if (cls == Point.class) {
                   Point point = (Point) value;
@@ -140,7 +137,7 @@ public class ExampleToNodeConverter<E> {
               //
               // NUMERIC
               //
-              case NUMERIC -> {
+              else if (schemaField instanceof NumericField) {
                 if (Iterable.class.isAssignableFrom(value.getClass())) {
                   Iterable<?> values = (Iterable<?>) value;
                   values = StreamSupport.stream(values.spliterator(), false) //
@@ -229,10 +226,10 @@ public class ExampleToNodeConverter<E> {
               //
               // VECTOR
               //
-              case VECTOR -> {
+              else if (schemaField instanceof VectorField) {
                 //TODO: pending - whether to support Vector fields in QBE
               }
-            }
+
           }
         }
       }

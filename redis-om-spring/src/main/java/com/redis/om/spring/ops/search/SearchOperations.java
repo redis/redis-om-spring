@@ -14,6 +14,7 @@ import java.util.Set;
 public interface SearchOperations<K> {
 
   String createIndex(Schema schema, IndexOptions options);
+  String createIndex(FTCreateParams params, List<SchemaField> fields);
   SearchResult search(Query q);
   SearchResult search(Query q, FTSearchParams params);
   AggregationResult aggregate(AggregationBuilder q);   

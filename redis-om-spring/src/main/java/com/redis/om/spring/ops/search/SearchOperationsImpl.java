@@ -37,6 +37,11 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
   }
 
   @Override
+  public String createIndex(FTCreateParams params, List<SchemaField> fields) {
+    return search.ftCreate(index.toString(), params, fields);
+  }
+
+  @Override
   public SearchResult search(Query q) {
     return search.ftSearch(SafeEncoder.encode(index.toString()), q);
   }
