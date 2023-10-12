@@ -60,10 +60,10 @@ public class ExampleToNodeConverter<E> {
     if (schema != null) {
       for (SchemaField schemaField : schema) {
         Optional<String> maybeAlias = getAliasForSchemaField(schemaField);
-        final String fieldName = maybeAlias.orElseGet(() -> schemaField.name.replace("$.", "")); // TODO:
+        final String fieldName = maybeAlias.orElseGet(() -> schemaField.getName().replace("$.", ""));
 
         if (!toIgnore.contains(fieldName)) {
-          Object value = ObjectUtils.getValueByPath(example.getProbe(), schemaField.name); // TODO:
+          Object value = ObjectUtils.getValueByPath(example.getProbe(), schemaField.getName());
 
           if (value != null) {
             Class<?> cls = value.getClass();
