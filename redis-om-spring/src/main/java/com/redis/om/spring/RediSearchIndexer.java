@@ -709,7 +709,7 @@ public class RediSearchIndexer {
           && !idField.isAnnotationPresent(Searchable.class)
           && !idField.isAnnotationPresent(TagIndexed.class)
           && !idField.isAnnotationPresent(TextIndexed.class)
-          && (fields.stream().noneMatch(f -> f.name.equals(idField.getName())))) { // TODO:
+          && (fields.stream().noneMatch(f -> f.getName().equals(idField.getName())))) {
         Class<?> idClass = idField.getType();
         if (idField.getType().isPrimitive()) {
           String cls = com.redis.om.spring.util.ObjectUtils.getTargetClassName(idClass.getName());
