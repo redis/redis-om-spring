@@ -35,20 +35,14 @@ public class ExampleToNodeConverter<E> {
     this.indexer = indexer;
   }
 
-  private static final Pattern SCHEMA_FIELD_NAME_PATTERN = Pattern.compile("Field\\{name='(.*?)'");
   private static Optional<String> getAliasForSchemaField(SchemaField schemaField) {
-    Optional<String> alias = Optional.empty();
-    Matcher matcher = SCHEMA_FIELD_NAME_PATTERN.matcher(schemaField.toString()); // TODO:
+    final String alias = schemaField.getFieldName().getAttribute();
 
-    if (matcher.find()) {
-      String name = matcher.group(1);
-      int aliasStart = name.indexOf("AS");
-      if (aliasStart != -1) {
-        alias = Optional.of(name.substring(aliasStart + 3));
-      }
+    if (Objects.isNull(alias)) {
+      return Optional.empty();
     }
 
-    return alias;
+    return Optional.of(alias);
   }
 
   public Node processExample(Example<E> example, Node rootNode) {
