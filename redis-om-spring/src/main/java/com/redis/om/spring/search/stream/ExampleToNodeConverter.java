@@ -37,12 +37,7 @@ public class ExampleToNodeConverter<E> {
 
   private static Optional<String> getAliasForSchemaField(SchemaField schemaField) {
     final String alias = schemaField.getFieldName().getAttribute();
-
-    if (Objects.isNull(alias)) {
-      return Optional.empty();
-    }
-
-    return Optional.of(alias);
+    return Optional.ofNullable(alias);
   }
 
   public Node processExample(Example<E> example, Node rootNode) {
