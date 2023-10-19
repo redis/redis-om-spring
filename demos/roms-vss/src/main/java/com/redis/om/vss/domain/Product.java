@@ -98,6 +98,7 @@ public class Product {
     String gender = values[1];
     String masterCategory = values[2];
     String subCategory = values[3];
+    if (subCategory.equalsIgnoreCase("Innerwear")) return null;
     String articleType = values[4];
     String baseColour = values[5];
     String season = values[6];

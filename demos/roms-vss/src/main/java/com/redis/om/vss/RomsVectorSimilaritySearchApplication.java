@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Bean;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 
 @SpringBootApplication @EnableRedisEnhancedRepositories(basePackages = "com.redis.om.vss.*") public class RomsVectorSimilaritySearchApplication {
   Logger logger = LoggerFactory.getLogger(RomsVectorSimilaritySearchApplication.class);
@@ -37,6 +38,7 @@ import java.util.List;
             .stream() //
             .limit(maxLines) //
             .map(line -> Product.fromCSV(line, useLocalImages)) //
+            .filter(Objects::nonNull) //
             .toList();
         repository.saveAll(data);
       }
