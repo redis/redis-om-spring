@@ -10,7 +10,7 @@
 
 ---
 
-**Redis OM Spring** extends [Spring Data Redis](https://spring.io/projects/spring-data-redis) to take full advantage of the power of Redis.
+**Redis OM Spring** extends [Spring Data Redis](https://spring.io/projects/spring-data-redis) to take full advantage of Redis and [Redis Stack](https://reedis.io/docs/stack/).
 
 | Stage                                             | Release                                      | Snapshot                                        | Issues                                                               | Resolution                                                                      | Code QL                                      | License                                  | SDR Ver.                                                |
 | ------------------------------------------------- | -------------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------- | ---------------------------------------- | ------------------------------------------------------- |
@@ -59,21 +59,21 @@ Learn / Discuss / Collaborate
 
 ## 💡 Why Redis OM?
 
-The Redis OM family of projects aim is to provide high-level abstractions idiomatically implemented for your language/platform of choice. We currently cater to the Node, Python, .Net and Spring communities.
+The Redis OM family of client libraries provide high-level abstractions, idiomatically implemented for your language and platform of choice. We currently cater to the Node, Python, .NET, and Spring communities.
 
 ## 🍀 Redis OM Spring
 
-Redis OM Spring provides powerful repository and custom object-mapping abstractions built on top of the powerful Spring Data Redis ([SDR](https://spring.io/projects/spring-data-redis)) framework.
+Redis OM Spring provides powerful repository and custom object-mapping abstractions built on top of the Spring Data Redis ([SDR](https://spring.io/projects/spring-data-redis)) framework.
 
-This **preview** release provides all of SDRs capabilities plus:
+This **preview** release provides all Spring Data Redis, plus:
 
 * `@Document` annotation to map Spring Data models to Redis JSON documents
-* Enhances SDRs `@RedisHash` via `@EnableRedisEnhancedRepositories` to:
+* Enhancement to the Spring Data Redis `@RedisHash` via `@EnableRedisEnhancedRepositories`:
   - uses Redis' native search engine (RediSearch) for secondary indexing
   - uses [ULID](https://github.com/ulid/spec) for `@Id` annotated fields
 * `RedisDocumentRepository` with automatic implementation of Repository interfaces for complex querying capabilities using `@EnableRedisDocumentRepositories`
-* Declarative Search Indices via `@Indexed`
-* Full-text Search Indices via `@Searchable`
+* Declarative search indexes via `@Indexed`
+* Full-text search indexes via `@Searchable`
 * `EntityStream`s: Streams-based Query and Aggregations Builder
 * `@Bloom` annotation to determine very fast, with and with high degree of certainty, whether a value is in a collection.
 * `@Vectorize` annotation to generate embeddings for text and images for use in Vector Similarity Searches
@@ -88,18 +88,18 @@ using a RedisJSON document.
 
 ### 🚀 Launch Redis
 
-Redis OM Spring relies on the power of the [RediSearch][redisearch-url] and [RedisJSON][redis-json-url] modules.
-Before writing any code you'll need a Redis instance with the appropriate Redis modules! The quickest way to get
+Redis OM Spring relies on the search, query, and JSON capabilities of [Redis Stack](https://reedis.io/docs/stack/).
+Before writing any code, you'll need a Redis Stack. The quickest way to get
 this is with Docker:
 
 ```sh
 docker run -p 6379:6379 -p 8001:8001 redis/redis-stack
 ```
 
-This launches the [redis-stack](https://redis.io/docs/stack/) an extension of Redis that adds all manner of modern data
-structures to Redis. You'll also notice that if you open up `http://localhost:8001` you'll have access to the
+This launches [redis-stack](https://redis.io/docs/stack/), an extension of Redis that adds several modern data
+structures to Redis. You'll also notice that if you open up `http://localhost:8001`, you'll have access to the
 redis-insight GUI, a GUI you can use to visualize and work with your data in Redis.
-We have also provided a docker compose YAML file for you to quickly get started
+We have also provided a Docker Compose YAML file for you to quickly get started
 using [Redis Stack](https://redis.io/docs/stack/).
 
 To launch the docker compose application, on the command line (or via Docker Desktop), clone this repository and run
