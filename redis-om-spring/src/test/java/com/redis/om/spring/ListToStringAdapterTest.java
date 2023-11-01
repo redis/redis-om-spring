@@ -93,6 +93,6 @@ public class ListToStringAdapterTest {
         when(mockJsonReader.nextString()).thenReturn(inputJson);
 
         List<String> result = adapter.read(mockJsonReader);
-        assertEquals(List.of(""), result);
+        assertEquals(List.of(""), result) ;
     }
 }
