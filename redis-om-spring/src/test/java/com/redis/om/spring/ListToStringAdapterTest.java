@@ -19,7 +19,7 @@ public class ListToStringAdapterTest {
 
     private ListToStringAdapter adapter;
     private JsonWriter mockJsonWriter;
-    private JsonReader mockJsonReader;
+    private JsonReader mockJsonReader ;
 
     @BeforeEach
     public void setUp() {
