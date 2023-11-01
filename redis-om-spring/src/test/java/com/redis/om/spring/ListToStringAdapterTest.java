@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Collections;
@@ -91,8 +92,7 @@ public class ListToStringAdapterTest {
         when(mockJsonReader.peek()).thenReturn(JsonToken.STRING);
         when(mockJsonReader.nextString()).thenReturn(inputJson);
 
-        List<?> result = adapter.read(mockJsonReader);
-
-        assertEquals(Collections.emptyList(), result);
+        List<String> result = adapter.read(mockJsonReader);
+        assertEquals(List.of(""), result);
     }
 }
