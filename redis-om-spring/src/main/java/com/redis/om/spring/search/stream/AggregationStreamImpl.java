@@ -211,9 +211,9 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
     if (currentReducer != null) {
       Reducer cr = currentReducer.getReducer();
       MetamodelField<?, ?> crField = currentReducer.getField();
-      if (cr.getAlias() == null) {
-        cr.setAlias(cr.getName().toLowerCase());
-      }
+//      if (cr.getAlias() == null) {
+//        cr.as(cr.getName().toLowerCase());
+//      }
       currentGroup.reduce(cr);
       returnFields.add(cr.getAlias());
       returnFieldsTypeHints.put(cr.getAlias(), getTypeHintForReducer(cr, crField));
