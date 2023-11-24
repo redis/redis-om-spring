@@ -13,22 +13,21 @@ import com.redis.om.spring.vectorize.FeatureExtractor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.*;
+import org.springframework.data.redis.core.TimeToLive;
+import redis.clients.jedis.search.Query;
+import org.springframework.util.ReflectionUtils;
+import org.springframework.util.StringUtils;
+import redis.clients.jedis.search.Document;
+import org.springframework.data.redis.core.convert.KeyspaceConfiguration;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.annotation.Reference;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisKeyValueAdapter;
 import org.springframework.data.redis.core.RedisOperations;
-import org.springframework.data.redis.core.TimeToLive;
-import org.springframework.data.redis.core.convert.KeyspaceConfiguration;
-import org.springframework.data.redis.core.convert.RedisCustomConversions;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.lang.Nullable;
-import org.springframework.util.ReflectionUtils;
-import org.springframework.util.StringUtils;
 import redis.clients.jedis.json.Path;
-import redis.clients.jedis.search.Document;
-import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.util.SafeEncoder;
 
@@ -42,9 +41,10 @@ import java.util.concurrent.TimeUnit;
 
 import static com.redis.om.spring.util.ObjectUtils.getKey;
 import static com.redis.om.spring.util.ObjectUtils.isPrimitiveOfType;
-
 public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
+
   private static final Log logger = LogFactory.getLog(RedisJSONKeyValueAdapter.class);
+
   private final JSONOperations<?> redisJSONOperations;
   private final RedisOperations<?, ?> redisOperations;
   private final RedisMappingContext mappingContext;
@@ -55,26 +55,20 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private final FeatureExtractor featureExtractor;
   private final RedisOMProperties redisOMProperties;
 
-  /**
-   * Creates new {@link RedisKeyValueAdapter} with default
-   * {@link RedisCustomConversions}.
-   *
-   * @param redisOps            must not be {@literal null}.
-   * @param rmo                 must not be {@literal null}.
-   * @param mappingContext      must not be {@literal null}.
-   * @param keyspaceToIndexMap  must not be {@literal null}.
-   */
-  @SuppressWarnings("unchecked")
-  public RedisJSONKeyValueAdapter( //
-    RedisOperations<?, ?> redisOps, //
-    RedisModulesOperations<?> rmo, //
-    RedisMappingContext mappingContext, //
-    RediSearchIndexer keyspaceToIndexMap, //
-    GsonBuilder gsonBuilder, //
-    FeatureExtractor featureExtractor, //
-    RedisOMProperties redisOMProperties
+  private final ReferenceProcessor referenceProcessor;
+  private final VersionProcessor versionProcessor;
+
+  public RedisJSONKeyValueAdapter(
+          RedisOperations<?, ?> redisOps,
+          RedisModulesOperations<?> rmo,
+          RedisMappingContext mappingContext,
+          RediSearchIndexer keyspaceToIndexMap,
+          GsonBuilder gsonBuilder,
+          FeatureExtractor featureExtractor,
+          RedisOMProperties redisOMProperties
   ) {
     super(redisOps, mappingContext, new RedisOMCustomConversions());
+
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.redisJSONOperations = modulesOperations.opsForJSON();
     this.redisOperations = redisOps;
@@ -84,48 +78,35 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     this.gsonBuilder = gsonBuilder;
     this.featureExtractor = featureExtractor;
     this.redisOMProperties = redisOMProperties;
+
+    this.referenceProcessor = new ReferenceProcessor(redisJSONOperations,indexer);
+    this.versionProcessor = new VersionProcessor(redisJSONOperations);
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see
-   * org.springframework.data.keyvalue.core.KeyValueAdapter#put(java.lang.Object,
-   * java.lang.Object, java.lang.String)
-   */
   @Override
   public Object put(Object id, Object item, String keyspace) {
     logger.debug(String.format("%s, %s, %s", id, item, keyspace));
+
     @SuppressWarnings("unchecked")
     JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
 
     String key = getKey(keyspace, id);
 
-    processVersion(key, item);
-    auditor.processEntity(key, item);
-    featureExtractor.processEntity(item);
+    referenceProcessor.processReferences(key, item);
+    versionProcessor.processVersion(key, item);
     Optional<Long> maybeTtl = getTTLForEntity(item);
 
     ops.set(key, item);
     processReferences(key, item);
 
     redisOperations.execute((RedisCallback<Object>) connection -> {
-
       maybeTtl.ifPresent(aLong -> connection.keyCommands().expire(toBytes(key), aLong));
-
       return null;
     });
 
     return item;
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see
-   * org.springframework.data.keyvalue.core.KeyValueAdapter#get(java.lang.Object,
-   * java.lang.String, java.lang.Class)
-   */
   @Nullable
   @Override
   public <T> T get(Object id, String keyspace, Class<T> type) {
@@ -139,15 +120,6 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     return ops.get(key, type);
   }
 
-  /**
-   * Get all elements for given keyspace.
-   *
-   * @param keyspace the keyspace to fetch entities from.
-   * @param type     the desired target type.
-   * @param offset   index value to start reading.
-   * @param rows     maximum number of entities to return.
-   * @return never {@literal null}.
-   */
   @Override
   public <T> List<T> getAllOf(String keyspace, Class<T> type, long offset, int rows) {
     Optional<String> maybeSearchIndex = indexer.getIndexName(keyspace);
@@ -165,8 +137,8 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       SearchResult searchResult = searchOps.search(query);
       Gson gson = gsonBuilder.create();
       result = searchResult.getDocuments().stream()
-          .map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), type)) //
-          .toList();
+              .map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), type)) //
+              .toList();
     }
 
     return result;
@@ -184,22 +156,15 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       Query query = new Query("*");
       query.returnFields(idField);
       SearchResult searchResult = searchOps.search(query);
-      
+
       keys = searchResult.getDocuments().stream()
-          .map(Document::getId) //
-          .toList();
+              .map(Document::getId) //
+              .toList();
     }
 
     return keys;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see
-   * org.springframework.data.keyvalue.core.AbstractKeyValueAdapter#delete(java.
-   * lang.Object, java.lang.String, java.lang.Class)
-   */
   @Override
   public <T> T delete(Object id, String keyspace, Class<T> type) {
     @SuppressWarnings("unchecked")
@@ -208,17 +173,9 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     if (entity != null) {
       ops.del(getKey(keyspace, id), Path.ROOT_PATH);
     }
-
     return entity;
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see
-   * org.springframework.data.keyvalue.core.KeyValueAdapter#deleteAllOf(java.lang.
-   * String)
-   */
   @Override
   public void deleteAllOf(String keyspace) {
     Class<?> type = indexer.getEntityClassForKeyspace(keyspace);
@@ -230,12 +187,6 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     }
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see org.springframework.data.keyvalue.core.KeyValueAdapter#count(java.lang.
-   * String)
-   */
   @Override
   public long count(String keyspace) {
     long count = 0L;
@@ -245,90 +196,28 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       // FT.SEARCH index * LIMIT 0 0
       Query query = new Query("*");
       query.limit(0, 0);
-      
+
       SearchResult result = search.search(query);
-      
+
       count = result.getTotalResults();
     }
     return count;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see
-   * org.springframework.data.keyvalue.core.KeyValueAdapter#contains(java.lang.
-   * Object, java.lang.String)
-   */
   @Override
   public boolean contains(Object id, String keyspace) {
     Boolean exists = redisOperations
-        .execute((RedisCallback<Boolean>) connection -> connection.keyCommands().exists(toBytes(getKey(keyspace, id))));
+            .execute((RedisCallback<Boolean>) connection -> connection.keyCommands().exists(toBytes(getKey(keyspace, id))));
 
     return exists != null && exists;
   }
 
   private void processReferences(String key, Object item) {
-    List<Field> fields = ObjectUtils.getFieldsWithAnnotation(item.getClass(), Reference.class);
-    if (!fields.isEmpty()) {
-      JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
-      PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(item);
-      fields.forEach(f -> {
-        var referencedValue = accessor.getPropertyValue(f.getName());
-        if (referencedValue != null) {
-          if (referencedValue instanceof Collection<?> referenceValues) {
-            List<String> referenceKeys = new ArrayList<>();
-            referenceValues.forEach(r -> {
-              Object id = ObjectUtils.getIdFieldForEntity(r);
-              if (id != null) {
-                String referenceKey = indexer.getKeyspaceForEntityClass(r.getClass()) + id;
-                referenceKeys.add(referenceKey);
-              }
-            });
-            ops.set(key, referenceKeys, Path.of("$." + f.getName()));
-          } else {
-            Object id = ObjectUtils.getIdFieldForEntity(referencedValue);
-            if (id != null) {
-              String referenceKey = indexer.getKeyspaceForEntityClass(f.getType()) + id;
-              ops.set(key, referenceKey, Path.of("$." + f.getName()));
-            }
-          }
-        }
-      });
-    }
+    referenceProcessor.processReferences(key, item);
   }
 
   private void processVersion(String key, Object item) {
-    List<Field> fields = ObjectUtils.getFieldsWithAnnotation(item.getClass(), Version.class);
-    if (fields.size() == 1) {
-      BeanWrapper wrapper = new BeanWrapperImpl(item);
-      Field versionField = fields.get(0);
-      String property = versionField.getName();
-      if ((versionField.getType() == Integer.class || isPrimitiveOfType(versionField.getType(), Integer.class)) ||
-         (versionField.getType() == Long.class || isPrimitiveOfType(versionField.getType(), Long.class))) {
-        Number version = (Number) wrapper.getPropertyValue(property);
-        Number dbVersion = getEntityVersion(key, property);
-
-        if (dbVersion != null && version != null && dbVersion.longValue() != version.longValue()) {
-          throw new OptimisticLockingFailureException(
-              String.format("Cannot insert/update entity %s with version %s as it already exists", item,
-                  version));
-        } else {
-          Number nextVersion = version == null ? 0 : version.longValue() + 1;
-          try {
-            wrapper.setPropertyValue(property, nextVersion);
-          } catch (NotWritablePropertyException nwpe) {
-            versionField.setAccessible(true);
-            try {
-              versionField.set(item, nextVersion);
-            } catch (IllegalAccessException iae) {
-              // throw the original exception?
-              throw new RuntimeException(nwpe);
-            }
-          }
-        }
-      }
-    }
+    versionProcessor.processVersion(key, item);
   }
 
   private Optional<Long> getTTLForEntity(Object entity) {
@@ -373,3 +262,5 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     return dbVersionArray != null ? dbVersionArray[0] : null;
   }
 }
+
+

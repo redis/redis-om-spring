@@ -119,6 +119,14 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     return source.getBucket().isEmpty() ? null : doReadInternal(entityClass, path, type, source);
   }
 
+  private <R> boolean isValidEntity (RedisPersistentEntity<?> entity, R instance) {
+    return entity != null && instance != null && entity.hasIdProperty();
+  }
+  private <R> void updateEntityProperties (RedisPersistentEntity<?> entity, R instance, RedisData source) {
+    PersistentPropertyAccessor<R> propertyAccessor = entity.getPropertyAccessor(instance);
+    propertyAccessor.setProperty(entity.getRequiredIdProperty(), source.getId());
+    instance = propertyAccessor.getBean();
+  }
   @SuppressWarnings("unchecked")
   private <R> R doReadInternal(Class<?> entityClass, String path, Class<R> type, RedisData source) {
 
@@ -140,13 +148,11 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       R instance = (R) conversionService.convert(partial, readType.getType());
 
       RedisPersistentEntity<?> entity = mappingContext.getPersistentEntity(readType);
-      if (entity != null && instance != null && entity.hasIdProperty()) {
 
-        PersistentPropertyAccessor<R> propertyAccessor = entity.getPropertyAccessor(instance);
-
-        propertyAccessor.setProperty(entity.getRequiredIdProperty(), source.getId());
-        instance = propertyAccessor.getBean();
+      if (isValidEntity(entity, instance)) {
+        updateEntityProperties(entity, instance, source);
       }
+
       return instance;
     }
 
@@ -184,6 +190,8 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
 
     return (R) accessor.getBean();
   }
+
+
 
   @Nullable
   protected Object readProperty(Class<?> entityClass, String path, RedisData source,
@@ -786,7 +794,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       if (collectionAsString == null) {
         collectionAsString = "";
       }
-      @SuppressWarnings("Annotator") List<String> values = Arrays.stream(collectionAsString.split("\\" + separator)).map(QueryUtils::unescape)
+      @SuppressWarnings("Annotator") List<String> values = Arrays.stream(collectionAsString.split("\\\\" + separator)).map(QueryUtils::unescape)
           .toList();
       target = CollectionFactory.createCollection(collectionTypeToUse, valueType, values.size());
       target.addAll(values);

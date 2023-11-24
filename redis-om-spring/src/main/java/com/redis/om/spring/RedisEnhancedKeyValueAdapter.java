@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.redis.om.spring.util.ObjectUtils.*;
 
-public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
+public class  RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
   private final RedisOperations<?, ?> redisOperations;
   private final RedisConverter converter;

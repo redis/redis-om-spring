@@ -168,13 +168,26 @@ public class RedisModulesConfiguration {
 
   @Bean(name = "djlFaceDetectionTranslator")
   public Translator<Image, DetectedObjects> faceDetectionTranslator() {
-    double confThresh = 0.85f;
-    double nmsThresh = 0.45f;
+    // Confidence threshold for face detection
+    double confidenceThreshold = 0.85f;
+
+    // Non-maximum suppression threshold for face detection
+    double nmsThreshold = 0.45f;
+
+    // Variance values for face detection
     double[] variance = {0.1f, 0.2f};
+
+    // Top K value for face detection
     int topK = 5000;
+
+    // Scales used in face detection
     int[][] scales = {{16, 32}, {64, 128}, {256, 512}};
+
+    // Steps used in face detection
     int[] steps = {8, 16, 32};
-    return new FaceDetectionTranslator(confThresh, nmsThresh, variance, topK, scales, steps);
+
+    // Create and return the face detection translator with the configured parameters
+    return new FaceDetectionTranslator(confidenceThreshold, nmsThreshold, variance, topK, scales, steps);
   }
 
   @Bean(name = "djlFaceDetectionModelCriteria")

@@ -8,26 +8,26 @@ import java.util.List;
 
 public class RedisOMCustomConversions extends RedisCustomConversions {
   private static final List<Object> omConverters = new ArrayList<>();
-  
+
   static {
-    // Ulid
+    //Ulid
     omConverters.add(new UlidToBytesConverter());
     omConverters.add(new BytesToUlidConverter());
-    // Point
+    //Point
     omConverters.add(new PointToBytesConverter());
     omConverters.add(new BytesToPointConverter());
-    // LocalDate
+    //LocalDate
     omConverters.add(new LocalDateToBytesConverter());
     omConverters.add(new BytesToLocalDateConverter());
     omConverters.add(new LocalDateToStringConverter());
-    // OffsetDateTime
+    //OffsetDateTime
     omConverters.add(new OffsetDateTimeToBytesConverter());
     omConverters.add(new BytesToOffsetDateTimeConverter());
     omConverters.add(new OffsetDateTimeToStringConverter());
-    // LocalDateTime
+    //LocalDateTime
     omConverters.add(new LocalDateTimeToBytesConverter());
     omConverters.add(new BytesToLocalDateTimeConverter());
-    // Boolean
+    //Boolean
     omConverters.add(new BooleanToBytesConverter());
     omConverters.add(new BytesToBooleanConverter());
   }

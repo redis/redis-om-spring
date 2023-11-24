@@ -65,7 +65,6 @@ public class ReferenceDeserializer implements JsonDeserializer<Object> {
         );
       }
     }
-
     return reference;
   }
 

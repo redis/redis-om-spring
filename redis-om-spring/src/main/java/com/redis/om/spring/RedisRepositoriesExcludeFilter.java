@@ -8,10 +8,11 @@ import java.util.List;
 import java.util.Set;
 
 public class RedisRepositoriesExcludeFilter implements AutoConfigurationImportFilter {
+  private static final String AUTO_CONFIG_TO_SKIP = "org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration";
 
-  private static final Set<String> SHOULD_SKIP = new HashSet<>(
-      List.of("org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration"));
-
+//  private static final Set<String> SHOULD_SKIP = new HashSet<>(
+//      List.of("org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration"));
+private static final Set<String> SHOULD_SKIP = new HashSet<>(List.of(AUTO_CONFIG_TO_SKIP));
   @Override
   public boolean[] match(String[] autoConfigurationClasses, AutoConfigurationMetadata autoConfigurationMetadata) {
     boolean[] matches = new boolean[autoConfigurationClasses.length];

@@ -16,10 +16,14 @@ import java.util.Optional;
 public class BloomQueryExecutor {
   
   private static final Log logger = LogFactory.getLog(BloomQueryExecutor.class);
-  public static final String EXISTS_BY_PREFIX = "existsBy";
-  final RepositoryQuery query;
-  final RedisModulesOperations<String> modulesOperations;
-  
+//  public static final String EXISTS_BY_PREFIX = "existsBy";
+//  final RepositoryQuery query;
+//  final RedisModulesOperations<String> modulesOperations;
+
+  private static final String EXISTS_BY_PREFIX = "existsBy";
+  private RepositoryQuery query;
+  private RedisModulesOperations<String> modulesOperations;
+
   public BloomQueryExecutor(RepositoryQuery query, RedisModulesOperations<String> modulesOperations) {
     this.query = query;
     this.modulesOperations = modulesOperations;

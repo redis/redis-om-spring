@@ -74,15 +74,16 @@ public class FaceDetectionTranslator implements Translator<Image, DetectedObject
     /** {@inheritDoc} */
     @Override
     public DetectedObjects processOutput(TranslatorContext ctx, NDList list) {
+        int indexone = 1;
         NDManager manager = ctx.getNDManager();
         double scaleXY = variance[0];
-        double scaleWH = variance[1];
+        double scaleWH = variance[indexone];
 
-        NDArray prob = list.get(1).get(":, 1:");
+        NDArray prob = list.get(indexone).get(":, 1:");
         prob =
                 NDArrays.stack(
                         new NDList(
-                                prob.argMax(1).toType(DataType.FLOAT32, false),
+                                prob.argMax(indexone).toType(DataType.FLOAT32, false),
                                 prob.max(new int[] {1})));
 
         NDArray boxRecover = boxRecover(manager, width, height, scales, steps);
@@ -96,19 +97,19 @@ public class FaceDetectionTranslator implements Translator<Image, DetectedObject
                         .add(boxRecover.get(":, :2"))
                         .sub(bbWH.mul(0.5f));
 
-        boundingBoxes = NDArrays.concat(new NDList(bbXY, bbWH), 1);
+        boundingBoxes = NDArrays.concat(new NDList(bbXY, bbWH), indexone);
 
         NDArray landms = list.get(2);
         landms = decodeLandm(landms, boxRecover, scaleXY);
 
         // filter the result below the threshold
-        NDArray cutOff = prob.get(1).gt(confThresh);
-        boundingBoxes = boundingBoxes.transpose().booleanMask(cutOff, 1).transpose();
-        landms = landms.transpose().booleanMask(cutOff, 1).transpose();
-        prob = prob.booleanMask(cutOff, 1);
+        NDArray cutOff = prob.get(indexone).gt(confThresh);
+        boundingBoxes = boundingBoxes.transpose().booleanMask(cutOff, indexone).transpose();
+        landms = landms.transpose().booleanMask(cutOff, indexone).transpose();
+        prob = prob.booleanMask(cutOff, indexone);
 
         // start categorical filtering
-        long[] order = prob.get(1).argSort().get(":" + topK).toLongArray();
+        long[] order = prob.get(indexone).argSort().get(":" + topK).toLongArray();
         prob = prob.transpose();
         List<String> retNames = new ArrayList<>();
         List<Double> retProbs = new ArrayList<>();
@@ -120,11 +121,11 @@ public class FaceDetectionTranslator implements Translator<Image, DetectedObject
             long currMaxLoc = order[i];
             float[] classProb = prob.get(currMaxLoc).toFloatArray();
             int classId = (int) classProb[0];
-            double probability = classProb[1];
+            double probability = classProb[indexone];
 
             double[] boxArr = boundingBoxes.get(currMaxLoc).toDoubleArray();
             double[] landmsArr = landms.get(currMaxLoc).toDoubleArray();
-            Rectangle rect = new Rectangle(boxArr[0], boxArr[1], boxArr[2], boxArr[3]);
+            Rectangle rect = new Rectangle(boxArr[0], boxArr[indexone], boxArr[2], boxArr[3]);
             List<BoundingBox> boxes = recorder.getOrDefault(classId, new ArrayList<>());
             boolean belowIoU = true;
             for (BoundingBox box : boxes) {
@@ -137,11 +138,11 @@ public class FaceDetectionTranslator implements Translator<Image, DetectedObject
                 List<Point> keyPoints = new ArrayList<>();
                 for (int j = 0; j < 5; j++) { // 5 face landmarks
                     double x = landmsArr[j * 2];
-                    double y = landmsArr[j * 2 + 1];
+                    double y = landmsArr[j * 2 + indexone];
                     keyPoints.add(new Point(x * width, y * height));
                 }
                 Landmark landmark =
-                        new Landmark(boxArr[0], boxArr[1], boxArr[2], boxArr[3], keyPoints);
+                        new Landmark(boxArr[0], boxArr[indexone], boxArr[2], boxArr[3], keyPoints);
 
                 boxes.add(landmark);
                 recorder.put(classId, boxes);

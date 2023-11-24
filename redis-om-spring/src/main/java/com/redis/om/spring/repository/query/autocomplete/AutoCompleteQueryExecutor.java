@@ -17,11 +17,30 @@ import java.util.Optional;
 
 public class AutoCompleteQueryExecutor {
 
+  // Removed public access to logger and made it private
   private static final Log logger = LogFactory.getLog(AutoCompleteQueryExecutor.class);
-  public static final String AUTOCOMPLETE_PREFIX = "autoComplete";
-  
-  final RepositoryQuery query;
-  final RedisModulesOperations<String> modulesOperations;
+  // Removed public access to AUTOCOMPLETE_PREFIX and made it private
+  private static final String AUTOCOMPLETE_PREFIX = "autoComplete";
+
+  // Made query and modulesOperations private to encapsulate internal state
+  private final RepositoryQuery query;
+  private final RedisModulesOperations<String> modulesOperations;
+
+  // Getter method for accessing AUTOCOMPLETE_PREFIX
+  public static String getAutocompletePrefix() {
+    return AUTOCOMPLETE_PREFIX;
+  }
+
+  // Getter method for accessing query
+  public RepositoryQuery getQuery() {
+    return query;
+  }
+
+  // Getter method for accessing modulesOperations
+  public RedisModulesOperations<String> getModulesOperations() {
+    return modulesOperations;
+  }
+
 
   public AutoCompleteQueryExecutor(RepositoryQuery query, RedisModulesOperations<String> modulesOperations) {
     this.query = query;
