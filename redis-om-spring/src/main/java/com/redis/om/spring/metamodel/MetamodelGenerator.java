@@ -10,6 +10,7 @@ import com.redis.om.spring.tuple.Triple;
 import com.redis.om.spring.tuple.Tuples;
 import com.redis.om.spring.util.ObjectUtils;
 import com.squareup.javapoet.*;
+import com.squareup.javapoet.CodeBlock.Builder;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Reference;
 import org.springframework.data.geo.Point;
@@ -40,7 +41,7 @@ import java.util.stream.Stream;
 import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 
 @SupportedAnnotationTypes(value = { "com.redis.om.spring.annotations.Document",
-        "org.springframework.data.redis.core.RedisHash" })
+    "org.springframework.data.redis.core.RedisHash" })
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
 @AutoService(Processor.class)
 public final class MetamodelGenerator extends AbstractProcessor {
@@ -52,6 +53,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
     private Messager messager;
 
     private TypeElement objectTypeElement;
+    private final Map<String, Integer> depthMap = new HashMap<>();
 
     public MetamodelGenerator() {
     }
@@ -81,14 +83,14 @@ public final class MetamodelGenerator extends AbstractProcessor {
         Set<? extends Element> documentEntities = roundEnv.getElementsAnnotatedWith(Document.class);
         Set<? extends Element> hashEntities = roundEnv.getElementsAnnotatedWith(RedisHash.class);
         Set<? extends Element> metamodelCandidates = Stream.of(documentEntities, hashEntities) //
-                .flatMap(Collection::stream).collect(Collectors.toSet());
+            .flatMap(Collection::stream).collect(Collectors.toSet());
 
         metamodelCandidates.stream().filter(ae -> ae.getKind() == ElementKind.CLASS).forEach(ae -> {
             try {
                 generateMetaModelClass(ae);
             } catch (IOException ioe) {
                 messager.printMessage(Diagnostic.Kind.ERROR, "Cannot generate metamodel class for "
-                        + ae.getClass().getName() + " because " + ioe.getMessage());
+                    + ae.getClass().getName() + " because " + ioe.getMessage());
             }
         });
 
@@ -102,7 +104,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
         TypeName entity = TypeName.get(annotatedElement.asType());
 
         messager.printMessage(Diagnostic.Kind.NOTE,
-                "Generating Entity Metamodel: " + qualifiedGenEntityName);
+            "Generating Entity Metamodel: " + qualifiedGenEntityName);
 
         Map<? extends Element, String> enclosedFields = getInstanceFields(annotatedElement);
 
@@ -122,22 +124,8 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
         enclosedFields.forEach((field, getter) -> {
             List<Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock>> fieldMetamodels = processFieldMetamodel(entity,
-                    entityName, List.of(field));
-            for (Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> fieldMetamodel : fieldMetamodels) {
-                FieldSpec fieldSpec = fieldMetamodel.getSecond();
-                fields.add(fieldMetamodel.getFirst());
-                interceptors.add(fieldMetamodel.getSecond());
-                initCodeBlocks.add(fieldMetamodel.getThird());
-
-                // Add _SCORE field to Vector
-                if (fieldSpec.type.toString().startsWith(VectorField.class.getName())) {
-                    String fieldName = fieldMetamodel.getFirst().fieldSpec().name;
-                    Pair<FieldSpec, CodeBlock> vectorFieldScore = generateUnboundMetamodelField(entity,
-                            "_" + fieldSpec.name + "_SCORE", "__" + fieldName + "_score", Double.class);
-                    interceptors.add(vectorFieldScore.getFirst());
-                    initCodeBlocks.add(vectorFieldScore.getSecond());
-                }
-            }
+                entityName, List.of(field));
+            extractFieldMetamodels(entity, interceptors, fields, initCodeBlocks, fieldMetamodels);
         });
 
         Pair<FieldSpec, CodeBlock> keyAccessor = generateUnboundMetamodelField(entity, "_KEY", "__key", String.class);
@@ -153,6 +141,44 @@ public final class MetamodelGenerator extends AbstractProcessor {
         boolean hasFields = !fields.isEmpty();
         if (hasFields)
             blockBuilder.beginControlFlow("try");
+        addStatement(entity, fields, initCodeBlocks, blockBuilder);
+
+        if (hasFields) {
+            blockBuilder.nextControlFlow("catch($T | $T e)", NoSuchFieldException.class, SecurityException.class);
+            blockBuilder.addStatement("System.err.println(e.getMessage())");
+            blockBuilder.endControlFlow();
+        }
+
+        CodeBlock staticBlock = blockBuilder.build();
+
+        TypeSpec metaClass = getTypeSpecForMetamodelClass(genEntityName, interceptors, fields,
+            nestedFieldsConstants, staticBlock);
+
+        JavaFile javaFile = JavaFile //
+            .builder(packageName, metaClass) //
+            .build();
+
+        JavaFileObject builderFile = processingEnv.getFiler().createSourceFile(qualifiedGenEntityName);
+        Writer writer = builderFile.openWriter();
+        javaFile.writeTo(writer);
+
+        writer.close();
+    }
+
+    private static TypeSpec getTypeSpecForMetamodelClass(String genEntityName, List<FieldSpec> interceptors,
+        List<ObjectGraphFieldSpec> fields, List<FieldSpec> nestedFieldsConstants,
+        CodeBlock staticBlock) {
+        return TypeSpec.classBuilder(genEntityName) //
+            .addModifiers(Modifier.PUBLIC, Modifier.FINAL) //
+            .addFields(fields.stream().map(ObjectGraphFieldSpec::fieldSpec).toList()) //
+            .addFields(nestedFieldsConstants) //
+            .addStaticBlock(staticBlock) //
+            .addFields(interceptors) //
+            .build();
+    }
+
+    private void addStatement(TypeName entity, List<ObjectGraphFieldSpec> fields,
+        List<CodeBlock> initCodeBlocks, Builder blockBuilder) {
         for (ObjectGraphFieldSpec ogfs : fields) {
             StringBuilder sb = new StringBuilder("$T.class");
             for (int i = 0; i < ogfs.chain().size(); i++) {
@@ -161,8 +187,8 @@ public final class MetamodelGenerator extends AbstractProcessor {
                     sb.append(".getType()");
                 }
                 String formattedString = String.format(
-                        "com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(%s, \"%s\")", sb,
-                        element.getSimpleName());
+                    "com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(%s, \"%s\")", sb,
+                    element.getSimpleName());
                 sb.setLength(0); // clear the builder
                 sb.append(formattedString);
             }
@@ -173,42 +199,15 @@ public final class MetamodelGenerator extends AbstractProcessor {
         for (CodeBlock initCodeBlock : initCodeBlocks) {
             blockBuilder.add(initCodeBlock);
         }
-
-        if (hasFields) {
-            blockBuilder.nextControlFlow("catch($T | $T e)", NoSuchFieldException.class, SecurityException.class);
-            blockBuilder.addStatement("System.err.println(e.getMessage())");
-            blockBuilder.endControlFlow();
-        }
-
-        CodeBlock staticBlock = blockBuilder.build();
-
-        TypeSpec metaClass = TypeSpec.classBuilder(genEntityName) //
-                .addModifiers(Modifier.PUBLIC, Modifier.FINAL) //
-                .addFields(fields.stream().map(ObjectGraphFieldSpec::fieldSpec).toList()) //
-                .addFields(nestedFieldsConstants) //
-                .addStaticBlock(staticBlock) //
-                .addFields(interceptors) //
-                // .addJavadoc(filename, null)
-                .build();
-
-        JavaFile javaFile = JavaFile //
-                .builder(packageName, metaClass) //
-                .build();
-
-        JavaFileObject builderFile = processingEnv.getFiler().createSourceFile(qualifiedGenEntityName);
-        Writer writer = builderFile.openWriter();
-        javaFile.writeTo(writer);
-
-        writer.close();
     }
 
     private List<Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock>> processFieldMetamodel(TypeName entity,
-            String entityName, List<Element> chain) {
+        String entityName, List<Element> chain) {
         return processFieldMetamodel(entity, entityName, chain, null);
     }
 
     private List<Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock>> processFieldMetamodel(TypeName entity,
-            String entityName, List<Element> chain, String collectionPrefix) {
+        String entityName, List<Element> chain, String collectionPrefix) {
         List<Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock>> fieldMetamodelSpec = new ArrayList<>();
 
         Element field = chain.get(chain.size() - 1);
@@ -225,13 +224,13 @@ public final class MetamodelGenerator extends AbstractProcessor {
         var reference = field.getAnnotation(Reference.class);
 
         boolean fieldIsIndexed = (searchable != null)
-                || (indexed != null)
-                || (textIndexed != null)
-                || (tagIndexed != null)
-                || (numericIndexed != null)
-                || (geoIndexed != null)
-                || (vectorIndexed != null)
-                || (id != null);
+            || (indexed != null)
+            || (textIndexed != null)
+            || (tagIndexed != null)
+            || (numericIndexed != null)
+            || (geoIndexed != null)
+            || (vectorIndexed != null)
+            || (id != null);
 
         String chainedFieldName = chain.stream().map(Element::getSimpleName).collect(Collectors.joining("_"));
         messager.printMessage(Diagnostic.Kind.NOTE, "Processing " + chainedFieldName);
@@ -276,8 +275,8 @@ public final class MetamodelGenerator extends AbstractProcessor {
                 targetCls = ClassUtils.forName(cls, MetamodelGenerator.class.getClassLoader());
             } catch (ClassNotFoundException cnfe) {
                 messager.printMessage(Diagnostic.Kind.WARNING,
-                        "Processing class " + entityName + " could not resolve " + cls
-                                + " while checking for nested @Indexed");
+                    "Processing class " + entityName + " could not resolve " + cls
+                        + " while checking for nested @Indexed");
                 fieldMetamodelSpec.addAll(processNestedIndexableFields(entity, chain));
             }
 
@@ -322,7 +321,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
                 // Any Date/Time Types
                 //
                 else if ((targetCls == LocalDateTime.class) || (targetCls == LocalDate.class) //
-                        || (targetCls == Date.class) || (targetCls == Instant.class) || (targetCls == OffsetDateTime.class)) {
+                    || (targetCls == Date.class) || (targetCls == Instant.class) || (targetCls == OffsetDateTime.class)) {
                     targetInterceptor = DateField.class;
                 }
                 //
@@ -337,12 +336,12 @@ public final class MetamodelGenerator extends AbstractProcessor {
                         Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> collectionFieldMetamodel = null;
                         try {
                             collectionFieldMetamodel = generateCollectionFieldMetamodel(entity, chain, chainedFieldName,
-                                    collectionElementName);
+                                collectionElementName);
                         } catch (IOException e) {
                             messager.printMessage(Diagnostic.Kind.WARNING,
-                                    "Processing class " + entityName
-                                            + " could create collection field metamodel element for "
-                                            + collectionElementName);
+                                "Processing class " + entityName
+                                    + " could create collection field metamodel element for "
+                                    + collectionElementName);
                         }
                         if (collectionFieldMetamodel != null) {
                             fieldMetamodelSpec.add(collectionFieldMetamodel);
@@ -387,8 +386,8 @@ public final class MetamodelGenerator extends AbstractProcessor {
                 // Numeric class AND Any Date/Time Types
                 //
                 else if (Number.class.isAssignableFrom(targetCls) || (targetCls == LocalDateTime.class)
-                        || (targetCls == LocalDate.class) || (targetCls == Date.class)
-                        || (targetCls == Instant.class) || (targetCls == OffsetDateTime.class)) {
+                    || (targetCls == LocalDate.class) || (targetCls == Date.class)
+                    || (targetCls == Instant.class) || (targetCls == OffsetDateTime.class)) {
                     targetInterceptor = NonIndexedNumericField.class;
                 }
                 //
@@ -405,26 +404,26 @@ public final class MetamodelGenerator extends AbstractProcessor {
                 }
             } catch (ClassNotFoundException cnfe) {
                 if (metamodel != null) {
-                  messager.printMessage(Kind.NOTE,
-                      "Processing class " + entityName + ", generating nested class " + cls
-                        + " metamodel (@Metamodel)");
-                  fieldMetamodelSpec.addAll(processNestedIndexableFields(entity, chain));
+                    messager.printMessage(Kind.NOTE,
+                        "Processing class " + entityName + ", generating nested class " + cls
+                            + " metamodel (@Metamodel)");
+                    fieldMetamodelSpec.addAll(processNestedIndexableFields(entity, chain));
                 }
             }
         }
 
         if (targetInterceptor != null) {
             fieldMetamodelSpec.add(generateFieldMetamodel(entity, chain, chainedFieldName, entityField,
-                    targetInterceptor, fieldIsIndexed, collectionPrefix, searchSchemaAlias));
+                targetInterceptor, fieldIsIndexed, collectionPrefix, searchSchemaAlias));
         }
         return fieldMetamodelSpec;
     }
 
     private Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> generateCollectionFieldMetamodel( //
-            TypeName parentEntity, //
-            List<Element> chain, //
-            String chainedFieldName, //
-            String collectionElementName //
+        TypeName parentEntity, //
+        List<Element> chain, //
+        String chainedFieldName, //
+        String collectionElementName //
     ) throws IOException {
         Element entity1 = chain.get(chain.size() - 1).getEnclosingElement();
         String qualifiedGenEntityName = parentEntity.toString() + "_" + chainedFieldName + "$";
@@ -437,7 +436,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
         String packageName;
         if (packageElement.isUnnamed()) {
             messager.printMessage(Diagnostic.Kind.WARNING,
-                    "Class " + entity1.getSimpleName() + " has an unnamed package.");
+                "Class " + entity1.getSimpleName() + " has an unnamed package.");
             packageName = "";
         } else {
             packageName = packageElement.getQualifiedName().toString();
@@ -450,72 +449,25 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
         enclosedFields.forEach((field, getter) -> {
             List<Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock>> fieldMetamodels = processFieldMetamodel(entity,
-                    entityName, List.of(field), chainedFieldName);
-            for (Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> fieldMetamodel : fieldMetamodels) {
-                FieldSpec fieldSpec = fieldMetamodel.getSecond();
-                fields.add(fieldMetamodel.getFirst());
-                interceptors.add(fieldMetamodel.getSecond());
-                initCodeBlocks.add(fieldMetamodel.getThird());
-
-                // Add _SCORE field to Vector
-                if (fieldSpec.type.toString().startsWith(VectorField.class.getName())) {
-                    String fieldName = fieldMetamodel.getFirst().fieldSpec().name;
-                    Pair<FieldSpec, CodeBlock> vectorFieldScore = generateUnboundMetamodelField(entity,
-                            "_" + fieldSpec.name + "_SCORE", "__" + fieldName + "_score", Double.class);
-                    interceptors.add(vectorFieldScore.getFirst());
-                    initCodeBlocks.add(vectorFieldScore.getSecond());
-                }
-            }
+                entityName, List.of(field), chainedFieldName);
+            extractFieldMetamodels(entity, interceptors, fields, initCodeBlocks, fieldMetamodels);
         });
 
         CodeBlock.Builder blockBuilder = CodeBlock.builder();
 
         blockBuilder.beginControlFlow("try");
-        for (ObjectGraphFieldSpec ogfs : fields) {
-            StringBuilder sb = new StringBuilder("$T.class");
-            for (int i = 0; i < ogfs.chain().size(); i++) {
-                Element element = ogfs.chain().get(i);
-                if (i != 0) {
-                    sb.append(".getType()");
-                }
-                String formattedString = String.format(
-                        "com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(%s, \"%s\")", sb,
-                        element.getSimpleName());
-                sb.setLength(0); // clear the buffer
-                sb.append(formattedString);
-            }
-            FieldSpec fieldSpec = ogfs.fieldSpec();
-            blockBuilder.addStatement("$L = " + sb, fieldSpec.name, entity);
-        }
-
-        for (CodeBlock initCodeBlock : initCodeBlocks) {
-            blockBuilder.add(initCodeBlock);
-        }
+        addStatement(entity, fields, initCodeBlocks, blockBuilder);
 
         blockBuilder.nextControlFlow("catch($T | $T e)", NoSuchFieldException.class, SecurityException.class);
         blockBuilder.addStatement("System.err.println(e.getMessage())");
         blockBuilder.endControlFlow();
 
-        CodeBlock staticBlock = blockBuilder.build();
-
-        TypeSpec metaClass = TypeSpec.classBuilder(genEntityName) //
-                .superclass(CollectionField.class) //
-                .addMethod(MethodSpec.constructorBuilder()
-                        .addModifiers(Modifier.PUBLIC)
-                        .addParameter(SearchFieldAccessor.class, "searchFieldAccessor")
-                        .addParameter(boolean.class, "indexed")
-                        .addStatement("super(searchFieldAccessor, indexed)")
-                        .build())
-                .addModifiers(Modifier.PUBLIC, Modifier.FINAL) //
-                .addFields(fields.stream().map(ObjectGraphFieldSpec::fieldSpec).toList()) //
-                .addFields(nestedFieldsConstants) //
-                .addStaticBlock(staticBlock) //
-                .addFields(interceptors) //
-                .build();
+        TypeSpec metaClass = getTypeSpecForFieldMetamodel(genEntityName, interceptors, fields,
+            nestedFieldsConstants, blockBuilder);
 
         JavaFile javaFile = JavaFile //
-                .builder(packageName, metaClass) //
-                .build();
+            .builder(packageName, metaClass) //
+            .build();
 
         JavaFileObject builderFile = processingEnv.getFiler().createSourceFile(qualifiedGenEntityName);
         Writer writer = builderFile.openWriter();
@@ -528,17 +480,71 @@ public final class MetamodelGenerator extends AbstractProcessor {
         return generateFieldMetamodel(chain, chainedFieldName, generatedTypeName);
     }
 
+    private void extractFieldMetamodels(TypeName entity, List<FieldSpec> interceptors,
+        List<ObjectGraphFieldSpec> fields, List<CodeBlock> initCodeBlocks,
+        List<Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock>> fieldMetamodels) {
+        for (Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> fieldMetamodel : fieldMetamodels) {
+            FieldSpec fieldSpec = fieldMetamodel.getSecond();
+            fields.add(fieldMetamodel.getFirst());
+            interceptors.add(fieldMetamodel.getSecond());
+            initCodeBlocks.add(fieldMetamodel.getThird());
+
+            // Add _SCORE field to Vector
+            if (fieldSpec.type.toString().startsWith(VectorField.class.getName())) {
+                String fieldName = fieldMetamodel.getFirst().fieldSpec().name;
+                Pair<FieldSpec, CodeBlock> vectorFieldScore = generateUnboundMetamodelField(entity,
+                    "_" + fieldSpec.name + "_SCORE", "__" + fieldName + "_score", Double.class);
+                interceptors.add(vectorFieldScore.getFirst());
+                initCodeBlocks.add(vectorFieldScore.getSecond());
+            }
+        }
+    }
+
+    private TypeSpec getTypeSpecForFieldMetamodel(String genEntityName, List<FieldSpec> interceptors,
+        List<ObjectGraphFieldSpec> fields, List<FieldSpec> nestedFieldsConstants,
+        Builder blockBuilder) {
+        CodeBlock staticBlock = blockBuilder.build();
+
+        return TypeSpec.classBuilder(genEntityName) //
+            .superclass(CollectionField.class) //
+            .addMethod(MethodSpec.constructorBuilder()
+                .addModifiers(Modifier.PUBLIC)
+                .addParameter(SearchFieldAccessor.class, "searchFieldAccessor")
+                .addParameter(boolean.class, "indexed")
+                .addStatement("super(searchFieldAccessor, indexed)")
+                .build())
+            .addModifiers(Modifier.PUBLIC, Modifier.FINAL) //
+            .addFields(fields.stream().map(ObjectGraphFieldSpec::fieldSpec).toList()) //
+            .addFields(nestedFieldsConstants) //
+            .addStaticBlock(staticBlock) //
+            .addFields(interceptors) //
+            .build();
+    }
+
     private List<Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock>> processNestedIndexableFields(TypeName entity,
-            List<Element> chain) {
+        List<Element> chain) {
         Element fieldElement = chain.get(chain.size() - 1);
         TypeMirror typeMirror = fieldElement.asType();
         DeclaredType asDeclaredType = (DeclaredType) typeMirror;
         Element entityField = asDeclaredType.asElement();
 
+        Indexed annotation = fieldElement.getAnnotation(Indexed.class);
+        if(entity.toString().equals(entityField.toString()) && annotation != null) {
+            Integer integer = depthMap.get(entity.toString());
+            if (integer == null) {
+                depthMap.put(entity.toString(), 1);
+            } else {
+                if (++integer > annotation.depth()) {
+                    return new ArrayList<>();
+                }
+                depthMap.put(entity.toString(), integer);
+            }
+        }
+
         List<Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock>> fieldMetamodels = new ArrayList<>();
 
         messager.printMessage(Diagnostic.Kind.NOTE,
-                "Processing constants for " + fieldElement + " of type " + entityField);
+            "Processing constants for " + fieldElement + " of type " + entityField);
 
         final String entityFieldName = fieldElement.toString();
         messager.printMessage(Diagnostic.Kind.NOTE, "entityFieldName => " + entityFieldName);
@@ -549,7 +555,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
         enclosedFields.forEach((field, getter) -> {
             boolean fieldIsIndexed = (field.getAnnotation(Indexed.class) != null)
-                    || (field.getAnnotation(Searchable.class) != null);
+                || (field.getAnnotation(Searchable.class) != null);
             boolean generateMetamodel = field.getAnnotation(Metamodel.class) != null;
 
             if (fieldIsIndexed || generateMetamodel) {
@@ -568,35 +574,35 @@ public final class MetamodelGenerator extends AbstractProcessor {
         }
 
         final Map<String, Element> getters = element.getEnclosedElements().stream()
-                .filter(ee -> ee.getKind() == ElementKind.METHOD)
-                // Only consider methods with no parameters
-                .filter(ee -> ee.getEnclosedElements().stream()
-                        .noneMatch(eee -> eee.getKind() == ElementKind.PARAMETER))
-                // Todo: Filter out methods that returns void or Void
-                .collect(Collectors.toMap(e -> e.getSimpleName().toString(), Function.identity()));
+            .filter(ee -> ee.getKind() == ElementKind.METHOD)
+            // Only consider methods with no parameters
+            .filter(ee -> ee.getEnclosedElements().stream()
+                .noneMatch(eee -> eee.getKind() == ElementKind.PARAMETER))
+            // Todo: Filter out methods that returns void or Void
+            .collect(Collectors.toMap(e -> e.getSimpleName().toString(), Function.identity()));
 
         final Set<String> isGetters = getters.values().stream()
-                // todo: Filter out methods only returning boolean or Boolean
-                .map(Element::getSimpleName).map(Object::toString).filter(n -> n.startsWith(IS_PREFIX))
-                .map(n -> n.substring(2))
-                .map(ObjectUtils::lcfirst).collect(Collectors.toSet());
+            // todo: Filter out methods only returning boolean or Boolean
+            .map(Element::getSimpleName).map(Object::toString).filter(n -> n.startsWith(IS_PREFIX))
+            .map(n -> n.substring(2))
+            .map(ObjectUtils::lcfirst).collect(Collectors.toSet());
 
         // Retrieve all declared non-final instance fields of the annotated class
         Map<Element, String> results = element.getEnclosedElements().stream()
-                .filter(ee -> ee.getKind().isField() && !ee.getModifiers().contains(Modifier.STATIC) // Ignore static
-                                                                                                     // fields
-                        && !ee.getModifiers().contains(Modifier.FINAL)) // Ignore final fields
-                .collect(Collectors.toMap(Function.identity(),
-                        ee -> findGetter(ee, getters, isGetters, element.toString(),
-                                lombokGetterAvailable(element, ee))));
+            .filter(ee -> ee.getKind().isField() && !ee.getModifiers().contains(Modifier.STATIC) // Ignore static
+                // fields
+                && !ee.getModifiers().contains(Modifier.FINAL)) // Ignore final fields
+            .collect(Collectors.toMap(Function.identity(),
+                ee -> findGetter(ee, getters, isGetters, element.toString(),
+                    lombokGetterAvailable(element, ee))));
 
         Types types = processingEnvironment.getTypeUtils();
         List<? extends TypeMirror> superTypes = types.directSupertypes(element.asType());
         superTypes.stream()
-                .map(types::asElement)
-                .filter(superElement -> superElement.getKind().isClass())
-                .findFirst()
-                .ifPresent(superElement -> results.putAll(getInstanceFields(superElement)));
+            .map(types::asElement)
+            .filter(superElement -> superElement.getKind().isClass())
+            .findFirst()
+            .ifPresent(superElement -> results.putAll(getInstanceFields(superElement)));
 
         return results;
     }
@@ -617,14 +623,14 @@ public final class MetamodelGenerator extends AbstractProcessor {
     }
 
     private static final Set<String> DISALLOWED_ACCESS_LEVELS = Stream.of("PROTECTED", "PRIVATE", "NONE")
-            .collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableSet));
+        .collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableSet));
 
     private boolean lombokGetterAvailable(Element classElement, Element fieldElement) {
         final boolean globalEnable = isLombokAnnotated(classElement, "Data")
-                || isLombokAnnotated(classElement, "Getter");
+            || isLombokAnnotated(classElement, "Getter");
         final boolean localEnable = isLombokAnnotated(fieldElement, "Getter");
         final boolean disallowedAccessLevel = DISALLOWED_ACCESS_LEVELS
-                .contains(getterAccessLevel(fieldElement).orElse("No access level defined"));
+            .contains(getterAccessLevel(fieldElement).orElse("No access level defined"));
         return !disallowedAccessLevel && (globalEnable || localEnable);
     }
 
@@ -633,7 +639,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
             final String className = "lombok." + lombokSimpleClassName;
             @SuppressWarnings("unchecked")
             final java.lang.Class<java.lang.annotation.Annotation> clazz = (java.lang.Class<java.lang.annotation.Annotation>) java.lang.Class
-                    .forName(className);
+                .forName(className);
             return annotatedElement.getAnnotation(clazz) != null;
         } catch (ClassNotFoundException ignored) {
             // ignore
@@ -646,23 +652,23 @@ public final class MetamodelGenerator extends AbstractProcessor {
         final List<? extends AnnotationMirror> mirrors = fieldElement.getAnnotationMirrors();
 
         Map<? extends ExecutableElement, ? extends AnnotationValue> map = mirrors.stream()
-                .filter(am -> "lombok.Getter".equals(am.getAnnotationType().toString())).findFirst()
-                .map(AnnotationMirror::getElementValues).orElse(Collections.emptyMap());
+            .filter(am -> "lombok.Getter".equals(am.getAnnotationType().toString())).findFirst()
+            .map(AnnotationMirror::getElementValues).orElse(Collections.emptyMap());
 
         return map.values().stream() //
-                .map(AnnotationValue::toString)
-                .map(v -> v.substring(v.lastIndexOf('.') + 1)) // Format as simple name
-                .filter(this::isAccessLevel).findFirst();
+            .map(AnnotationValue::toString)
+            .map(v -> v.substring(v.lastIndexOf('.') + 1)) // Format as simple name
+            .filter(this::isAccessLevel).findFirst();
     }
 
     private boolean isAccessLevel(String s) {
         Set<String> validAccessLevels = Stream.of("PACKAGE", "NONE", "PRIVATE", "MODULE", "PROTECTED", "PUBLIC")
-                .collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableSet));
+            .collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableSet));
         return validAccessLevels.contains(s);
     }
 
     private String findGetter(final Element field, final Map<String, Element> getters, final Set<String> isGetters,
-            final String entityName, boolean lombokGetterAvailable) {
+        final String entityName, boolean lombokGetterAvailable) {
 
         final String fieldName = field.getSimpleName().toString();
         final String getterPrefix = isGetters.contains(fieldName) ? IS_PREFIX : GET_PREFIX;
@@ -688,34 +694,34 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
         // default to thrower
         messager.printMessage(Diagnostic.Kind.ERROR, "Class " + entityName + " is not a proper JavaBean because "
-                + field.getSimpleName().toString() + " has no standard getter.");
+            + field.getSimpleName().toString() + " has no standard getter.");
         return lambdaName + " -> {throw new " + IllegalJavaBeanException.class.getSimpleName() + "(" + entityName
-                + ".class, \"" + fieldName + "\");}";
+            + ".class, \"" + fieldName + "\");}";
     }
 
     private Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> generateFieldMetamodel( //
-            TypeName entity, //
-            List<Element> chain, //
-            String chainFieldName, //
-            TypeName entityField, //
-            Class<?> interceptorClass, //
-            boolean fieldIsIndexed, //
-            String collectionPrefix, //
-            String searchSchemaAlias //
+        TypeName entity, //
+        List<Element> chain, //
+        String chainFieldName, //
+        TypeName entityField, //
+        Class<?> interceptorClass, //
+        boolean fieldIsIndexed, //
+        String collectionPrefix, //
+        String searchSchemaAlias //
     ) {
         String fieldAccessor = ObjectUtils.staticField(chainFieldName);
 
         FieldSpec objectField = FieldSpec //
-                .builder(Field.class, chainFieldName).addModifiers(Modifier.PUBLIC, Modifier.STATIC) //
-                .build();
+            .builder(Field.class, chainFieldName).addModifiers(Modifier.PUBLIC, Modifier.STATIC) //
+            .build();
 
         ObjectGraphFieldSpec ogf = new ObjectGraphFieldSpec(objectField, chain);
 
         TypeName interceptor = ParameterizedTypeName.get(ClassName.get(interceptorClass), entity, entityField);
 
         FieldSpec aField = FieldSpec //
-                .builder(interceptor, fieldAccessor).addModifiers(Modifier.PUBLIC, Modifier.STATIC) //
-                .build();
+            .builder(interceptor, fieldAccessor).addModifiers(Modifier.PUBLIC, Modifier.STATIC) //
+            .build();
 
         String alias;
         if (!isEmpty(searchSchemaAlias)) {
@@ -729,60 +735,60 @@ public final class MetamodelGenerator extends AbstractProcessor {
         jsonPath = "$." + (collectionPrefix != null ? collectionPrefix + "." + jsonPath : jsonPath);
 
         CodeBlock aFieldInit = CodeBlock //
-                .builder() //
-                .addStatement( //
-                        "$L = new $T(new $T(\"$L\", \"$L\", $L),$L)", //
-                        fieldAccessor, //
-                        interceptor, //
-                        SearchFieldAccessor.class, //
-                        alias, //
-                        jsonPath, //
-                        chainFieldName, //
-                        fieldIsIndexed //
-                ) //
-                .build();
+            .builder() //
+            .addStatement( //
+                "$L = new $T(new $T(\"$L\", \"$L\", $L),$L)", //
+                fieldAccessor, //
+                interceptor, //
+                SearchFieldAccessor.class, //
+                alias, //
+                jsonPath, //
+                chainFieldName, //
+                fieldIsIndexed //
+            ) //
+            .build();
 
         return Tuples.of(ogf, aField, aFieldInit);
     }
 
     private Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> generateFieldMetamodel(
-            List<Element> chain, //
-            String chainFieldName, //
-            TypeName interceptor //
+        List<Element> chain, //
+        String chainFieldName, //
+        TypeName interceptor //
     ) {
         String fieldAccessor = ObjectUtils.staticField(chainFieldName);
 
         FieldSpec objectField = FieldSpec.builder(Field.class, chainFieldName)
-                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .build();
+            .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+            .build();
         ObjectGraphFieldSpec ogf = new ObjectGraphFieldSpec(objectField, chain);
 
         FieldSpec aField = FieldSpec.builder(interceptor, fieldAccessor).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .build();
+            .build();
 
         String searchSchemaAlias = chain.stream().map(e -> e.getSimpleName().toString())
-                .collect(Collectors.joining("_"));
+            .collect(Collectors.joining("_"));
         String jsonPath = "$." + chain.stream().map(e -> e.getSimpleName().toString()).collect(Collectors.joining("."));
 
         CodeBlock aFieldInit = CodeBlock.builder()
-                .addStatement("$L = new $T(new $T(\"$L\", \"$L\", $L),$L)", fieldAccessor, interceptor,
-                        SearchFieldAccessor.class, searchSchemaAlias, jsonPath, chainFieldName,
-                        true)
-                .build();
+            .addStatement("$L = new $T(new $T(\"$L\", \"$L\", $L),$L)", fieldAccessor, interceptor,
+                SearchFieldAccessor.class, searchSchemaAlias, jsonPath, chainFieldName,
+                true)
+            .build();
 
         return Tuples.of(ogf, aField, aFieldInit);
     }
 
     private Pair<FieldSpec, CodeBlock> generateUnboundMetamodelField(TypeName entity, String name, String alias,
-            Class<?> type) {
+        Class<?> type) {
         TypeName interceptor = ParameterizedTypeName.get(ClassName.get(MetamodelField.class), entity,
-                TypeName.get(type));
+            TypeName.get(type));
 
         FieldSpec aField = FieldSpec.builder(interceptor, name).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-                .build();
+            .build();
 
         CodeBlock aFieldInit = CodeBlock.builder()
-                .addStatement("$L = new $T(\"$L\", $T.class, $L)", name, interceptor, alias, type, true).build();
+            .addStatement("$L = new $T(\"$L\", $T.class, $L)", name, interceptor, alias, type, true).build();
 
         return Tuples.of(aField, aFieldInit);
     }
@@ -791,13 +797,13 @@ public final class MetamodelGenerator extends AbstractProcessor {
         String name = "_THIS";
         String alias = "__this";
         TypeName interceptor = ParameterizedTypeName.get(ClassName.get(MetamodelField.class), entity,
-          entity);
+            entity);
 
         FieldSpec aField = FieldSpec.builder(interceptor, name).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-          .build();
+            .build();
 
         CodeBlock aFieldInit = CodeBlock.builder()
-          .addStatement("$L = new $T(\"$L\", $T.class, $L)", name, interceptor, alias, entity, true).build();
+            .addStatement("$L = new $T(\"$L\", $T.class, $L)", name, interceptor, alias, entity, true).build();
 
         return Tuples.of(aField, aFieldInit);
     }

@@ -82,4 +82,9 @@ public @interface Indexed {
   // are potentially scanned, allowing more extensive search and more accurate results
   // (on the expense of runtime). Default is 0.01.
   double epsilon() default 0.01;
+
+  /**
+   * @return depth of metamodel creation for nested self-class.
+   */
+  int depth() default 1;
 }
