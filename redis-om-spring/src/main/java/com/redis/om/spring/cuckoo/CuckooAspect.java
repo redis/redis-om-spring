@@ -42,7 +42,8 @@ public class CuckooAspect implements Ordered {
     for (Field field : com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(entity.getClass())) {
       if (field.isAnnotationPresent(Cuckoo.class)) {
         Cuckoo cuckoo = field.getAnnotation(Cuckoo.class);
-        String filterName = !ObjectUtils.isEmpty(cuckoo.name()) ? cuckoo.name() : String.format("cf:%s:%s", entity.getClass().getSimpleName(), field.getName());
+        String defaultFilterName = String.format("cf:%s:%s", entity.getClass().getSimpleName(), field.getName());
+        String filterName = !ObjectUtils.isEmpty(cuckoo.name()) ? cuckoo.name() : defaultFilterName;
         try {
           PropertyDescriptor pd = new PropertyDescriptor(field.getName(), entity.getClass());
           ops.add(filterName, pd.getReadMethod().invoke(entity).toString());

@@ -520,87 +520,121 @@ public class RediSearchIndexer {
   }
 
   private List<Field> getNestedField(String fieldPrefix, java.lang.reflect.Field field, String prefix,
-      List<Field> fieldList) {
+                                     List<Field> fieldList) {
     if (fieldList == null) {
       fieldList = new ArrayList<>();
     }
+
     Type genericType = field.getGenericType();
     if (genericType instanceof ParameterizedType pt) {
       Class<?> actualTypeArgument = (Class<?>) pt.getActualTypeArguments()[0];
       List<java.lang.reflect.Field> subDeclaredFields = com.redis.om.spring.util.ObjectUtils
-          .getDeclaredFieldsTransitively(actualTypeArgument);
-      String tempPrefix = "";
-      if (prefix == null) {
-        prefix = field.getName();
-      } else {
-        prefix += "." + field.getName();
-      }
-      for (java.lang.reflect.Field subField : subDeclaredFields) {
+              .getDeclaredFieldsTransitively(actualTypeArgument);
 
-        Optional<Class<?>> maybeCollectionType = getCollectionElementClass(subField);
+      String tempPrefix = initializeTempPrefix(field, prefix);
 
-        String suffix = (maybeCollectionType.isPresent() && (CharSequence.class.isAssignableFrom(maybeCollectionType.get())
-            || (maybeCollectionType.get() == Boolean.class))) ? "[*]" : "";
-
-        if (subField.isAnnotationPresent(TagIndexed.class)) {
-          TagIndexed ti = subField.getAnnotation(TagIndexed.class);
-          tempPrefix = field.getName() + "[0:].";
-
-          FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName() + suffix);
-          fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(subField, prefix));
-
-          logger.info(String.format("Creating nested relationships: %s -> %s", field.getName(), subField.getName()));
-          fieldList.add(new TagField(fieldName, ti.separator(), false));
-          continue;
-        } else if (subField.isAnnotationPresent(Indexed.class)) {
-          boolean subFieldIsTagField = (subField.isAnnotationPresent(Indexed.class)
-              && (CharSequence.class.isAssignableFrom(subField.getType()) || (subField.getType() == Boolean.class)
-                  || (maybeCollectionType.isPresent() && (CharSequence.class.isAssignableFrom(maybeCollectionType.get())
-                      || (maybeCollectionType.get() == Boolean.class)))));
-          if (subFieldIsTagField) {
-            Indexed indexed = subField.getAnnotation(Indexed.class);
-            tempPrefix = field.getName() + "[0:].";
-
-            FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName() + suffix);
-            fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(subField, prefix));
-
-            logger.info(String.format("Creating nested relationships: %s -> %s", field.getName(), subField.getName()));
-            fieldList.add(new TagField(fieldName, indexed.separator(), false));
-            continue;
-          }
-
-          else if (Number.class.isAssignableFrom(subField.getType()) || (subField.getType() == LocalDateTime.class)
-              || (subField.getType() == LocalDate.class) || (subField.getType() == Date.class)) {
-
-            FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName() + suffix);
-            fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(subField, prefix));
-            logger.info(String.format("Creating nested relationships: %s -> %s", field.getName(), subField.getName()));
-            fieldList.add(new Field(fieldName, FieldType.NUMERIC));
-          }
-        } else if (subField.isAnnotationPresent(Searchable.class)) {
-          Searchable searchable = subField.getAnnotation(Searchable.class);
-          tempPrefix = field.getName() + "[0:].";
-
-          FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName() + suffix);
-          fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(subField, prefix));
-
-          logger
-              .info(String.format("Creating TEXT nested relationships: %s -> %s", field.getName(), subField.getName()));
-
-          String phonetic = ObjectUtils.isEmpty(searchable.phonetic()) ? null : searchable.phonetic();
-
-          fieldList.add(new TextField(fieldName, searchable.weight(), searchable.sortable(), searchable.nostem(),
-              searchable.noindex(), phonetic));
-
-          continue;
-        }
-        if (subField.isAnnotationPresent(Indexed.class)) {
-          getNestedField(fieldPrefix + tempPrefix, subField, prefix, fieldList);
-        }
-      }
+      processSubFields(fieldPrefix, field, prefix, fieldList, subDeclaredFields, tempPrefix);
     }
+
     return fieldList;
   }
+
+  private String initializeTempPrefix(java.lang.reflect.Field field, String prefix) {
+    String tempPrefix = "";
+    if (prefix == null) {
+      prefix = field.getName();
+    } else {
+      prefix += "." + field.getName();
+    }
+    return tempPrefix;
+  }
+
+  private void processSubFields(String fieldPrefix, java.lang.reflect.Field field, String prefix,
+                                List<Field> fieldList, List<java.lang.reflect.Field> subDeclaredFields, String tempPrefix) {
+    for (java.lang.reflect.Field subField : subDeclaredFields) {
+      Optional<Class<?>> maybeCollectionType = getCollectionElementClass(subField);
+
+      String suffix = determineSuffix(subField, maybeCollectionType);
+
+      if (subField.isAnnotationPresent(TagIndexed.class)) {
+        processTagIndexedField(fieldPrefix, field, prefix, fieldList, tempPrefix, subField, suffix);
+      } else if (subField.isAnnotationPresent(Indexed.class)) {
+        processIndexedField(fieldPrefix, field, prefix, fieldList, tempPrefix, subField, suffix, maybeCollectionType);
+      } else if (subField.isAnnotationPresent(Searchable.class)) {
+        processSearchableField(fieldPrefix, field, prefix, fieldList, tempPrefix, subField, suffix);
+      }
+
+      if (subField.isAnnotationPresent(Indexed.class)) {
+        getNestedField(fieldPrefix + tempPrefix, subField, prefix, fieldList);
+      }
+    }
+  }
+
+  private void processIndexedField(String fieldPrefix, java.lang.reflect.Field field, String prefix,
+                                   List<Field> fieldList, String tempPrefix, java.lang.reflect.Field subField, String suffix,
+                                   Optional<Class<?>> maybeCollectionType) {
+
+    boolean subFieldIsTagField = (subField.isAnnotationPresent(Indexed.class)
+            && (CharSequence.class.isAssignableFrom(subField.getType()) || (subField.getType() == Boolean.class)
+            || (maybeCollectionType.isPresent() && (CharSequence.class.isAssignableFrom(maybeCollectionType.get())
+            || (maybeCollectionType.get() == Boolean.class)))));
+
+    if (subFieldIsTagField) {
+      Indexed indexed = subField.getAnnotation(Indexed.class);
+      tempPrefix = field.getName() + "[0:].";
+
+      FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName() + suffix);
+      fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(subField, prefix));
+
+      logger.info(String.format("Creating nested relationships: %s -> %s", field.getName(), subField.getName()));
+      fieldList.add(new TagField(fieldName, indexed.separator(), false));
+    } else if (Number.class.isAssignableFrom(subField.getType()) || (subField.getType() == LocalDateTime.class)
+            || (subField.getType() == LocalDate.class) || (subField.getType() == Date.class)) {
+
+      FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName() + suffix);
+      fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(subField, prefix));
+      logger.info(String.format("Creating nested relationships: %s -> %s", field.getName(), subField.getName()));
+      fieldList.add(new Field(fieldName, FieldType.NUMERIC));
+    }
+  }
+  private void processSearchableField(String fieldPrefix, java.lang.reflect.Field field, String prefix,
+                                      List<Field> fieldList, String tempPrefix, java.lang.reflect.Field subField, String suffix) {
+    Searchable searchable = subField.getAnnotation(Searchable.class);
+    tempPrefix = field.getName() + "[0:].";
+
+    FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName() + suffix);
+    fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(subField, prefix));
+
+    logger.info(String.format("Creating TEXT nested relationships: %s -> %s", field.getName(), subField.getName()));
+
+    String phonetic = ObjectUtils.isEmpty(searchable.phonetic()) ? null : searchable.phonetic();
+
+    fieldList.add(new TextField(fieldName, searchable.weight(), searchable.sortable(), searchable.nostem(),
+            searchable.noindex(), phonetic));
+  }
+
+  private void processTagIndexedField(String fieldPrefix, java.lang.reflect.Field field, String prefix,
+                                      List<Field> fieldList, String tempPrefix, java.lang.reflect.Field subField, String suffix) {
+    TagIndexed ti = subField.getAnnotation(TagIndexed.class);
+    tempPrefix = field.getName() + "[0:].";
+
+    FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName() + suffix);
+    fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(subField, prefix));
+
+    logger.info(String.format("Creating nested relationships: %s -> %s", field.getName(), subField.getName()));
+    fieldList.add(new TagField(fieldName, ti.separator(), false));
+  }
+
+
+  private String determineSuffix(java.lang.reflect.Field subField, Optional<Class<?>> maybeCollectionType) {
+    String suffix = (maybeCollectionType.isPresent() && (CharSequence.class.isAssignableFrom(maybeCollectionType.get())
+            || (maybeCollectionType.get() == Boolean.class))) ? "[*]" : "";
+    return suffix;
+  }
+
+// Add other helper methods as needed...
+
+
 
   private String getEntityPrefix(Class<?> cl) {
     String entityPrefix = cl.getName() + ":";
