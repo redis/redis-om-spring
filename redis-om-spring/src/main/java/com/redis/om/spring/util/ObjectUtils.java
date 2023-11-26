@@ -63,6 +63,14 @@ public class ObjectUtils {
 
     return converters.get(unit);
   }
+  public static List<Field> getDeclaredFieldsTransitively(Class<?> clazz) {
+    List<Field> fields = new ArrayList<>();
+    while (clazz != null) {
+      fields.addAll(Arrays.stream(clazz.getDeclaredFields()).toList());
+      clazz = clazz.getSuperclass();
+    }
+    return fields;
+  }
 
 
   public static String getTargetClassName(String fullTypeClassName) {
