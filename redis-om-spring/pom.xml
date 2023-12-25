@@ -7,7 +7,7 @@
 
   <groupId>com.redis.om</groupId>
   <artifactId>redis-om-spring</artifactId>
-  <version>0.8.7</version>
+  <version>0.8.8-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>redis-om-spring</name>
@@ -59,17 +59,17 @@
     <maven.test.source>17</maven.test.source>
     <maven.test.target>17</maven.test.target>
     <java.version>17</java.version>
-    <spring.version>3.1.3</spring.version>
-    <sdr.version>3.1.3</sdr.version>
+    <spring.version>3.1.7</spring.version>
+    <sdr.version>3.1.7</sdr.version>
     <jedis.version>4.4.3</jedis.version>
     <cdi>1.0</cdi>
     <auto-service.version>1.0.1</auto-service.version>
-    <spring.test.version>6.0.11</spring.test.version>
+    <spring.test.version>6.0.15</spring.test.version>
     <testcontainers.redis.version>1.6.4</testcontainers.redis.version>
     <testcontainers.redis.junit.version>1.6.4</testcontainers.redis.junit.version>
-    <guava.version>32.1.2-jre</guava.version>
-    <ulid.version>5.2.1</ulid.version>
-    <lombok.version>1.18.28</lombok.version>
+    <guava.version>33.0.0-jre</guava.version>
+    <ulid.version>5.2.2</ulid.version>
+    <lombok.version>1.18.30</lombok.version>
     <commons-lang.version>3.13.0</commons-lang.version>
     <javapoet.version>1.13.0</javapoet.version>
     <assertj.version>3.24.2</assertj.version>
@@ -77,7 +77,7 @@
     <gson.version>2.10.1</gson.version>
     <djl.starter.version>0.20</djl.starter.version>
     <djl.version>0.22.1</djl.version>
-    <junit-bom.version>5.10.0</junit-bom.version>
+    <junit-bom.version>5.10.1</junit-bom.version>
   </properties>
 
   <dependencyManagement>
