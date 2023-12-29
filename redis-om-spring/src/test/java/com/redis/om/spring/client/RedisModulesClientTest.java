@@ -5,7 +5,7 @@ import com.redis.om.spring.AbstractBaseDocumentTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import redis.clients.jedis.bloom.commands.BloomFilterCommands;
-import redis.clients.jedis.json.RedisJsonCommands;
+import redis.clients.jedis.json.commands.RedisJsonCommands;
 import redis.clients.jedis.search.RediSearchCommands;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

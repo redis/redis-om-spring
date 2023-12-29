@@ -89,7 +89,6 @@ import static org.junit.jupiter.api.Assertions.*;
     assertEquals(1, result.getTotalResults());
     Document doc = result.getDocuments().get(0);
     assertEquals(1.0, doc.getScore(), 0);
-    assertNull(doc.getPayload());
     assertEquals("{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}", SafeEncoder.encode((byte[])doc.get("$")));
   }
 
@@ -107,7 +106,6 @@ import static org.junit.jupiter.api.Assertions.*;
     assertEquals(1, result.getTotalResults());
     Document doc = result.getDocuments().get(0);
     assertEquals(1.0, doc.getScore(), 0);
-    assertNull(doc.getPayload());
     assertTrue(StreamSupport //
         .stream(doc.getProperties().spliterator(), false) //
         .anyMatch(p -> p.getKey().contentEquals("first_tag") && SafeEncoder.encode((byte[])p.getValue()).equals("news")));

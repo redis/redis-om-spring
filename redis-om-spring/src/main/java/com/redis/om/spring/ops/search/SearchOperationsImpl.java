@@ -37,10 +37,15 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
   }
 
   @Override
+  public String createIndex(FTCreateParams params, List<SchemaField> fields) {
+    return search.ftCreate(index.toString(), params, fields);
+  }
+
+  @Override
   public SearchResult search(Query q) {
     return search.ftSearch(SafeEncoder.encode(index.toString()), q);
   }
-  
+
   @Override
   public SearchResult search(Query q, FTSearchParams params) {
     return search.ftSearch(index.toString(), q.toString(), params);
@@ -83,7 +88,7 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
 
   @Override
   public Long addSuggestion(String key, String suggestion) {
-     return search.ftSugAdd(key, suggestion, 1.0);
+    return search.ftSugAdd(key, suggestion, 1.0);
   }
 
   @Override
@@ -134,7 +139,7 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
   public Boolean deleteSuggestion(String key, String entry) {
     return search.ftSugDel(key, entry);
   }
-  
+
   @Override
   public Long getSuggestionLength(String key) {
     return search.ftSugLen(key);
@@ -151,12 +156,12 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
   }
 
   @Override
-  public Map<String,String> getConfig(String option) {
+  public Map<String,Object> getConfig(String option) {
     return search.ftConfigGet(option);
   }
 
   @Override
-  public Map<String, String> getIndexConfig(String option) {
+  public Map<String, Object> getIndexConfig(String option) {
     return search.ftConfigGet(index.toString(), option);
   }
 

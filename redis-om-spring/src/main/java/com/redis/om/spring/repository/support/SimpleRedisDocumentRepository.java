@@ -399,11 +399,12 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
         }
 
         SearchResult searchResult = searchOps.search(query);
+        Gson gson = gsonBuilder.create();
 
         @SuppressWarnings("unchecked")
         List<T> content = (List<T>) searchResult.getDocuments().stream()
-            .map(d -> ObjectUtils.documentToObject(d, metadata.getJavaType(), mappingConverter))
-            .toList();
+          .map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get("$")), metadata.getJavaType()))
+          .toList();
 
         return new PageImpl<>(content, pageable, searchResult.getTotalResults());
       } else {
@@ -413,6 +414,21 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     } else {
       return super.findAll(pageable);
     }
+  }
+
+  /* (non-Javadoc)
+   *
+   * @see
+   * org.springframework.data.repository.PagingAndSortingRepository#findAll(org.
+   * springframework.data.domain.Sort) */
+  @Override
+  public List<T> findAll(Sort sort) {
+
+    Assert.notNull(sort, "Sort must not be null!");
+
+    Pageable pageRequest = PageRequest.of(0, properties.getRepository().getQuery().getLimit(), sort);
+
+    return findAll(pageRequest).toList();
   }
 
   @Override

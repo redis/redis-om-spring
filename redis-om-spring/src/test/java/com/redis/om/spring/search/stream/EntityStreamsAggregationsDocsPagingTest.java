@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SuppressWarnings({ "unchecked", "SpellCheckingInspection" }) class EntityStreamsAggregationsDocsPagingTest extends AbstractBaseDocumentTest {
+@SuppressWarnings({ "SpellCheckingInspection" }) class EntityStreamsAggregationsDocsPagingTest extends AbstractBaseDocumentTest {
   @Autowired EntityStream entityStream;
 
   @Autowired GameRepository repository;
@@ -66,7 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
     SearchStream<Game> searchStream = entityStream.of(Game.class);
 
     AggregationResult result = searchStream //
-        .cursor(pageSize, Duration.ofDays(2))
+        .cursor(pageSize, Duration.ofSeconds(300))
         .loadAll()
         .limit(300)
         .aggregate();

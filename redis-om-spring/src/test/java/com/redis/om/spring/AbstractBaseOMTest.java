@@ -22,7 +22,7 @@ public abstract class AbstractBaseOMTest {
   static final RedisStackContainer REDIS;
 
   static {
-    REDIS = new RedisStackContainer(DEFAULT_IMAGE_NAME.withTag("edge")).withReuse(true);
+    REDIS = new RedisStackContainer(DEFAULT_IMAGE_NAME.withTag(RedisStackContainer.DEFAULT_TAG)).withReuse(true);
     REDIS.start();
   }
 

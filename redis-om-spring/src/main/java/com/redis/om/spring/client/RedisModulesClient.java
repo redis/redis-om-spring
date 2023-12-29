@@ -11,7 +11,7 @@ import redis.clients.jedis.bloom.commands.BloomFilterCommands;
 import redis.clients.jedis.bloom.commands.CountMinSketchCommands;
 import redis.clients.jedis.bloom.commands.CuckooFilterCommands;
 import redis.clients.jedis.bloom.commands.TopKFilterCommands;
-import redis.clients.jedis.json.RedisJsonCommands;
+import redis.clients.jedis.json.commands.RedisJsonCommands;
 import redis.clients.jedis.search.RediSearchCommands;
 
 import java.util.Objects;

@@ -16,7 +16,6 @@ import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
 import redis.clients.jedis.search.aggr.*;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
-import redis.clients.jedis.util.SafeEncoder;
 
 import java.time.Duration;
 import java.util.*;
@@ -38,16 +37,20 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
   private boolean limitSet = false;
 
   private static class ReducerFieldPair {
-    private Reducer reducer;
+    private String alias;
+    private final Reducer reducer;
     private MetamodelField<?, ?> field;
 
-    private ReducerFieldPair(Reducer reducer, MetamodelField<?, ?> field) {
+    private final ReducerFunction reducerFunction;
+
+    private ReducerFieldPair(Reducer reducer, MetamodelField<?, ?> field, ReducerFunction reducerFunction) {
       this.reducer = reducer;
       this.field = field;
+      this.reducerFunction = reducerFunction;
     }
 
-    public static ReducerFieldPair of(Reducer reducer, MetamodelField<?, ?> field) {
-      return new ReducerFieldPair(reducer, field);
+    public static ReducerFieldPair of(Reducer reducer, MetamodelField<?, ?> field, ReducerFunction reducerFunction) {
+      return new ReducerFieldPair(reducer, field, reducerFunction);
     }
 
     public  Reducer getReducer() {
@@ -58,31 +61,38 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
       return this.field;
     }
 
-    public void setReducer( Reducer reducer) {
-      this.reducer = reducer;
+
+    public String getAlias() {
+      return this.alias;
     }
 
-    public void setField(MetamodelField<?, ?> field) {
-      this.field = field;
+    public void setAlias(String alias) {
+      this.alias = alias;
+      reducer.as(alias);
+    }
+
+    public ReducerFunction getReducerFunction() {
+      return reducerFunction;
     }
 
     public boolean equals(final Object o) {
       if (o == this)
         return true;
-      if (!(o instanceof AggregationStreamImpl.ReducerFieldPair))
+      if (!(o instanceof ReducerFieldPair other))
         return false;
-      final ReducerFieldPair other = (ReducerFieldPair) o;
-      if (!other.canEqual((Object) this))
+      if (!other.canEqual(this))
         return false;
       final Object this$reducer = this.getReducer();
       final Object other$reducer = other.getReducer();
-      if (this$reducer == null ? other$reducer != null : !this$reducer.equals(other$reducer))
+      if (!Objects.equals(this$reducer, other$reducer))
         return false;
       final Object this$field = this.getField();
       final Object other$field = other.getField();
-      if (this$field == null ? other$field != null : !this$field.equals(other$field))
+      if (!Objects.equals(this$field, other$field))
         return false;
-      return true;
+      final Object this$alias = this.getAlias();
+      final Object other$alias = other.getAlias();
+      return Objects.equals(this$alias, other$alias);
     }
 
     protected boolean canEqual(final Object other) {
@@ -161,6 +171,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
 
     applyCurrentReducer();
     Reducer r = null;
+
     switch (reducer) {
       case COUNT -> r = Reducers.count();
       case COUNT_DISTINCT -> r = Reducers.count_distinct(alias);
@@ -179,7 +190,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
         if (params.length > 0 && params[0].getClass().isAssignableFrom(Order.class)) {
           Order o = (Order) params[0];
           SortedField sf = new SortedField(o.getProperty(),
-              o.getDirection() == Direction.ASC ? SortOrder.ASC : SortOrder.DESC);
+            o.getDirection() == Direction.ASC ? SortOrder.ASC : SortOrder.DESC);
           r = Reducers.first_value(alias, sf);
         } else {
           r = Reducers.first_value(alias);
@@ -191,7 +202,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
       }
     }
     if (r != null) {
-      currentReducer = ReducerFieldPair.of(r, field);
+      currentReducer = ReducerFieldPair.of(r, field, reducer);
     }
 
     return this;
@@ -211,12 +222,12 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
     if (currentReducer != null) {
       Reducer cr = currentReducer.getReducer();
       MetamodelField<?, ?> crField = currentReducer.getField();
-      if (cr.getAlias() == null) {
-        cr.setAlias(cr.getName().toLowerCase());
+      if (currentReducer.getAlias() == null) {
+        currentReducer.setAlias(currentReducer.getReducerFunction().name().toLowerCase());
       }
       currentGroup.reduce(cr);
-      returnFields.add(cr.getAlias());
-      returnFieldsTypeHints.put(cr.getAlias(), getTypeHintForReducer(cr, crField));
+      returnFields.add(currentReducer.getAlias());
+      returnFieldsTypeHints.put(currentReducer.getAlias(), getTypeHintForReducer(currentReducer, crField));
       currentReducer = null;
       return true;
     } else {
@@ -235,7 +246,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
   @Override
   public AggregationStream<T> as(String alias) {
     if (currentReducer != null) {
-      currentReducer.getReducer().setAlias(alias);
+      currentReducer.setAlias(alias);
     }
     return this;
   }
@@ -445,7 +456,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
   @Override
   public <R extends T> Slice<R> toList(PageRequest pageRequest, Class<?>... contentTypes) {
     applyCurrentGroupBy();
-    aggregation.cursor(pageRequest.getPageSize(), -1);
+    aggregation.cursor(pageRequest.getPageSize(), 300000);
     return new AggregationPage(this, pageRequest, entityClass, gson, mappingConverter, isDocument);
   }
 
@@ -483,14 +494,13 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
     }
   }
 
-  private Class<?> getTypeHintForReducer(Reducer cr, MetamodelField<?, ?> field) {
+  private Class<?> getTypeHintForReducer(ReducerFieldPair reducerFieldPair, MetamodelField<?, ?> field) {
     Class<?> fieldTargetClass = field != null ? field.getTargetClass() : null;
-    return switch (cr.getName()) {
-      case "COUNT", "COUNT_DISTINCT", "COUNT_DISTINCTISH" -> Long.class;
-      case "SUM", "MIN", "MAX", "QUANTILE", "FIRST_VALUE", "TOLIST", "RANDOM_SAMPLE" ->
-          fieldTargetClass != null ? fieldTargetClass : String.class;
-      case "AVG", "STDDEV" -> Double.class;
-      default -> String.class;
+    return switch (reducerFieldPair.getReducerFunction()) {
+      case COUNT, COUNT_DISTINCT, COUNT_DISTINCTISH -> Long.class;
+      case SUM, MIN, MAX, QUANTILE, FIRST_VALUE, TOLIST, RANDOM_SAMPLE ->
+        fieldTargetClass != null ? fieldTargetClass : String.class;
+      case AVG, STDDEV -> Double.class;
     };
   }
 

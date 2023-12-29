@@ -24,6 +24,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import static com.redis.om.spring.util.ObjectUtils.getSchemaFieldName;
+import static com.redis.om.spring.util.ObjectUtils.getSchemaFieldType;
 import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
 
 public class ExampleToNodeConverter<E> {
@@ -59,18 +61,20 @@ public class ExampleToNodeConverter<E> {
     if (schema != null) {
       for (Schema.Field schemaField : schema.fields) {
         Optional<String> maybeAlias = getAliasForSchemaField(schemaField);
-        final String fieldName = maybeAlias.orElseGet(() -> schemaField.name.replace("$.", ""));
+        final String schemaFieldName = getSchemaFieldName(schemaField);
+        final String fieldName = maybeAlias.orElseGet(() -> schemaFieldName.replace("$.", ""));
 
         if (!toIgnore.contains(fieldName)) {
-          Object value = ObjectUtils.getValueByPath(example.getProbe(), schemaField.name);
+          Object value = ObjectUtils.getValueByPath(example.getProbe(), schemaFieldName);
 
           if (value != null) {
             Class<?> cls = value.getClass();
-            switch (schemaField.type) {
+            final String schemaFieldType = getSchemaFieldType(schemaField).toUpperCase();
+            switch (schemaFieldType) {
               //
               // TAG Index Fields
               //
-              case TAG -> {
+              case "TAG" -> {
                 if (Iterable.class.isAssignableFrom(value.getClass())) {
                   Iterable<?> values = (Iterable<?>) value;
                   values = StreamSupport.stream(values.spliterator(), false) //
@@ -97,7 +101,7 @@ public class ExampleToNodeConverter<E> {
               //
               // TEXT Index Fields
               //
-              case TEXT -> {
+              case "TEXT" -> {
                 switch (example.getMatcher().getDefaultStringMatcher()) {
                   case DEFAULT, EXACT ->
                       rootNode = isNotEmpty(value) ? QueryBuilders.intersect(rootNode).add(fieldName, QueryUtils.escape(value.toString(), false)) : rootNode;
@@ -115,7 +119,7 @@ public class ExampleToNodeConverter<E> {
               //
               // GEO Index Fields
               //
-              case GEO -> {
+              case "GEO" -> {
                 double x, y;
                 if (cls == Point.class) {
                   Point point = (Point) value;
@@ -140,7 +144,7 @@ public class ExampleToNodeConverter<E> {
               //
               // NUMERIC
               //
-              case NUMERIC -> {
+              case "NUMERIC" -> {
                 if (Iterable.class.isAssignableFrom(value.getClass())) {
                   Iterable<?> values = (Iterable<?>) value;
                   values = StreamSupport.stream(values.spliterator(), false) //
@@ -229,7 +233,7 @@ public class ExampleToNodeConverter<E> {
               //
               // VECTOR
               //
-              case VECTOR -> {
+              case "VECTOR" -> {
                 //TODO: pending - whether to support Vector fields in QBE
               }
             }

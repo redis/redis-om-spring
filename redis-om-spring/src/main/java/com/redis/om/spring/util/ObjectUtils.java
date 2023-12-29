@@ -26,6 +26,7 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.util.ReflectionUtils;
 import redis.clients.jedis.args.GeoUnit;
 import redis.clients.jedis.search.Document;
+import redis.clients.jedis.search.Schema;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -689,6 +690,36 @@ public class ObjectUtils {
       return word + "_";
     }
     return word;
+  }
+
+  public static String getSchemaFieldName(Schema.Field field) {
+    String toStringOutput = field.toString();
+    // Splitting by single quote character to isolate the name field and other fields
+    String[] parts = toStringOutput.split("'");
+    // parts[1] should now contain 'fieldNameValue' or 'fieldNameValue AS alias'
+    if (parts.length > 1) {
+      // Further splitting by ' AS ' to handle alias
+      String[] nameParts = parts[1].split(" AS ");
+      // The actual field name will always be the first part before ' AS '
+      return nameParts[0];  // Return fieldNameValue, before any ' AS ' part
+    }
+    return "";  // Return empty string if not found or invalid format
+  }
+
+  public static String getSchemaFieldType(Schema.Field field) {
+    String toStringOutput = field.toString();
+    // Assuming the format is exactly as provided: Field{name='fieldNameValue', type=typeValue, sortable=booleanValue, noindex=booleanValue}
+    // Splitting the string around ", " to get each field
+    String[] parts = toStringOutput.split(", ");
+
+    // Now find and return the part that starts with "type="
+    for (String part : parts) {
+      if (part.startsWith("type=")) {
+        // Assuming type value does not contain ','
+        return part.substring(5);  // "type=".length() == 5
+      }
+    }
+    return "";  // Return null if type is not found or invalid format
   }
 
   public static final Character REPLACEMENT_CHARACTER = '_';
