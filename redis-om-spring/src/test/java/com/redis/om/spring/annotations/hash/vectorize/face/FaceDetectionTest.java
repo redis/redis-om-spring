@@ -45,7 +45,7 @@ class FaceDetectionTest extends AbstractBaseEnhancedRedisTest {
             .collect(Collectors.toList());
 
         assertAll( //
-            () -> assertThat(detectedObjects).hasSize(115),
+            () -> assertThat(detectedObjects).hasSize(338),
             () -> assertThat(detectedObjects).map(DetectedObject::getClassName).allMatch(cn -> cn.equalsIgnoreCase("Face"))
         );
       }

@@ -688,7 +688,7 @@ public class RediSearchIndexer {
           && !idField.isAnnotationPresent(Searchable.class)
           && !idField.isAnnotationPresent(TagIndexed.class)
           && !idField.isAnnotationPresent(TextIndexed.class)
-          && (fields.stream().noneMatch(f -> f.name.equals(idField.getName())))) {
+          && (fields.stream().noneMatch(f -> getSchemaFieldName(f).equals(idField.getName())))) {
         Class<?> idClass = idField.getType();
         if (idField.getType().isPrimitive()) {
           String cls = com.redis.om.spring.util.ObjectUtils.getTargetClassName(idClass.getName());
@@ -750,7 +750,6 @@ public class RediSearchIndexer {
 
     if (cl.isAnnotationPresent(Document.class)) {
       Document document = cl.getAnnotation(Document.class);
-      index.setAsync(document.async());
       Optional.ofNullable(document.filter()).filter(ObjectUtils::isNotEmpty).ifPresent(index::setFilter);
       Optional.ofNullable(document.language()).filter(ObjectUtils::isNotEmpty).ifPresent(lang -> index.setLanguage(lang.getValue()));
       Optional.ofNullable(document.languageField()).filter(ObjectUtils::isNotEmpty).ifPresent(index::setLanguageField);

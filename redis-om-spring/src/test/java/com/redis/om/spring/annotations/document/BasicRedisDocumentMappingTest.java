@@ -1,11 +1,16 @@
 package com.redis.om.spring.annotations.document;
 
+import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisGeoCommands;
@@ -17,7 +22,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -647,5 +654,65 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
         () -> assertTrue(dn1After.isPresent()), //
         () -> assertEquals("dos-uno", dn1After.get().getNestLevel1().getNestLevel2().getName()) //
     );
+  }
+
+  @Test
+  void testBasicPagination() {
+    final List<Company> bunchOfCompanies = new ArrayList<>();
+    IntStream.range(1, 25).forEach(i -> {
+      Company c = Company.of("Company" + i, 2022, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "company" + i + "@inc.com");
+      bunchOfCompanies.add(c);
+    });
+    repository.saveAll(bunchOfCompanies);
+
+    Pageable pageRequest = PageRequest.of(0, 5);
+
+    Page<Company> result = repository.findAll(pageRequest);
+
+    assertEquals(5, result.getTotalPages());
+    assertEquals(24, result.getTotalElements());
+    assertEquals(5, result.getContent().size());
+  }
+
+  @Test
+  void testBasicPaginationWithSorting() {
+    final List<Company> bunchOfCompanies = new ArrayList<>();
+    IntStream.range(1, 25).forEach(i -> {
+      Company c = Company.of("Company" + i, 2022, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "company" + i + "@inc.com");
+      bunchOfCompanies.add(c);
+    });
+    repository.saveAll(bunchOfCompanies);
+
+    Pageable pageRequest = PageRequest.of(0, 10, Sort.by("name").ascending());
+
+    Page<Company> result = repository.findAll(pageRequest);
+
+    assertEquals(3, result.getTotalPages());
+    assertEquals(24, result.getTotalElements());
+    assertEquals(10, result.getContent().size());
+
+    List<String> companyNames = result.get().map(Company::getName).collect(
+      Collectors.toList());
+    assertThat(Ordering.<String>natural().isOrdered(companyNames)).isTrue();
+  }
+
+  @Test
+  void testFindAllWithSorting() {
+    final List<Company> bunchOfCompanies = new ArrayList<>();
+    IntStream.range(1, 25).forEach(i -> {
+      Company c = Company.of("Company" + i, 2022, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "company" + i + "@inc.com");
+      bunchOfCompanies.add(c);
+    });
+    repository.saveAll(bunchOfCompanies);
+
+    Iterable<Company> result = repository.findAll(Sort.by("name").ascending());
+
+    List<String> companyNames = StreamSupport.stream(result.spliterator(), false)
+      .map(Company::getName)
+      .collect(Collectors.toList());
+    assertThat(Ordering.<String>natural().isOrdered(companyNames)).isTrue();
   }
 }

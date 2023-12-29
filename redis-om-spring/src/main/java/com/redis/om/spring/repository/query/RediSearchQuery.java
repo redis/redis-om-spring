@@ -185,7 +185,7 @@ public class RediSearchQuery implements RepositoryQuery {
               }
             }
             if (r != null && alias != null && !alias.isBlank()) {
-              r.setAlias(alias);
+              r.as(alias);
             }
             group.reduce(r);
           });

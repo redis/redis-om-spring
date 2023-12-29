@@ -14,9 +14,10 @@ import java.util.Set;
 public interface SearchOperations<K> {
 
   String createIndex(Schema schema, IndexOptions options);
+  String createIndex(FTCreateParams params, List<SchemaField> fields);
   SearchResult search(Query q);
   SearchResult search(Query q, FTSearchParams params);
-  AggregationResult aggregate(AggregationBuilder q);   
+  AggregationResult aggregate(AggregationBuilder q);
   String cursorDelete(long cursorId);
   AggregationResult cursorRead(long cursorId, int count);
   String explain(Query q);
@@ -31,13 +32,13 @@ public interface SearchOperations<K> {
   Long getSuggestionLength(String key);
   String alterIndex(SchemaField... fields);
   String setConfig(String option, String value);
-  Map<String, String> getConfig(String option);
-  Map<String, String> getIndexConfig(String option);
+  Map<String, Object> getConfig(String option);
+  Map<String, Object> getIndexConfig(String option);
   String addAlias(String name);
   String updateAlias(String name);
   String deleteAlias(String name);
   String updateSynonym(String synonymGroupId, String ...terms);
   Map<String, List<String>> dumpSynonym();
   Set<String> tagVals(String value);
-  
+
 }

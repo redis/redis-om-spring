@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.1.7</version>
+    <version>3.2.0</version>
     <relativePath /> <!-- lookup parent from repository -->
   </parent>
 
@@ -24,7 +24,7 @@
     <maven.test.source>17</maven.test.source>
     <maven.test.target>17</maven.test.target>
     <maven.deploy.skip>true</maven.deploy.skip>
-    <testcontainers.redis.junit.version>1.6.3</testcontainers.redis.junit.version>
+    <testcontainers.redis.version>2.0.1</testcontainers.redis.version>
   </properties>
 
   <dependencies>
@@ -54,16 +54,22 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.redis.testcontainers</groupId>
-      <artifactId>testcontainers-redis-junit</artifactId>
-      <version>${testcontainers.redis.junit.version}</version>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>1.19.3</version>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.springdoc</groupId>
-      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-      <version>2.0.0</version>
+      <groupId>com.redis</groupId>
+      <artifactId>testcontainers-redis</artifactId>
+      <version>${testcontainers.redis.version}</version>
+      <scope>test</scope>
     </dependency>
+<!--    <dependency>-->
+<!--      <groupId>org.springdoc</groupId>-->
+<!--      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>-->
+<!--      <version>2.0.0</version>-->
+<!--    </dependency>-->
   </dependencies>
 
   <repositories>
@@ -131,7 +137,7 @@
             <path>
               <groupId>org.springframework.boot</groupId>
               <artifactId>spring-boot-configuration-processor</artifactId>
-              <version>3.1.0</version>
+              <version>3.2.0</version>
             </path>
             <path>
               <groupId>org.projectlombok</groupId>

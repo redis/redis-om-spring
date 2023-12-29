@@ -78,7 +78,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
     SearchStream<Game> searchStream = entityStream.of(Game.class);
 
     AggregationResult result = searchStream //
-        .cursor(pageSize, Duration.ofDays(2))
+        .cursor(pageSize, Duration.ofSeconds(300))
         .loadAll()
         .limit(300)
         .aggregate();
@@ -111,7 +111,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
   /**
    * <pre>
-   * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*" "WITHCURSOR" "COUNT" "45" "MAXIDLE" "172800000" "LOAD" "*" "LIMIT" "0" "300"
+   * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*" "WITHCURSOR" "COUNT" "45" "MAXIDLE" "300000" "LOAD" "*" "LIMIT" "0" "300"
    * "FT.CURSOR" "READ" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "17284697" "45"
    * "FT.CURSOR" "READ" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "17284697" "45"
    * "FT.CURSOR" "READ" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "17284697" "45"
