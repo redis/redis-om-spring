@@ -320,7 +320,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
    * @see org.springframework.data.convert.EntityWriter#write(java.lang.Object,
    * java.lang.Object) */
   @Override
-  @SuppressWarnings({ "rawtypes" })
+  @SuppressWarnings({ "rawtypes", "ConstantValue" })
   public void write(Object source, RedisData sink) {
     if (source == null) return;
 

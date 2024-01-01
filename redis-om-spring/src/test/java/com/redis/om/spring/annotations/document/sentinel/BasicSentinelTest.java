@@ -6,7 +6,6 @@ import com.redis.om.spring.annotations.document.fixtures.CompanyMeta;
 import com.redis.om.spring.annotations.document.fixtures.CompanyRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.Point;
 

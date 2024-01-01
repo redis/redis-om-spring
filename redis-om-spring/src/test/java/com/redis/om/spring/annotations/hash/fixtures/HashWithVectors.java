@@ -8,7 +8,7 @@ import com.redis.om.spring.annotations.VectorIndexed;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
-import redis.clients.jedis.search.Schema.VectorField.VectorAlgo;
+import redis.clients.jedis.search.schemafields.VectorField.VectorAlgorithm;
 
 @Data
 @RequiredArgsConstructor(staticName = "of")
@@ -20,18 +20,18 @@ public class HashWithVectors {
   private String id;
 
   @NonNull
-  @VectorIndexed(algorithm = VectorAlgo.FLAT, type = VectorType.FLOAT32, dimension = 2, distanceMetric = DistanceMetric.L2)
+  @VectorIndexed(algorithm = VectorAlgorithm.FLAT, type = VectorType.FLOAT32, dimension = 2, distanceMetric = DistanceMetric.L2)
   private String flat;
 
   @NonNull
-  @VectorIndexed(algorithm = VectorAlgo.HNSW, type = VectorType.FLOAT32, dimension = 2, distanceMetric = DistanceMetric.L2)
+  @VectorIndexed(algorithm = VectorAlgorithm.HNSW, type = VectorType.FLOAT32, dimension = 2, distanceMetric = DistanceMetric.L2)
   private String hnsw;
 
   @NonNull
-  @Indexed(schemaFieldType = SchemaFieldType.VECTOR, algorithm = VectorAlgo.FLAT, type = VectorType.FLOAT32, dimension = 2, distanceMetric = DistanceMetric.L2)
+  @Indexed(schemaFieldType = SchemaFieldType.VECTOR, algorithm = VectorAlgorithm.FLAT, type = VectorType.FLOAT32, dimension = 2, distanceMetric = DistanceMetric.L2)
   private String flat2;
 
   @NonNull
-  @Indexed(schemaFieldType = SchemaFieldType.VECTOR, algorithm = VectorAlgo.HNSW, type = VectorType.FLOAT32, dimension = 2, distanceMetric = DistanceMetric.L2)
+  @Indexed(schemaFieldType = SchemaFieldType.VECTOR, algorithm = VectorAlgorithm.HNSW, type = VectorType.FLOAT32, dimension = 2, distanceMetric = DistanceMetric.L2)
   private String hnsw2;
 }

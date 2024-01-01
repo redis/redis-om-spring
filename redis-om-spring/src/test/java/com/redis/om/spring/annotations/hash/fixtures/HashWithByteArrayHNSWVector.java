@@ -7,7 +7,7 @@ import com.redis.om.spring.annotations.SchemaFieldType;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
-import redis.clients.jedis.search.Schema.VectorField.VectorAlgo;
+import redis.clients.jedis.search.schemafields.VectorField.VectorAlgorithm;
 
 @Data
 @RequiredArgsConstructor(staticName = "of")
@@ -21,7 +21,7 @@ public class HashWithByteArrayHNSWVector {
 
   @Indexed(//
       schemaFieldType = SchemaFieldType.VECTOR, //
-      algorithm = VectorAlgo.HNSW, //
+      algorithm = VectorAlgorithm.HNSW, //
       type = VectorType.FLOAT32, //
       dimension = 100, //
       distanceMetric = DistanceMetric.L2, //
