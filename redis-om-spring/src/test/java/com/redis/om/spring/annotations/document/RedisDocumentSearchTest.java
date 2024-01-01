@@ -16,7 +16,7 @@ import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import redis.clients.jedis.json.Path;
+import redis.clients.jedis.json.Path2;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.AggregationResult;
 import redis.clients.jedis.search.aggr.Row;
@@ -276,7 +276,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
   @Test
   void testDeleteByIdWithPath() {
-    repository.deleteById(id1, Path.of("$.tag"));
+    repository.deleteById(id1, Path2.of("$.tag"));
 
     Optional<MyDoc> maybeDoc1 = repository.findById(id1);
     assertTrue(maybeDoc1.isPresent());

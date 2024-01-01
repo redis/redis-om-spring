@@ -1,7 +1,7 @@
 package com.redis.om.spring.search.stream.actions;
 
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
-import redis.clients.jedis.json.Path;
+import redis.clients.jedis.json.Path2;
 
 import java.util.function.Consumer;
 
@@ -15,7 +15,7 @@ public class NumIncrByAction<E> extends BaseAbstractAction implements Consumer<E
 
   @Override
   public void accept(E entity) {
-    json.numIncrBy(getKey(entity), Path.of("." + field.getSearchAlias()), value);
+    json.numIncrBy(getKey(entity), Path2.of("." + field.getSearchAlias()), value);
   }
 
 }

@@ -6,7 +6,6 @@ import com.redis.om.spring.util.ObjectUtils;
 import org.springframework.data.domain.*;
 import org.springframework.util.Assert;
 import redis.clients.jedis.search.aggr.AggregationResult;
-import redis.clients.jedis.util.SafeEncoder;
 
 import java.io.Serializable;
 import java.util.Iterator;

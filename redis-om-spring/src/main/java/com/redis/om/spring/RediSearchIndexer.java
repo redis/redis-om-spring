@@ -6,7 +6,7 @@ import com.redis.om.spring.annotations.*;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.query.QueryUtils;
-import com.redis.om.spring.serialization.gson.*;
+import com.redis.om.spring.serialization.gson.EnumTypeAdapter;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

@@ -2,7 +2,9 @@ package com.redis.om.spring.search.stream;
 
 import com.google.common.collect.Iterators;
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.hash.fixtures.*;
+import com.redis.om.spring.annotations.hash.fixtures.Company;
+import com.redis.om.spring.annotations.hash.fixtures.Company$;
+import com.redis.om.spring.annotations.hash.fixtures.CompanyRepository;
 import com.redis.om.spring.tuple.Fields;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.Triple;

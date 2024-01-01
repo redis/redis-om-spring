@@ -10,7 +10,6 @@ import org.springframework.data.repository.query.Param;
 import redis.clients.jedis.search.SearchResult;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 @SuppressWarnings({ "unused", "SpellCheckingInspection", "SpringDataMethodInconsistencyInspection" }) public interface MyHashRepository extends RedisEnhancedRepository<MyHash, String>, MyHashQueries {

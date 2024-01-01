@@ -1,7 +1,7 @@
 package com.redis.om.spring.search.stream.actions;
 
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
-import redis.clients.jedis.json.Path;
+import redis.clients.jedis.json.Path2;
 
 import java.util.function.Consumer;
 
@@ -18,7 +18,7 @@ public class ArrayInsertAction<E> extends BaseAbstractAction implements Consumer
 
   @Override
   public void accept(E entity) {
-    json.arrInsert(getKey(entity), Path.of("." + field.getSearchAlias()), index, value);
+    json.arrInsert(getKey(entity), Path2.of("." + field.getSearchAlias()), index, value);
   }
 
 }

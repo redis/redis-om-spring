@@ -23,7 +23,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.test.annotation.DirtiesContext;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import redis.clients.jedis.json.Path;
+import redis.clients.jedis.json.Path2;
 
 import java.util.HashSet;
 import java.util.List;
@@ -126,7 +126,7 @@ import static org.junit.jupiter.api.Assertions.*;
     assertEquals(myDoc1Id, maybeDoc1.get().getId());
     assertEquals("hello world updated", maybeDoc1.get().getTitle());
 
-    myDocRepository.deleteById(myDoc1Id, Path.of("$.tag"));
+    myDocRepository.deleteById(myDoc1Id, Path2.of("$.tag"));
     maybeDoc1 = myDocRepository.findById(myDoc1Id);
 
     assertTrue(maybeDoc1.isPresent());

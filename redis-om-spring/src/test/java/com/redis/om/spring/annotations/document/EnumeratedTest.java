@@ -1,7 +1,5 @@
 package com.redis.om.spring.annotations.document;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import com.redis.om.spring.AbstractBaseDocumentTest;
@@ -10,17 +8,16 @@ import com.redis.om.spring.annotations.document.fixtures.DeveloperRepository;
 import com.redis.om.spring.annotations.document.fixtures.DeveloperState;
 import com.redis.om.spring.annotations.document.fixtures.DeveloperType;
 import com.redis.om.spring.client.RedisModulesClient;
-import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class EnumeratedTest extends AbstractBaseDocumentTest {
 

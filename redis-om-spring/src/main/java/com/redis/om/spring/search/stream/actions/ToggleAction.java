@@ -1,7 +1,7 @@
 package com.redis.om.spring.search.stream.actions;
 
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
-import redis.clients.jedis.json.Path;
+import redis.clients.jedis.json.Path2;
 
 import java.util.function.Consumer;
 
@@ -12,6 +12,6 @@ public class ToggleAction<E> extends BaseAbstractAction implements Consumer<E> {
 
   @Override
   public void accept(E entity) {
-    json.toggle(getKey(entity), Path.of("." + field.getSearchAlias()));
+    json.toggle(getKey(entity), Path2.of("." + field.getSearchAlias()));
   }
 }

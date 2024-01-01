@@ -26,7 +26,7 @@ import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.lang.Nullable;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
-import redis.clients.jedis.json.Path;
+import redis.clients.jedis.json.Path2;
 import redis.clients.jedis.search.Document;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
@@ -206,7 +206,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
     T entity = get(id, keyspace, type);
     if (entity != null) {
-      ops.del(getKey(keyspace, id), Path.ROOT_PATH);
+      ops.del(getKey(keyspace, id), Path2.ROOT_PATH);
     }
 
     return entity;
@@ -285,12 +285,12 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
                 referenceKeys.add(referenceKey);
               }
             });
-            ops.set(key, referenceKeys, Path.of("$." + f.getName()));
+            ops.set(key, referenceKeys, Path2.of("$." + f.getName()));
           } else {
             Object id = ObjectUtils.getIdFieldForEntity(referencedValue);
             if (id != null) {
               String referenceKey = indexer.getKeyspaceForEntityClass(f.getType()) + id;
-              ops.set(key, referenceKey, Path.of("$." + f.getName()));
+              ops.set(key, referenceKey, Path2.of("$." + f.getName()));
             }
           }
         }
@@ -369,7 +369,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private Number getEntityVersion(String key, String versionProperty) {
     JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
     Class<?> type = new TypeToken<Long[]>() {}.getRawType();
-    Long[] dbVersionArray = (Long[]) ops.get(key, type, Path.of("$." + versionProperty));
+    Long[] dbVersionArray = (Long[]) ops.get(key, type, Path2.of("$." + versionProperty));
     return dbVersionArray != null ? dbVersionArray[0] : null;
   }
 }

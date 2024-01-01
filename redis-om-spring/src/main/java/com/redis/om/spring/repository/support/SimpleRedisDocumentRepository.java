@@ -46,7 +46,6 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
-import redis.clients.jedis.json.Path;
 import redis.clients.jedis.json.Path2;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
@@ -137,14 +136,14 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   }
 
   @Override
-  public void deleteById(ID id, Path path) {
+  public void deleteById(ID id, Path2 path) {
     modulesOperations.opsForJSON().del(getKey(id), path);
   }
 
   @Override
   public void updateField(T entity, MetamodelField<T, ?> field, Object value) {
     modulesOperations.opsForJSON().set(getKey(Objects.requireNonNull(metadata.getId(entity))), value,
-        Path.of(field.getJSONPath()));
+        Path2.of(field.getJSONPath()));
   }
 
   @SuppressWarnings("unchecked")
@@ -194,7 +193,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
         List<byte[]> args = new ArrayList<>(4);
         args.add(objectKey);
-        args.add(SafeEncoder.encode(Path.ROOT_PATH.toString()));
+        args.add(SafeEncoder.encode(Path2.ROOT_PATH.toString()));
         args.add(SafeEncoder.encode(gson.toJson(entity)));
         pipeline.sendCommand(JsonCommand.SET, args.toArray(new byte[args.size()][]));
 
@@ -270,7 +269,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
             List<byte[]> args = new ArrayList<>(4);
             args.add(objectKey);
-            args.add(SafeEncoder.encode(Path.of("$." + f.getName()).toString()));
+            args.add(SafeEncoder.encode(Path2.of("$." + f.getName()).toString()));
             args.add(SafeEncoder.encode(gson.toJson(referenceKeys)));
             pipeline.sendCommand(JsonCommand.SET, args.toArray(new byte[args.size()][]));
 
@@ -281,7 +280,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
               List<byte[]> args = new ArrayList<>(4);
               args.add(objectKey);
-              args.add(SafeEncoder.encode(Path.of("$." + f.getName()).toString()));
+              args.add(SafeEncoder.encode(Path2.of("$." + f.getName()).toString()));
               args.add(SafeEncoder.encode(gson.toJson(referenceKey)));
               pipeline.sendCommand(JsonCommand.SET, args.toArray(new byte[args.size()][]));
             }
@@ -344,7 +343,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   private Number getEntityVersion(String key, String versionProperty) {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     Class<?> type = new TypeToken<Long[]>() {}.getRawType();
-    Long[] dbVersionArray = (Long[]) ops.get(key, type, Path.of("$." + versionProperty));
+    Long[] dbVersionArray = (Long[]) ops.get(key, type, Path2.of("$." + versionProperty));
     return dbVersionArray != null ? dbVersionArray[0] : null;
   }
 
@@ -401,7 +400,6 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
         SearchResult searchResult = searchOps.search(query);
         Gson gson = gsonBuilder.create();
 
-        @SuppressWarnings("unchecked")
         List<T> content = (List<T>) searchResult.getDocuments().stream()
           .map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get("$")), metadata.getJavaType()))
           .toList();

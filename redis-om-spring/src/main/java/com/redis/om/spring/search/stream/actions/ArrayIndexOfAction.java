@@ -1,7 +1,7 @@
 package com.redis.om.spring.search.stream.actions;
 
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
-import redis.clients.jedis.json.Path;
+import redis.clients.jedis.json.Path2;
 
 import java.util.function.ToLongFunction;
 
@@ -16,6 +16,7 @@ public class ArrayIndexOfAction<E> extends BaseAbstractAction implements ToLongF
 
   @Override
   public long applyAsLong(E value) {
-    return json.arrIndex(getKey(value), Path.of("." + field.getSearchAlias()), element);
+    var result = json.arrIndex(getKey(value), Path2.of("." + field.getSearchAlias()), element);
+    return result != null && !result.isEmpty() ? result.get(0) : 0;
   }
 }
