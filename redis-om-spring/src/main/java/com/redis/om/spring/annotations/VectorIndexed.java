@@ -2,7 +2,7 @@ package com.redis.om.spring.annotations;
 
 import com.redis.om.spring.DistanceMetric;
 import com.redis.om.spring.VectorType;
-import redis.clients.jedis.search.Schema.VectorField.VectorAlgo;
+import redis.clients.jedis.search.schemafields.VectorField.VectorAlgorithm;
 
 import java.lang.annotation.*;
 
@@ -15,7 +15,7 @@ public @interface VectorIndexed {
   String alias() default "";
 
   // Indexing methods
-  VectorAlgo algorithm() default VectorAlgo.FLAT;
+  VectorAlgorithm algorithm() default VectorAlgorithm.FLAT;
 
   // Vector type. Current supported types are FLOAT32 and FLOAT64.
   VectorType type() default VectorType.FLOAT32;

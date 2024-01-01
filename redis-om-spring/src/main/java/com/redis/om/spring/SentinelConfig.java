@@ -33,7 +33,6 @@ public class SentinelConfig {
     sentinelConfig.setSentinels(redisNodes);
 
     final JedisPoolConfig poolConfig = new JedisPoolConfig();
-    poolConfig.setMinEvictableIdleTime(Duration.ofMillis(60000));
     poolConfig.setTimeBetweenEvictionRuns(Duration.ofMillis(30000));
     poolConfig.setNumTestsPerEvictionRun(-1);
     poolConfig.setTestWhileIdle(false);

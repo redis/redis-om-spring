@@ -12,7 +12,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
-import redis.clients.jedis.search.Schema.VectorField.VectorAlgo;
+import redis.clients.jedis.search.schemafields.VectorField.VectorAlgorithm;
 
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -63,12 +63,12 @@ public class Product {
 
 
   @Indexed(//
-      schemaFieldType = SchemaFieldType.VECTOR, //
-      algorithm = VectorAlgo.HNSW, //
-      type = VectorType.FLOAT32, //
-      dimension = 512, //
-      distanceMetric = DistanceMetric.COSINE, //
-      initialCapacity = 10
+           schemaFieldType = SchemaFieldType.VECTOR, //
+           algorithm = VectorAlgorithm.HNSW, //
+           type = VectorType.FLOAT32, //
+           dimension = 512, //
+           distanceMetric = DistanceMetric.COSINE, //
+           initialCapacity = 10
   )
   private byte[] imageEmbedding;
 
@@ -77,12 +77,12 @@ public class Product {
   private String imagePath;
 
   @Indexed(//
-      schemaFieldType = SchemaFieldType.VECTOR, //
-      algorithm = VectorAlgo.HNSW, //
-      type = VectorType.FLOAT32, //
-      dimension = 768, //
-      distanceMetric = DistanceMetric.COSINE, //
-      initialCapacity = 10
+           schemaFieldType = SchemaFieldType.VECTOR, //
+           algorithm = VectorAlgorithm.HNSW, //
+           type = VectorType.FLOAT32, //
+           dimension = 768, //
+           distanceMetric = DistanceMetric.COSINE, //
+           initialCapacity = 10
   )
   private byte[] sentenceEmbedding;
 
@@ -107,7 +107,7 @@ public class Product {
     String productDisplayName = values[9];
     String imagePath = useLocalImages ? "classpath:/static/product-images/" + id + ".jpg" : values[10];
     String productText = Stream.of(productDisplayName, "category", masterCategory, "subcategory", subCategory, "color", baseColour, "gender", gender).map(String::toLowerCase).collect(
-        Collectors.joining(" "));
+      Collectors.joining(" "));
 
     Product p = Product.of(gender, masterCategory, subCategory, articleType, baseColour, season, year, usage, productDisplayName, imagePath, productText);
     p.setId(id);
