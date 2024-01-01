@@ -79,13 +79,13 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     this.operations = operations;
     this.indexer = indexer;
     this.mappingConverter = new MappingRedisOMConverter(null,
-        new ReferenceResolverImpl(modulesOperations.getTemplate()));
-    this.enhancedKeyValueAdapter = new RedisEnhancedKeyValueAdapter(rmo.getTemplate(), rmo, indexer, featureExtractor, properties);
+        new ReferenceResolverImpl(modulesOperations.template()));
+    this.enhancedKeyValueAdapter = new RedisEnhancedKeyValueAdapter(rmo.template(), rmo, indexer, featureExtractor, properties);
     this.generator = ULIDIdentifierGenerator.INSTANCE;
-    this.auditor = new EntityAuditor(modulesOperations.getTemplate());
+    this.auditor = new EntityAuditor(modulesOperations.template());
     this.featureExtractor = featureExtractor;
     this.properties = properties;
-    this.entityStream = new EntityStreamImpl(modulesOperations, modulesOperations.getGsonBuilder(), indexer);
+    this.entityStream = new EntityStreamImpl(modulesOperations, modulesOperations.gsonBuilder(), indexer);
   }
 
   @SuppressWarnings("unchecked")
@@ -134,7 +134,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   @SuppressWarnings("unchecked")
   @Override
   public <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field) {
-    RedisTemplate<String, String> template = modulesOperations.getTemplate();
+    RedisTemplate<String, String> template = modulesOperations.template();
     List<String> keys = StreamSupport.stream(ids.spliterator(), false) //
         .map(this::getKey).toList();
 
@@ -145,7 +145,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
 
   @Override
   public Long getExpiration(ID id) {
-    RedisTemplate<String, String> template = modulesOperations.getTemplate();
+    RedisTemplate<String, String> template = modulesOperations.template();
     return template.getExpire(getKey(id));
   }
 
@@ -198,10 +198,9 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
         Query query = new Query("*");
         query.limit(Math.toIntExact(pageable.getOffset()), pageable.getPageSize());
 
-        if (pageable.getSort() != null) {
-          for (Order order : pageable.getSort()) {
-            query.setSortBy(order.getProperty(), order.isAscending());
-          }
+        pageable.getSort();
+        for (Order order : pageable.getSort()) {
+          query.setSortBy(order.getProperty(), order.isAscending());
         }
 
         SearchResult searchResult = searchOps.search(query);
@@ -237,7 +236,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
     List<S> saved = new ArrayList<>();
 
-    try (Jedis jedis = modulesOperations.getClient().getJedis().get()) {
+    try (Jedis jedis = modulesOperations.client().getJedis().get()) {
       Pipeline pipeline = jedis.pipelined();
 
       for (S entity : entities) {

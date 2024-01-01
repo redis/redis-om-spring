@@ -50,7 +50,7 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
   @Override
   public <T> T get(K key, Class<T> clazz, Path2 path) {
     var result = client.clientForJSON().jsonGet(key.toString(), path);
-    String asString = null;
+    String asString;
     if (result instanceof JSONArray jsonArray) {
       return extractValueAsClassFromJSONArray(jsonArray, clazz);
     } else if (result instanceof LinkedTreeMap<?,?> linkedTreeMap) {
@@ -204,6 +204,7 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
     return Arrays.stream(keys).map(Object::toString).toArray(String[]::new);
   }
 
+  @SuppressWarnings("unchecked")
   private <T> T extractValueAsClassFromJSONArray(JSONArray jsonArray, Class<T> clazz) {
     if (jsonArray != null && !jsonArray.isEmpty()) {
       var element = jsonArray.get(0).toString();

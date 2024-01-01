@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.*;
     @Primary
     public RedisMappingContext keyValueMappingContext() {
       RedisMappingContext mappingContext = new RedisMappingContext();
-      mappingContext.setFallbackKeySpaceResolver(type -> "CUSTOM_KEYSPACE" + ":" + type.getSimpleName());
+      mappingContext.setKeySpaceResolver(type -> "CUSTOM_KEYSPACE" + ":" + type.getSimpleName());
       return mappingContext;
     }
   }

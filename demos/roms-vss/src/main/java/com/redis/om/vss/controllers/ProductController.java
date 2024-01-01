@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 @Controller
 @RequestMapping("/")
 public class ProductController {
-  Logger logger = LoggerFactory.getLogger(ProductController.class);
+  final Logger logger = LoggerFactory.getLogger(ProductController.class);
 
   private static final int K = 15;
 

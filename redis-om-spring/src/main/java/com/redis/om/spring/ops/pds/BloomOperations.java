@@ -30,7 +30,7 @@ public interface BloomOperations<K> {
    * @param name The name of the filter
    * @param options {@link BFInsertParams}
    * @param items items to add to the filter
-   * @return array of booleans, true for each succesful insertion
+   * @return List of booleans, true for each successful insertion
    */
   List<Boolean> insert(K name, BFInsertParams options, String... items);
 

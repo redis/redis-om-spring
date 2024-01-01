@@ -13,8 +13,8 @@
 **Redis OM Spring** extends [Spring Data Redis](https://spring.io/projects/spring-data-redis) to take full advantage of Redis and [Redis Stack](https://reedis.io/docs/stack/).
 
 | Stage                                             | Release                                      | Snapshot                                        | Issues                                                               | Resolution                                                                      | Code QL                                      | License                                  | SDR Ver.                                                |
-| ------------------------------------------------- | -------------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------- | ---------------------------------------- | ------------------------------------------------------- |
-| [![Project stage][badge-Stage]][badge-stage-page] | [![Releases][badge-releases]][link-releases] | [![Snapshots][badge-snapshots]][link-snapshots] | [![Percentage of issues still open][badge-open-issues]][open-issues] | [![Average time to resolve an issue][badge-issue-resolution]][issue-resolution] | [![CodeQL][badge-codeql]][badge-codeql-page] | [![License][license-image]][license-url] | [![SDR Version][sdr-badge-releases]][sdr-link-releases] |
+|---------------------------------------------------| -------------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------- | ---------------------------------------- | ------------------------------------------------------- |
+| [![Project stage][badge-stage]][badge-stage-page] | [![Releases][badge-releases]][link-releases] | [![Snapshots][badge-snapshots]][link-snapshots] | [![Percentage of issues still open][badge-open-issues]][open-issues] | [![Average time to resolve an issue][badge-issue-resolution]][issue-resolution] | [![CodeQL][badge-codeql]][badge-codeql-page] | [![License][license-image]][license-url] | [![SDR Version][sdr-badge-releases]][sdr-link-releases] |
 
 Learn / Discuss / Collaborate
 
@@ -33,7 +33,7 @@ Learn / Discuss / Collaborate
 - [🏁 Getting Started](#-getting-started)
   - [🚀 Launch Redis](#-launch-redis)
   - [The SpringBoot App](#the-springboot-app)
-  - [💁‍♂️ The Mapped Model](#️-the-mapped-model)
+  - [💁‍♂️ The Mapped Model](#-the-mapped-model)
   - [🧰 The Repository](#-the-repository)
   - [🚤 Querying with Entity Streams](#-querying-with-entity-streams)
     - [👭 Entity Meta-model](#-entity-meta-model)
@@ -46,8 +46,9 @@ Learn / Discuss / Collaborate
   - [Dependency](#dependency)
 - [📚 Documentation](#-documentation)
 - [Demos](#demos)
-  - [Basic JSON Mapping and Querying](#basic-json-mapping-and-querying)
-- [⛏️ Troubleshooting](#️-troubleshooting)
+  - [Embedded Demos](#embedded-demos)
+  - [External Demos](#external-demos)
+- [⛏️ Troubleshooting](#-troubleshooting)
 - [✨ So How Do You Get RediSearch and RedisJSON?](#-so-how-do-you-get-redisearch-and-redisjson)
 - [💖 Contributing](#-contributing)
 - [🧑‍🤝‍🧑 Sibling Projects](#-sibling-projects)
@@ -480,7 +481,7 @@ These can be found in the `/demos` folder:
   - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-hashes`
 
 - **roms-permits**:
-  - Port of [Elena Kolevska's](https://github.com/elena-kolevska) Quick Start: Using RediSearch with JSON [Demo][redisearch-wjso] to Redis OM Spring.
+  - Port of [Elena Kolevska's](https://github.com/elena-kolevska) Quick Start: Using RediSearch with JSON [Demo][redisearch-json] to Redis OM Spring.
   - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-permits`
 
 - **roms-vss**:
@@ -568,7 +569,7 @@ Redis OM uses the [MIT license][license-url].
 [link-releases]: https://repo1.maven.org/maven2/com/redis/om/redis-om-spring/
 [open-issues]: http://isitmaintained.com/project/redis/redis-om-spring
 [issue-resolution]: http://isitmaintained.com/project/redis/redis-om-spring
-[redisearch-wjson]: https://github.com/redislabs-training/mod-devcap-redisjson-getting-started/blob/master/articles/QuickStart-RediSearchWithJSON.md
+[redisearch-json]: https://github.com/redislabs-training/mod-devcap-redisjson-getting-started/blob/master/articles/QuickStart-RediSearchWithJSON.md
 [sdr-link-releases]: https://repo1.maven.org/maven2/org/springframework/data/spring-data-redis/3.0.1/
 [discord-url]: http://discord.gg/redis
 [twitch-url]: https://www.twitch.tv/redisinc

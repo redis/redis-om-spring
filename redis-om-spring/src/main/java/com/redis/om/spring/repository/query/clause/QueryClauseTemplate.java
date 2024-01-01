@@ -6,14 +6,14 @@ import redis.clients.jedis.search.Schema.FieldType;
 
 public class QueryClauseTemplate {
   
-  private FieldType indexType;
+  private final FieldType indexType;
   
-  private Part.Type queryPartType;
+  private final Part.Type queryPartType;
 
   
-  private String querySegmentTemplate;
+  private final String querySegmentTemplate;
   
-  private Integer numberOfArguments;
+  private final Integer numberOfArguments;
 
   private QueryClauseTemplate( Schema.FieldType indexType,  Part.Type queryPartType,
        String querySegmentTemplate,  Integer numberOfArguments) {

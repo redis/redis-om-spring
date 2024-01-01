@@ -1,8 +1,5 @@
 package com.redis.om.spring.vectorize;
 
-import ai.djl.translate.TranslateException;
-
-import java.io.IOException;
 import java.io.InputStream;
 
 public class NoopFeatureExtractor implements FeatureExtractor {
@@ -18,12 +15,12 @@ public class NoopFeatureExtractor implements FeatureExtractor {
   }
 
   @Override
-  public byte[] getFacialImageEmbeddingsAsByteArrayFor(InputStream is) throws IOException, TranslateException {
+  public byte[] getFacialImageEmbeddingsAsByteArrayFor(InputStream is) {
     return new byte[0];
   }
 
   @Override
-  public float[] getFacialImageEmbeddingsAsFloatArrayFor(InputStream is) throws IOException, TranslateException {
+  public float[] getFacialImageEmbeddingsAsFloatArrayFor(InputStream is) {
     return new float[0];
   }
 

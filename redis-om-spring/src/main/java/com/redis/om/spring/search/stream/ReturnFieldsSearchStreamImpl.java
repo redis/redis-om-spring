@@ -289,12 +289,12 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
       if (useNoContent) {
         query.setNoContent();
         SearchResult searchResult = entitySearchStream.getOps().search(query);
-        if (searchResult.getDocuments().size() > 0) {
+        if (!searchResult.getDocuments().isEmpty()) {
           String keySample = searchResult.getDocuments().get(0).getId();
           int idBegin = keySample.indexOf(":") + 1;
           resolvedStream = (Stream<T>) searchResult.getDocuments().stream().map(Document::getId).map(key -> key.substring(idBegin));
         } else {
-          resolvedStream = (Stream<T>) Stream.empty();
+          resolvedStream = Stream.empty();
         }
       } else {
         boolean returningFullEntity = (returning.stream().anyMatch(foi -> foi.getSearchAlias().equalsIgnoreCase("__this")));
@@ -313,7 +313,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
               .stream() //
               .map(d -> { //
                 if (isDocument) {
-                  return (E) gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), entitySearchStream.getEntityClass());
+                  return gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), entitySearchStream.getEntityClass());
                 } else {
                   return (E) ObjectUtils.documentToObject(d, entitySearchStream.getEntityClass(), mappingConverter);
                 }

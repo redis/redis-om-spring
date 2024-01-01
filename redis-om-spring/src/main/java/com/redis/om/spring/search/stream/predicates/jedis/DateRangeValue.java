@@ -9,8 +9,8 @@ public class DateRangeValue extends RangeValue {
   private final Date from;
   private final Date to;
 
-  public static Date MIN = new Date(Long.MIN_VALUE);
-  public static Date MAX = new Date(Long.MAX_VALUE);
+  public static final Date MIN = new Date(Long.MIN_VALUE);
+  public static final Date MAX = new Date(Long.MAX_VALUE);
 
   public DateRangeValue(Date from, Date to) {
     this.from = from;

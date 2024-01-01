@@ -100,7 +100,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     }
     this.isDocument = entityClass.isAnnotationPresent(Document.class);
     this.mappingConverter = new MappingRedisOMConverter(null,
-        new ReferenceResolverImpl(modulesOperations.getTemplate()));
+        new ReferenceResolverImpl(modulesOperations.template()));
     this.exampleToNodeConverter = new ExampleToNodeConverter<>(indexer);
   }
 

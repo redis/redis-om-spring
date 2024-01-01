@@ -266,6 +266,7 @@ public class RedisModulesConfiguration {
       );
 
       try {
+        //noinspection ResultOfMethodCallIgnored
         InetAddress.getByName("www.huggingface.co").isReachable(5000);
         return HuggingFaceTokenizer.newInstance(properties.getDjl().getSentenceTokenizerModel(), options);
       } catch (IOException ioe) {

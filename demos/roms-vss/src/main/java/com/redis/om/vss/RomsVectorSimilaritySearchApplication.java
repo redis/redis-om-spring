@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Objects;
 
 @SpringBootApplication @EnableRedisEnhancedRepositories(basePackages = "com.redis.om.vss.*") public class RomsVectorSimilaritySearchApplication {
-  Logger logger = LoggerFactory.getLogger(RomsVectorSimilaritySearchApplication.class);
+  final Logger logger = LoggerFactory.getLogger(RomsVectorSimilaritySearchApplication.class);
 
   @Value("${com.redis.om.vss.useLocalImages}") private boolean useLocalImages;
 

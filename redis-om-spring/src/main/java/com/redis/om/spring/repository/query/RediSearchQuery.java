@@ -395,10 +395,9 @@ public class RediSearchQuery implements RepositoryQuery {
           query.limit(Math.toIntExact(pageable.getOffset()), pageable.getPageSize());
           needsLimit = false;
 
-          if (pageable.getSort() != null) {
-            for (Order order : pageable.getSort()) {
-              query.setSortBy(order.getProperty(), order.isAscending());
-            }
+          pageable.getSort();
+          for (Order order : pageable.getSort()) {
+            query.setSortBy(order.getProperty(), order.isAscending());
           }
         }
       }
@@ -500,7 +499,7 @@ public class RediSearchQuery implements RepositoryQuery {
     aggregationGroups.forEach(aggregation::groupBy);
 
     // filter
-    if (aggregationFilter != null && aggregationFilter.length > 0) {
+    if (aggregationFilter != null) {
       for (String filter : aggregationFilter) {
         aggregation.filter(filter);
       }
@@ -521,13 +520,12 @@ public class RediSearchQuery implements RepositoryQuery {
           needsLimit = false;
 
           // sort by
-          if (pageable.getSort() != null) {
-            for (Order order : pageable.getSort()) {
-              if (order.isAscending()) {
-                aggregation.sortByAsc(order.getProperty());
-              } else {
-                aggregation.sortByDesc(order.getProperty());
-              }
+          pageable.getSort();
+          for (Order order : pageable.getSort()) {
+            if (order.isAscending()) {
+              aggregation.sortByAsc(order.getProperty());
+            } else {
+              aggregation.sortByDesc(order.getProperty());
             }
           }
         }

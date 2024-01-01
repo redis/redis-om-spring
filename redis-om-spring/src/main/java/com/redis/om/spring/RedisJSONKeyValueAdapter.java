@@ -348,7 +348,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
         try {
           Field fld = ReflectionUtils.findField(entityClass, settings.getTimeToLivePropertyName());
           ttlGetter = ObjectUtils.getGetterForField(entityClass, fld);
-          Long ttlPropertyValue = ((Number) ReflectionUtils.invokeMethod(ttlGetter, entity)).longValue();
+          long ttlPropertyValue = ((Number) ReflectionUtils.invokeMethod(ttlGetter, entity)).longValue();
 
           TimeToLive ttl = fld.getAnnotation(TimeToLive.class);
           if (!ttl.unit().equals(TimeUnit.SECONDS)) {

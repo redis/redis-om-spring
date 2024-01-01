@@ -156,30 +156,17 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
         this.rmo, this.properties, this.queryCreator, this.repositoryQueryType, this.gsonBuilder));
   }
 
-  private static class RediSearchQueryLookupStrategy implements QueryLookupStrategy {
-
-    private final QueryMethodEvaluationContextProvider evaluationContextProvider;
-    private final KeyValueOperations keyValueOperations;
-    private final RedisModulesOperations<?> rmo;
-    private final GsonBuilder gsonBuilder;
-    private final RedisOMProperties properties;
-
-    private final Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
-    private final Class<? extends RepositoryQuery> repositoryQueryType;
+  private record RediSearchQueryLookupStrategy(QueryMethodEvaluationContextProvider evaluationContextProvider,
+                                               KeyValueOperations keyValueOperations, RedisModulesOperations<?> rmo,
+                                               RedisOMProperties properties, Class<? extends AbstractQueryCreator<?, ?>> queryCreator,
+                                               Class<? extends RepositoryQuery> repositoryQueryType, GsonBuilder gsonBuilder) implements QueryLookupStrategy {
 
     /**
      * @param evaluationContextProvider
      * @param keyValueOperations
      * @param queryCreator
      */
-    public RediSearchQueryLookupStrategy(
-        QueryMethodEvaluationContextProvider evaluationContextProvider, //
-        KeyValueOperations keyValueOperations, //
-        RedisModulesOperations<?> rmo, //
-        RedisOMProperties properties, //
-        Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
-        Class<? extends RepositoryQuery> repositoryQueryType, //
-        GsonBuilder gsonBuilder) {
+    private RediSearchQueryLookupStrategy {
 
       Assert.notNull(evaluationContextProvider, "EvaluationContextProvider must not be null!");
       Assert.notNull(keyValueOperations, "KeyValueOperations must not be null!");
@@ -188,51 +175,42 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
       Assert.notNull(queryCreator, "Query creator type must not be null!");
       Assert.notNull(repositoryQueryType, "RepositoryQueryType type must not be null!");
 
-      this.evaluationContextProvider = evaluationContextProvider;
-      this.keyValueOperations = keyValueOperations;
-      this.rmo = rmo;
-      this.properties = properties;
-      this.queryCreator = queryCreator;
-      this.repositoryQueryType = repositoryQueryType;
-      this.gsonBuilder = gsonBuilder;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see
-     * org.springframework.data.repository.query.QueryLookupStrategy#resolveQuery(
-     * java.lang.reflect.Method,
-     * org.springframework.data.repository.core.RepositoryMetadata,
-     * org.springframework.data.projection.ProjectionFactory,
-     * org.springframework.data.repository.core.NamedQueries)
-     */
-    @Override
-    @SuppressWarnings("unchecked")
-    public RepositoryQuery resolveQuery(Method method, RepositoryMetadata metadata, ProjectionFactory factory,
+      /*
+       * (non-Javadoc)
+       *
+       * @see
+       * org.springframework.data.repository.query.QueryLookupStrategy#resolveQuery(
+       * java.lang.reflect.Method,
+       * org.springframework.data.repository.core.RepositoryMetadata,
+       * org.springframework.data.projection.ProjectionFactory,
+       * org.springframework.data.repository.core.NamedQueries)
+       */
+      @Override
+      @SuppressWarnings("unchecked")
+      public RepositoryQuery resolveQuery(Method method, RepositoryMetadata metadata, ProjectionFactory factory,
         NamedQueries namedQueries) {
 
-      QueryMethod queryMethod = new QueryMethod(method, metadata, factory);
+        QueryMethod queryMethod = new QueryMethod(method, metadata, factory);
 
-      Constructor<? extends KeyValuePartTreeQuery> constructor = (Constructor<? extends KeyValuePartTreeQuery>) ClassUtils
-          .getConstructorIfAvailable( //
-              this.repositoryQueryType, //
-              QueryMethod.class, //
-              RepositoryMetadata.class, //
-              QueryMethodEvaluationContextProvider.class, //
-              KeyValueOperations.class, //
-              RedisModulesOperations.class, //
-              Class.class, //
-              GsonBuilder.class, //
-              RedisOMProperties.class
-          );
+        Constructor<? extends KeyValuePartTreeQuery> constructor = (Constructor<? extends KeyValuePartTreeQuery>) ClassUtils.getConstructorIfAvailable(
+          //
+          this.repositoryQueryType, //
+          QueryMethod.class, //
+          RepositoryMetadata.class, //
+          QueryMethodEvaluationContextProvider.class, //
+          KeyValueOperations.class, //
+          RedisModulesOperations.class, //
+          Class.class, //
+          GsonBuilder.class, //
+          RedisOMProperties.class);
 
-      Assert.state(constructor != null, String.format(
+        Assert.state(constructor != null, String.format(
           "Constructor %s(QueryMethod, RepositoryMetadata, EvaluationContextProvider, KeyValueOperations, RedisModulesOperations, Class, GsonBuilder, RedisOMSpringProperties) not available!",
           ClassUtils.getShortName(this.repositoryQueryType)));
 
-      return BeanUtils.instantiateClass(constructor, queryMethod, metadata, evaluationContextProvider,
-          this.keyValueOperations, this.rmo, this.queryCreator, this.gsonBuilder, this.properties);
+        return BeanUtils.instantiateClass(constructor, queryMethod, metadata, evaluationContextProvider, this.keyValueOperations, this.rmo, this.queryCreator, this.gsonBuilder, this.properties);
+      }
     }
-  }
 }
