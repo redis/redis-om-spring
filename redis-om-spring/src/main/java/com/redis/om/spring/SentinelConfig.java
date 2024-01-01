@@ -1,0 +1,61 @@
+package com.redis.om.spring;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisNode;
+import org.springframework.data.redis.connection.RedisSentinelConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import redis.clients.jedis.JedisPoolConfig;
+
+import java.time.Duration;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.springframework.util.StringUtils.commaDelimitedListToSet;
+
+public class SentinelConfig {
+  @Autowired
+  Environment env;
+
+  @Bean
+  public JedisConnectionFactory jedisConnectionFactory() {
+    String master = env.getProperty("spring.redis.sentinel.master", "localhost");
+    String nodes = env.getProperty("spring.redis.sentinel.nodes");
+    Set<String> sentinelNodes = commaDelimitedListToSet(nodes);
+    Set<RedisNode> redisNodes = sentinelNodes.stream().map(RedisNode::fromString).collect(Collectors.toSet());
+
+    RedisSentinelConfiguration sentinelConfig = new RedisSentinelConfiguration()
+      .master(master);
+    sentinelConfig.setSentinels(redisNodes);
+
+    final JedisPoolConfig poolConfig = new JedisPoolConfig();
+    poolConfig.setMinEvictableIdleTime(Duration.ofMillis(60000));
+    poolConfig.setTimeBetweenEvictionRuns(Duration.ofMillis(30000));
+    poolConfig.setNumTestsPerEvictionRun(-1);
+    poolConfig.setTestWhileIdle(false);
+    poolConfig.setTestOnReturn(false);
+    poolConfig.setTestOnBorrow(false);
+
+    final int timeout = 10000;
+
+    final JedisClientConfiguration jedisClientConfiguration = JedisClientConfiguration.builder()
+      .connectTimeout(Duration.ofMillis(timeout))
+      .readTimeout(Duration.ofMillis(timeout))
+      .usePooling()
+      .poolConfig(poolConfig).build();
+
+    return new JedisConnectionFactory(sentinelConfig, jedisClientConfiguration);
+  }
+
+  @Bean
+  public StringRedisTemplate redisTemplate(RedisConnectionFactory connectionFactory) {
+    StringRedisTemplate template = new StringRedisTemplate();
+    template.setConnectionFactory(connectionFactory);
+
+    return template;
+  }
+}
