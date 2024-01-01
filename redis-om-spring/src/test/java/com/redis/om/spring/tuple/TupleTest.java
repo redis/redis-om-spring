@@ -1,7 +1,6 @@
 package com.redis.om.spring.tuple;
 
 import com.redis.om.spring.tuple.accessor.*;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigInteger;

@@ -1,7 +1,7 @@
 package com.redis.om.spring.search.stream.actions;
 
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
-import redis.clients.jedis.json.Path;
+import redis.clients.jedis.json.Path2;
 
 import java.util.function.Consumer;
 
@@ -18,6 +18,6 @@ public class ArrayTrimAction<E> extends BaseAbstractAction implements Consumer<E
 
   @Override
   public void accept(E entity) {
-    json.arrTrim(getKey(entity), Path.of("." + field.getSearchAlias()), begin, end);
+    json.arrTrim(getKey(entity), Path2.of("." + field.getSearchAlias()), begin, end);
   }
 }

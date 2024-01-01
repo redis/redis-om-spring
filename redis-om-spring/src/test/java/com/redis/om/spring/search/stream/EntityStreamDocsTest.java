@@ -3,7 +3,6 @@ package com.redis.om.spring.search.stream;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.Doc3Repository;
 import com.redis.om.spring.annotations.document.fixtures.*;
 import com.redis.om.spring.tuple.Fields;
 import com.redis.om.spring.tuple.Pair;

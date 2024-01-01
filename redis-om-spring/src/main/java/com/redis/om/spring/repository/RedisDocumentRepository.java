@@ -6,7 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.keyvalue.repository.KeyValueRepository;
 import org.springframework.data.repository.NoRepositoryBean;
 import org.springframework.data.repository.query.QueryByExampleExecutor;
-import redis.clients.jedis.json.Path;
+import redis.clients.jedis.json.Path2;
 
 import java.io.IOException;
 
@@ -24,7 +24,7 @@ public interface RedisDocumentRepository<T, ID> extends KeyValueRepository<T, ID
    */
   Page<ID> getIds(Pageable pageable);
 
-  void deleteById(ID id, Path path);
+  void deleteById(ID id, Path2 path);
 
   void updateField(T entity, MetamodelField<T, ?> field, Object value);
 

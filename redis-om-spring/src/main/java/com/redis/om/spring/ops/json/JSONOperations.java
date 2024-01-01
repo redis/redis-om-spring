@@ -2,13 +2,12 @@ package com.redis.om.spring.ops.json;
 
 import org.springframework.lang.Nullable;
 import redis.clients.jedis.json.JsonSetParams;
-import redis.clients.jedis.json.Path;
 import redis.clients.jedis.json.Path2;
 
 import java.util.List;
 
 public interface JSONOperations<K> {
-  Long del(K key, Path path);
+  Long del(K key, Path2 path);
 
   @Nullable
   String get(K key);
@@ -17,7 +16,7 @@ public interface JSONOperations<K> {
   <T> T get(K key, Class<T> clazz);
 
   @Nullable
-  <T> T get(K key, Class<T> clazz, Path path);
+  <T> T get(K key, Class<T> clazz, Path2 path);
 
   @SuppressWarnings("unchecked")
   List<String> mget(K... keys);
@@ -28,42 +27,44 @@ public interface JSONOperations<K> {
   @SuppressWarnings("unchecked")
   <T> List<T> mget(Path2 path, Class<T> clazz, K... keys);
 
-  void set(K key, Object object, JsonSetParams params);
-
   void set(K key, Object object);
 
-  void set(K key, Object object, Path path);
+  void set(K key, Object object, Path2 path);
 
-  void set(K key, Object object, JsonSetParams params, Path path);
+  void set(K key, Object object, JsonSetParams params);
 
-  Class<?> type(K key);
+  void set(K key, Object object, JsonSetParams params, Path2 path);
 
-  Class<?> type(K key, Path path);
+  void setEscaped(K key, Object object, JsonSetParams params, Path2 path);
 
-  Long strAppend(K key, Path path, Object object);
+  List<Class<?>> type(K key);
 
-  Long strLen(K key, Path path);
+  List<Class<?>> type(K key, Path2 path);
 
-  Long arrAppend(K key, Path path, Object... objects);
+  List<Long> strAppend(K key, Path2 path, Object object);
 
-  Long arrIndex(K key, Path path, Object scalar);
+  List<Long> strLen(K key, Path2 path);
 
-  Long arrInsert(K key, Path path, Integer index, Object... objects);
+  List<Long> arrAppend(K key, Path2 path, Object... objects);
 
-  Long arrLen(K key, Path path);
+  List<Long> arrIndex(K key, Path2 path, Object scalar);
 
-  @Nullable
-  <T> T arrPop(K key, Class<T> clazz, Path path, Integer index);
+  List<Long> arrInsert(K key, Path2 path, Integer index, Object... objects);
 
-  @Nullable
-  <T> T arrPop(K key, Class<T> clazz, Path path);
+  List<Long> arrLen(K key, Path2 path);
 
   @Nullable
-  <T> T arrPop(K key, Class<T> clazz);
+  <T> List<T> arrPop(K key, Class<T> clazz, Path2 path, Integer index);
 
-  Long arrTrim(K key, Path path, Integer start, Integer stop);
+  @Nullable
+  <T> List<T> arrPop(K key, Class<T> clazz, Path2 path);
 
-  void toggle(K key, Path path);
+  @Nullable
+  <T> List<T> arrPop(K key, Class<T> clazz);
 
-  Double numIncrBy(K key, Path path, Long value);
+  List<Long> arrTrim(K key, Path2 path, Integer start, Integer stop);
+
+  void toggle(K key, Path2 path);
+
+  List<Double> numIncrBy(K key, Path2 path, Long value);
 }

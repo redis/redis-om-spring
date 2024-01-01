@@ -14,7 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisGeoCommands;
-import redis.clients.jedis.json.Path;
+import redis.clients.jedis.json.Path2;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -105,7 +105,7 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
 
     assertEquals(2, repository.count());
 
-    repository.deleteById(redis.getId(), Path.ROOT_PATH);
+    repository.deleteById(redis.getId(), Path2.ROOT_PATH);
 
     assertEquals(1, repository.count());
   }

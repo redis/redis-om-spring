@@ -2,7 +2,7 @@ package com.redis.om.spring.search.stream.actions;
 
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.util.ObjectUtils;
-import redis.clients.jedis.json.Path;
+import redis.clients.jedis.json.Path2;
 
 import java.lang.reflect.Field;
 import java.util.Optional;
@@ -23,7 +23,8 @@ public class ArrayPopAction<E, R> extends BaseAbstractAction implements Function
     Field f = field.getField();
     Optional<Class<?>> maybeClass = ObjectUtils.getCollectionElementClass(f);
     if (maybeClass.isPresent()) {
-      return (R) json.arrPop(getKey(entity), maybeClass.get(), Path.of("." + f.getName()), index);
+      var popResult = json.arrPop(getKey(entity), maybeClass.get(), Path2.of("." + f.getName()), index);
+      return popResult != null && !popResult.isEmpty() ? (R) popResult.get(0) : null;
     } else {
       throw new RuntimeException("Cannot determine contained element type for collection " + f.getName());
     }

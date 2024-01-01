@@ -4,9 +4,8 @@ import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.json.JsonSetParams;
-import redis.clients.jedis.json.Path;
+import redis.clients.jedis.json.Path2;
 
 import java.util.List;
 import java.util.Objects;
@@ -127,8 +126,8 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
   void basicSetGetShouldSucceed() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     // naive set with a path
-    ops.set("null", null, Path.ROOT_PATH);
-    assertNull(ops.get("null", String.class, Path.ROOT_PATH));
+    ops.set("null", null, Path2.ROOT_PATH);
+    assertNull(ops.get("null", String.class, Path2.ROOT_PATH));
 
     // real scalar value and no path
     ops.set("str", "strong");
@@ -140,7 +139,7 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
     assertEquals(obj, ops.get("obj", IRLObject.class));
 
     // check an update
-    Path p = Path.of(".str");
+    Path2 p = Path2.of(".str");
     ops.set("obj", "strung", p);
     assertEquals("strung", ops.get("obj", String.class, p));
   }
@@ -156,7 +155,7 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
 
     assertEquals("string", Objects.requireNonNull(obj1).str);
 
-    ops.set("obj", "String", Path.of("$.str"));
+    ops.set("obj", "String", Path2.of("$.str"));
     IRLObject obj2 = ops.get("obj", IRLObject.class);
 
     assertEquals("String", Objects.requireNonNull(obj2).str);
@@ -166,8 +165,8 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
   void setExistingPathOnlyIfExistsShouldSucceed() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     ops.set("obj", new IRLObject());
-    Path p = Path.of(".str");
-    ops.set("obj", "strangle", JsonSetParams.jsonSetParams().xx(), p);
+    Path2 p = Path2.of(".str");
+    ops.setEscaped("obj", "strangle", JsonSetParams.jsonSetParams().xx(), p);
     assertEquals("strangle", ops.get("obj", String.class, p));
   }
 
@@ -176,7 +175,7 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     ops.set("obj1", new IRLObject());
     ops.set("obj1", "strangle");
-    assertEquals("strangle", ops.get("obj1", String.class, Path.ROOT_PATH));
+    assertEquals("strangle", ops.get("obj1", String.class, Path2.ROOT_PATH));
   }
 
   @Test
@@ -219,7 +218,7 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
     IRLObject obj = new IRLObject();
     ops.set("obj", obj);
 
-    Path pbool = Path.of(".bTrue");
+    Path2 pbool = Path2.of(".bTrue");
     // check initial value
     assertEquals(Boolean.TRUE, ops.get("obj", Boolean.class, pbool));
 
@@ -232,46 +231,41 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
     assertEquals(Boolean.TRUE, ops.get("obj", Boolean.class, pbool));
 
     // ignore non-boolean field
-    Path pstr = Path.of(".str");
-    try {
-      ops.toggle("obj", pstr);
-      fail("Path not a bool");
-    } catch (JedisDataException jde) {
-      assertTrue(jde.getMessage().contains("not a bool"));
-    }
+    Path2 pstr = Path2.of(".str");
+    ops.toggle("obj", pstr);
     assertEquals("string", ops.get("obj", String.class, pstr));
   }
 
   @Test
   void testStringLen() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
-    ops.set("str", "foo", Path.ROOT_PATH);
-    assertEquals(Long.valueOf(3L), ops.strLen("str", Path.ROOT_PATH));
+    ops.set("str", "foo", Path2.ROOT_PATH);
+    assertEquals(Long.valueOf(3L), ops.strLen("str", Path2.ROOT_PATH).get(0));
   }
 
   @Test
   void testArrayPop() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
-    ops.set("arr", new int[] { 0, 1, 2, 3, 4 }, Path.ROOT_PATH);
-    assertEquals(Long.valueOf(4L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, 4));
-    assertEquals(Long.valueOf(3L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, -1));
-    assertEquals(Long.valueOf(2L), ops.arrPop("arr", Long.class, Path.ROOT_PATH));
-    assertEquals(Long.valueOf(0L), ops.arrPop("arr", Long.class, Path.ROOT_PATH, 0));
-    assertEquals(Long.valueOf(1L), ops.arrPop("arr", Long.class));
+    ops.set("arr", new int[] { 0, 1, 2, 3, 4 }, Path2.ROOT_PATH);
+    assertEquals(Long.valueOf(4L), ops.arrPop("arr", Long.class, Path2.ROOT_PATH, 4).get(0));
+    assertEquals(Long.valueOf(3L), ops.arrPop("arr", Long.class, Path2.ROOT_PATH, -1).get(0));
+    assertEquals(Long.valueOf(2L), ops.arrPop("arr", Long.class, Path2.ROOT_PATH).get(0));
+    assertEquals(Long.valueOf(0L), ops.arrPop("arr", Long.class, Path2.ROOT_PATH, 0).get(0));
+    assertEquals(Long.valueOf(1L), ops.arrPop("arr", Long.class).get(0));
   }
 
   @Test
   void typeChecksShouldSucceed() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
-    ops.set("foobar", new FooBarObject(), Path.ROOT_PATH);
-    assertSame(Object.class, ops.type("foobar"));
-    assertSame(Object.class, ops.type("foobar", Path.ROOT_PATH));
-    assertSame(String.class, ops.type("foobar", Path.of(".foo")));
-    assertSame(int.class, ops.type("foobar", Path.of(".fooI")));
-    assertSame(float.class, ops.type("foobar", Path.of(".fooF")));
-    assertSame(List.class, ops.type("foobar", Path.of(".fooArr")));
-    assertSame(boolean.class, ops.type("foobar", Path.of(".fooB")));
-    assertNull(ops.type("foobar", Path.of(".fooErr")));
+    ops.set("foobar", new FooBarObject(), Path2.ROOT_PATH);
+    assertSame(Object.class, ops.type("foobar").get(0));
+    assertSame(Object.class, ops.type("foobar", Path2.ROOT_PATH).get(0));
+    assertSame(String.class, ops.type("foobar", Path2.of(".foo")).get(0));
+    assertSame(int.class, ops.type("foobar", Path2.of(".fooI")).get(0));
+    assertSame(float.class, ops.type("foobar", Path2.of(".fooF")).get(0));
+    assertSame(List.class, ops.type("foobar", Path2.of(".fooArr")).get(0));
+    assertSame(boolean.class, ops.type("foobar", Path2.of(".fooB")).get(0));
+    assertTrue(ops.type("foobar", Path2.of(".fooErr")).isEmpty());
   }
 
 }

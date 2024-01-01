@@ -1,7 +1,5 @@
 package com.redis.om.spring.search.stream;
 
-import redis.clients.jedis.search.FTSearchParams;
-
 public class SummarizeParams {
   public Integer getFragsNum() {
     return fragsNum;
