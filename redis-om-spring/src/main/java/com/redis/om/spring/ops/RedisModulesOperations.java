@@ -9,17 +9,7 @@ import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.ops.search.SearchOperationsImpl;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-public class RedisModulesOperations<K> {
-
-  private final GsonBuilder gsonBuilder;
-  private final RedisModulesClient client;
-  private final StringRedisTemplate template;
-
-  public RedisModulesOperations(RedisModulesClient client, StringRedisTemplate template, GsonBuilder gsonBuilder) {
-    this.client = client;
-    this.template = template;
-    this.gsonBuilder = gsonBuilder;
-  }
+public record RedisModulesOperations<K>(RedisModulesClient client, StringRedisTemplate template, GsonBuilder gsonBuilder) {
 
   public JSONOperations<K> opsForJSON() {
     return new JSONOperationsImpl<>(client, gsonBuilder);
@@ -43,17 +33,5 @@ public class RedisModulesOperations<K> {
 
   public TopKOperations<K> opsForTopK() {
     return new TopKOperationsImpl<>(client);
-  }
-
-  public StringRedisTemplate getTemplate() {
-    return template;
-  }
-
-  public RedisModulesClient getClient() {
-    return client;
-  }
-
-  public GsonBuilder getGsonBuilder() {
-    return gsonBuilder;
   }
 }

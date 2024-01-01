@@ -217,13 +217,12 @@ public class RediSearchIndexer {
           fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
               indexed.arrayIndex(), indexed.alias()));
         } else if (fieldType.isEnum()) {
-          switch (indexed.serializationHint()) {
-            case ORDINAL -> {
-              fields.add(indexAsNumericFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.noindex(),
-                indexed.alias()));
-              gsonBuilder.registerTypeAdapter(fieldType, EnumTypeAdapter.of(fieldType));
-            }
-            default -> fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
+          if (Objects.requireNonNull(indexed.serializationHint()) == SerializationHint.ORDINAL) {
+            fields.add(indexAsNumericFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.noindex(),
+              indexed.alias()));
+            gsonBuilder.registerTypeAdapter(fieldType, EnumTypeAdapter.of(fieldType));
+          } else {
+            fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
               indexed.arrayIndex(), indexed.alias()));
           }
         }
@@ -359,7 +358,6 @@ public class RediSearchIndexer {
 
   private Field indexAsVectorFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix,
       Indexed indexed) {
-    TypeInformation<?> typeInfo = TypeInformation.of(field.getType());
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
     String fieldName = fieldPrefix + field.getName();
 

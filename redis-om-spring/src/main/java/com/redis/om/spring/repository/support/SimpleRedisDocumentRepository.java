@@ -99,14 +99,14 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     this.operations = operations;
     this.indexer = indexer;
     this.mappingConverter = new MappingRedisOMConverter(null,
-        new ReferenceResolverImpl(modulesOperations.getTemplate()));
+        new ReferenceResolverImpl(modulesOperations.template()));
     this.generator = ULIDIdentifierGenerator.INSTANCE;
     this.gsonBuilder = gsonBuilder;
     this.mappingContext = mappingContext;
-    this.auditor = new EntityAuditor(modulesOperations.getTemplate());
+    this.auditor = new EntityAuditor(modulesOperations.template());
     this.featureExtractor = featureExtractor;
     this.properties = properties;
-    this.entityStream = new EntityStreamImpl(modulesOperations, modulesOperations.getGsonBuilder(), indexer);
+    this.entityStream = new EntityStreamImpl(modulesOperations, modulesOperations.gsonBuilder(), indexer);
   }
 
   @Override
@@ -157,7 +157,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
   @Override
   public Long getExpiration(ID id) {
-    RedisTemplate<String, String> template = modulesOperations.getTemplate();
+    RedisTemplate<String, String> template = modulesOperations.template();
     return template.getExpire(getKey(id));
   }
 
@@ -166,7 +166,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
     List<S> saved = new ArrayList<>();
 
-    try (Jedis jedis = modulesOperations.getClient().getJedis().get()) {
+    try (Jedis jedis = modulesOperations.client().getJedis().get()) {
       Pipeline pipeline = jedis.pipelined();
       Gson gson = gsonBuilder.create();
       for (S entity : entities) {
@@ -400,7 +400,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
         SearchResult searchResult = searchOps.search(query);
         Gson gson = gsonBuilder.create();
 
-        List<T> content = (List<T>) searchResult.getDocuments().stream()
+        List<T> content = searchResult.getDocuments().stream()
           .map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get("$")), metadata.getJavaType()))
           .toList();
 

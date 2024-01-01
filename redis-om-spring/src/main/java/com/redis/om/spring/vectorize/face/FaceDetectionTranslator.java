@@ -30,12 +30,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class FaceDetectionTranslator implements Translator<Image, DetectedObjects> {
 
-    private double confThresh;
-    private double nmsThresh;
-    private int topK;
-    private double[] variance;
-    private int[][] scales;
-    private int[] steps;
+    private final double confThresh;
+    private final double nmsThresh;
+    private final int topK;
+    private final double[] variance;
+    private final int[][] scales;
+    private final int[] steps;
     private int width;
     private int height;
 

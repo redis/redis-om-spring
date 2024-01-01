@@ -101,7 +101,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
   }
 
   /* (non-Javadoc)
-   * 
+   *
    * @see org.springframework.data.convert.EntityReader#read(java.lang.Class,
    * java.lang.Object) */
   @Override
@@ -316,7 +316,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
   }
 
   /* (non-Javadoc)
-   * 
+   *
    * @see org.springframework.data.convert.EntityWriter#write(java.lang.Object,
    * java.lang.Object) */
   @Override
@@ -336,7 +336,6 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     }
 
     if (entity == null) {
-
       typeMapper.writeType(ClassUtils.getUserClass(source), sink.getBucket().getPath());
       sink.getBucket().put("_raw", conversionService.convert(source, byte[].class));
       return;
@@ -690,7 +689,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
           break;
         }
 
-        String currentPath = path + (path.equals("") ? "" : ".") + "[" + i + "]";
+        String currentPath = path + (path.isEmpty() ? "" : ".") + "[" + i + "]";
 
         if (!ClassUtils.isAssignable(typeHint.getType(), value.getClass())) {
           throw new MappingException(
@@ -1035,7 +1034,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
   }
 
   /* (non-Javadoc)
-   * 
+   *
    * @see org.springframework.data.convert.EntityConverter#getMappingContext() */
   @Override
   public RedisMappingContext getMappingContext() {
@@ -1043,7 +1042,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
   }
 
   /* (non-Javadoc)
-   * 
+   *
    * @see
    * org.springframework.data.redis.core.convert.RedisConverter#getIndexResolver(
    * ) */
@@ -1054,7 +1053,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
   }
 
   /* (non-Javadoc)
-   * 
+   *
    * @see
    * org.springframework.data.convert.EntityConverter#getConversionService() */
   @Override
@@ -1117,7 +1116,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     INSTANCE;
 
     /* (non-Javadoc)
-     * 
+     *
      * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object) */
     public int compare(String s1, String s2) {
 
@@ -1182,7 +1181,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       }
 
       /* (non-Javadoc)
-       * 
+       *
        * @see java.lang.Comparable#compareTo(java.lang.Object) */
       @Override
       public int compareTo(Part that) {
@@ -1213,7 +1212,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
 
         return this.rawValue.equals(part.rawValue);
       }
-      
+
       @Override
       public int hashCode() {
         return Objects.hash(longValue);
@@ -1284,7 +1283,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
 
       int keyspaceEndIndex = key.indexOf(DELIMITER);
 
-      return keyspaceEndIndex > 0 && key.length() > keyspaceEndIndex;
+      return keyspaceEndIndex > 0;
     }
 
     public String getKeyspace() {

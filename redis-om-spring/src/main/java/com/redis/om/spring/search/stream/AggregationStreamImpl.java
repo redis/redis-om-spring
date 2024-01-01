@@ -39,7 +39,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
   private static class ReducerFieldPair {
     private String alias;
     private final Reducer reducer;
-    private MetamodelField<?, ?> field;
+    private final MetamodelField<?, ?> field;
 
     private final ReducerFunction reducerFunction;
 
@@ -123,7 +123,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
     isDocument = entityClass.isAnnotationPresent(Document.class);
     this.gson = gson;
     this.mappingConverter = new MappingRedisOMConverter(null,
-        new ReferenceResolverImpl(modulesOperations.getTemplate()));
+        new ReferenceResolverImpl(modulesOperations.template()));
     createAggregationGroup(fields);
   }
 

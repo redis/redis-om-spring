@@ -46,7 +46,7 @@ public interface CountMinSketchOperations<K> {
    * @param key            The name of the sketch
    * @param itemIncrements a Map of the items to be increased and their integer
    *                       increment
-   * @return Count of each item after increment
+   * @return List of count of each item after increment
    */
   List<Long> cmsIncrBy(K key, Map<String, Long> itemIncrements);
 

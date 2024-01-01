@@ -141,7 +141,7 @@ public class AggregationPage<E> implements Slice<E>, Serializable {
 
     Assert.notNull(converter, "Function must not be null");
 
-    return (List<U>) this.stream().map(converter::apply).toList();
+    return (List<U>) this.stream().map(converter).toList();
   }
 
   List<E> toEntityList(AggregationResult aggregationResult) {
