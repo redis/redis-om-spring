@@ -1,10 +1,12 @@
 package com.redis.om.spring.annotations.document;
 
+import com.github.f4b6a3.ulid.Ulid;
 import com.google.common.collect.Lists;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.*;
 import com.redis.om.spring.repository.query.Sort;
 import com.redis.om.spring.search.stream.EntityStream;
+import com.redis.om.spring.search.stream.SearchStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +19,7 @@ import org.springframework.data.geo.Point;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,7 +37,27 @@ import static org.junit.jupiter.api.Assertions.assertAll;
   ComplexRepository complexRepository;
 
   @Autowired
+  WithNestedListOfUUIDsRepository withNestedListOfUUIDsRepository;
+
+  @Autowired
+  WithNestedListOfUlidsRepository withNestedListOfUlidsRepository;
+
+  @Autowired
   EntityStream es;
+
+  UUID uuid1 = UUID.fromString("297c358e-08df-4e9e-8e0e-c5fd6e2b5b2d");
+  UUID uuid2 = UUID.fromString("72a93375-30ae-4075-86cf-b07c62800713");
+  UUID uuid3 = UUID.fromString("d6b65b6c-3b93-44b7-8f30-8695028ba36f");
+  UUID uuid4 = UUID.fromString("2b3b6517-5a4c-48da-a2a7-7a9ef2162c6d");
+  UUID uuid5 = UUID.fromString("3b4c23cc-f9b6-4df1-b368-5ec82e32b8f9");
+  UUID uuid6 = UUID.fromString("01be53c2-29e6-468f-9fe8-ad082d738c65");
+
+  Ulid ulid1 = Ulid.from(uuid1);
+  Ulid ulid2 = Ulid.from(uuid2);
+  Ulid ulid3 = Ulid.from(uuid3);
+  Ulid ulid4 = Ulid.from(uuid4);
+  Ulid ulid5 = Ulid.from(uuid5);
+  Ulid ulid6 = Ulid.from(uuid6);
 
   @BeforeEach
   void setup() {
@@ -108,6 +131,19 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     Complex complex3 = Complex.of("complex3", List.of(HasAList.of(List.of("Pandiculation", "Taradiddle", "Ratoon")), HasAList.of(List.of("Yarborough", "Wabbit", "Erinaceous"))));
 
     complexRepository.saveAll(List.of(complex1, complex2, complex3));
+
+    // complex deep nested with uuids
+    WithNestedListOfUUIDs withNestedListOfUUIDs1 = WithNestedListOfUUIDs.of("withNestedListOfUUIDs1", List.of(uuid1, uuid2, uuid3));
+    WithNestedListOfUUIDs withNestedListOfUUIDs2 = WithNestedListOfUUIDs.of("withNestedListOfUUIDs2", List.of(uuid4, uuid5, uuid6));
+
+    withNestedListOfUUIDsRepository.saveAll(List.of(withNestedListOfUUIDs1, withNestedListOfUUIDs2));
+
+    // complex deep nested with ulids
+    WithNestedListOfUlids withNestedListOfUlids1 = WithNestedListOfUlids.of("withNestedListOfUlids1", List.of(ulid1, ulid2, ulid3));
+    WithNestedListOfUlids withNestedListOfUlids2 = WithNestedListOfUlids.of("withNestedListOfUlids2", List.of(ulid4, ulid5, ulid6));
+
+    withNestedListOfUlidsRepository.saveAll(List.of(withNestedListOfUlids1, withNestedListOfUlids2));
+
   }
 
   @Test
@@ -361,5 +397,112 @@ import static org.junit.jupiter.api.Assertions.assertAll;
         () -> assertThat(withTaradiddle.size()).isEqualTo(2), //
         () -> assertThat(withTaradiddle).extracting("id").containsExactlyInAnyOrder("complex2", "complex3") //
     );
+  }
+
+  // UUID Tests
+  @Test void testFindByNestedListOfUUIDsValuesIn() {
+    SearchStream<WithNestedListOfUUIDs> stream1 = es.of(WithNestedListOfUUIDs.class);
+
+    List<WithNestedListOfUUIDs> results1 = stream1 //
+      .filter(WithNestedListOfUUIDs$.UUIDS.in(uuid1)).collect(Collectors.toList());
+
+    List<String> ids1 = results1.stream().map(WithNestedListOfUUIDs::getId).collect(Collectors.toList());
+    assertThat(ids1).contains("withNestedListOfUUIDs1");
+
+    SearchStream<WithNestedListOfUUIDs> stream2 = es.of(WithNestedListOfUUIDs.class);
+
+    List<WithNestedListOfUUIDs> results2 = stream2 //
+      .filter(WithNestedListOfUUIDs$.UUIDS.in(uuid1, uuid4)).collect(Collectors.toList());
+
+    List<String> ids2 = results2.stream().map(WithNestedListOfUUIDs::getId).collect(Collectors.toList());
+    assertThat(ids2).contains("withNestedListOfUUIDs1", "withNestedListOfUUIDs2");
+
+    SearchStream<WithNestedListOfUUIDs> stream3 = es.of(WithNestedListOfUUIDs.class);
+
+    List<WithNestedListOfUUIDs> results3 = stream3 //
+      .filter(WithNestedListOfUUIDs$.UUIDS.in(uuid1, uuid4)).collect(Collectors.toList());
+
+    List<String> ids3 = results3.stream().map(WithNestedListOfUUIDs::getId).collect(Collectors.toList());
+    assertThat(ids3).contains("withNestedListOfUUIDs1", "withNestedListOfUUIDs2");
+  }
+
+  @Test void testFindByNestedListOfUUIDsValuesNotEq() {
+    SearchStream<WithNestedListOfUUIDs> stream1 = es.of(WithNestedListOfUUIDs.class);
+
+    List<WithNestedListOfUUIDs> results1 = stream1 //
+      .filter(WithNestedListOfUUIDs$.UUIDS.notEq(uuid1, uuid2)).collect(Collectors.toList());
+
+    List<String> ids1 = results1.stream().map(WithNestedListOfUUIDs::getId).collect(Collectors.toList());
+    assertThat(ids1).containsExactly("withNestedListOfUUIDs2");
+
+    SearchStream<WithNestedListOfUUIDs> stream2 = es.of(WithNestedListOfUUIDs.class);
+
+    List<WithNestedListOfUUIDs> results2 = stream2 //
+      .filter(WithNestedListOfUUIDs$.UUIDS.notEq(uuid4, uuid5)).collect(Collectors.toList());
+
+    List<String> ids2 = results2.stream().map(WithNestedListOfUUIDs::getId).collect(Collectors.toList());
+    assertThat(ids2).containsExactly("withNestedListOfUUIDs1");
+
+    SearchStream<WithNestedListOfUUIDs> stream3 = es.of(WithNestedListOfUUIDs.class);
+
+    List<WithNestedListOfUUIDs> results3 = stream3 //
+      .filter(WithNestedListOfUUIDs$.UUIDS.notEq(uuid1, uuid4)).collect(Collectors.toList());
+
+    List<String> ids3 = results3.stream().map(WithNestedListOfUUIDs::getId).collect(Collectors.toList());
+    assertThat(ids3).isEmpty();
+  }
+
+  // ULIDs Tests
+
+  @Test void testFindByNestedListOfUlidsValuesIn() {
+    SearchStream<WithNestedListOfUlids> stream1 = es.of(WithNestedListOfUlids.class);
+
+    List<WithNestedListOfUlids> results1 = stream1 //
+      .filter(WithNestedListOfUlids$.ULIDS.in(ulid1)).collect(Collectors.toList());
+
+    List<String> ids1 = results1.stream().map(WithNestedListOfUlids::getId).collect(Collectors.toList());
+    assertThat(ids1).contains("withNestedListOfUlids1");
+
+    SearchStream<WithNestedListOfUlids> stream2 = es.of(WithNestedListOfUlids.class);
+
+    List<WithNestedListOfUlids> results2 = stream2 //
+      .filter(WithNestedListOfUlids$.ULIDS.in(ulid1, ulid4)).collect(Collectors.toList());
+
+    List<String> ids2 = results2.stream().map(WithNestedListOfUlids::getId).collect(Collectors.toList());
+    assertThat(ids2).contains("withNestedListOfUlids1", "withNestedListOfUlids2");
+
+    SearchStream<WithNestedListOfUlids> stream3 = es.of(WithNestedListOfUlids.class);
+
+    List<WithNestedListOfUlids> results3 = stream3 //
+      .filter(WithNestedListOfUlids$.ULIDS.in(ulid1, ulid4)).collect(Collectors.toList());
+
+    List<String> ids3 = results3.stream().map(WithNestedListOfUlids::getId).collect(Collectors.toList());
+    assertThat(ids3).contains("withNestedListOfUlids1", "withNestedListOfUlids2");
+  }
+
+  @Test void testFindByNestedListOfUlidsValuesNotEq() {
+    SearchStream<WithNestedListOfUlids> stream1 = es.of(WithNestedListOfUlids.class);
+
+    List<WithNestedListOfUlids> results1 = stream1 //
+      .filter(WithNestedListOfUlids$.ULIDS.notEq(ulid1, ulid2)).collect(Collectors.toList());
+
+    List<String> ids1 = results1.stream().map(WithNestedListOfUlids::getId).collect(Collectors.toList());
+    assertThat(ids1).containsExactly("withNestedListOfUlids2");
+
+    SearchStream<WithNestedListOfUlids> stream2 = es.of(WithNestedListOfUlids.class);
+
+    List<WithNestedListOfUlids> results2 = stream2 //
+      .filter(WithNestedListOfUlids$.ULIDS.notEq(ulid4, ulid5)).collect(Collectors.toList());
+
+    List<String> ids2 = results2.stream().map(WithNestedListOfUlids::getId).collect(Collectors.toList());
+    assertThat(ids2).containsExactly("withNestedListOfUlids1");
+
+    SearchStream<WithNestedListOfUlids> stream3 = es.of(WithNestedListOfUlids.class);
+
+    List<WithNestedListOfUlids> results3 = stream3 //
+      .filter(WithNestedListOfUlids$.ULIDS.notEq(ulid1, ulid4)).collect(Collectors.toList());
+
+    List<String> ids3 = results3.stream().map(WithNestedListOfUlids::getId).collect(Collectors.toList());
+    assertThat(ids3).isEmpty();
   }
 }
