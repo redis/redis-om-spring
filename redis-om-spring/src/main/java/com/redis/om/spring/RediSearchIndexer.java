@@ -1,5 +1,6 @@
 package com.redis.om.spring;
 
+import com.github.f4b6a3.ulid.Ulid;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.JsonAdapter;
 import com.redis.om.spring.annotations.*;
@@ -207,8 +208,9 @@ public class RediSearchIndexer {
       } else if (indexed.schemaFieldType() == SchemaFieldType.AUTODETECT) {
         //
         // Any Character class, Boolean or Enum with AUTODETECT -> Tag Search Field
+        // Also UUID and Ulid (classes whose toString() is a valid text representation of the value)
         //
-        if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class)) {
+        if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class) || (fieldType == UUID.class) || (fieldType == Ulid.class)) {
           fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
             indexed.arrayIndex(), indexed.alias()));
         } else if (fieldType.isEnum()) {
@@ -252,6 +254,8 @@ public class RediSearchIndexer {
                 fields.add(indexAsNumericFieldFor(field, true, prefix, indexed.sortable(), indexed.noindex(), indexed.alias()));
               } else if (collectionType == Point.class) {
                 fields.add(indexAsGeoFieldFor(field, true, prefix, indexed.alias()));
+              } else if (collectionType == UUID.class || collectionType == Ulid.class) {
+                fields.add(indexAsTagFieldFor(field, true, prefix, indexed.sortable(), indexed.separator(), 0, indexed.alias()));
               } else {
                 // Index nested JSON fields
                 logger.debug(String.format("Found nested field on field of type: %s", field.getType()));
@@ -551,7 +555,9 @@ public class RediSearchIndexer {
           continue;
         } else if (subField.isAnnotationPresent(Indexed.class)) {
           boolean subFieldIsTagField = (subField.isAnnotationPresent(Indexed.class)
-            && (CharSequence.class.isAssignableFrom(subField.getType()) || (subField.getType() == Boolean.class)
+            && (CharSequence.class.isAssignableFrom(subField.getType())
+            || (subField.getType() == Boolean.class)
+            || (subField.getType() == UUID.class)
             || (maybeCollectionType.isPresent() && (CharSequence.class.isAssignableFrom(maybeCollectionType.get())
             || (maybeCollectionType.get() == Boolean.class)))));
           if (subFieldIsTagField) {

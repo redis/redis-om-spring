@@ -30,12 +30,24 @@ public class TagField<E, T> extends MetamodelField<E, T> {
     return new NotEqualPredicate<>(searchFieldAccessor, Arrays.asList(values));
   }
 
+  public NotEqualPredicate<E, T> notEq(Object... values) {
+    return new NotEqualPredicate<>(searchFieldAccessor, Arrays.stream(values).map(Object::toString).toList());
+  }
+
   public InPredicate<E, ?> in(String... values) {
     return new InPredicate<>(searchFieldAccessor, Arrays.asList(values));
   }
 
+  public InPredicate<E, ?> in(Object... values) {
+    return new InPredicate<>(searchFieldAccessor, Arrays.stream(values).map(Object::toString).toList());
+  }
+
   public ContainsAllPredicate<E, ?> containsAll(String... values) {
     return new ContainsAllPredicate<>(searchFieldAccessor, Arrays.asList(values));
+  }
+
+  public ContainsAllPredicate<E, ?> containsAll(Object... values) {
+    return new ContainsAllPredicate<>(searchFieldAccessor, Arrays.stream(values).map(Object::toString).toList());
   }
 
   public NotEqualPredicate<E, T> containsNone(T value) {
