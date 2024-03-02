@@ -364,6 +364,40 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
   }
 
   @Test
+  void testFindAllWithSortingById() {
+    final List<Company> bunchOfCompanies = new ArrayList<>();
+    IntStream.range(1, 25).forEach(i -> {
+      Company c = Company.of("Company" + i, 2022, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "company" + i + "@inc.com");
+      bunchOfCompanies.add(c);
+    });
+    companyRepo.saveAll(bunchOfCompanies);
+
+    Iterable<Company> result = companyRepo.findAll(Sort.by("id").ascending());
+
+    List<String> ids = StreamSupport.stream(result.spliterator(), false).map(Company::getId)
+      .collect(Collectors.toList());
+    assertThat(Ordering.<String>natural().isOrdered(ids)).isTrue();
+  }
+
+  @Test
+  void testFindAllWithSortingByIdUsingMetamodel() {
+    final List<Company> bunchOfCompanies = new ArrayList<>();
+    IntStream.range(1, 25).forEach(i -> {
+      Company c = Company.of("Company" + i, 2022, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "company" + i + "@inc.com");
+      bunchOfCompanies.add(c);
+    });
+    companyRepo.saveAll(bunchOfCompanies);
+
+    Iterable<Company> result = companyRepo.findAll(com.redis.om.spring.repository.query.Sort.by(Company$.ID).ascending());
+
+    List<String> ids = StreamSupport.stream(result.spliterator(), false).map(Company::getId)
+      .collect(Collectors.toList());
+    assertThat(Ordering.<String>natural().isOrdered(ids)).isTrue();
+  }
+
+  @Test
   void testBasicPaginationForNonIndexedEntity() {
     final List<NonIndexedHash> bunchOfNihs = new ArrayList<>();
     IntStream.range(1, 25).forEach(i -> {
