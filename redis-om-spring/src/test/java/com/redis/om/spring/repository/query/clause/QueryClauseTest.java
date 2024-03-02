@@ -7,6 +7,10 @@ import org.springframework.data.geo.Point;
 import org.springframework.data.repository.query.parser.Part;
 import redis.clients.jedis.search.Schema.FieldType;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -61,4 +65,36 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     assertEquals("findByWorkTypeIsContaining", QueryClause.getPostProcessMethodName("findByWorkTypeIsContainingAll"));
   }
 
+  @Test
+  void testPrepareQuery(){
+    // Arrange
+    List<Object> tagContainingAll = new ArrayList<>(Arrays.asList("db1", "db2"));
+    List<Object> numericContaining = new ArrayList<>(Arrays.asList(1,2,3));
+    List<Object> numericContainingAll = new ArrayList<>(Arrays.asList(1,2,3));
+    List<Object> geoContaining = new ArrayList<>(Arrays.asList(new Point(-122.066540, 37.377690), new Point(122.066540, -37.377690)));
+    List<Object> geoContainingAll = new ArrayList<>(Arrays.asList(new Point(-122.066540, 37.377690), new Point(122.066540, -37.377690)));
+    List<Object> numericGreaterThan = new ArrayList<>(Arrays.asList(5,10));
+
+    // Act
+    String tagContainingAllQuery = QueryClause.TAG_CONTAINING_ALL.prepareQuery("database", tagContainingAll);
+    String numericContainingQuery = QueryClause.NUMERIC_CONTAINING.prepareQuery("number", numericContaining);
+    String numericContainingAllQuery = QueryClause.NUMERIC_CONTAINING_ALL.prepareQuery("number", numericContainingAll);
+    String geoContainingQuery = QueryClause.GEO_CONTAINING.prepareQuery("location", geoContaining);
+    String geoContainigAllQuery = QueryClause.GEO_CONTAINING_ALL.prepareQuery("location", geoContainingAll);
+    String numericGreaterThanQuery = QueryClause.NUMERIC_GREATER_THAN.prepareQuery("number", numericGreaterThan);
+
+    // Assert
+    assertEquals("@database:{db1} @database:{db2}", tagContainingAllQuery);
+    assertEquals("@number:[1 1]|@number:[2 2]|@number:[3 3]", numericContainingQuery);
+    assertEquals("@number:[1 1] @number:[2 2] @number:[3 3]", numericContainingAllQuery);
+    assertEquals("@location:[-122.06654 37.37769 .000001 ft]|@location:[122.06654 -37.37769 .000001 ft]", geoContainingQuery);
+    assertEquals("@location:[-122.06654 37.37769 .000001 ft] @location:[122.06654 -37.37769 .000001 ft]", geoContainigAllQuery);
+    assertEquals("@number:[(5|10 inf]", numericGreaterThanQuery);
+  }
+
+  @Test
+  void testGetPostProcessMethodName(){
+    String methodName1 = "SomeOtherMethodName";
+    assertEquals(methodName1, QueryClause.getPostProcessMethodName(methodName1));
+  }
 }
