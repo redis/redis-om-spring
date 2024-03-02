@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisGeoCommands;
@@ -714,5 +715,41 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
       .map(Company::getName)
       .collect(Collectors.toList());
     assertThat(Ordering.<String>natural().isOrdered(companyNames)).isTrue();
+  }
+
+  @Test
+  void testFindAllWithSortingById() {
+    final List<Company> bunchOfCompanies = new ArrayList<>();
+    IntStream.range(1, 25).forEach(i -> {
+      Company c = Company.of("Company" + i, 2022, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "company" + i + "@inc.com");
+      bunchOfCompanies.add(c);
+    });
+    repository.saveAll(bunchOfCompanies);
+
+    Iterable<Company> result = repository.findAll(Sort.by("id").ascending());
+
+    List<String> ids = StreamSupport.stream(result.spliterator(), false)
+      .map(Company::getId)
+      .toList();
+    assertThat(Ordering.<String>natural().isOrdered(ids)).isTrue();
+  }
+
+  @Test
+  void testFindAllWithSortingByIdUsingMetamodel() {
+    final List<Company> bunchOfCompanies = new ArrayList<>();
+    IntStream.range(1, 25).forEach(i -> {
+      Company c = Company.of("Company" + i, 2022, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "company" + i + "@inc.com");
+      bunchOfCompanies.add(c);
+    });
+    repository.saveAll(bunchOfCompanies);
+
+    Iterable<Company> result = repository.findAll(com.redis.om.spring.repository.query.Sort.by(Company$.ID).ascending());
+
+    List<String> ids = StreamSupport.stream(result.spliterator(), false)
+      .map(Company::getId)
+      .toList();
+    assertThat(Ordering.<String>natural().isOrdered(ids)).isTrue();
   }
 }

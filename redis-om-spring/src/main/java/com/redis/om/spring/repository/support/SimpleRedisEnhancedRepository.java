@@ -271,7 +271,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   }
 
   public byte[] createKey(String keyspace, String id) {
-    return this.mappingConverter.toBytes(keyspace + ":" + id);
+    return this.mappingConverter.toBytes(keyspace.endsWith(":") ? keyspace + id : keyspace + ":" + id);
   }
 
   private boolean expires(RedisData data) {

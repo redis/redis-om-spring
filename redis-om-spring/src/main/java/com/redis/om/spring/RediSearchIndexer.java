@@ -117,6 +117,7 @@ public class RediSearchIndexer {
       }
 
       String entityPrefix = maybeEntityPrefix.orElse(getEntityPrefix(cl));
+      entityPrefix = entityPrefix.endsWith(":") ? entityPrefix : entityPrefix + ":";
       params.prefix(entityPrefix);
       addKeySpaceMapping(entityPrefix, cl);
       updateTTLSettings(cl, entityPrefix, isDocument, document, allClassFields);
