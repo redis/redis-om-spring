@@ -155,6 +155,30 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
   }
 
   @Test
+  void testFindAllByExampleById() {
+    MyDoc template = new MyDoc();
+    template.setId(id1);
+
+    Example<MyDoc> example = Example.of(template);
+
+    Iterable<MyDoc> docs = repository.findAll(example);
+    assertThat(docs).hasSize(1);
+    assertThat(docs.iterator().next()).extracting(MyDoc::getTitle).isEqualTo("hello world");
+  }
+
+  @Test
+  void testFindAllByExampleByIdWithExampleMatcher() {
+    MyDoc template = new MyDoc();
+    template.setId(id1);
+
+    Example<MyDoc> example = Example.of(template, ExampleMatcher.matching().withIgnoreCase(false));
+
+    Iterable<MyDoc> docs = repository.findAll(example);
+    assertThat(docs).hasSize(1);
+    assertThat(docs.iterator().next()).extracting(MyDoc::getTitle).isEqualTo("hello world");
+  }
+
+  @Test
   void testFindAllByWithPageableAndSortAsc() {
     Pageable pageRequest = PageRequest.of(0, 2,
         Sort.by("title").ascending());
