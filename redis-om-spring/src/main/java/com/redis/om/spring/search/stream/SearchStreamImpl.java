@@ -184,6 +184,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       return new WrapperSearchStream<>(resolveStream().map(mapper));
     }
 
+    resolvedStream = Stream.empty();
+
     return new ReturnFieldsSearchStreamImpl<>(this, returning, mappingConverter, getGson(), isDocument);
   }
 
@@ -334,6 +336,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     Query query = (rootNode.toString().isBlank()) ? new Query() : new Query(rootNode.toString());
     query.limit(0, 0);
     SearchResult searchResult = search.search(query);
+    resolvedStream = Stream.empty();
 
     return searchResult.getTotalResults();
   }
@@ -566,6 +569,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
       result = wrappedIds.mapToLong(mapper).boxed();
     }
+    resolvedStream = Stream.empty();
+
     return result;
   }
 
@@ -576,12 +581,14 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @SafeVarargs @Override
   public final <R> AggregationStream<R> groupBy(MetamodelField<E, ?>... fields) {
+    resolvedStream = Stream.empty();
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
     return new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(), entityClass, query, fields);
   }
 
   @Override
   public <R> AggregationStream<R> apply(String expression, String alias) {
+    resolvedStream = Stream.empty();
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
     AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(), entityClass, query);
     aggregationStream.apply(expression, alias);
@@ -590,6 +597,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @SafeVarargs @Override
   public final <R> AggregationStream<R> load(MetamodelField<E, ?>... fields) {
+    resolvedStream = Stream.empty();
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
     AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(), entityClass, query);
     aggregationStream.load(fields);
@@ -598,6 +606,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public <R> AggregationStream<R> loadAll() {
+    resolvedStream = Stream.empty();
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
     AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(), entityClass, query);
     aggregationStream.loadAll();
@@ -606,6 +615,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public <R> AggregationStream<R> cursor(int count, Duration timeout) {
+    resolvedStream = Stream.empty();
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
     AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(), entityClass, query);
     aggregationStream.cursor(count, timeout);
@@ -614,6 +624,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public Optional<E> min(NumericField<E, ?> field) {
+    resolvedStream = Stream.empty();
     List<Pair<String, ?>> minByField = this //
         .load(new MetamodelField<E, String>("__key", String.class)) //
         .sorted(Order.asc("@" + field.getSearchAlias()))
@@ -625,6 +636,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public Optional<E> max(NumericField<E, ?> field) {
+    resolvedStream = Stream.empty();
     List<Pair<String, ?>> maxByField = this //
         .load(new MetamodelField<E, String>("__key", String.class)) //
         .sorted(1, Order.desc("@" + field.getSearchAlias()))
@@ -645,6 +657,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public Slice<E> getSlice(Pageable pageable) {
+    resolvedStream = Stream.empty();
     if (pageable.getClass().isAssignableFrom(AggregationPageable.class)) {
       AggregationPageable ap = (AggregationPageable) pageable;
       AggregationResult ar = search.cursorRead(ap.getCursorId(), pageable.getPageSize());
