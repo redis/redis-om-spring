@@ -2,9 +2,7 @@ package com.redis.om.spring.search.stream;
 
 import com.google.common.collect.Iterators;
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.hash.fixtures.Company;
-import com.redis.om.spring.annotations.hash.fixtures.Company$;
-import com.redis.om.spring.annotations.hash.fixtures.CompanyRepository;
+import com.redis.om.spring.annotations.hash.fixtures.*;
 import com.redis.om.spring.tuple.Fields;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.Triple;
@@ -29,6 +27,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("SpellCheckingInspection") class EntityStreamHashTest extends AbstractBaseEnhancedRedisTest {
   @Autowired CompanyRepository repository;
+  @Autowired
+  ASimpleHashRepository aSimpleHashRepository;
   @Autowired EntityStream entityStream;
 
   String redisId;
@@ -1531,5 +1531,73 @@ import static org.junit.jupiter.api.Assertions.*;
       .collect(Collectors.toList());
 
     assertThat(names).isEmpty();
+  }
+
+  @Test void testContainingPredicateOnFreeFormTextStartMatches() {
+    var hash = ASimpleHash.of("someDoc");
+    hash.setSecond("some text about nothing");
+    hash.setThird("some other text");
+
+    aSimpleHashRepository.save(hash);
+
+    var hashes = entityStream.of(ASimpleHash.class)
+      .filter(ASimpleHash$.SECOND.containing("some text"))
+      .collect(Collectors.toList());
+
+    assertEquals(1, hashes.size());
+    assertThat(hashes.get(0).getSecond()).isEqualTo("some text about nothing");
+
+    aSimpleHashRepository.delete(hash);
+  }
+
+  @Test void testContainingPredicateOnFreeFormTextMiddleMatches() {
+    var hash = ASimpleHash.of("someDoc");
+    hash.setSecond("some text about nothing");
+    hash.setThird("some other text");
+
+    aSimpleHashRepository.save(hash);
+
+    var hashes = entityStream.of(ASimpleHash.class)
+      .filter(ASimpleHash$.SECOND.containing("text about"))
+      .collect(Collectors.toList());
+
+    assertEquals(1, hashes.size());
+    assertThat(hashes.get(0).getSecond()).isEqualTo("some text about nothing");
+
+    aSimpleHashRepository.delete(hash);
+  }
+
+  @Test void testContainingPredicateOnFreeFormTextEndMatches() {
+    var hash = ASimpleHash.of("someDoc");
+    hash.setSecond("some text about nothing");
+    hash.setThird("some other text");
+
+    aSimpleHashRepository.save(hash);
+
+    var hashes = entityStream.of(ASimpleHash.class)
+      .filter(ASimpleHash$.SECOND.containing("about nothing"))
+      .collect(Collectors.toList());
+
+    assertEquals(1, hashes.size());
+    assertThat(hashes.get(0).getSecond()).isEqualTo("some text about nothing");
+
+    aSimpleHashRepository.delete(hash);
+  }
+
+  @Test void testContainingPredicateOnFreeFormTextMiddleIncompleteWords() {
+    var hash = ASimpleHash.of("someDoc");
+    hash.setSecond("some text about nothing");
+    hash.setThird("some other text");
+
+    aSimpleHashRepository.save(hash);
+
+    var hashes = entityStream.of(ASimpleHash.class)
+      .filter(ASimpleHash$.SECOND.containing("ext abou"))
+      .collect(Collectors.toList());
+
+    assertEquals(1, hashes.size());
+    assertThat(hashes.get(0).getSecond()).isEqualTo("some text about nothing");
+
+    aSimpleHashRepository.delete(hash);
   }
 }
