@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.2.0</version>
+    <version>3.2.3</version>
     <relativePath /> <!-- lookup parent from repository -->
   </parent>
 
@@ -24,14 +24,14 @@
     <maven.test.source>17</maven.test.source>
     <maven.test.target>17</maven.test.target>
     <maven.deploy.skip>true</maven.deploy.skip>
-    <testcontainers.redis.version>2.0.1</testcontainers.redis.version>
+    <testcontainers.redis.version>2.2.0</testcontainers.redis.version>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>com.redis.om</groupId>
       <artifactId>redis-om-spring</artifactId>
-      <version>0.8.8</version>
+      <version>0.8.9</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -147,7 +147,7 @@
             <path>
               <groupId>com.redis.om</groupId>
               <artifactId>redis-om-spring</artifactId>
-              <version>0.8.8</version>
+              <version>0.8.9</version>
             </path>
           </annotationProcessorPaths>
         </configuration>

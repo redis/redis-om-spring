@@ -397,7 +397,7 @@ inherited from the parent poms):
       <path>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-configuration-processor</artifactId>
-        <version>3.1.2</version>
+        <version>3.2.3</version>
       </path>
       <path>
         <groupId>org.projectlombok</groupId>
@@ -407,7 +407,7 @@ inherited from the parent poms):
       <path>
         <groupId>com.redis.om</groupId>
         <artifactId>redis-om-spring</artifactId>
-        <version>0.8.8</version>
+        <version>0.8.9</version>
       </path>
     </annotationProcessorPaths>
   </configuration>
@@ -453,7 +453,7 @@ repositories {
 ### Dependency
 ```groovy
 ext {
-  redisOmVersion = '0.8.8'
+  redisOmVersion = '0.8.9'
 }
 
 dependencies {
