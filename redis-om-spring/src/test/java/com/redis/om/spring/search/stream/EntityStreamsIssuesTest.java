@@ -633,4 +633,19 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     );
   }
 
+  @Test
+  void testEqAgainstContentWithForwardSlash() {
+    Doc2 doc1 = doc2Repository.save(Doc2.of("This is Picture", "excellent/birds"));
+    Doc2 doc2 = doc2Repository.save(Doc2.of("Here it comes", "excellent/snow"));
+
+    var result = entityStream.of(Doc2.class)
+        .filter(Doc2$.TAG.eq("excellent/birds"))
+        .collect(Collectors.toList());
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0)).isEqualTo(doc1);
+
+    doc2Repository.deleteAll(List.of(doc1, doc2));
+  }
+
 }
