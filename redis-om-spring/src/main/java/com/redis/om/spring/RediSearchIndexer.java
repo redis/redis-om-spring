@@ -614,7 +614,8 @@ public class RediSearchIndexer {
       }
       tag.separator(separator.charAt(0));
     }
-    return tag.sortable();
+    if (sortable) tag.sortable();
+    return tag;
   }
 
   private TextField getTextField(FieldName fieldName, double weight,
