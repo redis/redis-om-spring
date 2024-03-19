@@ -10,7 +10,7 @@
 
 ---
 
-**Redis OM Spring** extends [Spring Data Redis](https://spring.io/projects/spring-data-redis) to take full advantage of Redis and [Redis Stack](https://reedis.io/docs/stack/).
+**Redis OM Spring** extends [Spring Data Redis](https://spring.io/projects/spring-data-redis) to take full advantage of Redis and [Redis Stack](https://redis.io/docs/stack/).
 
 | Stage                                             | Release                                      | Snapshot                                        | Issues                                                               | Resolution                                                                      | Code QL                                      | License                                  | SDR Ver.                                                |
 |---------------------------------------------------| -------------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------- | ---------------------------------------- | ------------------------------------------------------- |
@@ -89,7 +89,7 @@ using a RedisJSON document.
 
 ### 🚀 Launch Redis
 
-Redis OM Spring relies on the search, query, and JSON capabilities of [Redis Stack](https://reedis.io/docs/stack/).
+Redis OM Spring relies on the search, query, and JSON capabilities of [Redis Stack](https://redis.io/docs/stack/).
 Before writing any code, you'll need a Redis Stack. The quickest way to get
 this is with Docker:
 
