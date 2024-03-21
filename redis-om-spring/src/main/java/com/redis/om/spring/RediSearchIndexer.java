@@ -766,12 +766,12 @@ public class RediSearchIndexer {
       }
 
       if (Number.class.isAssignableFrom(idClass)) {
-        result = Optional.of(NumericField.of(fieldName).sortable());
+        result = Optional.of(isDocument ? NumericField.of(fieldName) : NumericField.of(fieldName).sortable());
       } else {
-        result = Optional.of(TagField.of(fieldName).separator('|').sortable());
+        result = Optional.of(isDocument ? TagField.of(fieldName).separator('|') : TagField.of(fieldName).separator('|').sortable());
       }
     } else {
-      result = Optional.of(TagField.of(fieldName).separator('|').sortable());
+      result = Optional.of(isDocument ? TagField.of(fieldName).separator('|') : TagField.of(fieldName).separator('|').sortable());
     }
 
     return result;
