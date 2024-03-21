@@ -121,8 +121,8 @@ public class RediSearchIndexer {
       params.prefix(entityPrefix);
       addKeySpaceMapping(entityPrefix, cl);
       updateTTLSettings(cl, entityPrefix, isDocument, document, allClassFields);
-      opsForSearch.createIndex(params, fields);
       entityClassToSchema.put(cl, fields);
+      opsForSearch.createIndex(params, fields);
     } catch (Exception e) {
       logger.warn(String.format(SKIPPING_INDEX_CREATION, indexName, e.getMessage()));
     }
