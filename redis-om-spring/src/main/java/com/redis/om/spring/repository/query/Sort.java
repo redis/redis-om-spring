@@ -25,6 +25,11 @@ public class Sort extends org.springframework.data.domain.Sort {
     return org.springframework.data.domain.Sort.by(direction, properties);
   }
 
+  public static org.springframework.data.domain.Sort by(MetamodelField<?, ?>... fields) {
+    String[] properties = Arrays.stream(fields).map(MetamodelField::getSearchAlias).toArray(String[]::new);
+    return org.springframework.data.domain.Sort.by(properties);
+  }
+
   @Serial private static final long serialVersionUID = 7789210988714363618L;
 
 }

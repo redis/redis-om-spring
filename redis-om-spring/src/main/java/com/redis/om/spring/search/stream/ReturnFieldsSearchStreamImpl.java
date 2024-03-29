@@ -57,7 +57,8 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     this.returning = returning;
     this.gson = gson;
     this.mappingConverter = mappingConverter;
-    this.useNoContent = returning.size() == 1 && returning.get(0).getSearchFieldAccessor().getField().isAnnotationPresent(Id.class);
+    this.useNoContent = returning.size() == 1 && returning.get(0).getSearchFieldAccessor() != null && returning.get(0)
+      .getSearchFieldAccessor().getField().isAnnotationPresent(Id.class);
     this.isDocument = isDocument;
   }
 

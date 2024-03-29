@@ -100,6 +100,30 @@ public class RedisHashQueryByExampleTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
+  void testFindAllByExampleById() {
+    MyHash template = new MyHash();
+    template.setId(id1);
+
+    Example<MyHash> example = Example.of(template);
+
+    Iterable<MyHash> hashes = repository.findAll(example);
+    assertThat(hashes).hasSize(1);
+    assertThat(hashes.iterator().next()).extracting(MyHash::getTitle).isEqualTo("hello world");
+  }
+
+  @Test
+  void testFindAllByExampleByIdWithExampleMatcher() {
+    MyHash template = new MyHash();
+    template.setId(id1);
+
+    Example<MyHash> example = Example.of(template, ExampleMatcher.matching().withIgnoreCase(false));
+
+    Iterable<MyHash> hashes = repository.findAll(example);
+    assertThat(hashes).hasSize(1);
+    assertThat(hashes.iterator().next()).extracting(MyHash::getTitle).isEqualTo("hello world");
+  }
+
+  @Test
   void testFindByTextIndexedProperty() {
     MyHash template = new MyHash();
     template.setTitle("hello world");

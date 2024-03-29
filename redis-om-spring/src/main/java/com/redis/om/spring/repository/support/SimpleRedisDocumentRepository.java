@@ -246,7 +246,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   }
 
   public byte[] createKey(String keyspace, String id) {
-    return this.mappingConverter.toBytes(keyspace + ":" + id);
+    return this.mappingConverter.toBytes(keyspace.endsWith(":") ? keyspace + id : keyspace + ":" + id);
   }
 
   private void processReferenceAnnotations(byte[] objectKey, Object entity, Pipeline pipeline) {

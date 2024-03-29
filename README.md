@@ -10,7 +10,7 @@
 
 ---
 
-**Redis OM Spring** extends [Spring Data Redis](https://spring.io/projects/spring-data-redis) to take full advantage of Redis and [Redis Stack](https://reedis.io/docs/stack/).
+**Redis OM Spring** extends [Spring Data Redis](https://spring.io/projects/spring-data-redis) to take full advantage of Redis and [Redis Stack](https://redis.io/docs/stack/).
 
 | Stage                                             | Release                                      | Snapshot                                        | Issues                                                               | Resolution                                                                      | Code QL                                      | License                                  | SDR Ver.                                                |
 |---------------------------------------------------| -------------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------- | ---------------------------------------- | ------------------------------------------------------- |
@@ -89,7 +89,7 @@ using a RedisJSON document.
 
 ### 🚀 Launch Redis
 
-Redis OM Spring relies on the search, query, and JSON capabilities of [Redis Stack](https://reedis.io/docs/stack/).
+Redis OM Spring relies on the search, query, and JSON capabilities of [Redis Stack](https://redis.io/docs/stack/).
 Before writing any code, you'll need a Redis Stack. The quickest way to get
 this is with Docker:
 
@@ -397,7 +397,7 @@ inherited from the parent poms):
       <path>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-configuration-processor</artifactId>
-        <version>3.1.2</version>
+        <version>3.2.3</version>
       </path>
       <path>
         <groupId>org.projectlombok</groupId>
@@ -407,7 +407,7 @@ inherited from the parent poms):
       <path>
         <groupId>com.redis.om</groupId>
         <artifactId>redis-om-spring</artifactId>
-        <version>0.8.8</version>
+        <version>0.8.9</version>
       </path>
     </annotationProcessorPaths>
   </configuration>
@@ -453,7 +453,7 @@ repositories {
 ### Dependency
 ```groovy
 ext {
-  redisOmVersion = '0.8.8'
+  redisOmVersion = '0.8.9'
 }
 
 dependencies {

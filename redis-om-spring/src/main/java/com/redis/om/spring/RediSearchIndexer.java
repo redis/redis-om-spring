@@ -117,6 +117,7 @@ public class RediSearchIndexer {
       }
 
       String entityPrefix = maybeEntityPrefix.orElse(getEntityPrefix(cl));
+      entityPrefix = entityPrefix.endsWith(":") ? entityPrefix : entityPrefix + ":";
       params.prefix(entityPrefix);
       addKeySpaceMapping(entityPrefix, cl);
       updateTTLSettings(cl, entityPrefix, isDocument, document, allClassFields);
@@ -613,7 +614,8 @@ public class RediSearchIndexer {
       }
       tag.separator(separator.charAt(0));
     }
-    return tag.sortable();
+    if (sortable) tag.sortable();
+    return tag;
   }
 
   private TextField getTextField(FieldName fieldName, double weight,

@@ -2440,4 +2440,75 @@ import static org.junit.jupiter.api.Assertions.*;
 
     assertThat(names).isEmpty();
   }
+
+  @Test void testContainingPredicateOnFreeFormTextStartMatches() {
+    doc3Repository.deleteAll();
+    var doc = Doc3.of("someDoc");
+    doc.setSecond("some text about nothing");
+    doc.setThird("some other text");
+
+    doc3Repository.save(doc);
+
+    var docs = entityStream.of(Doc3.class)
+      .filter(Doc3$.SECOND.containing("some text"))
+      .collect(Collectors.toList());
+
+    assertEquals(1, docs.size());
+    assertThat(docs.get(0).getSecond()).isEqualTo("some text about nothing");
+
+    doc3Repository.delete(doc);
+  }
+
+  @Test void testContainingPredicateOnFreeFormTextMiddleMatches() {
+    doc3Repository.deleteAll();
+    var doc = Doc3.of("someDoc");
+    doc.setSecond("some text about nothing");
+    doc.setThird("some other text");
+
+    doc3Repository.save(doc);
+
+    var docs = entityStream.of(Doc3.class)
+      .filter(Doc3$.SECOND.containing("text about"))
+      .collect(Collectors.toList());
+
+    assertEquals(1, docs.size());
+    assertThat(docs.get(0).getSecond()).isEqualTo("some text about nothing");
+
+    doc3Repository.delete(doc);
+  }
+
+  @Test void testContainingPredicateOnFreeFormTextEndMatches() {
+    doc3Repository.deleteAll();
+    var doc = Doc3.of("someDoc");
+    doc.setSecond("some text about nothing");
+    doc.setThird("some other text");
+
+    doc3Repository.save(doc);
+
+    var docs = entityStream.of(Doc3.class)
+      .filter(Doc3$.SECOND.containing("about nothing"))
+      .collect(Collectors.toList());
+
+    assertEquals(1, docs.size());
+    assertThat(docs.get(0).getSecond()).isEqualTo("some text about nothing");
+
+    doc3Repository.delete(doc);
+  }
+
+  @Test void testContainingPredicateOnFreeFormTextMiddleIncompleteWords() {
+    doc3Repository.deleteAll();
+    var doc = Doc3.of("someDoc");
+    doc.setSecond("some text about nothing");
+    doc.setThird("some other text");
+    doc3Repository.save(doc);
+
+    var docs = entityStream.of(Doc3.class)
+      .filter(Doc3$.SECOND.containing("ext abou"))
+      .collect(Collectors.toList());
+
+    assertEquals(1, docs.size());
+    assertThat(docs.get(0).getSecond()).isEqualTo("some text about nothing");
+
+    doc3Repository.delete(doc);
+  }
 }

@@ -119,6 +119,10 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     this.redisOMProperties = redisOMProperties;
   }
 
+  private static String sanitizeKeyspace(String keyspace) {
+    return keyspace.endsWith(":") ? keyspace.substring(0, keyspace.length() - 1) : keyspace;
+  }
+
   /*
    * (non-Javadoc)
    *
@@ -132,7 +136,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     if (item instanceof RedisData redisData) {
       rdo = redisData;
     } else {
-      byte[] redisKey = createKey(keyspace, converter.getConversionService().convert(id, String.class));
+      byte[] redisKey = createKey(sanitizeKeyspace(keyspace),
+        converter.getConversionService().convert(id, String.class));
       auditor.processEntity(redisKey, item);
       featureExtractor.processEntity(item);
 
@@ -144,7 +149,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       rdo.setId(converter.getConversionService().convert(id, String.class));
     }
 
-    byte[] objectKey = createKey(rdo.getKeyspace(), rdo.getId());
+    byte[] objectKey = createKey(sanitizeKeyspace(rdo.getKeyspace()), rdo.getId());
     redisOperations.execute((RedisCallback<Boolean>) connection -> connection.keyCommands().del(objectKey) == 0);
 
     redisOperations.executePipelined((RedisCallback<Object>) connection -> {
@@ -173,7 +178,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   public <T> T get(Object id, String keyspace, Class<T> type) {
 
     String stringId = asStringValue(id);
-    String stringKeyspace = asStringValue(keyspace);
+    String stringKeyspace = sanitizeKeyspace(asStringValue(keyspace));
 
     byte[] binId = createKey(stringKeyspace, stringId);
 
@@ -189,30 +194,6 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     data.setKeyspace(stringKeyspace);
 
     return readTimeToLiveIfSet(binId, converter.read(type, data));
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see
-   * org.springframework.data.keyvalue.core.AbstractKeyValueAdapter#delete(java.
-   * lang.Object, java.lang.String, java.lang.Class)
-   */
-  @Override
-  public <T> T delete(Object id, String keyspace, Class<T> type) {
-    T o = get(id, keyspace, type);
-
-    if (o != null) {
-
-      byte[] keyToDelete = createKey(asStringValue(keyspace), asStringValue(id));
-
-      redisOperations.execute((RedisCallback<Void>) connection -> {
-        connection.keyCommands().unlink(keyToDelete);
-        return null;
-      });
-    }
-
-    return o;
   }
 
   /*
@@ -291,13 +272,75 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     return result;
   }
 
+  /*
+   * (non-Javadoc)
+   *
+   * @see
+   * org.springframework.data.keyvalue.core.AbstractKeyValueAdapter#delete(java.
+   * lang.Object, java.lang.String, java.lang.Class)
+   */
+  @Override
+  public <T> T delete(Object id, String keyspace, Class<T> type) {
+    T o = get(id, keyspace, type);
+
+    if (o != null) {
+
+      byte[] keyToDelete = createKey(sanitizeKeyspace(asStringValue(keyspace)), asStringValue(id));
+
+      redisOperations.execute((RedisCallback<Void>) connection -> {
+        connection.keyCommands().unlink(keyToDelete);
+        return null;
+      });
+    }
+
+    return o;
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see org.springframework.data.keyvalue.core.KeyValueAdapter#count(java.lang.
+   * String)
+   */
+  @Override
+  public long count(String keyspace) {
+    long count = 0L;
+    Optional<String> maybeIndexName = indexer.getIndexName(keyspace);
+    if (maybeIndexName.isPresent()) {
+      SearchOperations<String> search = modulesOperations.opsForSearch(maybeIndexName.get());
+      // FT.SEARCH index * LIMIT 0 0
+      Query query = new Query("*");
+      query.limit(0, 0);
+      
+      SearchResult result = search.search(query);
+      
+      count = result.getTotalResults();
+    }
+    return count;
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * org.springframework.data.keyvalue.core.KeyValueAdapter#contains(java.lang.
+   * Object, java.lang.String)
+   */
+  @Override
+  public boolean contains(Object id, String keyspace) {
+    Boolean exists = redisOperations
+        .execute((RedisCallback<Boolean>) connection -> connection.keyCommands().exists(toBytes(getKey(keyspace, id))));
+
+    return exists != null && exists;
+  }
+
   @Override
   public void update(PartialUpdate<?> update) {
 
     RedisPersistentEntity<?> entity = this.converter.getMappingContext()
         .getRequiredPersistentEntity(update.getTarget());
 
-    String keyspace = entity.getKeySpace();
+    String keyspace = sanitizeKeyspace(entity.getKeySpace());
     Object id = update.getId();
 
     byte[] redisKey = createKey(keyspace, converter.getConversionService().convert(id, String.class));
@@ -346,48 +389,6 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
       return null;
     });
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see org.springframework.data.keyvalue.core.KeyValueAdapter#count(java.lang.
-   * String)
-   */
-  @Override
-  public long count(String keyspace) {
-    long count = 0L;
-    Optional<String> maybeIndexName = indexer.getIndexName(keyspace);
-    if (maybeIndexName.isPresent()) {
-      SearchOperations<String> search = modulesOperations.opsForSearch(maybeIndexName.get());
-      // FT.SEARCH index * LIMIT 0 0
-      Query query = new Query("*");
-      query.limit(0, 0);
-      
-      SearchResult result = search.search(query);
-      
-      count = result.getTotalResults();
-    }
-    return count;
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see
-   * org.springframework.data.keyvalue.core.KeyValueAdapter#contains(java.lang.
-   * Object, java.lang.String)
-   */
-  @Override
-  public boolean contains(Object id, String keyspace) {
-    Boolean exists = redisOperations
-        .execute((RedisCallback<Boolean>) connection -> connection.keyCommands().exists(toBytes(getKey(keyspace, id))));
-
-    return exists != null && exists;
-  }
-
-  protected String getKey(String keyspace, Object id) {
-    return String.format("%s:%s", keyspace, id);
   }
 
   private RedisUpdateObject fetchDeletePathsFromHash(RedisUpdateObject redisUpdateObject, String path,
@@ -499,5 +500,10 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     void addFieldToRemove(byte[] field) {
       fieldsToRemove.add(field);
     }
+  }
+
+  protected String getKey(String keyspace, Object id) {
+    String sanitizedKeyspace = sanitizeKeyspace(keyspace);
+    return String.format("%s:%s", sanitizedKeyspace, id);
   }
 }
