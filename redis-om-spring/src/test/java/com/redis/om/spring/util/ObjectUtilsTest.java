@@ -252,10 +252,10 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
   @Test
   void testLcfirst() {
-    assertThat(ObjectUtils.lcfirst("Spam")).isEqualTo("spam");
-    assertThat(ObjectUtils.lcfirst("spam")).isEqualTo("spam");
-    assertThat(ObjectUtils.lcfirst("*light")).isEqualTo("*light");
-    assertThat(ObjectUtils.lcfirst("8675309")).isEqualTo("8675309");
+    assertThat(ObjectUtils.toLowercaseFirstCharacter("Spam")).isEqualTo("spam");
+    assertThat(ObjectUtils.toLowercaseFirstCharacter("spam")).isEqualTo("spam");
+    assertThat(ObjectUtils.toLowercaseFirstCharacter("*light")).isEqualTo("*light");
+    assertThat(ObjectUtils.toLowercaseFirstCharacter("8675309")).isEqualTo("8675309");
   }
 
   @Test

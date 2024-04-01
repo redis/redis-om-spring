@@ -585,7 +585,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
             // todo: Filter out methods only returning boolean or Boolean
             .map(Element::getSimpleName).map(Object::toString).filter(n -> n.startsWith(IS_PREFIX))
             .map(n -> n.substring(2))
-            .map(ObjectUtils::lcfirst).collect(Collectors.toSet());
+            .map(ObjectUtils::toLowercaseFirstCharacter).collect(Collectors.toSet());
 
         // Retrieve all declared non-final instance fields of the annotated class
         Map<Element, String> results = element.getEnclosedElements().stream()
@@ -685,7 +685,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
             return entityName + "::" + standardGetterName;
         }
 
-        final String lambdaName = ObjectUtils.lcfirst(entityName);
+        final String lambdaName = ObjectUtils.toLowercaseFirstCharacter(entityName);
 
         if (!field.getModifiers().contains(Modifier.PROTECTED) && !field.getModifiers().contains(Modifier.PRIVATE)) {
             // We can use a lambda. Great escape hatch!
