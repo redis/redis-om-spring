@@ -706,17 +706,21 @@ public class RediSearchIndexer {
       .map(field -> (isDocument ? "$." : "") + field.getName());
   }
 
+  private boolean isAnnotationPreset(java.lang.reflect.Field idField, List<SchemaField> fields){
+    return (!idField.isAnnotationPresent(Indexed.class)
+            && !idField.isAnnotationPresent(Searchable.class)
+            && !idField.isAnnotationPresent(TagIndexed.class)
+            && !idField.isAnnotationPresent(TextIndexed.class)
+            && (fields.stream().noneMatch(f -> f.getName().equals(idField.getName()))));
+  }
+
   private Optional<SchemaField> createIndexedFieldForIdField(Class<?> cl, List<SchemaField> fields, boolean isDocument) {
     Optional<SchemaField> result = Optional.empty();
     Optional<java.lang.reflect.Field> maybeIdField = getIdFieldForEntityClass(cl);
     if (maybeIdField.isPresent()) {
       java.lang.reflect.Field idField = maybeIdField.get();
       // Only auto-index the @Id if not already indexed by the user (gh-135)
-      if (!idField.isAnnotationPresent(Indexed.class)
-        && !idField.isAnnotationPresent(Searchable.class)
-        && !idField.isAnnotationPresent(TagIndexed.class)
-        && !idField.isAnnotationPresent(TextIndexed.class)
-        && (fields.stream().noneMatch(f -> f.getName().equals(idField.getName())))) {
+      if (isAnnotationPreset(idField, fields)) {
         Class<?> idClass = idField.getType();
         if (idField.getType().isPrimitive()) {
           String cls = com.redis.om.spring.util.ObjectUtils.getTargetClassName(idClass.getName());

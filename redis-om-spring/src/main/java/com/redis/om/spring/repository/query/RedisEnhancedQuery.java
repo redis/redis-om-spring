@@ -204,7 +204,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
         this.returnFields = new String[] {};
       } else if (queryMethod.getName().startsWith("getAll")) {
         this.type = RediSearchQueryType.TAGVALS;
-        this.value = ObjectUtils.lcfirst(queryMethod.getName().substring(6));
+        this.value = ObjectUtils.toLowercaseFirstCharacter(queryMethod.getName().substring(6));
       } else if (queryMethod.getName().startsWith(AutoCompleteQueryExecutor.AUTOCOMPLETE_PREFIX)) {
         this.type = RediSearchQueryType.AUTOCOMPLETE;
       } else {

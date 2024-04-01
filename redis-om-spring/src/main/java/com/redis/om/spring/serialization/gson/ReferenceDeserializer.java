@@ -11,6 +11,7 @@ import org.apache.commons.logging.LogFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
 
@@ -55,7 +56,7 @@ public class ReferenceDeserializer implements JsonDeserializer<Object> {
       reference = deserializeEntity(jsonObject, context);
     } else if (json.isJsonArray()) {
       JsonArray jsonArray = json.getAsJsonArray();
-      reference = ObjectUtils.instantiateCollection(typeOfT);
+      reference = instantiateCollection(typeOfT);
 
       String[] keys = jsonArray.asList().stream().filter(JsonElement::isJsonPrimitive).map(jsonElement -> ObjectUtils.unQuote(jsonElement.toString())).toArray(String[]::new);
       if (keys.length > 0) {
@@ -67,6 +68,27 @@ public class ReferenceDeserializer implements JsonDeserializer<Object> {
     }
 
     return reference;
+  }
+
+  public Collection<?> instantiateCollection(Type type) {
+    Class<?> rawType = (Class<?>) ((ParameterizedType) type).getRawType();
+    if (rawType.isInterface()) {
+      if (List.class.isAssignableFrom(rawType)) {
+        return new ArrayList<>();
+      } else if (Set.class.isAssignableFrom(rawType)) {
+        return new HashSet<>();
+      } else if (Queue.class.isAssignableFrom(rawType)) {
+        return new LinkedList<>();
+      } else {
+        throw new IllegalArgumentException("Unsupported interface: " + rawType);
+      }
+    } else {
+      try {
+        return (Collection<?>) rawType.getDeclaredConstructor().newInstance();
+      } catch (Exception e) {
+        throw new IllegalArgumentException("Type not instantiatable: " + rawType);
+      }
+    }
   }
 
   private Object deserializeEntity(JsonObject jsonObject, JsonDeserializationContext context) {

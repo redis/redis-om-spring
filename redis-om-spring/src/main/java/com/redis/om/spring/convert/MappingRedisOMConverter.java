@@ -335,6 +335,10 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       typeMapper.writeType(ClassUtils.getUserClass(source), sink.getBucket().getPath());
     }
 
+    writeEntity(entity, source, sink);
+  }
+
+  private void writeEntity(RedisPersistentEntity<?> entity, Object source, RedisData sink) {
     if (entity == null) {
       typeMapper.writeType(ClassUtils.getUserClass(source), sink.getBucket().getPath());
       sink.getBucket().put("_raw", conversionService.convert(source, byte[].class));
@@ -345,7 +349,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
 
     if (entity.getTypeInformation().isCollectionLike()) {
       writeCollection(entity.getType(), entity.getKeySpace(), "", (List) source,
-          entity.getTypeInformation().getRequiredComponentType(), sink);
+              entity.getTypeInformation().getRequiredComponentType(), sink);
     } else {
       writeInternal(entity.getKeySpace(), "", source, entity.getTypeInformation(), sink);
     }

@@ -197,7 +197,7 @@ public class ObjectUtils {
    * @param input The text.
    * @return The resulting text.
    */
-  public static String lcfirst(String input) {
+  public static String toLowercaseFirstCharacter(String input) {
     return withFirst(input, first -> String.valueOf(Character.toLowerCase(first)));
   }
 
@@ -429,26 +429,26 @@ public class ObjectUtils {
     return floatArray;
   }
 
-  public static Collection<?> instantiateCollection(Type type) {
-    Class<?> rawType = (Class<?>) ((ParameterizedType) type).getRawType();
-    if (rawType.isInterface()) {
-      if (List.class.isAssignableFrom(rawType)) {
-        return new ArrayList<>();
-      } else if (Set.class.isAssignableFrom(rawType)) {
-        return new HashSet<>();
-      } else if (Queue.class.isAssignableFrom(rawType)) {
-        return new LinkedList<>();
-      } else {
-        throw new IllegalArgumentException("Unsupported interface: " + rawType);
-      }
-    } else {
-      try {
-        return (Collection<?>) rawType.getDeclaredConstructor().newInstance();
-      } catch (Exception e) {
-        throw new IllegalArgumentException("Type not instantiatable: " + rawType);
-      }
-    }
-  }
+//  public static Collection<?> instantiateCollection(Type type) {
+//    Class<?> rawType = (Class<?>) ((ParameterizedType) type).getRawType();
+//    if (rawType.isInterface()) {
+//      if (List.class.isAssignableFrom(rawType)) {
+//        return new ArrayList<>();
+//      } else if (Set.class.isAssignableFrom(rawType)) {
+//        return new HashSet<>();
+//      } else if (Queue.class.isAssignableFrom(rawType)) {
+//        return new LinkedList<>();
+//      } else {
+//        throw new IllegalArgumentException("Unsupported interface: " + rawType);
+//      }
+//    } else {
+//      try {
+//        return (Collection<?>) rawType.getDeclaredConstructor().newInstance();
+//      } catch (Exception e) {
+//        throw new IllegalArgumentException("Type not instantiatable: " + rawType);
+//      }
+//    }
+//  }
 
   public static boolean isPrimitiveOfType(Class<?> clazz, Class<?> wrapper) {
     return clazz.isPrimitive() && resolvePrimitiveIfNecessary(clazz) == wrapper;

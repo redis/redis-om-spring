@@ -24,7 +24,7 @@ public abstract class BasicAbstractTuple<T extends GenericTuple<R>, R> implement
     requireNonNull(values);
     this.baseClass = requireNonNull(baseClass);
     this.labels = labels;
-    
+
     if (!isNullable()) {
       for (Object v : values) {
         requireNonNull(v, () -> getClass().getName() + " cannot hold null values.");
@@ -35,14 +35,6 @@ public abstract class BasicAbstractTuple<T extends GenericTuple<R>, R> implement
   }
 
   protected abstract boolean isNullable();
-
-  protected int assertIndexBounds(int index) {
-    if (index < 0 || index >= size()) {
-      throw new IndexOutOfBoundsException(
-          "index " + index + " is illegal. The degree of this Tuple is " + size() + ".");
-    }
-    return index;
-  }
 
   @Override
   public int hashCode() {
