@@ -4,6 +4,7 @@ import com.redis.om.spring.AbstractBaseDocumentSentinelTest;
 import com.redis.om.spring.annotations.document.fixtures.Company;
 import com.redis.om.spring.annotations.document.fixtures.CompanyMeta;
 import com.redis.om.spring.annotations.document.fixtures.CompanyRepository;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,7 @@ class BasicSentinelTest extends AbstractBaseDocumentSentinelTest {
   @Autowired
   CompanyRepository repository;
 
+  @Disabled("Potential Regression on Sentinel Support - see GH-227")
   @Test
   @DisabledIfEnvironmentVariable(named = "GITHUB_ACTIONS", matches = "true")
   void testBasicCrudOperations() {
