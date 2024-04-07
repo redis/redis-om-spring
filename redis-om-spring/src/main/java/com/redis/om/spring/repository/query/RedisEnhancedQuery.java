@@ -44,6 +44,7 @@ import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class RedisEnhancedQuery implements RepositoryQuery {
@@ -89,7 +90,9 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   private final CuckooQueryExecutor cuckooQueryExecutor;
   private final AutoCompleteQueryExecutor autoCompleteQueryExecutor;
 
-  private boolean isANDQuery = false;
+  private final boolean isANDQuery;
+  private boolean isNullParamQuery;
+  private final KeyValueOperations keyValueOperations;
 
   @SuppressWarnings("unchecked")
   public RedisEnhancedQuery(
@@ -103,6 +106,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       RedisOMProperties redisOMProperties) {
     logger.info(String.format("Creating query %s", queryMethod.getName()));
 
+    this.keyValueOperations = keyValueOperations;
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.queryMethod = queryMethod;
     this.searchIndex = this.queryMethod.getEntityInformation().getJavaType().getName() + "Idx";
@@ -119,6 +123,10 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     @SuppressWarnings("rawtypes")
     Class[] params = queryMethod.getParameters().stream().map(Parameter::getType).toArray(Class[]::new);
     hasLanguageParameter = Arrays.stream(params).anyMatch(c -> c.isAssignableFrom(SearchLanguage.class));
+    isANDQuery = QueryClause.hasContainingAllClause(queryMethod.getName());
+
+    String methodName = isANDQuery ? QueryClause.getPostProcessMethodName(queryMethod.getName())
+      : queryMethod.getName();
 
     try {
       java.lang.reflect.Method method = repoClass.getDeclaredMethod(queryMethod.getName(), params);
@@ -208,16 +216,23 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       } else if (queryMethod.getName().startsWith(AutoCompleteQueryExecutor.AUTOCOMPLETE_PREFIX)) {
         this.type = RediSearchQueryType.AUTOCOMPLETE;
       } else {
-        isANDQuery = QueryClause.hasContainingAllClause(queryMethod.getName());
-
-        String methodName = isANDQuery ? QueryClause.getPostProcessMethodName(queryMethod.getName())
-            : queryMethod.getName();
-
         PartTree pt = new PartTree(methodName, metadata.getDomainType());
-        processPartTree(pt);
 
+        List<String> nullParamNames = new ArrayList<>();
+        List<String> notNullParamNames = new ArrayList<>();
+
+        pt.getParts().forEach(part -> {
+          if (part.getType() == Part.Type.IS_NULL) {
+            nullParamNames.add(part.getProperty().getSegment());
+          } else if (part.getType() == Part.Type.IS_NOT_NULL) {
+            notNullParamNames.add(part.getProperty().getSegment());
+          }
+        });
+
+        this.isNullParamQuery = !nullParamNames.isEmpty() || !notNullParamNames.isEmpty();
         this.type = RediSearchQueryType.QUERY;
         this.returnFields = new String[] {};
+        processPartTree(pt, nullParamNames, notNullParamNames);
       }
     } catch (NoSuchMethodException | SecurityException e) {
       logger.debug(String.format("Could not resolved query method %s(%s): %s", queryMethod.getName(),
@@ -225,14 +240,21 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     }
   }
 
-  private void processPartTree(PartTree pt) {
+  private void processPartTree(PartTree pt, List<String> nullParamNames, List<String> notNullParamNames) {
     pt.stream().forEach(orPart -> {
       List<Pair<String, QueryClause>> orPartParts = new ArrayList<>();
       orPart.iterator().forEachRemaining(part -> {
         PropertyPath propertyPath = part.getProperty();
+        List<PropertyPath> path = StreamSupport.stream(propertyPath.spliterator(), false).toList();
 
-        List<PropertyPath> path = StreamSupport.stream(propertyPath.spliterator(), false).collect(Collectors.toList());
-        orPartParts.addAll(extractQueryFields(domainType, part, path));
+        String paramName = path.get(path.size() - 1).getSegment();
+        if (nullParamNames.contains(paramName)) {
+          orPartParts.add(Pair.of(paramName, QueryClause.IS_NULL));
+        } else if (notNullParamNames.contains(paramName)) {
+          orPartParts.add(Pair.of(paramName, QueryClause.IS_NOT_NULL));
+        } else {
+          orPartParts.addAll(extractQueryFields(domainType, part, path));
+        }
       });
       queryOrParts.add(orPartParts);
     });
@@ -354,7 +376,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     } else if (maybeCuckooFilter.isPresent()) {
       return cuckooQueryExecutor.executeCuckooQuery(parameters, maybeCuckooFilter.get());
     } else if (type == RediSearchQueryType.QUERY) {
-      return executeQuery(parameters);
+      return !isNullParamQuery ? executeQuery(parameters) : executeNullQuery(parameters);
     } else if (type == RediSearchQueryType.AGGREGATION) {
       return executeAggregation(parameters);
     } else if (type == RediSearchQueryType.TAGVALS) {
@@ -375,7 +397,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
   private Object executeQuery(Object[] parameters) {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
-    String preparedQuery = prepareQuery(parameters);
+    boolean excludeNullParams = !isNullParamQuery;
+    String preparedQuery = prepareQuery(parameters, excludeNullParams);
     Query query = new Query(preparedQuery);
     query.returnFields(returnFields);
 
@@ -454,8 +477,6 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       if (searchResult.getTotalResults() > 0 && !searchResult.getDocuments().isEmpty()) {
         result = ObjectUtils.documentToObject(searchResult.getDocuments().get(0), queryMethod.getReturnedObjectType(),
             mappingConverter);
-      } else {
-        result = null;
       }
     } else if (queryMethod.isQueryForEntity() && queryMethod.isCollectionQuery()) {
       result = searchResult.getDocuments().stream() //
@@ -583,7 +604,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     return ops.tagVals(this.value);
   }
 
-  private String prepareQuery(final Object[] parameters) {
+  private String prepareQuery(final Object[] parameters, boolean excludeNullParams) {
     logger.debug(String.format("parameters: %s", Arrays.toString(parameters)));
     List<Object> params = new ArrayList<>(Arrays.asList(parameters));
     StringBuilder preparedQuery = new StringBuilder();
@@ -594,6 +615,9 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       preparedQuery.append(queryOrParts.stream().map(qop -> {
         String orPart = multipleOrParts ? "(" : "";
         orPart = orPart + qop.stream().map(fieldClauses -> {
+          if (excludeNullParams && (fieldClauses.getSecond() == QueryClause.IS_NULL || fieldClauses.getSecond() == QueryClause.IS_NOT_NULL)) {
+            return "";
+          }
           String fieldName = fieldClauses.getFirst();
           QueryClause queryClause = fieldClauses.getSecond();
           int paramsCnt = queryClause.getClauseTemplate().getNumberOfArguments();
@@ -642,8 +666,100 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       }
     }
 
+    if (preparedQuery.toString().isBlank()) {
+      preparedQuery.append("*");
+    }
+
     logger.debug(String.format("query: %s", preparedQuery));
 
     return preparedQuery.toString();
+  }
+
+  private Object executeNullQuery(Object[] parameters) {
+    SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
+    String baseQuery = prepareQuery(parameters, true);
+
+    AggregationBuilder aggregation = new AggregationBuilder(baseQuery);
+
+    // Load fields with IS_NULL or IS_NOT_NULL query clauses
+    String[] fields = Stream.concat(Stream.of("@__key"), queryOrParts.stream().flatMap(List::stream)
+      .filter(pair -> pair.getSecond() == QueryClause.IS_NULL || pair.getSecond() == QueryClause.IS_NOT_NULL)
+      .map(pair -> String.format("@%s", pair.getFirst()))).toArray(String[]::new);
+
+    aggregation.load(fields);
+
+    // Apply exists or !exists filter for null parameters
+    for (List<Pair<String, QueryClause>> orPartParts : queryOrParts) {
+      for (Pair<String, QueryClause> pair : orPartParts) {
+        if (pair.getSecond() == QueryClause.IS_NULL) {
+          aggregation.filter("!exists(@" + pair.getFirst() + ")");
+        } else if (pair.getSecond() == QueryClause.IS_NOT_NULL) {
+          aggregation.filter("exists(@" + pair.getFirst() + ")");
+        }
+      }
+    }
+
+    // sort by
+    Optional<Pageable> maybePageable;
+
+    boolean needsLimit = true;
+    if (queryMethod.isPageQuery()) {
+      maybePageable = Arrays.stream(parameters).filter(Pageable.class::isInstance).map(Pageable.class::cast)
+        .findFirst();
+
+      if (maybePageable.isPresent()) {
+        Pageable pageable = maybePageable.get();
+        if (!pageable.isUnpaged()) {
+          aggregation.limit(Math.toIntExact(pageable.getOffset()), pageable.getPageSize());
+          needsLimit = false;
+
+          // sort by
+          pageable.getSort();
+          for (Order order : pageable.getSort()) {
+            if (order.isAscending()) {
+              aggregation.sortByAsc(order.getProperty());
+            } else {
+              aggregation.sortByDesc(order.getProperty());
+            }
+          }
+        }
+      }
+    }
+
+    if ((sortBy != null && !sortBy.isBlank())) {
+      aggregation.sortByAsc(sortBy);
+    } else if (!aggregationSortedFields.isEmpty()) {
+      if (aggregationSortByMax != null) {
+        aggregation.sortBy(aggregationSortByMax, aggregationSortedFields.toArray(new SortedField[] {}));
+      } else {
+        aggregation.sortBy(aggregationSortedFields.toArray(new SortedField[] {}));
+      }
+    }
+
+    // limit
+    if (needsLimit) {
+      if ((limit != null) || (offset != null)) {
+        aggregation.limit(offset != null ? offset : 0, limit != null ? limit : 0);
+      } else {
+        aggregation.limit(0, redisOMProperties.getRepository().getQuery().getLimit());
+      }
+    }
+
+    // Execute the aggregation query
+    AggregationResult aggregationResult = ops.aggregate(aggregation);
+
+    // extract the keys from the aggregation result
+    var ids = aggregationResult.getResults().stream()
+      .map(d -> d.get("__key").toString().split(":"))
+      .map(parts -> parts[parts.length - 1])
+      .toList();
+    var entities = new ArrayList<>();
+    ids.forEach(id -> keyValueOperations.findById(id, domainType).ifPresent(entities::add));
+
+    if (!queryMethod.isCollectionQuery()) {
+      return entities.isEmpty() ? null : entities.get(0);
+    } else {
+      return entities;
+    }
   }
 }

@@ -6,6 +6,7 @@ import com.redis.om.spring.util.ObjectUtils;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.repository.query.parser.Part;
+import org.springframework.data.repository.query.parser.Part.Type;
 import redis.clients.jedis.search.Schema.FieldType;
 
 import java.util.*;
@@ -112,6 +113,13 @@ public enum QueryClause {
   ),
   TAG_ENDING_WITH( //
       QueryClauseTemplate.of(FieldType.TAG, Part.Type.ENDING_WITH, QueryClause.FIELD_TAG_ENDING_WITH, 1) //
+  ),
+  // ALL FIELDS
+  IS_NULL( //
+    QueryClauseTemplate.of(FieldType.TAG, Part.Type.IS_NULL, QueryClause.FIELD_IS_NULL, 0) //
+  ),
+  IS_NOT_NULL( //
+    QueryClauseTemplate.of(FieldType.TAG, Type.IS_NOT_NULL, QueryClause.FIELD_IS_NOT_NULL, 0) //
   );
 
   private static final String PARAM_PREFIX = "$param_";
@@ -135,6 +143,8 @@ public enum QueryClause {
   private static final String FIELD_NUMERIC_BEFORE = "@$field:[-inf ($param_0]";
   private static final String FIELD_NUMERIC_AFTER = "@$field:[($param_0 inf]";
   private static final String FIELD_GEO_NEAR = "@$field:[$param_0 $param_1 $param_2]";
+  private static final String FIELD_IS_NULL = "!exists(@$field)";
+  private static final String FIELD_IS_NOT_NULL = "exists(@$field)";
 
   private final QueryClauseTemplate clauseTemplate;
   private final MappingRedisOMConverter converter = new MappingRedisOMConverter();
