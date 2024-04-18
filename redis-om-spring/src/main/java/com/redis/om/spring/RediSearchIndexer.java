@@ -744,37 +744,11 @@ public class RediSearchIndexer {
   private Optional<SchemaField> createIndexedFieldForReferenceIdField( //
     java.lang.reflect.Field referenceIdField, //
     boolean isDocument) {
-    Optional<SchemaField> result;
 
     String fieldPrefix = getFieldPrefix("", isDocument);
     FieldName fieldName = FieldName.of(fieldPrefix + referenceIdField.getName());
-
     fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(referenceIdField, ""));
-
-    Class<?> refClass = referenceIdField.getType();
-    Optional<java.lang.reflect.Field> maybeIdField = getIdFieldForEntityClass(refClass);
-
-    if (maybeIdField.isPresent()) {
-      java.lang.reflect.Field idField = maybeIdField.get();
-      Class<?> idClass = idField.getType();
-      if (idField.getType().isPrimitive()) {
-        String cls = com.redis.om.spring.util.ObjectUtils.getTargetClassName(idClass.getName());
-        Class<?> primitive = ClassUtils.resolvePrimitiveClassName(cls);
-        if (primitive != null) {
-          idClass = ClassUtils.resolvePrimitiveIfNecessary(primitive);
-        }
-      }
-
-      if (Number.class.isAssignableFrom(idClass)) {
-        result = Optional.of(isDocument ? NumericField.of(fieldName) : NumericField.of(fieldName).sortable());
-      } else {
-        result = Optional.of(isDocument ? TagField.of(fieldName).separator('|') : TagField.of(fieldName).separator('|').sortable());
-      }
-    } else {
-      result = Optional.of(isDocument ? TagField.of(fieldName).separator('|') : TagField.of(fieldName).separator('|').sortable());
-    }
-
-    return result;
+    return Optional.of(isDocument ? TagField.of(fieldName).separator('|') : TagField.of(fieldName).separator('|').sortable());
   }
 
   private FTCreateParams createIndexDefinition(Class<?> cl, IndexDataType idxType) {
