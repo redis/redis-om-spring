@@ -16,6 +16,7 @@ public @interface Document {
 
   @AliasFor(annotation = KeySpace.class, attribute = "value")
   String value() default "";
+  String indexName() default "";
   
   boolean async() default false;
   String[] prefixes() default {};

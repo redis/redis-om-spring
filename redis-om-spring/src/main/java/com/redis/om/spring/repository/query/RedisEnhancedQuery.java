@@ -1,5 +1,6 @@
 package com.redis.om.spring.repository.query;
 
+import com.redis.om.spring.RediSearchIndexer;
 import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.annotations.*;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
@@ -85,6 +86,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
   private final RedisModulesOperations<String> modulesOperations;
   private final MappingRedisOMConverter mappingConverter;
+  private final RediSearchIndexer indexer;
 
   private final BloomQueryExecutor bloomQueryExecutor;
   private final CuckooQueryExecutor cuckooQueryExecutor;
@@ -98,6 +100,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   public RedisEnhancedQuery(
       QueryMethod queryMethod, //
       RepositoryMetadata metadata, //
+      RediSearchIndexer indexer, //
       QueryMethodEvaluationContextProvider evaluationContextProvider, //
       KeyValueOperations keyValueOperations, //
       RedisOperations<?, ?> redisOperations, //
@@ -107,12 +110,13 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     logger.info(String.format("Creating query %s", queryMethod.getName()));
 
     this.keyValueOperations = keyValueOperations;
+    this.indexer = indexer;
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.queryMethod = queryMethod;
-    this.searchIndex = this.queryMethod.getEntityInformation().getJavaType().getName() + "Idx";
     this.domainType = this.queryMethod.getEntityInformation().getJavaType();
+    Optional<String> maybeIndex = indexer.getIndexName(this.domainType);
+    this.searchIndex = maybeIndex.orElse(this.domainType.getName() + "Idx");
     this.redisOMProperties = redisOMProperties;
-
     this.mappingConverter = new MappingRedisOMConverter(null, new ReferenceResolverImpl(redisOperations));
 
     bloomQueryExecutor = new BloomQueryExecutor(this, modulesOperations);

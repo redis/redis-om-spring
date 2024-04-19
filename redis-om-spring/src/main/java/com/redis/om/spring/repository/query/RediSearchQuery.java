@@ -2,6 +2,7 @@ package com.redis.om.spring.repository.query;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.redis.om.spring.RediSearchIndexer;
 import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.annotations.*;
 import com.redis.om.spring.ops.RedisModulesOperations;
@@ -91,6 +92,7 @@ public class RediSearchQuery implements RepositoryQuery {
   private final CuckooQueryExecutor cuckooQueryExecutor;
   private final AutoCompleteQueryExecutor autoCompleteQueryExecutor;
   private final GsonBuilder gsonBuilder;
+  private final RediSearchIndexer indexer;
   private Gson gson;
   private boolean isNullParamQuery;
 
@@ -98,6 +100,7 @@ public class RediSearchQuery implements RepositoryQuery {
   public RediSearchQuery(//
       QueryMethod queryMethod, //
       RepositoryMetadata metadata, //
+      RediSearchIndexer indexer, //
       QueryMethodEvaluationContextProvider evaluationContextProvider, //
       KeyValueOperations keyValueOperations, //
       RedisModulesOperations<?> rmo, //
@@ -108,9 +111,11 @@ public class RediSearchQuery implements RepositoryQuery {
     logger.info(String.format("Creating %s query method", queryMethod.getName()));
 
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
+    this.indexer = indexer;
     this.queryMethod = queryMethod;
-    this.searchIndex = this.queryMethod.getEntityInformation().getJavaType().getName() + "Idx";
     this.domainType = this.queryMethod.getEntityInformation().getJavaType();
+    Optional<String> maybeIndex = indexer.getIndexName(this.domainType);
+    this.searchIndex = maybeIndex.orElse(this.domainType.getName() + "Idx");
     this.gsonBuilder = gsonBuilder;
     this.redisOMProperties = redisOMProperties;
 
