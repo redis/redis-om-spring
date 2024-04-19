@@ -88,7 +88,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       RediSearchIndexer indexer) {
     this.modulesOperations = modulesOperations;
     this.entityClass = entityClass;
-    this.searchIndex = entityClass.getName() + "Idx";
+    Optional<String> maybeIndex = indexer.getIndexName(entityClass);
+    this.searchIndex = maybeIndex.orElse(entityClass.getName() + "Idx");
     this.search = modulesOperations.opsForSearch(searchIndex);
     this.json = modulesOperations.opsForJSON();
     this.gsonBuilder = gsonBuilder;

@@ -4,6 +4,7 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.*;
+import com.redis.om.spring.search.stream.EntityStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,14 +16,14 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisGeoCommands;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.json.Path2;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
@@ -50,6 +51,17 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   @Autowired
   DeepNestRepository deepNestRepository;
 
+  @Autowired
+  CustomIndexDocRepository customIndexDocRepository;
+
+  @Autowired
+  JedisConnectionFactory jedisConnectionFactory;
+
+  @Autowired
+  EntityStream es;
+
+  private UnifiedJedis jedis;
+
   @BeforeEach
   void cleanUp() {
     flushSearchIndexFor(Company.class);
@@ -61,6 +73,9 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
       DeepNest dn3 = DeepNest.of("dn-3", NestLevel1.of("nl-1-3", "A good body with a dull brain is as cheap as life itself.", NestLevel2.of("nl-2-3", "I'm Spartacus!")));
       deepNestRepository.saveAll(List.of(dn1, dn2, dn3));
     }
+
+    jedis = new JedisPooled(Objects.requireNonNull(jedisConnectionFactory.getPoolConfig()),
+        jedisConnectionFactory.getHostName(), jedisConnectionFactory.getPort());
   }
 
   @Test
@@ -751,5 +766,37 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
       .map(Company::getId)
       .toList();
     assertThat(Ordering.<String>natural().isOrdered(ids)).isTrue();
+  }
+
+  @Test
+  void testCustomIndexName() {
+    // CustomIndexDoc has a custom index name defined in the @Document annotation
+    var indices = jedis.ftList();
+    assertThat(indices).contains("MyCustomIndex");
+  }
+
+  //customIndexDocRepository
+  @Test
+  void testFreeFormTextSearchOrderIssue() {
+    customIndexDocRepository.deleteAll();
+    CustomIndexDoc redis1 = customIndexDocRepository.save(CustomIndexDoc.of("Redis", "wwwabccom"));
+    CustomIndexDoc redis2 = customIndexDocRepository.save(CustomIndexDoc.of("Redis", "wwwxyznet"));
+    CustomIndexDoc microsoft1 = customIndexDocRepository.save(CustomIndexDoc.of("Microsoft", "wwwabcnet"));
+    CustomIndexDoc microsoft2 = customIndexDocRepository.save(CustomIndexDoc.of("Microsoft", "wwwxyzcom"));
+
+    var withFreeTextFirst = es.of(CustomIndexDoc.class)
+        .filter("*co*")
+        .filter(CustomIndexDoc$.FIRST.eq("Microsoft"))
+        .collect(Collectors.toList());
+
+    var withFreeTextLast = es.of(CustomIndexDoc.class)
+        .filter(CustomIndexDoc$.FIRST.eq("Microsoft"))
+        .filter("*co*")
+        .collect(Collectors.toList());
+
+    assertAll( //
+        () -> assertThat(withFreeTextLast).containsExactly(microsoft2),
+        () -> assertThat(withFreeTextFirst).containsExactly(microsoft2)
+    );
   }
 }
