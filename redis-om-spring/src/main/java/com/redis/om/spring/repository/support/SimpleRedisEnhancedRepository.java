@@ -223,7 +223,8 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     }
   }
 
-  private String getKeyspace() {
+  @Override
+  public String getKeyspace() {
     return indexer.getKeyspaceForEntityClass(metadata.getJavaType());
   }
   

@@ -35,4 +35,6 @@ public interface RedisDocumentRepository<T, ID> extends KeyValueRepository<T, ID
   Iterable<T> bulkLoad(String file) throws IOException;
 
   <S extends T> S update(S entity);
+
+  String getKeyspace();
 }
