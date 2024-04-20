@@ -26,4 +26,6 @@ public interface RedisEnhancedRepository<T, ID> extends KeyValueRepository<T, ID
   <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field);
 
   Long getExpiration(ID id);
+
+  String getKeyspace();
 }
