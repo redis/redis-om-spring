@@ -77,6 +77,7 @@ import static com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively
 @ComponentScan("com.redis.om.spring.cuckoo")
 @ComponentScan("com.redis.om.spring.autocomplete")
 @ComponentScan("com.redis.om.spring.metamodel")
+@ComponentScan("com.redis.om.spring.util")
 public class RedisModulesConfiguration {
 
   private static final Log logger = LogFactory.getLog(RedisModulesConfiguration.class);
@@ -149,6 +150,7 @@ public class RedisModulesConfiguration {
   @Bean(name = "rediSearchIndexer")
   public RediSearchIndexer redisearchIndexer(ApplicationContext ac,
                                              @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder) {
+
     return new RediSearchIndexer(ac, gsonBuilder);
   }
 
