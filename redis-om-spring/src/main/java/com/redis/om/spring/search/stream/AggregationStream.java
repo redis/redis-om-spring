@@ -2,6 +2,7 @@ package com.redis.om.spring.search.stream;
 
 import com.redis.om.spring.annotations.ReducerFunction;
 import com.redis.om.spring.metamodel.MetamodelField;
+import com.redis.om.spring.search.stream.aggregations.filters.AggregationFilter;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort.Order;
@@ -36,6 +37,8 @@ public interface AggregationStream<T> {
   AggregationStream<T> limit(int limit, int offset);
 
   AggregationStream<T> filter(String... filters);
+
+  AggregationStream<T> filter(AggregationFilter... filters);
 
   AggregationResult aggregate();
 
