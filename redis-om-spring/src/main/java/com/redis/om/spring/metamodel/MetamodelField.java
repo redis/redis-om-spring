@@ -1,5 +1,8 @@
 package com.redis.om.spring.metamodel;
 
+import com.redis.om.spring.search.stream.aggregations.filters.AggregationFilter;
+import com.redis.om.spring.search.stream.aggregations.filters.ExistsFilter;
+import com.redis.om.spring.search.stream.aggregations.filters.NotExistsFilter;
 import org.springframework.data.domain.Sort.Order;
 
 import java.util.Comparator;
@@ -68,5 +71,13 @@ public class MetamodelField<E, T> implements Comparator<E>, Function<E,T> {
 
   public Order desc() {
     return Order.desc("@" + getSearchAlias());
+  }
+
+  public AggregationFilter exists() {
+    return new ExistsFilter(this.getSearchAlias());
+  }
+
+  public AggregationFilter notExists() {
+    return new NotExistsFilter(this.getSearchAlias());
   }
 }

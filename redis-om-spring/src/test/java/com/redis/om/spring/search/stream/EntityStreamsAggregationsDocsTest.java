@@ -11,7 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort.Order;
 
 import java.io.IOException;
+import java.sql.Date;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -28,6 +30,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
   @Autowired GameRepository repository;
   @Autowired PersonRepository personRepository;
   @Autowired PizzaOrderRepository pizzaOrderRepository;
+  @Autowired FilmRepository filmRepository;
+  @Autowired LanguageRepository languageRepository;
 
   @BeforeEach void beforeEach() throws IOException {
     // Load Sample Docs
@@ -99,6 +103,28 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
       pizzaOrderRepository.saveAll(List.of(order0, order1, order2, order3, order4, order5, order6, order7));
     }
+
+    // Sakila Films/Language
+    var en = Language.of(1, "English");
+    en.setLastUpdate(LocalDate.of(2022, 1, 1));
+
+    var es = Language.of(2, "Spanish");
+    es.setLastUpdate(LocalDate.of(2022, 1, 1));
+
+    languageRepository.saveAll(List.of(en,es));
+
+    var film1 = Film.of(1, "Breakfast with Morty");
+    film1.setReleaseYear(LocalDate.of(2020, 1, 1));
+    film1.setLanguage(en);
+
+    var film2 = Film.of(2, "Academy Dinosaur");
+    film2.setLanguage(es);
+
+    var film3 = Film.of(3, "La Permanente de mi hermana");
+    film3.setReleaseYear(LocalDate.of(2020, 1, 1));
+    film3.setLanguage(en);
+
+    filmRepository.saveAll(List.of(film1, film2, film3));
   }
 
   /**
@@ -911,6 +937,28 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
             () -> assertEquals(6, byDate.size()),
             () -> assertThat(byDate).map(Single::getFirst).containsAll(List.of(0,1,2,3,6,7))
     );
+  }
+
+  @Test
+  void testExistPredicate() {
+    List<Single<Integer>> releasedFilms = entityStream.of(Film.class) //
+      .load(Film$.RELEASE_YEAR) //
+      .filter(Film$.RELEASE_YEAR.exists()) //
+      .reduce(ReducerFunction.COUNT).as("released") //
+      .toList(Integer.class);
+    assertThat(releasedFilms).hasSize(1);
+    assertThat(releasedFilms.get(0).getFirst()).isEqualTo(2);
+  }
+
+  @Test
+  void testNotExistPredicate() {
+    List<Single<Integer>> releasedFilms = entityStream.of(Film.class) //
+      .load(Film$.RELEASE_YEAR) //
+      .filter(Film$.RELEASE_YEAR.notExists()) //
+      .reduce(ReducerFunction.COUNT).as("released") //
+      .toList(Integer.class);
+    assertThat(releasedFilms).hasSize(1);
+    assertThat(releasedFilms.get(0).getFirst()).isEqualTo(1);
   }
 
 }
