@@ -1,0 +1,14 @@
+name: roms-vss
+services:
+  redis:
+    image: "redis/redis-stack:edge"
+    ports:
+      - "6379:6379"
+    environment:
+      - "REDIS_ARGS=--appendonly yes"
+    volumes:
+      - ./../../data:/data
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
