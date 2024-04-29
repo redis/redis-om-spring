@@ -1056,6 +1056,11 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     return null;
   }
 
+  @Override
+  public EntityInstantiators getEntityInstantiators() {
+    return entityInstantiators;
+  }
+
   /* (non-Javadoc)
    *
    * @see
