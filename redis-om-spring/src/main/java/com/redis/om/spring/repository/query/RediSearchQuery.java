@@ -49,6 +49,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static com.redis.om.spring.util.ObjectUtils.getIdFieldForEntityClass;
+import static com.redis.om.spring.util.ObjectUtils.getValueForField;
+
 public class RediSearchQuery implements RepositoryQuery {
 
   private static final Log logger = LogFactory.getLog(RediSearchQuery.class);
@@ -235,7 +238,8 @@ public class RediSearchQuery implements RepositoryQuery {
         });
 
         this.isNullParamQuery = !nullParamNames.isEmpty() || !notNullParamNames.isEmpty();
-        this.type = RediSearchQueryType.QUERY;
+
+        this.type = queryMethod.getName().matches("(?:remove|delete).*") ? RediSearchQueryType.DELETE : RediSearchQueryType.QUERY;
         this.returnFields = new String[] {};
         processPartTree(pt, nullParamNames, notNullParamNames);
       }
@@ -385,6 +389,8 @@ public class RediSearchQuery implements RepositoryQuery {
       return !isNullParamQuery ? executeQuery(parameters) : executeNullQuery(parameters);
     } else if (type == RediSearchQueryType.AGGREGATION) {
       return executeAggregation(parameters);
+    } else if (type == RediSearchQueryType.DELETE) {
+      return executeDeleteQuery(parameters);
     } else if (type == RediSearchQueryType.TAGVALS) {
       return executeFtTagVals();
     } else if (type == RediSearchQueryType.AUTOCOMPLETE) {
@@ -480,13 +486,14 @@ public class RediSearchQuery implements RepositoryQuery {
       }
 
     } else if (queryMethod.isQueryForEntity() && !queryMethod.isCollectionQuery()) {
+      // handle the case where we have a single entity result and we the query results are empty
       if (!searchResult.getDocuments().isEmpty()) {
         Gson gson = getGson();
         Document doc = searchResult.getDocuments().get(0);
         Object json = doc != null ? SafeEncoder.encode((byte[])doc.get("$")) : "";
         result = gson.fromJson(json.toString(), queryMethod.getReturnedObjectType());
       }
-    } else if (queryMethod.isQueryForEntity() && queryMethod.isCollectionQuery()) {
+    } else if ((queryMethod.isQueryForEntity() && queryMethod.isCollectionQuery()) || this.type == RediSearchQueryType.DELETE) {
       Gson gson = getGson();
       result = searchResult.getDocuments().stream()
           .map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), queryMethod.getReturnedObjectType()))
@@ -494,6 +501,59 @@ public class RediSearchQuery implements RepositoryQuery {
     }
 
     return result;
+  }
+
+  private Object executeDeleteQuery(Object[] parameters) {
+    SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
+    String baseQuery = prepareQuery(parameters, true);
+//    String[] fields = new String[] { "@__key" };
+    AggregationBuilder aggregation = new AggregationBuilder(baseQuery);
+
+    // Load fields with IS_NULL or IS_NOT_NULL query clauses
+    String[] fields = Stream.concat(Stream.of("@__key"), queryOrParts.stream().flatMap(List::stream)
+      .filter(pair -> pair.getSecond() == QueryClause.IS_NULL || pair.getSecond() == QueryClause.IS_NOT_NULL)
+      .map(pair -> String.format("@%s", pair.getFirst()))).toArray(String[]::new);
+    aggregation.load(fields);
+
+    // Apply exists or !exists filter for null parameters
+    for (List<Pair<String, QueryClause>> orPartParts : queryOrParts) {
+      for (Pair<String, QueryClause> pair : orPartParts) {
+        if (pair.getSecond() == QueryClause.IS_NULL) {
+          aggregation.filter("!exists(@" + pair.getFirst() + ")");
+        } else if (pair.getSecond() == QueryClause.IS_NOT_NULL) {
+          aggregation.filter("exists(@" + pair.getFirst() + ")");
+        }
+      }
+    }
+
+    aggregation.sortBy(aggregationSortedFields.toArray(new SortedField[] {}));
+    aggregation.limit(0, redisOMProperties.getRepository().getQuery().getLimit());
+
+    // Execute the aggregation query
+    AggregationResult aggregationResult = ops.aggregate(aggregation);
+
+    // extract the keys from the aggregation result
+    List<String> keys = aggregationResult.getResults().stream().map(d -> d.get("__key").toString()).toList();
+
+    // determine if we need to return the deleted entities or just obtain the keys
+    Class<?> returnType = queryMethod.getReturnedObjectType();
+    if (Number.class.isAssignableFrom(returnType) || returnType.equals(int.class) || returnType.equals(long.class) || returnType.equals(short.class)) {
+      // return the number of deleted entities, so we only need the ids
+      if (keys.isEmpty()) {
+        return 0;
+      } else {
+        return modulesOperations.template().delete(keys);
+      }
+    } else {
+      if (keys.isEmpty()) {
+        return Collections.emptyList();
+      } else {
+        // return the deleted entities
+        var entities = modulesOperations.opsForJSON().mget(this.domainType, keys.toArray(new String[0]));
+        modulesOperations.template().delete(keys);
+        return entities;
+      }
+    }
   }
 
   private Object executeAggregation(Object[] parameters) {

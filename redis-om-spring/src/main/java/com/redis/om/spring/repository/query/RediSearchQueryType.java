@@ -4,5 +4,6 @@ public enum RediSearchQueryType {
   QUERY,
   AGGREGATION,
   TAGVALS,
-  AUTOCOMPLETE
+  AUTOCOMPLETE,
+  DELETE,
 }
