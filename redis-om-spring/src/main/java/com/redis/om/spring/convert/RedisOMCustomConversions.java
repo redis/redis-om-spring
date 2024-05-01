@@ -16,6 +16,11 @@ public class RedisOMCustomConversions extends RedisCustomConversions {
     // Point
     omConverters.add(new PointToBytesConverter());
     omConverters.add(new BytesToPointConverter());
+    // Date
+    omConverters.add(new DateToBytesConverter());
+    omConverters.add(new BytesToDateConverter());
+    omConverters.add(new DateToStringConverter());
+
     // LocalDate
     omConverters.add(new LocalDateToBytesConverter());
     omConverters.add(new BytesToLocalDateConverter());
