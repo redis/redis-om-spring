@@ -22,7 +22,6 @@ class BasicSentinelTest extends AbstractBaseDocumentSentinelTest {
   @Autowired
   CompanyRepository repository;
 
-  @Disabled("Potential Regression on Sentinel Support - see GH-227")
   @Test
   @DisabledIfEnvironmentVariable(named = "GITHUB_ACTIONS", matches = "true")
   void testBasicCrudOperations() {
