@@ -25,7 +25,7 @@ public class TestConfig {
 
         final JedisPoolConfig poolConfig = new JedisPoolConfig();
         poolConfig.setTestWhileIdle(false);
-        poolConfig.setMinEvictableIdleTime(Duration.ofMillis(60000));
+        poolConfig.setMinEvictableIdleDuration(Duration.ofMillis(60000));
         poolConfig.setTimeBetweenEvictionRuns(Duration.ofMillis(30000));
         poolConfig.setNumTestsPerEvictionRun(-1);
 

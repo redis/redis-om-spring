@@ -238,7 +238,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
         .filter(Doc2$.TEXT.endsWith("o 11")) //
         .collect(Collectors.toList());
 
-    String regex = ".*o\s11$";
+    String regex = ".*o 11$";
     assertThat(startingWithMarca2).map(Doc2::getText).allMatch(t -> t.matches(regex));
   }
 
@@ -247,13 +247,13 @@ import static org.junit.jupiter.api.Assertions.assertAll;
         .filter(Doc2$.TAG.endsWith("LOR 12")) //
         .collect(Collectors.toList());
 
-    String regex = ".*LOR\s12$";
+    String regex = ".*LOR 12$";
     assertThat(startingWithMarca2).map(Doc2::getTag).allMatch(t -> t.matches(regex));
   }
 
   @Test void testSearchInsideListOfObjects() {
     var results = entityStream.of(DeepList.class) //
-        .filter(DeepList$.NEST_LEVELS.NAME.eq("nl-2-2")) //
+        .filter(DeepList_nestLevels$.NAME.eq("nl-2-2")) //
         .map(DeepList$.NAME) //
         .collect(Collectors.toList());
 
@@ -265,7 +265,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
   @Test void testSearchInsideListOfObjects2() {
     var results = entityStream.of(DeepList.class) //
-        .filter(DeepList$.NEST_LEVELS.NAME.startsWith("nl-2")) //
+        .filter(DeepList_nestLevels$.NAME.startsWith("nl-2")) //
         .map(DeepList$.NAME) //
         .collect(Collectors.toList());
 
@@ -277,7 +277,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
   @Test void testSearchInsideListOfObjects3() {
     var results = entityStream.of(DeepList.class) //
-        .filter(DeepList$.NEST_LEVELS.BLOCK.eq("have")) //
+        .filter(DeepList_nestLevels$.BLOCK.eq("have")) //
         .map(DeepList$.NAME) //
         .collect(Collectors.toList());
 

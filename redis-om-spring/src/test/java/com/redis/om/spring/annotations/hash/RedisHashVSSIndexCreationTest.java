@@ -24,7 +24,7 @@ class RedisHashVSSIndexCreationTest extends AbstractBaseEnhancedRedisTest {
 
   private UnifiedJedis jedis;
 
-  private static String INDEX = "com.redis.om.spring.annotations.hash.fixtures.HashWithVectorsIdx";
+  private static final String INDEX = "com.redis.om.spring.annotations.hash.fixtures.HashWithVectorsIdx";
   private HashWithVectors hwv1;
   private HashWithVectors hwv2;
   private HashWithVectors hwv3;

@@ -220,7 +220,7 @@ import static org.assertj.core.api.Assertions.assertThat;
   
   @Test
   void testLocalDateDeSerializationInQuery() {
-    List<KitchenSink> all = repository.findByLocalDateGreaterThan(localDate.minus(2, ChronoUnit.DAYS));
+    List<KitchenSink> all = repository.findByLocalDateGreaterThan(localDate.minusDays(2));
     assertThat(all).containsExactlyInAnyOrder(ks, ks1, ks2, ks3, ks4);
   }
   
