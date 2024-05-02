@@ -369,7 +369,6 @@ public class RediSearchIndexer {
 
   private VectorField indexAsVectorFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix,
       Indexed indexed) {
-    TypeInformation<?> typeInfo = TypeInformation.of(field.getType());
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
     String fieldName = fieldPrefix + field.getName();
 

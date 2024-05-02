@@ -13,7 +13,6 @@ import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
 import org.aspectj.lang.annotation.Pointcut;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.GenericTypeResolver;
 import org.springframework.core.Ordered;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -32,15 +31,16 @@ import java.util.*;
 public class AutoCompleteAspect implements Ordered {
   private static final Log logger = LogFactory.getLog(AutoCompleteAspect.class);
 
-  @Autowired
-  private Gson gson;
+  private final Gson gson;
 
-  @Autowired StringRedisTemplate template;
+  final StringRedisTemplate template;
 
   private final RedisModulesOperations<String> rmo;
 
-  public AutoCompleteAspect(RedisModulesOperations<String> rmo) {
+  public AutoCompleteAspect(RedisModulesOperations<String> rmo, Gson gson, StringRedisTemplate template) {
     this.rmo = rmo;
+    this.gson = gson;
+    this.template = template;
   }
 
   @Pointcut("execution(public * org.springframework.data.repository.CrudRepository+.save(..))")

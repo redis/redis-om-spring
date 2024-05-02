@@ -464,6 +464,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public <R extends T> Slice<R> toList(PageRequest pageRequest, Class<?>... contentTypes) {
     applyCurrentGroupBy();
     aggregation.cursor(pageRequest.getPageSize(), 300000);
@@ -471,6 +472,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public <R extends T> Slice<R> toList(PageRequest pageRequest, Duration timeout, Class<?>... contentTypes) {
     applyCurrentGroupBy();
     aggregation.cursor(pageRequest.getPageSize(), timeout.toMillis());
@@ -514,6 +516,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
     };
   }
 
+  @SuppressWarnings("unchecked")
   List<E> toEntityList(AggregationResult aggregationResult) {
     if (isDocument) {
       return aggregationResult.getResults().stream().map(d -> gson.fromJson(d.get("$").toString(), entityClass))

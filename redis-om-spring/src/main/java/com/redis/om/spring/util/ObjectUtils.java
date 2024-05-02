@@ -31,7 +31,6 @@ import redis.clients.jedis.search.Schema;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -429,27 +428,6 @@ public class ObjectUtils {
     return floatArray;
   }
 
-//  public static Collection<?> instantiateCollection(Type type) {
-//    Class<?> rawType = (Class<?>) ((ParameterizedType) type).getRawType();
-//    if (rawType.isInterface()) {
-//      if (List.class.isAssignableFrom(rawType)) {
-//        return new ArrayList<>();
-//      } else if (Set.class.isAssignableFrom(rawType)) {
-//        return new HashSet<>();
-//      } else if (Queue.class.isAssignableFrom(rawType)) {
-//        return new LinkedList<>();
-//      } else {
-//        throw new IllegalArgumentException("Unsupported interface: " + rawType);
-//      }
-//    } else {
-//      try {
-//        return (Collection<?>) rawType.getDeclaredConstructor().newInstance();
-//      } catch (Exception e) {
-//        throw new IllegalArgumentException("Type not instantiatable: " + rawType);
-//      }
-//    }
-//  }
-
   public static boolean isPrimitiveOfType(Class<?> clazz, Class<?> wrapper) {
     return clazz.isPrimitive() && resolvePrimitiveIfNecessary(clazz) == wrapper;
   }
@@ -568,7 +546,7 @@ public class ObjectUtils {
 
       Expression leftExp = SPEL_EXPRESSION_PARSER.parseExpression(leftPath);
       Expression rightExp = SPEL_EXPRESSION_PARSER.parseExpression(rightPath);
-      Collection left = (Collection) leftExp.getValue(target);
+      Collection<?> left = (Collection<?>) leftExp.getValue(target);
       if (left != null && !left.isEmpty()) {
         value = flattenCollection(left.stream().map(rightExp::getValue).toList());
       }
@@ -577,6 +555,7 @@ public class ObjectUtils {
     return value;
   }
 
+  @SuppressWarnings("unchecked")
   public static Collection<Object> flattenCollection(Collection<Object> inputCollection) {
     List<Object> flatList = new ArrayList<>();
 

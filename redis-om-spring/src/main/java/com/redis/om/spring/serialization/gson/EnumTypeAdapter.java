@@ -9,6 +9,7 @@ public class EnumTypeAdapter<T extends Enum<?>> implements JsonSerializer<T>,
 
   private final T[] values;
 
+  @SuppressWarnings("unchecked")
   public EnumTypeAdapter(Class<?> enumType) {
     this.values = (T[]) enumType.getEnumConstants();
   }

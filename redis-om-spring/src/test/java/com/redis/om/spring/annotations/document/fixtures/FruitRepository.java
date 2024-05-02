@@ -1,11 +1,9 @@
 package com.redis.om.spring.annotations.document.fixtures;
 
-import java.util.List;
-import java.util.Optional;
-
 import com.redis.om.spring.repository.RedisDocumentRepository;
-//import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 
 @Repository

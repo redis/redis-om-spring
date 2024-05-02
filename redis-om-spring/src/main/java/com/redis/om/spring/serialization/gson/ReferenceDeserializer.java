@@ -23,6 +23,7 @@ public class ReferenceDeserializer implements JsonDeserializer<Object> {
 
   private final JSONOperations<String> ops;
 
+  @SuppressWarnings("unchecked")
   public ReferenceDeserializer(Field field, JSONOperations<?> ops) {
     this.ops = (JSONOperations<String>) ops;
     Map<Type, InstanceCreator<?>> instanceCreators = new HashMap<>();
@@ -42,6 +43,7 @@ public class ReferenceDeserializer implements JsonDeserializer<Object> {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public Object deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
       throws JsonParseException {
     Object reference = null;

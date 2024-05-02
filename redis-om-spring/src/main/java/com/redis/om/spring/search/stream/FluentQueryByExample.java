@@ -44,6 +44,7 @@ public class FluentQueryByExample <T> implements FluentQuery.FetchableFluentQuer
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public FetchableFluentQuery<T> project(Collection<String> properties) {
     List<MetamodelField<?, ?>> metamodelFields = MetamodelUtils.getMetamodelFieldsForProperties(probeType,
         properties);

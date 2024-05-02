@@ -136,8 +136,11 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     if (item instanceof RedisData redisData) {
       rdo = redisData;
     } else {
-      byte[] redisKey = createKey(sanitizeKeyspace(keyspace),
-        converter.getConversionService().convert(id, String.class));
+      String idAsString = converter.getConversionService().convert(id, String.class);
+      if (idAsString == null) {
+        idAsString = id.toString();
+      }
+      byte[] redisKey = createKey(sanitizeKeyspace(keyspace), idAsString);
       auditor.processEntity(redisKey, item);
       featureExtractor.processEntity(item);
 
@@ -227,10 +230,11 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       SearchResult searchResult = searchOps.search(query);
 
       keys = searchResult.getDocuments().stream()
-          .map(d -> documentToObject(d, type, (MappingRedisOMConverter) converter)) //
-          .map(e -> getIdFieldForEntity(maybeIdField.get(), e)) //
-          .map(Object::toString)
-          .toList();
+        .map(d -> documentToObject(d, type, (MappingRedisOMConverter) converter))
+        .map(e -> maybeIdField.map(field -> getIdFieldForEntity(field, e)).orElse(null))
+        .filter(Objects::nonNull)
+        .map(Object::toString)
+        .toList();
     }
 
     return keys;
@@ -425,9 +429,9 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   /**
    * Read back and set {@link TimeToLive} for the property.
    *
-   * @param key
-   * @param target
-   * @return
+   * @param key   the key to read the TTL for.
+   * @param target the target object.
+   * @return the target object with the TTL set.
    */
   @Nullable
   private <T> T readTimeToLiveIfSet(@Nullable byte[] key, @Nullable T target) {

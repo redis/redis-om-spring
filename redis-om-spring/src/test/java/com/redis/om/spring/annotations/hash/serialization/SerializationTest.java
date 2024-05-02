@@ -15,7 +15,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.io.IOException;
 import java.time.*;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;

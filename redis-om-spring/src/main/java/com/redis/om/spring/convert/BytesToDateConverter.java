@@ -5,7 +5,6 @@ import org.springframework.data.convert.ReadingConverter;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.concurrent.TimeUnit;
 
 @ReadingConverter
 public class BytesToDateConverter implements Converter<byte[], Date> {

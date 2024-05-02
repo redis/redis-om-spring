@@ -64,9 +64,10 @@
     <jedis.version>5.0.2</jedis.version>
     <cdi>2.0-PFD</cdi>
     <auto-service.version>1.1.1</auto-service.version>
-    <testcontainers.redis.version>2.2.0</testcontainers.redis.version>
-    <testcontainers.redis.junit.version>2.2.0</testcontainers.redis.junit.version>
-    <guava.version>33.0.0-jre</guava.version>
+    <testcontainers.redis.version>2.2.2</testcontainers.redis.version>
+    <testcontainers.redis.junit.version>2.2.2</testcontainers.redis.junit.version>
+    <testcontainers.junit.jupiter>1.19.7</testcontainers.junit.jupiter>
+    <guava.version>33.1.0-jre</guava.version>
     <ulid.version>5.2.3</ulid.version>
     <lombok.version>1.18.32</lombok.version>
     <commons-lang.version>3.13.0</commons-lang.version>
@@ -75,7 +76,7 @@
     <elementary.version>2.0.1</elementary.version>
     <gson.version>2.10.1</gson.version>
     <djl.starter.version>0.26</djl.starter.version>
-    <djl.version>0.26.0</djl.version>
+    <djl.version>0.27.0</djl.version>
     <junit-bom.version>5.10.2</junit-bom.version>
   </properties>
 
@@ -256,9 +257,14 @@
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>junit-jupiter</artifactId>
-      <version>1.19.7</version>
+      <version>${testcontainers.junit.jupiter}</version>
       <scope>test</scope>
     </dependency>
+      <dependency>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
+          <scope>test</scope>
+      </dependency>
   </dependencies>
 
   <build>
