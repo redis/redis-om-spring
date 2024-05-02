@@ -137,6 +137,7 @@ public class AggregationPage<E> implements Slice<E>, Serializable {
     return cursorId;
   }
 
+  @SuppressWarnings("unchecked")
   protected <U> List<U> getConvertedContent(Function<? super E, ? extends U> converter) {
 
     Assert.notNull(converter, "Function must not be null");
@@ -144,6 +145,7 @@ public class AggregationPage<E> implements Slice<E>, Serializable {
     return (List<U>) this.stream().map(converter).toList();
   }
 
+  @SuppressWarnings("unchecked")
   List<E> toEntityList(AggregationResult aggregationResult) {
     if (isDocument) {
       return aggregationResult.getResults().stream().map(d -> gson.fromJson(d.get("$").toString(), entityClass)).toList();

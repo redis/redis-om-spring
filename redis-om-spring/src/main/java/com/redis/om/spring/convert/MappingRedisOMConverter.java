@@ -26,7 +26,6 @@ import org.springframework.data.redis.util.ByteUtils;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.lang.Nullable;
 import org.springframework.util.*;
-import org.springframework.util.comparator.NullSafeComparator;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -47,8 +46,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
   private final GenericConversionService conversionService;
   private final EntityInstantiators entityInstantiators;
   private final RedisTypeMapper typeMapper;
-  private final Comparator<String> listKeyComparator = new NullSafeComparator<>(NaturalOrderingKeyComparator.INSTANCE,
-      true);
+  private final Comparator<String> listKeyComparator = Comparator.nullsLast(NaturalOrderingKeyComparator.INSTANCE);
 
   private @Nullable ReferenceResolver referenceResolver;
   private CustomConversions customConversions;

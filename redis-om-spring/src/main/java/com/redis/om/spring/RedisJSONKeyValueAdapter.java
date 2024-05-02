@@ -268,6 +268,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     return exists != null && exists;
   }
 
+  @SuppressWarnings("unchecked")
   private void processReferences(String key, Object item) {
     List<Field> fields = ObjectUtils.getFieldsWithAnnotation(item.getClass(), Reference.class);
     if (!fields.isEmpty()) {
@@ -347,14 +348,18 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
         Method ttlGetter;
         try {
           Field fld = ReflectionUtils.findField(entityClass, settings.getTimeToLivePropertyName());
-          ttlGetter = ObjectUtils.getGetterForField(entityClass, fld);
-          long ttlPropertyValue = ((Number) ReflectionUtils.invokeMethod(ttlGetter, entity)).longValue();
+          if (fld != null) {
+            ttlGetter = ObjectUtils.getGetterForField(entityClass, fld);
+            long ttlPropertyValue = ((Number) ReflectionUtils.invokeMethod(ttlGetter, entity)).longValue();
 
-          TimeToLive ttl = fld.getAnnotation(TimeToLive.class);
-          if (!ttl.unit().equals(TimeUnit.SECONDS)) {
-            return Optional.of(TimeUnit.SECONDS.convert(ttlPropertyValue, ttl.unit()));
+            TimeToLive ttl = fld.getAnnotation(TimeToLive.class);
+            if (!ttl.unit().equals(TimeUnit.SECONDS)) {
+              return Optional.of(TimeUnit.SECONDS.convert(ttlPropertyValue, ttl.unit()));
+            } else {
+              return Optional.of(ttlPropertyValue);
+            }
           } else {
-            return Optional.of(ttlPropertyValue);
+            return Optional.empty();
           }
         } catch (SecurityException | IllegalArgumentException e) {
           return Optional.empty();
@@ -366,6 +371,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     return Optional.empty();
   }
 
+  @SuppressWarnings("unchecked")
   private Number getEntityVersion(String key, String versionProperty) {
     JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
     Class<?> type = new TypeToken<Long[]>() {}.getRawType();

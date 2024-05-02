@@ -283,6 +283,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     return resolveStream().findAny();
   }
 
+  @SuppressWarnings("unchecked")
   private Stream<T> resolveStream() {
     if (resolvedStream == null) {
       List<T> results;

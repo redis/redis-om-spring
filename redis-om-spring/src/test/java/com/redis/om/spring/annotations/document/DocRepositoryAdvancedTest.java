@@ -3,8 +3,8 @@ package com.redis.om.spring.annotations.document;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.document.fixtures.Doc4;
 import com.redis.om.spring.annotations.document.fixtures.Doc4Repository;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;

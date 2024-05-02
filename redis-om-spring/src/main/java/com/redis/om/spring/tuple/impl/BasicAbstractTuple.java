@@ -1,14 +1,9 @@
 package com.redis.om.spring.tuple.impl;
 
-import com.google.common.collect.Maps;
-import com.google.common.collect.Streams;
 import com.redis.om.spring.tuple.GenericTuple;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
@@ -65,12 +60,16 @@ public abstract class BasicAbstractTuple<T extends GenericTuple<R>, R> implement
     requireNonNull(clazz);
     return Stream.of(values).filter(clazz::isInstance).map(clazz::cast);
   }
-  
+
   @Override
-  public Map<String,Object> labelledMap() {
-    Stream<String> objectLabels = Arrays.stream(labels).map(s -> StringUtils.removeStart(s, "$."));
-    return Streams.zip(objectLabels, Arrays.stream(values), Maps::immutableEntry)
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  public Map<String, Object> labelledMap() {
+    Map<String, Object> result = new HashMap<>();
+    for (int i = 0; i < Math.min(labels.length, values.length); i++) {
+      String label = StringUtils.removeStart(labels[i], "$.");
+      Object value = values[i];
+      result.put(label, value);
+    }
+    return Collections.unmodifiableMap(result);
   }
 
 }

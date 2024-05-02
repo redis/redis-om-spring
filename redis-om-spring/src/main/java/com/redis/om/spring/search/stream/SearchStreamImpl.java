@@ -109,6 +109,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public SearchStream<E> filter(SearchFieldPredicate<? super E, ?> predicate) {
     if (predicate instanceof KNNPredicate) {
       knnPredicate = (KNNPredicate<E,?>) predicate;
@@ -488,6 +489,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     return search.search(prepareQuery());
   }
 
+  @SuppressWarnings("unchecked")
   private List<E> toEntityList(SearchResult searchResult) {
     if (projections.isEmpty()) {
       if (isDocument) {
@@ -672,6 +674,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public <R> SearchStream<E> project(Function<? super E, ? extends R> field) {
     if (MetamodelField.class.isAssignableFrom(field.getClass())) {
       @SuppressWarnings("unchecked")

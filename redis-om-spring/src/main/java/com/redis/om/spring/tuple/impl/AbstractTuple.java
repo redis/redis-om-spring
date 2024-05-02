@@ -4,8 +4,6 @@ import com.redis.om.spring.tuple.Tuple;
 
 import java.util.stream.Stream;
 
-import static java.util.Objects.requireNonNull;
-
 public abstract class AbstractTuple extends BasicAbstractTuple<AbstractTuple, Object> implements Tuple {
 
   protected AbstractTuple(Class<? extends AbstractTuple> baseClass, String[] labels, Object... values) {
