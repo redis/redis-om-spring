@@ -18,11 +18,8 @@ import java.util.stream.Collectors;
 import static org.springframework.util.StringUtils.commaDelimitedListToSet;
 
 public class SentinelConfig {
-  @Autowired
-  Environment env;
-
   @Bean
-  public JedisConnectionFactory jedisConnectionFactory() {
+  public JedisConnectionFactory jedisConnectionFactory(Environment env) {
     String master = env.getProperty("spring.redis.sentinel.master", "localhost");
     String nodes = env.getProperty("spring.redis.sentinel.nodes");
     Set<String> sentinelNodes = commaDelimitedListToSet(nodes);
