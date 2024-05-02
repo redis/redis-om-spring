@@ -385,7 +385,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
   @Test
   public void testInvalidPartCharacter() {
     String result = ObjectUtils.replaceIfIllegalJavaIdentifierCharacter("invalid*identifier");
-    assertThat(result).isEqualTo("invalid" + ObjectUtils.REPLACEMENT_CHARACTER.toString() + "identifier");
+    assertThat(result).isEqualTo("invalid" + ObjectUtils.REPLACEMENT_CHARACTER + "identifier");
   }
 
   @Test
