@@ -503,11 +503,6 @@ public class RediSearchQuery implements RepositoryQuery {
     return result;
   }
 
-  static class Company {
-    public String url;
-    public String name;
-  }
-
   private Object executeDeleteQuery(Object[] parameters) {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
     String baseQuery = prepareQuery(parameters, true);
