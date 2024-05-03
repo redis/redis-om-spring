@@ -1,4 +1,4 @@
-package com.redis.om.spring.repository;
+package com.redis.om.spring.annotations.document.fixtures;
 
 import org.springframework.beans.factory.annotation.Value;
 

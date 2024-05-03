@@ -13,25 +13,26 @@ import com.redis.om.spring.repository.query.cuckoo.CuckooQueryExecutor;
 import com.redis.om.spring.util.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.geo.Point;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.mapping.PropertyPath;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisOperations;
+import org.springframework.data.redis.core.convert.RedisData;
 import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
 import org.springframework.data.repository.core.RepositoryMetadata;
-import org.springframework.data.repository.query.Parameter;
-import org.springframework.data.repository.query.QueryMethod;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
-import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.*;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.data.util.Pair;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
+import redis.clients.jedis.search.FieldName;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.Schema.FieldType;
 import redis.clients.jedis.search.SearchResult;
@@ -95,6 +96,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   private final boolean isANDQuery;
   private boolean isNullParamQuery;
   private final KeyValueOperations keyValueOperations;
+  private final RedisOperations<?, ?> redisOperations;
 
   @SuppressWarnings("unchecked")
   public RedisEnhancedQuery(
@@ -117,6 +119,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     Optional<String> maybeIndex = indexer.getIndexName(this.domainType);
     this.searchIndex = maybeIndex.orElse(this.domainType.getName() + "Idx");
     this.redisOMProperties = redisOMProperties;
+    this.redisOperations = redisOperations;
     this.mappingConverter = new MappingRedisOMConverter(null, new ReferenceResolverImpl(redisOperations));
 
     bloomQueryExecutor = new BloomQueryExecutor(this, modulesOperations);
@@ -234,7 +237,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
         });
 
         this.isNullParamQuery = !nullParamNames.isEmpty() || !notNullParamNames.isEmpty();
-        this.type = RediSearchQueryType.QUERY;
+        this.type = queryMethod.getName().matches("(?:remove|delete).*") ? RediSearchQueryType.DELETE : RediSearchQueryType.QUERY;
         this.returnFields = new String[] {};
         processPartTree(pt, nullParamNames, notNullParamNames);
       }
@@ -383,6 +386,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       return !isNullParamQuery ? executeQuery(parameters) : executeNullQuery(parameters);
     } else if (type == RediSearchQueryType.AGGREGATION) {
       return executeAggregation(parameters);
+    } else if (type == RediSearchQueryType.DELETE) {
+      return executeDeleteQuery(parameters);
     } else if (type == RediSearchQueryType.TAGVALS) {
       return executeFtTagVals();
     } else if (type == RediSearchQueryType.AUTOCOMPLETE) {
@@ -400,11 +405,29 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   }
 
   private Object executeQuery(Object[] parameters) {
+    ParameterAccessor accessor = new ParametersParameterAccessor(queryMethod.getParameters(), parameters);
+    ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(accessor);
+
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
     boolean excludeNullParams = !isNullParamQuery;
     String preparedQuery = prepareQuery(parameters, excludeNullParams);
     Query query = new Query(preparedQuery);
-    query.returnFields(returnFields);
+
+    ReturnedType returnedType = processor.getReturnedType();
+
+    boolean isProjecting = returnedType.isProjecting() && returnedType.getReturnedType() != SearchResult.class;
+    boolean isOpenProjecting = Arrays.stream(returnedType.getReturnedType().getMethods())
+      .anyMatch(m -> m.isAnnotationPresent(Value.class));
+    boolean canPerformQueryOptimization = isProjecting && !isOpenProjecting;
+
+    if (canPerformQueryOptimization) {
+      query.returnFields(returnedType.getInputProperties()
+        .stream()
+        .map(inputProperty -> new FieldName( "$." + inputProperty, inputProperty))
+        .toArray(FieldName[]::new));
+    } else {
+      query.returnFields(returnFields);
+    }
 
     Optional<Pageable> maybePageable = Optional.empty();
 
@@ -462,33 +485,104 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
     SearchResult searchResult = ops.search(query);
 
-    // what to return
-    Object result = null;
+    Object result;
 
     if (queryMethod.getReturnedObjectType() == SearchResult.class) {
       result = searchResult;
     } else if (queryMethod.isPageQuery()) {
-      List<Object> content = searchResult.getDocuments().stream() //
-          .map(d -> ObjectUtils.documentToObject(d, queryMethod.getReturnedObjectType(), mappingConverter)) //
-          .collect(Collectors.toList());
+      List<Object> content = searchResult.getDocuments().stream()
+        .map(d -> ObjectUtils.documentToObject(d, queryMethod.getReturnedObjectType(), mappingConverter))
+        .collect(Collectors.toList());
 
       if (maybePageable.isPresent()) {
         Pageable pageable = maybePageable.get();
         result = new PageImpl<>(content, pageable, searchResult.getTotalResults());
+      } else {
+        result = content;
       }
-
-    } else if (queryMethod.isQueryForEntity() && !queryMethod.isCollectionQuery()) {
+    } else if (!queryMethod.isCollectionQuery()) {
       if (searchResult.getTotalResults() > 0 && !searchResult.getDocuments().isEmpty()) {
-        result = ObjectUtils.documentToObject(searchResult.getDocuments().get(0), queryMethod.getReturnedObjectType(),
-            mappingConverter);
+        result = ObjectUtils.documentToObject(searchResult.getDocuments().get(0), queryMethod.getReturnedObjectType(), mappingConverter);
+      } else {
+        result = null;
       }
-    } else if (queryMethod.isQueryForEntity() && queryMethod.isCollectionQuery()) {
-      result = searchResult.getDocuments().stream() //
-          .map(d -> ObjectUtils.documentToObject(d, queryMethod.getReturnedObjectType(), mappingConverter)) //
-          .collect(Collectors.toList());
+    } else if (queryMethod.isCollectionQuery()) {
+      result = searchResult.getDocuments().stream()
+        .map(d -> ObjectUtils.documentToObject(d, queryMethod.getReturnedObjectType(), mappingConverter))
+        .collect(Collectors.toList());
+    } else {
+      result = null;
     }
 
-    return result;
+    return processor.processResult(result);
+  }
+
+  private Object executeDeleteQuery(Object[] parameters) {
+    SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
+    String baseQuery = prepareQuery(parameters, true);
+    AggregationBuilder aggregation = new AggregationBuilder(baseQuery);
+
+    // Load fields with IS_NULL or IS_NOT_NULL query clauses
+    String[] fields = Stream.concat(Stream.of("@__key"), queryOrParts.stream().flatMap(List::stream)
+      .filter(pair -> pair.getSecond() == QueryClause.IS_NULL || pair.getSecond() == QueryClause.IS_NOT_NULL)
+      .map(pair -> String.format("@%s", pair.getFirst()))).toArray(String[]::new);
+    aggregation.load(fields);
+
+    // Apply exists or !exists filter for null parameters
+    for (List<Pair<String, QueryClause>> orPartParts : queryOrParts) {
+      for (Pair<String, QueryClause> pair : orPartParts) {
+        if (pair.getSecond() == QueryClause.IS_NULL) {
+          aggregation.filter("!exists(@" + pair.getFirst() + ")");
+        } else if (pair.getSecond() == QueryClause.IS_NOT_NULL) {
+          aggregation.filter("exists(@" + pair.getFirst() + ")");
+        }
+      }
+    }
+
+    aggregation.sortBy(aggregationSortedFields.toArray(new SortedField[] {}));
+    aggregation.limit(0, redisOMProperties.getRepository().getQuery().getLimit());
+
+    // Execute the aggregation query
+    AggregationResult aggregationResult = ops.aggregate(aggregation);
+
+    // extract the keys from the aggregation result
+    List<String> keys = aggregationResult.getResults().stream().map(d -> d.get("__key").toString()).toList();
+
+    // determine if we need to return the deleted entities or just obtain the keys
+    Class<?> returnType = queryMethod.getReturnedObjectType();
+    if (Number.class.isAssignableFrom(returnType) || returnType.equals(int.class) || returnType.equals(long.class) || returnType.equals(short.class)) {
+      // return the number of deleted entities, so we only need the ids
+      if (keys.isEmpty()) {
+        return 0;
+      } else {
+        return modulesOperations.template().delete(keys);
+      }
+    } else {
+      if (keys.isEmpty()) {
+        return Collections.emptyList();
+      } else {
+        // return the deleted entities
+        var entities = new ArrayList<>();
+
+        redisOperations.executePipelined((RedisCallback<Map<byte[], Map<byte[], byte[]>>>) connection -> {
+          for (String key : keys) {
+            connection.hashCommands().hGetAll(key.getBytes());
+          }
+
+          List<Object> results = connection.closePipeline();
+
+          for (Object result : results) {
+            Map<byte[], byte[]> hashMap = (Map<byte[], byte[]>) result;
+            Object entity = mappingConverter.read(returnType, new RedisData(hashMap));
+            entities.add(entity);
+          }
+          return null;
+        });
+        modulesOperations.template().delete(keys);
+
+        return entities;
+      }
+    }
   }
 
   private Object executeAggregation(Object[] parameters) {

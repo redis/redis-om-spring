@@ -533,7 +533,6 @@ public class RediSearchQuery implements RepositoryQuery {
   private Object executeDeleteQuery(Object[] parameters) {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
     String baseQuery = prepareQuery(parameters, true);
-//    String[] fields = new String[] { "@__key" };
     AggregationBuilder aggregation = new AggregationBuilder(baseQuery);
 
     // Load fields with IS_NULL or IS_NOT_NULL query clauses
@@ -851,7 +850,9 @@ public class RediSearchQuery implements RepositoryQuery {
     AggregationResult aggregationResult = ops.aggregate(aggregation);
 
     // extract the keys from the aggregation result
-    String[] keys = aggregationResult.getResults().stream().map(d -> d.get("__key").toString()).toArray(String[]::new);
+    String[] keys = aggregationResult.getResults().stream() //
+      .map(d -> d.get("__key").toString())
+      .toArray(String[]::new);
 
     var entities = modulesOperations.opsForJSON().mget(domainType, keys);
 

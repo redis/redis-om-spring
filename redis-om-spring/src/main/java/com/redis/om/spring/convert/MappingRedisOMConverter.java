@@ -15,6 +15,8 @@ import org.springframework.data.mapping.model.EntityInstantiator;
 import org.springframework.data.mapping.model.EntityInstantiators;
 import org.springframework.data.mapping.model.PersistentEntityParameterValueProvider;
 import org.springframework.data.mapping.model.PropertyValueProvider;
+import org.springframework.data.projection.ProjectionFactory;
+import org.springframework.data.projection.SpelAwareProxyProjectionFactory;
 import org.springframework.data.redis.core.PartialUpdate;
 import org.springframework.data.redis.core.PartialUpdate.PropertyUpdate;
 import org.springframework.data.redis.core.PartialUpdate.UpdateCommand;
@@ -50,6 +52,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
 
   private @Nullable ReferenceResolver referenceResolver;
   private CustomConversions customConversions;
+  private final ProjectionFactory projectionFactory;
 
   public MappingRedisOMConverter() {
     this(null);
@@ -94,6 +97,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     this.customConversions = new RedisOMCustomConversions();
     this.typeMapper = typeMapper != null ? typeMapper
         : new DefaultRedisTypeMapper(DefaultRedisTypeMapper.DEFAULT_TYPE_KEY, this.mappingContext);
+    this.projectionFactory = new SpelAwareProxyProjectionFactory();
     this.referenceResolver = referenceResolver;
     afterPropertiesSet();
   }
@@ -107,9 +111,15 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
   public <R> R read(Class<R> type, RedisData source) {
     TypeInformation<?> readType = typeMapper.readType(source.getBucket().getPath(), TypeInformation.of(type));
 
-    return readType.isCollectionLike()
-        ? (R) readCollectionOrArray(type, "", ArrayList.class, Object.class, source.getBucket())
-        : doReadInternal(type, "", type, source);
+    if (readType.isCollectionLike()) {
+      return (R) readCollectionOrArray(type, "", ArrayList.class, Object.class, source.getBucket());
+    }
+
+    //    if (type.isInterface()) {
+//      return (R) projectionFactory.createProjection(type, result);
+//    }
+
+    return readInternal(type, "", type, source);
   }
 
   @Nullable
@@ -119,70 +129,85 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
 
   @SuppressWarnings("unchecked")
   private <R> R doReadInternal(Class<?> entityClass, String path, Class<R> type, RedisData source) {
-
     TypeInformation<?> readType = typeMapper.readType(source.getBucket().getPath(), TypeInformation.of(type));
 
     if (customConversions.hasCustomReadTarget(Map.class, readType.getType())) {
-
       Map<String, byte[]> partial = new HashMap<>();
 
       if (!path.isEmpty()) {
-
         for (Entry<String, byte[]> entry : source.getBucket().extract(path + ".").entrySet()) {
           partial.put(entry.getKey().substring(path.length() + 1), entry.getValue());
         }
-
       } else {
         partial.putAll(source.getBucket().asMap());
       }
+
       R instance = (R) conversionService.convert(partial, readType.getType());
 
       RedisPersistentEntity<?> entity = mappingContext.getPersistentEntity(readType);
       if (entity != null && instance != null && entity.hasIdProperty()) {
-
         PersistentPropertyAccessor<R> propertyAccessor = entity.getPropertyAccessor(instance);
-
         propertyAccessor.setProperty(entity.getRequiredIdProperty(), source.getId());
         instance = propertyAccessor.getBean();
       }
+
       return instance;
     }
 
     if (conversionService.canConvert(byte[].class, readType.getType())) {
-      return (R) conversionService.convert(source.getBucket().get(StringUtils.hasText(path) ? path : "_raw"),
-          readType.getType());
+      return (R) conversionService.convert(source.getBucket().get(StringUtils.hasText(path) ? path : "_raw"), readType.getType());
     }
 
     RedisPersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(readType);
     EntityInstantiator instantiator = entityInstantiators.getInstantiatorFor(entity);
 
-    Object instance = instantiator.createInstance((RedisPersistentEntity<RedisPersistentProperty>) entity,
+    Object instance;
+    if (type.isInterface()) {
+      instance = source.getBucket().asMap();
+    } else {
+      instance = instantiator.createInstance((RedisPersistentEntity<RedisPersistentProperty>) entity,
         new PersistentEntityParameterValueProvider<>(entity,
-            new ConverterAwareParameterValueProvider(entityClass, path, source, conversionService),
-            this.conversionService));
+          new ConverterAwareParameterValueProvider(entityClass, path, source, conversionService),
+          this.conversionService));
+    }
 
-    PersistentPropertyAccessor<Object> accessor = entity.getPropertyAccessor(instance);
-
-    entity.doWithProperties((PropertyHandler<RedisPersistentProperty>) persistentProperty -> {
-
-      InstanceCreatorMetadata<RedisPersistentProperty> constructor = entity.getInstanceCreatorMetadata();
-
-      if (constructor != null && constructor.isCreatorParameter(persistentProperty)) {
-        return;
+    if (type.isInterface()) {
+      Map<String, Object> map = new HashMap<>();
+      RedisPersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(readType);
+      for (Entry<String, byte[]> entry : source.getBucket().asMap().entrySet()) {
+        String key = entry.getKey();
+        byte[] value = entry.getValue();
+        RedisPersistentProperty persistentProperty = persistentEntity.getPersistentProperty(key);
+        Object convertedValue;
+        if (persistentProperty != null) {
+          // Convert the byte[] value to the appropriate type
+          convertedValue = conversionService.convert(value, persistentProperty.getType());
+        } else {
+          // If the property is not found, treat the value as a String
+          convertedValue = new String(value);
+        }
+        map.put(key, convertedValue);
       }
 
-      Object targetValue = readProperty(entityClass, path, source, persistentProperty);
+      // Create a proxy instance of the interface using Spring's ProxyFactory
+      return projectionFactory.createProjection(type, map);
+    } else {
+      PersistentPropertyAccessor<Object> accessor = entity.getPropertyAccessor(instance);
+      entity.doWithProperties((PropertyHandler<RedisPersistentProperty>) persistentProperty -> {
+        InstanceCreatorMetadata<RedisPersistentProperty> constructor = entity.getInstanceCreatorMetadata();
+        if (constructor != null && constructor.isCreatorParameter(persistentProperty)) {
+          return;
+        }
+        Object targetValue = readProperty(entityClass, path, source, persistentProperty);
+        if (targetValue != null) {
+          accessor.setProperty(persistentProperty, targetValue);
+        }
+      });
+      readAssociation(path, source, entity, accessor);
+    }
 
-      if (targetValue != null) {
-        accessor.setProperty(persistentProperty, targetValue);
-      }
-    });
-
-    readAssociation(path, source, entity, accessor);
-
-    return (R) accessor.getBean();
+    return (R) instance;
   }
-
   @Nullable
   protected Object readProperty(Class<?> entityClass, String path, RedisData source,
       RedisPersistentProperty persistentProperty) {
