@@ -1,5 +1,6 @@
-package com.redis.om.spring.repository;
+package com.redis.om.spring.annotations.document.fixtures;
 
+import com.redis.om.spring.repository.RedisDocumentRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
