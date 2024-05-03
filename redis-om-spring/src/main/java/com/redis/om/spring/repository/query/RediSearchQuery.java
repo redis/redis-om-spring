@@ -21,10 +21,7 @@ import org.springframework.data.geo.Point;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.mapping.PropertyPath;
 import org.springframework.data.repository.core.RepositoryMetadata;
-import org.springframework.data.repository.query.Parameter;
-import org.springframework.data.repository.query.QueryMethod;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
-import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.*;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
@@ -48,9 +45,6 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
-import static com.redis.om.spring.util.ObjectUtils.getIdFieldForEntityClass;
-import static com.redis.om.spring.util.ObjectUtils.getValueForField;
 
 public class RediSearchQuery implements RepositoryQuery {
 
@@ -378,6 +372,12 @@ public class RediSearchQuery implements RepositoryQuery {
 
   @Override
   public Object execute(Object[] parameters) {
+    ParameterAccessor accessor = new ParametersParameterAccessor(this.getQueryMethod().getParameters(), parameters);
+    ResultProcessor processor = this.queryMethod.getResultProcessor().withDynamicProjection(accessor);
+    return processor.processResult(this.doExecute(parameters));
+  }
+
+  public Object doExecute(Object[] parameters) {
     Optional<String> maybeBloomFilter = bloomQueryExecutor.getBloomFilter();
     Optional<String> maybeCuckooFilter = cuckooQueryExecutor.getCuckooFilter();
 
@@ -477,7 +477,7 @@ public class RediSearchQuery implements RepositoryQuery {
     } else if (queryMethod.isPageQuery()) {
       Gson gson = getGson();
       List<Object> content = searchResult.getDocuments().stream()
-          .map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), queryMethod.getReturnedObjectType()))
+          .map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), domainType))
           .collect(Collectors.toList());
 
       if (maybePageable.isPresent()) {
@@ -485,22 +485,27 @@ public class RediSearchQuery implements RepositoryQuery {
         result = new PageImpl<>(content, pageable, searchResult.getTotalResults());
       }
 
-    } else if (queryMethod.isQueryForEntity() && !queryMethod.isCollectionQuery()) {
+    } else if (!queryMethod.isCollectionQuery()) {
       // handle the case where we have a single entity result and we the query results are empty
       if (!searchResult.getDocuments().isEmpty()) {
         Gson gson = getGson();
         Document doc = searchResult.getDocuments().get(0);
         Object json = doc != null ? SafeEncoder.encode((byte[])doc.get("$")) : "";
-        result = gson.fromJson(json.toString(), queryMethod.getReturnedObjectType());
+        result = gson.fromJson(json.toString(), domainType);
       }
-    } else if ((queryMethod.isQueryForEntity() && queryMethod.isCollectionQuery()) || this.type == RediSearchQueryType.DELETE) {
+    } else if ((queryMethod.isCollectionQuery()) || this.type == RediSearchQueryType.DELETE) {
       Gson gson = getGson();
       result = searchResult.getDocuments().stream()
-          .map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), queryMethod.getReturnedObjectType()))
+          .map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), domainType))
           .collect(Collectors.toList());
     }
 
     return result;
+  }
+
+  static class Company {
+    public String url;
+    public String name;
   }
 
   private Object executeDeleteQuery(Object[] parameters) {
