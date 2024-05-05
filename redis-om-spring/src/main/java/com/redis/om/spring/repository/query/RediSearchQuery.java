@@ -14,6 +14,7 @@ import com.redis.om.spring.repository.query.cuckoo.CuckooQueryExecutor;
 import com.redis.om.spring.util.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Order;
@@ -28,7 +29,7 @@ import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.data.util.Pair;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
-import redis.clients.jedis.search.Document;
+import redis.clients.jedis.search.FieldName;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.Schema.FieldType;
 import redis.clients.jedis.search.SearchResult;
@@ -372,12 +373,6 @@ public class RediSearchQuery implements RepositoryQuery {
 
   @Override
   public Object execute(Object[] parameters) {
-    ParameterAccessor accessor = new ParametersParameterAccessor(this.getQueryMethod().getParameters(), parameters);
-    ResultProcessor processor = this.queryMethod.getResultProcessor().withDynamicProjection(accessor);
-    return processor.processResult(this.doExecute(parameters));
-  }
-
-  public Object doExecute(Object[] parameters) {
     Optional<String> maybeBloomFilter = bloomQueryExecutor.getBloomFilter();
     Optional<String> maybeCuckooFilter = cuckooQueryExecutor.getCuckooFilter();
 
@@ -408,11 +403,28 @@ public class RediSearchQuery implements RepositoryQuery {
   }
 
   private Object executeQuery(Object[] parameters) {
+    ParameterAccessor accessor = new ParametersParameterAccessor(queryMethod.getParameters(), parameters);
+    ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(accessor);
+
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
     boolean excludeNullParams = !isNullParamQuery;
     String preparedQuery = prepareQuery(parameters, excludeNullParams);
     Query query = new Query(preparedQuery);
-    query.returnFields(returnFields);
+
+    ReturnedType returnedType = processor.getReturnedType();
+
+    boolean isOpenProjection = Arrays.stream(returnedType.getReturnedType().getMethods())
+            .anyMatch(m -> m.isAnnotationPresent(Value.class));
+    boolean canPerformQueryOptimization = returnedType.isProjecting() && !isOpenProjection;
+
+    if (canPerformQueryOptimization) {
+      query.returnFields(returnedType.getInputProperties()
+              .stream()
+              .map(inputProperty -> new FieldName( "$." + inputProperty, inputProperty))
+              .toArray(FieldName[]::new));
+    } else {
+      query.returnFields(returnFields);
+    }
 
     Optional<Pageable> maybePageable = Optional.empty();
 
@@ -475,10 +487,9 @@ public class RediSearchQuery implements RepositoryQuery {
     if (queryMethod.getReturnedObjectType() == SearchResult.class) {
       result = searchResult;
     } else if (queryMethod.isPageQuery()) {
-      Gson gson = getGson();
       List<Object> content = searchResult.getDocuments().stream()
-          .map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), domainType))
-          .collect(Collectors.toList());
+          .map(this::parseDocumentResult)
+              .toList();
 
       if (maybePageable.isPresent()) {
         Pageable pageable = maybePageable.get();
@@ -488,19 +499,34 @@ public class RediSearchQuery implements RepositoryQuery {
     } else if (!queryMethod.isCollectionQuery()) {
       // handle the case where we have a single entity result and we the query results are empty
       if (!searchResult.getDocuments().isEmpty()) {
-        Gson gson = getGson();
-        Document doc = searchResult.getDocuments().get(0);
-        Object json = doc != null ? SafeEncoder.encode((byte[])doc.get("$")) : "";
-        result = gson.fromJson(json.toString(), domainType);
+        redis.clients.jedis.search.Document doc = searchResult.getDocuments().get(0);
+        result = parseDocumentResult(doc);
       }
     } else if ((queryMethod.isCollectionQuery()) || this.type == RediSearchQueryType.DELETE) {
-      Gson gson = getGson();
       result = searchResult.getDocuments().stream()
-          .map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), domainType))
-          .collect(Collectors.toList());
+          .map(this::parseDocumentResult)
+              .toList();
     }
 
-    return result;
+    return processor.processResult(result);
+  }
+
+  private Object parseDocumentResult(redis.clients.jedis.search.Document doc) {
+    Gson gsonInstance = getGson();
+
+    if (doc == null) {
+      return gsonInstance.fromJson("", domainType);
+    }
+
+    if (doc.get("$") != null) {
+      return gsonInstance.fromJson(SafeEncoder.encode((byte[])doc.get("$")), domainType);
+    }
+
+    return gsonInstance.fromJson(gsonInstance.toJsonTree(StreamSupport.stream(doc.getProperties().spliterator(), false)
+            .collect(Collectors.toMap(
+                    Entry::getKey,
+                    entry -> SafeEncoder.encode((byte[]) entry.getValue())
+            ))), domainType);
   }
 
   private Object executeDeleteQuery(Object[] parameters) {
