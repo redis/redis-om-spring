@@ -413,11 +413,12 @@ public class RediSearchQuery implements RepositoryQuery {
 
     ReturnedType returnedType = processor.getReturnedType();
 
-    boolean isOpenProjection = Arrays.stream(returnedType.getReturnedType().getMethods())
+    boolean isProjecting = returnedType.isProjecting() && returnedType.getReturnedType() != SearchResult.class;
+    boolean isOpenProjecting = Arrays.stream(returnedType.getReturnedType().getMethods())
             .anyMatch(m -> m.isAnnotationPresent(Value.class));
-    boolean canPerformQueryOptimization = returnedType.isProjecting() && !isOpenProjection;
+    boolean canPerformQueryOptimization = isProjecting && !isOpenProjecting;
 
-    if (canPerformQueryOptimization) {
+    if (canPerformQueryOptimization && queryMethod.getReturnedObjectType() != SearchResult.class) {
       query.returnFields(returnedType.getInputProperties()
               .stream()
               .map(inputProperty -> new FieldName( "$." + inputProperty, inputProperty))
