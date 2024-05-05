@@ -14,8 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class DocumentProjectionTest extends AbstractBaseDocumentTest {
 
     public static final String TEST_NAME = "testName";
-    public static final String TEST_REC_1 = "test1";
-    public static final String TEST_REC_2 = "test2";
+    public static final String TEST_PROP_1 = "test1";
     private final DocumentProjectionRepository documentProjectionRepository;
 
     @Autowired
@@ -28,10 +27,7 @@ class DocumentProjectionTest extends AbstractBaseDocumentTest {
         for (int i = 0; i < 2; i++) {
             DocumentProjectionPojo entity = new DocumentProjectionPojo();
             entity.setName(TEST_NAME);
-            DocumentProjectionPojo.RecursiveProjection recursiveProjection = new DocumentProjectionPojo.RecursiveProjection();
-            recursiveProjection.setRecursiveProp1(TEST_REC_1);
-            recursiveProjection.setRecursiveProp2(TEST_REC_2);
-            entity.setRecursiveProjection(recursiveProjection);
+            entity.setTest(TEST_PROP_1);
             documentProjectionRepository.save(entity);
         }
     }
@@ -41,8 +37,8 @@ class DocumentProjectionTest extends AbstractBaseDocumentTest {
         Optional<DocumentProjection> byNameProjection = documentProjectionRepository.findByName(TEST_NAME);
         assertTrue(byNameProjection.isPresent());
         assertEquals(TEST_NAME, byNameProjection.get().getName());
-        assertNotNull(byNameProjection.get().getRecursiveProjection());
-        assertEquals(TEST_REC_1, byNameProjection.get().getRecursiveProjection().getRecursiveProp1());
+        assertNotNull(byNameProjection.get().getSpelTest());
+        assertEquals(TEST_NAME + " " + TEST_PROP_1, byNameProjection.get().getSpelTest());
     }
 
     @Test
@@ -52,7 +48,7 @@ class DocumentProjectionTest extends AbstractBaseDocumentTest {
         assertEquals(2, byNameProjection.size());
         byNameProjection.forEach(documentProjection -> {
             assertNotNull(documentProjection.getName());
-            assertNotNull(documentProjection.getRecursiveProjection());
+            assertNotNull(documentProjection.getSpelTest());
         });
     }
 

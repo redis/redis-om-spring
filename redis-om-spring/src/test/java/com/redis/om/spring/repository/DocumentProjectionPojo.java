@@ -15,16 +15,10 @@ public class DocumentProjectionPojo {
 
     private String name;
 
-    private RecursiveProjection recursiveProjection;
+    private String test;
 
     public DocumentProjectionPojo() {
         this.id = UUID.randomUUID().toString();
     }
 
-
-    @Data
-    static class RecursiveProjection {
-        private String recursiveProp1;
-        private String recursiveProp2;
-    }
 }
