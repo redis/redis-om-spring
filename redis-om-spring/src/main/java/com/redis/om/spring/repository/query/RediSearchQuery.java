@@ -418,7 +418,7 @@ public class RediSearchQuery implements RepositoryQuery {
             .anyMatch(m -> m.isAnnotationPresent(Value.class));
     boolean canPerformQueryOptimization = isProjecting && !isOpenProjecting;
 
-    if (canPerformQueryOptimization && queryMethod.getReturnedObjectType() != SearchResult.class) {
+    if (canPerformQueryOptimization) {
       query.returnFields(returnedType.getInputProperties()
               .stream()
               .map(inputProperty -> new FieldName( "$." + inputProperty, inputProperty))
