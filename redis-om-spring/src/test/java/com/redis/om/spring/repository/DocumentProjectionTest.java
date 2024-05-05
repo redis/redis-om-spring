@@ -5,6 +5,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Collection;
 import java.util.Optional;
@@ -33,7 +35,7 @@ class DocumentProjectionTest extends AbstractBaseDocumentTest {
     }
 
     @Test
-    void testEntityProjection() {
+    void testProjectionSingleEntityReturnType() {
         Optional<DocumentProjection> byNameProjection = documentProjectionRepository.findByName(TEST_NAME);
         assertTrue(byNameProjection.isPresent());
         assertEquals(TEST_NAME, byNameProjection.get().getName());
@@ -42,7 +44,7 @@ class DocumentProjectionTest extends AbstractBaseDocumentTest {
     }
 
     @Test
-    void testCollectionProjection() {
+    void testProjectionCollectionReturnType() {
         Collection<DocumentProjection> byNameProjection = documentProjectionRepository.findAllByName(TEST_NAME);
         assertNotNull(byNameProjection);
         assertEquals(2, byNameProjection.size());
@@ -50,6 +52,14 @@ class DocumentProjectionTest extends AbstractBaseDocumentTest {
             assertNotNull(documentProjection.getName());
             assertNotNull(documentProjection.getSpelTest());
         });
+    }
+
+    @Test
+    void testProjectionPageReturnType() {
+        Page<DocumentProjection> byNameProjection = documentProjectionRepository.findAllByName(TEST_NAME, Pageable.ofSize(1));
+        assertNotNull(byNameProjection);
+        assertEquals(1, byNameProjection.getNumberOfElements());
+        assertEquals(2, byNameProjection.getTotalPages());
     }
 
     @AfterEach
