@@ -199,7 +199,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
         processReferenceAnnotations(objectKey, entity, pipeline);
 
-        maybeTtl.ifPresent(aLong -> pipeline.expire(objectKey, aLong));
+        maybeTtl.ifPresent(ttl -> { if (ttl > 0) pipeline.expire(objectKey, ttl); });
 
         saved.add(entity);
       }

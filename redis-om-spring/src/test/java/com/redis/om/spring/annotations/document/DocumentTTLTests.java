@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -118,5 +119,29 @@ import static org.assertj.core.api.Assertions.assertThat;
     assertThat(withTTLAnnotationRepository.findAll()).isEmpty();
     assertThat(withTTLAnnotationRepository.findOneByName("Konrad Zuse")).isNotPresent();
     assertThat(withTTLAnnotationRepository.findOneByName("Steve Wozniak")).isNotPresent();
+  }
+
+  @Test
+  void testNegativeTimeToLiveAnnotationWithSave() {
+    ExpiringPerson mWoodger = ExpiringPerson.of("Mike Woodger", -1L);
+    withTTLAnnotationRepository.save(mWoodger);
+
+    Long expire = withTTLAnnotationRepository.getExpiration(mWoodger.getId());
+    boolean exists = withTTLAnnotationRepository.existsById(mWoodger.getId());
+
+    assertThat(expire).isEqualTo(-1L);
+    assertThat(exists).isTrue();
+  }
+
+  @Test
+  void testNegativeTimeToLiveAnnotationWithSaveAll() {
+    ExpiringPerson mWoodger = ExpiringPerson.of("Mike Woodger", -1L);
+    withTTLAnnotationRepository.saveAll(Set.of(mWoodger));
+
+    Long expire = withTTLAnnotationRepository.getExpiration(mWoodger.getId());
+    boolean exists = withTTLAnnotationRepository.existsById(mWoodger.getId());
+
+    assertThat(expire).isEqualTo(-1L);
+    assertThat(exists).isTrue();
   }
 }
