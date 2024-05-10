@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -102,5 +103,29 @@ import static org.assertj.core.api.Assertions.assertThat;
 
     assertThat(jWilkinsonExpiration).isEqualTo(7L*24*60*60);
     assertThat(sDummontExpiration).isEqualTo(7L*24*60*60);
+  }
+
+  @Test
+  void testNegativeTimeToLiveAnnotationUsingSave() {
+    ExpiringPerson mWoodger = ExpiringPerson.of("Mike Woodger", -1L);
+    withTTLAnnotationRepository.save(mWoodger);
+
+    Long expire = withTTLAnnotationRepository.getExpiration(mWoodger.getId());
+    boolean exists = withTTLAnnotationRepository.existsById(mWoodger.getId());
+
+    assertThat(expire).isEqualTo(-1L);
+    assertThat(exists).isTrue();
+  }
+
+  @Test
+  void testNegativeTimeToLiveAnnotationUsingSaveAll() {
+    ExpiringPerson mWoodger = ExpiringPerson.of("Mike Woodger", -1L);
+    withTTLAnnotationRepository.saveAll(Set.of(mWoodger));
+
+    Long expire = withTTLAnnotationRepository.getExpiration(mWoodger.getId());
+    boolean exists = withTTLAnnotationRepository.existsById(mWoodger.getId());
+
+    assertThat(expire).isEqualTo(-1L);
+    assertThat(exists).isTrue();
   }
 }

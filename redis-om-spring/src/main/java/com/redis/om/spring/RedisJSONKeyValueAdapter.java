@@ -110,9 +110,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     processReferences(key, item);
 
     redisOperations.execute((RedisCallback<Object>) connection -> {
-
-      maybeTtl.ifPresent(aLong -> connection.keyCommands().expire(toBytes(key), aLong));
-
+      maybeTtl.ifPresent(ttl -> { if (ttl > 0) connection.keyCommands().expire(toBytes(key), ttl); });
       return null;
     });
 
