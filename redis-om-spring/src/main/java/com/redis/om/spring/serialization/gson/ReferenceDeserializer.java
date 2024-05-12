@@ -4,6 +4,8 @@ import com.google.gson.*;
 import com.google.gson.internal.ConstructorConstructor;
 import com.google.gson.internal.ObjectConstructor;
 import com.google.gson.reflect.TypeToken;
+import com.redis.om.spring.RedisOMProperties;
+import com.redis.om.spring.RedisOMProperties.References;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.util.ObjectUtils;
 import org.apache.commons.logging.Log;
@@ -14,17 +16,23 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.stream.Collectors;
+
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 
 public class ReferenceDeserializer implements JsonDeserializer<Object> {
   private static final Log logger = LogFactory.getLog(ReferenceDeserializer.class);
 
   private final Class<?> type;
   private final ObjectConstructor<?> objectConstructor;
-
   private final JSONOperations<String> ops;
+  private final Gson gson = new Gson();
+  private final Cache referenceCache;
+  private final List<String> cachedReferenceClasses;
 
   @SuppressWarnings("unchecked")
-  public ReferenceDeserializer(Field field, JSONOperations<?> ops) {
+  public ReferenceDeserializer(Field field, JSONOperations<?> ops, RedisOMProperties properties, CacheManager cacheManager) {
     this.ops = (JSONOperations<String>) ops;
     Map<Type, InstanceCreator<?>> instanceCreators = new HashMap<>();
     ConstructorConstructor constructorConstructor = new ConstructorConstructor(instanceCreators, true,
@@ -40,18 +48,31 @@ public class ReferenceDeserializer implements JsonDeserializer<Object> {
       this.type = field.getType();
     }
     this.objectConstructor = constructorConstructor.get(TypeToken.get(type));
+
+    References referencesConfig = properties.getReferences();
+    referenceCache = cacheManager.getCache(referencesConfig.getCacheName());
+    this.cachedReferenceClasses = referencesConfig.getCachedReferenceClasses();
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public Object deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
-      throws JsonParseException {
+    throws JsonParseException {
     Object reference = null;
     JsonObject jsonObject;
     if (json.isJsonPrimitive()) {
       String referenceKey = ObjectUtils.unQuote(json.toString());
-      String referenceJSON = ops.get(referenceKey);
-      jsonObject = new Gson().fromJson(referenceJSON, JsonObject.class);
+      String referenceJSON = null;
+      if (shouldCache(type)) {
+        referenceJSON = referenceCache.get(referenceKey, String.class);
+      }
+      if (referenceJSON == null) {
+        referenceJSON = ops.get(referenceKey);
+        if (referenceCache != null && shouldCache(type)) {
+          referenceCache.put(referenceKey, referenceJSON);
+        }
+      }
+      jsonObject = gson.fromJson(referenceJSON, JsonObject.class);
       reference = deserializeEntity(jsonObject, context);
     } else if (json.isJsonObject()) {
       jsonObject = json.getAsJsonObject();
@@ -60,12 +81,33 @@ public class ReferenceDeserializer implements JsonDeserializer<Object> {
       JsonArray jsonArray = json.getAsJsonArray();
       reference = instantiateCollection(typeOfT);
 
-      String[] keys = jsonArray.asList().stream().filter(JsonElement::isJsonPrimitive).map(jsonElement -> ObjectUtils.unQuote(jsonElement.toString())).toArray(String[]::new);
+      String[] keys = jsonArray.asList().stream()
+        .filter(JsonElement::isJsonPrimitive)
+        .map(jsonElement -> ObjectUtils.unQuote(jsonElement.toString()))
+        .toArray(String[]::new);
+
+      List<String> values;
       if (keys.length > 0) {
-        var values = ops.mget(keys);
-        ((Collection) reference).addAll( //
-            values.stream().map(raw -> new Gson().fromJson(raw, JsonObject.class)).map(jo -> deserializeEntity(jo, context)).toList() //
-        );
+        if (shouldCache(type)) {
+          values = Arrays.stream(keys).map(key -> referenceCache.get(key, String.class)).filter(Objects::nonNull)
+            .collect(Collectors.toList());
+          if (values.size() < keys.length) {
+            String[] missingKeys = Arrays.stream(keys).filter(key -> referenceCache.get(key, String.class) == null)
+              .toArray(String[]::new);
+            List<String> fetchedValues = ops.mget(missingKeys);
+            for (int i = 0; i < missingKeys.length; i++) {
+              referenceCache.put(missingKeys[i], fetchedValues.get(i));
+            }
+            values.addAll(fetchedValues);
+          }
+        } else {
+          values = ops.mget(keys);
+        }
+        ((Collection) reference).addAll(
+          values.stream()
+            .map(raw -> gson.fromJson(raw, JsonObject.class))
+            .map(jo -> deserializeEntity(jo, context))
+            .toList());
       }
     }
 
@@ -116,5 +158,9 @@ public class ReferenceDeserializer implements JsonDeserializer<Object> {
       }
     }
     return reference;
+  }
+
+  private boolean shouldCache(Class<?> referenceClass) {
+    return cachedReferenceClasses.contains(referenceClass.getName());
   }
 }
