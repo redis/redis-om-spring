@@ -6,13 +6,14 @@ import com.redis.om.spring.search.stream.EntityStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.TestPropertySource;
 
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@TestPropertySource(properties = {"spring.config.location=classpath:application.yaml"})
 class ReferenceTest extends AbstractBaseDocumentTest {
   @Autowired
   CityRepository cityRepository;
@@ -25,6 +26,12 @@ class ReferenceTest extends AbstractBaseDocumentTest {
 
   @Autowired
   StatesRepository statesRepository;
+
+  @Autowired
+  RefRepository refRepository;
+
+  @Autowired
+  TooManyReferencesRepository tooManyReferencesRepository;
 
   @Autowired
   EntityStream entityStream;
@@ -60,6 +67,37 @@ class ReferenceTest extends AbstractBaseDocumentTest {
         City.of("Savannah", ga), City.of("Augusta", ga) //
     );
     cityRepository.saveAll(cities);
+
+    if (refRepository.count() == 0) {
+      Set<Ref> refs = new HashSet<>();
+      for (int i = 0; i < 100; i++) {
+        refs.add(Ref.of("ref" + i));
+      }
+      refRepository.saveAll(refs);
+
+      Set<TooManyReferences> tmrs = new HashSet<>();
+      List<Ref> refList = new ArrayList<>(refs);
+      Random random = new Random();
+
+      for (int i = 0; i < 10000; i++) {
+        TooManyReferences tmr = TooManyReferences.of("ref" + i);
+
+        tmr.setRef1(refList.get(random.nextInt(refList.size())));
+        tmr.setRef2(refList.get(random.nextInt(refList.size())));
+        tmr.setRef3(refList.get(random.nextInt(refList.size())));
+        tmr.setRef4(refList.get(random.nextInt(refList.size())));
+        tmr.setRef5(refList.get(random.nextInt(refList.size())));
+        tmr.setRef6(refList.get(random.nextInt(refList.size())));
+        tmr.setRef7(refList.get(random.nextInt(refList.size())));
+        tmr.setRef8(refList.get(random.nextInt(refList.size())));
+        tmr.setRef9(refList.get(random.nextInt(refList.size())));
+        tmr.setRef10(refList.get(random.nextInt(refList.size())));
+
+        tmrs.add(tmr);
+      }
+
+      tooManyReferencesRepository.saveAll(tmrs);
+    }
   }
 
   @Test
@@ -224,5 +262,25 @@ class ReferenceTest extends AbstractBaseDocumentTest {
 
     assertThat(ohioCities).hasSize(15);
     assertThat(ohioCities).doesNotContain(cincinnati, cleveland, columbus);
+  }
+
+  @Test
+  void testExtremeReferencesWithFindAll() {
+    List<TooManyReferences> allReferences = tooManyReferencesRepository.findAll();
+
+    assertThat(allReferences).isNotEmpty();
+
+    for (TooManyReferences tmr : allReferences) {
+      assertThat(tmr.getRef1()).isNotNull();
+      assertThat(tmr.getRef2()).isNotNull();
+      assertThat(tmr.getRef3()).isNotNull();
+      assertThat(tmr.getRef4()).isNotNull();
+      assertThat(tmr.getRef5()).isNotNull();
+      assertThat(tmr.getRef6()).isNotNull();
+      assertThat(tmr.getRef7()).isNotNull();
+      assertThat(tmr.getRef8()).isNotNull();
+      assertThat(tmr.getRef9()).isNotNull();
+      assertThat(tmr.getRef10()).isNotNull();
+    }
   }
 }

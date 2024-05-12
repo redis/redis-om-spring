@@ -3,6 +3,9 @@ package com.redis.om.spring;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @ConfigurationProperties(
     prefix = "redis.om.spring", ignoreInvalidFields = true
 )
@@ -10,10 +13,12 @@ public class RedisOMProperties {
     public static final int MAX_SEARCH_RESULTS = 10000;
     // repository properties
     private final Repository repository = new Repository();
+    private final References references = new References();
 
     public Repository getRepository() {
         return repository;
     }
+    public References getReferences() { return references; }
 
     public static class Repository {
         private final Query query = new Query();
@@ -32,6 +37,27 @@ public class RedisOMProperties {
             public void setLimit(int limit) {
                 this.limit = limit;
             }
+        }
+    }
+
+    public static class References {
+        private String cacheName = "roms-reference-cache";
+        private List<String> cachedReferenceClasses = new ArrayList<>();
+
+        public String getCacheName() {
+            return cacheName;
+        }
+
+        public void setCacheName(String cacheName) {
+            this.cacheName = cacheName;
+        }
+
+        public List<String> getCachedReferenceClasses() {
+            return cachedReferenceClasses;
+        }
+
+        public void setCachedReferenceClasses(List<String> cachedReferenceClasses) {
+            this.cachedReferenceClasses = cachedReferenceClasses;
         }
     }
 

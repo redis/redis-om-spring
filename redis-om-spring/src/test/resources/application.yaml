@@ -4,3 +4,8 @@ redis:
       repository:
         query:
           limit: 20
+      references:
+        cachedReferenceClasses:
+          - com.redis.om.spring.annotations.document.fixtures.Ref
+          - com.redis.om.spring.annotations.document.fixtures.State
+          - com.redis.om.spring.annotations.document.fixtures.Country

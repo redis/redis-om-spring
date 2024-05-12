@@ -2,10 +2,12 @@ package com.redis.om.spring.serialization.gson;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.ops.json.JSONOperations;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.annotation.Reference;
 import org.springframework.stereotype.Component;
@@ -69,7 +71,14 @@ public class GsonReferenceSerializerRegistrar {
       typeToken = TypeToken.get(field.getType());
     }
 
-    builder.registerTypeAdapter(typeToken.getType(), new ReferenceDeserializer(field, ops));
+    builder.registerTypeAdapter(
+      typeToken.getType(),
+      new ReferenceDeserializer(
+        field,
+        ops,
+        ac.getBean(RedisOMProperties.class),
+        ac.getBean("redisOMCacheManager", CacheManager.class))
+    );
     processEntity(field.getType());
   }
 

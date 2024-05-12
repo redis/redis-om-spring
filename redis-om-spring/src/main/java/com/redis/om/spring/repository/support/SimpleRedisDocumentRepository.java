@@ -66,6 +66,7 @@ import java.util.stream.StreamSupport;
 import static com.redis.om.spring.util.ObjectUtils.isPrimitiveOfType;
 import static com.redis.om.spring.util.ObjectUtils.pageFromSlice;
 import static redis.clients.jedis.json.JsonProtocol.JsonCommand;
+import static com.redis.om.spring.util.ObjectUtils.getFieldsWithAnnotation;
 
 public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueRepository<T, ID>
     implements RedisDocumentRepository<T, ID> {
@@ -251,7 +252,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   }
 
   private void processReferenceAnnotations(byte[] objectKey, Object entity, Pipeline pipeline) {
-    List<Field> fields = com.redis.om.spring.util.ObjectUtils.getFieldsWithAnnotation(entity.getClass(), Reference.class);
+    List<Field> fields = getFieldsWithAnnotation(entity.getClass(), Reference.class);
     if (!fields.isEmpty()) {
       PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(entity);
       fields.forEach(f -> {
