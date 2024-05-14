@@ -345,4 +345,10 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
     throw new UnsupportedOperationException("highlight is not supported on a WrappedSearchStream");
   }
 
+
+  @Override
+  public SearchStream<E> findFirstOrElse(Supplier<? extends E> supplier) {
+    throw new UnsupportedOperationException("findFirstOrElse is not supported on a WrappedSearchStream");
+  }
+
 }

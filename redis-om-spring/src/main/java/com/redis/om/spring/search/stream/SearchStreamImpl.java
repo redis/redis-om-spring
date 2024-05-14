@@ -373,6 +373,22 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   @Override
+  public SearchStream<E> findFirstOrElse(Supplier<? extends E> supplier) {
+    if (resolvedStream == null) {
+      resolvedStream = toEntityList(executeQuery()).stream();
+    }
+
+    if (resolvedStream.findFirst().isEmpty()) {
+      var entity = supplier.get();
+      if (entity != null) {
+        resolvedStream = Stream.of(entity);
+      }
+    }
+
+    return this;
+  }
+
+  @Override
   public Iterator<E> iterator() {
     return resolveStream().iterator();
   }
