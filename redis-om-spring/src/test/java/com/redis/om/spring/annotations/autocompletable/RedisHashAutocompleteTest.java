@@ -13,7 +13,8 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SuppressWarnings("SpellCheckingInspection") class RedisHashAutocompleteTest extends AbstractBaseEnhancedRedisTest {
+@SuppressWarnings("SpellCheckingInspection")
+class RedisHashAutocompleteTest extends AbstractBaseEnhancedRedisTest {
   @Autowired
   PersonRepository repository;
 
@@ -33,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
     Person kaitlyn = Person.of("Kaitlyn Michael", "kaitlyn@redis.com", "kaitlyn");
     Person josefin = Person.of("Josefin Sjoeberg", "josefin.sjoeberg@redis.com", "josefin");
     List<Person> persons = List.of(guyr, guyk, simon, justin, steve, kyleo, kyleb, andrew, alex, lance, rachel, kaitlyn,
-        josefin);
+      josefin);
 
     repository.saveAll(persons);
   }

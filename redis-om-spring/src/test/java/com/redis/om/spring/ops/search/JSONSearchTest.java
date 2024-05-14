@@ -1,5 +1,7 @@
 package com.redis.om.spring.ops.search;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
@@ -19,33 +21,21 @@ import redis.clients.jedis.search.aggr.Row;
 import redis.clients.jedis.util.SafeEncoder;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.StreamSupport;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SuppressWarnings("SpellCheckingInspection") class JSONSearchTest extends AbstractBaseDocumentTest {
+@SuppressWarnings("SpellCheckingInspection")
+class JSONSearchTest extends AbstractBaseDocumentTest {
   public static final String searchIndex = "idx";
-
-  /* A simple class that represents an object in real life */
-  /* '{"title":"hello world", "tag": ["news", "article"]}' */
-  private static class SomeJSON {
-    @SuppressWarnings("unused")
-    public String title;
-    public final Set<String> tag = new HashSet<>();
-
-    public SomeJSON() {
-      this.title = "hello world";
-      this.tag.add("news");
-      this.tag.add("article");
-    }
-  }
-
   @Autowired
   RedisModulesOperations<String> modulesOperations;
-
   @Autowired
   private StringRedisTemplate template;
+
+  private final ObjectMapper objectMapper = new ObjectMapper();
 
   @BeforeEach
   void setup() {
@@ -59,8 +49,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
     // FT.CREATE idx ON JSON SCHEMA $.title AS title TEXT $.tag[*] AS tag TAG
     Schema sc = new Schema() //
-        .addField(new TextField(FieldName.of("$.title").as("title"))) //
-        .addField(new Field(FieldName.of("$.tag[*]").as("tag"), FieldType.TAG));
+      .addField(new TextField(FieldName.of("$.title").as("title"))) //
+      .addField(new Field(FieldName.of("$.tag[*]").as("tag"), FieldType.TAG));
 
     IndexDefinition def = new IndexDefinition(IndexDefinition.Type.JSON);
     ops.createIndex(sc, IndexOptions.defaultOptions().setDefinition(def));
@@ -82,14 +72,19 @@ import static org.junit.jupiter.api.Assertions.*;
    * 2) "{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}"
    */
   @Test
-  void testBasicSearchOverJSON() {
+  void testBasicSearchOverJSON() throws Exception {
     SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
 
     SearchResult result = ops.search(new Query("@title:hello @tag:{news}"));
     assertEquals(1, result.getTotalResults());
     Document doc = result.getDocuments().get(0);
     assertEquals(1.0, doc.getScore(), 0);
-    assertEquals("{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}", SafeEncoder.encode((byte[])doc.get("$")));
+
+    String jsonString = SafeEncoder.encode((byte[]) doc.get("$"));
+    Map<String, Object> actualMap = objectMapper.readValue(jsonString, new TypeReference<Map<String, Object>>() {});
+    Map<String, Object> expectedMap = objectMapper.readValue("{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}", new TypeReference<Map<String, Object>>() {});
+
+    assertEquals(expectedMap, actualMap);
   }
 
   /**
@@ -107,8 +102,9 @@ import static org.junit.jupiter.api.Assertions.*;
     Document doc = result.getDocuments().get(0);
     assertEquals(1.0, doc.getScore(), 0);
     assertTrue(StreamSupport //
-        .stream(doc.getProperties().spliterator(), false) //
-        .anyMatch(p -> p.getKey().contentEquals("first_tag") && SafeEncoder.encode((byte[])p.getValue()).equals("news")));
+      .stream(doc.getProperties().spliterator(), false) //
+      .anyMatch(
+        p -> p.getKey().contentEquals("first_tag") && SafeEncoder.encode((byte[]) p.getValue()).equals("news")));
   }
 
   /**
@@ -130,5 +126,19 @@ import static org.junit.jupiter.api.Assertions.*;
     assertNotNull(row);
     assertTrue(row.containsKey("tag2"));
     assertEquals("article", row.getString("tag2"));
+  }
+
+  /* A simple class that represents an object in real life */
+  /* '{"title":"hello world", "tag": ["news", "article"]}' */
+  private static class SomeJSON {
+    public final Set<String> tag = new HashSet<>();
+    @SuppressWarnings("unused")
+    public String title;
+
+    public SomeJSON() {
+      this.title = "hello world";
+      this.tag.add("news");
+      this.tag.add("article");
+    }
   }
 }

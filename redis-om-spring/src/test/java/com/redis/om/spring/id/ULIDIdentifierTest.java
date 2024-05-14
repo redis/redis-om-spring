@@ -22,25 +22,26 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SuppressWarnings("SpellCheckingInspection") class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
-  
+@SuppressWarnings("SpellCheckingInspection")
+class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
+
   private final ULIDIdentifierGenerator generator = ULIDIdentifierGenerator.INSTANCE;
 
   @Autowired
   PersonRepository repository;
-  
+
   @Autowired
   BadDocRepository badDocRepo;
-  
+
   @Autowired
   DocWithExplicitUlidIdRepository docWithUlidRepo;
-  
+
   @Autowired
   DocWithIntegerIdRepository docWithIntRepo;
-  
+
   @Autowired
   RedisModulesOperations<String> modulesOperations;
-  
+
   @Test
   void testMonotonicallyIncreasingUlidAssignment() {
     Person ofer = Person.of("Ofer Bengal", "ofer@redis.com", "ofer");
@@ -52,34 +53,38 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     Ulid yiftachUlid = Ulid.from(yiftachId);
     assertTrue(oferUlid.getInstant().isBefore(yiftachUlid.getInstant()));
   }
-  
+
   @Test
   void testUnsupportedIdTypesThrowException() {
     BadDoc badDoc = new BadDoc();
-    InvalidDataAccessApiUsageException exception = Assertions.assertThrows(InvalidDataAccessApiUsageException.class, () -> badDocRepo.save(badDoc));
+    InvalidDataAccessApiUsageException exception = Assertions.assertThrows(InvalidDataAccessApiUsageException.class,
+      () -> badDocRepo.save(badDoc));
 
-    String expectedErrorMessage = String.format("Identifier cannot be generated for %s. Supported types are: ULID, String, Integer, and Long.", BigInteger.class.getName());
+    String expectedErrorMessage = String.format(
+      "Identifier cannot be generated for %s. Supported types are: ULID, String, Integer, and Long.",
+      BigInteger.class.getName());
     Assertions.assertEquals(expectedErrorMessage, exception.getMessage());
   }
-  
+
   @Test
   void testExplicitUlid() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
-    
+
     DocWithExplicitUlidId ulidDoc = new DocWithExplicitUlidId();
     Ulid generatedId = docWithUlidRepo.save(ulidDoc).getId();
-    
-    JsonObject rawJSON = ops.get(DocWithExplicitUlidId.class.getName() + ":" + generatedId.toString(), JsonObject.class);
+
+    JsonObject rawJSON = ops.get(DocWithExplicitUlidId.class.getName() + ":" + generatedId.toString(),
+      JsonObject.class);
     String ulidAsString = Objects.requireNonNull(rawJSON).get("id").getAsString();
     Ulid ulidFromRawJSON = Ulid.from(ulidAsString);
-    
+
     assertThat(ulidFromRawJSON).isEqualByComparingTo(generatedId);
   }
-  
+
   @Test
   void shouldThrowExceptionForUnsupportedType() {
-    assertThatExceptionOfType(InvalidDataAccessApiUsageException.class)
-        .isThrownBy(() -> generator.generateIdentifierOfType(TypeInformation.of(Date.class)));
+    assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(
+      () -> generator.generateIdentifierOfType(TypeInformation.of(Date.class)));
   }
 
   @Test
@@ -89,16 +94,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
     assertThat(value).isNotNull().isInstanceOf(Ulid.class);
   }
-  
+
   @Test
   void testIntegerId() {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
-    
+
     DocWithIntegerId intDoc = new DocWithIntegerId();
     Integer generatedId = docWithIntRepo.save(intDoc).getId();
-    
+
     JsonObject rawJSON = ops.get(DocWithIntegerId.class.getName() + ":" + generatedId.toString(), JsonObject.class);
-    
+
     assertThat(Objects.requireNonNull(rawJSON).get("id").getAsInt()).isEqualByComparingTo(generatedId);
   }
 

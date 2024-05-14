@@ -46,15 +46,42 @@ import static java.util.Objects.requireNonNull;
 import static org.springframework.util.ClassUtils.resolvePrimitiveIfNecessary;
 
 public class ObjectUtils {
+  public static final Character REPLACEMENT_CHARACTER = '_';
+  static final Set<String> JAVA_LITERAL_WORDS = Set.of("true", "false", "null");
+  // Java reserved keywords
+  static final Set<String> JAVA_RESERVED_WORDS = Collections.unmodifiableSet(Stream.of(
+    // Unused
+    "const", "goto",
+    // The real ones...
+    "abstract", "continue", "for", "new", "switch", "assert", "default", "goto", "package", "synchronized", "boolean",
+    "do", "if", "private", "this", "break", "double", "implements", "protected", "throw", "byte", "else", "import",
+    "public", "throws", "case", "enum", "instanceof", "return", "transient", "catch", "extends", "int", "short", "try",
+    "char", "final", "interface", "static", "void", "class", "finally", "long", "strictfp", "volatile", "const",
+    "float", "native", "super", "while").collect(Collectors.toSet()));
+  static final Set<Class<?>> JAVA_BUILT_IN_CLASSES = Set.of(Boolean.class, Byte.class, Character.class, Double.class,
+    Float.class, Integer.class, Long.class, Object.class, Short.class, String.class, BigDecimal.class, BigInteger.class,
+    boolean.class, byte.class, char.class, double.class, float.class, int.class, long.class, short.class);
+  private static final ExpressionParser SPEL_EXPRESSION_PARSER = new SpelExpressionParser();
+  private static final Set<String> JAVA_BUILT_IN_CLASS_WORDS = Collections.unmodifiableSet(
+    JAVA_BUILT_IN_CLASSES.stream().map(Class::getSimpleName).collect(Collectors.toSet()));
+  private static final Set<String> JAVA_USED_WORDS = Collections.unmodifiableSet(
+    Stream.of(JAVA_LITERAL_WORDS, JAVA_RESERVED_WORDS, JAVA_BUILT_IN_CLASS_WORDS).flatMap(Collection::stream)
+      .collect(Collectors.toSet()));
+  private static final Set<String> JAVA_USED_WORDS_LOWER_CASE = Collections.unmodifiableSet(
+    JAVA_USED_WORDS.stream().map(String::toLowerCase).collect(Collectors.toSet()));
+
+  private ObjectUtils() {
+  }
+
   public static String getDistanceAsRedisString(Distance distance) {
     return String.format("%s %s", distance.getValue(), distance.getUnit());
   }
 
   public static List<Field> getFieldsWithAnnotation(Class<?> clazz, Class<? extends Annotation> annotationClass) {
     return getDeclaredFieldsTransitively(clazz) //
-        .stream() //
-        .filter(f -> f.isAnnotationPresent(annotationClass)) //
-        .toList();
+      .stream() //
+      .filter(f -> f.isAnnotationPresent(annotationClass)) //
+      .toList();
   }
 
   public static GeoUnit getDistanceUnit(Distance distance) {
@@ -127,7 +154,8 @@ public class ObjectUtils {
 
   public static Object getIdFieldForEntity(Object entity) {
     Optional<Field> maybeIdField = getIdFieldForEntityClass(entity.getClass());
-    if (maybeIdField.isEmpty()) return null;
+    if (maybeIdField.isEmpty())
+      return null;
 
     Field idField = maybeIdField.get();
 
@@ -263,7 +291,7 @@ public class ObjectUtils {
   }
 
   public static boolean isPropertyAnnotatedWith(Class<?> cls, String property,
-      Class<? extends Annotation> annotationClass) {
+    Class<? extends Annotation> annotationClass) {
     Field field;
     try {
       field = ReflectionUtils.findField(cls, property);
@@ -278,17 +306,17 @@ public class ObjectUtils {
   }
 
   public static Object documentToObject(Document document, Class<?> returnedObjectType,
-      MappingRedisOMConverter mappingConverter) {
+    MappingRedisOMConverter mappingConverter) {
     Bucket b = new Bucket();
     document.getProperties().forEach(p -> b.put(p.getKey(), (byte[]) p.getValue()));
 
     return mappingConverter.read(returnedObjectType, new RedisData(b));
   }
 
-  public static Object mapToObject(Map<String,Object> properties, Class<?> returnedObjectType,
-      MappingRedisOMConverter mappingConverter) {
+  public static Object mapToObject(Map<String, Object> properties, Class<?> returnedObjectType,
+    MappingRedisOMConverter mappingConverter) {
     Bucket b = new Bucket();
-    properties.forEach((k,v) -> b.put(k, v.toString().getBytes()));
+    properties.forEach((k, v) -> b.put(k, v.toString().getBytes()));
 
     return mappingConverter.read(returnedObjectType, new RedisData(b));
   }
@@ -353,7 +381,7 @@ public class ObjectUtils {
   }
 
   public static List<Pair<EnableRedisDocumentRepositories, String>> getEnableRedisDocumentRepositories(
-      ApplicationContext ac) {
+    ApplicationContext ac) {
     Map<String, Object> annotatedBeans = ac.getBeansWithAnnotation(SpringBootApplication.class);
     annotatedBeans.putAll(ac.getBeansWithAnnotation(Configuration.class));
     List<Pair<EnableRedisDocumentRepositories, String>> erdrs = new ArrayList<>();
@@ -369,7 +397,7 @@ public class ObjectUtils {
   }
 
   public static List<Pair<EnableRedisEnhancedRepositories, String>> getEnableRedisEnhancedRepositories(
-      ApplicationContext ac) {
+    ApplicationContext ac) {
     Map<String, Object> annotatedBeans = ac.getBeansWithAnnotation(SpringBootApplication.class);
     annotatedBeans.putAll(ac.getBeansWithAnnotation(Configuration.class));
     List<Pair<EnableRedisEnhancedRepositories, String>> erers = new ArrayList<>();
@@ -521,8 +549,6 @@ public class ObjectUtils {
     };
   }
 
-  private static final ExpressionParser SPEL_EXPRESSION_PARSER = new SpelExpressionParser();
-
   public static Object getValueByPath(Object target, String path) {
     // Remove JSONPath prefix
     String safeSpelPath = path.replace("$.", "");
@@ -533,8 +559,8 @@ public class ObjectUtils {
 
     if (!hasNestedObject) {
       safeSpelPath = safeSpelPath //
-          .replace("[*]", "") //
-          .replace(".", "?.");
+        .replace("[*]", "") //
+        .replace(".", "?.");
 
       value = SPEL_EXPRESSION_PARSER.parseExpression(safeSpelPath).getValue(target);
     } else {
@@ -542,7 +568,7 @@ public class ObjectUtils {
       String[] parts = tempParts[1].split("\\.", 2);
       String leftPath = tempParts[0].replace(".", "?.");
       String rightPath = parts[1].replace(".", "?.") //
-                                 .replace("[*]", "");
+        .replace("[*]", "");
 
       Expression leftExp = SPEL_EXPRESSION_PARSER.parseExpression(leftPath);
       Expression rightExp = SPEL_EXPRESSION_PARSER.parseExpression(rightPath);
@@ -601,34 +627,6 @@ public class ObjectUtils {
     return sb.toString();
   }
 
-  static final Set<String> JAVA_LITERAL_WORDS = Set.of("true", "false", "null");
-
-  // Java reserved keywords
-  static final Set<String> JAVA_RESERVED_WORDS = Collections.unmodifiableSet(Stream.of(
-      // Unused
-      "const", "goto",
-      // The real ones...
-      "abstract", "continue", "for", "new", "switch", "assert", "default", "goto", "package", "synchronized", "boolean",
-      "do", "if", "private", "this", "break", "double", "implements", "protected", "throw", "byte", "else", "import",
-      "public", "throws", "case", "enum", "instanceof", "return", "transient", "catch", "extends", "int", "short",
-      "try", "char", "final", "interface", "static", "void", "class", "finally", "long", "strictfp", "volatile",
-      "const", "float", "native", "super", "while").collect(Collectors.toSet()));
-
-  static final Set<Class<?>> JAVA_BUILT_IN_CLASSES = Set.of(Boolean.class, Byte.class, Character.class, Double.class,
-      Float.class, Integer.class, Long.class, Object.class, Short.class, String.class, BigDecimal.class,
-      BigInteger.class, boolean.class, byte.class, char.class, double.class, float.class, int.class, long.class,
-      short.class);
-
-  private static final Set<String> JAVA_BUILT_IN_CLASS_WORDS = Collections
-      .unmodifiableSet(JAVA_BUILT_IN_CLASSES.stream().map(Class::getSimpleName).collect(Collectors.toSet()));
-
-  private static final Set<String> JAVA_USED_WORDS = Collections
-      .unmodifiableSet(Stream.of(JAVA_LITERAL_WORDS, JAVA_RESERVED_WORDS, JAVA_BUILT_IN_CLASS_WORDS)
-          .flatMap(Collection::stream).collect(Collectors.toSet()));
-
-  private static final Set<String> JAVA_USED_WORDS_LOWER_CASE = Collections
-      .unmodifiableSet(JAVA_USED_WORDS.stream().map(String::toLowerCase).collect(Collectors.toSet()));
-
   /**
    * Returns a static field name representation of the specified camel-cased
    * string.
@@ -643,8 +641,7 @@ public class ObjectUtils {
 
   public static String javaNameFromExternal(final String externalName) {
     requireNonNull(externalName);
-    return ObjectUtils
-        .replaceIfIllegalJavaIdentifierCharacter(replaceIfJavaUsedWord(nameFromExternal(externalName)));
+    return ObjectUtils.replaceIfIllegalJavaIdentifierCharacter(replaceIfJavaUsedWord(nameFromExternal(externalName)));
   }
 
   public static String nameFromExternal(final String externalName) {
@@ -655,7 +652,7 @@ public class ObjectUtils {
      * -capital-letters-are-found-consecutively-in-a [A-Z] -> \p{Lu} [^A-Za-z0-9] ->
      * [^\pL0-90-9] */
     result = Stream.of(result.replaceAll("(\\p{Lu}+)", "_$1").split("[^\\pL\\d]")).map(String::toLowerCase)
-        .map(ObjectUtils::ucfirst).collect(Collectors.joining());
+      .map(ObjectUtils::ucfirst).collect(Collectors.joining());
     return result;
   }
 
@@ -699,10 +696,5 @@ public class ObjectUtils {
       }
     }
     return "";  // Return null if type is not found or invalid format
-  }
-
-  public static final Character REPLACEMENT_CHARACTER = '_';
-
-  private ObjectUtils() {
   }
 }

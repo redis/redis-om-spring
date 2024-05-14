@@ -15,10 +15,12 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor(staticName = "of")
 @Document(timeToLive = 5)
 public class ExpiringPersonDifferentTimeUnit {
-  @Id String id;
+  @Id
+  String id;
   @NonNull
   String name;
-  
+
   @NonNull
-  @TimeToLive(unit = TimeUnit.DAYS) Long ttl;
+  @TimeToLive(unit = TimeUnit.DAYS)
+  Long ttl;
 }

@@ -10,13 +10,12 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 @DirtiesContext
 @SpringBootTest(
-        classes = AbstractDocumentTest.Config.class,
-        properties = {"spring.main.allow-bean-definition-overriding=true"}
+  classes = AbstractDocumentTest.Config.class, properties = { "spring.main.allow-bean-definition-overriding=true" }
 )
 public abstract class AbstractDocumentTest extends AbstractTest {
-    @SpringBootApplication
-    @Configuration
-    @EnableRedisDocumentRepositories
-    static class Config extends TestConfig {
-    }
+  @SpringBootApplication
+  @Configuration
+  @EnableRedisDocumentRepositories
+  static class Config extends TestConfig {
+  }
 }

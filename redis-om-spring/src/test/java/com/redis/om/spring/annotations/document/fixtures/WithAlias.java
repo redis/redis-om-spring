@@ -7,7 +7,8 @@ import org.springframework.data.geo.Point;
 
 import java.util.Set;
 
-@SuppressWarnings("SpellCheckingInspection") @Data
+@SuppressWarnings("SpellCheckingInspection")
+@Data
 @NoArgsConstructor(force = true)
 @RequiredArgsConstructor(staticName = "of")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)

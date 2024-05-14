@@ -14,7 +14,7 @@ class QueryUtilsTest {
   }
 
   @Test
-  void testSearchIndexFieldAlliasFor(){
+  void testSearchIndexFieldAlliasFor() {
     // Arrange
     Field field = Mockito.mock(Field.class);
     Mockito.when(field.getName()).thenReturn("redis");

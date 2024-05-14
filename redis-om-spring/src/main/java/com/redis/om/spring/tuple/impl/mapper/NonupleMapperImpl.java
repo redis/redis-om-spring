@@ -7,10 +7,10 @@ import com.redis.om.spring.tuple.Tuples;
 import java.util.function.Function;
 
 public final class NonupleMapperImpl<T, T0, T1, T2, T3, T4, T5, T6, T7, T8>
-    extends AbstractTupleMapper<T, Nonuple<T0, T1, T2, T3, T4, T5, T6, T7, T8>> {
+  extends AbstractTupleMapper<T, Nonuple<T0, T1, T2, T3, T4, T5, T6, T7, T8>> {
 
   public NonupleMapperImpl(Function<T, T0> m0, Function<T, T1> m1, Function<T, T2> m2, Function<T, T3> m3,
-      Function<T, T4> m4, Function<T, T5> m5, Function<T, T6> m6, Function<T, T7> m7, Function<T, T8> m8) {
+    Function<T, T4> m4, Function<T, T5> m5, Function<T, T6> m6, Function<T, T7> m7, Function<T, T8> m8) {
     super(9);
     set(0, m0);
     set(1, m1);
@@ -26,7 +26,7 @@ public final class NonupleMapperImpl<T, T0, T1, T2, T3, T4, T5, T6, T7, T8>
   @Override
   public Nonuple<T0, T1, T2, T3, T4, T5, T6, T7, T8> apply(T t) {
     return Tuples.of(getFirst().apply(t), getSecond().apply(t), getThird().apply(t), getFourth().apply(t),
-        getFifth().apply(t), getSixth().apply(t), getSeventh().apply(t), getEighth().apply(t), getNinth().apply(t));
+      getFifth().apply(t), getSixth().apply(t), getSeventh().apply(t), getEighth().apply(t), getNinth().apply(t));
   }
 
   public Function<T, T0> getFirst() {

@@ -18,12 +18,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.withPrecision;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
-@SuppressWarnings("SpellCheckingInspection") class EntityStreamsHashVSSTests extends AbstractBaseEnhancedRedisTest {
-  @Autowired HashWithByteArrayHNSWVectorRepository hnswRepository;
-  @Autowired HashWithByteArrayFlatVectorRepository flatRepository;
+@SuppressWarnings("SpellCheckingInspection")
+class EntityStreamsHashVSSTests extends AbstractBaseEnhancedRedisTest {
+  @Autowired
+  HashWithByteArrayHNSWVectorRepository hnswRepository;
+  @Autowired
+  HashWithByteArrayFlatVectorRepository flatRepository;
 
-  @Autowired EntityStream entityStream;
-  
+  @Autowired
+  EntityStream entityStream;
+
   @BeforeEach
   void cleanUp() {
     if (hnswRepository.count() == 0 && flatRepository.count() == 0) {
@@ -38,8 +42,10 @@ import static org.junit.jupiter.api.Assertions.assertAll;
         float[] vec = new float[dimension];
         float val = (float) i / (dimension + i);
         Arrays.fill(vec, val);
-        hashWithByteArrayHNSWVectors.add(HashWithByteArrayHNSWVector.of("doc:" + i, ObjectUtils.floatArrayToByteArray(vec), i));
-        hashWithByteArrayFlatVectors.add(HashWithByteArrayFlatVector.of("doc:" + i, ObjectUtils.floatArrayToByteArray(vec), i));
+        hashWithByteArrayHNSWVectors.add(
+          HashWithByteArrayHNSWVector.of("doc:" + i, ObjectUtils.floatArrayToByteArray(vec), i));
+        hashWithByteArrayFlatVectors.add(
+          HashWithByteArrayFlatVector.of("doc:" + i, ObjectUtils.floatArrayToByteArray(vec), i));
       }
       hnswRepository.saveAll(hashWithByteArrayHNSWVectors);
       flatRepository.saveAll(hashWithByteArrayFlatVectors);
@@ -49,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
   /**
    * A simple FT.SEARCH (only vector similarity)
    * Get top 4 documents where the vector field is closest to [1.4e-30f, 1.4e-30f,...]
-   *
+   * <p>
    * FT.SEARCH QUERY = `"(*)=>[KNN $K @vector $vector_blob]"`
    */
   @Test
@@ -62,18 +68,17 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     SearchStream<HashWithByteArrayHNSWVector> stream = entityStream.of(HashWithByteArrayHNSWVector.class);
 
     List<HashWithByteArrayHNSWVector> results = stream //
-        .filter(HashWithByteArrayHNSWVector$.VECTOR.knn(K, ObjectUtils.floatArrayToByteArray(e))) //
-        .sorted(HashWithByteArrayHNSWVector$._VECTOR_SCORE)
-        .limit(K)
-        .collect(Collectors.toList());
+      .filter(HashWithByteArrayHNSWVector$.VECTOR.knn(K, ObjectUtils.floatArrayToByteArray(e))) //
+      .sorted(HashWithByteArrayHNSWVector$._VECTOR_SCORE).limit(K).collect(Collectors.toList());
 
-    assertThat(results).hasSize(4).map(HashWithByteArrayHNSWVector::getId).containsExactly("doc:0", "doc:1", "doc:2", "doc:3");
+    assertThat(results).hasSize(4).map(HashWithByteArrayHNSWVector::getId)
+      .containsExactly("doc:0", "doc:1", "doc:2", "doc:3");
   }
 
   /**
    * A simple FT.SEARCH (only vector similarity)
    * Get top 4 documents where the vector field is closest to [1.4e-30f, 1.4e-30f,...]
-   *
+   * <p>
    * FT.SEARCH QUERY = `"(*)=>[KNN $K @vector $vector_blob]"`
    */
   @Test
@@ -85,20 +90,20 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
     SearchStream<HashWithByteArrayHNSWVector> stream = entityStream.of(HashWithByteArrayHNSWVector.class);
 
-    List<Pair<Integer,Double>> results = stream //
-        .filter(HashWithByteArrayHNSWVector$.VECTOR.knn(K, ObjectUtils.floatArrayToByteArray(e))) //
-        .sorted(HashWithByteArrayHNSWVector$._VECTOR_SCORE) //
-        .limit(K) //
-        .map(Fields.of(HashWithByteArrayHNSWVector$.NUMBER, HashWithByteArrayHNSWVector$._VECTOR_SCORE)) //
-        .collect(Collectors.toList());
+    List<Pair<Integer, Double>> results = stream //
+      .filter(HashWithByteArrayHNSWVector$.VECTOR.knn(K, ObjectUtils.floatArrayToByteArray(e))) //
+      .sorted(HashWithByteArrayHNSWVector$._VECTOR_SCORE) //
+      .limit(K) //
+      .map(Fields.of(HashWithByteArrayHNSWVector$.NUMBER, HashWithByteArrayHNSWVector$._VECTOR_SCORE)) //
+      .collect(Collectors.toList());
 
     double[] expected = new double[] { 0.0, 0.00980296079069, 0.0384467579424, 0.0848336219788 };
 
     assertAll( //
-        () -> assertThat(results).hasSize(4), //
-        () -> assertThat(results).map(Pair::getFirst).containsExactly(0, 1, 2, 3), //
-        () -> assertThat(results.stream().mapToDouble(Pair::getSecond).toArray()).containsExactly(expected, withPrecision(0.001))
-    );
+      () -> assertThat(results).hasSize(4), //
+      () -> assertThat(results).map(Pair::getFirst).containsExactly(0, 1, 2, 3), //
+      () -> assertThat(results.stream().mapToDouble(Pair::getSecond).toArray()).containsExactly(expected,
+        withPrecision(0.001)));
   }
 
   /**
@@ -118,22 +123,22 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
     SearchStream<HashWithByteArrayHNSWVector> stream = entityStream.of(HashWithByteArrayHNSWVector.class);
 
-    List<Pair<Integer,Double>> results = stream //
-        .filter(HashWithByteArrayFlatVector$.NUMBER.between(0, 20) //
-            .or(HashWithByteArrayFlatVector$.NUMBER.between(NUMBER_ARTICLES - 20, NUMBER_ARTICLES))) //
-        .filter(HashWithByteArrayHNSWVector$.VECTOR.knn(K, ObjectUtils.floatArrayToByteArray(e))) //
-        .sorted(HashWithByteArrayHNSWVector$._VECTOR_SCORE) //
-        .limit(K) //
-        .map(Fields.of(HashWithByteArrayHNSWVector$.NUMBER, HashWithByteArrayHNSWVector$._VECTOR_SCORE)) //
-        .collect(Collectors.toList());
+    List<Pair<Integer, Double>> results = stream //
+      .filter(HashWithByteArrayFlatVector$.NUMBER.between(0, 20) //
+        .or(HashWithByteArrayFlatVector$.NUMBER.between(NUMBER_ARTICLES - 20, NUMBER_ARTICLES))) //
+      .filter(HashWithByteArrayHNSWVector$.VECTOR.knn(K, ObjectUtils.floatArrayToByteArray(e))) //
+      .sorted(HashWithByteArrayHNSWVector$._VECTOR_SCORE) //
+      .limit(K) //
+      .map(Fields.of(HashWithByteArrayHNSWVector$.NUMBER, HashWithByteArrayHNSWVector$._VECTOR_SCORE)) //
+      .collect(Collectors.toList());
 
     double[] expected = new double[] { 0.0, 0.00980296079069, 0.0384467579424, 0.0848336219788, 0.147929027677 };
 
     assertAll( //
-        () -> assertThat(results).hasSize(5), //
-        () -> assertThat(results).map(Pair::getFirst).containsExactly(0, 1, 2, 3, 4), //
-        () -> assertThat(results.stream().mapToDouble(Pair::getSecond).toArray()).containsExactly(expected, withPrecision(0.001))
-    );
+      () -> assertThat(results).hasSize(5), //
+      () -> assertThat(results).map(Pair::getFirst).containsExactly(0, 1, 2, 3, 4), //
+      () -> assertThat(results.stream().mapToDouble(Pair::getSecond).toArray()).containsExactly(expected,
+        withPrecision(0.001)));
   }
 
   /**
@@ -150,14 +155,12 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     SearchStream<HashWithByteArrayFlatVector> stream = entityStream.of(HashWithByteArrayFlatVector.class);
 
     List<HashWithByteArrayFlatVector> results = stream //
-        .filter(HashWithByteArrayFlatVector$.NUMBER.between(0, 100)) //
-        .filter(HashWithByteArrayFlatVector$.VECTOR.knn(K, ObjectUtils.floatArrayToByteArray(e))) //
-        .sorted(HashWithByteArrayFlatVector$._VECTOR_SCORE)
-        .limit(K)
-        .collect(Collectors.toList());
+      .filter(HashWithByteArrayFlatVector$.NUMBER.between(0, 100)) //
+      .filter(HashWithByteArrayFlatVector$.VECTOR.knn(K, ObjectUtils.floatArrayToByteArray(e))) //
+      .sorted(HashWithByteArrayFlatVector$._VECTOR_SCORE).limit(K).collect(Collectors.toList());
 
-    assertThat(results).hasSize(5).map(HashWithByteArrayFlatVector::getId).containsExactly("doc:0", "doc:1", "doc:2", "doc:3", "doc:4");
+    assertThat(results).hasSize(5).map(HashWithByteArrayFlatVector::getId)
+      .containsExactly("doc:0", "doc:1", "doc:2", "doc:3", "doc:4");
   }
-
 
 }

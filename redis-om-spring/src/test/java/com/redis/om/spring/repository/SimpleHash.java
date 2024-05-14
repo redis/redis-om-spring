@@ -7,18 +7,18 @@ import java.util.UUID;
 
 @RedisHash
 public class SimpleHash {
-    @Id
-    private String id;
+  @Id
+  private String id;
 
-    public SimpleHash() {
-        this.id = UUID.randomUUID().toString();
-    }
+  public SimpleHash() {
+    this.id = UUID.randomUUID().toString();
+  }
 
-    public String getId() {
-        return id;
-    }
+  public String getId() {
+    return id;
+  }
 
-    public void setId(String id) {
-        this.id = id;
-    }
+  public void setId(String id) {
+    this.id = id;
+  }
 }

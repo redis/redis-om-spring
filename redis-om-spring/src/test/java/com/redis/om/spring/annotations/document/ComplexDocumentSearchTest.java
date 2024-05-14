@@ -25,7 +25,8 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
-@SuppressWarnings("SpellCheckingInspection") class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
+@SuppressWarnings("SpellCheckingInspection")
+class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
   Permit permit1;
   Permit permit2;
   Permit permit3;
@@ -68,38 +69,36 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     Address address1 = Address.of("Lisbon", "25 de Abril");
     Order order1 = Order.of("O11", 1.5);
     Order order2 = Order.of("O12", 5.6);
-    Attribute attribute11 = Attribute.of("size","S", Lists.newArrayList(order1));
-    Attribute attribute12 = Attribute.of("size","M", Lists.newArrayList(order2));
+    Attribute attribute11 = Attribute.of("size", "S", Lists.newArrayList(order1));
+    Attribute attribute12 = Attribute.of("size", "M", Lists.newArrayList(order2));
     List<Attribute> attrList1 = Lists.newArrayList(attribute11, attribute12);
     permit1 = Permit.of( //
-            address1, //
-            "To construct a single detached house with a front covered veranda.", //
-            "single detached house", //
-            Set.of("demolition", "reconstruction"), //
-            42000L, //
-            new Point(38.7635877,-9.2018309), //
-            List.of("started", "in_progress", "approved"), //
-            attrList1
-    );
+      address1, //
+      "To construct a single detached house with a front covered veranda.", //
+      "single detached house", //
+      Set.of("demolition", "reconstruction"), //
+      42000L, //
+      new Point(38.7635877, -9.2018309), //
+      List.of("started", "in_progress", "approved"), //
+      attrList1);
     permit1.setPermitTimestamp(LocalDateTime.of(2022, 8, 1, 10, 0));
 
     // # Document 2
     Address address2 = Address.of("Porto", "Av. da Liberdade");
     Order order21 = Order.of("O21", 1.2);
     Order order22 = Order.of("O22", 5.6);
-    Attribute attribute21 = Attribute.of("color","red", Lists.newArrayList(order21));
-    Attribute attribute22 = Attribute.of("color","blue", Lists.newArrayList(order22));
+    Attribute attribute21 = Attribute.of("color", "red", Lists.newArrayList(order21));
+    Attribute attribute22 = Attribute.of("color", "blue", Lists.newArrayList(order22));
     List<Attribute> attrList2 = Lists.newArrayList(attribute21, attribute22);
     permit2 = Permit.of( //
-            address2, //
-            "To construct a loft", //
-            "apartment", //
-            Set.of("construction"), //
-            53000L, //
-            new Point(38.7205373,-9.148091), //
-            List.of("started", "in_progress", "rejected"), //
-            attrList2
-    );
+      address2, //
+      "To construct a loft", //
+      "apartment", //
+      Set.of("construction"), //
+      53000L, //
+      new Point(38.7205373, -9.148091), //
+      List.of("started", "in_progress", "rejected"), //
+      attrList2);
     permit2.setPermitTimestamp(LocalDateTime.of(2022, 8, 2, 0, 0));
 
     // # Document 3
@@ -108,39 +107,46 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     Order order32 = Order.of("DEF", 1.3);
     Order order33 = Order.of("GHJ", 1.6);
     Order order34 = Order.of("VBN", 1.0);
-    Attribute attribute31 = Attribute.of("brand","A", Lists.newArrayList(order31, order33));
-    Attribute attribute32 = Attribute.of("brand","B", Lists.newArrayList(order32, order34));
+    Attribute attribute31 = Attribute.of("brand", "A", Lists.newArrayList(order31, order33));
+    Attribute attribute32 = Attribute.of("brand", "B", Lists.newArrayList(order32, order34));
     List<Attribute> attrList3 = Lists.newArrayList(attribute31, attribute32);
     permit3 = Permit.of( //
-            address3, //
-            "New house build", //
-            "house", //
-            Set.of("construction", "design"), //
-            260000L, //
-            new Point(37.0990749,-8.6868258), //
-            List.of("started", "in_progress", "postponed"), //
-            attrList3
-    );
+      address3, //
+      "New house build", //
+      "house", //
+      Set.of("construction", "design"), //
+      260000L, //
+      new Point(37.0990749, -8.6868258), //
+      List.of("started", "in_progress", "postponed"), //
+      attrList3);
     permit3.setPermitTimestamp(LocalDateTime.of(2022, 8, 25, 0, 0));
 
     repository.saveAll(List.of(permit1, permit2, permit3));
 
     // complex deep nested
-    Complex complex1 = Complex.of("complex1", List.of(HasAList.of(List.of("Nudiustertian", "Comeuppance", "Yarborough")), HasAList.of(List.of("Sialoquent", "Pauciloquent", "Bloviate"))));
-    Complex complex2 = Complex.of("complex2", List.of(HasAList.of(List.of("Quire", "Zoanthropy", "Flibbertigibbet")), HasAList.of(List.of("Taradiddle", "Malarkey", "Comeuppance"))));
-    Complex complex3 = Complex.of("complex3", List.of(HasAList.of(List.of("Pandiculation", "Taradiddle", "Ratoon")), HasAList.of(List.of("Yarborough", "Wabbit", "Erinaceous"))));
+    Complex complex1 = Complex.of("complex1",
+      List.of(HasAList.of(List.of("Nudiustertian", "Comeuppance", "Yarborough")),
+        HasAList.of(List.of("Sialoquent", "Pauciloquent", "Bloviate"))));
+    Complex complex2 = Complex.of("complex2", List.of(HasAList.of(List.of("Quire", "Zoanthropy", "Flibbertigibbet")),
+      HasAList.of(List.of("Taradiddle", "Malarkey", "Comeuppance"))));
+    Complex complex3 = Complex.of("complex3", List.of(HasAList.of(List.of("Pandiculation", "Taradiddle", "Ratoon")),
+      HasAList.of(List.of("Yarborough", "Wabbit", "Erinaceous"))));
 
     complexRepository.saveAll(List.of(complex1, complex2, complex3));
 
     // complex deep nested with uuids
-    WithNestedListOfUUIDs withNestedListOfUUIDs1 = WithNestedListOfUUIDs.of("withNestedListOfUUIDs1", List.of(uuid1, uuid2, uuid3));
-    WithNestedListOfUUIDs withNestedListOfUUIDs2 = WithNestedListOfUUIDs.of("withNestedListOfUUIDs2", List.of(uuid4, uuid5, uuid6));
+    WithNestedListOfUUIDs withNestedListOfUUIDs1 = WithNestedListOfUUIDs.of("withNestedListOfUUIDs1",
+      List.of(uuid1, uuid2, uuid3));
+    WithNestedListOfUUIDs withNestedListOfUUIDs2 = WithNestedListOfUUIDs.of("withNestedListOfUUIDs2",
+      List.of(uuid4, uuid5, uuid6));
 
     withNestedListOfUUIDsRepository.saveAll(List.of(withNestedListOfUUIDs1, withNestedListOfUUIDs2));
 
     // complex deep nested with ulids
-    WithNestedListOfUlids withNestedListOfUlids1 = WithNestedListOfUlids.of("withNestedListOfUlids1", List.of(ulid1, ulid2, ulid3));
-    WithNestedListOfUlids withNestedListOfUlids2 = WithNestedListOfUlids.of("withNestedListOfUlids2", List.of(ulid4, ulid5, ulid6));
+    WithNestedListOfUlids withNestedListOfUlids1 = WithNestedListOfUlids.of("withNestedListOfUlids1",
+      List.of(ulid1, ulid2, ulid3));
+    WithNestedListOfUlids withNestedListOfUlids2 = WithNestedListOfUlids.of("withNestedListOfUlids2",
+      List.of(ulid4, ulid5, ulid6));
 
     withNestedListOfUlidsRepository.saveAll(List.of(withNestedListOfUlids1, withNestedListOfUlids2));
 
@@ -163,23 +169,23 @@ import static org.junit.jupiter.api.Assertions.assertAll;
   @Test
   void testByBuildingType() {
     String type = "detached";
-    Iterable<Permit> permits =  repository.findByBuildingType(type);
+    Iterable<Permit> permits = repository.findByBuildingType(type);
     assertThat(permits).containsExactly(permit1);
   }
 
   @Test
   void testByCity() {
-    Iterable<Permit> permits =  repository.findByAddress_City("Lisbon");
+    Iterable<Permit> permits = repository.findByAddress_City("Lisbon");
     assertThat(permits).containsExactly(permit1);
 
-    permits =  repository.findByAddress_City("Porto");
+    permits = repository.findByAddress_City("Porto");
     assertThat(permits).containsExactly(permit2);
   }
 
   @Test
   void testByTags() {
-    Set<String> wts = Set.of("design","construction");
-    Iterable<Permit> permits =  repository.findByWorkType(wts);
+    Set<String> wts = Set.of("design", "construction");
+    Iterable<Permit> permits = repository.findByWorkType(wts);
     assertThat(permits).containsExactlyInAnyOrder(permit2, permit3);
   }
 
@@ -189,15 +195,14 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     List<Attribute> attrs = List.of();
     Address address4 = Address.of("Coimbra", "R. Serra 14");
     Permit permit4 = Permit.of( //
-            address4, //
-            "Historical Renovation", //
-            "church", //
-            Set.of(), //
-            260000L, //
-            new Point(37.0990749,-8.6868258), //
-            List.of(), //
-            attrs
-    );
+      address4, //
+      "Historical Renovation", //
+      "church", //
+      Set.of(), //
+      260000L, //
+      new Point(37.0990749, -8.6868258), //
+      List.of(), //
+      attrs);
 
     repository.save(permit4);
 
@@ -205,11 +210,10 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     assertThat(permits).isEmpty();
   }
 
-
   @Test
   void testByAllTags() {
-    Set<String> wts = Set.of("design","construction");
-    Iterable<Permit> permits =  repository.findByWorkTypeContainingAll(wts);
+    Set<String> wts = Set.of("design", "construction");
+    Iterable<Permit> permits = repository.findByWorkTypeContainingAll(wts);
     assertThat(permits).containsExactly(permit3);
   }
 
@@ -254,7 +258,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
   void testFullTextSearchExplicitEscapeSearchTermPrefixSearch() {
     String q = "To construct*";
     Iterable<Permit> permits = repository.search(q);
-    assertThat(permits).containsExactly(permit1,permit2);
+    assertThat(permits).containsExactly(permit1, permit2);
   }
 
   /**
@@ -268,7 +272,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
     assertThat(result.getTotalPages()).isEqualTo(1);
     assertThat(result.getTotalElements()).isEqualTo(2);
-    assertThat(result.getContent()).containsExactly(permit2,permit1);
+    assertThat(result.getContent()).containsExactly(permit2, permit1);
   }
 
   /**
@@ -282,7 +286,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
     assertThat(result.getTotalPages()).isEqualTo(1);
     assertThat(result.getTotalElements()).isEqualTo(2);
-    assertThat(result.getContent()).containsExactly(permit1,permit2);
+    assertThat(result.getContent()).containsExactly(permit1, permit2);
   }
 
   /**
@@ -324,7 +328,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
     assertThat(result.getTotalPages()).isEqualTo(1);
     assertThat(result.getTotalElements()).isEqualTo(3);
-    assertThat(result.getContent()).containsExactly(permit3,permit2,permit1);
+    assertThat(result.getContent()).containsExactly(permit3, permit2, permit1);
   }
 
   /**
@@ -338,7 +342,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
     assertThat(result.getTotalPages()).isEqualTo(1);
     assertThat(result.getTotalElements()).isEqualTo(3);
-    assertThat(result.getContent()).containsExactly(permit1,permit2,permit3);
+    assertThat(result.getContent()).containsExactly(permit1, permit2, permit3);
   }
 
   /**
@@ -352,7 +356,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
     assertThat(result.getTotalPages()).isEqualTo(1);
     assertThat(result.getTotalElements()).isEqualTo(3);
-    assertThat(result.getContent()).containsExactly(permit2,permit1,permit3);
+    assertThat(result.getContent()).containsExactly(permit2, permit1, permit3);
   }
 
   /**
@@ -366,41 +370,39 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
     assertThat(result.getTotalPages()).isEqualTo(1);
     assertThat(result.getTotalElements()).isEqualTo(3);
-    assertThat(result.getContent()).containsExactly(permit3,permit1,permit2);
+    assertThat(result.getContent()).containsExactly(permit3, permit1, permit2);
   }
 
   @Test
   void testListInsideAListTagSearch() {
-    List<Complex> withYarborough = es.of(Complex.class)
-        .filter(Complex$.MY_LIST.INNER_LIST.in("Yarborough"))
-        .collect(Collectors.toList());
+    List<Complex> withYarborough = es.of(Complex.class).filter(Complex$.MY_LIST.INNER_LIST.in("Yarborough"))
+      .collect(Collectors.toList());
 
     assertAll( //
-        () -> assertThat(withYarborough.size()).isEqualTo(2), //
-        () -> assertThat(withYarborough).extracting("id").containsExactlyInAnyOrder("complex1", "complex3") //
+      () -> assertThat(withYarborough.size()).isEqualTo(2), //
+      () -> assertThat(withYarborough).extracting("id").containsExactlyInAnyOrder("complex1", "complex3") //
     );
 
-    List<Complex> withComeuppance = es.of(Complex.class)
-        .filter(Complex$.MY_LIST.INNER_LIST.in("Comeuppance"))
-        .collect(Collectors.toList());
+    List<Complex> withComeuppance = es.of(Complex.class).filter(Complex$.MY_LIST.INNER_LIST.in("Comeuppance"))
+      .collect(Collectors.toList());
 
     assertAll( //
-        () -> assertThat(withComeuppance.size()).isEqualTo(2), //
-        () -> assertThat(withComeuppance).extracting("id").containsExactlyInAnyOrder("complex1", "complex2") //
+      () -> assertThat(withComeuppance.size()).isEqualTo(2), //
+      () -> assertThat(withComeuppance).extracting("id").containsExactlyInAnyOrder("complex1", "complex2") //
     );
 
-    List<Complex> withTaradiddle = es.of(Complex.class)
-        .filter(Complex$.MY_LIST.INNER_LIST.in("Taradiddle"))
-        .collect(Collectors.toList());
+    List<Complex> withTaradiddle = es.of(Complex.class).filter(Complex$.MY_LIST.INNER_LIST.in("Taradiddle"))
+      .collect(Collectors.toList());
 
     assertAll( //
-        () -> assertThat(withTaradiddle.size()).isEqualTo(2), //
-        () -> assertThat(withTaradiddle).extracting("id").containsExactlyInAnyOrder("complex2", "complex3") //
+      () -> assertThat(withTaradiddle.size()).isEqualTo(2), //
+      () -> assertThat(withTaradiddle).extracting("id").containsExactlyInAnyOrder("complex2", "complex3") //
     );
   }
 
   // UUID Tests
-  @Test void testFindByNestedListOfUUIDsValuesIn() {
+  @Test
+  void testFindByNestedListOfUUIDsValuesIn() {
     SearchStream<WithNestedListOfUUIDs> stream1 = es.of(WithNestedListOfUUIDs.class);
 
     List<WithNestedListOfUUIDs> results1 = stream1 //
@@ -426,7 +428,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     assertThat(ids3).contains("withNestedListOfUUIDs1", "withNestedListOfUUIDs2");
   }
 
-  @Test void testFindByNestedListOfUUIDsValuesNotEq() {
+  @Test
+  void testFindByNestedListOfUUIDsValuesNotEq() {
     SearchStream<WithNestedListOfUUIDs> stream1 = es.of(WithNestedListOfUUIDs.class);
 
     List<WithNestedListOfUUIDs> results1 = stream1 //
@@ -454,7 +457,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
   // ULIDs Tests
 
-  @Test void testFindByNestedListOfUlidsValuesIn() {
+  @Test
+  void testFindByNestedListOfUlidsValuesIn() {
     SearchStream<WithNestedListOfUlids> stream1 = es.of(WithNestedListOfUlids.class);
 
     List<WithNestedListOfUlids> results1 = stream1 //
@@ -480,7 +484,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     assertThat(ids3).contains("withNestedListOfUlids1", "withNestedListOfUlids2");
   }
 
-  @Test void testFindByNestedListOfUlidsValuesNotEq() {
+  @Test
+  void testFindByNestedListOfUlidsValuesNotEq() {
     SearchStream<WithNestedListOfUlids> stream1 = es.of(WithNestedListOfUlids.class);
 
     List<WithNestedListOfUlids> results1 = stream1 //

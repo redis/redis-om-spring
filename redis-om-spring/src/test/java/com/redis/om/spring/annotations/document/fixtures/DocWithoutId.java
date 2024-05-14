@@ -10,7 +10,7 @@ import java.util.List;
 @Document
 public class DocWithoutId {
   private String id;
-  
+
   @Indexed
   private List<String> tags;
 }

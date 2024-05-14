@@ -24,8 +24,7 @@ public class SentinelConfig {
     Set<String> sentinelNodes = commaDelimitedListToSet(nodes);
     Set<RedisNode> redisNodes = sentinelNodes.stream().map(RedisNode::fromString).collect(Collectors.toSet());
 
-    RedisSentinelConfiguration sentinelConfig = new RedisSentinelConfiguration()
-      .master(master);
+    RedisSentinelConfiguration sentinelConfig = new RedisSentinelConfiguration().master(master);
     sentinelConfig.setSentinels(redisNodes);
 
     final JedisPoolConfig poolConfig = new JedisPoolConfig();
@@ -38,9 +37,7 @@ public class SentinelConfig {
     final int timeout = 10000;
 
     final JedisClientConfiguration jedisClientConfiguration = JedisClientConfiguration.builder()
-      .connectTimeout(Duration.ofMillis(timeout))
-      .readTimeout(Duration.ofMillis(timeout))
-      .usePooling()
+      .connectTimeout(Duration.ofMillis(timeout)).readTimeout(Duration.ofMillis(timeout)).usePooling()
       .poolConfig(poolConfig).build();
 
     return new JedisConnectionFactory(sentinelConfig, jedisClientConfiguration);

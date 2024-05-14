@@ -32,7 +32,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
 
-@SuppressWarnings("SpellCheckingInspection") class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
+@SuppressWarnings("SpellCheckingInspection")
+class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   static Person john;
   static Person gray;
   static Person terryg;
@@ -72,8 +73,8 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
     terryg.setFavoriteFoods(Set.of("Shepherd’s Pie", "Cottage Pie", "Steak and Kidney Pie"));
 
     eric = Person.of("Eric Idle", "eric.idle@mp.com", "eric");
-    eric.setRoles(Set.of("Sir Robin the-not-quite-so-brave-as-Sir-Lancelot", "Lancelot's squire Concorde",
-        "Roger the Shrubber"));
+    eric.setRoles(
+      Set.of("Sir Robin the-not-quite-so-brave-as-Sir-Lancelot", "Lancelot's squire Concorde", "Roger the Shrubber"));
     eric.setFavoriteFoods(Set.of("Cottage Pie", "Steak and Kidney Pie"));
 
     terryj = Person.of("Terry Jones", "terry.jones@mp.com", "terry");
@@ -89,23 +90,22 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
     studentRepository.deleteAll();
     List<Student> students = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
-      students.add(
-        Student.of((long) i, "Student" + i, LocalDateTime.now()));
+      students.add(Student.of((long) i, "Student" + i, LocalDateTime.now()));
     }
     studentRepository.saveAll(students);
   }
-  
+
   @Test
   void testDeleteAll() {
     assertThat(personRepo.count()).isEqualTo(6);
     personRepo.deleteAll();
     with() //
-     .pollInterval(Duration.ofMillis(100)).and() //
-         .with().pollDelay(20, MILLISECONDS) //
-        .await("repository cleared").until(() -> personRepo.count() == 0);
+      .pollInterval(Duration.ofMillis(100)).and() //
+      .with().pollDelay(20, MILLISECONDS) //
+      .await("repository cleared").until(() -> personRepo.count() == 0);
     assertThat(personRepo.count()).isZero();
   }
-  
+
   @Test
   void testDeleteOne() {
     assertThat(personRepo.count()).isEqualTo(6);
@@ -119,7 +119,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
     String hashKey = "people:" + eric.getId();
     String ericRolesRaw = Objects.requireNonNull(template.opsForHash().get(hashKey, "roles")).toString();
     Set<String> ericRoles = Arrays.asList(ericRolesRaw.split("\\|")).stream().map(Object::toString)
-        .map(QueryUtils::unescape).collect(Collectors.toSet());
+      .map(QueryUtils::unescape).collect(Collectors.toSet());
     assertThat(ericRoles).containsExactlyInAnyOrderElementsOf(eric.getRoles());
   }
 
@@ -154,14 +154,14 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
   @Test
   void testAggregationAnnotation01() {
     AggregationResult results = personRepo.allNamesInUppercase();
-    List<String> upcasedNames = results.getResults().stream().map(m -> m.get("upcasedName"))
-        .map(Object::toString).toList();
+    List<String> upcasedNames = results.getResults().stream().map(m -> m.get("upcasedName")).map(Object::toString)
+      .toList();
     assertThat(upcasedNames).containsExactlyInAnyOrder("JOHN CLEESE", //
-        "GRAHAM CHAPMAN", //
-        "TERRY GILLIAM", //
-        "ERIC IDLE", //
-        "TERRY JONES", //
-        "MICHAEL PALIN" //
+      "GRAHAM CHAPMAN", //
+      "TERRY GILLIAM", //
+      "ERIC IDLE", //
+      "TERRY JONES", //
+      "MICHAEL PALIN" //
     );
   }
 
@@ -172,9 +172,10 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
   @Test
   void testBasicCrudOperations() {
     Company redis = companyRepo.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
-    Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
-        new Point(-122.124500, 47.640160), "research@microsoft.com"));
+      Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company microsoft = companyRepo.save(
+      Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
+        "research@microsoft.com"));
 
     assertEquals(2, companyRepo.count());
 
@@ -201,26 +202,28 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
   @Test
   void testFindAllById() {
     Company redis = companyRepo.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
-    Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
-        new Point(-122.124500, 47.640160), "research@microsoft.com"));
+      Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company microsoft = companyRepo.save(
+      Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
+        "research@microsoft.com"));
 
     assertEquals(2, companyRepo.count());
 
     Iterable<Company> companies = companyRepo.findAllById(List.of(redis.getId(), microsoft.getId()));
 
     assertAll( //
-        () -> assertThat(companies).hasSize(2), //
-        () -> assertThat(companies).containsExactly(redis, microsoft) //
+      () -> assertThat(companies).hasSize(2), //
+      () -> assertThat(companies).containsExactly(redis, microsoft) //
     );
   }
 
   @Test
   void testAuditAnnotations() {
     Company redis = companyRepo.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
-    Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
-        new Point(-122.124500, 47.640160), "research@microsoft.com"));
+      Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company microsoft = companyRepo.save(
+      Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
+        "research@microsoft.com"));
 
     // created dates should not be null
     assertNotNull(redis.getCreatedDate());
@@ -230,7 +233,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
     assertNull(redis.getLastModifiedDate());
     assertNull(microsoft.getLastModifiedDate());
 
-    companyRepo.saveAll(List.of(redis,microsoft));
+    companyRepo.saveAll(List.of(redis, microsoft));
 
     // last modified dates should not be null after a second save
     assertNotNull(redis.getLastModifiedDate());
@@ -240,9 +243,10 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
   @Test
   void testTagEscapeChars() {
     Company redis = companyRepo.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
-    Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
-        new Point(-122.124500, 47.640160), "research@microsoft.com"));
+      Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company microsoft = companyRepo.save(
+      Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
+        "research@microsoft.com"));
 
     assertEquals(2, companyRepo.count());
 
@@ -276,7 +280,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
     final List<Company> bunchOfCompanies = new ArrayList<>();
     IntStream.range(1, 100).forEach(i -> {
       Company c = Company.of("Company" + i, 2022, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
-          "company" + i + "@inc.com");
+        "company" + i + "@inc.com");
       if (i % 2 == 0)
         c.setPubliclyListed(true);
       bunchOfCompanies.add(c);
@@ -287,23 +291,24 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
 
     //noinspection ResultOfMethodCallIgnored
     assertAll( //
-        () -> assertThat(publiclyListed).hasSize(49), //
-        () -> assertThat(publiclyListed).allSatisfy(Company::isPubliclyListed) //
+      () -> assertThat(publiclyListed).hasSize(49), //
+      () -> assertThat(publiclyListed).allSatisfy(Company::isPubliclyListed) //
     );
   }
 
   @Test
   void testFindByTagsIn() {
     Company redis = companyRepo.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+      Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
     redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
 
-    Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
-        new Point(-122.124500, 47.640160), "research@microsoft.com"));
+    Company microsoft = companyRepo.save(
+      Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
+        "research@microsoft.com"));
     microsoft.setTags(Set.of("innovative", "reliable", "os", "ai"));
 
     Company tesla = companyRepo.save(
-        Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903, 30.2210767), "elon@tesla.com"));
+      Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903, 30.2210767), "elon@tesla.com"));
     tesla.setTags(Set.of("innovative", "futuristic", "ai"));
 
     companyRepo.saveAll(List.of(redis, microsoft, tesla));
@@ -322,7 +327,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
     final List<Company> bunchOfCompanies = new ArrayList<>();
     IntStream.range(1, 25).forEach(i -> {
       Company c = Company.of("Company" + i, 2022, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
-          "company" + i + "@inc.com");
+        "company" + i + "@inc.com");
       bunchOfCompanies.add(c);
     });
     companyRepo.saveAll(bunchOfCompanies);
@@ -341,7 +346,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
     final List<Company> bunchOfCompanies = new ArrayList<>();
     IntStream.range(1, 25).forEach(i -> {
       Company c = Company.of("Company" + i, 2022, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
-          "company" + i + "@inc.com");
+        "company" + i + "@inc.com");
       bunchOfCompanies.add(c);
     });
     companyRepo.saveAll(bunchOfCompanies);
@@ -363,7 +368,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
     final List<Company> bunchOfCompanies = new ArrayList<>();
     IntStream.range(1, 25).forEach(i -> {
       Company c = Company.of("Company" + i, 2022, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
-          "company" + i + "@inc.com");
+        "company" + i + "@inc.com");
       bunchOfCompanies.add(c);
     });
     companyRepo.saveAll(bunchOfCompanies);
@@ -371,7 +376,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
     Iterable<Company> result = companyRepo.findAll(Sort.by("name").ascending());
 
     List<String> companyNames = StreamSupport.stream(result.spliterator(), false).map(Company::getName)
-        .collect(Collectors.toList());
+      .collect(Collectors.toList());
     assertThat(Ordering.<String>natural().isOrdered(companyNames)).isTrue();
   }
 
@@ -402,7 +407,8 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
     });
     companyRepo.saveAll(bunchOfCompanies);
 
-    Iterable<Company> result = companyRepo.findAll(com.redis.om.spring.repository.query.Sort.by(Company$.ID).ascending());
+    Iterable<Company> result = companyRepo.findAll(
+      com.redis.om.spring.repository.query.Sort.by(Company$.ID).ascending());
 
     List<String> ids = StreamSupport.stream(result.spliterator(), false).map(Company::getId)
       .collect(Collectors.toList());
@@ -430,21 +436,22 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
   @Test
   void testTagValsQuery() {
     Company redis = companyRepo.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+      Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
     redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
 
-    Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
-        new Point(-122.124500, 47.640160), "research@microsoft.com"));
+    Company microsoft = companyRepo.save(
+      Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
+        "research@microsoft.com"));
     microsoft.setTags(Set.of("innovative", "reliable", "os", "ai"));
 
     Company tesla = companyRepo.save(
-        Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903, 30.2210767), "elon@tesla.com"));
+      Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903, 30.2210767), "elon@tesla.com"));
     tesla.setTags(Set.of("innovative", "futuristic", "ai"));
 
     companyRepo.saveAll(List.of(redis, microsoft, tesla));
 
     Set<String> allTags = Set.of("fast", "scalable", "reliable", "database", "nosql", "innovative", "os", "ai",
-        "futuristic");
+      "futuristic");
 
     Iterable<String> tags = companyRepo.getAllTags();
     assertThat(tags).containsAll(allTags);
@@ -453,15 +460,16 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
   @Test
   void testFullTextSearch() {
     Company redis = companyRepo.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+      Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
     redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
 
-    Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
-        new Point(-122.124500, 47.640160), "research@microsoft.com"));
+    Company microsoft = companyRepo.save(
+      Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
+        "research@microsoft.com"));
     microsoft.setTags(Set.of("innovative", "reliable", "os", "ai"));
 
     Company tesla = companyRepo.save(
-        Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903, 30.2210767), "elon@tesla.com"));
+      Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903, 30.2210767), "elon@tesla.com"));
     tesla.setTags(Set.of("innovative", "futuristic", "ai"));
 
     companyRepo.saveAll(List.of(redis, microsoft, tesla));
@@ -474,15 +482,16 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
   @Test
   void testFindByFieldWithExplicitGeoIndexedAnnotation() {
     Company redis = companyRepo.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+      Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
     redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
 
-    Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
-        new Point(-122.124500, 47.640160), "research@microsoft.com"));
+    Company microsoft = companyRepo.save(
+      Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
+        "research@microsoft.com"));
     microsoft.setTags(Set.of("innovative", "reliable", "os", "ai"));
 
     Company tesla = companyRepo.save(
-        Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903, 30.2210767), "elon@tesla.com"));
+      Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903, 30.2210767), "elon@tesla.com"));
     tesla.setTags(Set.of("innovative", "futuristic", "ai"));
 
     companyRepo.saveAll(List.of(redis, microsoft, tesla));
@@ -499,7 +508,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
     final List<Company> bunchOfCompanies = new ArrayList<>();
     IntStream.range(1, 5).forEach(i -> {
       Company c = Company.of("Company" + i, 2022, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
-          "company" + i + "@inc.com");
+        "company" + i + "@inc.com");
       bunchOfCompanies.add(c);
     });
     companyRepo.saveAll(bunchOfCompanies);
@@ -514,7 +523,7 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
   @Test
   void testUpdateSingleField() {
     Company redisInc = companyRepo.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+      Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
     companyRepo.updateField(redisInc, Company$.NAME, "Redis");
 
     Optional<Company> maybeRedis = companyRepo.findById(redisInc.getId());
@@ -527,18 +536,21 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
   @Test
   void testGetFieldsByIds() {
     Company redis = companyRepo.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
-    Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
-        new Point(-122.124500, 47.640160), "research@microsoft.com"));
+      Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company microsoft = companyRepo.save(
+      Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
+        "research@microsoft.com"));
 
     Iterable<String> ids = List.of(redis.getId(), microsoft.getId());
     Iterable<String> companyNames = companyRepo.getFieldsByIds(ids, Company$.NAME);
     assertThat(companyNames).containsExactly(redis.getName(), microsoft.getName());
   }
 
-  @SuppressWarnings("ConstantConditions") @Test
+  @SuppressWarnings("ConstantConditions")
+  @Test
   void testPersistingEntityMustNotBeNull() {
-    IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> companyRepo.save(null));
+    IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
+      () -> companyRepo.save(null));
 
     Assertions.assertEquals("Entity must not be null", exception.getMessage());
   }
@@ -546,9 +558,9 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
   @Test
   void testAuditAnnotationsOnSaveAll() {
     Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
-        "stack@redis.com");
+      "stack@redis.com");
     Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
-        "research@microsoft.com");
+      "research@microsoft.com");
 
     companyRepo.saveAll(List.of(redis, microsoft));
 
@@ -561,21 +573,21 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
     Iterable<Company> companies = companyRepo.findAllById(List.of(redis.getId(), microsoft.getId()));
 
     assertAll( //
-        () -> assertThat(companies).hasSize(2), //
-        () -> assertThat(companies).containsExactly(redis, microsoft), //
-        () -> assertThat(redis.getCreatedDate()).isNotNull(), //
-        () -> assertThat(redis.getLastModifiedDate()).isNull(), //
-        () -> assertThat(microsoft.getCreatedDate()).isNotNull(), //
-        () -> assertThat(microsoft.getLastModifiedDate()).isNotNull());
+      () -> assertThat(companies).hasSize(2), //
+      () -> assertThat(companies).containsExactly(redis, microsoft), //
+      () -> assertThat(redis.getCreatedDate()).isNotNull(), //
+      () -> assertThat(redis.getLastModifiedDate()).isNull(), //
+      () -> assertThat(microsoft.getCreatedDate()).isNotNull(), //
+      () -> assertThat(microsoft.getLastModifiedDate()).isNotNull());
   }
 
   @Test
   void testFindByTagValueStartingWith() {
     Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
-        "stack@redis.com");
+      "stack@redis.com");
 
-    Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
-        new Point(-122.124500, 47.640160), "research@microsoft.com");
+    Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
+      "research@microsoft.com");
 
     companyRepo.saveAll(List.of(redis, microsoft));
 
@@ -585,18 +597,18 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
     List<Company> shouldBeOnlyMS = companyRepo.findByEmailStartingWith("res");
 
     assertAll( //
-        () -> assertThat(shouldBeOnlyRedis).map(Company::getName).containsExactly("RedisInc"), //
-        () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft") //
+      () -> assertThat(shouldBeOnlyRedis).map(Company::getName).containsExactly("RedisInc"), //
+      () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft") //
     );
   }
 
   @Test
   void testFindByTagValueEndingWith() {
     Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
-        "stack@redis.com");
+      "stack@redis.com");
 
-    Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
-        new Point(-122.124500, 47.640160), "research@microsoft.com");
+    Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
+      "research@microsoft.com");
 
     companyRepo.saveAll(List.of(redis, microsoft));
 
@@ -606,30 +618,28 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
     List<Company> shouldBeOnlyMS = companyRepo.findByEmailEndingWith("t.com");
 
     assertAll( //
-        () -> assertThat(shouldBeOnlyRedis).map(Company::getName).containsExactly("RedisInc"), //
-        () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft") //
+      () -> assertThat(shouldBeOnlyRedis).map(Company::getName).containsExactly("RedisInc"), //
+      () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft") //
     );
   }
 
   @Test
   void testOrderByInMethodName() {
     companyRepo.saveAll(
-        List.of(
-            Company.of("aaa", 2000, LocalDate.of(2020, 5, 1), new Point(-122.066540, 37.377690), "aaa@aaa.com"),
-            Company.of("bbb", 2000, LocalDate.of(2021, 6, 2), new Point(-122.066540, 37.377690), "bbb@bbb.com"),
-            Company.of("ccc", 2000, LocalDate.of(2022, 7, 3), new Point(-122.066540, 37.377690), "ccc@ccc.com")
-        ));
+      List.of(Company.of("aaa", 2000, LocalDate.of(2020, 5, 1), new Point(-122.066540, 37.377690), "aaa@aaa.com"),
+        Company.of("bbb", 2000, LocalDate.of(2021, 6, 2), new Point(-122.066540, 37.377690), "bbb@bbb.com"),
+        Company.of("ccc", 2000, LocalDate.of(2022, 7, 3), new Point(-122.066540, 37.377690), "ccc@ccc.com")));
 
     List<Company> byNameAsc = companyRepo.findByYearFoundedOrderByNameAsc(2000);
     List<Company> byNameDesc = companyRepo.findByYearFoundedOrderByNameDesc(2000);
 
     assertAll( //
-        () -> assertThat(byNameAsc).extracting("name").containsExactly("aaa", "bbb", "ccc"),
-        () -> assertThat(byNameDesc).extracting("name").containsExactly("ccc", "bbb", "aaa")
-    );
+      () -> assertThat(byNameAsc).extracting("name").containsExactly("aaa", "bbb", "ccc"),
+      () -> assertThat(byNameDesc).extracting("name").containsExactly("ccc", "bbb", "aaa"));
   }
 
-  @Test void testEnumsAreIndexed() {
+  @Test
+  void testEnumsAreIndexed() {
     HashWithEnum doc1 = HashWithEnum.of(MyJavaEnum.VALUE_1);
     HashWithEnum doc2 = HashWithEnum.of(MyJavaEnum.VALUE_2);
     HashWithEnum doc3 = HashWithEnum.of(MyJavaEnum.VALUE_3);
@@ -641,9 +651,9 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
     List<HashWithEnum> onlyVal3 = hashWithEnumRepository.findByEnumProp(MyJavaEnum.VALUE_3);
 
     assertAll( //
-        () -> assertThat(onlyVal1).containsExactly(doc1), //
-        () -> assertThat(onlyVal2).containsExactly(doc2), //
-        () -> assertThat(onlyVal3).containsExactly(doc3)  //
+      () -> assertThat(onlyVal1).containsExactly(doc1), //
+      () -> assertThat(onlyVal2).containsExactly(doc2), //
+      () -> assertThat(onlyVal3).containsExactly(doc3)  //
     );
   }
 
@@ -652,8 +662,8 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
     List<Student> result = studentRepository.findByUserName("Student2");
 
     assertAll( //
-      () -> assertThat(result).hasSize(1),
-      () -> assertThat(result).extracting("userName").containsExactly("Student2") //
+      () -> assertThat(result).hasSize(1), () -> assertThat(result).extracting("userName").containsExactly("Student2")
+      //
     );
   }
 }

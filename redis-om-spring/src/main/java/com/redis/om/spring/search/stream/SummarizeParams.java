@@ -1,6 +1,14 @@
 package com.redis.om.spring.search.stream;
 
 public class SummarizeParams {
+  private Integer fragsNum = 3;
+  private Integer fragSize = 20;
+  private String separator = "...";
+
+  public static SummarizeParams instance() {
+    return new SummarizeParams();
+  }
+
   public Integer getFragsNum() {
     return fragsNum;
   }
@@ -12,10 +20,6 @@ public class SummarizeParams {
   public String getSeparator() {
     return separator;
   }
-
-  private Integer fragsNum = 3;
-  private Integer fragSize = 20;
-  private String separator = "...";
 
   public SummarizeParams fragments(int num) {
     this.fragsNum = num;
@@ -30,9 +34,5 @@ public class SummarizeParams {
   public SummarizeParams separator(String separator) {
     this.separator = separator;
     return this;
-  }
-
-  public static SummarizeParams instance() {
-    return new SummarizeParams();
   }
 }

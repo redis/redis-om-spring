@@ -6,7 +6,7 @@ import java.util.Map;
 public interface CountMinSketchOperations<K> {
   /**
    * CMS.INITBYDIM Initializes a Count-Min Sketch to dimensions specified by user.
-   * 
+   *
    * @param key   The name of the sketch
    * @param width Number of counter in each array. Reduces the error size
    * @param depth Number of counter-arrays. Reduces the probability for an error
@@ -17,7 +17,7 @@ public interface CountMinSketchOperations<K> {
   /**
    * CMS.INITBYPROB Initializes a Count-Min Sketch to accommodate requested
    * capacity.
-   * 
+   *
    * @param key         The name of the sketch.
    * @param error       Estimate size of error. The error is a percent of total
    *                    counted items. This effects the width of the sketch.
@@ -32,7 +32,7 @@ public interface CountMinSketchOperations<K> {
 
   /**
    * CMS.INCRBY Increases the count of item by increment
-   * 
+   *
    * @param key       The name of the sketch
    * @param item      The item which counter to be increased
    * @param increment Counter to be increased by this integer
@@ -42,7 +42,7 @@ public interface CountMinSketchOperations<K> {
 
   /**
    * CMS.INCRBY Increases the count of one or more item.
-   * 
+   *
    * @param key            The name of the sketch
    * @param itemIncrements a Map of the items to be increased and their integer
    *                       increment
@@ -53,7 +53,7 @@ public interface CountMinSketchOperations<K> {
   /**
    * CMS.QUERY Returns count for item. Multiple items can be queried with one
    * call.
-   * 
+   *
    * @param key   The name of the sketch
    * @param items The items for which to retrieve the counts
    * @return Count for one or more items
@@ -63,7 +63,7 @@ public interface CountMinSketchOperations<K> {
   /**
    * CMS.MERGE Merges several sketches into one sketch. All sketches must have
    * identical width and depth.
-   * 
+   *
    * @param destKey The name of destination sketch. Must be initialized.
    * @param keys    The sketches to be merged
    */
@@ -74,7 +74,7 @@ public interface CountMinSketchOperations<K> {
    * CMS.MERGE Merges several sketches into one sketch. All sketches must have
    * identical width and depth. Weights can be used to multiply certain sketches.
    * Default weight is 1.
-   * 
+   *
    * @param destKey        The name of destination sketch. Must be initialized.
    * @param keysAndWeights A map of keys and weights used to multiply the sketch.
    */
@@ -82,7 +82,7 @@ public interface CountMinSketchOperations<K> {
 
   /**
    * CMS.INFO Returns width, depth and total count of the sketch.
-   * 
+   *
    * @param key The name of the sketch
    * @return A Map with width, depth and total count.
    */

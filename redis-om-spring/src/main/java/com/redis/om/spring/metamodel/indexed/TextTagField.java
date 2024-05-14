@@ -15,12 +15,12 @@ public class TextTagField<E, T> extends TagField<E, T> {
     super(field, indexed);
   }
 
-  public StartsWithPredicate<E,T> startsWith(T value) {
-    return new StartsWithPredicate<>(searchFieldAccessor,value);
+  public StartsWithPredicate<E, T> startsWith(T value) {
+    return new StartsWithPredicate<>(searchFieldAccessor, value);
   }
 
-  public EndsWithPredicate<E,T> endsWith(T value) {
-    return new EndsWithPredicate<>(searchFieldAccessor,value);
+  public EndsWithPredicate<E, T> endsWith(T value) {
+    return new EndsWithPredicate<>(searchFieldAccessor, value);
   }
 
   public Consumer<E> append(String value) {

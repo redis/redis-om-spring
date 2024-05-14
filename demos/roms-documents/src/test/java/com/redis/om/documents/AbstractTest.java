@@ -18,36 +18,36 @@ import static com.redis.testcontainers.RedisStackContainer.DEFAULT_IMAGE_NAME;
 @Testcontainers(disabledWithoutDocker = true)
 @DirtiesContext
 public abstract class AbstractTest {
-    @Container
-    static final RedisStackContainer REDIS;
+  @Container
+  static final RedisStackContainer REDIS;
 
-    static {
-        REDIS = new RedisStackContainer(DEFAULT_IMAGE_NAME.withTag("edge")).withReuse(true);
-        REDIS.start();
-    }
+  static {
+    REDIS = new RedisStackContainer(DEFAULT_IMAGE_NAME.withTag("edge")).withReuse(true);
+    REDIS.start();
+  }
 
-    @Autowired
-    protected StringRedisTemplate template;
+  @Autowired
+  protected StringRedisTemplate template;
 
-    @Autowired
-    protected RedisModulesOperations<String> modulesOperations;
+  @Autowired
+  protected RedisModulesOperations<String> modulesOperations;
 
-    @Autowired
-    @Qualifier("redisCustomKeyValueTemplate")
-    protected CustomRedisKeyValueTemplate kvTemplate;
+  @Autowired
+  @Qualifier("redisCustomKeyValueTemplate")
+  protected CustomRedisKeyValueTemplate kvTemplate;
 
-    @Autowired
-    protected RediSearchIndexer indexer;
+  @Autowired
+  protected RediSearchIndexer indexer;
 
-    @DynamicPropertySource
-    static void properties(DynamicPropertyRegistry registry) {
-        registry.add("spring.redis.host", REDIS::getHost);
-        registry.add("spring.redis.port", REDIS::getFirstMappedPort);
-    }
+  @DynamicPropertySource
+  static void properties(DynamicPropertyRegistry registry) {
+    registry.add("spring.redis.host", REDIS::getHost);
+    registry.add("spring.redis.port", REDIS::getFirstMappedPort);
+  }
 
-    protected void flushSearchIndexFor(Class<?> entityClass) {
-        indexer.dropIndexAndDocumentsFor(entityClass);
-        indexer.createIndexFor(entityClass);
-    }
+  protected void flushSearchIndexFor(Class<?> entityClass) {
+    indexer.dropIndexAndDocumentsFor(entityClass);
+    indexer.createIndexFor(entityClass);
+  }
 
 }

@@ -11,14 +11,16 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 @DirtiesContext
 @SpringBootTest( //
-    classes = AbstractBaseDocumentTest.Config.class, //
-    properties = { "spring.main.allow-bean-definition-overriding=true" } //
-)
-@TestPropertySource(properties = {"spring.config.location=classpath:vss_on.yaml"})
+                 classes = AbstractBaseDocumentTest.Config.class, //
+                 properties = { "spring.main.allow-bean-definition-overriding=true" } //
+                 )
+@TestPropertySource(properties = { "spring.config.location=classpath:vss_on.yaml" })
 public abstract class AbstractBaseDocumentTest extends AbstractBaseOMTest {
   @SpringBootApplication
   @Configuration
-  @EnableRedisDocumentRepositories(basePackages = {"com.redis.om.spring.annotations.document.fixtures", "com.redis.om.spring.repository"})
+  @EnableRedisDocumentRepositories(
+    basePackages = { "com.redis.om.spring.annotations.document.fixtures", "com.redis.om.spring.repository" }
+  )
   static class Config extends TestConfig {
   }
 }

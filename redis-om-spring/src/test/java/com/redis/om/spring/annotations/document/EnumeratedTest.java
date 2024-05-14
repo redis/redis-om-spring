@@ -29,21 +29,9 @@ class EnumeratedTest extends AbstractBaseDocumentTest {
 
   @BeforeEach
   void loadTestData() {
-    var java = Developer.builder()
-        .id("1")
-        .typeOrdinal(DeveloperType.JAVA)
-        .state(DeveloperState.REST)
-        .build();
-    var cpp = Developer.builder()
-        .id("2")
-        .typeOrdinal(DeveloperType.CPP)
-        .state(DeveloperState.WORK)
-        .build();
-    var python = Developer.builder()
-        .id("3")
-        .typeOrdinal(DeveloperType.PYTHON)
-        .state(DeveloperState.WORK)
-        .build();
+    var java = Developer.builder().id("1").typeOrdinal(DeveloperType.JAVA).state(DeveloperState.REST).build();
+    var cpp = Developer.builder().id("2").typeOrdinal(DeveloperType.CPP).state(DeveloperState.WORK).build();
+    var python = Developer.builder().id("3").typeOrdinal(DeveloperType.PYTHON).state(DeveloperState.WORK).build();
 
     developerRepository.saveAll(List.of(java, cpp, python));
   }
@@ -54,10 +42,9 @@ class EnumeratedTest extends AbstractBaseDocumentTest {
     var search = redisModulesClient.clientForSearch();
     Gson gson = new Gson();
 
-    var data = search.ftSearch("com.redis.om.spring.annotations.document.fixtures.DeveloperIdx")
-        .getDocuments().stream()
-        .map(el -> gson.fromJson((String) el.get("$"), DeveloperNative.class))
-        .collect(Collectors.toMap(DeveloperNative::getId, Function.identity()));
+    var data = search.ftSearch("com.redis.om.spring.annotations.document.fixtures.DeveloperIdx").getDocuments().stream()
+      .map(el -> gson.fromJson((String) el.get("$"), DeveloperNative.class))
+      .collect(Collectors.toMap(DeveloperNative::getId, Function.identity()));
 
     assertThat(data.get("1").getOrdinal()).isEqualTo(DeveloperType.JAVA.ordinal());
     assertThat(data.get("2").getOrdinal()).isEqualTo(DeveloperType.CPP.ordinal());
@@ -81,6 +68,5 @@ class EnumeratedTest extends AbstractBaseDocumentTest {
 
     private String state;
   }
-
 
 }

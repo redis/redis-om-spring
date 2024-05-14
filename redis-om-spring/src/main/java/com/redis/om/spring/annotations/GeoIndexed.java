@@ -7,6 +7,8 @@ import java.lang.annotation.*;
 @Target({ ElementType.FIELD, ElementType.ANNOTATION_TYPE })
 public @interface GeoIndexed {
   String fieldName() default "";
+
   String alias() default "";
+
   boolean noindex() default false;
 }

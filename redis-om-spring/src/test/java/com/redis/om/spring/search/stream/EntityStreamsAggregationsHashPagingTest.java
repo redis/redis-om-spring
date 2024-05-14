@@ -26,15 +26,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SuppressWarnings({ "SpellCheckingInspection" }) class EntityStreamsAggregationsHashPagingTest
-    extends AbstractBaseEnhancedRedisTest {
-  @Autowired EntityStream entityStream;
+@SuppressWarnings({ "SpellCheckingInspection" })
+class EntityStreamsAggregationsHashPagingTest extends AbstractBaseEnhancedRedisTest {
+  @Autowired
+  EntityStream entityStream;
 
-  @Autowired GameRepository repository;
+  @Autowired
+  GameRepository repository;
 
-  @Autowired Gson gson;
+  @Autowired
+  Gson gson;
 
-  @BeforeEach void beforeEach() throws IOException {
+  @BeforeEach
+  void beforeEach() throws IOException {
     // Load Sample Docs
     if (repository.count() == 0) {
       try (Reader reader = Files.newBufferedReader(Paths.get("src/test/resources/data/games.json"))) {
@@ -52,12 +56,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
    *   "LIMIT" "0" "100"
    * </pre>
    */
-  @Test void testLoadAllWithEntityReturn() {
-    List<Game> result = entityStream
-        .of(Game.class) //
-        .loadAll()
-        .limit(100)
-        .toList(Game.class);
+  @Test
+  void testLoadAllWithEntityReturn() {
+    List<Game> result = entityStream.of(Game.class) //
+      .loadAll().limit(100).toList(Game.class);
 
     assertThat(result).hasSize(100);
   }
@@ -73,15 +75,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
    * "FT.CURSOR" "READ" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "17284697" "45"
    * </pre>
    */
-  @Test void testBasicExplicitCursorSession() {
+  @Test
+  void testBasicExplicitCursorSession() {
     int pageSize = 45;
     SearchStream<Game> searchStream = entityStream.of(Game.class);
 
     AggregationResult result = searchStream //
-        .cursor(pageSize, Duration.ofSeconds(300))
-        .loadAll()
-        .limit(300)
-        .aggregate();
+      .cursor(pageSize, Duration.ofSeconds(300)).loadAll().limit(300).aggregate();
 
     // get the cursor id
     long cursorId = result.getCursorId();
@@ -98,15 +98,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
     }
 
     // assert the page counts
-    assertAll("page counts",
-        () -> assertEquals(6, pageCounts.size()),
-        () -> assertEquals(45, pageCounts.get(0)),
-        () -> assertEquals(45, pageCounts.get(1)),
-        () -> assertEquals(45, pageCounts.get(2)),
-        () -> assertEquals(45, pageCounts.get(3)),
-        () -> assertEquals(45, pageCounts.get(4)),
-        () -> assertEquals(30, pageCounts.get(5))
-    );
+    assertAll("page counts", () -> assertEquals(6, pageCounts.size()), () -> assertEquals(45, pageCounts.get(0)),
+      () -> assertEquals(45, pageCounts.get(1)), () -> assertEquals(45, pageCounts.get(2)),
+      () -> assertEquals(45, pageCounts.get(3)), () -> assertEquals(45, pageCounts.get(4)),
+      () -> assertEquals(30, pageCounts.get(5)));
   }
 
   /**
@@ -120,14 +115,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
    * "FT.CURSOR" "READ" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "17284697" "45"
    * </pre>
    */
-  @Test void testManagedCursorSession() {
+  @Test
+  void testManagedCursorSession() {
     int pageSize = 45;
     SearchStream<Game> searchStream = entityStream.of(Game.class);
 
     Slice<Game> page = searchStream //
-        .loadAll()
-        .limit(300)
-        .toList(PageRequest.ofSize(pageSize), Game.class);
+      .loadAll().limit(300).toList(PageRequest.ofSize(pageSize), Game.class);
 
     // loop through the slices using the SearchStream.getSlice method passing the next page request
     // obtained from the current page
@@ -140,16 +134,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
     }
 
     // assert the page counts
-    assertAll("page counts",
-        () -> assertEquals(pageSize, pageCounts.get(0)),
-        () -> assertEquals(pageSize, pageCounts.get(1)),
-        () -> assertEquals(pageSize, pageCounts.get(2)),
-        () -> assertEquals(pageSize, pageCounts.get(3)),
-        () -> assertEquals(pageSize, pageCounts.get(4)),
-        () -> assertEquals(pageSize, pageCounts.get(5)),
-        () -> assertEquals(30, pageCounts.get(6))
-    );
+    assertAll("page counts", () -> assertEquals(pageSize, pageCounts.get(0)),
+      () -> assertEquals(pageSize, pageCounts.get(1)), () -> assertEquals(pageSize, pageCounts.get(2)),
+      () -> assertEquals(pageSize, pageCounts.get(3)), () -> assertEquals(pageSize, pageCounts.get(4)),
+      () -> assertEquals(pageSize, pageCounts.get(5)), () -> assertEquals(30, pageCounts.get(6)));
   }
-
 
 }

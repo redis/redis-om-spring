@@ -23,6 +23,10 @@ public class RomsHashesApplication {
   @Autowired
   private RoleRepository roleRepo;
 
+  public static void main(String[] args) {
+    SpringApplication.run(RomsHashesApplication.class, args);
+  }
+
   @Bean
   CommandLineRunner loadTestData() {
     return args -> {
@@ -42,9 +46,5 @@ public class RomsHashesApplication {
       userRepo.save(tom); // save again to trigger @LastModifiedDate
     };
   }
-
-	public static void main(String[] args) {
-		SpringApplication.run(RomsHashesApplication.class, args);
-	}
 
 }

@@ -9,16 +9,17 @@ import java.time.ZoneId;
 
 public class OffsetDateTimeTypeAdapter implements JsonSerializer<OffsetDateTime>, JsonDeserializer<OffsetDateTime> {
 
-    public JsonElement serialize(OffsetDateTime offsetDateTime, Type typeOfSrc, JsonSerializationContext context) {
-        long timeInMillis = offsetDateTime.toInstant().toEpochMilli();
-        return new JsonPrimitive(timeInMillis);
-    }
+  public static OffsetDateTimeTypeAdapter getInstance() {
+    return new OffsetDateTimeTypeAdapter();
+  }
 
-    public OffsetDateTime deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
-        return OffsetDateTime.ofInstant(Instant.ofEpochMilli(json.getAsLong()), ZoneId.systemDefault());
-    }
+  public JsonElement serialize(OffsetDateTime offsetDateTime, Type typeOfSrc, JsonSerializationContext context) {
+    long timeInMillis = offsetDateTime.toInstant().toEpochMilli();
+    return new JsonPrimitive(timeInMillis);
+  }
 
-    public static OffsetDateTimeTypeAdapter getInstance() {
-        return new OffsetDateTimeTypeAdapter();
-    }
+  public OffsetDateTime deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
+    throws JsonParseException {
+    return OffsetDateTime.ofInstant(Instant.ofEpochMilli(json.getAsLong()), ZoneId.systemDefault());
+  }
 }

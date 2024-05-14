@@ -23,12 +23,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SuppressWarnings("SpellCheckingInspection") class RedisHashWithAliasTest extends AbstractBaseEnhancedRedisTest {
+@SuppressWarnings("SpellCheckingInspection")
+class RedisHashWithAliasTest extends AbstractBaseEnhancedRedisTest {
   @Autowired
   WithAliasRepository repository;
 
   String id1;
-  @SuppressWarnings("unused") String id2;
+  @SuppressWarnings("unused")
+  String id2;
 
   @Autowired
   EntityStream entityStream;
@@ -78,26 +80,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
   void testGetByAliasedProperty() {
     SearchStream<WithAlias> stream = entityStream.of(WithAlias.class);
     List<WithAlias> docs = stream //
-        .filter(WithAlias$.TEXT.eq("Oye man")) //
-        .collect(Collectors.toList());
+      .filter(WithAlias$.TEXT.eq("Oye man")) //
+      .collect(Collectors.toList());
 
     assertAll( //
-        () -> assertThat(docs).hasSize(1),
-        () -> assertThat(docs).extracting("text").containsOnly("Oye man")
-    );
+      () -> assertThat(docs).hasSize(1), () -> assertThat(docs).extracting("text").containsOnly("Oye man"));
   }
 
   @Test
   void testGetByTagAliasedProperty() {
     SearchStream<WithAlias> stream = entityStream.of(WithAlias.class);
     List<WithAlias> docs = stream //
-        .filter(WithAlias$.TAGS.in("articulo", "article")) //
-        .collect(Collectors.toList());
+      .filter(WithAlias$.TAGS.in("articulo", "article")) //
+      .collect(Collectors.toList());
 
     assertAll( //
-        () -> assertThat(docs).hasSize(2),
-        () -> assertThat(docs).extracting("text").containsOnly("Epa chamo", "Oye man")
-    );
+      () -> assertThat(docs).hasSize(2),
+      () -> assertThat(docs).extracting("text").containsOnly("Epa chamo", "Oye man"));
   }
 
 }

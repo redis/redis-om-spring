@@ -13,17 +13,18 @@ import java.util.List;
 import java.util.function.Function;
 
 public class AggregationPage<E> implements Slice<E>, Serializable {
-  private List<E> content;
   private final transient Pageable pageable;
-  private transient AggregationStream<E> aggregationStream;
-  private long cursorId = -1;
-  private AggregationResult aggregationResult;
   private final transient Gson gson;
   private final Class<E> entityClass;
   private final boolean isDocument;
   private final transient MappingRedisOMConverter mappingConverter;
+  private List<E> content;
+  private transient AggregationStream<E> aggregationStream;
+  private long cursorId = -1;
+  private AggregationResult aggregationResult;
 
-  public AggregationPage(AggregationStream<E> aggregationStream, Pageable pageable, Class<E> entityClass, Gson gson, MappingRedisOMConverter mappingConverter, boolean isDocument) {
+  public AggregationPage(AggregationStream<E> aggregationStream, Pageable pageable, Class<E> entityClass, Gson gson,
+    MappingRedisOMConverter mappingConverter, boolean isDocument) {
     this.aggregationStream = aggregationStream;
     this.pageable = pageable;
     this.entityClass = entityClass;
@@ -32,7 +33,8 @@ public class AggregationPage<E> implements Slice<E>, Serializable {
     this.mappingConverter = mappingConverter;
   }
 
-  public AggregationPage(AggregationResult aggregationResult, Pageable pageable, Class<E> entityClass, Gson gson, MappingRedisOMConverter mappingConverter, boolean isDocument) {
+  public AggregationPage(AggregationResult aggregationResult, Pageable pageable, Class<E> entityClass, Gson gson,
+    MappingRedisOMConverter mappingConverter, boolean isDocument) {
     this.aggregationResult = aggregationResult;
     this.pageable = pageable;
     this.entityClass = entityClass;
@@ -58,7 +60,7 @@ public class AggregationPage<E> implements Slice<E>, Serializable {
   }
 
   @Override
-  public  List<E> getContent() {
+  public List<E> getContent() {
     return resolveContent();
   }
 
@@ -68,7 +70,7 @@ public class AggregationPage<E> implements Slice<E>, Serializable {
   }
 
   @Override
-  public  Sort getSort() {
+  public Sort getSort() {
     return pageable.getSort();
   }
 
@@ -88,17 +90,16 @@ public class AggregationPage<E> implements Slice<E>, Serializable {
   }
 
   @Override
-  public  Pageable nextPageable() {
+  public Pageable nextPageable() {
     Pageable next = PageRequest.of(getNumber() + 1, pageable.getPageSize(), pageable.getSort());
     return hasNext() ? new AggregationPageable(next, resolveAggregation().getCursorId()) : Pageable.unpaged();
   }
 
   @Override
-  public <U>  Slice<U> map(Function<? super E, ? extends U> converter) {
+  public <U> Slice<U> map(Function<? super E, ? extends U> converter) {
     return new SliceImpl<>(getConvertedContent(converter), pageable, hasNext());
   }
 
-  
   @Override
   public Iterator<E> iterator() {
     return resolveContent().iterator();
@@ -111,7 +112,7 @@ public class AggregationPage<E> implements Slice<E>, Serializable {
   }
 
   @Override
-  public  Pageable previousPageable() {
+  public Pageable previousPageable() {
     return Pageable.unpaged();
   }
   // END - Unsupported operations
@@ -148,9 +149,11 @@ public class AggregationPage<E> implements Slice<E>, Serializable {
   @SuppressWarnings("unchecked")
   List<E> toEntityList(AggregationResult aggregationResult) {
     if (isDocument) {
-      return aggregationResult.getResults().stream().map(d -> gson.fromJson(d.get("$").toString(), entityClass)).toList();
+      return aggregationResult.getResults().stream().map(d -> gson.fromJson(d.get("$").toString(), entityClass))
+        .toList();
     } else {
-      return aggregationResult.getResults().stream().map(h -> (E) ObjectUtils.mapToObject(h, entityClass, mappingConverter)).toList();
+      return aggregationResult.getResults().stream()
+        .map(h -> (E) ObjectUtils.mapToObject(h, entityClass, mappingConverter)).toList();
     }
   }
 }

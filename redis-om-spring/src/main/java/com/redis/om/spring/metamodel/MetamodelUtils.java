@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class MetamodelUtils {
-  public static MetamodelField<?,?> getMetamodelForIdField(Class<?> entityClass) {
+  public static MetamodelField<?, ?> getMetamodelForIdField(Class<?> entityClass) {
     Optional<Field> idField = ObjectUtils.getIdFieldForEntityClass(entityClass);
     if (idField.isPresent()) {
       try {
@@ -24,11 +24,12 @@ public class MetamodelUtils {
     return null;
   }
 
-  public static List<MetamodelField<?,?>> getMetamodelFieldsForProperties(Class<?> entityClass, Collection<String> properties) {
-    List<MetamodelField<?,?>> result = new ArrayList<>();
+  public static List<MetamodelField<?, ?>> getMetamodelFieldsForProperties(Class<?> entityClass,
+    Collection<String> properties) {
+    List<MetamodelField<?, ?>> result = new ArrayList<>();
     try {
       Class<?> metamodel = Class.forName(entityClass.getName() + "$");
-      for (var property: properties) {
+      for (var property : properties) {
         try {
           result.add((MetamodelField<?, ?>) metamodel.getField(ObjectUtils.staticField(property)).get(null));
         } catch (IllegalAccessException | NoSuchFieldException e) {

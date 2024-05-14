@@ -6,5 +6,5 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface EventService {
-    List<Event> searchByBeginDateBetween(LocalDateTime start, LocalDateTime end);
+  List<Event> searchByBeginDateBetween(LocalDateTime start, LocalDateTime end);
 }

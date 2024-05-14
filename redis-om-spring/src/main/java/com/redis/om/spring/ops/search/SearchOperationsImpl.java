@@ -97,11 +97,12 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
   }
 
   @Override
-  public List<Suggestion> getSuggestion(String key,String prefix) {
+  public List<Suggestion> getSuggestion(String key, String prefix) {
     return this.getSuggestion(key, prefix, AutoCompleteOptions.get());
   }
 
-  @Override public List<Suggestion> getSuggestion(String key, String prefix, AutoCompleteOptions options) {
+  @Override
+  public List<Suggestion> getSuggestion(String key, String prefix, AutoCompleteOptions options) {
     Gson gson = modulesClient.gsonBuilder().create();
 
     if (options.isWithScore()) {
@@ -109,10 +110,12 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
       return suggestions.stream().map(suggestion -> {
         if (options.isWithPayload()) {
           String[] keyParts = key.split(":");
-          String payLoadKey = String.format("sugg:payload:%s:%s", keyParts[keyParts.length - 2], keyParts[keyParts.length - 1]);
+          String payLoadKey = String.format("sugg:payload:%s:%s", keyParts[keyParts.length - 2],
+            keyParts[keyParts.length - 1]);
           Object payload = template.opsForHash().get(payLoadKey, suggestion);
           String json = payload != null ? payload.toString() : "{}";
-          Map<String, Object> payloadMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {}.getType());
+          Map<String, Object> payloadMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
+          }.getType());
           return new Suggestion(suggestion.getElement(), suggestion.getScore(), payloadMap);
         } else {
           return new Suggestion(suggestion.getElement(), suggestion.getScore());
@@ -123,10 +126,12 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
       return suggestions.stream().map(suggestion -> {
         if (options.isWithPayload()) {
           String[] keyParts = key.split(":");
-          String payLoadKey = String.format("sugg:payload:%s:%s", keyParts[keyParts.length - 2], keyParts[keyParts.length - 1]);
+          String payLoadKey = String.format("sugg:payload:%s:%s", keyParts[keyParts.length - 2],
+            keyParts[keyParts.length - 1]);
           Object payload = template.opsForHash().get(payLoadKey, suggestion);
           String json = payload != null ? payload.toString() : "{}";
-          Map<String, Object> payloadMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {}.getType());
+          Map<String, Object> payloadMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
+          }.getType());
           return new Suggestion(suggestion, payloadMap);
         } else {
           return new Suggestion(suggestion);
@@ -156,7 +161,7 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
   }
 
   @Override
-  public Map<String,Object> getConfig(String option) {
+  public Map<String, Object> getConfig(String option) {
     return search.ftConfigGet(option);
   }
 
@@ -194,7 +199,5 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
   public Set<String> tagVals(String field) {
     return search.ftTagVals(index.toString(), field);
   }
-
-
 
 }

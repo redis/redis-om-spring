@@ -1,4 +1,3 @@
-
 package com.redis.om.spring.tuple.impl;
 
 import com.redis.om.spring.tuple.Triple;

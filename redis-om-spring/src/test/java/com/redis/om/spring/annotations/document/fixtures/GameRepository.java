@@ -9,7 +9,8 @@ import redis.clients.jedis.search.aggr.AggregationResult;
 
 import java.util.Map;
 
-@SuppressWarnings({ "unused", "SpellCheckingInspection", "SpringDataRepositoryMethodReturnTypeInspection" }) public interface GameRepository extends RedisDocumentRepository<Game, String> {
+@SuppressWarnings({ "unused", "SpellCheckingInspection", "SpringDataRepositoryMethodReturnTypeInspection" })
+public interface GameRepository extends RedisDocumentRepository<Game, String> {
   /**
    * <pre>
    * FT.AGGREGATE "com.redis.om.spring.annotations.document.fixtures.GameIdx" '*'
@@ -20,16 +21,17 @@ import java.util.Map;
    * </pre>
    */
   @Aggregation( //
-      groupBy = { //
-          @GroupBy( //
-              properties = "@brand", //
-              reduce = { @Reducer(func = ReducerFunction.COUNT, alias = "count") } //
-          ) //
-      }, //
-      sortBy = { //
-          @SortBy(field = "@count", direction = Direction.DESC), //
-      }
-  ) //
+                groupBy = { //
+                  @GroupBy( //
+                            properties = "@brand", //
+                            reduce = { @Reducer(func = ReducerFunction.COUNT, alias = "count") } //
+                            ) //
+                }, //
+                sortBy = { //
+                  @SortBy(field = "@count", direction = Direction.DESC), //
+                }
+  )
+  //
   Page<Map<String, String>> countByBrand(Pageable pageable);
 
   /**
@@ -42,20 +44,20 @@ import java.util.Map;
    * </pre>
    */
   @Aggregation( //
-      value = "sony", //
-      groupBy = { //
-          @GroupBy( //
-              properties = "@brand", //
-              reduce = { //
-                  @Reducer(func = ReducerFunction.COUNT), //
-                  @Reducer(func = ReducerFunction.MIN, args={"@price"}, alias="minPrice")
-              } //
-          ) //
-      }, //
-      sortBy = { //
-          @SortBy(field = "@minPrice", direction = Direction.DESC), //
-      }
-  ) //
+                value = "sony", //
+                groupBy = { //
+                  @GroupBy( //
+                            properties = "@brand", //
+                            reduce = { //
+                              @Reducer(func = ReducerFunction.COUNT), //
+                              @Reducer(func = ReducerFunction.MIN, args = { "@price" }, alias = "minPrice") } //
+                            ) //
+                }, //
+                sortBy = { //
+                  @SortBy(field = "@minPrice", direction = Direction.DESC), //
+                }
+  )
+  //
   AggregationResult minPricesContainingSony();
 
   /**
@@ -68,20 +70,20 @@ import java.util.Map;
    * </pre>
    */
   @Aggregation( //
-      value = "sony", //
-      groupBy = { //
-          @GroupBy( //
-              properties = "@brand", //
-              reduce = { //
-                  @Reducer(func = ReducerFunction.COUNT), //
-                  @Reducer(func = ReducerFunction.MAX, args={"@price"}, alias="maxPrice")
-              } //
-          ) //
-      }, //
-      sortBy = { //
-          @SortBy(field = "@maxPrice", direction = Direction.DESC), //
-      }
-  ) //
+                value = "sony", //
+                groupBy = { //
+                  @GroupBy( //
+                            properties = "@brand", //
+                            reduce = { //
+                              @Reducer(func = ReducerFunction.COUNT), //
+                              @Reducer(func = ReducerFunction.MAX, args = { "@price" }, alias = "maxPrice") } //
+                            ) //
+                }, //
+                sortBy = { //
+                  @SortBy(field = "@maxPrice", direction = Direction.DESC), //
+                }
+  )
+  //
   AggregationResult maxPricesContainingSony();
 
   /**
@@ -95,20 +97,23 @@ import java.util.Map;
    * </pre>
    */
   @Aggregation( //
-      groupBy = { //
-          @GroupBy( //
-              properties = "@brand", //
-              reduce = { //
-                  @Reducer(func = ReducerFunction.COUNT_DISTINCT, args={"@title"}, alias="count_distinct(title)"), //
-                  @Reducer(func = ReducerFunction.COUNT) //
-              } //
-          ) //
-      }, //
-      sortBy = { //
-          @SortBy(field = "@count_distinct(title)", direction = Direction.DESC), //
-      },
-      limit = 5
-  ) //
+                groupBy = { //
+                  @GroupBy( //
+                            properties = "@brand", //
+                            reduce = { //
+                              @Reducer(
+                                func = ReducerFunction.COUNT_DISTINCT, args = { "@title" },
+                                alias = "count_distinct(title)"
+                              ), //
+                              @Reducer(func = ReducerFunction.COUNT) //
+                            } //
+                            ) //
+                }, //
+                sortBy = { //
+                  @SortBy(field = "@count_distinct(title)", direction = Direction.DESC), //
+                }, limit = 5
+  )
+  //
   AggregationResult top5countDistinctByBrand();
 
   /**
@@ -124,23 +129,23 @@ import java.util.Map;
    * </pre>
    */
   @Aggregation( //
-      groupBy = { //
-          @GroupBy( //
-              properties = "@brand", //
-              reduce = { //
-                  @Reducer(func = ReducerFunction.QUANTILE, args={"@price", "0.50"}, alias="q50"), //
-                  @Reducer(func = ReducerFunction.QUANTILE, args={"@price", "0.90"}, alias="q90"), //
-                  @Reducer(func = ReducerFunction.QUANTILE, args={"@price", "0.95"}, alias="q95"), //
-                  @Reducer(func = ReducerFunction.AVG, args={"@price"}), //
-                  @Reducer(func = ReducerFunction.COUNT, alias = "rowcount") //
-              } //
-          ) //
-      }, //
-      sortBy = { //
-          @SortBy(field = "@rowcount", direction = Direction.DESC), //
-      },
-      sortByMax = 1 //
-  ) //
+                groupBy = { //
+                  @GroupBy( //
+                            properties = "@brand", //
+                            reduce = { //
+                              @Reducer(func = ReducerFunction.QUANTILE, args = { "@price", "0.50" }, alias = "q50"), //
+                              @Reducer(func = ReducerFunction.QUANTILE, args = { "@price", "0.90" }, alias = "q90"), //
+                              @Reducer(func = ReducerFunction.QUANTILE, args = { "@price", "0.95" }, alias = "q95"), //
+                              @Reducer(func = ReducerFunction.AVG, args = { "@price" }), //
+                              @Reducer(func = ReducerFunction.COUNT, alias = "rowcount") //
+                            } //
+                            ) //
+                }, //
+                sortBy = { //
+                  @SortBy(field = "@rowcount", direction = Direction.DESC), //
+                }, sortByMax = 1 //
+                )
+  //
   AggregationResult priceQuantiles();
 
   /**
@@ -156,22 +161,24 @@ import java.util.Map;
    * </pre>
    */
   @Aggregation( //
-      groupBy = { //
-          @GroupBy( //
-              properties = "@brand", //
-              reduce = { //
-                  @Reducer(func = ReducerFunction.STDDEV, args={"@price"}, alias="stddev(price)"), //
-                  @Reducer(func = ReducerFunction.AVG, args={"@price"}, alias = "avgPrice"), //
-                  @Reducer(func = ReducerFunction.QUANTILE, args={"@price", "0.50"}, alias="q50Price"), //
-                  @Reducer(func = ReducerFunction.COUNT, alias = "rowcount") //
-              } //
-          ) //
-      }, //
-      sortBy = { //
-          @SortBy(field = "@rowcount", direction = Direction.DESC), //
-      },
-      limit = 10 //
-  ) //
+                groupBy = { //
+                  @GroupBy( //
+                            properties = "@brand", //
+                            reduce = { //
+                              @Reducer(func = ReducerFunction.STDDEV, args = { "@price" }, alias = "stddev(price)"), //
+                              @Reducer(func = ReducerFunction.AVG, args = { "@price" }, alias = "avgPrice"), //
+                              @Reducer(
+                                func = ReducerFunction.QUANTILE, args = { "@price", "0.50" }, alias = "q50Price"
+                              ), //
+                              @Reducer(func = ReducerFunction.COUNT, alias = "rowcount") //
+                            } //
+                            ) //
+                }, //
+                sortBy = { //
+                  @SortBy(field = "@rowcount", direction = Direction.DESC), //
+                }, limit = 10 //
+                )
+  //
   AggregationResult priceStdDev();
 
   /**
@@ -185,18 +192,19 @@ import java.util.Map;
    * </pre>
    */
   @Aggregation( //
-      groupBy = { //
-          @GroupBy( //
-              properties = "@brand", //
-              reduce = { @Reducer(func = ReducerFunction.COUNT, alias = "count") } //
-          ) //
-      }, //
-      apply = { //
-          @Apply(expression = "timefmt(1517417144)", alias = "dt"), //
-          @Apply(expression = "parsetime(@dt, \"%FT%TZ\")", alias = "parsed_dt"), //
-      }, //
-      limit = 1 //
-  ) //
+                groupBy = { //
+                  @GroupBy( //
+                            properties = "@brand", //
+                            reduce = { @Reducer(func = ReducerFunction.COUNT, alias = "count") } //
+                            ) //
+                }, //
+                apply = { //
+                  @Apply(expression = "timefmt(1517417144)", alias = "dt"), //
+                  @Apply(expression = "parsetime(@dt, \"%FT%TZ\")", alias = "parsed_dt"), //
+                }, //
+                limit = 1 //
+                )
+  //
   AggregationResult parseTime();
 
   /**
@@ -209,20 +217,22 @@ import java.util.Map;
    * </pre>
    */
   @Aggregation( //
-      groupBy = { //
-          @GroupBy( //
-              properties = "@brand", //
-              reduce = { //
-                  @Reducer(func = ReducerFunction.COUNT, alias = "num"), //
-                  @Reducer(func = ReducerFunction.RANDOM_SAMPLE, args={"@price", "10"}, alias = "sample") //
-              } //
-          ) //
-      }, //
-      sortBy = { //
-          @SortBy(field = "@num", direction = Direction.DESC), //
-      },
-      sortByMax = 10
-  ) //
+                groupBy = { //
+                  @GroupBy( //
+                            properties = "@brand", //
+                            reduce = { //
+                              @Reducer(func = ReducerFunction.COUNT, alias = "num"), //
+                              @Reducer(
+                                func = ReducerFunction.RANDOM_SAMPLE, args = { "@price", "10" }, alias = "sample"
+                              ) //
+                            } //
+                            ) //
+                }, //
+                sortBy = { //
+                  @SortBy(field = "@num", direction = Direction.DESC), //
+                }, sortByMax = 10
+  )
+  //
   AggregationResult randomSample();
 
   /**
@@ -242,20 +252,19 @@ import java.util.Map;
    * </pre>
    */
   @Aggregation( //
-      apply = {
-        @Apply(expression = "1517417144", alias = "dt"), //
-        @Apply(expression = "timefmt(@dt)", alias = "timefmt"), //
-        @Apply(expression = "day(@dt)", alias = "day"), //
-        @Apply(expression = "hour(@dt)", alias = "hour"), //
-        @Apply(expression = "minute(@dt)", alias = "minute"), //
-        @Apply(expression = "month(@dt)", alias = "month"), //
-        @Apply(expression = "dayofweek(@dt)", alias = "dayofweek"), //
-        @Apply(expression = "dayofmonth(@dt)", alias = "dayofmonth"), //
-        @Apply(expression = "dayofyear(@dt)", alias = "dayofyear"), //
-        @Apply(expression = "year(@dt)", alias = "year"), //
-      },
-      limit = 1
-  ) //
+                apply = { @Apply(expression = "1517417144", alias = "dt"), //
+                  @Apply(expression = "timefmt(@dt)", alias = "timefmt"), //
+                  @Apply(expression = "day(@dt)", alias = "day"), //
+                  @Apply(expression = "hour(@dt)", alias = "hour"), //
+                  @Apply(expression = "minute(@dt)", alias = "minute"), //
+                  @Apply(expression = "month(@dt)", alias = "month"), //
+                  @Apply(expression = "dayofweek(@dt)", alias = "dayofweek"), //
+                  @Apply(expression = "dayofmonth(@dt)", alias = "dayofmonth"), //
+                  @Apply(expression = "dayofyear(@dt)", alias = "dayofyear"), //
+                  @Apply(expression = "year(@dt)", alias = "year"), //
+                }, limit = 1
+  )
+  //
   AggregationResult timeFunctions();
 
   /**
@@ -268,20 +277,21 @@ import java.util.Map;
    * </pre>
    */
   @Aggregation( //
-      groupBy = { //
-          @GroupBy( //
-              properties = {"@title", "@brand"}, //
-              reduce = { //
-                  @Reducer(func = ReducerFunction.COUNT), //
-                  @Reducer(func = ReducerFunction.MAX, args={"@price"}, alias = "price") //
-              } //
-          ) //
-      }, //
-      apply = {
-          @Apply(expression = "format(\"%s|%s|%s|%s\", @title, @brand, \"Mark\", @price)", alias = "titleBrand"), //
-      },
-      limit = 10
-  ) //
+                groupBy = { //
+                  @GroupBy( //
+                            properties = { "@title", "@brand" }, //
+                            reduce = { //
+                              @Reducer(func = ReducerFunction.COUNT), //
+                              @Reducer(func = ReducerFunction.MAX, args = { "@price" }, alias = "price") //
+                            } //
+                            ) //
+                }, //
+                apply = { @Apply(
+                  expression = "format(\"%s|%s|%s|%s\", @title, @brand, \"Mark\", @price)", alias = "titleBrand"
+                ), //
+                }, limit = 10
+  )
+  //
   AggregationResult stringFormat();
 
   /**
@@ -295,20 +305,20 @@ import java.util.Map;
    * </pre>
    */
   @Aggregation( //
-      groupBy = { //
-          @GroupBy( //
-              properties = {"@brand"}, //
-              reduce = { //
-                  @Reducer(func = ReducerFunction.COUNT, alias="count"), //
-                  @Reducer(func = ReducerFunction.SUM, args={"@price"}, alias = "sum(price)") //
-              } //
-          ) //
-      }, //
-      sortBy = { //
-          @SortBy(field = "@sum(price)", direction = Direction.DESC), //
-      },
-      limit = 5 //
-  ) //
+                groupBy = { //
+                  @GroupBy( //
+                            properties = { "@brand" }, //
+                            reduce = { //
+                              @Reducer(func = ReducerFunction.COUNT, alias = "count"), //
+                              @Reducer(func = ReducerFunction.SUM, args = { "@price" }, alias = "sum(price)") //
+                            } //
+                            ) //
+                }, //
+                sortBy = { //
+                  @SortBy(field = "@sum(price)", direction = Direction.DESC), //
+                }, limit = 5 //
+                )
+  //
   AggregationResult sumPrice();
 
   /**
@@ -321,14 +331,15 @@ import java.util.Map;
    * </pre>
    */
   @Aggregation( //
-      groupBy = { //
-          @GroupBy( //
-              properties = {"@brand"}, //
-              reduce = { @Reducer(func = ReducerFunction.COUNT, alias="count") } //
-          ) //
-      }, //
-      filter = { "@count < 5", "@count > 2 && @brand != \"\"" }
-  ) //
+                groupBy = { //
+                  @GroupBy( //
+                            properties = { "@brand" }, //
+                            reduce = { @Reducer(func = ReducerFunction.COUNT, alias = "count") } //
+                            ) //
+                }, //
+                filter = { "@count < 5", "@count > 2 && @brand != \"\"" }
+  )
+  //
   AggregationResult filters();
 
   /**
@@ -342,20 +353,20 @@ import java.util.Map;
    * </pre>
    */
   @Aggregation( //
-      groupBy = { //
-          @GroupBy( //
-              properties = {"@brand"}, //
-              reduce = { //
-                  @Reducer(func = ReducerFunction.COUNT_DISTINCT, args="@price", alias="count"), //
-                  @Reducer(func = ReducerFunction.TOLIST, args="@price", alias="prices") //
-              } //
-          ) //
-      }, //
-      sortBy = { //
-          @SortBy(field = "@count", direction = Direction.DESC), //
-      },
-      limit = 5 //
-  ) //
+                groupBy = { //
+                  @GroupBy( //
+                            properties = { "@brand" }, //
+                            reduce = { //
+                              @Reducer(func = ReducerFunction.COUNT_DISTINCT, args = "@price", alias = "count"), //
+                              @Reducer(func = ReducerFunction.TOLIST, args = "@price", alias = "prices") //
+                            } //
+                            ) //
+                }, //
+                sortBy = { //
+                  @SortBy(field = "@count", direction = Direction.DESC), //
+                }, limit = 5 //
+                )
+  //
   AggregationResult toList();
 
   /**
@@ -369,19 +380,19 @@ import java.util.Map;
    * </pre>
    */
   @Aggregation( //
-      groupBy = { //
-          @GroupBy( //
-              properties = {"@brand"}, //
-              reduce = { @Reducer(func = ReducerFunction.SUM, args="@price", alias="price") } //
-          ) //
-      }, //
-      apply = { @Apply(expression = "(@price % 10)", alias = "price") }, //
-      sortBy = { //
-          @SortBy(field = "@price", direction = Direction.ASC), //
-          @SortBy(field = "@brand", direction = Direction.DESC), //
-      },
-      sortByMax = 10
-  ) //
+                groupBy = { //
+                  @GroupBy( //
+                            properties = { "@brand" }, //
+                            reduce = { @Reducer(func = ReducerFunction.SUM, args = "@price", alias = "price") } //
+                            ) //
+                }, //
+                apply = { @Apply(expression = "(@price % 10)", alias = "price") }, //
+                sortBy = { //
+                  @SortBy(field = "@price", direction = Direction.ASC), //
+                  @SortBy(field = "@brand", direction = Direction.DESC), //
+                }, sortByMax = 10
+  )
+  //
   AggregationResult sortByMany();
 
   /**
@@ -393,10 +404,10 @@ import java.util.Map;
    * </pre>
    */
   @Aggregation( //
-      load = @Load(property = "@title"),
-      sortBy = @SortBy(field = "@price", direction = Direction.DESC),
-      limit = 2
-  ) //
+                load = @Load(property = "@title"), sortBy = @SortBy(field = "@price", direction = Direction.DESC),
+                limit = 2
+  )
+  //
   AggregationResult loadWithSort();
 
   /**
@@ -410,10 +421,10 @@ import java.util.Map;
    * </pre>
    */
   @Aggregation( //
-      load = { @Load(property = "@brand"), @Load(property = "@price"), @Load(property = "@__key") },
-      sortBy = @SortBy(field = "@price", direction = Direction.DESC),
-      sortByMax = 4
-  ) //
+                load = { @Load(property = "@brand"), @Load(property = "@price"), @Load(property = "@__key") },
+                sortBy = @SortBy(field = "@price", direction = Direction.DESC), sortByMax = 4
+  )
+  //
   AggregationResult loadWithDocId();
 
   /**
@@ -429,20 +440,23 @@ import java.util.Map;
    * </pre>
    */
   @Aggregation( //
-      value = "@brand:(sony|matias|beyerdynamic|(mad catz))",
-      groupBy = { //
-          @GroupBy( //
-              properties = {"@brand"}, //
+                value = "@brand:(sony|matias|beyerdynamic|(mad catz))", groupBy = { //
+    @GroupBy( //
+              properties = { "@brand" }, //
               reduce = { //
-                  @Reducer(func = ReducerFunction.FIRST_VALUE, args={"@title", "@price", "DESC"}, alias="top_item"),
-                  @Reducer(func = ReducerFunction.FIRST_VALUE, args={"@price", "@price", "DESC"}, alias="top_price"),
-                  @Reducer(func = ReducerFunction.FIRST_VALUE, args={"@title", "@price", "ASC"}, alias="bottom_item"),
-                  @Reducer(func = ReducerFunction.FIRST_VALUE, args={"@price", "@price", "ASC"}, alias="bottom_price"),
-              } //
-          ) //
-      }, //
-      sortBy = @SortBy(field = "@top_price", direction = Direction.DESC), //
-      sortByMax = 5 //
-  ) //
+                @Reducer(func = ReducerFunction.FIRST_VALUE, args = { "@title", "@price", "DESC" }, alias = "top_item"),
+                @Reducer(
+                  func = ReducerFunction.FIRST_VALUE, args = { "@price", "@price", "DESC" }, alias = "top_price"
+                ), @Reducer(
+                func = ReducerFunction.FIRST_VALUE, args = { "@title", "@price", "ASC" }, alias = "bottom_item"
+              ), @Reducer(
+                func = ReducerFunction.FIRST_VALUE, args = { "@price", "@price", "ASC" }, alias = "bottom_price"
+              ), } //
+              ) //
+  }, //
+                sortBy = @SortBy(field = "@top_price", direction = Direction.DESC), //
+                sortByMax = 5 //
+                )
+  //
   AggregationResult firstValue();
 }

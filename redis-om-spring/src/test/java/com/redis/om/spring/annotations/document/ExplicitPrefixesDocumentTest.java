@@ -68,7 +68,8 @@ public class ExplicitPrefixesDocumentTest extends AbstractBaseDocumentTest {
     }
   }
 
-  @Test void testFindByIdForCustomPrefixWithColon() {
+  @Test
+  void testFindByIdForCustomPrefixWithColon() {
     Optional<DocWithColonInPrefix> maybePanama = docWithColonInPrefixRepository.findById("Panama");
     assertThat(maybePanama).isPresent();
   }

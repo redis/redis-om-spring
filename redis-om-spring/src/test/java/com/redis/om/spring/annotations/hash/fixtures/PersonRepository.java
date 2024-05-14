@@ -13,7 +13,8 @@ import redis.clients.jedis.search.aggr.AggregationResult;
 import java.util.List;
 import java.util.Set;
 
-@SuppressWarnings({ "unused", "SpellCheckingInspection", "SpringDataMethodInconsistencyInspection" }) @Repository
+@SuppressWarnings({ "unused", "SpellCheckingInspection", "SpringDataMethodInconsistencyInspection" })
+@Repository
 public interface PersonRepository extends RedisEnhancedRepository<Person, String>, EmailTaken {
   boolean existsByEmail(String email);
 
@@ -33,6 +34,8 @@ public interface PersonRepository extends RedisEnhancedRepository<Person, String
   // com.redis.om.spring.annotations.hash.fixtures.PersonIdx "*"
   // LOAD 1 name
   // APPLY upper(@name) AS upcasedName
-  @Aggregation(load = { @Load(property = "name") }, apply = { @Apply(expression = "upper(@name)", alias = "upcasedName") })
+  @Aggregation(
+    load = { @Load(property = "name") }, apply = { @Apply(expression = "upper(@name)", alias = "upcasedName") }
+  )
   AggregationResult allNamesInUppercase();
 }

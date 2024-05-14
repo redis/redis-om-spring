@@ -16,7 +16,7 @@ class CuckooTest extends AbstractBaseEnhancedRedisTest {
 
   @Autowired
   Person2Repository repository;
-  
+
   @BeforeEach
   void loadPersons() {
     Person2 guyr = Person2.of("Guy Royse", "guy.royse@redis.com", "guy");
@@ -32,8 +32,8 @@ class CuckooTest extends AbstractBaseEnhancedRedisTest {
     Person2 rachel = Person2.of("Rachel Elledge", "rachel@redis.com", "rachel");
     Person2 kaitlyn = Person2.of("Kaitlyn Michael", "kaitlyn@redis.com", "kaitlyn");
     Person2 josefin = Person2.of("Josefin Sjoeberg", "josefin.sjoeberg@redis.com", "josefin");
-    List<Person2> persons = List.of(guyr, guyk, simon, justin, steve, kyleo, kyleb, andrew, alex, lance, rachel, kaitlyn,
-        josefin);
+    List<Person2> persons = List.of(guyr, guyk, simon, justin, steve, kyleo, kyleb, andrew, alex, lance, rachel,
+      kaitlyn, josefin);
 
     repository.saveAll(persons);
   }
@@ -43,7 +43,7 @@ class CuckooTest extends AbstractBaseEnhancedRedisTest {
     assertTrue(repository.existsByEmail("kyle.owen@redis.com"));
     assertFalse(repository.existsByEmail("bsb@redis.com"));
   }
-  
+
   @Test
   void testDynamicBloomRepositoryMethodForDefaultNamedFilter() {
     assertTrue(repository.existsByNickname("floridaman"));

@@ -13,16 +13,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest( //
-    classes = DocRepositoriesAutoDiscoveryTest.Config.class, //
-    properties = { "spring.main.allow-bean-definition-overriding=true" } //
-)
+                 classes = DocRepositoriesAutoDiscoveryTest.Config.class, //
+                 properties = { "spring.main.allow-bean-definition-overriding=true" } //
+                 )
 class DocRepositoriesAutoDiscoveryTest extends AbstractBaseOMTest {
-  @SpringBootApplication
-  @Configuration
-  @EnableRedisDocumentRepositories()
-  static class Config extends TestConfig {
-  }
-
   @Autowired
   DocRepository repository;
 
@@ -40,6 +34,12 @@ class DocRepositoriesAutoDiscoveryTest extends AbstractBaseOMTest {
     repository.deleteById(doc.getId());
 
     assertEquals(0, repository.count());
+  }
+
+  @SpringBootApplication
+  @Configuration
+  @EnableRedisDocumentRepositories()
+  static class Config extends TestConfig {
   }
 
 }

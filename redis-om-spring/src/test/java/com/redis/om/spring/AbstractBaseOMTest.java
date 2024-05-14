@@ -15,7 +15,8 @@ import java.util.Comparator;
 
 import static com.redis.testcontainers.RedisStackContainer.DEFAULT_IMAGE_NAME;
 
-@SuppressWarnings("SpellCheckingInspection") @Testcontainers(disabledWithoutDocker = true)
+@SuppressWarnings({ "SpellCheckingInspection", "resource" })
+@Testcontainers(disabledWithoutDocker = true)
 @DirtiesContext
 public abstract class AbstractBaseOMTest {
   @Container
@@ -38,6 +39,12 @@ public abstract class AbstractBaseOMTest {
 
   @Autowired
   protected RediSearchIndexer indexer;
+  protected Comparator<Double> closeToComparator = new Comparator<Double>() {
+    @Override
+    public int compare(Double o1, Double o2) {
+      return Math.abs(o1.doubleValue() - o2.doubleValue()) < 0.001 ? 0 : -1;
+    }
+  };
 
   @DynamicPropertySource
   static void properties(DynamicPropertyRegistry registry) {
@@ -49,12 +56,5 @@ public abstract class AbstractBaseOMTest {
     indexer.dropIndexAndDocumentsFor(entityClass);
     indexer.createIndexFor(entityClass);
   }
-
-  protected Comparator<Double> closeToComparator = new Comparator<Double>() {
-    @Override
-    public int compare(Double o1, Double o2) {
-      return Math.abs(o1.doubleValue() - o2.doubleValue()) < 0.001 ? 0 : -1;
-    }
-  };
 
 }

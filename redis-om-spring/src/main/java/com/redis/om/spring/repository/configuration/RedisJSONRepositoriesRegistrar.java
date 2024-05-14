@@ -9,7 +9,7 @@ import java.lang.annotation.Annotation;
 public class RedisJSONRepositoriesRegistrar extends RepositoryBeanDefinitionRegistrarSupport {
 
   /* (non-Javadoc)
-   * 
+   *
    * @see org.springframework.data.repository.config.
    * RepositoryBeanDefinitionRegistrarSupport#getAnnotation() */
   @Override
@@ -18,7 +18,7 @@ public class RedisJSONRepositoriesRegistrar extends RepositoryBeanDefinitionRegi
   }
 
   /* (non-Javadoc)
-   * 
+   *
    * @see org.springframework.data.repository.config.
    * RepositoryBeanDefinitionRegistrarSupport#getExtension() */
   @Override

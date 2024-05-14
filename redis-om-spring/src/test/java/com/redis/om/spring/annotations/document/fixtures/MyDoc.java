@@ -19,19 +19,19 @@ public class MyDoc {
   @NonNull
   @TextIndexed(alias = "title", sortable = true)
   private String title;
-  
+
   @NonNull
   @GeoIndexed(alias = "location")
   private Point location;
-  
+
   @NonNull
   @Indexed
   private Point location2;
-  
+
   @NonNull
   @NumericIndexed
   private Integer aNumber;
-  
+
   @TagIndexed(alias = "tag")
   private Set<String> tag = new HashSet<>();
 }

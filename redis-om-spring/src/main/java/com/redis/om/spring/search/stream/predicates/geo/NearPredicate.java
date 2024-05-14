@@ -34,9 +34,11 @@ public class NearPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   public Node apply(Node root) {
     boolean paramsPresent = isNotEmpty(point) && isNotEmpty(distance);
     if (paramsPresent) {
-      GeoValue geoValue = new GeoValue(getPoint().getX(), getPoint().getY(), getDistance().getValue(), ObjectUtils.getDistanceUnit(getDistance()));
+      GeoValue geoValue = new GeoValue(getPoint().getX(), getPoint().getY(), getDistance().getValue(),
+        ObjectUtils.getDistanceUnit(getDistance()));
       return QueryBuilders.intersect(root).add(getSearchAlias(), geoValue);
-    } else return root;
+    } else
+      return root;
   }
 
 }

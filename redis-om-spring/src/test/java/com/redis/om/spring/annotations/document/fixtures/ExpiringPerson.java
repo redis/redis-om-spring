@@ -14,10 +14,13 @@ import org.springframework.data.redis.core.TimeToLive;
 @RequiredArgsConstructor(staticName = "of")
 @Document(timeToLive = 5)
 public class ExpiringPerson {
-  @Id String id;
-  @NonNull @Indexed
-  String name;
-  
+  @Id
+  String id;
   @NonNull
-  @TimeToLive Long ttl;
+  @Indexed
+  String name;
+
+  @NonNull
+  @TimeToLive
+  Long ttl;
 }

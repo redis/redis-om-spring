@@ -15,7 +15,8 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SuppressWarnings("SpellCheckingInspection") class OpsForBloomTest extends AbstractBaseDocumentTest {
+@SuppressWarnings("SpellCheckingInspection")
+class OpsForBloomTest extends AbstractBaseDocumentTest {
   @Autowired
   RedisModulesOperations<String> modulesOperations;
 
@@ -58,12 +59,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
     // If you have a long list of items to check/add, you can use the
     // "multi" methods
 
-    bloom.addMulti("simpleBloom", "foo", "bar", "baz", "bat",
-        "bag");
+    bloom.addMulti("simpleBloom", "foo", "bar", "baz", "bat", "bag");
 
     // Check if they exist:
-    List<Boolean> rv = bloom.existsMulti("simpleBloom", "foo", "bar", "baz",
-        "bat", "Mark", "nonexist");
+    List<Boolean> rv = bloom.existsMulti("simpleBloom", "foo", "bar", "baz", "bat", "Mark", "nonexist");
     // All items except the last one will be 'true'
     assertThat(List.of(true, true, true, true, true, false)).isEqualTo(rv);
 
@@ -72,7 +71,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
   @Test
   void reserveExpansionNoCreate() {
-    JedisDataException exception = Assertions.assertThrows(JedisDataException.class, () -> bloom.insert("bfexpansion", BFInsertParams.insertParams().noCreate(), "a", "b", "c"));
+    JedisDataException exception = Assertions.assertThrows(JedisDataException.class,
+      () -> bloom.insert("bfexpansion", BFInsertParams.insertParams().noCreate(), "a", "b", "c"));
 
     Assertions.assertEquals("ERR not found", exception.getMessage());
     template.delete("bfexpansion");
@@ -80,8 +80,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
   @Test
   void reserveExpansion() {
-    assertThat(bloom.insert("bfexpansion2", BFInsertParams.insertParams().capacity(1000), "a", "b", "c"))
-        .isEqualTo(List.of(true, true, true));
+    assertThat(bloom.insert("bfexpansion2", BFInsertParams.insertParams().capacity(1000), "a", "b", "c")).isEqualTo(
+      List.of(true, true, true));
     template.delete("bfexpansion2");
   }
 

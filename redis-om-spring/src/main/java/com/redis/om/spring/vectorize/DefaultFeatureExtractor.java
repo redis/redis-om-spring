@@ -28,22 +28,21 @@ import static com.redis.om.spring.util.ObjectUtils.byteArrayToFloatArray;
 import static com.redis.om.spring.util.ObjectUtils.longArrayToFloatArray;
 
 public class DefaultFeatureExtractor implements FeatureExtractor {
+  private static final Log logger = LogFactory.getLog(DefaultFeatureExtractor.class);
+  public final Pipeline imagePipeline;
+  public final HuggingFaceTokenizer sentenceTokenizer;
   private final ZooModel<Image, byte[]> imageEmbeddingModel;
   private final ZooModel<Image, float[]> faceEmbeddingModel;
   private final ImageFactory imageFactory;
   private final ApplicationContext applicationContext;
   private final ImageFeatureExtractor imageFeatureExtractor;
-  public final Pipeline imagePipeline;
-  public final HuggingFaceTokenizer sentenceTokenizer;
-
-  private static final Log logger = LogFactory.getLog(DefaultFeatureExtractor.class);
 
   public DefaultFeatureExtractor( //
-      ApplicationContext applicationContext, //
-      ZooModel<Image, byte[]> imageEmbeddingModel, //
-      ZooModel<Image, float[]> faceEmbeddingModel, //
-      ImageFactory imageFactory, //
-      Pipeline imagePipeline, HuggingFaceTokenizer sentenceTokenizer) {
+    ApplicationContext applicationContext, //
+    ZooModel<Image, byte[]> imageEmbeddingModel, //
+    ZooModel<Image, float[]> faceEmbeddingModel, //
+    ImageFactory imageFactory, //
+    Pipeline imagePipeline, HuggingFaceTokenizer sentenceTokenizer) {
     this.applicationContext = applicationContext;
     this.imageEmbeddingModel = imageEmbeddingModel;
     this.faceEmbeddingModel = faceEmbeddingModel;
@@ -116,9 +115,11 @@ public class DefaultFeatureExtractor implements FeatureExtractor {
               Resource resource = applicationContext.getResource(fieldValue.toString());
               try {
                 if (isDocument) {
-                  accessor.setPropertyValue(vectorize.destination(), getImageEmbeddingsAsFloatArrayFor(resource.getInputStream()));
+                  accessor.setPropertyValue(vectorize.destination(),
+                    getImageEmbeddingsAsFloatArrayFor(resource.getInputStream()));
                 } else {
-                  accessor.setPropertyValue(vectorize.destination(), getImageEmbeddingsAsByteArrayFor(resource.getInputStream()));
+                  accessor.setPropertyValue(vectorize.destination(),
+                    getImageEmbeddingsAsByteArrayFor(resource.getInputStream()));
                 }
               } catch (IOException e) {
                 logger.warn("Error generating image embedding", e);
@@ -131,9 +132,11 @@ public class DefaultFeatureExtractor implements FeatureExtractor {
               Resource resource = applicationContext.getResource(fieldValue.toString());
               try {
                 if (isDocument) {
-                  accessor.setPropertyValue(vectorize.destination(), getFacialImageEmbeddingsAsFloatArrayFor(resource.getInputStream()));
+                  accessor.setPropertyValue(vectorize.destination(),
+                    getFacialImageEmbeddingsAsFloatArrayFor(resource.getInputStream()));
                 } else {
-                  accessor.setPropertyValue(vectorize.destination(), getFacialImageEmbeddingsAsByteArrayFor(resource.getInputStream()));
+                  accessor.setPropertyValue(vectorize.destination(),
+                    getFacialImageEmbeddingsAsByteArrayFor(resource.getInputStream()));
                 }
               } catch (IOException | TranslateException e) {
                 logger.warn("Error generating facial image embedding", e);
@@ -141,9 +144,11 @@ public class DefaultFeatureExtractor implements FeatureExtractor {
             }
             case SENTENCE -> {
               if (isDocument) {
-                accessor.setPropertyValue(vectorize.destination(), getSentenceEmbeddingAsFloatArrayFor(fieldValue.toString()));
+                accessor.setPropertyValue(vectorize.destination(),
+                  getSentenceEmbeddingAsFloatArrayFor(fieldValue.toString()));
               } else {
-                accessor.setPropertyValue(vectorize.destination(), getSentenceEmbeddingsAsByteArrayFor(fieldValue.toString()));
+                accessor.setPropertyValue(vectorize.destination(),
+                  getSentenceEmbeddingsAsByteArrayFor(fieldValue.toString()));
               }
             }
           }

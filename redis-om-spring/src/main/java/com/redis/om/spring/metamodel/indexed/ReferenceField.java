@@ -10,11 +10,11 @@ public class ReferenceField<E, T> extends MetamodelField<E, T> {
     super(field, indexed);
   }
 
-  public EqualPredicate<E,T> eq(T value) {
-    return new EqualPredicate<>(searchFieldAccessor,value);
+  public EqualPredicate<E, T> eq(T value) {
+    return new EqualPredicate<>(searchFieldAccessor, value);
   }
 
-  public NotEqualPredicate<E,T> notEq(T value) {
-    return new NotEqualPredicate<>(searchFieldAccessor,value);
+  public NotEqualPredicate<E, T> notEq(T value) {
+    return new NotEqualPredicate<>(searchFieldAccessor, value);
   }
 }

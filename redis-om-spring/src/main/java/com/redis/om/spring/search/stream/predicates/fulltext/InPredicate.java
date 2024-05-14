@@ -32,7 +32,8 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
       }
 
       return QueryBuilders.intersect(root).add(getSearchAlias(), sj.toString());
-    } else return root;
+    } else
+      return root;
   }
 
 }

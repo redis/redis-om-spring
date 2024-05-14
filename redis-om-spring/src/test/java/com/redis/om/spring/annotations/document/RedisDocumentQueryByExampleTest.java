@@ -61,12 +61,12 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
 
     companyRepository.deleteAll();
     Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
-        "stack@redis.com");
+      "stack@redis.com");
     redis.setTags(Set.of("RedisTag", "CommonTag"));
     redis.setMetaList(Set.of(CompanyMeta.of("RD", 100, Set.of("RedisTag", "CommonTag"))));
 
-    Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
-        new Point(-122.124500, 47.640160), "research@microsoft.com");
+    Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
+      "research@microsoft.com");
     microsoft.setTags(Set.of("MsTag", "CommonTag"));
     microsoft.setMetaList(Set.of(CompanyMeta.of("MS", 50, Set.of("MsTag", "CommonTag"))));
 
@@ -180,9 +180,8 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
 
   @Test
   void testFindAllByWithPageableAndSortAsc() {
-    Pageable pageRequest = PageRequest.of(0, 2,
-        Sort.by("title").ascending());
-    Page<MyDoc> content  = repository.findAll(pageRequest);
+    Pageable pageRequest = PageRequest.of(0, 2, Sort.by("title").ascending());
+    Page<MyDoc> content = repository.findAll(pageRequest);
 
     assertThat(content.getSize()).isEqualTo(2);
     assertThat(content.getContent().get(0).getTitle()).isEqualTo("bonjour le monde");
@@ -190,9 +189,8 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
 
   @Test
   void testFindAllByWithPageableAndSortDec() {
-    Pageable pageRequest = PageRequest.of(0, 2,
-        Sort.by("title").descending());
-    Page<MyDoc> content  = repository.findAll(pageRequest);
+    Pageable pageRequest = PageRequest.of(0, 2, Sort.by("title").descending());
+    Page<MyDoc> content = repository.findAll(pageRequest);
 
     assertThat(content.getSize()).isEqualTo(2);
     assertThat(content.getContent().get(0).getTitle()).isEqualTo("ola mundo");
@@ -262,8 +260,7 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
     MyDoc template = new MyDoc();
     template.setTitle("hello");
 
-    ExampleMatcher matcher = ExampleMatcher.matching()
-          .withStringMatcher(StringMatcher.STARTING);
+    ExampleMatcher matcher = ExampleMatcher.matching().withStringMatcher(StringMatcher.STARTING);
 
     Example<MyDoc> example = Example.of(template, matcher);
 
@@ -277,8 +274,7 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
     MyDoc template = new MyDoc();
     template.setTitle("ndo");
 
-    ExampleMatcher matcher = ExampleMatcher.matching()
-        .withStringMatcher(StringMatcher.ENDING);
+    ExampleMatcher matcher = ExampleMatcher.matching().withStringMatcher(StringMatcher.ENDING);
 
     Example<MyDoc> example = Example.of(template, matcher);
 
@@ -292,8 +288,7 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
     MyDoc template = new MyDoc();
     template.setTitle("llo");
 
-    ExampleMatcher matcher = ExampleMatcher.matching()
-        .withStringMatcher(StringMatcher.CONTAINING);
+    ExampleMatcher matcher = ExampleMatcher.matching().withStringMatcher(StringMatcher.CONTAINING);
 
     Example<MyDoc> example = Example.of(template, matcher);
 
@@ -335,8 +330,8 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
     Iterable<Company> shouldBeOnlyMS = companyRepository.findAll(msExample);
 
     assertAll( //
-        () -> assertThat(shouldBeOnlyRedis).map(Company::getName).containsExactly("RedisInc"), //
-        () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft") //
+      () -> assertThat(shouldBeOnlyRedis).map(Company::getName).containsExactly("RedisInc"), //
+      () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft") //
     );
   }
 
@@ -360,8 +355,8 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
     Iterable<Company> shouldBeOnlyMS = companyRepository.findAll(msExample);
 
     assertAll( //
-        () -> assertThat(shouldBeOnlyRedis).map(Company::getName).containsExactly("RedisInc"), //
-        () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft") //
+      () -> assertThat(shouldBeOnlyRedis).map(Company::getName).containsExactly("RedisInc"), //
+      () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft") //
     );
   }
 
@@ -384,10 +379,9 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
     Iterable<Company> shouldBeBoth = companyRepository.findAll(bothExample);
 
     assertAll( //
-        () -> assertThat(shouldBeOnlyRedis).map(Company::getName).containsExactly("RedisInc"), //
-        () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft"), //
-        () -> assertThat(shouldBeBoth).map(Company::getName).containsExactlyInAnyOrder("RedisInc",
-            "Microsoft") //
+      () -> assertThat(shouldBeOnlyRedis).map(Company::getName).containsExactly("RedisInc"), //
+      () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft"), //
+      () -> assertThat(shouldBeBoth).map(Company::getName).containsExactlyInAnyOrder("RedisInc", "Microsoft") //
     );
   }
 
@@ -416,10 +410,9 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
     Iterable<Company> shouldBeBoth = companyRepository.findAll(bothExample);
 
     assertAll( //
-        () -> assertThat(shouldBeOnlyRedis).map(Company::getName).containsExactly("RedisInc"), //
-        () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft"), //
-        () -> assertThat(shouldBeBoth).map(Company::getName).containsExactlyInAnyOrder("RedisInc",
-            "Microsoft") //
+      () -> assertThat(shouldBeOnlyRedis).map(Company::getName).containsExactly("RedisInc"), //
+      () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft"), //
+      () -> assertThat(shouldBeBoth).map(Company::getName).containsExactlyInAnyOrder("RedisInc", "Microsoft") //
     );
   }
 
@@ -428,8 +421,7 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
     MyDoc template = new MyDoc();
     template.setTitle("llo");
 
-    ExampleMatcher matcher = ExampleMatcher.matching()
-        .withStringMatcher(StringMatcher.CONTAINING);
+    ExampleMatcher matcher = ExampleMatcher.matching().withStringMatcher(StringMatcher.CONTAINING);
 
     Example<MyDoc> example = Example.of(template, matcher);
 
@@ -449,19 +441,17 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
 
     MyDoc moreThanOneMatchTemplate = new MyDoc();
     moreThanOneMatchTemplate.setTitle("llo");
-    ExampleMatcher matcher = ExampleMatcher.matching()
-        .withStringMatcher(StringMatcher.CONTAINING);
+    ExampleMatcher matcher = ExampleMatcher.matching().withStringMatcher(StringMatcher.CONTAINING);
 
     assertThatExceptionOfType(IncorrectResultSizeDataAccessException.class).isThrownBy(
-        () -> repository.findBy(Example.of(moreThanOneMatchTemplate, matcher), FluentQuery.FetchableFluentQuery::one));
+      () -> repository.findBy(Example.of(moreThanOneMatchTemplate, matcher), FluentQuery.FetchableFluentQuery::one));
   }
 
   @Test
   void testFindByShouldReturnAll() {
     MyDoc template = new MyDoc();
     template.setTitle("llo");
-    ExampleMatcher matcher = ExampleMatcher.matching()
-        .withStringMatcher(StringMatcher.CONTAINING);
+    ExampleMatcher matcher = ExampleMatcher.matching().withStringMatcher(StringMatcher.CONTAINING);
 
     List<MyDoc> result = repository.findBy(Example.of(template, matcher), FluentQuery.FetchableFluentQuery::all);
 
@@ -473,15 +463,15 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
     Company probe = new Company();
 
     List<Company> result = companyRepository.findBy( //
-        Example.of(probe), //
-        it -> it.sortBy(Sort.by("name")).all() //
+      Example.of(probe), //
+      it -> it.sortBy(Sort.by("name")).all() //
     );
 
     assertThat(result).map(Company::getName).containsExactly("Microsoft", "RedisInc");
 
     result = companyRepository.findBy( //
-        Example.of(probe), //
-        it -> it.sortBy(Sort.by(Sort.Direction.DESC, "name")).all() //
+      Example.of(probe), //
+      it -> it.sortBy(Sort.by(Sort.Direction.DESC, "name")).all() //
     );
     assertThat(result).map(Company::getName).containsExactly("RedisInc", "Microsoft");
   }
@@ -492,13 +482,14 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
     template.setLocation(new Point(-122.066540, 37.377690));
 
     Page<MyDoc> firstPage = repository.findBy(Example.of(template),
-        it -> it.page(PageRequest.of(0, 2, Sort.by("name"))));
+      it -> it.page(PageRequest.of(0, 2, Sort.by("name"))));
     assertThat(firstPage.getTotalElements()).isEqualTo(3);
     assertThat(firstPage.getContent().size()).isEqualTo(2);
-    assertThat(firstPage.getContent().stream().toList()).map(MyDoc::getTitle).containsExactly("hello mundo", "ola mundo");
+    assertThat(firstPage.getContent().stream().toList()).map(MyDoc::getTitle)
+      .containsExactly("hello mundo", "ola mundo");
 
     Page<MyDoc> secondPage = repository.findBy(Example.of(template),
-        it -> it.page(PageRequest.of(1, 2, Sort.by("name"))));
+      it -> it.page(PageRequest.of(1, 2, Sort.by("name"))));
 
     assertThat(secondPage.getTotalElements()).isEqualTo(3);
     assertThat(secondPage.getContent().size()).isEqualTo(1);

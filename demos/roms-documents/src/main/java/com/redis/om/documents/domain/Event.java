@@ -14,17 +14,17 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Document
 public class Event {
-    @Id
-    private String id;
+  @Id
+  private String id;
 
-    @NonNull
-    @Searchable
-    private String name;
+  @NonNull
+  @Searchable
+  private String name;
 
-    @Indexed
-    private LocalDateTime beginDate;
+  @Indexed
+  private LocalDateTime beginDate;
 
-    @Indexed
-    private LocalDateTime endDate;
+  @Indexed
+  private LocalDateTime endDate;
 
 }

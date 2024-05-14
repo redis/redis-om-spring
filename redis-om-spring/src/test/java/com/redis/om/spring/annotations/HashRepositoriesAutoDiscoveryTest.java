@@ -15,17 +15,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest( //
-    classes = HashRepositoriesAutoDiscoveryTest.Config.class, //
-    properties = { "spring.main.allow-bean-definition-overriding=true" } //
-)
-@TestPropertySource(properties = {"spring.config.location=classpath:vss_on.yaml"})
+                 classes = HashRepositoriesAutoDiscoveryTest.Config.class, //
+                 properties = { "spring.main.allow-bean-definition-overriding=true" } //
+                 )
+@TestPropertySource(properties = { "spring.config.location=classpath:vss_on.yaml" })
 class HashRepositoriesAutoDiscoveryTest extends AbstractBaseOMTest {
-  @SpringBootApplication
-  @Configuration
-  @EnableRedisEnhancedRepositories()
-  static class Config extends TestConfig {
-  }
-
   @Autowired
   AHashRepository repository;
 
@@ -43,6 +37,12 @@ class HashRepositoriesAutoDiscoveryTest extends AbstractBaseOMTest {
     repository.deleteById(aHash.getId());
 
     assertEquals(0, repository.count());
+  }
+
+  @SpringBootApplication
+  @Configuration
+  @EnableRedisEnhancedRepositories()
+  static class Config extends TestConfig {
   }
 
 }

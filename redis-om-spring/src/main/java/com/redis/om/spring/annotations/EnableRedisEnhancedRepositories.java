@@ -35,29 +35,31 @@ public @interface EnableRedisEnhancedRepositories {
    * Alias for the {@link #basePackages()} attribute. Allows for more concise annotation declarations e.g.:
    * {@code @EnableRedisRepositories("org.my.pkg")} instead of
    * {@code @EnableRedisRepositories(basePackages="org.my.pkg")}.
+   *
    * @return basePackages
    */
-  @AliasFor("basePackages")
-  String[] value() default {};
+  @AliasFor("basePackages") String[] value() default {};
 
   /**
    * Base packages to scan for annotated components. {@link #value()} is an alias for (and mutually exclusive with) this
    * attribute. Use {@link #basePackageClasses()} for a type-safe alternative to String-based package names.
+   *
    * @return basePackages as a String
    */
-  @AliasFor("value")
-  String[] basePackages() default {};
+  @AliasFor("value") String[] basePackages() default {};
 
   /**
    * Type-safe alternative to {@link #basePackages()} for specifying the packages to scan for annotated components. The
    * package of each class specified will be scanned. Consider creating a special no-op marker class or interface in
    * each package that serves no purpose other than being referenced by this attribute.
+   *
    * @return array of base Package Classes
    */
   Class<?>[] basePackageClasses() default {};
 
   /**
    * Specifies which types are not eligible for component scanning.
+   *
    * @return array of components to exclude
    */
   Filter[] excludeFilters() default {};
@@ -65,6 +67,7 @@ public @interface EnableRedisEnhancedRepositories {
   /**
    * Specifies which types are eligible for component scanning. Narrows the set of candidate components from
    * everything in {@link #basePackages()} to everything in the base packages that matches the given filter or filters.
+   *
    * @return array of components to include
    */
   Filter[] includeFilters() default {};
@@ -113,11 +116,12 @@ public @interface EnableRedisEnhancedRepositories {
    *
    * @return key value operations template name
    */
-  String keyValueTemplateRef() default "redisCustomKeyValueTemplate"; 
+  String keyValueTemplateRef() default "redisCustomKeyValueTemplate";
 
   /**
    * Configures whether nested repository-interfaces (e.g. defined as inner classes) should be discovered by the
    * repositories infrastructure.
+   *
    * @return whether to consider nested repositories
    */
   boolean considerNestedRepositories() default false;
@@ -150,7 +154,7 @@ public @interface EnableRedisEnhancedRepositories {
    * @since 1.8
    */
   EnableKeyspaceEvents enableKeyspaceEvents() default EnableKeyspaceEvents.OFF;
-  
+
   /**
    * Configure the name of the {@link org.springframework.data.redis.listener.RedisMessageListenerContainer} bean to be
    * used for keyspace event subscriptions. Defaults to use an anonymous managed instance by

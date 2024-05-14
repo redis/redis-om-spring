@@ -15,100 +15,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @SuppressWarnings({ "unused", "SpellCheckingInspection" })
 class OpsForJSONTest extends AbstractBaseDocumentTest {
 
-  /* A simple class that represents an object in real life */
-  @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
-  private static class IRLObject {
-    public final String str;
-    public final boolean bTrue;
-
-    public IRLObject() {
-      this.str = "string";
-      this.bTrue = true;
-    }
-
-    @Override
-    public boolean equals(Object other) {
-      IRLObject o = (IRLObject) other;
-      return this.str.equals(o.str) && this.bTrue == o.bTrue;
-    }
-  }
-
-  @SuppressWarnings("unused")
-  private static class FooBarObject {
-    public final String foo;
-    public final boolean fooB;
-    public final int fooI;
-    public final float fooF;
-    public final String[] fooArr;
-
-    public FooBarObject() {
-      this.foo = "bar";
-      this.fooB = true;
-      this.fooI = 6574;
-      this.fooF = 435.345f;
-      this.fooArr = new String[] { "a", "b", "c" };
-    }
-  }
-
-  @SuppressWarnings({ "SpellCheckingInspection", "FieldMayBeFinal" })
-  private static class Baz {
-    private String quuz;
-    private String grault;
-    private String waldo;
-
-    public Baz(final String quuz, final String grault, final String waldo) {
-      this.quuz = quuz;
-      this.grault = grault;
-      this.waldo = waldo;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o)
-        return true;
-      if (o == null)
-        return false;
-      if (getClass() != o.getClass())
-        return false;
-      Baz other = (Baz) o;
-
-      return Objects.equals(quuz, other.quuz) && //
-          Objects.equals(grault, other.grault) && //
-          Objects.equals(waldo, other.waldo);
-    }
-  }
-
-  @SuppressWarnings({ "SpellCheckingInspection", "FieldMayBeFinal" })
-  private static class Qux {
-    private String quux;
-    private String corge;
-    private String garply;
-    private Baz baz;
-
-    public Qux(String quux, String corge, String garply, Baz baz) {
-      this.quux = quux;
-      this.corge = corge;
-      this.garply = garply;
-      this.baz = baz;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o)
-        return true;
-      if (o == null)
-        return false;
-      if (getClass() != o.getClass())
-        return false;
-      Qux other = (Qux) o;
-
-      return Objects.equals(quux, other.quux) && //
-          Objects.equals(corge, other.corge) && //
-          Objects.equals(garply, other.garply) && //
-          Objects.equals(baz, other.baz);
-    }
-  }
-
   @Autowired
   RedisModulesOperations<String> modulesOperations;
 
@@ -198,13 +104,13 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
     assertEquals(qux1, oneQux.get(0));
 
     Qux testQux1 = allQux.stream() //
-        .filter(q -> q.quux.equals("quux1")) //
-        .findFirst() //
-        .orElseThrow(() -> new NullPointerException(""));
+      .filter(q -> q.quux.equals("quux1")) //
+      .findFirst() //
+      .orElseThrow(() -> new NullPointerException(""));
     Qux testQux2 = allQux.stream() //
-        .filter(q -> q.quux.equals("quux2")) //
-        .findFirst() //
-        .orElseThrow(() -> new NullPointerException(""));
+      .filter(q -> q.quux.equals("quux2")) //
+      .findFirst() //
+      .orElseThrow(() -> new NullPointerException(""));
 
     assertEquals(qux1, testQux1);
     assertEquals(qux2, testQux2);
@@ -266,6 +172,100 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
     assertSame(List.class, ops.type("foobar", Path2.of(".fooArr")).get(0));
     assertSame(boolean.class, ops.type("foobar", Path2.of(".fooB")).get(0));
     assertTrue(ops.type("foobar", Path2.of(".fooErr")).isEmpty());
+  }
+
+  /* A simple class that represents an object in real life */
+  @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
+  private static class IRLObject {
+    public final String str;
+    public final boolean bTrue;
+
+    public IRLObject() {
+      this.str = "string";
+      this.bTrue = true;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+      IRLObject o = (IRLObject) other;
+      return this.str.equals(o.str) && this.bTrue == o.bTrue;
+    }
+  }
+
+  @SuppressWarnings("unused")
+  private static class FooBarObject {
+    public final String foo;
+    public final boolean fooB;
+    public final int fooI;
+    public final float fooF;
+    public final String[] fooArr;
+
+    public FooBarObject() {
+      this.foo = "bar";
+      this.fooB = true;
+      this.fooI = 6574;
+      this.fooF = 435.345f;
+      this.fooArr = new String[] { "a", "b", "c" };
+    }
+  }
+
+  @SuppressWarnings({ "SpellCheckingInspection", "FieldMayBeFinal" })
+  private static class Baz {
+    private String quuz;
+    private String grault;
+    private String waldo;
+
+    public Baz(final String quuz, final String grault, final String waldo) {
+      this.quuz = quuz;
+      this.grault = grault;
+      this.waldo = waldo;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o)
+        return true;
+      if (o == null)
+        return false;
+      if (getClass() != o.getClass())
+        return false;
+      Baz other = (Baz) o;
+
+      return Objects.equals(quuz, other.quuz) && //
+        Objects.equals(grault, other.grault) && //
+        Objects.equals(waldo, other.waldo);
+    }
+  }
+
+  @SuppressWarnings({ "SpellCheckingInspection", "FieldMayBeFinal" })
+  private static class Qux {
+    private String quux;
+    private String corge;
+    private String garply;
+    private Baz baz;
+
+    public Qux(String quux, String corge, String garply, Baz baz) {
+      this.quux = quux;
+      this.corge = corge;
+      this.garply = garply;
+      this.baz = baz;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o)
+        return true;
+      if (o == null)
+        return false;
+      if (getClass() != o.getClass())
+        return false;
+      Qux other = (Qux) o;
+
+      return Objects.equals(quux, other.quux) && //
+        Objects.equals(corge, other.corge) && //
+        Objects.equals(garply, other.garply) && //
+        Objects.equals(baz, other.baz);
+    }
   }
 
 }

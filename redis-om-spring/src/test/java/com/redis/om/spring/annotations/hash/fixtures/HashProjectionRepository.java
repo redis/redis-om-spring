@@ -8,7 +8,9 @@ import java.util.Collection;
 import java.util.Optional;
 
 public interface HashProjectionRepository extends RedisEnhancedRepository<HashProjectionPojo, String> {
-   Optional<HashProjection> findByName(String name);
-   Collection<HashProjection> findAllByName(String name);
-   Page<HashProjection> findAllByName(String name, Pageable pageable);
+  Optional<HashProjection> findByName(String name);
+
+  Collection<HashProjection> findAllByName(String name);
+
+  Page<HashProjection> findAllByName(String name, Pageable pageable);
 }

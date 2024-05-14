@@ -31,7 +31,7 @@ public class ValidDocumentIndexed {
   @NonNull
   @Indexed
   private Integer yearFounded;
-  
+
   @NonNull
   @Indexed
   private LocalDate lastValuation;

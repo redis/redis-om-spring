@@ -20,57 +20,49 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-
 @AutoConfigureMockMvc
 class EventControllerTest extends AbstractDocumentTest {
 
-    @Autowired
-    private MockMvc mvc;
-    @Autowired
-    private EventRepository eventRepository;
+  @Autowired
+  private MockMvc mvc;
+  @Autowired
+  private EventRepository eventRepository;
 
-    @BeforeEach
-    void init() {
-        var event1 = new Event("1", "event 1", LocalDateTime.parse("2023-01-01T00:00:00.000"), LocalDateTime.parse("2023-01-02T00:00:00.000"));
-        var event2 = new Event("2", "event 2", LocalDateTime.parse("2023-03-08T00:00:00.000"), LocalDateTime.parse("2023-03-09T00:00:00.000"));
+  @BeforeEach
+  void init() {
+    var event1 = new Event("1", "event 1", LocalDateTime.parse("2023-01-01T00:00:00.000"),
+      LocalDateTime.parse("2023-01-02T00:00:00.000"));
+    var event2 = new Event("2", "event 2", LocalDateTime.parse("2023-03-08T00:00:00.000"),
+      LocalDateTime.parse("2023-03-09T00:00:00.000"));
 
-        eventRepository.saveAll(List.of(event1, event2));
-    }
+    eventRepository.saveAll(List.of(event1, event2));
+  }
 
-    @AfterEach
-    void clear() {
-        eventRepository.deleteAll();
-    }
+  @AfterEach
+  void clear() {
+    eventRepository.deleteAll();
+  }
 
-    @Test
-    void shouldReturnAllEvents() throws Exception {
-        var all = eventRepository.findAll();
-        assertEquals(2, all.size());
+  @Test
+  void shouldReturnAllEvents() throws Exception {
+    var all = eventRepository.findAll();
+    assertEquals(2, all.size());
 
-        mvc.perform(MockMvcRequestBuilders
-                        .get("/api/events/between")
-                        .param("start", LocalDateTime.parse("2023-02-01T00:00:00.000").toString())
-                        .param("end", LocalDateTime.parse("2023-04-01T00:00:00.000").toString())
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id",
-                        equalTo("2"))
-                );
-    }
+    mvc.perform(MockMvcRequestBuilders.get("/api/events/between")
+        .param("start", LocalDateTime.parse("2023-02-01T00:00:00.000").toString())
+        .param("end", LocalDateTime.parse("2023-04-01T00:00:00.000").toString())).andExpect(status().isOk())
+      .andExpect(jsonPath("$[0].id", equalTo("2")));
+  }
 
-    @Test
-    void shouldReturnEmpty() throws Exception {
-        var all = eventRepository.findAll();
-        assertEquals(2, all.size());
+  @Test
+  void shouldReturnEmpty() throws Exception {
+    var all = eventRepository.findAll();
+    assertEquals(2, all.size());
 
-        mvc.perform(MockMvcRequestBuilders
-                        .get("/api/events/between")
-                        .param("start", LocalDateTime.parse("2023-03-09T00:00:00.000").toString())
-                        .param("end", LocalDateTime.parse("2023-04-01T00:00:00.000").toString())
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(0)));
-    }
-
+    mvc.perform(MockMvcRequestBuilders.get("/api/events/between")
+        .param("start", LocalDateTime.parse("2023-03-09T00:00:00.000").toString())
+        .param("end", LocalDateTime.parse("2023-04-01T00:00:00.000").toString())).andExpect(status().isOk())
+      .andExpect(jsonPath("$", hasSize(0)));
+  }
 
 }

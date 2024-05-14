@@ -26,32 +26,37 @@ class ExplicitelyIndexedIdFieldsTest extends AbstractBaseDocumentTest {
 
   @BeforeEach
   void cleanUp() {
-    docWithIndexedIdRepository.saveAll(List.of(DocWithIndexedId.of("DWII01", "DWII01"), DocWithIndexedId.of("DWII02", "DWII02")));
-    docWithSearchableIdRepository.saveAll(List.of(DocWithSearchableId.of("DWSI01", "DWSI01"), DocWithSearchableId.of("DWSI02", "DWSI02")));
-    docWithTagIndexedIdRepository.saveAll(List.of(DocWithTagIndexedId.of("DWTII01", "DWTII01"), DocWithTagIndexedId.of("DWTII02", "DWTII02")));
+    docWithIndexedIdRepository.saveAll(
+      List.of(DocWithIndexedId.of("DWII01", "DWII01"), DocWithIndexedId.of("DWII02", "DWII02")));
+    docWithSearchableIdRepository.saveAll(
+      List.of(DocWithSearchableId.of("DWSI01", "DWSI01"), DocWithSearchableId.of("DWSI02", "DWSI02")));
+    docWithTagIndexedIdRepository.saveAll(
+      List.of(DocWithTagIndexedId.of("DWTII01", "DWTII01"), DocWithTagIndexedId.of("DWTII02", "DWTII02")));
   }
 
-  @Test void testFindById() {
+  @Test
+  void testFindById() {
     Optional<DocWithIndexedId> maybeDWII01 = docWithIndexedIdRepository.findById("DWII01");
     Optional<DocWithSearchableId> maybeDWSI01 = docWithSearchableIdRepository.findById("DWSI01");
     Optional<DocWithTagIndexedId> maybeDWTII01 = docWithTagIndexedIdRepository.findById("DWTII01");
 
     assertAll( //
-        () -> assertThat(maybeDWII01).isPresent(), //
-        () -> assertThat(maybeDWSI01).isPresent(), //
-        () -> assertThat(maybeDWTII01).isPresent() //
+      () -> assertThat(maybeDWII01).isPresent(), //
+      () -> assertThat(maybeDWSI01).isPresent(), //
+      () -> assertThat(maybeDWTII01).isPresent() //
     );
   }
 
-  @Test void testFindAll() {
+  @Test
+  void testFindAll() {
     var allDWII = docWithIndexedIdRepository.findAll();
     var allDWSI = docWithSearchableIdRepository.findAll();
     var allDWTII = docWithTagIndexedIdRepository.findAll();
 
     assertAll( //
-        () -> assertThat(allDWII).hasSize(2), //
-        () -> assertThat(allDWSI).hasSize(2), //
-        () -> assertThat(allDWTII).hasSize(2) //
+      () -> assertThat(allDWII).hasSize(2), //
+      () -> assertThat(allDWSI).hasSize(2), //
+      () -> assertThat(allDWTII).hasSize(2) //
     );
   }
 }

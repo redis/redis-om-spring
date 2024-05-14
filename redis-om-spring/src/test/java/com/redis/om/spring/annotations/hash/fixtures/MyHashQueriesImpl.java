@@ -11,12 +11,12 @@ import redis.clients.jedis.search.SearchResult;
 
 import java.util.Optional;
 
-@SuppressWarnings({ "unused", "SpringJavaAutowiredMembersInspection" }) public class MyHashQueriesImpl implements MyHashQueries {
-
-  @Autowired
-  RedisModulesOperations<String> modulesOperations;
+@SuppressWarnings({ "unused", "SpringJavaAutowiredMembersInspection" })
+public class MyHashQueriesImpl implements MyHashQueries {
 
   private final MappingRedisOMConverter converter = new MappingRedisOMConverter();
+  @Autowired
+  RedisModulesOperations<String> modulesOperations;
 
   @Override
   public Optional<MyHash> findByTitle(String title) {

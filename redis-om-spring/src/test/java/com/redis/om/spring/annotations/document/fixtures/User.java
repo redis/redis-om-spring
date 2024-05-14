@@ -16,15 +16,15 @@ import java.util.List;
 public class User {
   @Id
   private String id;
-  
+
   @NonNull
   @Indexed
   private String name;
-  
+
   @NonNull
   @Indexed
   private Double lotteryWinnings;
-  
+
   @Indexed
   private List<String> roles = new ArrayList<>();
 }

@@ -25,10 +25,8 @@ import java.util.stream.Collectors;
 @Controller
 @RequestMapping("/")
 public class ProductController {
-  final Logger logger = LoggerFactory.getLogger(ProductController.class);
-
   private static final int K = 15;
-
+  final Logger logger = LoggerFactory.getLogger(ProductController.class);
   @Autowired
   private ProductRepository repository;
 
@@ -39,12 +37,10 @@ public class ProductController {
   public String index(Model model) {
     logger.info("🔎 index :: Showing first {} products...", K);
 
-    List<Product> products = entityStream.of(Product.class)
-        .limit(K) //
-        .collect(Collectors.toList());
+    List<Product> products = entityStream.of(Product.class).limit(K) //
+      .collect(Collectors.toList());
 
-    ProductsPageModel.of()
-      .model(model) //
+    ProductsPageModel.of().model(model) //
       .products(products) //
       .build().apply();
 
@@ -52,20 +48,17 @@ public class ProductController {
   }
 
   @GetMapping("/load")
-  public String load(
-      Model model, //
-      @RequestParam Optional<String> gender, //
-      @RequestParam Optional<String> category, //
-      @RequestParam(name = "skip") Optional<Long> skipParam //
+  public String load(Model model, //
+    @RequestParam Optional<String> gender, //
+    @RequestParam Optional<String> category, //
+    @RequestParam(name = "skip") Optional<Long> skipParam //
   ) {
     long count = repository.count();
     long skip = skipParam.isPresent() && skipParam.get() < count - K ? skipParam.get() + K : 0;
 
     logger.info("🔎 load :: Showing {} products, starting at {}...", K, skip);
 
-    SearchStream<Product> stream = entityStream.of(Product.class)
-        .skip(skip)
-        .limit(K);
+    SearchStream<Product> stream = entityStream.of(Product.class).skip(skip).limit(K);
 
     applyFilters(stream, gender, category);
 
@@ -75,8 +68,7 @@ public class ProductController {
       skip = 0;
     }
 
-    ProductsPageModel.of()
-      .model(model) //
+    ProductsPageModel.of().model(model) //
       .products(products) //
       .category(category.orElse(null)) //
       .skip(skip) //
@@ -86,34 +78,33 @@ public class ProductController {
   }
 
   @GetMapping("/vss/text/{id}")
-  public String findSimilarByText(
-      Model model, //
-      @PathVariable("id") String id, //
-      @RequestParam Optional<String> gender, //
-      @RequestParam Optional<String> category, //
-      @RequestParam Optional<Long> skip //
+  public String findSimilarByText(Model model, //
+    @PathVariable("id") String id, //
+    @RequestParam Optional<String> gender, //
+    @RequestParam Optional<String> category, //
+    @RequestParam Optional<Long> skip //
   ) {
     Optional<Product> maybeProduct = repository.findById(id);
     if (maybeProduct.isPresent()) {
       Product product = maybeProduct.get();
-      logger.info("🔎 vss :: Finding products with text similar to product {} ({})...", id, product.getProductDisplayName());
+      logger.info("🔎 vss :: Finding products with text similar to product {} ({})...", id,
+        product.getProductDisplayName());
 
       SearchStream<Product> stream = entityStream.of(Product.class);
 
       applyFilters(stream, gender, category);
 
-      List<Pair<Product,Double>> productsAndScores = stream
-          .filter(Product$.SENTENCE_EMBEDDING.knn(K, product.getSentenceEmbedding())) //
-          .sorted(Product$._SENTENCE_EMBEDDING_SCORE) //
-          .limit(K) //
-          .map(Fields.of(Product$._THIS, Product$._SENTENCE_EMBEDDING_SCORE)) //
-          .collect(Collectors.toList());
+      List<Pair<Product, Double>> productsAndScores = stream.filter(
+          Product$.SENTENCE_EMBEDDING.knn(K, product.getSentenceEmbedding())) //
+        .sorted(Product$._SENTENCE_EMBEDDING_SCORE) //
+        .limit(K) //
+        .map(Fields.of(Product$._THIS, Product$._SENTENCE_EMBEDDING_SCORE)) //
+        .collect(Collectors.toList());
 
       List<Product> products = productsAndScores.stream().map(Pair::getFirst).toList();
-      List<Double> scores = productsAndScores.stream().map(Pair::getSecond).map(d -> 100.0 * (1 - d/2)).toList();
+      List<Double> scores = productsAndScores.stream().map(Pair::getSecond).map(d -> 100.0 * (1 - d / 2)).toList();
 
-      ProductsPageModel.of()
-        .model(model) //
+      ProductsPageModel.of().model(model) //
         .products(products) //
         .scores(scores) //
         .category(category.orElse(null)) //
@@ -128,34 +119,33 @@ public class ProductController {
   }
 
   @GetMapping("/vss/image/{id}")
-  public String findSimilarByImage(
-      Model model, //
-      @PathVariable("id") String id, //
-      @RequestParam Optional<String> gender, //
-      @RequestParam Optional<String> category, //
-      @RequestParam Optional<Long> skip //
+  public String findSimilarByImage(Model model, //
+    @PathVariable("id") String id, //
+    @RequestParam Optional<String> gender, //
+    @RequestParam Optional<String> category, //
+    @RequestParam Optional<Long> skip //
   ) {
     Optional<Product> maybeProduct = repository.findById(id);
     if (maybeProduct.isPresent()) {
       Product product = maybeProduct.get();
-      logger.info("🔎 vss :: Finding products with images similar to product {} ({})...", id, product.getProductDisplayName());
+      logger.info("🔎 vss :: Finding products with images similar to product {} ({})...", id,
+        product.getProductDisplayName());
 
       SearchStream<Product> stream = entityStream.of(Product.class);
 
       applyFilters(stream, gender, category);
 
-      List<Pair<Product,Double>> productsAndScores = stream
-        .filter(Product$.IMAGE_EMBEDDING.knn(K, product.getImageEmbedding())) //
+      List<Pair<Product, Double>> productsAndScores = stream.filter(
+          Product$.IMAGE_EMBEDDING.knn(K, product.getImageEmbedding())) //
         .sorted(Product$._IMAGE_EMBEDDING_SCORE) //
         .limit(K) //
         .map(Fields.of(Product$._THIS, Product$._IMAGE_EMBEDDING_SCORE)) //
         .collect(Collectors.toList());
 
       List<Product> products = productsAndScores.stream().map(Pair::getFirst).toList();
-      List<Double> scores = productsAndScores.stream().map(Pair::getSecond).map(d -> 100.0 * (1 - d/2)).toList();
+      List<Double> scores = productsAndScores.stream().map(Pair::getSecond).map(d -> 100.0 * (1 - d / 2)).toList();
 
-      ProductsPageModel.of()
-        .model(model) //
+      ProductsPageModel.of().model(model) //
         .products(products) //
         .scores(scores) //
         .category(category.orElse(null)) //
@@ -170,16 +160,14 @@ public class ProductController {
   }
 
   @GetMapping("/filters")
-  public String filters(
-      Model model, //
-      @RequestParam Optional<String> gender, //
-      @RequestParam Optional<String> category, //
-      @RequestParam Optional<Long> skip //
+  public String filters(Model model, //
+    @RequestParam Optional<String> gender, //
+    @RequestParam Optional<String> category, //
+    @RequestParam Optional<Long> skip //
   ) {
     logger.info("🔎️ :: Setting Filters. Gender → {}, Category → {}", gender, category);
 
-    ProductsPageModel.of()
-      .model(model) //
+    ProductsPageModel.of().model(model) //
       .category(category.orElse(null)) //
       .gender(gender.orElse(null)) //
       .skip(skip.orElse(null)) //

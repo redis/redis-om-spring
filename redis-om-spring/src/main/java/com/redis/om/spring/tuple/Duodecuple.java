@@ -4,54 +4,6 @@ import com.redis.om.spring.tuple.accessor.*;
 
 public interface Duodecuple<E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12> extends Tuple {
 
-  E1 getFirst();
-
-  E2 getSecond();
-
-  E3 getThird();
-
-  E4 getFourth();
-
-  E5 getFifth();
-
-  E6 getSixth();
-
-  E7 getSeventh();
-
-  E8 getEighth();
-
-  E9 getNinth();
-
-  E10 getTenth();
-
-  E11 getEleventh();
-
-  E12 getTwelfth();
-
-  @Override
-  default int size() {
-    return 12;
-  }
-
-  default Object get(int index) {
-    return switch (index) {
-      case 0 -> getFirst();
-      case 1 -> getSecond();
-      case 2 -> getThird();
-      case 3 -> getFourth();
-      case 4 -> getFifth();
-      case 5 -> getSixth();
-      case 6 -> getSeventh();
-      case 7 -> getEighth();
-      case 8 -> getNinth();
-      case 9 -> getTenth();
-      case 10 -> getEleventh();
-      case 11 -> getTwelfth();
-      default -> throw new IndexOutOfBoundsException(
-          String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
-    };
-  }
-
   static <E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12> FirstAccessor<Duodecuple<E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12>, E1> getFirstGetter() {
     return Duodecuple::getFirst;
   }
@@ -98,5 +50,53 @@ public interface Duodecuple<E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12> e
 
   static <E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12> TwelfthAccessor<Duodecuple<E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12>, E12> getTwelfthGetter() {
     return Duodecuple::getTwelfth;
+  }
+
+  E1 getFirst();
+
+  E2 getSecond();
+
+  E3 getThird();
+
+  E4 getFourth();
+
+  E5 getFifth();
+
+  E6 getSixth();
+
+  E7 getSeventh();
+
+  E8 getEighth();
+
+  E9 getNinth();
+
+  E10 getTenth();
+
+  E11 getEleventh();
+
+  E12 getTwelfth();
+
+  @Override
+  default int size() {
+    return 12;
+  }
+
+  default Object get(int index) {
+    return switch (index) {
+      case 0 -> getFirst();
+      case 1 -> getSecond();
+      case 2 -> getThird();
+      case 3 -> getFourth();
+      case 4 -> getFifth();
+      case 5 -> getSixth();
+      case 6 -> getSeventh();
+      case 7 -> getEighth();
+      case 8 -> getNinth();
+      case 9 -> getTenth();
+      case 10 -> getEleventh();
+      case 11 -> getTwelfth();
+      default -> throw new IndexOutOfBoundsException(
+        String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
+    };
   }
 }

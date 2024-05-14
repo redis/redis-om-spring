@@ -37,31 +37,31 @@ public class AutoCompleteOptions {
     return fuzzy;
   }
 
-  public boolean isWithScore() {
-    return withScore;
-  }
-
-  public boolean isWithPayload() {
-    return withPayload;
-  }
-
-  public int getLimit() {
-    return limit;
-  }
-
   public void setFuzzy(boolean fuzzy) {
     this.fuzzy = fuzzy;
   }
 
-  public void setLimit(int limit) {
-    this.limit = limit;
+  public boolean isWithScore() {
+    return withScore;
   }
 
   public void setWithScore(boolean withScore) {
     this.withScore = withScore;
   }
 
+  public boolean isWithPayload() {
+    return withPayload;
+  }
+
   public void setWithPayload(boolean withPayload) {
     this.withPayload = withPayload;
+  }
+
+  public int getLimit() {
+    return limit;
+  }
+
+  public void setLimit(int limit) {
+    this.limit = limit;
   }
 }

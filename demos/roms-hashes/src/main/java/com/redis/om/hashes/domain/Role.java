@@ -11,10 +11,11 @@ import org.springframework.data.redis.core.RedisHash;
 @NoArgsConstructor
 @RedisHash
 public class Role {
-  @Id 
+  @Id
   private String id;
-  
-  @Indexed @NonNull
+
+  @Indexed
+  @NonNull
   private String roleName;
 
 }

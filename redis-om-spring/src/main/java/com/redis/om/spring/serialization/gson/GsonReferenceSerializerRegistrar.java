@@ -22,10 +22,10 @@ import static com.redis.om.spring.util.ObjectUtils.*;
 @Component
 public class GsonReferenceSerializerRegistrar {
   private static final Log logger = LogFactory.getLog(GsonReferenceSerializerRegistrar.class);
-  private final GsonBuilder builder;
-  private JSONOperations<?> ops;
-  private final ApplicationContext ac;
   private static final String SKIPPING_REFERENCE_SEARCH = "Skipping @Reference search for %s because %s";
+  private final GsonBuilder builder;
+  private final ApplicationContext ac;
+  private JSONOperations<?> ops;
 
   public GsonReferenceSerializerRegistrar(GsonBuilder builder, ApplicationContext ac) {
     this.builder = builder;
@@ -71,14 +71,9 @@ public class GsonReferenceSerializerRegistrar {
       typeToken = TypeToken.get(field.getType());
     }
 
-    builder.registerTypeAdapter(
-      typeToken.getType(),
-      new ReferenceDeserializer(
-        field,
-        ops,
-        ac.getBean(RedisOMProperties.class),
-        ac.getBean("redisOMCacheManager", CacheManager.class))
-    );
+    builder.registerTypeAdapter(typeToken.getType(),
+      new ReferenceDeserializer(field, ops, ac.getBean(RedisOMProperties.class),
+        ac.getBean("redisOMCacheManager", CacheManager.class)));
     processEntity(field.getType());
   }
 

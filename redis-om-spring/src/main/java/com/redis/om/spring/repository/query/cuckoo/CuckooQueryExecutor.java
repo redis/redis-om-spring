@@ -15,8 +15,8 @@ import java.util.Optional;
 
 public class CuckooQueryExecutor {
 
-  private static final Log logger = LogFactory.getLog(CuckooQueryExecutor.class);
   public static final String EXISTS_BY_PREFIX = "existsBy";
+  private static final Log logger = LogFactory.getLog(CuckooQueryExecutor.class);
   final RepositoryQuery query;
   final RedisModulesOperations<String> modulesOperations;
 
@@ -40,8 +40,9 @@ public class CuckooQueryExecutor {
         }
         if (field.isAnnotationPresent(Cuckoo.class)) {
           Cuckoo cuckoo = field.getAnnotation(Cuckoo.class);
-          return Optional.of(!org.apache.commons.lang3.ObjectUtils.isEmpty(cuckoo.name()) ? cuckoo.name()
-              : String.format("cf:%s:%s", entityClass.getSimpleName(), field.getName()));
+          return Optional.of(!org.apache.commons.lang3.ObjectUtils.isEmpty(cuckoo.name()) ?
+            cuckoo.name() :
+            String.format("cf:%s:%s", entityClass.getSimpleName(), field.getName()));
         }
       } catch (SecurityException e) {
         // NO-OP
@@ -49,7 +50,7 @@ public class CuckooQueryExecutor {
     }
     return Optional.empty();
   }
-  
+
   public Object executeCuckooQuery(Object[] parameters, String cuckooFilter) {
     logger.debug(String.format("filter:%s, params:%s", cuckooFilter, Arrays.toString(parameters)));
     CuckooFilterOperations<String> ops = modulesOperations.opsForCuckoFilter();

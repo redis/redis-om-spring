@@ -4,8 +4,7 @@ import com.google.gson.*;
 
 import java.lang.reflect.Type;
 
-public class EnumTypeAdapter<T extends Enum<?>> implements JsonSerializer<T>,
-    JsonDeserializer<T> {
+public class EnumTypeAdapter<T extends Enum<?>> implements JsonSerializer<T>, JsonDeserializer<T> {
 
   private final T[] values;
 
@@ -19,14 +18,12 @@ public class EnumTypeAdapter<T extends Enum<?>> implements JsonSerializer<T>,
   }
 
   @Override
-  public JsonElement serialize(T o, Type type,
-      JsonSerializationContext jsonSerializationContext) {
+  public JsonElement serialize(T o, Type type, JsonSerializationContext jsonSerializationContext) {
     return new JsonPrimitive(o.ordinal());
   }
 
   @Override
-  public T deserialize(JsonElement json, Type type, JsonDeserializationContext context)
-      throws JsonParseException {
+  public T deserialize(JsonElement json, Type type, JsonDeserializationContext context) throws JsonParseException {
     return values[json.getAsInt()];
   }
 }

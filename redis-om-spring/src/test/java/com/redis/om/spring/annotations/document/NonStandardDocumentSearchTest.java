@@ -16,13 +16,16 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-@SuppressWarnings("SpellCheckingInspection") class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
+@SuppressWarnings("SpellCheckingInspection")
+class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
   @Autowired
   CustomRepository repository;
 
-  @Autowired CompanyWithLongIdRepository companyRepo;
+  @Autowired
+  CompanyWithLongIdRepository companyRepo;
 
-  @Autowired StringRedisTemplate template;
+  @Autowired
+  StringRedisTemplate template;
 
   private long id1;
   private long id2;
@@ -30,7 +33,8 @@ import static org.junit.jupiter.api.Assertions.*;
   @BeforeEach
   void loadTestData() {
     Custom c1 = Custom.of("foofoo");
-    var nl1 = NestLevel1.of("nl-1-1", "Louis, I think this is the beginning of a beautiful friendship.", NestLevel2.of("nl-2-1", "Here's looking at you, kid."));
+    var nl1 = NestLevel1.of("nl-1-1", "Louis, I think this is the beginning of a beautiful friendship.",
+      NestLevel2.of("nl-2-1", "Here's looking at you, kid."));
     c1.setNest_level1(nl1);
     Custom c2 = Custom.of("barbar");
     Custom c3 = Custom.of("bazbaz");
@@ -83,7 +87,7 @@ import static org.junit.jupiter.api.Assertions.*;
     repository.deleteAll();
     assertThat(repository.count()).isZero();
   }
-  
+
   @Test
   void testUpdateSingleField() {
     Optional<Custom> maybeC1 = repository.findById(id1);
@@ -93,7 +97,7 @@ import static org.junit.jupiter.api.Assertions.*;
     Optional<Custom> maybeC1After = repository.findById(id1);
 
     assertAll( //
-        () -> assertTrue(maybeC1After.isPresent()), () -> assertEquals("fufoo", maybeC1After.get().getName()) //
+      () -> assertTrue(maybeC1After.isPresent()), () -> assertEquals("fufoo", maybeC1After.get().getName()) //
     );
   }
 
@@ -106,19 +110,19 @@ import static org.junit.jupiter.api.Assertions.*;
     Optional<Custom> dn1After = repository.findById(id1);
 
     assertAll( //
-        () -> assertThat(dn1.get().getName()).isNotEqualTo("dos-uno"), //
-        () -> assertTrue(dn1After.isPresent()), //
-        () -> assertEquals("dos-uno", dn1After.get().getNest_level1().getNestLevel2().getName()) //
+      () -> assertThat(dn1.get().getName()).isNotEqualTo("dos-uno"), //
+      () -> assertTrue(dn1After.isPresent()), //
+      () -> assertEquals("dos-uno", dn1After.get().getNest_level1().getNestLevel2().getName()) //
     );
   }
 
   @Test
   void testSaveAllWithNonStringKey() {
-    CompanyWithLongId redis = CompanyWithLongId.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
-        "stack@redis.com");
+    CompanyWithLongId redis = CompanyWithLongId.of("RedisInc", 2011, LocalDate.of(2021, 5, 1),
+      new Point(-122.066540, 37.377690), "stack@redis.com");
 
     CompanyWithLongId microsoft = CompanyWithLongId.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
-        new Point(-122.124500, 47.640160), "research@microsoft.com");
+      new Point(-122.124500, 47.640160), "research@microsoft.com");
 
     companyRepo.saveAll(List.of(redis, microsoft));
 

@@ -13,10 +13,12 @@ import org.springframework.data.redis.core.TimeToLive;
 @RequiredArgsConstructor(staticName = "of")
 @RedisHash(timeToLive = 5)
 public class ExpiringPerson {
-  @Id String id;
+  @Id
+  String id;
   @NonNull
   String name;
-  
+
   @NonNull
-  @TimeToLive Long ttl;
+  @TimeToLive
+  Long ttl;
 }

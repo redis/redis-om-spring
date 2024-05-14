@@ -9,11 +9,11 @@ import java.nio.charset.StandardCharsets;
 
 @Component
 @WritingConverter
-public class PointToBytesConverter  implements Converter<Point, byte[]> {
+public class PointToBytesConverter implements Converter<Point, byte[]> {
   byte[] fromString(String source) {
     return source.getBytes(StandardCharsets.UTF_8);
   }
-  
+
   @Override
   public byte[] convert(Point source) {
     return fromString(source.getX() + "," + source.getY());

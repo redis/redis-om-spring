@@ -10,7 +10,6 @@ import java.util.function.ToLongFunction;
 
 public class NonIndexedTextField<E, T> extends MetamodelField<E, T> {
 
-
   public NonIndexedTextField(SearchFieldAccessor field, boolean indexed) {
     super(field, indexed);
   }

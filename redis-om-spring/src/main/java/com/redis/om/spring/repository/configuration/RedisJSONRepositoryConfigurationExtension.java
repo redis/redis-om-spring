@@ -14,7 +14,7 @@ import java.util.Collections;
 
 public class RedisJSONRepositoryConfigurationExtension extends RedisRepositoryConfigurationExtension {
   private static final String REDIS_ADAPTER_BEAN_NAME = "redisJSONKeyValueAdapter";
-  
+
   /*
    * (non-Javadoc)
    * @see org.springframework.data.keyvalue.repository.config.KeyValueRepositoryConfigurationExtension#getModuleName()
@@ -23,7 +23,7 @@ public class RedisJSONRepositoryConfigurationExtension extends RedisRepositoryCo
   public String getModuleName() {
     return "RedisJSON";
   }
-  
+
   /*
    * (non-Javadoc)
    * @see org.springframework.data.keyvalue.repository.config.KeyValueRepositoryConfigurationExtension#getModulePrefix()
@@ -32,7 +32,7 @@ public class RedisJSONRepositoryConfigurationExtension extends RedisRepositoryCo
   protected String getModulePrefix() {
     return "rejson";
   }
-  
+
   /*
    * (non-Javadoc)
    * @see org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport#getIdentifyingTypes()
@@ -41,21 +41,21 @@ public class RedisJSONRepositoryConfigurationExtension extends RedisRepositoryCo
   protected Collection<Class<?>> getIdentifyingTypes() {
     return Collections.singleton(RedisDocumentRepository.class);
   }
-  
+
   /*
    * (non-Javadoc)
    * @see org.springframework.data.keyvalue.repository.config.KeyValueRepositoryConfigurationExtension#getDefaultKeyValueTemplateBeanDefinition(org.springframework.data.repository.config.RepositoryConfigurationSource)
    */
   @Override
   protected AbstractBeanDefinition getDefaultKeyValueTemplateBeanDefinition(
-      RepositoryConfigurationSource configurationSource) {
+    RepositoryConfigurationSource configurationSource) {
 
     return BeanDefinitionBuilder.rootBeanDefinition(CustomRedisKeyValueTemplate.class) //
-        .addConstructorArgReference(REDIS_ADAPTER_BEAN_NAME) //
-        .addConstructorArgReference(MAPPING_CONTEXT_BEAN_NAME) //
-        .getBeanDefinition();
+      .addConstructorArgReference(REDIS_ADAPTER_BEAN_NAME) //
+      .addConstructorArgReference(MAPPING_CONTEXT_BEAN_NAME) //
+      .getBeanDefinition();
   }
-  
+
   /*
    * (non-Javadoc)
    * @see org.springframework.data.repository.config.RepositoryConfigurationExtensionSupport#getIdentifyingAnnotations()

@@ -4,6 +4,30 @@ import com.redis.om.spring.tuple.accessor.*;
 
 public interface Hextuple<E1, E2, E3, E4, E5, E6> extends Tuple {
 
+  static <E1, E2, E3, E4, E5, E6> FirstAccessor<Hextuple<E1, E2, E3, E4, E5, E6>, E1> getFirstGetter() {
+    return Hextuple::getFirst;
+  }
+
+  static <E1, E2, E3, E4, E5, E6> SecondAccessor<Hextuple<E1, E2, E3, E4, E5, E6>, E2> getSecondGetter() {
+    return Hextuple::getSecond;
+  }
+
+  static <E1, E2, E3, E4, E5, E6> ThirdAccessor<Hextuple<E1, E2, E3, E4, E5, E6>, E3> getThirdGetter() {
+    return Hextuple::getThird;
+  }
+
+  static <E1, E2, E3, E4, E5, E6> FourthAccessor<Hextuple<E1, E2, E3, E4, E5, E6>, E4> getFourthGetter() {
+    return Hextuple::getFourth;
+  }
+
+  static <E1, E2, E3, E4, E5, E6> FifthAccessor<Hextuple<E1, E2, E3, E4, E5, E6>, E5> getFifthGetter() {
+    return Hextuple::getFifth;
+  }
+
+  static <E1, E2, E3, E4, E5, E6> SixthAccessor<Hextuple<E1, E2, E3, E4, E5, E6>, E6> getSixthGetter() {
+    return Hextuple::getSixth;
+  }
+
   E1 getFirst();
 
   E2 getSecond();
@@ -30,31 +54,7 @@ public interface Hextuple<E1, E2, E3, E4, E5, E6> extends Tuple {
       case 4 -> getFifth();
       case 5 -> getSixth();
       default -> throw new IndexOutOfBoundsException(
-          String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
+        String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
     };
-  }
-
-  static <E1, E2, E3, E4, E5, E6> FirstAccessor<Hextuple<E1, E2, E3, E4, E5, E6>, E1> getFirstGetter() {
-    return Hextuple::getFirst;
-  }
-
-  static <E1, E2, E3, E4, E5, E6> SecondAccessor<Hextuple<E1, E2, E3, E4, E5, E6>, E2> getSecondGetter() {
-    return Hextuple::getSecond;
-  }
-
-  static <E1, E2, E3, E4, E5, E6> ThirdAccessor<Hextuple<E1, E2, E3, E4, E5, E6>, E3> getThirdGetter() {
-    return Hextuple::getThird;
-  }
-
-  static <E1, E2, E3, E4, E5, E6> FourthAccessor<Hextuple<E1, E2, E3, E4, E5, E6>, E4> getFourthGetter() {
-    return Hextuple::getFourth;
-  }
-
-  static <E1, E2, E3, E4, E5, E6> FifthAccessor<Hextuple<E1, E2, E3, E4, E5, E6>, E5> getFifthGetter() {
-    return Hextuple::getFifth;
-  }
-
-  static <E1, E2, E3, E4, E5, E6> SixthAccessor<Hextuple<E1, E2, E3, E4, E5, E6>, E6> getSixthGetter() {
-    return Hextuple::getSixth;
   }
 }

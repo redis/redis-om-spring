@@ -23,12 +23,12 @@ public class Product {
   private String name;
 
   @Indexed(//
-      schemaFieldType = SchemaFieldType.VECTOR, //
-      algorithm = VectorAlgorithm.HNSW, //
-      type = VectorType.FLOAT32, //
-      dimension = 512, //
-      distanceMetric = DistanceMetric.COSINE, //
-      initialCapacity = 10
+           schemaFieldType = SchemaFieldType.VECTOR, //
+           algorithm = VectorAlgorithm.HNSW, //
+           type = VectorType.FLOAT32, //
+           dimension = 512, //
+           distanceMetric = DistanceMetric.COSINE, //
+           initialCapacity = 10
   )
   private float[] imageEmbedding;
 
@@ -37,12 +37,12 @@ public class Product {
   private String imagePath;
 
   @Indexed(//
-      schemaFieldType = SchemaFieldType.VECTOR, //
-      algorithm = VectorAlgorithm.HNSW, //
-      type = VectorType.FLOAT32, //
-      dimension = 768, //
-      distanceMetric = DistanceMetric.COSINE, //
-      initialCapacity = 10
+           schemaFieldType = SchemaFieldType.VECTOR, //
+           algorithm = VectorAlgorithm.HNSW, //
+           type = VectorType.FLOAT32, //
+           dimension = 768, //
+           distanceMetric = DistanceMetric.COSINE, //
+           initialCapacity = 10
   )
   private float[] sentenceEmbedding;
 

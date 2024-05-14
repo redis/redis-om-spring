@@ -7,7 +7,7 @@ import org.springframework.data.repository.config.RepositoryConfigurationExtensi
 
 import java.lang.annotation.Annotation;
 
-public class RedisEnhancedRepositoriesRegistrar extends RepositoryBeanDefinitionRegistrarSupport {    
+public class RedisEnhancedRepositoriesRegistrar extends RepositoryBeanDefinitionRegistrarSupport {
   /*
    * (non-Javadoc)
    * @see org.springframework.data.repository.config.RepositoryBeanDefinitionRegistrarSupport#getAnnotation()

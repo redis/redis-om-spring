@@ -26,7 +26,8 @@ public class ContainsAllPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
-    if (isEmpty(getValues())) return root;
+    if (isEmpty(getValues()))
+      return root;
     QueryNode and = QueryBuilders.intersect();
     for (String value : getValues()) {
       and.add(getSearchAlias(), "{" + value + "}");

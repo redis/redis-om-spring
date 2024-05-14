@@ -5,8 +5,8 @@ import org.junit.jupiter.api.Test;
 //@SpringBootTest
 class PermitsApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
+  @Test
+  void contextLoads() {
+  }
 
 }

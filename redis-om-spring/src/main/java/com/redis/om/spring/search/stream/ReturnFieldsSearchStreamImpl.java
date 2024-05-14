@@ -41,10 +41,10 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
 
   private final SearchStreamImpl<E> entitySearchStream;
   private final List<MetamodelField<E, ?>> returning;
-  private Stream<T> resolvedStream;
-  private Runnable closeHandler;
   private final boolean useNoContent;
   private final boolean isDocument;
+  private Stream<T> resolvedStream;
+  private Runnable closeHandler;
 
   public ReturnFieldsSearchStreamImpl( //
     SearchStreamImpl<E> entitySearchStream, //
@@ -128,6 +128,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     throw new UnsupportedOperationException("Filter on Example predicate is not supported on mapped stream");
   }
 
+  @SuppressWarnings("resource")
   @Override
   public <R> SearchStream<R> map(Function<? super T, ? extends R> mapper) {
     return new WrapperSearchStream<>(resolveStream()).map(mapper);
@@ -148,21 +149,25 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     return resolveStream().mapToDouble(mapper);
   }
 
+  @SuppressWarnings("resource")
   @Override
   public <R> SearchStream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMap(mapper);
   }
 
+  @SuppressWarnings("resource")
   @Override
   public IntStream flatMapToInt(Function<? super T, ? extends IntStream> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMapToInt(mapper);
   }
 
+  @SuppressWarnings("resource")
   @Override
   public LongStream flatMapToLong(Function<? super T, ? extends LongStream> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMapToLong(mapper);
   }
 
+  @SuppressWarnings("resource")
   @Override
   public DoubleStream flatMapToDouble(Function<? super T, ? extends DoubleStream> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMapToDouble(mapper);
@@ -294,32 +299,34 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
         if (!searchResult.getDocuments().isEmpty()) {
           String keySample = searchResult.getDocuments().get(0).getId();
           int idBegin = keySample.indexOf(":") + 1;
-          resolvedStream = (Stream<T>) searchResult.getDocuments().stream().map(Document::getId).map(key -> key.substring(idBegin));
+          resolvedStream = (Stream<T>) searchResult.getDocuments().stream().map(Document::getId)
+            .map(key -> key.substring(idBegin));
         } else {
           resolvedStream = Stream.empty();
         }
       } else {
-        boolean returningFullEntity = (returning.stream().anyMatch(foi -> foi.getSearchAlias().equalsIgnoreCase("__this")));
+        boolean returningFullEntity = (returning.stream()
+          .anyMatch(foi -> foi.getSearchAlias().equalsIgnoreCase("__this")));
 
         String[] returnFields = !returningFullEntity ? returning.stream() //
-            .map(foi -> ObjectUtils.isCollection(foi.getTargetClass()) ? "$." + foi.getSearchAlias() : foi.getSearchAlias())
-            .toArray(String[]::new) : new String[]{};
+          .map(
+            foi -> ObjectUtils.isCollection(foi.getTargetClass()) ? "$." + foi.getSearchAlias() : foi.getSearchAlias())
+          .toArray(String[]::new) : new String[] {};
 
         boolean resultSetHasNonIndexedFields = returning.stream().anyMatch(foi -> !foi.isIndexed());
 
         if (resultSetHasNonIndexedFields) {
           SearchResult searchResult = entitySearchStream.getOps().search(query);
 
-          List<E> entities = searchResult
-              .getDocuments() //
-              .stream() //
-              .map(d -> { //
-                if (isDocument) {
-                  return gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), entitySearchStream.getEntityClass());
-                } else {
-                  return (E) ObjectUtils.documentToObject(d, entitySearchStream.getEntityClass(), mappingConverter);
-                }
-              }).toList();
+          List<E> entities = searchResult.getDocuments() //
+            .stream() //
+            .map(d -> { //
+              if (isDocument) {
+                return gson.fromJson(SafeEncoder.encode((byte[]) d.get("$")), entitySearchStream.getEntityClass());
+              } else {
+                return (E) ObjectUtils.documentToObject(d, entitySearchStream.getEntityClass(), mappingConverter);
+              }
+            }).toList();
 
           results = toResultTuple(entities, returnFields);
 
@@ -338,7 +345,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     List<T> results = new ArrayList<>();
     searchResult.getDocuments().forEach(doc -> {
       Map<String, Object> props = StreamSupport.stream(doc.getProperties().spliterator(), false)
-          .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+        .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
 
       List<Object> mappedResults = new ArrayList<>();
       returning.forEach(foi -> {
@@ -394,7 +401,8 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     return resolveStream().map(Tuple.class::cast).map(Tuple::labelledMap);
   }
 
-  @SafeVarargs @Override
+  @SafeVarargs
+  @Override
   public final <R> AggregationStream<R> groupBy(MetamodelField<T, ?>... field) {
     throw new UnsupportedOperationException("groupBy is not supported on a ReturnFieldSearchStream");
   }
@@ -404,7 +412,8 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     throw new UnsupportedOperationException("apply is not supported on a ReturnFieldSearchStream");
   }
 
-  @SafeVarargs @Override
+  @SafeVarargs
+  @Override
   public final <R> AggregationStream<R> load(MetamodelField<T, ?>... fields) {
     throw new UnsupportedOperationException("load is not supported on a ReturnFieldSearchStream");
   }
@@ -424,7 +433,8 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     throw new UnsupportedOperationException("max is not supported on a ReturnFieldSearchStream");
   }
 
-  @Override public SearchStream<T> dialect(int dialect) {
+  @Override
+  public SearchStream<T> dialect(int dialect) {
     throw new UnsupportedOperationException("dialect is not supported on a ReturnFieldSearchStream");
   }
 
@@ -475,7 +485,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   }
 
   @Override
-  public <R> SearchStream<T> highlight(Function<? super T, ? extends R> field, Pair<String,String> tags) {
+  public <R> SearchStream<T> highlight(Function<? super T, ? extends R> field, Pair<String, String> tags) {
     throw new UnsupportedOperationException("highlight is not supported on a ReturnFieldSearchStream");
   }
 

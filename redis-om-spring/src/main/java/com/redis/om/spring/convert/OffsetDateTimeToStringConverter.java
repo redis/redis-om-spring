@@ -11,10 +11,10 @@ import java.time.ZoneId;
 @Component
 @WritingConverter
 public class OffsetDateTimeToStringConverter implements Converter<OffsetDateTime, String> {
-    @Override
-    public String convert(OffsetDateTime source) {
-        Instant instant = source.atZoneSameInstant(ZoneId.systemDefault()).toInstant();
-        long unixTime = instant.getEpochSecond();
-        return Long.toString(unixTime);
-    }
+  @Override
+  public String convert(OffsetDateTime source) {
+    Instant instant = source.atZoneSameInstant(ZoneId.systemDefault()).toInstant();
+    long unixTime = instant.getEpochSecond();
+    return Long.toString(unixTime);
+  }
 }
