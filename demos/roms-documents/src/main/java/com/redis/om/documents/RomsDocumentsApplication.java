@@ -25,14 +25,20 @@ public class RomsDocumentsApplication {
   @Autowired
   PersonRepository personRepo;
 
+  public static void main(String[] args) {
+    SpringApplication.run(RomsDocumentsApplication.class, args);
+  }
+
   @Bean
   CommandLineRunner loadTestData() {
     return args -> {
       companyRepo.deleteAll();
-      Company redis = Company.of("Redis", "https://redis.com", new Point(-122.066540, 37.377690), 526, 2011, Set.of(CompanyMeta.of("Redis", 100, Set.of("RedisTag"))));
+      Company redis = Company.of("Redis", "https://redis.com", new Point(-122.066540, 37.377690), 526, 2011,
+        Set.of(CompanyMeta.of("Redis", 100, Set.of("RedisTag"))));
       redis.setTags(Set.of("fast", "scalable", "reliable"));
 
-      Company microsoft = Company.of("Microsoft", "https://microsoft.com", new Point(-122.124500, 47.640160), 182268, 1975, Set.of(CompanyMeta.of("MS", 50, Set.of("MsTag"))));
+      Company microsoft = Company.of("Microsoft", "https://microsoft.com", new Point(-122.124500, 47.640160), 182268,
+        1975, Set.of(CompanyMeta.of("MS", 50, Set.of("MsTag"))));
       microsoft.setTags(Set.of("innovative", "reliable"));
 
       companyRepo.save(redis);
@@ -44,10 +50,6 @@ public class RomsDocumentsApplication {
       personRepo.save(Person.of("Guy", "Royse", "guy.royse@redis.com"));
       personRepo.save(Person.of("Guy", "Korland", "guy.korland@redis.com"));
     };
-  }
-
-  public static void main(String[] args) {
-    SpringApplication.run(RomsDocumentsApplication.class, args);
   }
 
 }

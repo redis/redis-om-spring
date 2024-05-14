@@ -24,7 +24,8 @@ public class StartsWithPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
-    if (isEmpty(getValue())) return root;
+    if (isEmpty(getValue()))
+      return root;
     if (Iterable.class.isAssignableFrom(getValue().getClass())) {
       Iterable<?> values = (Iterable<?>) getValue();
       QueryNode and = QueryBuilders.intersect();
@@ -33,7 +34,8 @@ public class StartsWithPredicate<E, T> extends BaseAbstractPredicate<E, T> {
       }
       return QueryBuilders.intersect(root, and);
     } else {
-      return QueryBuilders.intersect(root).add(getSearchAlias(), "{" + QueryUtils.escape(value.toString(), true) + "*}");
+      return QueryBuilders.intersect(root)
+        .add(getSearchAlias(), "{" + QueryUtils.escape(value.toString(), true) + "*}");
     }
   }
 

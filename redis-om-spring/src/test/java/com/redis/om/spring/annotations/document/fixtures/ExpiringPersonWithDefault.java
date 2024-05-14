@@ -12,7 +12,8 @@ import org.springframework.data.annotation.Id;
 @RequiredArgsConstructor(staticName = "of")
 @Document(timeToLive = 5)
 public class ExpiringPersonWithDefault {
-  @Id String id;
+  @Id
+  String id;
   @NonNull
   String name;
 }

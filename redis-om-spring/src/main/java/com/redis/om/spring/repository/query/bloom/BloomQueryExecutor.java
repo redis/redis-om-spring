@@ -14,12 +14,12 @@ import java.util.Arrays;
 import java.util.Optional;
 
 public class BloomQueryExecutor {
-  
-  private static final Log logger = LogFactory.getLog(BloomQueryExecutor.class);
+
   public static final String EXISTS_BY_PREFIX = "existsBy";
+  private static final Log logger = LogFactory.getLog(BloomQueryExecutor.class);
   final RepositoryQuery query;
   final RedisModulesOperations<String> modulesOperations;
-  
+
   public BloomQueryExecutor(RepositoryQuery query, RedisModulesOperations<String> modulesOperations) {
     this.query = query;
     this.modulesOperations = modulesOperations;
@@ -40,8 +40,9 @@ public class BloomQueryExecutor {
         }
         if (field.isAnnotationPresent(Bloom.class)) {
           Bloom bloom = field.getAnnotation(Bloom.class);
-          return Optional.of(!org.apache.commons.lang3.ObjectUtils.isEmpty(bloom.name()) ? bloom.name()
-              : String.format("bf:%s:%s", entityClass.getSimpleName(), field.getName()));
+          return Optional.of(!org.apache.commons.lang3.ObjectUtils.isEmpty(bloom.name()) ?
+            bloom.name() :
+            String.format("bf:%s:%s", entityClass.getSimpleName(), field.getName()));
         }
       } catch (SecurityException e) {
         // NO-OP
@@ -49,7 +50,7 @@ public class BloomQueryExecutor {
     }
     return Optional.empty();
   }
-  
+
   public Object executeBloomQuery(Object[] parameters, String bloomFilter) {
     logger.debug(String.format("filter:%s, params:%s", bloomFilter, Arrays.toString(parameters)));
     BloomOperations<String> ops = modulesOperations.opsForBloom();

@@ -15,7 +15,7 @@ public class NonIndexedNumericField<E, T> extends MetamodelField<E, T> {
   public Consumer<E> incrBy(Long value) {
     return new NumIncrByAction<>(searchFieldAccessor, value);
   }
-  
+
   public Consumer<E> decrBy(Long value) {
     return new NumIncrByAction<>(searchFieldAccessor, -value);
   }

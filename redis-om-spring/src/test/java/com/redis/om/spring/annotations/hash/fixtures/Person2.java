@@ -13,17 +13,17 @@ import org.springframework.data.redis.core.RedisHash;
 @RedisHash("people2")
 public class Person2 {
 
-  @Id 
+  @Id
   String id;
-  
-  @NonNull 
+
+  @NonNull
   String name;
-  
-  @NonNull 
-  @AutoComplete 
+
+  @NonNull
+  @AutoComplete
   @Cuckoo(name = "cf_person_email", capacity = 100000)
   String email;
-  
+
   @NonNull
   @Cuckoo(capacity = 100000)
   String nickname;

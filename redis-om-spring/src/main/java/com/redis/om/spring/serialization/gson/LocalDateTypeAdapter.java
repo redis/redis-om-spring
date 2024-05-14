@@ -9,25 +9,24 @@ import java.time.ZoneId;
 
 /**
  * GSON Serializer/Deserializer for LocalDate to Unix Timestamp
- *
  */
-public class LocalDateTypeAdapter  implements JsonSerializer<LocalDate>, JsonDeserializer<LocalDate>{
+public class LocalDateTypeAdapter implements JsonSerializer<LocalDate>, JsonDeserializer<LocalDate> {
+
+  public static LocalDateTypeAdapter getInstance() {
+    return new LocalDateTypeAdapter();
+  }
 
   @Override
   public JsonElement serialize(LocalDate localDate, Type typeOfSrc, JsonSerializationContext context) {
-    Instant instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();  
+    Instant instant = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
     long unixTime = instant.getEpochSecond();
     return new JsonPrimitive(unixTime);
   }
-  
+
   @Override
   public LocalDate deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
-      throws JsonParseException {
+    throws JsonParseException {
     return LocalDate.ofInstant(Instant.ofEpochSecond(json.getAsLong()), ZoneId.systemDefault());
-  }
-  
-  public static LocalDateTypeAdapter getInstance() {
-    return new LocalDateTypeAdapter();
   }
 
 }

@@ -15,19 +15,6 @@ class RedisModulesClientTest extends AbstractBaseDocumentTest {
 
   @Autowired
   Gson gson;
-
-  /* A simple class that represents an object in real life */
-  @SuppressWarnings("unused")
-  private static class IRLObject {
-    public final String str;
-    public final boolean bTrue;
-
-    public IRLObject() {
-      this.str = "string";
-      this.bTrue = true;
-    }
-  }
-
   @Autowired
   RedisModulesClient client;
 
@@ -36,7 +23,7 @@ class RedisModulesClientTest extends AbstractBaseDocumentTest {
     RedisJsonCommands jsonClient = client.clientForJSON();
 
     IRLObject obj = new IRLObject();
-    jsonClient.jsonSetLegacy("obj", obj);
+    jsonClient.jsonSetWithEscape("obj", obj);
     Object expected = gson.fromJson(gson.toJson(obj), Object.class);
     assertEquals(expected, jsonClient.jsonGet("obj"));
   }
@@ -51,6 +38,18 @@ class RedisModulesClientTest extends AbstractBaseDocumentTest {
   void testBloomClient() {
     BloomFilterCommands bloomClient = client.clientForBloom();
     assertNotNull(bloomClient);
+  }
+
+  /* A simple class that represents an object in real life */
+  @SuppressWarnings("unused")
+  private static class IRLObject {
+    public final String str;
+    public final boolean bTrue;
+
+    public IRLObject() {
+      this.str = "string";
+      this.bTrue = true;
+    }
   }
 
 }

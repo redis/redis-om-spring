@@ -9,5 +9,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Apply {
   String expression() default "";
+
   String alias() default "";
 }

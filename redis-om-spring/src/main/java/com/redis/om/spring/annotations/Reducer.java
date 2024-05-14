@@ -9,6 +9,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Reducer {
   ReducerFunction func();
+
   String[] args() default {};
+
   String alias() default "";
 }

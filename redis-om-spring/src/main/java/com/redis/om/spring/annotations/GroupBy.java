@@ -9,5 +9,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface GroupBy {
   String[] properties() default {};
+
   Reducer[] reduce() default {};
 }

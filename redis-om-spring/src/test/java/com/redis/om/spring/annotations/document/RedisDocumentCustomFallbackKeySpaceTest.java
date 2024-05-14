@@ -35,33 +35,17 @@ import static org.junit.jupiter.api.Assertions.*;
 @Testcontainers
 @DirtiesContext
 @SpringBootTest( //
-    classes = RedisDocumentCustomFallbackKeySpaceTest.Config.class, //
-    properties = { "spring.main.allow-bean-definition-overriding=true" } //
-) class RedisDocumentCustomFallbackKeySpaceTest extends AbstractBaseOMTest {
-
-  @SpringBootApplication
-  @Configuration
-  @EnableRedisDocumentRepositories(basePackages = "com.redis.om.spring.annotations.document.fixtures")
-  static class Config extends TestConfig {
-    @Bean
-    @Primary
-    public RedisMappingContext keyValueMappingContext() {
-      RedisMappingContext mappingContext = new RedisMappingContext();
-      mappingContext.setKeySpaceResolver(type -> "CUSTOM_KEYSPACE" + ":" + type.getSimpleName());
-      return mappingContext;
-    }
-  }
-
+                 classes = RedisDocumentCustomFallbackKeySpaceTest.Config.class, //
+                 properties = { "spring.main.allow-bean-definition-overriding=true" } //
+                 )
+class RedisDocumentCustomFallbackKeySpaceTest extends AbstractBaseOMTest {
 
   @Autowired
   MyDocRepository myDocRepository;
-
   @Autowired
   RedisTemplate<String, String> template;
-
   @Autowired
   RedisModulesOperations<String> modulesOperations;
-
   String myDoc1Id;
 
   @BeforeEach
@@ -86,17 +70,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
   @Test
   void testSearchIndex() {
-    SearchOperations<String> searchOps = modulesOperations.opsForSearch("com.redis.om.spring.annotations.document.fixtures.MyDocIdx");
+    SearchOperations<String> searchOps = modulesOperations.opsForSearch(
+      "com.redis.om.spring.annotations.document.fixtures.MyDocIdx");
 
     var info = searchOps.getInfo();
 
     var definition = info.get("index_definition");
     assertInstanceOf(List.class, definition);
 
-    var prefixes = ((List<?>)definition).get(((List<?>)definition).indexOf("prefixes") + 1);
+    var prefixes = ((List<?>) definition).get(((List<?>) definition).indexOf("prefixes") + 1);
     assertNotNull(prefixes);
     assertInstanceOf(List.class, prefixes);
-    assertEquals("CUSTOM_KEYSPACE:MyDoc:", ((List<?>)prefixes).get(0));
+    assertEquals("CUSTOM_KEYSPACE:MyDoc:", ((List<?>) prefixes).get(0));
   }
 
   @Test
@@ -136,5 +121,18 @@ import static org.junit.jupiter.api.Assertions.*;
     maybeDoc1 = myDocRepository.findById(myDoc1Id);
 
     assertFalse(maybeDoc1.isPresent());
+  }
+
+  @SpringBootApplication
+  @Configuration
+  @EnableRedisDocumentRepositories(basePackages = "com.redis.om.spring.annotations.document.fixtures")
+  static class Config extends TestConfig {
+    @Bean
+    @Primary
+    public RedisMappingContext keyValueMappingContext() {
+      RedisMappingContext mappingContext = new RedisMappingContext();
+      mappingContext.setKeySpaceResolver(type -> "CUSTOM_KEYSPACE" + ":" + type.getSimpleName());
+      return mappingContext;
+    }
   }
 }

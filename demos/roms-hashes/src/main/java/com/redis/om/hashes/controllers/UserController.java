@@ -19,17 +19,17 @@ public class UserController {
   public User save(@RequestBody User user) {
     return userRepository.save(user);
   }
-  
+
   @GetMapping("/q")
   public List<User> findByName(@RequestParam String firstName, @RequestParam String lastName) {
     return userRepository.findByFirstNameAndLastName(firstName, lastName);
   }
-  
+
   @GetMapping("/name/{lastName}")
   Optional<User> byName(@PathVariable("lastName") String lastName) {
     return userRepository.findOneByLastName(lastName);
   }
-  
+
   @GetMapping("/exists")
   boolean isEmailTaken(@RequestParam("email") String email) {
     return userRepository.existsByEmail(email);

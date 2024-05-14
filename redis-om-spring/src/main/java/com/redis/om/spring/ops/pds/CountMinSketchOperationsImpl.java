@@ -43,18 +43,18 @@ public class CountMinSketchOperationsImpl<K> implements CountMinSketchOperations
   @Override
   public void cmsMerge(K destKey, K... keys) {
     client.clientForCMS().cmsMerge( //
-        destKey.toString(), //
-        Arrays.stream(keys).map(Object::toString).toArray(String[]::new));
+      destKey.toString(), //
+      Arrays.stream(keys).map(Object::toString).toArray(String[]::new));
   }
 
   @Override
   public void cmsMerge(K destKey, Map<K, Long> keysAndWeights) {
     client.clientForCMS().cmsMerge( //
-        destKey.toString(), //
-        keysAndWeights //
-            .entrySet() //
-            .stream() //
-            .collect(Collectors.toMap(e -> e.getKey().toString(), Map.Entry::getValue)));
+      destKey.toString(), //
+      keysAndWeights //
+        .entrySet() //
+        .stream() //
+        .collect(Collectors.toMap(e -> e.getKey().toString(), Map.Entry::getValue)));
   }
 
   @Override

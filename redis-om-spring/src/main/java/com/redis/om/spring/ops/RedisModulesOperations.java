@@ -9,7 +9,8 @@ import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.ops.search.SearchOperationsImpl;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-public record RedisModulesOperations<K>(RedisModulesClient client, StringRedisTemplate template, GsonBuilder gsonBuilder) {
+public record RedisModulesOperations<K>(RedisModulesClient client, StringRedisTemplate template,
+                                        GsonBuilder gsonBuilder) {
 
   public JSONOperations<K> opsForJSON() {
     return new JSONOperationsImpl<>(client, gsonBuilder);

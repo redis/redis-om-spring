@@ -4,48 +4,6 @@ import com.redis.om.spring.tuple.accessor.*;
 
 public interface Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> extends Tuple {
 
-  T0 getFirst();
-
-  T1 getSecond();
-
-  T2 getThird();
-
-  T3 getFourth();
-
-  T4 getFifth();
-
-  T5 getSixth();
-
-  T6 getSeventh();
-
-  T7 getEighth();
-
-  T8 getNinth();
-
-  T9 getTenth();
-
-  @Override
-  default int size() {
-    return 10;
-  }
-
-  default Object get(int index) {
-    return switch (index) {
-      case 0 -> getFirst();
-      case 1 -> getSecond();
-      case 2 -> getThird();
-      case 3 -> getFourth();
-      case 4 -> getFifth();
-      case 5 -> getSixth();
-      case 6 -> getSeventh();
-      case 7 -> getEighth();
-      case 8 -> getNinth();
-      case 9 -> getTenth();
-      default -> throw new IndexOutOfBoundsException(
-          String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
-    };
-  }
-
   static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> FirstAccessor<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T0> getFirstGetter() {
     return Decuple::getFirst;
   }
@@ -84,5 +42,47 @@ public interface Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> extends Tuple {
 
   static <T0, T1, T2, T3, T4, T5, T6, T7, T8, T9> TenthAccessor<Decuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9>, T9> getTenthGetter() {
     return Decuple::getTenth;
+  }
+
+  T0 getFirst();
+
+  T1 getSecond();
+
+  T2 getThird();
+
+  T3 getFourth();
+
+  T4 getFifth();
+
+  T5 getSixth();
+
+  T6 getSeventh();
+
+  T7 getEighth();
+
+  T8 getNinth();
+
+  T9 getTenth();
+
+  @Override
+  default int size() {
+    return 10;
+  }
+
+  default Object get(int index) {
+    return switch (index) {
+      case 0 -> getFirst();
+      case 1 -> getSecond();
+      case 2 -> getThird();
+      case 3 -> getFourth();
+      case 4 -> getFifth();
+      case 5 -> getSixth();
+      case 6 -> getSeventh();
+      case 7 -> getEighth();
+      case 8 -> getNinth();
+      case 9 -> getTenth();
+      default -> throw new IndexOutOfBoundsException(
+        String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
+    };
   }
 }

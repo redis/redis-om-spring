@@ -18,31 +18,25 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.io.IOException;
 
+@SuppressWarnings("resource")
 @Testcontainers(disabledWithoutDocker = true)
 @DirtiesContext
 @SpringBootTest( //
                  classes = AbstractBaseDocumentSentinelTest.Config.class, //
                  properties = { "spring.main.allow-bean-definition-overriding=true" } //
                  )
-@TestPropertySource(properties = {"spring.config.location=classpath:vss_on.yaml"})
+@TestPropertySource(properties = { "spring.config.location=classpath:vss_on.yaml" })
 public abstract class AbstractBaseDocumentSentinelTest {
-  @SpringBootApplication
-  @Configuration
-  @EnableRedisDocumentRepositories(basePackages = {"com.redis.om.spring.annotations.document.fixtures", "com.redis.om.spring.repository"})
-  static class Config extends SentinelConfig {
-  }
-
+  @Container
+  public static final DockerComposeContainer<?> SENTINEL;
   protected static final int REDIS_PORT = 6379;
   protected static final int SENTINEL_PORT = 26379;
   protected static String dockerComposeFile = "sentinel/docker/docker-compose.yml";
 
-  @Container
-  public static final DockerComposeContainer<?> SENTINEL;
-
   static {
     try {
-      SENTINEL = new DockerComposeContainer<>(new ClassPathResource(dockerComposeFile).getFile())
-        .withExposedService("redis-master_1", REDIS_PORT, Wait.forListeningPort())
+      SENTINEL = new DockerComposeContainer<>(new ClassPathResource(dockerComposeFile).getFile()).withExposedService(
+          "redis-master_1", REDIS_PORT, Wait.forListeningPort())
         .withExposedService("redis-sentinel_1", SENTINEL_PORT, Wait.forListeningPort());
       SENTINEL.start();
     } catch (IOException e) {
@@ -58,8 +52,15 @@ public abstract class AbstractBaseDocumentSentinelTest {
     registry.add("spring.redis.sentinel.master", () -> "mymaster");
 
     registry.add("spring.redis.sentinel.nodes",
-      () -> SENTINEL.getServiceHost("redis-sentinel_1", SENTINEL_PORT)
-        + ":" +
-        SENTINEL.getServicePort("redis-sentinel_1", SENTINEL_PORT));
+      () -> SENTINEL.getServiceHost("redis-sentinel_1", SENTINEL_PORT) + ":" + SENTINEL.getServicePort(
+        "redis-sentinel_1", SENTINEL_PORT));
+  }
+
+  @SpringBootApplication
+  @Configuration
+  @EnableRedisDocumentRepositories(
+    basePackages = { "com.redis.om.spring.annotations.document.fixtures", "com.redis.om.spring.repository" }
+  )
+  static class Config extends SentinelConfig {
   }
 }

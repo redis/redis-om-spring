@@ -18,22 +18,22 @@ import java.util.Set;
 public class CompanyController {
   @Autowired
   CompanyRepository repository;
-  
+
   @GetMapping("employees/count/{count}")
   Iterable<Company> byNumberOfEmployees(@PathVariable("count") int count) {
     return repository.findByNumberOfEmployees(count);
   }
-  
+
   @GetMapping("employees/range/{low}/{high}")
   Iterable<Company> byNumberOfEmployeesRange(@PathVariable("low") int low, @PathVariable("high") int high) {
     return repository.findByNumberOfEmployeesBetween(low, high);
   }
-  
+
   @GetMapping("all")
   Page<Company> all(Pageable pageable) {
     return repository.findAll(pageable);
   }
-  
+
   @GetMapping("all-ids")
   Page<String> allIds(Pageable pageable) {
     return repository.getIds(pageable);
@@ -41,12 +41,12 @@ public class CompanyController {
 
   @GetMapping("near")
   Iterable<Company> byLocationNear(//
-      @RequestParam("lat") double lat, //
-      @RequestParam("lon") double lon, //
-      @RequestParam("d") double distance) {
+    @RequestParam("lat") double lat, //
+    @RequestParam("lon") double lon, //
+    @RequestParam("d") double distance) {
     return repository.findByLocationNear(new Point(lon, lat), new Distance(distance, Metrics.MILES));
   }
-  
+
   @GetMapping("name/starts/{prefix}")
   Iterable<Company> byNameStartingWith(@PathVariable("prefix") String prefix) {
     return repository.findByNameStartingWith(prefix);

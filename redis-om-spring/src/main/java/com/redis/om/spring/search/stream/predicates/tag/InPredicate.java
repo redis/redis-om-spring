@@ -26,7 +26,8 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
-    if (isEmpty(getValues())) return root;
+    if (isEmpty(getValues()))
+      return root;
     StringJoiner sj = new StringJoiner(" | ");
     for (Object value : getValues()) {
       sj.add(value.toString());

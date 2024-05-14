@@ -25,15 +25,17 @@ public class CustomRedisKeyValueTemplate extends KeyValueTemplate {
   /**
    * Obtain the underlying redis specific
    * {@link org.springframework.data.convert.EntityConverter}.
+   *
    * @return the EntityConverter
    */
   public RedisConverter getConverter() {
     return adapter.getConverter();
   }
-  
+
   /**
    * Obtain the underlying redis specific
    * {@link org.springframework.data.redis.core.RedisKeyValueAdapter}.
+   *
    * @return the KeyValueAdapter
    */
   public RedisKeyValueAdapter getAdapter() {
@@ -41,12 +43,12 @@ public class CustomRedisKeyValueTemplate extends KeyValueTemplate {
   }
 
   /* (non-Javadoc)
-   * 
+   *
    * @see
    * org.springframework.data.keyvalue.core.KeyValueTemplate#getMappingContext(
    * ) */
   @Override
-  public  RedisMappingContext getMappingContext() {
+  public RedisMappingContext getMappingContext() {
     return (RedisMappingContext) super.getMappingContext();
   }
 

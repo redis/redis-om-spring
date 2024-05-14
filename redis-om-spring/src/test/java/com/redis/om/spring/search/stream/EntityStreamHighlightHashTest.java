@@ -36,10 +36,10 @@ class EntityStreamHighlightHashTest extends AbstractBaseEnhancedRedisTest {
 
   /**
    * "FT.SEARCH" "com.redis.om.spring.annotations.hash.fixtures.TextIdx" "abraham isaac jacob"
-   *   "LIMIT" "0" "10000"
-   *   "HIGHLIGHT" "FIELDS" "1" "body"
-   *   "SUMMARIZE" "FIELDS" "1" "body"
-   *   "DIALECT" "1"
+   * "LIMIT" "0" "10000"
+   * "HIGHLIGHT" "FIELDS" "1" "body"
+   * "SUMMARIZE" "FIELDS" "1" "body"
+   * "DIALECT" "1"
    */
   @Test
   void testHighlightSummarize() {
@@ -56,15 +56,14 @@ class EntityStreamHighlightHashTest extends AbstractBaseEnhancedRedisTest {
     assertAll( //
       () -> assertThat(result).contains("<b>Abraham</b>"), //
       () -> assertThat(result).contains("<b>Isaac</b>"), //
-      () -> assertThat(result).contains("<b>Jacob</b>")
-    );
+      () -> assertThat(result).contains("<b>Jacob</b>"));
   }
 
   /**
    * "FT.SEARCH" "com.redis.om.spring.annotations.hash.fixtures.TextIdx" "abraham isaac jacob"
-   *   "LIMIT" "0" "10000"
-   *   "HIGHLIGHT" "FIELDS" "1" "body" "TAGS" "<strong>" "</strong>"
-   *   "SUMMARIZE" "FIELDS" "1" "body" "DIALECT" "1"
+   * "LIMIT" "0" "10000"
+   * "HIGHLIGHT" "FIELDS" "1" "body" "TAGS" "<strong>" "</strong>"
+   * "SUMMARIZE" "FIELDS" "1" "body" "DIALECT" "1"
    */
   @Test
   void testHighlightSummarizeWithCustomTags() {
@@ -81,14 +80,13 @@ class EntityStreamHighlightHashTest extends AbstractBaseEnhancedRedisTest {
     assertAll( //
       () -> assertThat(result).contains("<strong>Abraham</strong>"), //
       () -> assertThat(result).contains("<strong>Isaac</strong>"), //
-      () -> assertThat(result).contains("<strong>Jacob</strong>")
-    );
+      () -> assertThat(result).contains("<strong>Jacob</strong>"));
   }
 
   /**
    * "FT.SEARCH" "com.redis.om.spring.annotations.hash.fixtures.TextIdx" "abraham isaac jacob" "LIMIT" "0" "10000"
-   *   "SUMMARIZE" "FIELDS" "1" "body" "FRAGS" "100" "LEN" "20" "SEPARATOR" "<frag/>"
-   *   "DIALECT" "1"
+   * "SUMMARIZE" "FIELDS" "1" "body" "FRAGS" "100" "LEN" "20" "SEPARATOR" "<frag/>"
+   * "DIALECT" "1"
    */
   @Test
   void testHighlightSummarizeWithFragmentSizeAndSeparator() {
@@ -99,14 +97,15 @@ class EntityStreamHighlightHashTest extends AbstractBaseEnhancedRedisTest {
       .summarize(Text$.BODY, SummarizeParams.instance().fragments(100).separator("<frag/>")) //
       .collect(Collectors.toList());
 
-    List<String> fragments = Arrays.stream(texts.stream().findFirst().map(Text::getBody).get().split("<frag/>")).toList();
+    List<String> fragments = Arrays.stream(texts.stream().findFirst().map(Text::getBody).get().split("<frag/>"))
+      .toList();
     assertThat(fragments).hasSize(100);
   }
 
   /**
    * "FT.SEARCH" "com.redis.om.spring.annotations.hash.fixtures.TextIdx" "isaac"
-   *   "LIMIT" "0" "10000"
-   *   "SUMMARIZE" "FIELDS" "1" "body" "FRAGS" "4" "LEN" "3" "SEPARATOR" "\r\n" "DIALECT" "1"
+   * "LIMIT" "0" "10000"
+   * "SUMMARIZE" "FIELDS" "1" "body" "FRAGS" "4" "LEN" "3" "SEPARATOR" "\r\n" "DIALECT" "1"
    */
   @Test
   void testHighlightSummarizeWithCustomSeparator() {
@@ -118,14 +117,15 @@ class EntityStreamHighlightHashTest extends AbstractBaseEnhancedRedisTest {
       .collect(Collectors.toList());
 
     String result = texts.stream().findFirst().map(Text::getBody).get();
-    assertThat(result).isEqualTo("name Isaac: and\r\nwith Isaac,\r\nIsaac. {21:4} And Abraham circumcised his son Isaac\r\nson Isaac was\r\n");
+    assertThat(result).isEqualTo(
+      "name Isaac: and\r\nwith Isaac,\r\nIsaac. {21:4} And Abraham circumcised his son Isaac\r\nson Isaac was\r\n");
   }
 
   /**
    * "FT.SEARCH" "com.redis.om.spring.annotations.hash.fixtures.TextIdx" "-blah"
-   *   "LIMIT" "0" "10000"
-   *   "SUMMARIZE" "FIELDS" "1" "body" "FRAGS" "3" "LEN" "3" "SEPARATOR" "..."
-   *   "DIALECT" "1"
+   * "LIMIT" "0" "10000"
+   * "SUMMARIZE" "FIELDS" "1" "body" "FRAGS" "3" "LEN" "3" "SEPARATOR" "..."
+   * "DIALECT" "1"
    */
   @Test
   void testAttemptQueryWithNoCorrespondingMatchedTerm() {

@@ -10,15 +10,15 @@ import java.util.UUID;
 @Data
 public class DocumentProjectionPojo {
 
-    @Id
-    private String id;
+  @Id
+  private String id;
 
-    private String name;
+  private String name;
 
-    private String test;
+  private String test;
 
-    public DocumentProjectionPojo() {
-        this.id = UUID.randomUUID().toString();
-    }
+  public DocumentProjectionPojo() {
+    this.id = UUID.randomUUID().toString();
+  }
 
 }

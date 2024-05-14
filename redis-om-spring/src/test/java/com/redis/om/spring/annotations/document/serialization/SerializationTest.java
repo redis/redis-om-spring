@@ -23,7 +23,8 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SuppressWarnings("SpellCheckingInspection") class SerializationTest extends AbstractBaseDocumentTest {
+@SuppressWarnings("SpellCheckingInspection")
+class SerializationTest extends AbstractBaseDocumentTest {
   @Autowired
   KitchenSinkRepository repository;
 
@@ -45,7 +46,6 @@ import static org.assertj.core.api.Assertions.assertThat;
   private Set<String> setThings;
   private List<String> listThings;
 
-
   @BeforeEach
   void cleanUp() {
     repository.deleteAll();
@@ -61,38 +61,38 @@ import static org.assertj.core.api.Assertions.assertThat;
     instant = Instant.now();
 
     ks = KitchenSink.builder() //
-            .localDate(localDate) //
-            .localDateTime(localDateTime) //
-            .localOffsetDateTime(localOffsetDateTime) //
-            .date(date) //
-            .point(point) //
-            .ulid(ulid) //
-            .setThings(setThings) //
-            .listThings(listThings) //
-            .instant(instant) //
-            .build();
+      .localDate(localDate) //
+      .localDateTime(localDateTime) //
+      .localOffsetDateTime(localOffsetDateTime) //
+      .date(date) //
+      .point(point) //
+      .ulid(ulid) //
+      .setThings(setThings) //
+      .listThings(listThings) //
+      .instant(instant) //
+      .build();
 
     ks1 = KitchenSink.builder() //
-            .localDate(localDate) //
-            .localDateTime(localDateTime) //
-            .localOffsetDateTime(localOffsetDateTime) //
-            .date(date) //
-            .point(point) //
-            .ulid(ulid) //
-            .setThings(Set.of()) //
-            .listThings(List.of()) //
-            .instant(instant) //
-            .build();
+      .localDate(localDate) //
+      .localDateTime(localDateTime) //
+      .localOffsetDateTime(localOffsetDateTime) //
+      .date(date) //
+      .point(point) //
+      .ulid(ulid) //
+      .setThings(Set.of()) //
+      .listThings(List.of()) //
+      .instant(instant) //
+      .build();
 
     ks2 = KitchenSink.builder() //
-            .localDate(localDate) //
-            .localDateTime(localDateTime) //
-            .localOffsetDateTime(localOffsetDateTime) //
-            .date(date) //
-            .point(point) //
-            .ulid(ulid) //
-            .instant(instant) //
-            .build();
+      .localDate(localDate) //
+      .localDateTime(localDateTime) //
+      .localOffsetDateTime(localOffsetDateTime) //
+      .date(date) //
+      .point(point) //
+      .ulid(ulid) //
+      .instant(instant) //
+      .build();
 
     ks2.setSetThings(null);
     ks2.setListThings(null);
@@ -121,7 +121,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
     // Point
     String redisGeo = "33.62826024782707,-111.83592170193586";
-    
+
     // Instant
     long instantInMillis = instant.toEpochMilli();
 
@@ -135,7 +135,8 @@ import static org.assertj.core.api.Assertions.assertThat;
     assertThat(rawJSON.get("point").getAsString()).isEqualTo(redisGeo);
     assertThat(rawJSON.get("ulid").getAsString()).isEqualTo(ulid.toString());
     assertThat(rawJSON.get("instant").getAsLong()).isEqualTo(instantInMillis);
-    assertThat(Arrays.asList(rawJSON.get("setThings").getAsString().split("\\|"))).containsExactlyInAnyOrder("thingOne", "thingTwo", "thingThree");
+    assertThat(Arrays.asList(rawJSON.get("setThings").getAsString().split("\\|"))).containsExactlyInAnyOrder("thingOne",
+      "thingTwo", "thingThree");
     assertThat(rawJSON.get("listThings").getAsString()).isEqualTo("redFish|blueFish");
   }
 

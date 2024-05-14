@@ -11,5 +11,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface SortBy {
   String field();
+
   Direction direction() default Direction.ASC;
 }

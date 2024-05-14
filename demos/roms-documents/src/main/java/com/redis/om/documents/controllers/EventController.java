@@ -17,14 +17,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EventController {
 
-    private final EventService eventService;
+  private final EventService eventService;
 
-    @GetMapping("between")
-    List<Event> byNumberOfEmployees(@RequestParam("start")
-                                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
-                                    @RequestParam("end")
-                                    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
-        return eventService.searchByBeginDateBetween(start, end);
-    }
+  @GetMapping("between")
+  List<Event> byNumberOfEmployees(
+    @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+    @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
+    return eventService.searchByBeginDateBetween(start, end);
+  }
 
 }

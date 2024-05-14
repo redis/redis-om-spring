@@ -23,7 +23,7 @@ public abstract class AbstractTuple extends BasicAbstractTuple<AbstractTuple, Ob
   protected int assertIndexBounds(int index) {
     if (index < 0 || index >= size()) {
       throw new IndexOutOfBoundsException(
-              "index " + index + " is illegal. The degree of this Tuple is " + size() + ".");
+        "index " + index + " is illegal. The degree of this Tuple is " + size() + ".");
     }
     return index;
   }

@@ -4,8 +4,9 @@ import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.pds.BloomOperations;
 import org.springframework.beans.factory.annotation.Autowired;
 
-@SuppressWarnings("ALL") public class EmailTakenImpl implements EmailTaken {
-  
+@SuppressWarnings("ALL")
+public class EmailTakenImpl implements EmailTaken {
+
   @Autowired
   RedisModulesOperations<String> modulesOperations;
 

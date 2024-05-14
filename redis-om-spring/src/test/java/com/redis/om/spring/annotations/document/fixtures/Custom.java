@@ -18,7 +18,7 @@ public class Custom {
   @NonNull
   @Searchable(sortable = true)
   private String name;
-  
+
   @Indexed
   private boolean taken;
 

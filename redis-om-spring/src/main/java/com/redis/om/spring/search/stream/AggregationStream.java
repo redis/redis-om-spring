@@ -24,7 +24,7 @@ public interface AggregationStream<T> {
 
   AggregationStream<T> sorted(Order... fields);
 
-  AggregationStream<T> sorted(int max, Order ...fields);
+  AggregationStream<T> sorted(int max, Order... fields);
 
   AggregationStream<T> reduce(ReducerFunction reducer);
 
@@ -52,6 +52,8 @@ public interface AggregationStream<T> {
 
   // Cursor API
   AggregationStream<T> cursor(int i, Duration duration);
+
   <R extends T> Slice<R> toList(PageRequest pageRequest, Class<?>... contentTypes);
+
   <R extends T> Slice<R> toList(PageRequest pageRequest, Duration duration, Class<?>... contentTypes);
 }

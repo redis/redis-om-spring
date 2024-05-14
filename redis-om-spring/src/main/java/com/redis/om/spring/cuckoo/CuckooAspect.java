@@ -21,32 +21,38 @@ import java.util.List;
 @Aspect
 @Component
 public class CuckooAspect implements Ordered {
-  private final CuckooFilterOperations<String> ops;
   private static final Log logger = LogFactory.getLog(CuckooAspect.class);
+  private final CuckooFilterOperations<String> ops;
 
   public CuckooAspect(CuckooFilterOperations<String> ops) {
     this.ops = ops;
   }
 
   @Pointcut("execution(public * org.springframework.data.repository.CrudRepository+.save(..))")
-  public void inCrudRepositorySave() {}
+  public void inCrudRepositorySave() {
+  }
 
   @Pointcut("execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.save(..))")
-  public void inRedisDocumentRepositorySave() {}
+  public void inRedisDocumentRepositorySave() {
+  }
 
   @Pointcut("inCrudRepositorySave() || inRedisDocumentRepositorySave()")
-  private void inSaveOperation() {}
+  private void inSaveOperation() {
+  }
 
   @AfterReturning("inSaveOperation() && args(entity,..)")
   public void addToCuckoo(JoinPoint jp, Object entity) {
     for (Field field : com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(entity.getClass())) {
       if (field.isAnnotationPresent(Cuckoo.class)) {
         Cuckoo cuckoo = field.getAnnotation(Cuckoo.class);
-        String filterName = !ObjectUtils.isEmpty(cuckoo.name()) ? cuckoo.name() : String.format("cf:%s:%s", entity.getClass().getSimpleName(), field.getName());
+        String filterName = !ObjectUtils.isEmpty(cuckoo.name()) ?
+          cuckoo.name() :
+          String.format("cf:%s:%s", entity.getClass().getSimpleName(), field.getName());
         try {
           PropertyDescriptor pd = new PropertyDescriptor(field.getName(), entity.getClass());
           ops.add(filterName, pd.getReadMethod().invoke(entity).toString());
-        } catch (IllegalArgumentException | IllegalAccessException | IntrospectionException | InvocationTargetException e) {
+        } catch (IllegalArgumentException | IllegalAccessException | IntrospectionException |
+                 InvocationTargetException e) {
           logger.error(String.format("Could not add value to Cuckoo filter %s", filterName), e);
         }
       }
@@ -54,13 +60,16 @@ public class CuckooAspect implements Ordered {
   }
 
   @Pointcut("execution(public * org.springframework.data.repository.CrudRepository+.saveAll(..))")
-  public void inCrudRepositorySaveAll() {}
+  public void inCrudRepositorySaveAll() {
+  }
 
   @Pointcut("execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.saveAll(..))")
-  public void inRedisDocumentRepositorySaveAll() {}
+  public void inRedisDocumentRepositorySaveAll() {
+  }
 
   @Pointcut("inCrudRepositorySaveAll() || inRedisDocumentRepositorySaveAll()")
-  private void inSaveAllOperation() {}
+  private void inSaveAllOperation() {
+  }
 
   @AfterReturning("inSaveAllOperation() && args(entities,..)")
   public void addAllToCuckoo(JoinPoint jp, List<Object> entities) {
@@ -68,11 +77,14 @@ public class CuckooAspect implements Ordered {
       for (Field field : com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(entity.getClass())) {
         if (field.isAnnotationPresent(Cuckoo.class)) {
           Cuckoo cuckoo = field.getAnnotation(Cuckoo.class);
-          String filterName = !ObjectUtils.isEmpty(cuckoo.name()) ? cuckoo.name() : String.format("cf:%s:%s", entity.getClass().getSimpleName(), field.getName());
+          String filterName = !ObjectUtils.isEmpty(cuckoo.name()) ?
+            cuckoo.name() :
+            String.format("cf:%s:%s", entity.getClass().getSimpleName(), field.getName());
           try {
             PropertyDescriptor pd = new PropertyDescriptor(field.getName(), entity.getClass());
             ops.add(filterName, pd.getReadMethod().invoke(entity).toString());
-          } catch (IllegalArgumentException | IllegalAccessException | IntrospectionException | InvocationTargetException e) {
+          } catch (IllegalArgumentException | IllegalAccessException | IntrospectionException |
+                   InvocationTargetException e) {
             logger.error(String.format("Could not add values to Bloom filter %s", filterName), e);
           }
         }

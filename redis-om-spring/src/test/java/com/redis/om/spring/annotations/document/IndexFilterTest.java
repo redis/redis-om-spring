@@ -45,7 +45,6 @@ public class IndexFilterTest extends AbstractBaseDocumentTest {
     assertAll( //
       () -> assertThat(vehicles.size()).isEqualTo(3), //
       () -> assertThat(vehicles).extracting("model").containsExactlyInAnyOrder("Beetle", "911 S 2.4", "Thunderbird"), //
-      () -> assertThat(vehicles).allMatch(v -> v.getVehicleType().equals(VehicleType.COUPE))
-    );
+      () -> assertThat(vehicles).allMatch(v -> v.getVehicleType().equals(VehicleType.COUPE)));
   }
 }

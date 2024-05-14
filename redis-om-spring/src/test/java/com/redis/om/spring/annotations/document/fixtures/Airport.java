@@ -13,10 +13,13 @@ import org.springframework.data.annotation.Id;
 public class Airport {
   @Id
   private String id;
-  @AutoComplete @NonNull
+  @AutoComplete
+  @NonNull
   private String name;
-  @AutoCompletePayload("name") @NonNull
+  @AutoCompletePayload("name")
+  @NonNull
   private String code;
-  @AutoCompletePayload("name") @NonNull
+  @AutoCompletePayload("name")
+  @NonNull
   private String state;
 }

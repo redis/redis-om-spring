@@ -13,36 +13,36 @@ import redis.clients.jedis.JedisPoolConfig;
 import java.time.Duration;
 
 public class TestConfig {
-    @Autowired
-    Environment env;
+  @Autowired
+  Environment env;
 
-    @Bean
-    public JedisConnectionFactory jedisConnectionFactory() {
-        String host = env.getProperty("spring.redis.host", "localhost");
-        int port = env.getProperty("spring.redis.port", Integer.class, 6379);
+  @Bean
+  public JedisConnectionFactory jedisConnectionFactory() {
+    String host = env.getProperty("spring.redis.host", "localhost");
+    int port = env.getProperty("spring.redis.port", Integer.class, 6379);
 
-        RedisStandaloneConfiguration conf = new RedisStandaloneConfiguration(host, port);
+    RedisStandaloneConfiguration conf = new RedisStandaloneConfiguration(host, port);
 
-        final JedisPoolConfig poolConfig = new JedisPoolConfig();
-        poolConfig.setTestWhileIdle(false);
-        poolConfig.setMinEvictableIdleDuration(Duration.ofMillis(60000));
-        poolConfig.setTimeBetweenEvictionRuns(Duration.ofMillis(30000));
-        poolConfig.setNumTestsPerEvictionRun(-1);
+    final JedisPoolConfig poolConfig = new JedisPoolConfig();
+    poolConfig.setTestWhileIdle(false);
+    poolConfig.setMinEvictableIdleDuration(Duration.ofMillis(60000));
+    poolConfig.setTimeBetweenEvictionRuns(Duration.ofMillis(30000));
+    poolConfig.setNumTestsPerEvictionRun(-1);
 
-        final int timeout = 10000;
+    final int timeout = 10000;
 
-        final JedisClientConfiguration jedisClientConfiguration = JedisClientConfiguration.builder()
-                .connectTimeout(Duration.ofMillis(timeout)).readTimeout(Duration.ofMillis(timeout)).usePooling()
-                .poolConfig(poolConfig).build();
+    final JedisClientConfiguration jedisClientConfiguration = JedisClientConfiguration.builder()
+      .connectTimeout(Duration.ofMillis(timeout)).readTimeout(Duration.ofMillis(timeout)).usePooling()
+      .poolConfig(poolConfig).build();
 
-        return new JedisConnectionFactory(conf, jedisClientConfiguration);
-    }
+    return new JedisConnectionFactory(conf, jedisClientConfiguration);
+  }
 
-    @Bean
-    public StringRedisTemplate redisTemplate(RedisConnectionFactory connectionFactory) {
-        StringRedisTemplate template = new StringRedisTemplate();
-        template.setConnectionFactory(connectionFactory);
+  @Bean
+  public StringRedisTemplate redisTemplate(RedisConnectionFactory connectionFactory) {
+    StringRedisTemplate template = new StringRedisTemplate();
+    template.setConnectionFactory(connectionFactory);
 
-        return template;
-    }
+    return template;
+  }
 }

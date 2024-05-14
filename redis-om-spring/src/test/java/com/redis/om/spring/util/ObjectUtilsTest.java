@@ -29,7 +29,8 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
-@SuppressWarnings({ "ConstantConditions", "SpellCheckingInspection" }) class ObjectUtilsTest extends AbstractBaseDocumentTest {
+@SuppressWarnings({ "ConstantConditions", "SpellCheckingInspection" })
+class ObjectUtilsTest extends AbstractBaseDocumentTest {
 
   @Autowired
   CompanyRepository companyRepository;
@@ -110,7 +111,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     assertThat(ObjectUtils.getTargetClassName(inta.getClass().getTypeName())).isEqualTo(int[].class.getTypeName());
     assertThat(ObjectUtils.getTargetClassName(typeName)).isEqualTo(boolean.class.getTypeName());
     assertThat(ObjectUtils.getTargetClassName(
-        "java.util.List<com.redis.om.spring.annotations.document.fixtures.Attribute>")).isEqualTo(List.class.getTypeName());
+      "java.util.List<com.redis.om.spring.annotations.document.fixtures.Attribute>")).isEqualTo(
+      List.class.getTypeName());
   }
 
   @Test
@@ -119,12 +121,6 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     assertThat(ObjectUtils.firstToLowercase("spam")).isEqualTo("spam");
     assertThat(ObjectUtils.firstToLowercase("*light")).isEqualTo("*light");
     assertThat(ObjectUtils.firstToLowercase("8675309")).isEqualTo("8675309");
-  }
-
-  static class BunchOfCollections {
-    public final List<String> lofs = new ArrayList<>();
-    public final Set<Integer> sois = new HashSet<>();
-    public final Iterable<Company> ioc = new ArrayList<>();
   }
 
   @Test
@@ -142,14 +138,14 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     Optional<Class<?>> maybeContentsOfIoc = ObjectUtils.getCollectionElementClass(iocField);
 
     assertAll( //
-        () -> assertThat(maybeContentsOfLofs).isPresent(), //
-        () -> assertThat(maybeContentsOfLofs).contains(String.class), //
+      () -> assertThat(maybeContentsOfLofs).isPresent(), //
+      () -> assertThat(maybeContentsOfLofs).contains(String.class), //
 
-        () -> assertThat(maybeContentsOfSois).isPresent(), //
-        () -> assertThat(maybeContentsOfSois).contains(Integer.class), //
+      () -> assertThat(maybeContentsOfSois).isPresent(), //
+      () -> assertThat(maybeContentsOfSois).contains(Integer.class), //
 
-        () -> assertThat(maybeContentsOfIoc).isPresent(), //
-        () -> assertThat(maybeContentsOfIoc).contains(Company.class) //
+      () -> assertThat(maybeContentsOfIoc).isPresent(), //
+      () -> assertThat(maybeContentsOfIoc).contains(Company.class) //
     );
   }
 
@@ -169,7 +165,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
   @Test
   void testGetIdFieldForEntity() {
     Company redis = companyRepository.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+      Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
     String actualCompanyId = redis.getId();
 
     Object id = ObjectUtils.getIdFieldForEntity(redis);
@@ -263,7 +259,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     assertThat(ObjectUtils.unQuote("\"Spam\"")).isEqualTo("Spam");
     assertThat(ObjectUtils.unQuote("Spam")).isEqualTo("Spam");
     assertThat(ObjectUtils.unQuote("\"The quick \\\"brown\\\" fox \\\"jumps\\\" over the lazy dog\"")).isEqualTo(
-        "The quick \\\"brown\\\" fox \\\"jumps\\\" over the lazy dog");
+      "The quick \\\"brown\\\" fox \\\"jumps\\\" over the lazy dog");
   }
 
   @Test
@@ -296,13 +292,13 @@ import static org.junit.jupiter.api.Assertions.assertAll;
   @Test
   void testGetValueByPath() {
     Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
-        "stack@redis.com");
+      "stack@redis.com");
     redis.setId("8675309");
     redis.setMetaList(Set.of(CompanyMeta.of("RD", 100, Set.of("RedisTag", "CommonTag"))));
     redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
 
     Set<Employee> employees = Sets.newHashSet(Employee.of("Brian Sam-Bodden"), Employee.of("Guy Royse"),
-        Employee.of("Justin Castilla"));
+      Employee.of("Justin Castilla"));
     redis.setEmployees(employees);
 
     String id = (String) ObjectUtils.getValueByPath(redis, "$.id");
@@ -310,26 +306,33 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     Integer yearFounded = (Integer) ObjectUtils.getValueByPath(redis, "$.yearFounded");
     LocalDate lastValuation = (LocalDate) ObjectUtils.getValueByPath(redis, "$.lastValuation");
     Point location = (Point) ObjectUtils.getValueByPath(redis, "$.location");
-    Set<String> tags = (Set<String>) ObjectUtils.getValueByPath(redis, "$.tags[*]");
+    @SuppressWarnings("unchecked") Set<String> tags = (Set<String>) ObjectUtils.getValueByPath(redis, "$.tags[*]");
     String email = (String) ObjectUtils.getValueByPath(redis, "$.email");
     boolean publiclyListed = (boolean) ObjectUtils.getValueByPath(redis, "$.publiclyListed");
-    Collection<Integer> metaList_numberValue = (Collection<Integer>) ObjectUtils.getValueByPath(redis, "$.metaList[0:].numberValue");
-    Collection<String> metaList_stringValue = (Collection<String>) ObjectUtils.getValueByPath(redis, "$.metaList[0:].stringValue");
-    Collection<String> employees_name = (Collection<String>) ObjectUtils.getValueByPath(redis, "$.employees[0:].name");
+    @SuppressWarnings(
+      "unchecked"
+    ) Collection<Integer> metaList_numberValue = (Collection<Integer>) ObjectUtils.getValueByPath(redis,
+      "$.metaList[0:].numberValue");
+    @SuppressWarnings(
+      "unchecked"
+    ) Collection<String> metaList_stringValue = (Collection<String>) ObjectUtils.getValueByPath(redis,
+      "$.metaList[0:].stringValue");
+    @SuppressWarnings("unchecked") Collection<String> employees_name = (Collection<String>) ObjectUtils.getValueByPath(
+      redis, "$.employees[0:].name");
 
     assertAll( //
-        () -> assertThat(id).isEqualTo(redis.getId()),
-        () -> assertThat(name).isEqualTo(redis.getName()),
-        () -> assertThat(yearFounded).isEqualTo(redis.getYearFounded()),
-        () -> assertThat(lastValuation).isEqualTo(redis.getLastValuation()),
-        () -> assertThat(location).isEqualTo(redis.getLocation()),
-        () -> assertThat(tags).isEqualTo(redis.getTags()),
-        () -> assertThat(email).isEqualTo(redis.getEmail()),
-        () -> assertThat(publiclyListed).isEqualTo(redis.isPubliclyListed()),
-        () -> assertThat(metaList_numberValue).containsExactlyElementsOf(redis.getMetaList().stream().map(CompanyMeta::getNumberValue).toList()),
-        () -> assertThat(metaList_stringValue).containsExactlyElementsOf(redis.getMetaList().stream().map(CompanyMeta::getStringValue).toList()),
-        () -> assertThat(employees_name).containsExactlyElementsOf(redis.getEmployees().stream().map(Employee::getName).toList())
-    );
+      () -> assertThat(id).isEqualTo(redis.getId()), () -> assertThat(name).isEqualTo(redis.getName()),
+      () -> assertThat(yearFounded).isEqualTo(redis.getYearFounded()),
+      () -> assertThat(lastValuation).isEqualTo(redis.getLastValuation()),
+      () -> assertThat(location).isEqualTo(redis.getLocation()), () -> assertThat(tags).isEqualTo(redis.getTags()),
+      () -> assertThat(email).isEqualTo(redis.getEmail()),
+      () -> assertThat(publiclyListed).isEqualTo(redis.isPubliclyListed()),
+      () -> assertThat(metaList_numberValue).containsExactlyElementsOf(
+        redis.getMetaList().stream().map(CompanyMeta::getNumberValue).toList()),
+      () -> assertThat(metaList_stringValue).containsExactlyElementsOf(
+        redis.getMetaList().stream().map(CompanyMeta::getStringValue).toList()),
+      () -> assertThat(employees_name).containsExactlyElementsOf(
+        redis.getEmployees().stream().map(Employee::getName).toList()));
   }
 
   @Test
@@ -393,5 +396,11 @@ import static org.junit.jupiter.api.Assertions.assertAll;
     String result = ObjectUtils.replaceIfIllegalJavaIdentifierCharacter("!@#*%^&*()");
     String expected = "__________";
     assertThat(result).isEqualTo(expected);
+  }
+
+  static class BunchOfCollections {
+    public final List<String> lofs = new ArrayList<>();
+    public final Set<Integer> sois = new HashSet<>();
+    public final Iterable<Company> ioc = new ArrayList<>();
   }
 }

@@ -68,7 +68,8 @@ public class ExplicitPrefixesHashTest extends AbstractBaseEnhancedRedisTest {
     }
   }
 
-  @Test void testFindByIdForCustomPrefixWithColon() {
+  @Test
+  void testFindByIdForCustomPrefixWithColon() {
     Optional<HashWithColonInPrefix> maybePanama = hashWithColonInPrefixRepository.findById("Panama");
     assertThat(maybePanama).isPresent();
   }

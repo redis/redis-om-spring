@@ -7,5 +7,6 @@ import java.lang.annotation.*;
 @Target({ ElementType.FIELD, ElementType.ANNOTATION_TYPE })
 public @interface Vectorize {
   String destination();
+
   EmbeddingType embeddingType() default EmbeddingType.SENTENCE;
 }

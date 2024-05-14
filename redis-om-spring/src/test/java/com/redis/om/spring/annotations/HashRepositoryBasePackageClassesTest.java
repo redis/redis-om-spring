@@ -19,24 +19,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest( //
-    classes = HashRepositoryBasePackageClassesTest.Config.class, //
-    properties = { "spring.main.allow-bean-definition-overriding=true" } //
-)
-@TestPropertySource(properties = {"spring.config.location=classpath:vss_on.yaml"})
+                 classes = HashRepositoryBasePackageClassesTest.Config.class, //
+                 properties = { "spring.main.allow-bean-definition-overriding=true" } //
+                 )
+@TestPropertySource(properties = { "spring.config.location=classpath:vss_on.yaml" })
 class HashRepositoryBasePackageClassesTest extends AbstractBaseOMTest {
-  @SpringBootApplication
-  @Configuration
-  @EnableRedisEnhancedRepositories(basePackageClasses = {Company.class, CompanyRepository.class})
-  static class Config extends TestConfig {
-  }
-  
   @Autowired
   CompanyRepository repository;
-  
+
   @Test
   void testBasePackageClassesAreFound() {
     Company redis = repository.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+      Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
 
     assertEquals(1, repository.count());
 
@@ -48,6 +42,12 @@ class HashRepositoryBasePackageClassesTest extends AbstractBaseOMTest {
     repository.deleteById(redis.getId());
 
     assertEquals(0, repository.count());
+  }
+
+  @SpringBootApplication
+  @Configuration
+  @EnableRedisEnhancedRepositories(basePackageClasses = { Company.class, CompanyRepository.class })
+  static class Config extends TestConfig {
   }
 
 }

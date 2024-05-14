@@ -12,7 +12,6 @@ public class SearchFieldAccessor {
   private final Class<?> targetClass;
   private final Class<?> declaringClass;
 
-
   public SearchFieldAccessor(String searchAlias, String jsonPath, Field... fields) {
     this.searchAlias = searchAlias;
     this.jsonPath = jsonPath;

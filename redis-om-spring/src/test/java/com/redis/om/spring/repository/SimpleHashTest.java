@@ -13,32 +13,32 @@ import static org.assertj.core.api.Assumptions.assumeThat;
 
 class SimpleHashTest extends AbstractBaseEnhancedRedisTest {
 
-    private static final int SIZE = 20;
+  private static final int SIZE = 20;
 
-    private final SimpleHashRepository simpleHashRepository;
+  private final SimpleHashRepository simpleHashRepository;
 
-    @Autowired
-    SimpleHashTest(SimpleHashRepository simpleHashRepository) {
-        this.simpleHashRepository = simpleHashRepository;
+  @Autowired
+  SimpleHashTest(SimpleHashRepository simpleHashRepository) {
+    this.simpleHashRepository = simpleHashRepository;
+  }
+
+  @BeforeEach
+  void setUp() {
+    for (int i = 0; i < SIZE; ++i) {
+      simpleHashRepository.save(new SimpleHash());
     }
+  }
 
-    @BeforeEach
-    void setUp() {
-        for (int i = 0; i < SIZE; ++i) {
-            simpleHashRepository.save(new SimpleHash());
-        }
-    }
+  @Test
+  void testAllSimpleDocumentsReturned() {
+    assumeThat(simpleHashRepository.count()).isEqualTo(SIZE);
 
-    @Test
-    void testAllSimpleDocumentsReturned() {
-        assumeThat(simpleHashRepository.count()).isEqualTo(SIZE);
+    List<SimpleHash> documents = simpleHashRepository.findAll();
+    assertThat(documents).isNotNull().hasSize(SIZE);
+  }
 
-        List<SimpleHash> documents = simpleHashRepository.findAll();
-        assertThat(documents).isNotNull().hasSize(SIZE);
-    }
-
-    @AfterEach
-    void tearDown() {
-        simpleHashRepository.deleteAll();
-    }
+  @AfterEach
+  void tearDown() {
+    simpleHashRepository.deleteAll();
+  }
 }

@@ -260,7 +260,8 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
     throw new UnsupportedOperationException("mapToLabelledMaps is not supported on a WrappedSearchStream");
   }
 
-  @SafeVarargs @Override
+  @SafeVarargs
+  @Override
   public final <R> AggregationStream<R> groupBy(MetamodelField<E, ?>... fields) {
     throw new UnsupportedOperationException("groupBy is not supported on a WrappedSearchStream");
   }
@@ -270,7 +271,8 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
     throw new UnsupportedOperationException("apply is not supported on a WrappedSearchStream");
   }
 
-  @SafeVarargs @Override
+  @SafeVarargs
+  @Override
   public final <R> AggregationStream<R> load(MetamodelField<E, ?>... fields) {
     throw new UnsupportedOperationException("load is not supported on a WrappedSearchStream");
   }
@@ -290,7 +292,8 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
     throw new UnsupportedOperationException("max is not supported on a WrappedSearchStream");
   }
 
-  @Override public SearchStream<E> dialect(int dialect) {
+  @Override
+  public SearchStream<E> dialect(int dialect) {
     throw new UnsupportedOperationException("dialect is not supported on a WrappedSearchStream");
   }
 
@@ -341,10 +344,9 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
   }
 
   @Override
-  public <R> SearchStream<E> highlight(Function<? super E, ? extends R> field, Pair<String,String> tags) {
+  public <R> SearchStream<E> highlight(Function<? super E, ? extends R> field, Pair<String, String> tags) {
     throw new UnsupportedOperationException("highlight is not supported on a WrappedSearchStream");
   }
-
 
   @Override
   public SearchStream<E> findFirstOrElse(Supplier<? extends E> supplier) {

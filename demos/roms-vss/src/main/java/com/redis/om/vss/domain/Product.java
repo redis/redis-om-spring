@@ -61,7 +61,6 @@ public class Product {
   @NonNull
   private String productDisplayName;
 
-
   @Indexed(//
            schemaFieldType = SchemaFieldType.VECTOR, //
            algorithm = VectorAlgorithm.HNSW, //
@@ -98,18 +97,20 @@ public class Product {
     String gender = values[1];
     String masterCategory = values[2];
     String subCategory = values[3];
-    if (subCategory.equalsIgnoreCase("Innerwear")) return null;
+    if (subCategory.equalsIgnoreCase("Innerwear"))
+      return null;
     String articleType = values[4];
     String baseColour = values[5];
     String season = values[6];
     String year = values[7];
-    String usage  = values[8];
+    String usage = values[8];
     String productDisplayName = values[9];
     String imagePath = useLocalImages ? "classpath:/static/product-images/" + id + ".jpg" : values[10];
-    String productText = Stream.of(productDisplayName, "category", masterCategory, "subcategory", subCategory, "color", baseColour, "gender", gender).map(String::toLowerCase).collect(
-      Collectors.joining(" "));
+    String productText = Stream.of(productDisplayName, "category", masterCategory, "subcategory", subCategory, "color",
+      baseColour, "gender", gender).map(String::toLowerCase).collect(Collectors.joining(" "));
 
-    Product p = Product.of(gender, masterCategory, subCategory, articleType, baseColour, season, year, usage, productDisplayName, imagePath, productText);
+    Product p = Product.of(gender, masterCategory, subCategory, articleType, baseColour, season, year, usage,
+      productDisplayName, imagePath, productText);
     p.setId(id);
     return p;
   }

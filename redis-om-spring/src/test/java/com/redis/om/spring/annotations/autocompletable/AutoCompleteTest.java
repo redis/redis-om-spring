@@ -36,11 +36,11 @@ class AutoCompleteTest extends AbstractBaseDocumentTest {
   void loadAirports(@Value("classpath:/data/airport_codes.csv") File dataFile) throws IOException {
     if (repository.count() != 190) {
       List<Airport> data = Files //
-          .readLines(dataFile, StandardCharsets.UTF_8) //
-          .stream() //
-          .map(l -> l.split(",")) //
-          .map(ar -> Airport.of(ar[0], ar[1], ar[2])) //
-          .collect(Collectors.toList());
+        .readLines(dataFile, StandardCharsets.UTF_8) //
+        .stream() //
+        .map(l -> l.split(",")) //
+        .map(ar -> Airport.of(ar[0], ar[1], ar[2])) //
+        .collect(Collectors.toList());
       repository.saveAll(data);
     }
   }
@@ -64,8 +64,8 @@ class AutoCompleteTest extends AbstractBaseDocumentTest {
     List<Suggestion> suggestions = repository.autoCompleteName("col", AutoCompleteOptions.get().limit(2));
     List<String> suggestionsString = suggestions.stream().map(Suggestion::getValue).collect(Collectors.toList());
     assertAll( //
-        () -> assertThat(suggestionsString).size().isEqualTo(2), //
-        () -> assertThat(suggestionsString).containsAll(List.of("Columbia", "Columbus")) //
+      () -> assertThat(suggestionsString).size().isEqualTo(2), //
+      () -> assertThat(suggestionsString).containsAll(List.of("Columbia", "Columbus")) //
     );
   }
 
@@ -90,7 +90,7 @@ class AutoCompleteTest extends AbstractBaseDocumentTest {
     assertThat(suggestionsString).containsAll(List.of("Columbia", "Columbus", "Colorado Springs"));
 
     assertThat(scores).usingComparatorForType(new DoubleComparator(0.1), Double.class)
-        .containsAll(List.of(0.41, 0.41, 0.27));
+      .containsAll(List.of(0.41, 0.41, 0.27));
   }
 
 }

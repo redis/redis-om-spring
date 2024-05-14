@@ -33,12 +33,13 @@ public class NotEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
-    if (isEmpty(getValues())) return root;
+    if (isEmpty(getValues()))
+      return root;
     QueryNode and = QueryBuilders.intersect();
 
     StreamSupport.stream(getValues().spliterator(), false) //
-        .map(v -> Values.value("{" + v.toString() + "}"))
-        .forEach(val -> and.add(QueryBuilders.disjunct(getSearchAlias(), val)));
+      .map(v -> Values.value("{" + v.toString() + "}"))
+      .forEach(val -> and.add(QueryBuilders.disjunct(getSearchAlias(), val)));
 
     return QueryBuilders.intersect(root, and);
   }

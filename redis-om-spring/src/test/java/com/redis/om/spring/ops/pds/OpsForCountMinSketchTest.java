@@ -73,7 +73,7 @@ class OpsForCountMinSketchTest extends AbstractBaseDocumentTest {
     List<Long> q5 = cms.cmsQuery("C", "foo", "bar", "baz");
     assertArrayEquals(new Long[] { 16L, 15L, 21L }, q5.toArray(new Long[0]));
   }
-  
+
   @Test
   void testInitByProb() {
     cms.cmsInitByProb("cms2", 0.01, 0.01);
@@ -82,7 +82,7 @@ class OpsForCountMinSketchTest extends AbstractBaseDocumentTest {
     assertEquals(7L, info.get("depth"));
     assertEquals(0L, info.get("count"));
   }
-  
+
   @Test
   void testIncrBy() {
     cms.cmsInitByDim("cms3", 1000L, 5L);

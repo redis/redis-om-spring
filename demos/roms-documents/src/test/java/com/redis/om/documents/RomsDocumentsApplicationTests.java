@@ -5,8 +5,8 @@ import org.junit.jupiter.api.Test;
 //@SpringBootTest
 class RomsDocumentsApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
+  @Test
+  void contextLoads() {
+  }
 
 }

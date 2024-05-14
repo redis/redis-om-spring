@@ -9,7 +9,7 @@ public interface GenericTuple<R> {
   R get(int index);
 
   <T> Stream<T> streamOf(Class<T> clazz);
-  
-  Map<String,Object> labelledMap();
+
+  Map<String, Object> labelledMap();
 
 }

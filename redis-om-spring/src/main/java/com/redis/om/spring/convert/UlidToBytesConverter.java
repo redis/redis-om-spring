@@ -13,7 +13,7 @@ public class UlidToBytesConverter implements Converter<Ulid, byte[]> {
   byte[] fromString(String source) {
     return source.getBytes(StandardCharsets.UTF_8);
   }
-  
+
   @Override
   public byte[] convert(Ulid source) {
     return fromString(source.toString());

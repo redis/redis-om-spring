@@ -14,37 +14,37 @@ public class GeoField<E, T> extends MetamodelField<E, T> {
   public GeoField(SearchFieldAccessor field, boolean indexed) {
     super(field, indexed);
   }
-  
-  public EqualPredicate<E,T> eq(T value) {
-    return new EqualPredicate<>(searchFieldAccessor,value);
+
+  public EqualPredicate<E, T> eq(T value) {
+    return new EqualPredicate<>(searchFieldAccessor, value);
   }
-  
-  public EqualPredicate<E,T> eq(String xy) {
-    return new EqualPredicate<>(searchFieldAccessor,xy);
+
+  public EqualPredicate<E, T> eq(String xy) {
+    return new EqualPredicate<>(searchFieldAccessor, xy);
   }
-  
-  public EqualPredicate<E,T> eq(double x, double y) {
+
+  public EqualPredicate<E, T> eq(double x, double y) {
     return new EqualPredicate<>(searchFieldAccessor, x, y);
   }
-  
-  public NotEqualPredicate<E,T> notEq(T value) {
-    return new NotEqualPredicate<>(searchFieldAccessor,value);
+
+  public NotEqualPredicate<E, T> notEq(T value) {
+    return new NotEqualPredicate<>(searchFieldAccessor, value);
   }
-  
-  public NotEqualPredicate<E,T> notEq(String xy) {
-    return new NotEqualPredicate<>(searchFieldAccessor,xy);
+
+  public NotEqualPredicate<E, T> notEq(String xy) {
+    return new NotEqualPredicate<>(searchFieldAccessor, xy);
   }
-  
-  public NotEqualPredicate<E,T> notEq(double x, double y) {
+
+  public NotEqualPredicate<E, T> notEq(double x, double y) {
     return new NotEqualPredicate<>(searchFieldAccessor, x, y);
   }
-  
-  public NearPredicate<E,T> near(Point point, Distance distance) {
-    return new NearPredicate<>(searchFieldAccessor,point,distance);
+
+  public NearPredicate<E, T> near(Point point, Distance distance) {
+    return new NearPredicate<>(searchFieldAccessor, point, distance);
   }
-  
-  public OutsideOfPredicate<E,T> outsideOf(Point point, Distance distance) {
-    return new OutsideOfPredicate<>(searchFieldAccessor,point,distance);
+
+  public OutsideOfPredicate<E, T> outsideOf(Point point, Distance distance) {
+    return new OutsideOfPredicate<>(searchFieldAccessor, point, distance);
   }
 
 }

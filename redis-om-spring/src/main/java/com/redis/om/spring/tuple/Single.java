@@ -4,6 +4,10 @@ import com.redis.om.spring.tuple.accessor.FirstAccessor;
 
 public interface Single<T0> extends Tuple {
 
+  static <T0> FirstAccessor<Single<T0>, T0> getFirstGetter() {
+    return Single::getFirst;
+  }
+
   T0 getFirst();
 
   @Override
@@ -16,11 +20,7 @@ public interface Single<T0> extends Tuple {
       return getFirst();
     } else {
       throw new IndexOutOfBoundsException(
-          String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
+        String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
     }
-  }
-
-  static <T0> FirstAccessor<Single<T0>, T0> getFirstGetter() {
-    return Single::getFirst;
   }
 }

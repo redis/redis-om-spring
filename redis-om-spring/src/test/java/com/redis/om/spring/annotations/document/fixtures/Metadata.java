@@ -15,10 +15,10 @@ import org.springframework.data.annotation.Id;
 public class Metadata {
   @Id
   private String id;
-  
+
   @Indexed
-  private String employeeId; 
-  
+  private String employeeId;
+
   @Indexed
   private String deptId;
 }

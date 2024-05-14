@@ -15,9 +15,9 @@ public interface Tuple extends GenericTuple<Object> {
   default <T> Stream<T> streamOf(Class<T> clazz) {
     return stream().filter(clazz::isInstance).map(clazz::cast);
   }
-  
+
   @Override
-  default Map<String,Object> labelledMap() {
+  default Map<String, Object> labelledMap() {
     return Collections.emptyMap();
   }
 }

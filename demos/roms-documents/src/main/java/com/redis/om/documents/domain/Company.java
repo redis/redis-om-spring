@@ -49,12 +49,12 @@ public class Company {
   private Set<CompanyMeta> metaList;
 
   private boolean publiclyListed;
-  
+
   // audit fields
-  
+
   @CreatedDate
   private Date createdDate;
-  
+
   @LastModifiedDate
   private Date lastModifiedDate;
 }

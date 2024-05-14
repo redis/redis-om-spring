@@ -12,11 +12,12 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SuppressWarnings("SpellCheckingInspection") class BloomTest extends AbstractBaseEnhancedRedisTest {
+@SuppressWarnings("SpellCheckingInspection")
+class BloomTest extends AbstractBaseEnhancedRedisTest {
 
   @Autowired
   PersonRepository repository;
-  
+
   @BeforeEach
   void loadPersons() {
     Person guyr = Person.of("Guy Royse", "guy.royse@redis.com", "guy");
@@ -33,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     Person kaitlyn = Person.of("Kaitlyn Michael", "kaitlyn@redis.com", "kaitlyn");
     Person josefin = Person.of("Josefin Sjoeberg", "josefin.sjoeberg@redis.com", "josefin");
     List<Person> persons = List.of(guyr, guyk, simon, justin, steve, kyleo, kyleb, andrew, alex, lance, rachel, kaitlyn,
-        josefin);
+      josefin);
 
     repository.saveAll(persons);
   }
@@ -49,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     assertTrue(repository.existsByEmail("kyle.owen@redis.com"));
     assertFalse(repository.existsByEmail("bsb@redis.com"));
   }
-  
+
   @Test
   void testDynamicBloomRepositoryMethodForDefaultNamedFilter() {
     assertTrue(repository.existsByNickname("floridaman"));

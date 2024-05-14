@@ -1,4 +1,3 @@
-
 package com.redis.om.spring.tuple.accessor;
 
 import java.util.function.Function;

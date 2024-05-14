@@ -14,15 +14,15 @@ import org.springframework.data.annotation.Id;
 public class Person {
   @Id
   private String id;
-  
+
   @NonNull
   @TextIndexed
   private String firstName;
-  
+
   @NonNull
   @TextIndexed
   private String lastName;
-  
+
   @NonNull
   @TagIndexed
   private String email;

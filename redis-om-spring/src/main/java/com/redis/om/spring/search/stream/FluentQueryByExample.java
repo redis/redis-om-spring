@@ -14,17 +14,17 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class FluentQueryByExample <T> implements FluentQuery.FetchableFluentQuery<T> {
+public class FluentQueryByExample<T> implements FluentQuery.FetchableFluentQuery<T> {
   private final SearchStream<T> searchStream;
   private final Class<T> probeType;
 
   private final SearchOperations<String> searchOps;
 
   public FluentQueryByExample( //
-      Example<T> example, //
-      Class<T> probeType, //
-      EntityStream entityStream, //
-      SearchOperations<String> searchOps //
+    Example<T> example, //
+    Class<T> probeType, //
+    EntityStream entityStream, //
+    SearchOperations<String> searchOps //
   ) {
     this.probeType = probeType;
     this.searchOps = searchOps;
@@ -46,9 +46,8 @@ public class FluentQueryByExample <T> implements FluentQuery.FetchableFluentQuer
   @Override
   @SuppressWarnings("unchecked")
   public FetchableFluentQuery<T> project(Collection<String> properties) {
-    List<MetamodelField<?, ?>> metamodelFields = MetamodelUtils.getMetamodelFieldsForProperties(probeType,
-        properties);
-    metamodelFields.forEach(mmf ->  searchStream.project((MetamodelField<? super T, ?>) mmf));
+    List<MetamodelField<?, ?>> metamodelFields = MetamodelUtils.getMetamodelFieldsForProperties(probeType, properties);
+    metamodelFields.forEach(mmf -> searchStream.project((MetamodelField<? super T, ?>) mmf));
     return this;
   }
 
@@ -83,7 +82,8 @@ public class FluentQueryByExample <T> implements FluentQuery.FetchableFluentQuer
     query.limit(0, 0);
     SearchResult searchResult = searchOps.search(query);
     var count = searchResult.getTotalResults();
-    var pageContents = searchStream.limit(pageable.getPageSize()).skip(pageable.getOffset()).collect(Collectors.toList());
+    var pageContents = searchStream.limit(pageable.getPageSize()).skip(pageable.getOffset())
+      .collect(Collectors.toList());
     return new PageImpl<>(pageContents, pageable, count);
   }
 

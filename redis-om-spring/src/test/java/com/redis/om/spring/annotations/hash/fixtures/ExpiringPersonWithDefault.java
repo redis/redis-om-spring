@@ -12,7 +12,8 @@ import org.springframework.data.redis.core.RedisHash;
 @RequiredArgsConstructor(staticName = "of")
 @RedisHash(timeToLive = 5)
 public class ExpiringPersonWithDefault {
-  @Id String id;
+  @Id
+  String id;
   @NonNull
   String name;
 }

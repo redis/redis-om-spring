@@ -6,11 +6,10 @@ import redis.clients.jedis.search.querybuilder.RangeValue;
 import java.util.Date;
 
 public class DateRangeValue extends RangeValue {
-  private final Date from;
-  private final Date to;
-
   public static final Date MIN = new Date(Long.MIN_VALUE);
   public static final Date MAX = new Date(Long.MAX_VALUE);
+  private final Date from;
+  private final Date to;
 
   public DateRangeValue(Date from, Date to) {
     this.from = from;

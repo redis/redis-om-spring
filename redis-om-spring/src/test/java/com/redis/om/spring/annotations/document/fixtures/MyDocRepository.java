@@ -15,7 +15,8 @@ import redis.clients.jedis.search.aggr.AggregationResult;
 import java.util.List;
 import java.util.Set;
 
-@SuppressWarnings({ "unused", "SpellCheckingInspection", "SpringDataMethodInconsistencyInspection" }) public interface MyDocRepository extends RedisDocumentRepository<MyDoc, String>, MyDocQueries {
+@SuppressWarnings({ "unused", "SpellCheckingInspection", "SpringDataMethodInconsistencyInspection" })
+public interface MyDocRepository extends RedisDocumentRepository<MyDoc, String>, MyDocQueries {
   /**
    * <pre>
    * > FT.SEARCH idx * RETURN 3 $.tag[0] AS first_tag 1) (integer) 1 2) "doc1" 3)
@@ -46,7 +47,7 @@ import java.util.Set;
    *    2) "article"
    * </pre>
    */
-  @Aggregation(load = { @Load(property = "$.tag[1]", alias = "tag2")})
+  @Aggregation(load = { @Load(property = "$.tag[1]", alias = "tag2") })
   AggregationResult getSecondTagWithAggregation();
 
   /**
@@ -76,9 +77,9 @@ import java.util.Set;
    * > FT.SEARCH idx @title:pre* SORTBY title ASC LIMIT 1 12 RETURN 2 title aNumber
    * </pre>
    */
-  @Query(value="@title:$prefix*", returnFields={"title", "aNumber"}, limit = 12, offset = 1, sortBy = "title")
+  @Query(value = "@title:$prefix*", returnFields = { "title", "aNumber" }, limit = 12, offset = 1, sortBy = "title")
   SearchResult customFindAllByTitleStartingWithReturnFieldsAndLimit(@Param("prefix") String prefix);
-  
+
   /**
    * <pre>
    * > FT.TAGVALS idx tags

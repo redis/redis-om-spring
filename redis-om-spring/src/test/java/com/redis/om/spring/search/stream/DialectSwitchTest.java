@@ -12,13 +12,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 class DialectSwitchTest extends AbstractBaseDocumentTest {
-  @Autowired DocRepository docRepository;
+  @Autowired
+  DocRepository docRepository;
 
-  @Autowired EntityStream entityStream;
+  @Autowired
+  EntityStream entityStream;
 
   /**
    * Consider the differences in parser behavior in example hello world | "goodbye" moon:
-   *
+   * <p>
    * In DIALECT 1, this query is interpreted as searching for (hello world | "goodbye") moon.
    * In DIALECT 2 or greater, this query is interpreted as searching for either hello world OR "goodbye" moon.
    */
@@ -29,24 +31,23 @@ class DialectSwitchTest extends AbstractBaseDocumentTest {
     Doc goodbyeMoon = docRepository.save(Doc.of("doc2", "goodbye moon"));
 
     var dialectOne = entityStream.of(Doc.class) //
-        .dialect(1) //
-        .filter("hello world | \"goodbye\" moon") //
-        .collect(Collectors.toList());
+      .dialect(1) //
+      .filter("hello world | \"goodbye\" moon") //
+      .collect(Collectors.toList());
 
     var dialectTwo = entityStream.of(Doc.class) //
-        .dialect(2) //
-        .filter("hello world | \"goodbye\" moon") //
-        .collect(Collectors.toList());
+      .dialect(2) //
+      .filter("hello world | \"goodbye\" moon") //
+      .collect(Collectors.toList());
 
     assertAll( //
-        () -> assertThat(dialectOne).containsExactly(goodbyeMoon),
-        () -> assertThat(dialectTwo).containsExactly(helloWorld, goodbyeMoon)
-    );
+      () -> assertThat(dialectOne).containsExactly(goodbyeMoon),
+      () -> assertThat(dialectTwo).containsExactly(helloWorld, goodbyeMoon));
   }
 
   /**
    * Consider a simple query with negation -hello world:
-   *
+   * <p>
    * In DIALECT 1, this query is interpreted as "find values in any field that does not contain hello AND does not
    * contain world". The equivalent is -(hello world) or -hello -world.
    * In DIALECT 2 or greater, this query is interpreted as -hello AND world (only hello is negated).
@@ -60,20 +61,17 @@ class DialectSwitchTest extends AbstractBaseDocumentTest {
     docRepository.save(Doc.of("doc3", "hello world"));
 
     var dialectOne = entityStream.of(Doc.class) //
-        .dialect(1) //
-        .filter("-hello world") //
-        .collect(Collectors.toList());
+      .dialect(1) //
+      .filter("-hello world") //
+      .collect(Collectors.toList());
 
     var dialectTwo = entityStream.of(Doc.class) //
-        .dialect(2) //
-        .filter("-hello world") //
-        .collect(Collectors.toList());
+      .dialect(2) //
+      .filter("-hello world") //
+      .collect(Collectors.toList());
 
     assertAll( //
-        () -> assertThat(dialectOne).containsExactly(hello, world),
-        () -> assertThat(dialectTwo).containsExactly(world)
-    );
+      () -> assertThat(dialectOne).containsExactly(hello, world), () -> assertThat(dialectTwo).containsExactly(world));
   }
-
 
 }

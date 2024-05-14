@@ -16,24 +16,31 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor(staticName = "of")
 @Document
 public class PizzaOrder {
-  @NonNull @Id
+  @NonNull
+  @Id
   private Integer id;
 
-  @NonNull @Indexed(sortable = true)
+  @NonNull
+  @Indexed(sortable = true)
   private String name;
 
-  @NonNull @Indexed(sortable = true)
+  @NonNull
+  @Indexed(sortable = true)
   private String size;
 
-  @NonNull @Indexed(sortable = true)
+  @NonNull
+  @Indexed(sortable = true)
   private double price;
 
-  @NonNull @Indexed(sortable = true)
+  @NonNull
+  @Indexed(sortable = true)
   private int quantity;
 
-  @NonNull @Indexed(sortable = true)
+  @NonNull
+  @Indexed(sortable = true)
   private Instant date;
 
-  @NonNull @Indexed(sortable = true)
+  @NonNull
+  @Indexed(sortable = true)
   private LocalDateTime created;
 }

@@ -14,17 +14,22 @@ import java.lang.annotation.*;
 @KeySpace
 public @interface Document {
 
-  @AliasFor(annotation = KeySpace.class, attribute = "value")
-  String value() default "";
+  @AliasFor(annotation = KeySpace.class, attribute = "value") String value() default "";
+
   String indexName() default "";
-  
+
   boolean async() default false;
+
   String[] prefixes() default {};
+
   String filter() default "";
+
   String languageField() default "";
+
   SearchLanguage language() default SearchLanguage.ENGLISH;
-  double score() default 1.0; 
-  
+
+  double score() default 1.0;
+
   /**
    * Time before expire in seconds.
    *

@@ -49,6 +49,7 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
   SearchStream<E> sorted(Comparator<? super E> comparator);
 
   SearchStream<E> sorted(Comparator<? super E> comparator, SortOrder order);
+
   SearchStream<E> sorted(Sort sort);
 
   SearchStream<E> peek(Consumer<? super E> action);
@@ -111,15 +112,16 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
 
   SearchStream<E> dialect(int dialect);
 
-  <R> AggregationStream<R>  cursor(int i, Duration duration);
+  <R> AggregationStream<R> cursor(int i, Duration duration);
 
   SearchOperations<String> getSearchOperations();
 
   Slice<E> getSlice(Pageable pageable);
 
   <R> SearchStream<E> project(Function<? super E, ? extends R> field);
+
   @SuppressWarnings("unchecked")
-  <R> SearchStream<E> project(MetamodelField<? super E, ? extends R> ...field);
+  <R> SearchStream<E> project(MetamodelField<? super E, ? extends R>... field);
 
   String backingQuery();
 
@@ -128,5 +130,6 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
   <R> SearchStream<E> summarize(Function<? super E, ? extends R> field, SummarizeParams params);
 
   <R> SearchStream<E> highlight(Function<? super E, ? extends R> field);
-  <R> SearchStream<E> highlight(Function<? super E, ? extends R> field, Pair<String,String> tags);
+
+  <R> SearchStream<E> highlight(Function<? super E, ? extends R> field, Pair<String, String> tags);
 }

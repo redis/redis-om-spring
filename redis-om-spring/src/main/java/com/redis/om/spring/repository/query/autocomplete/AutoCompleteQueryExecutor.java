@@ -17,9 +17,8 @@ import java.util.Optional;
 
 public class AutoCompleteQueryExecutor {
 
-  private static final Log logger = LogFactory.getLog(AutoCompleteQueryExecutor.class);
   public static final String AUTOCOMPLETE_PREFIX = "autoComplete";
-  
+  private static final Log logger = LogFactory.getLog(AutoCompleteQueryExecutor.class);
   final RepositoryQuery query;
   final RedisModulesOperations<String> modulesOperations;
 
@@ -32,8 +31,7 @@ public class AutoCompleteQueryExecutor {
     String methodName = query.getQueryMethod().getName();
     boolean hasExistByPrefix = methodName.startsWith(AUTOCOMPLETE_PREFIX);
     if (hasExistByPrefix && query.getQueryMethod().isCollectionQuery()) {
-      String targetProperty = ObjectUtils
-          .firstToLowercase(methodName.substring(AUTOCOMPLETE_PREFIX.length()));
+      String targetProperty = ObjectUtils.firstToLowercase(methodName.substring(AUTOCOMPLETE_PREFIX.length()));
       logger.debug(String.format("Target Property : %s", targetProperty));
       Class<?> entityClass = query.getQueryMethod().getEntityInformation().getJavaType();
 
@@ -44,8 +42,9 @@ public class AutoCompleteQueryExecutor {
         }
         if (field.isAnnotationPresent(AutoComplete.class)) {
           AutoComplete bloom = field.getAnnotation(AutoComplete.class);
-          return Optional.of(!org.apache.commons.lang3.ObjectUtils.isEmpty(bloom.name()) ? bloom.name()
-              : String.format(Suggestion.KEY_FORMAT_STRING, entityClass.getSimpleName(), field.getName()));
+          return Optional.of(!org.apache.commons.lang3.ObjectUtils.isEmpty(bloom.name()) ?
+            bloom.name() :
+            String.format(Suggestion.KEY_FORMAT_STRING, entityClass.getSimpleName(), field.getName()));
         }
       } catch (SecurityException e) {
         return Optional.empty();
@@ -59,7 +58,7 @@ public class AutoCompleteQueryExecutor {
     SearchOperations<String> ops = modulesOperations.opsForSearch(autoCompleteKey);
 
     if ((parameters.length > 1) && (parameters[1].getClass() == AutoCompleteOptions.class)) {
-      AutoCompleteOptions options = (AutoCompleteOptions)parameters[1];
+      AutoCompleteOptions options = (AutoCompleteOptions) parameters[1];
       return ops.getSuggestion(autoCompleteKey, parameters[0].toString(), options);
     } else {
       return ops.getSuggestion(autoCompleteKey, parameters[0].toString());

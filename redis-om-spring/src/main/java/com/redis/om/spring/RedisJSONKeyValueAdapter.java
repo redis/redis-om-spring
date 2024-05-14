@@ -59,10 +59,10 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    * Creates new {@link RedisKeyValueAdapter} with default
    * {@link RedisCustomConversions}.
    *
-   * @param redisOps            must not be {@literal null}.
-   * @param rmo                 must not be {@literal null}.
-   * @param mappingContext      must not be {@literal null}.
-   * @param keyspaceToIndexMap  must not be {@literal null}.
+   * @param redisOps           must not be {@literal null}.
+   * @param rmo                must not be {@literal null}.
+   * @param mappingContext     must not be {@literal null}.
+   * @param keyspaceToIndexMap must not be {@literal null}.
    */
   @SuppressWarnings("unchecked")
   public RedisJSONKeyValueAdapter( //
@@ -72,8 +72,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     RediSearchIndexer keyspaceToIndexMap, //
     GsonBuilder gsonBuilder, //
     FeatureExtractor featureExtractor, //
-    RedisOMProperties redisOMProperties
-  ) {
+    RedisOMProperties redisOMProperties) {
     super(redisOps, mappingContext, new RedisOMCustomConversions());
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.redisJSONOperations = modulesOperations.opsForJSON();
@@ -96,8 +95,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   @Override
   public Object put(Object id, Object item, String keyspace) {
     logger.debug(String.format("%s, %s, %s", id, item, keyspace));
-    @SuppressWarnings("unchecked")
-    JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
+    @SuppressWarnings("unchecked") JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
 
     String key = getKey(keyspace, id);
 
@@ -110,7 +108,10 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     processReferences(key, item);
 
     redisOperations.execute((RedisCallback<Object>) connection -> {
-      maybeTtl.ifPresent(ttl -> { if (ttl > 0) connection.keyCommands().expire(toBytes(key), ttl); });
+      maybeTtl.ifPresent(ttl -> {
+        if (ttl > 0)
+          connection.keyCommands().expire(toBytes(key), ttl);
+      });
       return null;
     });
 
@@ -132,8 +133,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
 
   @Nullable
   public <T> T get(String key, Class<T> type) {
-    @SuppressWarnings("unchecked")
-    JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
+    @SuppressWarnings("unchecked") JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
     return ops.get(key, type);
   }
 
@@ -163,8 +163,8 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       SearchResult searchResult = searchOps.search(query);
       Gson gson = gsonBuilder.create();
       result = searchResult.getDocuments().stream()
-          .map(d -> gson.fromJson(SafeEncoder.encode((byte[])d.get("$")), type)) //
-          .toList();
+        .map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get("$")), type)) //
+        .toList();
     }
 
     return result;
@@ -182,10 +182,9 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       Query query = new Query("*");
       query.returnFields(idField);
       SearchResult searchResult = searchOps.search(query);
-      
-      keys = searchResult.getDocuments().stream()
-          .map(Document::getId) //
-          .toList();
+
+      keys = searchResult.getDocuments().stream().map(Document::getId) //
+        .toList();
     }
 
     return keys;
@@ -193,15 +192,14 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
 
   /*
    * (non-Javadoc)
-   * 
+   *
    * @see
    * org.springframework.data.keyvalue.core.AbstractKeyValueAdapter#delete(java.
    * lang.Object, java.lang.String, java.lang.Class)
    */
   @Override
   public <T> T delete(Object id, String keyspace, Class<T> type) {
-    @SuppressWarnings("unchecked")
-    JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
+    @SuppressWarnings("unchecked") JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
     T entity = get(id, keyspace, type);
     if (entity != null) {
       ops.del(getKey(keyspace, id), Path2.ROOT_PATH);
@@ -230,7 +228,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
 
   /*
    * (non-Javadoc)
-   * 
+   *
    * @see org.springframework.data.keyvalue.core.KeyValueAdapter#count(java.lang.
    * String)
    */
@@ -243,9 +241,9 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       // FT.SEARCH index * LIMIT 0 0
       Query query = new Query("*");
       query.limit(0, 0);
-      
+
       SearchResult result = search.search(query);
-      
+
       count = result.getTotalResults();
     }
     return count;
@@ -253,15 +251,15 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
 
   /*
    * (non-Javadoc)
-   * 
+   *
    * @see
    * org.springframework.data.keyvalue.core.KeyValueAdapter#contains(java.lang.
    * Object, java.lang.String)
    */
   @Override
   public boolean contains(Object id, String keyspace) {
-    Boolean exists = redisOperations
-        .execute((RedisCallback<Boolean>) connection -> connection.keyCommands().exists(toBytes(getKey(keyspace, id))));
+    Boolean exists = redisOperations.execute(
+      (RedisCallback<Boolean>) connection -> connection.keyCommands().exists(toBytes(getKey(keyspace, id))));
 
     return exists != null && exists;
   }
@@ -303,15 +301,15 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       BeanWrapper wrapper = new BeanWrapperImpl(item);
       Field versionField = fields.get(0);
       String property = versionField.getName();
-      if ((versionField.getType() == Integer.class || isPrimitiveOfType(versionField.getType(), Integer.class)) ||
-         (versionField.getType() == Long.class || isPrimitiveOfType(versionField.getType(), Long.class))) {
+      if ((versionField.getType() == Integer.class || isPrimitiveOfType(versionField.getType(),
+        Integer.class)) || (versionField.getType() == Long.class || isPrimitiveOfType(versionField.getType(),
+        Long.class))) {
         Number version = (Number) wrapper.getPropertyValue(property);
         Number dbVersion = getEntityVersion(key, property);
 
         if (dbVersion != null && version != null && dbVersion.longValue() != version.longValue()) {
           throw new OptimisticLockingFailureException(
-              String.format("Cannot insert/update entity %s with version %s as it already exists", item,
-                  version));
+            String.format("Cannot insert/update entity %s with version %s as it already exists", item, version));
         } else {
           Number nextVersion = version == null ? 0 : version.longValue() + 1;
           try {
@@ -372,7 +370,8 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   @SuppressWarnings("unchecked")
   private Number getEntityVersion(String key, String versionProperty) {
     JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
-    Class<?> type = new TypeToken<Long[]>() {}.getRawType();
+    Class<?> type = new TypeToken<Long[]>() {
+    }.getRawType();
     Long[] dbVersionArray = (Long[]) ops.get(key, type, Path2.of("$." + versionProperty));
     return dbVersionArray != null ? dbVersionArray[0] : null;
   }

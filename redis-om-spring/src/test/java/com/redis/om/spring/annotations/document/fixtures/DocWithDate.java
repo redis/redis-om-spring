@@ -15,11 +15,11 @@ import java.util.Date;
 @NoArgsConstructor(force = true)
 @Document
 public class DocWithDate {
-    @Id
-    @NonNull
-    private String id;
+  @Id
+  @NonNull
+  private String id;
 
-    @Indexed
-    @NonNull
-    private Date date;
+  @Indexed
+  @NonNull
+  private Date date;
 }

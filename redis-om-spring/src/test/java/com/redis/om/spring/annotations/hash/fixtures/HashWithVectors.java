@@ -20,18 +20,28 @@ public class HashWithVectors {
   private String id;
 
   @NonNull
-  @VectorIndexed(algorithm = VectorAlgorithm.FLAT, type = VectorType.FLOAT32, dimension = 2, distanceMetric = DistanceMetric.L2)
+  @VectorIndexed(
+    algorithm = VectorAlgorithm.FLAT, type = VectorType.FLOAT32, dimension = 2, distanceMetric = DistanceMetric.L2
+  )
   private String flat;
 
   @NonNull
-  @VectorIndexed(algorithm = VectorAlgorithm.HNSW, type = VectorType.FLOAT32, dimension = 2, distanceMetric = DistanceMetric.L2)
+  @VectorIndexed(
+    algorithm = VectorAlgorithm.HNSW, type = VectorType.FLOAT32, dimension = 2, distanceMetric = DistanceMetric.L2
+  )
   private String hnsw;
 
   @NonNull
-  @Indexed(schemaFieldType = SchemaFieldType.VECTOR, algorithm = VectorAlgorithm.FLAT, type = VectorType.FLOAT32, dimension = 2, distanceMetric = DistanceMetric.L2)
+  @Indexed(
+    schemaFieldType = SchemaFieldType.VECTOR, algorithm = VectorAlgorithm.FLAT, type = VectorType.FLOAT32,
+    dimension = 2, distanceMetric = DistanceMetric.L2
+  )
   private String flat2;
 
   @NonNull
-  @Indexed(schemaFieldType = SchemaFieldType.VECTOR, algorithm = VectorAlgorithm.HNSW, type = VectorType.FLOAT32, dimension = 2, distanceMetric = DistanceMetric.L2)
+  @Indexed(
+    schemaFieldType = SchemaFieldType.VECTOR, algorithm = VectorAlgorithm.HNSW, type = VectorType.FLOAT32,
+    dimension = 2, distanceMetric = DistanceMetric.L2
+  )
   private String hnsw2;
 }

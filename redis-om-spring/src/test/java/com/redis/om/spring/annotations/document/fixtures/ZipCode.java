@@ -25,8 +25,7 @@ import org.springframework.data.geo.Point;
  *   "pop" : 15338,
  *   "state" : "MA"
  * }
- */
-public class ZipCode {
+ */ public class ZipCode {
 
   @Id
   @SerializedName(value = "_id")

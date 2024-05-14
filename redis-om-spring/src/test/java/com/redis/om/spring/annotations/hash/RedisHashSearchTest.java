@@ -24,11 +24,13 @@ import java.util.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-@SuppressWarnings("SpellCheckingInspection") class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
+@SuppressWarnings("SpellCheckingInspection")
+class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
   @Autowired
   MyHashRepository repository;
 
-  @Autowired StringRedisTemplate template;
+  @Autowired
+  StringRedisTemplate template;
 
   String id1;
   String id2;
@@ -86,8 +88,8 @@ import static org.junit.jupiter.api.Assertions.*;
    * <pre>
    * &#64;Query("@title:$title @tag:{$tags}")
    *
-   * > FT.SEARCH idx '@title:hello @tag:{news}' 
-   * 1) (integer) 1 2) "doc1" 
+   * > FT.SEARCH idx '@title:hello @tag:{news}'
+   * 1) (integer) 1 2) "doc1"
    * 3) 1) "$"
    *    2) "{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}"
    * </pre>
@@ -210,8 +212,8 @@ import static org.junit.jupiter.api.Assertions.*;
     MyHash doc = iter.next();
     assertEquals("hello mundo", doc.getTitle());
 
-    @SuppressWarnings("unused")
-    NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class, iter::next);
+    @SuppressWarnings("unused") NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class,
+      iter::next);
   }
 
   @Test
@@ -223,8 +225,8 @@ import static org.junit.jupiter.api.Assertions.*;
     MyHash doc = iter.next();
     assertEquals("hello mundo", doc.getTitle());
 
-    @SuppressWarnings("unused")
-    NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class, iter::next);
+    @SuppressWarnings("unused") NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class,
+      iter::next);
   }
 
   @Test
@@ -235,46 +237,45 @@ import static org.junit.jupiter.api.Assertions.*;
     assertEquals("hello world", doc.getTitle());
     assertThat(doc.getTag()).containsExactlyInAnyOrder("news", "article");
   }
-  
+
   @Test
   void testQueryAnnotationWithReturnFieldsAndLimitAndOffset() {
     repository.deleteAll();
     Point point = new Point(-122.066540, 37.377690);
-    repository.saveAll(List.of(
-        MyHash.of("predisposition", point, point, 4), //
-        MyHash.of("predestination", point, point, 8), //
-        MyHash.of("prepublication", point, point, 15), //
-        MyHash.of("predestinarian", point, point, 16), //
-        MyHash.of("preadolescence", point, point, 23), //
-        MyHash.of("premillenarian", point, point, 42), //
-        MyHash.of("precipitinogen", point, point, 4), //
-        MyHash.of("precipitations", point, point, 8), //
-        MyHash.of("precociousness", point, point, 15), //
-        MyHash.of("precombustions", point, point, 16), //
-        MyHash.of("preconditioned", point, point, 23), //
-        MyHash.of("preconceptions", point, point, 42), //
-        MyHash.of("precipitancies", point, point, 4), //
-        MyHash.of("preciousnesses", point, point, 8), //
-        MyHash.of("precentorships", point, point, 15), //
-        MyHash.of("preceptorships", point, point, 16) //
+    repository.saveAll(List.of(MyHash.of("predisposition", point, point, 4), //
+      MyHash.of("predestination", point, point, 8), //
+      MyHash.of("prepublication", point, point, 15), //
+      MyHash.of("predestinarian", point, point, 16), //
+      MyHash.of("preadolescence", point, point, 23), //
+      MyHash.of("premillenarian", point, point, 42), //
+      MyHash.of("precipitinogen", point, point, 4), //
+      MyHash.of("precipitations", point, point, 8), //
+      MyHash.of("precociousness", point, point, 15), //
+      MyHash.of("precombustions", point, point, 16), //
+      MyHash.of("preconditioned", point, point, 23), //
+      MyHash.of("preconceptions", point, point, 42), //
+      MyHash.of("precipitancies", point, point, 4), //
+      MyHash.of("preciousnesses", point, point, 8), //
+      MyHash.of("precentorships", point, point, 15), //
+      MyHash.of("preceptorships", point, point, 16) //
     ));
 
     SearchResult result = repository.customFindAllByTitleStartingWithReturnFieldsAndLimit("pre");
 
     assertThat(result.getTotalResults()).isEqualTo(16);
     assertThat(result.getDocuments()).hasSize(12);
-    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(0).get("title"))).isEqualTo("precentorships");
-    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(1).get("title"))).isEqualTo("preceptorships");
-    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(2).get("title"))).isEqualTo("preciousnesses");
-    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(3).get("title"))).isEqualTo("precipitancies");
-    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(4).get("title"))).isEqualTo("precipitations");
-    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(5).get("title"))).isEqualTo("precipitinogen");
-    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(6).get("title"))).isEqualTo("precociousness");
-    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(7).get("title"))).isEqualTo("precombustions");
-    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(8).get("title"))).isEqualTo("preconceptions");
-    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(9).get("title"))).isEqualTo("preconditioned");
-    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(10).get("title"))).isEqualTo("predestinarian");
-    assertThat(SafeEncoder.encode((byte[])result.getDocuments().get(11).get("title"))).isEqualTo("predestination");
+    assertThat(SafeEncoder.encode((byte[]) result.getDocuments().get(0).get("title"))).isEqualTo("precentorships");
+    assertThat(SafeEncoder.encode((byte[]) result.getDocuments().get(1).get("title"))).isEqualTo("preceptorships");
+    assertThat(SafeEncoder.encode((byte[]) result.getDocuments().get(2).get("title"))).isEqualTo("preciousnesses");
+    assertThat(SafeEncoder.encode((byte[]) result.getDocuments().get(3).get("title"))).isEqualTo("precipitancies");
+    assertThat(SafeEncoder.encode((byte[]) result.getDocuments().get(4).get("title"))).isEqualTo("precipitations");
+    assertThat(SafeEncoder.encode((byte[]) result.getDocuments().get(5).get("title"))).isEqualTo("precipitinogen");
+    assertThat(SafeEncoder.encode((byte[]) result.getDocuments().get(6).get("title"))).isEqualTo("precociousness");
+    assertThat(SafeEncoder.encode((byte[]) result.getDocuments().get(7).get("title"))).isEqualTo("precombustions");
+    assertThat(SafeEncoder.encode((byte[]) result.getDocuments().get(8).get("title"))).isEqualTo("preconceptions");
+    assertThat(SafeEncoder.encode((byte[]) result.getDocuments().get(9).get("title"))).isEqualTo("preconditioned");
+    assertThat(SafeEncoder.encode((byte[]) result.getDocuments().get(10).get("title"))).isEqualTo("predestinarian");
+    assertThat(SafeEncoder.encode((byte[]) result.getDocuments().get(11).get("title"))).isEqualTo("predestination");
   }
 
   @Test
@@ -282,29 +283,31 @@ import static org.junit.jupiter.api.Assertions.*;
     repository.deleteAll();
     Point point = new Point(-122.066540, 37.377690);
     repository.saveAll(List.of(MyHash.of("predisposition", point, point, 4), //
-        MyHash.of("predestination", point, point, 8), //
-        MyHash.of("prepublication", point, point, 15), //
-        MyHash.of("predestinarian", point, point, 16), //
-        MyHash.of("preadolescence", point, point, 23), //
-        MyHash.of("premillenarian", point, point, 42), //
-        MyHash.of("precipitinogen", point, point, 4), //
-        MyHash.of("precipitations", point, point, 8), //
-        MyHash.of("precociousness", point, point, 15), //
-        MyHash.of("precombustions", point, point, 16), //
-        MyHash.of("preconditioned", point, point, 23), //
-        MyHash.of("preconceptions", point, point, 42), //
-        MyHash.of("precipitancies", point, point, 4), //
-        MyHash.of("preciousnesses", point, point, 8), //
-        MyHash.of("precentorships", point, point, 15), //
-        MyHash.of("preceptorships", point, point, 16) //
+      MyHash.of("predestination", point, point, 8), //
+      MyHash.of("prepublication", point, point, 15), //
+      MyHash.of("predestinarian", point, point, 16), //
+      MyHash.of("preadolescence", point, point, 23), //
+      MyHash.of("premillenarian", point, point, 42), //
+      MyHash.of("precipitinogen", point, point, 4), //
+      MyHash.of("precipitations", point, point, 8), //
+      MyHash.of("precociousness", point, point, 15), //
+      MyHash.of("precombustions", point, point, 16), //
+      MyHash.of("preconditioned", point, point, 23), //
+      MyHash.of("preconceptions", point, point, 42), //
+      MyHash.of("precipitancies", point, point, 4), //
+      MyHash.of("preciousnesses", point, point, 8), //
+      MyHash.of("precentorships", point, point, 15), //
+      MyHash.of("preceptorships", point, point, 16) //
     ));
 
     List<MyHash> endsWithTion = repository.findAllByTitleEndingWith("tion");
     List<MyHash> endsWithTions = repository.findAllByTitleEndingWith("tions");
 
     assertAll( //
-        () -> assertThat(endsWithTion).extracting("title").containsExactlyInAnyOrder("predisposition", "predestination", "prepublication"),
-        () -> assertThat(endsWithTions).extracting("title").containsExactlyInAnyOrder("precipitations", "precombustions", "preconceptions"));
+      () -> assertThat(endsWithTion).extracting("title")
+        .containsExactlyInAnyOrder("predisposition", "predestination", "prepublication"),
+      () -> assertThat(endsWithTions).extracting("title")
+        .containsExactlyInAnyOrder("precipitations", "precombustions", "preconceptions"));
   }
 
 }

@@ -10,7 +10,7 @@ import org.springframework.data.annotation.Id;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(force = true)
 @Document
-public class User2{
+public class User2 {
   @Id
   @Indexed
   private String id;

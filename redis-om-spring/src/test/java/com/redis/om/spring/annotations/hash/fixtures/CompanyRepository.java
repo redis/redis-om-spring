@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-@SuppressWarnings("unused") public interface CompanyRepository extends RedisEnhancedRepository<Company, String> {
+@SuppressWarnings("unused")
+public interface CompanyRepository extends RedisEnhancedRepository<Company, String> {
   List<Company> findByName(String companyName);
 
   boolean existsByEmail(String email);
@@ -28,10 +29,11 @@ import java.util.Set;
   Iterable<String> getAllTags();
 
   Iterable<Company> search(String text);
-  
+
   List<Company> findByLocationNear(Point point, Distance distance);
 
   // order by
   List<Company> findByYearFoundedOrderByNameAsc(int year);
+
   List<Company> findByYearFoundedOrderByNameDesc(int year);
 }

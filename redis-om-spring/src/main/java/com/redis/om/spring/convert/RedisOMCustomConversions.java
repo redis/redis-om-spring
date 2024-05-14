@@ -8,7 +8,7 @@ import java.util.List;
 
 public class RedisOMCustomConversions extends RedisCustomConversions {
   private static final List<Object> omConverters = new ArrayList<>();
-  
+
   static {
     // Ulid
     omConverters.add(new UlidToBytesConverter());

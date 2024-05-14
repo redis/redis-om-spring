@@ -24,16 +24,16 @@ import java.util.Set;
 public class ValidDocumentUnindexed {
   @Id
   private String id;
-  
+
   @NonNull
   private String string;
-  
+
   @NonNull
   private Boolean bool;
 
   @NonNull
   private Integer integerWrapper;
-  
+
   @NonNull
   private int integerPrimitive;
 

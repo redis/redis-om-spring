@@ -15,13 +15,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class EventServiceImpl implements EventService {
 
-    private final EntityStream entityStream;
+  private final EntityStream entityStream;
 
-    @Override
-    public List<Event> searchByBeginDateBetween(LocalDateTime start, LocalDateTime end) {
+  @Override
+  public List<Event> searchByBeginDateBetween(LocalDateTime start, LocalDateTime end) {
 
-        return entityStream.of(Event.class)
-                .filter(Event$.BEGIN_DATE.between(start, end))
-                .collect(Collectors.toList());
-    }
+    return entityStream.of(Event.class).filter(Event$.BEGIN_DATE.between(start, end)).collect(Collectors.toList());
+  }
 }

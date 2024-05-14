@@ -32,14 +32,14 @@ class AutoCompleteDeletionTest extends AbstractBaseDocumentTest {
   void loadAirports() {
     repository.deleteAll();
     repository.saveAll(List.of( //
-        Airport.of("Huntsville International Airport", "HSV", "AL"), //
-        Airport.of("Mobile", "MOB", "AL"), //
-        Airport.of("Montgomery", "MGM", "AL"), //
-        Airport.of("Anchorage International Airport", "ANC", "AK"), //
-        Airport.of("Fairbanks International Airport", "FAI", "AK"), //
-        Airport.of("Juneau International Airport", "JNU", "AK"), //
-        Airport.of("Flagstaff", "FLG", "AZ"), //
-        Airport.of("Phoenix, Phoenix Sky Harbor International Airport", "PHX", "AZ") //
+      Airport.of("Huntsville International Airport", "HSV", "AL"), //
+      Airport.of("Mobile", "MOB", "AL"), //
+      Airport.of("Montgomery", "MGM", "AL"), //
+      Airport.of("Anchorage International Airport", "ANC", "AK"), //
+      Airport.of("Fairbanks International Airport", "FAI", "AK"), //
+      Airport.of("Juneau International Airport", "JNU", "AK"), //
+      Airport.of("Flagstaff", "FLG", "AZ"), //
+      Airport.of("Phoenix, Phoenix Sky Harbor International Airport", "PHX", "AZ") //
     ));
   }
 

@@ -11,18 +11,14 @@ import org.springframework.data.annotation.Id;
 @NoArgsConstructor(force = true)
 @Document
 public class DocWithBoolean {
-    @Id
-    private String id;
-
-    @NonNull
-    @Indexed
-    public Boolean indexedBoolean;
-
-    @NonNull
-    public Boolean nonIndexedBoolean;
-
-    @Indexed
-    public boolean indexedPrimitiveBoolean;
-
-    public boolean nonIndexedPrimitiveBoolean;
+  @NonNull
+  @Indexed
+  public Boolean indexedBoolean;
+  @NonNull
+  public Boolean nonIndexedBoolean;
+  @Indexed
+  public boolean indexedPrimitiveBoolean;
+  public boolean nonIndexedPrimitiveBoolean;
+  @Id
+  private String id;
 }

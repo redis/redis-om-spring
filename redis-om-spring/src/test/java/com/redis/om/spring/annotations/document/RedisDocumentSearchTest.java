@@ -27,14 +27,14 @@ import java.util.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-@SuppressWarnings("SpellCheckingInspection") class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
-  @Autowired
-  MyDocRepository repository;
-
-  @Autowired StringRedisTemplate template;
-
+@SuppressWarnings("SpellCheckingInspection")
+class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   private static String id1;
   private static String id2;
+  @Autowired
+  MyDocRepository repository;
+  @Autowired
+  StringRedisTemplate template;
 
   @BeforeEach
   void loadTestData() {
@@ -90,10 +90,9 @@ import static org.junit.jupiter.api.Assertions.*;
     SearchResult result = repository.getFirstTag();
 
     assertAll( //
-        () -> assertThat(result.getTotalResults()).isEqualTo(2),
-        () -> assertThat(result.getDocuments().get(0).getScore()).isEqualTo(1.0),
-        () -> assertThat(result.getDocuments().get(0).getString("first_tag")).isIn("news", "article")
-    );
+      () -> assertThat(result.getTotalResults()).isEqualTo(2),
+      () -> assertThat(result.getDocuments().get(0).getScore()).isEqualTo(1.0),
+      () -> assertThat(result.getDocuments().get(0).getString("first_tag")).isIn("news", "article"));
   }
 
   /**
@@ -112,9 +111,7 @@ import static org.junit.jupiter.api.Assertions.*;
     assertEquals(1, ((Collection<MyDoc>) results).size());
     MyDoc doc = results.iterator().next();
     assertAll( //
-        () -> assertThat(doc.getTitle()).isEqualTo("hello world"),
-        () -> assertThat(doc.getTag()).contains("news")
-    );
+      () -> assertThat(doc.getTitle()).isEqualTo("hello world"), () -> assertThat(doc.getTag()).contains("news"));
   }
 
   /**
@@ -134,9 +131,7 @@ import static org.junit.jupiter.api.Assertions.*;
     Row row = result.getRow(0);
 
     assertAll( //
-        () -> assertThat(row).isNotNull(),
-        () -> assertThat(row.getString("tag2")).isIn("news", "article")
-    );
+      () -> assertThat(row).isNotNull(), () -> assertThat(row.getString("tag2")).isIn("news", "article"));
   }
 
   @Test
@@ -146,11 +141,9 @@ import static org.junit.jupiter.api.Assertions.*;
     Page<MyDoc> result = repository.findAllByTitleStartingWith("hel", pageRequest);
 
     assertAll( //
-        () -> assertEquals(2, result.getTotalPages()),
-        () -> assertEquals(2, result.getTotalElements()),
-        () -> assertEquals(1, result.getContent().size()),
-        () -> assertEquals("hello world", result.getContent().get(0).getTitle())
-    );
+      () -> assertEquals(2, result.getTotalPages()), () -> assertEquals(2, result.getTotalElements()),
+      () -> assertEquals(1, result.getContent().size()),
+      () -> assertEquals("hello world", result.getContent().get(0).getTitle()));
   }
 
   @Test
@@ -248,8 +241,8 @@ import static org.junit.jupiter.api.Assertions.*;
     MyDoc doc = iter.next();
     assertEquals("hello mundo", doc.getTitle());
 
-    @SuppressWarnings("unused")
-    NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class, iter::next);
+    @SuppressWarnings("unused") NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class,
+      iter::next);
   }
 
   @Test
@@ -261,8 +254,8 @@ import static org.junit.jupiter.api.Assertions.*;
     MyDoc doc = iter.next();
     assertEquals("hello mundo", doc.getTitle());
 
-    @SuppressWarnings("unused")
-    NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class, iter::next);
+    @SuppressWarnings("unused") NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class,
+      iter::next);
   }
 
   @Test
@@ -291,71 +284,71 @@ import static org.junit.jupiter.api.Assertions.*;
   @Test
   void testQueryAnnotationWithReturnFieldsAndLimitAndOffset() {
     Point point = new Point(-122.066540, 37.377690);
-    repository.saveAll(List.of(
-        MyDoc.of("predisposition", point, point, 4), //
-        MyDoc.of("predestination", point, point, 8), //
-        MyDoc.of("prepublication", point, point, 15), //
-        MyDoc.of("predestinarian", point, point, 16), //
-        MyDoc.of("preadolescence", point, point, 23), //
-        MyDoc.of("premillenarian", point, point, 42), //
-        MyDoc.of("precipitinogen", point, point, 4), //
-        MyDoc.of("precipitations", point, point, 8), //
-        MyDoc.of("precociousness", point, point, 15), //
-        MyDoc.of("precombustions", point, point, 16), //
-        MyDoc.of("preconditioned", point, point, 23), //
-        MyDoc.of("preconceptions", point, point, 42), //
-        MyDoc.of("precipitancies", point, point, 4), //
-        MyDoc.of("preciousnesses", point, point, 8), //
-        MyDoc.of("precentorships", point, point, 15), //
-        MyDoc.of("preceptorships", point, point, 16) //
+    repository.saveAll(List.of(MyDoc.of("predisposition", point, point, 4), //
+      MyDoc.of("predestination", point, point, 8), //
+      MyDoc.of("prepublication", point, point, 15), //
+      MyDoc.of("predestinarian", point, point, 16), //
+      MyDoc.of("preadolescence", point, point, 23), //
+      MyDoc.of("premillenarian", point, point, 42), //
+      MyDoc.of("precipitinogen", point, point, 4), //
+      MyDoc.of("precipitations", point, point, 8), //
+      MyDoc.of("precociousness", point, point, 15), //
+      MyDoc.of("precombustions", point, point, 16), //
+      MyDoc.of("preconditioned", point, point, 23), //
+      MyDoc.of("preconceptions", point, point, 42), //
+      MyDoc.of("precipitancies", point, point, 4), //
+      MyDoc.of("preciousnesses", point, point, 8), //
+      MyDoc.of("precentorships", point, point, 15), //
+      MyDoc.of("preceptorships", point, point, 16) //
     ));
 
     SearchResult result = repository.customFindAllByTitleStartingWithReturnFieldsAndLimit("pre");
     assertEquals(16, result.getTotalResults());
     assertThat(result.getTotalResults()).isEqualTo(16);
 
-    List<String> titles = result.getDocuments().stream().map(d -> SafeEncoder.encode((byte[])d.get("title"))).map(Object::toString).toList();
+    List<String> titles = result.getDocuments().stream().map(d -> SafeEncoder.encode((byte[]) d.get("title")))
+      .map(Object::toString).toList();
 
     assertThat(titles).containsExactly("precentorships", "preceptorships", "preciousnesses", "precipitancies",
-        "precipitations", "precipitinogen", "precociousness", "precombustions", "preconceptions", "preconditioned",
-        "predestinarian", "predestination");
+      "precipitations", "precipitinogen", "precociousness", "precombustions", "preconceptions", "preconditioned",
+      "predestinarian", "predestination");
   }
 
   @Test
   void testEndingWithSearches() {
     Point point = new Point(-122.066540, 37.377690);
-    repository.saveAll(List.of(
-        MyDoc.of("predisposition", point, point, 4), //
-        MyDoc.of("predisposition", point, point, 8), //
-        MyDoc.of("prepublication", point, point, 15), //
-        MyDoc.of("predestinarian", point, point, 16), //
-        MyDoc.of("preadolescence", point, point, 23), //
-        MyDoc.of("premillenarian", point, point, 42), //
-        MyDoc.of("precipitinogen", point, point, 4), //
-        MyDoc.of("precipitations", point, point, 8), //
-        MyDoc.of("precociousness", point, point, 15), //
-        MyDoc.of("precombustions", point, point, 16), //
-        MyDoc.of("preconditioned", point, point, 23), //
-        MyDoc.of("preconceptions", point, point, 42), //
-        MyDoc.of("precipitancies", point, point, 4), //
-        MyDoc.of("preciousnesses", point, point, 8), //
-        MyDoc.of("precentorships", point, point, 15), //
-        MyDoc.of("preceptorships", point, point, 16) //
+    repository.saveAll(List.of(MyDoc.of("predisposition", point, point, 4), //
+      MyDoc.of("predisposition", point, point, 8), //
+      MyDoc.of("prepublication", point, point, 15), //
+      MyDoc.of("predestinarian", point, point, 16), //
+      MyDoc.of("preadolescence", point, point, 23), //
+      MyDoc.of("premillenarian", point, point, 42), //
+      MyDoc.of("precipitinogen", point, point, 4), //
+      MyDoc.of("precipitations", point, point, 8), //
+      MyDoc.of("precociousness", point, point, 15), //
+      MyDoc.of("precombustions", point, point, 16), //
+      MyDoc.of("preconditioned", point, point, 23), //
+      MyDoc.of("preconceptions", point, point, 42), //
+      MyDoc.of("precipitancies", point, point, 4), //
+      MyDoc.of("preciousnesses", point, point, 8), //
+      MyDoc.of("precentorships", point, point, 15), //
+      MyDoc.of("preceptorships", point, point, 16) //
     ));
 
     List<MyDoc> endsWithTion = repository.findAllByTitleEndingWith("tion");
     List<MyDoc> endsWithTions = repository.findAllByTitleEndingWith("tions");
 
     assertAll( //
-        () -> assertThat(endsWithTion).extracting("title").containsExactlyInAnyOrder("predisposition", "predisposition", "prepublication"),
-        () -> assertThat(endsWithTions).extracting("title").containsExactlyInAnyOrder("precipitations", "precombustions", "preconceptions")
-    );
+      () -> assertThat(endsWithTion).extracting("title")
+        .containsExactlyInAnyOrder("predisposition", "predisposition", "prepublication"),
+      () -> assertThat(endsWithTions).extracting("title")
+        .containsExactlyInAnyOrder("precipitations", "precombustions", "preconceptions"));
   }
 
   @Test
   void testQueryDoubleConditionWhileOneParam() {
     Point point1 = new Point(-12.100, 4.640);
-    MyDoc doc1 = MyDoc.of( id1, point1, point1, 1);
+    MyDoc doc1 = MyDoc.of(id1, point1, point1, 1);
     repository.save(doc1);
 
     List<MyDoc> result = repository.searchByIdOrTitle(id1);

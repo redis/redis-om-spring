@@ -11,7 +11,6 @@ import java.util.Iterator;
 
 /**
  * Building operations for criteria based queries
- *
  */
 public class RediSearchQueryCreator extends AbstractQueryCreator<KeyValueQuery<RediSearchQuery>, RediSearchQuery> {
 

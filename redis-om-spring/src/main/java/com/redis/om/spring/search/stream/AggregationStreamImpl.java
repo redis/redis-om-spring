@@ -22,97 +22,18 @@ import java.time.Duration;
 import java.util.*;
 
 public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
+  private static final Integer MAX_LIMIT = 10000;
   private final Class<E> entityClass;
   private final boolean isDocument;
   private final AggregationBuilder aggregation;
-  private Group currentGroup;
-  private ReducerFieldPair currentReducer;
   private final MappingRedisOMConverter mappingConverter;
   private final Gson gson;
-
   private final SearchOperations<String> search;
   private final Set<String> returnFields = new LinkedHashSet<>();
   private final Map<String, Class<?>> returnFieldsTypeHints = new HashMap<>();
-
-  private static final Integer MAX_LIMIT = 10000;
+  private Group currentGroup;
+  private ReducerFieldPair currentReducer;
   private boolean limitSet = false;
-
-  private static class ReducerFieldPair {
-    private String alias;
-    private final Reducer reducer;
-    private final MetamodelField<?, ?> field;
-
-    private final ReducerFunction reducerFunction;
-
-    private ReducerFieldPair(Reducer reducer, MetamodelField<?, ?> field, ReducerFunction reducerFunction) {
-      this.reducer = reducer;
-      this.field = field;
-      this.reducerFunction = reducerFunction;
-    }
-
-    public static ReducerFieldPair of(Reducer reducer, MetamodelField<?, ?> field, ReducerFunction reducerFunction) {
-      return new ReducerFieldPair(reducer, field, reducerFunction);
-    }
-
-    public Reducer getReducer() {
-      return this.reducer;
-    }
-
-    public MetamodelField<?, ?> getField() {
-      return this.field;
-    }
-
-    public String getAlias() {
-      return this.alias;
-    }
-
-    public void setAlias(String alias) {
-      this.alias = alias;
-      reducer.as(alias);
-    }
-
-    public ReducerFunction getReducerFunction() {
-      return reducerFunction;
-    }
-
-    public boolean equals(final Object o) {
-      if (o == this)
-        return true;
-      if (!(o instanceof ReducerFieldPair other))
-        return false;
-      if (!other.canEqual(this))
-        return false;
-      final Object this$reducer = this.getReducer();
-      final Object other$reducer = other.getReducer();
-      if (!Objects.equals(this$reducer, other$reducer))
-        return false;
-      final Object this$field = this.getField();
-      final Object other$field = other.getField();
-      if (!Objects.equals(this$field, other$field))
-        return false;
-      final Object this$alias = this.getAlias();
-      final Object other$alias = other.getAlias();
-      return Objects.equals(this$alias, other$alias);
-    }
-
-    protected boolean canEqual(final Object other) {
-      return other instanceof AggregationStreamImpl.ReducerFieldPair;
-    }
-
-    public int hashCode() {
-      final int PRIME = 59;
-      int result = 1;
-      final Object $reducer = this.getReducer();
-      result = result * PRIME + ($reducer == null ? 43 : $reducer.hashCode());
-      final Object $field = this.getField();
-      result = result * PRIME + ($field == null ? 43 : $field.hashCode());
-      return result;
-    }
-
-    public String toString() {
-      return "AggregationStreamImpl.ReducerFieldPair(reducer=" + this.getReducer() + ", field=" + this.getField() + ")";
-    }
-  }
 
   @SafeVarargs
   public AggregationStreamImpl(String searchIndex, RedisModulesOperations<String> modulesOperations, Gson gson,
@@ -454,8 +375,6 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
     return (List<R>) asList;
   }
 
-  // Cursor API
-
   @Override
   public AggregationStream<T> cursor(int count, Duration timeout) {
     applyCurrentGroupBy();
@@ -463,8 +382,10 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
     return this;
   }
 
+  // Cursor API
+
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public <R extends T> Slice<R> toList(PageRequest pageRequest, Class<?>... contentTypes) {
     applyCurrentGroupBy();
     aggregation.cursor(pageRequest.getPageSize(), 300000);
@@ -472,7 +393,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public <R extends T> Slice<R> toList(PageRequest pageRequest, Duration timeout, Class<?>... contentTypes) {
     applyCurrentGroupBy();
     aggregation.cursor(pageRequest.getPageSize(), timeout.toMillis());
@@ -524,6 +445,82 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
     } else {
       return aggregationResult.getResults().stream()
         .map(h -> (E) ObjectUtils.mapToObject(h, entityClass, mappingConverter)).toList();
+    }
+  }
+
+  private static class ReducerFieldPair {
+    private final Reducer reducer;
+    private final MetamodelField<?, ?> field;
+    private final ReducerFunction reducerFunction;
+    private String alias;
+
+    private ReducerFieldPair(Reducer reducer, MetamodelField<?, ?> field, ReducerFunction reducerFunction) {
+      this.reducer = reducer;
+      this.field = field;
+      this.reducerFunction = reducerFunction;
+    }
+
+    public static ReducerFieldPair of(Reducer reducer, MetamodelField<?, ?> field, ReducerFunction reducerFunction) {
+      return new ReducerFieldPair(reducer, field, reducerFunction);
+    }
+
+    public Reducer getReducer() {
+      return this.reducer;
+    }
+
+    public MetamodelField<?, ?> getField() {
+      return this.field;
+    }
+
+    public String getAlias() {
+      return this.alias;
+    }
+
+    public void setAlias(String alias) {
+      this.alias = alias;
+      reducer.as(alias);
+    }
+
+    public ReducerFunction getReducerFunction() {
+      return reducerFunction;
+    }
+
+    public boolean equals(final Object o) {
+      if (o == this)
+        return true;
+      if (!(o instanceof ReducerFieldPair other))
+        return false;
+      if (!other.canEqual(this))
+        return false;
+      final Object this$reducer = this.getReducer();
+      final Object other$reducer = other.getReducer();
+      if (!Objects.equals(this$reducer, other$reducer))
+        return false;
+      final Object this$field = this.getField();
+      final Object other$field = other.getField();
+      if (!Objects.equals(this$field, other$field))
+        return false;
+      final Object this$alias = this.getAlias();
+      final Object other$alias = other.getAlias();
+      return Objects.equals(this$alias, other$alias);
+    }
+
+    protected boolean canEqual(final Object other) {
+      return other instanceof AggregationStreamImpl.ReducerFieldPair;
+    }
+
+    public int hashCode() {
+      final int PRIME = 59;
+      int result = 1;
+      final Object $reducer = this.getReducer();
+      result = result * PRIME + ($reducer == null ? 43 : $reducer.hashCode());
+      final Object $field = this.getField();
+      result = result * PRIME + ($field == null ? 43 : $field.hashCode());
+      return result;
+    }
+
+    public String toString() {
+      return "AggregationStreamImpl.ReducerFieldPair(reducer=" + this.getReducer() + ", field=" + this.getField() + ")";
     }
   }
 

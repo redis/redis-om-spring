@@ -33,16 +33,14 @@ class RepositoryIssuesTest extends AbstractBaseDocumentTest {
     skuCacheRepository.deleteAll();
     List<SKU> skuCaches = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
-      skuCaches.add(
-          new SKU((long) i, "A" + i + i + i + i + i, "SKU " + i));
+      skuCaches.add(new SKU((long) i, "A" + i + i + i + i + i, "SKU " + i));
     }
     skuCacheRepository.saveAll(skuCaches);
 
     studentRepository.deleteAll();
     List<Student> students = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
-      students.add(
-        Student.of((long) i, "Student" + i, LocalDateTime.now()));
+      students.add(Student.of((long) i, "Student" + i, LocalDateTime.now()));
     }
     studentRepository.saveAll(students);
   }
@@ -60,18 +58,18 @@ class RepositoryIssuesTest extends AbstractBaseDocumentTest {
     List<SKU> result = skuCacheRepository.findAllBySkuNameIn(Set.of("SKU 1", "SKU 2"));
 
     assertAll( //
-        () -> assertThat(result).hasSize(2),
-        () -> assertThat(result).extracting("skuName").containsExactlyInAnyOrder("SKU 1", "SKU 2") //
+      () -> assertThat(result).hasSize(2),
+      () -> assertThat(result).extracting("skuName").containsExactlyInAnyOrder("SKU 1", "SKU 2") //
     );
   }
 
   @Test
   void testFindAllByTag() {
-    List<SKU> result = skuCacheRepository.findAllBySkuNumberIn(Set.of("A11111","A00000"));
+    List<SKU> result = skuCacheRepository.findAllBySkuNumberIn(Set.of("A11111", "A00000"));
 
     assertAll( //
-        () -> assertThat(result).hasSize(2),
-        () -> assertThat(result).extracting("skuNumber").containsExactlyInAnyOrder("A11111","A00000") //
+      () -> assertThat(result).hasSize(2),
+      () -> assertThat(result).extracting("skuNumber").containsExactlyInAnyOrder("A11111", "A00000") //
     );
   }
 
@@ -80,8 +78,7 @@ class RepositoryIssuesTest extends AbstractBaseDocumentTest {
     SKU result = skuCacheRepository.findOneBySkuNumber("A11111").orElseThrow();
 
     assertAll( //
-        () -> assertThat(result).isNotNull(),
-        () -> assertThat(result.getSkuNumber()).isEqualTo("A11111") //
+      () -> assertThat(result).isNotNull(), () -> assertThat(result.getSkuNumber()).isEqualTo("A11111") //
     );
   }
 
@@ -90,8 +87,8 @@ class RepositoryIssuesTest extends AbstractBaseDocumentTest {
     List<Student> result = studentRepository.findByUserName("Student2");
 
     assertAll( //
-      () -> assertThat(result).hasSize(1),
-      () -> assertThat(result).extracting("userName").containsExactly("Student2") //
+      () -> assertThat(result).hasSize(1), () -> assertThat(result).extracting("userName").containsExactly("Student2")
+      //
     );
   }
 }

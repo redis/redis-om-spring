@@ -17,25 +17,25 @@ import java.util.Set;
 @RedisHash("people")
 public class Person {
 
-  @Id 
+  @Id
   String id;
-  
-  @NonNull 
+
+  @NonNull
   String name;
-  
-  @NonNull 
-  @AutoComplete 
+
+  @NonNull
+  @AutoComplete
   @Bloom(name = "bf_person_email", capacity = 100000, errorRate = 0.001)
   String email;
-  
+
   @NonNull
   @Bloom(capacity = 100000, errorRate = 0.001)
   String nickname;
-  
+
   @NonNull
   @Indexed
   Set<String> roles = new HashSet<>();
-  
+
   @NonNull
   Set<String> favoriteFoods = new HashSet<>();
 }

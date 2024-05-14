@@ -73,7 +73,7 @@ import static com.redis.om.spring.util.ObjectUtils.getBeanDefinitionsFor;
 import static com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively;
 
 @Configuration(proxyBeanMethods = false)
-@EnableConfigurationProperties({RedisProperties.class, RedisOMProperties.class})
+@EnableConfigurationProperties({ RedisProperties.class, RedisOMProperties.class })
 @EnableAspectJAutoProxy
 @ComponentScan("com.redis.om.spring.bloom")
 @ComponentScan("com.redis.om.spring.cuckoo")
@@ -107,8 +107,8 @@ public class RedisModulesConfiguration {
   @Bean(name = "redisModulesClient")
   @Lazy
   RedisModulesClient redisModulesClient( //
-          JedisConnectionFactory jedisConnectionFactory, //
-          @Qualifier("omGsonBuilder") GsonBuilder builder) {
+    JedisConnectionFactory jedisConnectionFactory, //
+    @Qualifier("omGsonBuilder") GsonBuilder builder) {
     return new RedisModulesClient(jedisConnectionFactory, builder);
   }
 
@@ -117,9 +117,9 @@ public class RedisModulesConfiguration {
   @ConditionalOnMissingBean
   @Lazy
   RedisModulesOperations<?> redisModulesOperations( //
-          RedisModulesClient rmc, //
-          StringRedisTemplate template, //
-          @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder) {
+    RedisModulesClient rmc, //
+    StringRedisTemplate template, //
+    @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder) {
     return new RedisModulesOperations<>(rmc, template, gsonBuilder);
   }
 
@@ -151,7 +151,7 @@ public class RedisModulesConfiguration {
 
   @Bean(name = "rediSearchIndexer")
   public RediSearchIndexer redisearchIndexer(ApplicationContext ac,
-                                             @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder) {
+    @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder) {
 
     return new RediSearchIndexer(ac, gsonBuilder);
   }
@@ -163,42 +163,40 @@ public class RedisModulesConfiguration {
 
   @Bean(name = "djlImageEmbeddingModelCriteria")
   public Criteria<Image, byte[]> imageEmbeddingModelCriteria(RedisOMProperties properties) {
-    return properties.getDjl().isEnabled() ? Criteria.builder()
-        .setTypes(Image.class, byte[].class) //
-        .optEngine(properties.getDjl().getImageEmbeddingModelEngine())  //
-        .optModelUrls(properties.getDjl().getImageEmbeddingModelModelUrls()) //
-        .build() : null;
+    return properties.getDjl().isEnabled() ? Criteria.builder().setTypes(Image.class, byte[].class) //
+      .optEngine(properties.getDjl().getImageEmbeddingModelEngine())  //
+      .optModelUrls(properties.getDjl().getImageEmbeddingModelModelUrls()) //
+      .build() : null;
   }
 
   @Bean(name = "djlFaceDetectionTranslator")
   public Translator<Image, DetectedObjects> faceDetectionTranslator() {
     double confThresh = 0.85f;
     double nmsThresh = 0.45f;
-    double[] variance = {0.1f, 0.2f};
+    double[] variance = { 0.1f, 0.2f };
     int topK = 5000;
-    int[][] scales = {{16, 32}, {64, 128}, {256, 512}};
-    int[] steps = {8, 16, 32};
+    int[][] scales = { { 16, 32 }, { 64, 128 }, { 256, 512 } };
+    int[] steps = { 8, 16, 32 };
     return new FaceDetectionTranslator(confThresh, nmsThresh, variance, topK, scales, steps);
   }
 
   @Bean(name = "djlFaceDetectionModelCriteria")
   public Criteria<Image, DetectedObjects> faceDetectionModelCriteria( //
-      @Qualifier("djlFaceDetectionTranslator") Translator<Image, DetectedObjects> translator, //
-      RedisOMProperties properties) {
+    @Qualifier("djlFaceDetectionTranslator") Translator<Image, DetectedObjects> translator, //
+    RedisOMProperties properties) {
 
-    return properties.getDjl().isEnabled() ? Criteria.builder()
-        .setTypes(Image.class, DetectedObjects.class) //
-        .optModelUrls(properties.getDjl().getFaceDetectionModelModelUrls()) //
-        .optModelName(properties.getDjl().getFaceDetectionModelName()) //
-        .optTranslator(translator) //
-        .optEngine(properties.getDjl().getFaceDetectionModelEngine()) //
-        .build() : null;
+    return properties.getDjl().isEnabled() ? Criteria.builder().setTypes(Image.class, DetectedObjects.class) //
+      .optModelUrls(properties.getDjl().getFaceDetectionModelModelUrls()) //
+      .optModelName(properties.getDjl().getFaceDetectionModelName()) //
+      .optTranslator(translator) //
+      .optEngine(properties.getDjl().getFaceDetectionModelEngine()) //
+      .build() : null;
   }
 
   @Bean(name = "djlFaceDetectionModel")
   public ZooModel<Image, DetectedObjects> faceDetectionModel(
-      @Nullable @Qualifier("djlFaceDetectionModelCriteria") Criteria<Image, DetectedObjects> criteria,
-      RedisOMProperties properties) {
+    @Nullable @Qualifier("djlFaceDetectionModelCriteria") Criteria<Image, DetectedObjects> criteria,
+    RedisOMProperties properties) {
     try {
       return properties.getDjl().isEnabled() && (criteria != null) ? ModelZoo.loadModel(criteria) : null;
     } catch (IOException | ModelNotFoundException | MalformedModelException ex) {
@@ -214,22 +212,21 @@ public class RedisModulesConfiguration {
 
   @Bean(name = "djlFaceEmbeddingModelCriteria")
   public Criteria<Image, float[]> faceEmbeddingModelCriteria( //
-      @Qualifier("djlFaceEmbeddingTranslator") Translator<Image, float[]> translator, //
-      RedisOMProperties properties) {
+    @Qualifier("djlFaceEmbeddingTranslator") Translator<Image, float[]> translator, //
+    RedisOMProperties properties) {
 
     return properties.getDjl().isEnabled() ? Criteria.builder() //
-            .setTypes(Image.class, float[].class)
-            .optModelUrls(properties.getDjl().getFaceEmbeddingModelModelUrls()) //
-            .optModelName(properties.getDjl().getFaceEmbeddingModelName()) //
-            .optTranslator(translator) //
-            .optEngine(properties.getDjl().getFaceEmbeddingModelEngine()) //
-            .build() : null;
+      .setTypes(Image.class, float[].class).optModelUrls(properties.getDjl().getFaceEmbeddingModelModelUrls()) //
+      .optModelName(properties.getDjl().getFaceEmbeddingModelName()) //
+      .optTranslator(translator) //
+      .optEngine(properties.getDjl().getFaceEmbeddingModelEngine()) //
+      .build() : null;
   }
 
   @Bean(name = "djlFaceEmbeddingModel")
   public ZooModel<Image, float[]> faceEmbeddingModel(
-      @Nullable @Qualifier("djlFaceEmbeddingModelCriteria") Criteria<Image, float[]> criteria, //
-      RedisOMProperties properties) {
+    @Nullable @Qualifier("djlFaceEmbeddingModelCriteria") Criteria<Image, float[]> criteria, //
+    RedisOMProperties properties) {
     try {
       return properties.getDjl().isEnabled() && (criteria != null) ? ModelZoo.loadModel(criteria) : null;
     } catch (Exception e) {
@@ -240,8 +237,8 @@ public class RedisModulesConfiguration {
 
   @Bean(name = "djlImageEmbeddingModel")
   public ZooModel<Image, byte[]> imageModel(
-      @Nullable @Qualifier("djlImageEmbeddingModelCriteria") Criteria<Image, byte[]> criteria, RedisOMProperties properties)
-      throws MalformedModelException, ModelNotFoundException, IOException {
+    @Nullable @Qualifier("djlImageEmbeddingModelCriteria") Criteria<Image, byte[]> criteria,
+    RedisOMProperties properties) throws MalformedModelException, ModelNotFoundException, IOException {
     return properties.getDjl().isEnabled() && (criteria != null) ? ModelZoo.loadModel(criteria) : null;
   }
 
@@ -253,20 +250,21 @@ public class RedisModulesConfiguration {
         pipeline.add(new CenterCrop());
       }
       return pipeline //
-          .add(new Resize( //
-              properties.getDjl().getDefaultImagePipelineResizeWidth(), //
-              properties.getDjl().getDefaultImagePipelineResizeHeight() //
-          )) //
-          .add(new ToTensor());
-    } else return null;
+        .add(new Resize( //
+          properties.getDjl().getDefaultImagePipelineResizeWidth(), //
+          properties.getDjl().getDefaultImagePipelineResizeHeight() //
+        )) //
+        .add(new ToTensor());
+    } else
+      return null;
   }
 
   @Bean(name = "djlSentenceTokenizer")
   public HuggingFaceTokenizer sentenceTokenizer(RedisOMProperties properties) {
     if (properties.getDjl().isEnabled()) {
       Map<String, String> options = Map.of( //
-          "maxLength", properties.getDjl().getSentenceTokenizerMaxLength(), //
-          "modelMaxLength", properties.getDjl().getSentenceTokenizerModelMaxLength() //
+        "maxLength", properties.getDjl().getSentenceTokenizerMaxLength(), //
+        "modelMaxLength", properties.getDjl().getSentenceTokenizerModelMaxLength() //
       );
 
       try {
@@ -277,74 +275,73 @@ public class RedisModulesConfiguration {
         logger.warn("Error retrieving default DJL sentence tokenizer");
         return null;
       }
-    } else return null;
+    } else
+      return null;
   }
 
   @Bean(name = "featureExtractor")
   public FeatureExtractor featureExtractor(
-      @Nullable @Qualifier("djlImageEmbeddingModel") ZooModel<Image, byte[]> imageEmbeddingModel,
-      @Nullable @Qualifier("djlFaceEmbeddingModel") ZooModel<Image, float[]> faceEmbeddingModel,
-      @Nullable @Qualifier("djlImageFactory") ImageFactory imageFactory,
-      @Nullable @Qualifier("djlDefaultImagePipeline") Pipeline defaultImagePipeline,
-      @Nullable @Qualifier("djlSentenceTokenizer") HuggingFaceTokenizer sentenceTokenizer,
-      RedisOMProperties properties,
-      ApplicationContext ac) {
-    return properties.getDjl().isEnabled() ? new DefaultFeatureExtractor( ac, imageEmbeddingModel, faceEmbeddingModel, imageFactory, defaultImagePipeline, sentenceTokenizer) : new NoopFeatureExtractor();
+    @Nullable @Qualifier("djlImageEmbeddingModel") ZooModel<Image, byte[]> imageEmbeddingModel,
+    @Nullable @Qualifier("djlFaceEmbeddingModel") ZooModel<Image, float[]> faceEmbeddingModel,
+    @Nullable @Qualifier("djlImageFactory") ImageFactory imageFactory,
+    @Nullable @Qualifier("djlDefaultImagePipeline") Pipeline defaultImagePipeline,
+    @Nullable @Qualifier("djlSentenceTokenizer") HuggingFaceTokenizer sentenceTokenizer, RedisOMProperties properties,
+    ApplicationContext ac) {
+    return properties.getDjl().isEnabled() ?
+      new DefaultFeatureExtractor(ac, imageEmbeddingModel, faceEmbeddingModel, imageFactory, defaultImagePipeline,
+        sentenceTokenizer) :
+      new NoopFeatureExtractor();
   }
 
   @Bean(name = "redisJSONKeyValueAdapter")
   RedisJSONKeyValueAdapter getRedisJSONKeyValueAdapter( //
-      RedisOperations<?, ?> redisOps, //
-      RedisModulesOperations<?> redisModulesOperations, //
-      RedisMappingContext mappingContext, //
-      RediSearchIndexer indexer, //
-      @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder, //
-      RedisOMProperties properties, //
-      @Nullable @Qualifier("featureExtractor") FeatureExtractor featureExtractor
-  ) {
-    return new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, gsonBuilder, featureExtractor, properties);
+    RedisOperations<?, ?> redisOps, //
+    RedisModulesOperations<?> redisModulesOperations, //
+    RedisMappingContext mappingContext, //
+    RediSearchIndexer indexer, //
+    @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder, //
+    RedisOMProperties properties, //
+    @Nullable @Qualifier("featureExtractor") FeatureExtractor featureExtractor) {
+    return new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, gsonBuilder,
+      featureExtractor, properties);
   }
 
   @Bean(name = "redisJSONKeyValueTemplate")
   public CustomRedisKeyValueTemplate getRedisJSONKeyValueTemplate( //
-      RedisOperations<?, ?> redisOps, //
-      RedisModulesOperations<?> redisModulesOperations, //
-      RedisMappingContext mappingContext, //
-      RediSearchIndexer indexer, //
-      @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder, //
-      RedisOMProperties properties, //
-      @Nullable @Qualifier("featureExtractor") FeatureExtractor featureExtractor
-  ) {
+    RedisOperations<?, ?> redisOps, //
+    RedisModulesOperations<?> redisModulesOperations, //
+    RedisMappingContext mappingContext, //
+    RediSearchIndexer indexer, //
+    @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder, //
+    RedisOMProperties properties, //
+    @Nullable @Qualifier("featureExtractor") FeatureExtractor featureExtractor) {
     return new CustomRedisKeyValueTemplate(
-        new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, gsonBuilder, featureExtractor, properties),
-        mappingContext);
+      new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, gsonBuilder,
+        featureExtractor, properties), mappingContext);
   }
 
   @Bean(name = "redisCustomKeyValueTemplate")
   public CustomRedisKeyValueTemplate getKeyValueTemplate( //
-      RedisOperations<?, ?> redisOps, //
-      RedisModulesOperations<?> redisModulesOperations, //
-      RedisMappingContext mappingContext, //
-      RediSearchIndexer indexer, //
-      RedisOMProperties properties, //
-      @Nullable @Qualifier("featureExtractor") FeatureExtractor featureExtractor
-  ) {
+    RedisOperations<?, ?> redisOps, //
+    RedisModulesOperations<?> redisModulesOperations, //
+    RedisMappingContext mappingContext, //
+    RediSearchIndexer indexer, //
+    RedisOMProperties properties, //
+    @Nullable @Qualifier("featureExtractor") FeatureExtractor featureExtractor) {
     return new CustomRedisKeyValueTemplate(
-        new RedisEnhancedKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, featureExtractor, properties), //
-        mappingContext);
+      new RedisEnhancedKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, featureExtractor,
+        properties), //
+      mappingContext);
   }
 
   @Bean(name = "streamingQueryBuilder")
-  EntityStream streamingQueryBuilder(
-      RedisModulesOperations<?> redisModulesOperations,
-      @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder,
-      RediSearchIndexer indexer
-  ) {
+  EntityStream streamingQueryBuilder(RedisModulesOperations<?> redisModulesOperations,
+    @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder, RediSearchIndexer indexer) {
     return new EntityStreamImpl(redisModulesOperations, gsonBuilder, indexer);
   }
 
   @Bean(name = "redisOMCacheManager")
-  public CacheManager getCacheManager(){
+  public CacheManager getCacheManager() {
     return new ConcurrentMapCacheManager();
   }
 
@@ -362,8 +359,8 @@ public class RedisModulesConfiguration {
   @EventListener(ContextRefreshedEvent.class)
   public void processBloom(ContextRefreshedEvent cre) {
     ApplicationContext ac = cre.getApplicationContext();
-    @SuppressWarnings("unchecked")
-    RedisModulesOperations<String> rmo = (RedisModulesOperations<String>) ac.getBean("redisModulesOperations");
+    @SuppressWarnings("unchecked") RedisModulesOperations<String> rmo = (RedisModulesOperations<String>) ac.getBean(
+      "redisModulesOperations");
 
     Set<BeanDefinition> beanDefs = getBeanDefinitionsFor(ac, Document.class, RedisHash.class);
 
@@ -374,8 +371,9 @@ public class RedisModulesConfiguration {
           if (field.isAnnotationPresent(Bloom.class)) {
             Bloom bloom = field.getAnnotation(Bloom.class);
             BloomOperations<String> ops = rmo.opsForBloom();
-            String filterName = !ObjectUtils.isEmpty(bloom.name()) ? bloom.name()
-                : String.format("bf:%s:%s", cl.getSimpleName(), field.getName());
+            String filterName = !ObjectUtils.isEmpty(bloom.name()) ?
+              bloom.name() :
+              String.format("bf:%s:%s", cl.getSimpleName(), field.getName());
             ops.createFilter(filterName, bloom.capacity(), bloom.errorRate());
           }
         }
@@ -388,8 +386,8 @@ public class RedisModulesConfiguration {
   @EventListener(ContextRefreshedEvent.class)
   public void processCuckoo(ContextRefreshedEvent cre) {
     ApplicationContext ac = cre.getApplicationContext();
-    @SuppressWarnings("unchecked")
-    RedisModulesOperations<String> rmo = (RedisModulesOperations<String>) ac.getBean("redisModulesOperations");
+    @SuppressWarnings("unchecked") RedisModulesOperations<String> rmo = (RedisModulesOperations<String>) ac.getBean(
+      "redisModulesOperations");
 
     Set<BeanDefinition> beanDefs = getBeanDefinitionsFor(ac, Document.class, RedisHash.class);
 
@@ -400,12 +398,11 @@ public class RedisModulesConfiguration {
           if (field.isAnnotationPresent(Cuckoo.class)) {
             Cuckoo cuckoo = field.getAnnotation(Cuckoo.class);
             CuckooFilterOperations<String> ops = rmo.opsForCuckoFilter();
-            String filterName = !ObjectUtils.isEmpty(cuckoo.name()) ? cuckoo.name()
-                : String.format("cf:%s:%s", cl.getSimpleName(), field.getName());
-            CFReserveParams params = CFReserveParams.reserveParams()
-                .bucketSize(cuckoo.bucketSize())
-                .expansion(cuckoo.expansion())
-                .maxIterations(cuckoo.maxIterations());
+            String filterName = !ObjectUtils.isEmpty(cuckoo.name()) ?
+              cuckoo.name() :
+              String.format("cf:%s:%s", cl.getSimpleName(), field.getName());
+            CFReserveParams params = CFReserveParams.reserveParams().bucketSize(cuckoo.bucketSize())
+              .expansion(cuckoo.expansion()).maxIterations(cuckoo.maxIterations());
             ops.createFilter(filterName, cuckoo.capacity(), params);
           }
         }
@@ -420,7 +417,7 @@ public class RedisModulesConfiguration {
     logger.info("Registering Reference Serializers......");
 
     ApplicationContext ac = cre.getApplicationContext();
-    GsonBuilder gsonBuilder = (GsonBuilder)ac.getBean("omGsonBuilder");
+    GsonBuilder gsonBuilder = (GsonBuilder) ac.getBean("omGsonBuilder");
     GsonReferenceSerializerRegistrar registrar = new GsonReferenceSerializerRegistrar(gsonBuilder, ac);
 
     registrar.registerReferencesFor(Document.class);

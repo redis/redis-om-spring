@@ -10,33 +10,35 @@ import org.springframework.data.annotation.Id;
 
 import java.time.LocalDateTime;
 
-@Data @NoArgsConstructor(force = true)
-@Document public class SomeDocument {
-  @NonNull @Id @Indexed protected String id;
-  @NonNull @Indexed private String name;
+@Data
+@NoArgsConstructor(force = true)
+@Document
+public class SomeDocument {
+  @NonNull
+  @Id
+  @Indexed
+  protected String id;
+  @NonNull
+  @Indexed
+  private String name;
 
-  @Indexed(sortable = true) private LocalDateTime documentCreationDate;
-  @Searchable private String description;
-  @Indexed private Source source;
-  @Searchable private String category;
-  @Indexed private Format format;
-  @Searchable private String objectStorageKey;
-  @Searchable private String searchableContent;
+  @Indexed(sortable = true)
+  private LocalDateTime documentCreationDate;
+  @Searchable
+  private String description;
+  @Indexed
+  private Source source;
+  @Searchable
+  private String category;
+  @Indexed
+  private Format format;
+  @Searchable
+  private String objectStorageKey;
+  @Searchable
+  private String searchableContent;
 
-  @SuppressWarnings("unused") public enum Format {
-    pdf,
-    word,
-    text,
-    png,
-    jpeg
-  }
-
-  @SuppressWarnings("unused") public enum Source {
-    sourceA,
-    sourceB
-  }
-
-  @Override public boolean equals(Object o) {
+  @Override
+  public boolean equals(Object o) {
     if (this == o)
       return true;
     if (o == null || getClass() != o.getClass())
@@ -49,10 +51,26 @@ import java.time.LocalDateTime;
     return name.equals(that.name);
   }
 
-  @Override public int hashCode() {
+  @Override
+  public int hashCode() {
     int result = id.hashCode();
     result = 31 * result + name.hashCode();
     return result;
+  }
+
+  @SuppressWarnings("unused")
+  public enum Format {
+    pdf,
+    word,
+    text,
+    png,
+    jpeg
+  }
+
+  @SuppressWarnings("unused")
+  public enum Source {
+    sourceA,
+    sourceB
   }
 
 }

@@ -7,18 +7,18 @@ import java.util.UUID;
 
 @Document
 public class SimpleDocument {
-    @Id
-    private String id;
+  @Id
+  private String id;
 
-    public SimpleDocument() {
-        this.id = UUID.randomUUID().toString();
-    }
+  public SimpleDocument() {
+    this.id = UUID.randomUUID().toString();
+  }
 
-    public String getId() {
-        return id;
-    }
+  public String getId() {
+    return id;
+  }
 
-    public void setId(String id) {
-        this.id = id;
-    }
+  public void setId(String id) {
+    this.id = id;
+  }
 }

@@ -15,9 +15,9 @@ import java.util.Objects;
 
 public class JSONOperationsImpl<K> implements JSONOperations<K> {
 
-  private Gson gson;
   private final GsonBuilder builder;
   private final RedisModulesClient client;
+  private Gson gson;
 
   public JSONOperationsImpl(RedisModulesClient client, GsonBuilder builder) {
     this.client = client;
@@ -32,11 +32,11 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
   @Nullable
   @Override
   public String get(K key) {
-    var result = client.clientForJSON().jsonGet(key.toString());
+    var result = client.clientForJSON().jsonGet(key.toString(), Path2.ROOT_PATH);
     if (result instanceof JSONArray jsonArray) {
       return !jsonArray.isEmpty() ? jsonArray.get(0).toString() : null;
-    } else if (result instanceof LinkedTreeMap<?,?> linkedTreeMap) {
-      return getGson().toJson(result);
+    } else if (result instanceof LinkedTreeMap<?, ?> linkedTreeMap) {
+      return getGson().toJson(linkedTreeMap);
     } else {
       return result.toString();
     }
@@ -53,8 +53,8 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
     String asString;
     if (result instanceof JSONArray jsonArray) {
       return extractValueAsClassFromJSONArray(jsonArray, clazz);
-    } else if (result instanceof LinkedTreeMap<?,?> linkedTreeMap) {
-      asString = getGson().toJson(result);
+    } else if (result instanceof LinkedTreeMap<?, ?> linkedTreeMap) {
+      asString = getGson().toJson(linkedTreeMap);
     } else {
       asString = result != null ? result.toString() : null;
     }
@@ -65,34 +65,30 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
   @SafeVarargs
   @Override
   public final List<String> mget(K... keys) {
-    return (keys.length > 0) ? client.clientForJSON().jsonMGet(getKeysAsString(keys))
-        .stream()
-        .filter(Objects::nonNull)
-        .map(jsonArr -> jsonArr.get(0))
-        .map(Object::toString)
-        .toList() : List.of();
+    return (keys.length > 0) ?
+      client.clientForJSON().jsonMGet(getKeysAsString(keys)).stream().filter(Objects::nonNull)
+        .map(jsonArr -> jsonArr.get(0)).map(Object::toString).toList() :
+      List.of();
   }
 
-  @SafeVarargs @Override
+  @SafeVarargs
+  @Override
   public final <T> List<T> mget(Class<T> clazz, K... keys) {
     Gson g = getGson();
-    return (keys.length > 0) ? client.clientForJSON().jsonMGet(getKeysAsString(keys))
-        .stream()
-        .filter(Objects::nonNull)
-        .map(jsonArr -> jsonArr.get(0))
-        .map(Object::toString)
-        .map(str -> g.fromJson(str, clazz))
-        .toList() : List.of();
+    return (keys.length > 0) ?
+      client.clientForJSON().jsonMGet(getKeysAsString(keys)).stream().filter(Objects::nonNull)
+        .map(jsonArr -> jsonArr.get(0)).map(Object::toString).map(str -> g.fromJson(str, clazz)).toList() :
+      List.of();
   }
 
-  @SafeVarargs @Override
+  @SafeVarargs
+  @Override
   public final <T> List<T> mget(Path2 path, Class<T> clazz, K... keys) {
     Gson g = getGson();
-    return (keys.length > 0) ? client.clientForJSON().jsonMGet(path, getKeysAsString(keys))
-        .stream()
-        .map(Object::toString)
-        .map(str -> g.fromJson(str, clazz))
-        .toList() : List.of();
+    return (keys.length > 0) ?
+      client.clientForJSON().jsonMGet(path, getKeysAsString(keys)).stream().map(Object::toString)
+        .map(str -> g.fromJson(str, clazz)).toList() :
+      List.of();
   }
 
   @Override
@@ -162,20 +158,14 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
 
   @Override
   public <T> List<T> arrPop(K key, Class<T> clazz, Path2 path, Integer index) {
-    return client.clientForJSON().jsonArrPop(key.toString(), path, index)
-      .stream()
-      .map(Object::toString)
-      .map(str -> getGson().fromJson(str, clazz))
-      .toList();
+    return client.clientForJSON().jsonArrPop(key.toString(), path, index).stream().map(Object::toString)
+      .map(str -> getGson().fromJson(str, clazz)).toList();
   }
 
   @Override
   public <T> List<T> arrPop(K key, Class<T> clazz, Path2 path) {
-    return client.clientForJSON().jsonArrPop(key.toString(), path)
-      .stream()
-      .map(Object::toString)
-      .map(str -> getGson().fromJson(str, clazz))
-      .toList();
+    return client.clientForJSON().jsonArrPop(key.toString(), path).stream().map(Object::toString)
+      .map(str -> getGson().fromJson(str, clazz)).toList();
   }
 
   @Override
@@ -212,7 +202,7 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
         case "String" -> element.equals("null") ? null : (T) element;
         case "Integer" -> (T) Integer.valueOf(element);
         case "Long" -> (T) Long.valueOf(element);
-        case  "Long[]" -> (T) jsonArray.toList().stream().map(e -> Long.valueOf(e.toString())).toArray(Long[]::new);
+        case "Long[]" -> (T) jsonArray.toList().stream().map(e -> Long.valueOf(e.toString())).toArray(Long[]::new);
         case "Double" -> (T) Double.valueOf(element);
         case "Boolean" -> (T) Boolean.valueOf(element);
         default -> getGson().fromJson(element, clazz);

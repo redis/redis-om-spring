@@ -19,18 +19,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SuppressWarnings("SpellCheckingInspection") class RedisEnhancedKeyValueAdapterTest extends AbstractBaseEnhancedRedisTest {
+@SuppressWarnings("SpellCheckingInspection")
+class RedisEnhancedKeyValueAdapterTest extends AbstractBaseEnhancedRedisTest {
 
   @Autowired
   @Qualifier("redisCustomKeyValueTemplate")
   CustomRedisKeyValueTemplate kvTemplate;
-  
-  @Autowired StringRedisTemplate template;
-  
+
+  @Autowired
+  StringRedisTemplate template;
+
   RedisEnhancedKeyValueAdapter adapter;
 
   @Autowired
   CompanyRepository repository;
+  Company redis;
+  Company microsoft;
 
   @Test
   void testPutRedisData() {
@@ -38,41 +42,38 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
     rdo.setId("abc");
     rdo.setKeyspace("redisdata");
     kvTemplate.getAdapter().put("abc", rdo, "redisdata");
-    
+
     Object firstName = template.opsForHash().get("redisdata:abc", "firstname");
     assertThat(firstName).hasToString("rand");
   }
-  
-  Company redis;
-  Company microsoft;
 
   @BeforeEach
   void createData() {
     adapter = (RedisEnhancedKeyValueAdapter) kvTemplate.getAdapter();
     repository.deleteAll();
     redis = repository.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
-    microsoft = repository.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
-        new Point(-122.124500, 47.640160), "research@microsoft.com"));
+      Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+    microsoft = repository.save(
+      Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
+        "research@microsoft.com"));
   }
 
   @Test
   void testGetAllOf() {
     Iterable<Company> companies = adapter.getAllOf("com.redis.om.spring.annotations.hash.fixtures.Company",
-        Company.class);
+      Company.class);
     assertAll( //
-        () -> assertThat(repository.count()).isEqualTo(2),
-        () -> assertThat(companies).hasSize(2) //
+      () -> assertThat(repository.count()).isEqualTo(2), () -> assertThat(companies).hasSize(2) //
     );
   }
-  
+
   @Test
   void testGetAllOfWithRowsSet() {
     assertEquals(2, repository.count());
     Iterable<Company> companies = adapter.getAllOf("com.redis.om.spring.annotations.hash.fixtures.Company",
-        Company.class, 0, 1);
+      Company.class, 0, 1);
     assertAll( //
-        () -> assertThat(companies).hasSize(1) //
+      () -> assertThat(companies).hasSize(1) //
     );
   }
 
@@ -82,9 +83,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
     assertEquals(2, repository.count());
     List<String> keys = adapter.getAllIds(keyspace, Company.class);
     assertAll( //
-        () -> assertThat(keys).hasSize(2), //
-        () -> assertThat(keys).contains(redis.getId()), //
-        () -> assertThat(keys).contains(microsoft.getId()) //
+      () -> assertThat(keys).hasSize(2), //
+      () -> assertThat(keys).contains(redis.getId()), //
+      () -> assertThat(keys).contains(microsoft.getId()) //
     );
   }
 }

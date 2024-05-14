@@ -27,19 +27,6 @@ public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicat
     this.fieldType = getFieldTypeFor(field.getField());
   }
 
-  @Override
-  public String getSearchAlias() { return field.getSearchAlias(); }
-
-  @Override
-  public Field getField() {
-    return field.getField();
-  }
-
-  @Override
-  public FieldType getSearchFieldType() {
-    return fieldType;
-  }
-
   private static FieldType getFieldTypeFor(java.lang.reflect.Field field) {
     FieldType result = null;
     // Searchable - behaves like Text indexed
@@ -71,8 +58,8 @@ public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicat
       //
       // Any Numeric class -> Numeric Search Field
       //
-      else if (Number.class.isAssignableFrom(field.getType()) || (field.getType() == LocalDateTime.class)
-          || (field.getType() == LocalDate.class) || (field.getType() == Date.class) || (field.getType() == Instant.class)) {
+      else if (Number.class.isAssignableFrom(
+        field.getType()) || (field.getType() == LocalDateTime.class) || (field.getType() == LocalDate.class) || (field.getType() == Date.class) || (field.getType() == Instant.class)) {
         result = FieldType.NUMERIC;
       }
       //
@@ -89,6 +76,21 @@ public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicat
       }
     }
     return result;
+  }
+
+  @Override
+  public String getSearchAlias() {
+    return field.getSearchAlias();
+  }
+
+  @Override
+  public Field getField() {
+    return field.getField();
+  }
+
+  @Override
+  public FieldType getSearchFieldType() {
+    return fieldType;
   }
 
   @Override

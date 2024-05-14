@@ -22,8 +22,10 @@ public class NotEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
-    return ObjectUtils.isNotEmpty(getValue()) ? QueryBuilders.intersect(root).add(QueryBuilders.disjunct(getSearchAlias(), Values.value(
-        QueryUtils.escape(getValue().toString(), true)))) : root;
+    return ObjectUtils.isNotEmpty(getValue()) ?
+      QueryBuilders.intersect(root)
+        .add(QueryBuilders.disjunct(getSearchAlias(), Values.value(QueryUtils.escape(getValue().toString(), true)))) :
+      root;
   }
 
 }

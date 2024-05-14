@@ -45,6 +45,7 @@ public interface CompanyRepository extends RedisDocumentRepository<Company, Stri
 
   // order by
   List<Company> findByYearFoundedOrderByNameAsc(int year);
+
   List<Company> findByYearFoundedOrderByNameDesc(int year);
 
 }

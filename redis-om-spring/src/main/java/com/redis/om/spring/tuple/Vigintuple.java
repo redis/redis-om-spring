@@ -3,79 +3,7 @@ package com.redis.om.spring.tuple;
 import com.redis.om.spring.tuple.accessor.*;
 
 public interface Vigintuple<E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E15, E16, E17, E18, E19, E20>
-    extends Tuple {
-
-  E1 getFirst();
-
-  E2 getSecond();
-
-  E3 getThird();
-
-  E4 getFourth();
-
-  E5 getFifth();
-
-  E6 getSixth();
-
-  E7 getSeventh();
-
-  E8 getEighth();
-
-  E9 getNinth();
-
-  E10 getTenth();
-
-  E11 getEleventh();
-
-  E12 getTwelfth();
-
-  E13 getThirteenth();
-
-  E14 getFourteenth();
-
-  E15 getFifteenth();
-
-  E16 getSixteenth();
-
-  E17 getSeventeenth();
-
-  E18 getEighteenth();
-
-  E19 getNineteenth();
-
-  E20 getTwentieth();
-
-  @Override
-  default int size() {
-    return 20;
-  }
-
-  default Object get(int index) {
-    return switch (index) {
-      case 0 -> getFirst();
-      case 1 -> getSecond();
-      case 2 -> getThird();
-      case 3 -> getFourth();
-      case 4 -> getFifth();
-      case 5 -> getSixth();
-      case 6 -> getSeventh();
-      case 7 -> getEighth();
-      case 8 -> getNinth();
-      case 9 -> getTenth();
-      case 10 -> getEleventh();
-      case 11 -> getTwelfth();
-      case 12 -> getThirteenth();
-      case 13 -> getFourteenth();
-      case 14 -> getFifteenth();
-      case 15 -> getSixteenth();
-      case 16 -> getSeventeenth();
-      case 17 -> getEighteenth();
-      case 18 -> getNineteenth();
-      case 19 -> getTwentieth();
-      default -> throw new IndexOutOfBoundsException(
-          String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
-    };
-  }
+  extends Tuple {
 
   static <E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E15, E16, E17, E18, E19, E20> FirstAccessor<Vigintuple<E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E15, E16, E17, E18, E19, E20>, E1> getFirstGetter() {
     return Vigintuple::getFirst;
@@ -155,5 +83,77 @@ public interface Vigintuple<E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E
 
   static <E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E15, E16, E17, E18, E19, E20> TwentiethAccessor<Vigintuple<E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E15, E16, E17, E18, E19, E20>, E20> getTwentiethGetter() {
     return Vigintuple::getTwentieth;
+  }
+
+  E1 getFirst();
+
+  E2 getSecond();
+
+  E3 getThird();
+
+  E4 getFourth();
+
+  E5 getFifth();
+
+  E6 getSixth();
+
+  E7 getSeventh();
+
+  E8 getEighth();
+
+  E9 getNinth();
+
+  E10 getTenth();
+
+  E11 getEleventh();
+
+  E12 getTwelfth();
+
+  E13 getThirteenth();
+
+  E14 getFourteenth();
+
+  E15 getFifteenth();
+
+  E16 getSixteenth();
+
+  E17 getSeventeenth();
+
+  E18 getEighteenth();
+
+  E19 getNineteenth();
+
+  E20 getTwentieth();
+
+  @Override
+  default int size() {
+    return 20;
+  }
+
+  default Object get(int index) {
+    return switch (index) {
+      case 0 -> getFirst();
+      case 1 -> getSecond();
+      case 2 -> getThird();
+      case 3 -> getFourth();
+      case 4 -> getFifth();
+      case 5 -> getSixth();
+      case 6 -> getSeventh();
+      case 7 -> getEighth();
+      case 8 -> getNinth();
+      case 9 -> getTenth();
+      case 10 -> getEleventh();
+      case 11 -> getTwelfth();
+      case 12 -> getThirteenth();
+      case 13 -> getFourteenth();
+      case 14 -> getFifteenth();
+      case 15 -> getSixteenth();
+      case 16 -> getSeventeenth();
+      case 17 -> getEighteenth();
+      case 18 -> getNineteenth();
+      case 19 -> getTwentieth();
+      default -> throw new IndexOutOfBoundsException(
+        String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
+    };
   }
 }

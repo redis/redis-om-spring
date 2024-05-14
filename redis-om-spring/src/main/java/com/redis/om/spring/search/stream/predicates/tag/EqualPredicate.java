@@ -23,7 +23,8 @@ public class EqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
-    if (isEmpty(getValue())) return root;
+    if (isEmpty(getValue()))
+      return root;
     if (Iterable.class.isAssignableFrom(getValue().getClass())) {
       Iterable<?> values = (Iterable<?>) getValue();
       QueryNode and = QueryBuilders.intersect();

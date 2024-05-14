@@ -7,13 +7,11 @@ import org.springframework.data.annotation.Version;
 @Document
 public class VersionedEntity {
 
+  private final String name;
   @Id
   private long id;
-
   @Version
   private long version;
-
-  private final String name;
 
   public VersionedEntity(long id) {
     this(id, 0, null);

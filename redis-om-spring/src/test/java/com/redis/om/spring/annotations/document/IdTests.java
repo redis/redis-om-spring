@@ -41,7 +41,6 @@ class IdTests extends AbstractBaseDocumentTest {
     movieRepository.saveAll(Set.of(movie1, movie2, movie3));
   }
 
-
   @Test
   void testLongPrimivitiveIdIndexGeneration() {
     SearchStream<Movie> stream = entityStream.of(Movie.class);

@@ -7,6 +7,10 @@ import java.time.Instant;
 
 public class InstantTypeAdapter implements JsonSerializer<Instant>, JsonDeserializer<Instant> {
 
+  public static InstantTypeAdapter getInstance() {
+    return new InstantTypeAdapter();
+  }
+
   @Override
   public JsonElement serialize(Instant instant, Type typeOfSrc, JsonSerializationContext context) {
     long timeInMillis = instant.toEpochMilli();
@@ -15,12 +19,8 @@ public class InstantTypeAdapter implements JsonSerializer<Instant>, JsonDeserial
 
   @Override
   public Instant deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
-      throws JsonParseException {
+    throws JsonParseException {
     return Instant.ofEpochMilli(json.getAsLong());
-  }
-
-  public static InstantTypeAdapter getInstance() {
-    return new InstantTypeAdapter();
   }
 
 }

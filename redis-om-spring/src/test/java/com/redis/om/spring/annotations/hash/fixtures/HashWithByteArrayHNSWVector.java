@@ -20,13 +20,12 @@ public class HashWithByteArrayHNSWVector {
   private String id;
 
   @Indexed(//
-      schemaFieldType = SchemaFieldType.VECTOR, //
-      algorithm = VectorAlgorithm.HNSW, //
-      type = VectorType.FLOAT32, //
-      dimension = 100, //
-      distanceMetric = DistanceMetric.L2, //
-      initialCapacity = 300,
-      m = 40
+           schemaFieldType = SchemaFieldType.VECTOR, //
+           algorithm = VectorAlgorithm.HNSW, //
+           type = VectorType.FLOAT32, //
+           dimension = 100, //
+           distanceMetric = DistanceMetric.L2, //
+           initialCapacity = 300, m = 40
   )
   @NonNull
   private byte[] vector;

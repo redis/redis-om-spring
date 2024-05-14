@@ -8,13 +8,13 @@ import org.springframework.data.domain.Sort.Order;
 import java.util.Comparator;
 import java.util.function.Function;
 
-public class MetamodelField<E, T> implements Comparator<E>, Function<E,T> {
+public class MetamodelField<E, T> implements Comparator<E>, Function<E, T> {
 
   protected final SearchFieldAccessor searchFieldAccessor;
   protected final boolean indexed;
   protected final String alias;
   protected Class<?> targetClass;
-  
+
   public MetamodelField(SearchFieldAccessor searchFieldAccessor, boolean indexed) {
     this.searchFieldAccessor = searchFieldAccessor;
     this.indexed = indexed;
@@ -34,7 +34,7 @@ public class MetamodelField<E, T> implements Comparator<E>, Function<E,T> {
     this.alias = alias;
     this.targetClass = targetClass;
   }
-  
+
   public SearchFieldAccessor getSearchFieldAccessor() {
     return searchFieldAccessor;
   }
@@ -48,7 +48,7 @@ public class MetamodelField<E, T> implements Comparator<E>, Function<E,T> {
   public T apply(E t) {
     return null;
   }
-  
+
   public boolean isIndexed() {
     return indexed;
   }

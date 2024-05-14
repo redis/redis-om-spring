@@ -6,7 +6,8 @@ import lombok.Data;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-@SuppressWarnings("SpellCheckingInspection") @Data
+@SuppressWarnings("SpellCheckingInspection")
+@Data
 @RequiredArgsConstructor(staticName = "of")
 public class Direccion {
   @NonNull

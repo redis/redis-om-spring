@@ -4,6 +4,26 @@ import com.redis.om.spring.tuple.accessor.*;
 
 public interface Quintuple<E1, E2, E3, E4, E5> extends Tuple {
 
+  static <E1, E2, E3, E4, E5> FirstAccessor<Quintuple<E1, E2, E3, E4, E5>, E1> getFirstGetter() {
+    return Quintuple::getFirst;
+  }
+
+  static <E1, E2, E3, E4, E5> SecondAccessor<Quintuple<E1, E2, E3, E4, E5>, E2> getSecondGetter() {
+    return Quintuple::getSecond;
+  }
+
+  static <E1, E2, E3, E4, E5> ThirdAccessor<Quintuple<E1, E2, E3, E4, E5>, E3> getThirdGetter() {
+    return Quintuple::getThird;
+  }
+
+  static <E1, E2, E3, E4, E5> FourthAccessor<Quintuple<E1, E2, E3, E4, E5>, E4> getFourthGetter() {
+    return Quintuple::getFourth;
+  }
+
+  static <E1, E2, E3, E4, E5> FifthAccessor<Quintuple<E1, E2, E3, E4, E5>, E5> getFifthGetter() {
+    return Quintuple::getFifth;
+  }
+
   E1 getFirst();
 
   E2 getSecond();
@@ -27,27 +47,7 @@ public interface Quintuple<E1, E2, E3, E4, E5> extends Tuple {
       case 3 -> getFourth();
       case 4 -> getFifth();
       default -> throw new IndexOutOfBoundsException(
-          String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
+        String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
     };
-  }
-
-  static <E1, E2, E3, E4, E5> FirstAccessor<Quintuple<E1, E2, E3, E4, E5>, E1> getFirstGetter() {
-    return Quintuple::getFirst;
-  }
-
-  static <E1, E2, E3, E4, E5> SecondAccessor<Quintuple<E1, E2, E3, E4, E5>, E2> getSecondGetter() {
-    return Quintuple::getSecond;
-  }
-
-  static <E1, E2, E3, E4, E5> ThirdAccessor<Quintuple<E1, E2, E3, E4, E5>, E3> getThirdGetter() {
-    return Quintuple::getThird;
-  }
-
-  static <E1, E2, E3, E4, E5> FourthAccessor<Quintuple<E1, E2, E3, E4, E5>, E4> getFourthGetter() {
-    return Quintuple::getFourth;
-  }
-
-  static <E1, E2, E3, E4, E5> FifthAccessor<Quintuple<E1, E2, E3, E4, E5>, E5> getFifthGetter() {
-    return Quintuple::getFifth;
   }
 }
