@@ -3,6 +3,7 @@ package com.redis.om.spring;
 import com.github.f4b6a3.ulid.Ulid;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.JsonAdapter;
+import com.google.gson.annotations.SerializedName;
 import com.redis.om.spring.annotations.*;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
@@ -217,8 +218,8 @@ public class RediSearchIndexer {
         // Also UUID and Ulid (classes whose toString() is a valid text representation
         // of the value)
         //
-        if (CharSequence.class.isAssignableFrom(
-            fieldType) || (fieldType == Boolean.class) || (fieldType == UUID.class) || (fieldType == Ulid.class)) {
+        if (CharSequence.class.isAssignableFrom(fieldType) || //
+            (fieldType == Boolean.class) || (fieldType == UUID.class) || (fieldType == Ulid.class)) {
           fields.add(indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed.separator(),
               indexed.arrayIndex(), indexed.alias()));
         } else if (fieldType.isEnum()) {
@@ -454,13 +455,15 @@ public class RediSearchIndexer {
 
   private SchemaField indexAsTagFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix,
       boolean sortable, String separator, int arrayIndex, String annotationAlias) {
+    SerializedName serializedName = field.getAnnotation(SerializedName.class);
+    String fname = (serializedName != null) ? serializedName.value() : field.getName();
     TypeInformation<?> typeInfo = TypeInformation.of(field.getType());
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
     String index = (arrayIndex != Integer.MIN_VALUE) ? ".[" + arrayIndex + "]" : "[*]";
     String fieldPostfix = (isDocument && typeInfo.isCollectionLike() && !field.isAnnotationPresent(JsonAdapter.class)) ?
         index :
         "";
-    String name = fieldPrefix + field.getName() + fieldPostfix;
+    String name = fieldPrefix + fname + fieldPostfix;
     String alias = (annotationAlias == null || annotationAlias.isBlank()) ?
         QueryUtils.searchIndexFieldAliasFor(field, prefix) :
         annotationAlias;
@@ -536,8 +539,10 @@ public class RediSearchIndexer {
   }
 
   private FieldName getFieldName(java.lang.reflect.Field field, boolean isDocument, String prefix, String alias) {
+    SerializedName serializedName = field.getAnnotation(SerializedName.class);
+    String fname = (serializedName != null) ? serializedName.value() : field.getName();
     String fieldPrefix = getFieldPrefix(prefix, isDocument);
-    String name = fieldPrefix + field.getName();
+    String name = fieldPrefix + fname;
     FieldName fieldName = FieldName.of(name);
     fieldName = fieldName.as(alias);
     return fieldName;
@@ -758,9 +763,11 @@ public class RediSearchIndexer {
   private Optional<SchemaField> createIndexedFieldForReferenceIdField( //
       java.lang.reflect.Field referenceIdField, //
       boolean isDocument) {
+    SerializedName serializedName = referenceIdField.getAnnotation(SerializedName.class);
+    String fname = (serializedName != null) ? serializedName.value() : referenceIdField.getName();
 
     String fieldPrefix = getFieldPrefix("", isDocument);
-    FieldName fieldName = FieldName.of(fieldPrefix + referenceIdField.getName());
+    FieldName fieldName = FieldName.of(fieldPrefix + fname);
     fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(referenceIdField, ""));
     return Optional.of(
         isDocument ? TagField.of(fieldName).separator('|') : TagField.of(fieldName).separator('|').sortable());

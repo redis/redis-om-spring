@@ -1,14 +1,12 @@
 package com.redis.om.spring.annotations.document;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.SKU;
-import com.redis.om.spring.annotations.document.fixtures.SKUCacheRepository;
-import com.redis.om.spring.annotations.document.fixtures.User2;
-import com.redis.om.spring.annotations.document.fixtures.User2Repository;
+import com.redis.om.spring.annotations.document.fixtures.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -24,6 +22,9 @@ class RepositoryIssuesTest extends AbstractBaseDocumentTest {
   @Autowired
   SKUCacheRepository skuCacheRepository;
 
+  @Autowired
+  StudentRepository studentRepository;
+
   @BeforeEach
   void cleanUp() {
     repository.deleteAll();
@@ -37,6 +38,13 @@ class RepositoryIssuesTest extends AbstractBaseDocumentTest {
     }
     skuCacheRepository.saveAll(skuCaches);
 
+    studentRepository.deleteAll();
+    List<Student> students = new ArrayList<>();
+    for (int i = 0; i < 10; i++) {
+      students.add(
+        Student.of((long) i, "Student" + i, LocalDateTime.now()));
+    }
+    studentRepository.saveAll(students);
   }
 
   // RediSearchQuery wrong preparedQuery #187
@@ -74,6 +82,16 @@ class RepositoryIssuesTest extends AbstractBaseDocumentTest {
     assertAll( //
         () -> assertThat(result).isNotNull(),
         () -> assertThat(result.getSkuNumber()).isEqualTo("A11111") //
+    );
+  }
+
+  @Test
+  void testFindByPropertyWithAliasWithHyphens() {
+    List<Student> result = studentRepository.findByUserName("Student2");
+
+    assertAll( //
+      () -> assertThat(result).hasSize(1),
+      () -> assertThat(result).extracting("userName").containsExactly("Student2") //
     );
   }
 }

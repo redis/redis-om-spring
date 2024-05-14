@@ -21,6 +21,7 @@ import redis.clients.jedis.search.aggr.AggregationResult;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -50,6 +51,9 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
 
   @Autowired
   HashWithEnumRepository hashWithEnumRepository;
+
+  @Autowired
+  StudentRepository studentRepository;
 
   @BeforeEach
   void createTestDataIfNeeded() {
@@ -81,6 +85,14 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
     michael.setFavoriteFoods(Set.of("Steak and Kidney Pie", "Sunday Roast", "Bangers and Mash"));
 
     personRepo.saveAll(List.of(john, gray, terryg, eric, terryj, michael));
+
+    studentRepository.deleteAll();
+    List<Student> students = new ArrayList<>();
+    for (int i = 0; i < 10; i++) {
+      students.add(
+        Student.of((long) i, "Student" + i, LocalDateTime.now()));
+    }
+    studentRepository.saveAll(students);
   }
   
   @Test
@@ -632,6 +644,16 @@ import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
         () -> assertThat(onlyVal1).containsExactly(doc1), //
         () -> assertThat(onlyVal2).containsExactly(doc2), //
         () -> assertThat(onlyVal3).containsExactly(doc3)  //
+    );
+  }
+
+  @Test
+  void testFindByPropertyWithAliasWithHyphens() {
+    List<Student> result = studentRepository.findByUserName("Student2");
+
+    assertAll( //
+      () -> assertThat(result).hasSize(1),
+      () -> assertThat(result).extracting("userName").containsExactly("Student2") //
     );
   }
 }
