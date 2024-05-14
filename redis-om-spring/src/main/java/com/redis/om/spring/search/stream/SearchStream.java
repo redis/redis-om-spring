@@ -91,6 +91,8 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
 
   Optional<E> findAny();
 
+  SearchStream<E> findFirstOrElse(Supplier<? extends E> supplier);
+
   Stream<Map<String, Object>> mapToLabelledMaps();
 
   @SuppressWarnings("unchecked")

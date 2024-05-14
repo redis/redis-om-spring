@@ -479,4 +479,9 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     throw new UnsupportedOperationException("highlight is not supported on a ReturnFieldSearchStream");
   }
 
+  @Override
+  public SearchStream<T> findFirstOrElse(Supplier<? extends T> supplier) {
+    throw new UnsupportedOperationException("findFirstOrElse is not supported on a ReturnFieldSearchStream");
+  }
+
 }

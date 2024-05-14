@@ -2511,4 +2511,28 @@ import static org.junit.jupiter.api.Assertions.*;
 
     doc3Repository.delete(doc);
   }
+
+  @Test
+  void testOrElseAndUpdate() {
+    String name = "NewCompany";
+    String email = "info@newcompany.com";
+
+    entityStream.of(Company.class)
+      .filter(Company$.NAME.eq(name))
+      .findFirstOrElse(() -> {
+        Company newCompany = Company.of(name, 2023, LocalDate.now(), new Point(0, 0), email);
+        newCompany.setTags(Collections.emptySet());
+        return repository.save(newCompany);
+      })
+      .forEach(Company$.TAGS.add("innovative"));
+
+    Optional<Company> maybeCompany = repository.findFirstByName(name);
+    assertTrue(maybeCompany.isPresent());
+
+    Company updatedCompany = maybeCompany.get();
+    assertEquals(email, updatedCompany.getEmail());
+    assertTrue(updatedCompany.getTags().contains("innovative"));
+
+    repository.delete(updatedCompany);
+  }
 }
