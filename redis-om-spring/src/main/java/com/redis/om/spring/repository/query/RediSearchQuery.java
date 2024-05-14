@@ -712,7 +712,7 @@ public class RediSearchQuery implements RepositoryQuery {
           if (excludeNullParams && (fieldClauses.getSecond() == QueryClause.IS_NULL || fieldClauses.getSecond() == QueryClause.IS_NOT_NULL)) {
             return "";
           }
-          String fieldName = fieldClauses.getFirst();
+          String fieldName = QueryUtils.escape(fieldClauses.getFirst());
           QueryClause queryClause = fieldClauses.getSecond();
           int paramsCnt = queryClause.getClauseTemplate().getNumberOfArguments();
 
