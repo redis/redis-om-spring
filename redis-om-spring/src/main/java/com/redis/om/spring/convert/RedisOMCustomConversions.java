@@ -13,9 +13,11 @@ public class RedisOMCustomConversions extends RedisCustomConversions {
     // Ulid
     omConverters.add(new UlidToBytesConverter());
     omConverters.add(new BytesToUlidConverter());
+
     // Point
     omConverters.add(new PointToBytesConverter());
     omConverters.add(new BytesToPointConverter());
+
     // Date
     omConverters.add(new DateToBytesConverter());
     omConverters.add(new BytesToDateConverter());
@@ -25,13 +27,17 @@ public class RedisOMCustomConversions extends RedisCustomConversions {
     omConverters.add(new LocalDateToBytesConverter());
     omConverters.add(new BytesToLocalDateConverter());
     omConverters.add(new LocalDateToStringConverter());
+
     // OffsetDateTime
     omConverters.add(new OffsetDateTimeToBytesConverter());
     omConverters.add(new BytesToOffsetDateTimeConverter());
     omConverters.add(new OffsetDateTimeToStringConverter());
+
     // LocalDateTime
     omConverters.add(new LocalDateTimeToBytesConverter());
     omConverters.add(new BytesToLocalDateTimeConverter());
+    omConverters.add(new LocalDateTimeToStringConverter());
+    
     // Boolean
     omConverters.add(new BooleanToBytesConverter());
     omConverters.add(new BytesToBooleanConverter());
