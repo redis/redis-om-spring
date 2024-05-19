@@ -1,9 +1,9 @@
 package com.redis.om.spring.annotations.hash.fixtures;
 
-import com.redis.om.spring.DistanceMetric;
-import com.redis.om.spring.VectorType;
 import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.SchemaFieldType;
+import com.redis.om.spring.indexing.DistanceMetric;
+import com.redis.om.spring.indexing.VectorType;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;

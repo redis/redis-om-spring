@@ -1,12 +1,12 @@
 package com.redis.om.spring.repository.support;
 
 import com.google.common.collect.Lists;
-import com.redis.om.spring.RediSearchIndexer;
 import com.redis.om.spring.RedisEnhancedKeyValueAdapter;
 import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.audit.EntityAuditor;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.id.ULIDIdentifierGenerator;
+import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;

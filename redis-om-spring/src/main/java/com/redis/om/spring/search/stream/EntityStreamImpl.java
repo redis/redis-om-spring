@@ -1,7 +1,7 @@
 package com.redis.om.spring.search.stream;
 
 import com.google.gson.GsonBuilder;
-import com.redis.om.spring.RediSearchIndexer;
+import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.ops.RedisModulesOperations;
 
 public class EntityStreamImpl implements EntityStream {

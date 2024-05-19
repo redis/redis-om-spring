@@ -1,7 +1,7 @@
 package com.redis.om.documents;
 
 import com.redis.om.spring.CustomRedisKeyValueTemplate;
-import com.redis.om.spring.RediSearchIndexer;
+import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.testcontainers.RedisStackContainer;
 import org.springframework.beans.factory.annotation.Autowired;

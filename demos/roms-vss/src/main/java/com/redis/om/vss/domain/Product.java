@@ -1,7 +1,7 @@
 package com.redis.om.vss.domain;
 
-import com.redis.om.spring.DistanceMetric;
-import com.redis.om.spring.VectorType;
+import com.redis.om.spring.indexing.DistanceMetric;
+import com.redis.om.spring.indexing.VectorType;
 import com.redis.om.spring.annotations.EmbeddingType;
 import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.SchemaFieldType;

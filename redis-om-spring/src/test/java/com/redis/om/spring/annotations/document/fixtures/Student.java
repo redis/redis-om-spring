@@ -21,12 +21,13 @@ public class Student {
   @NonNull
   private Long id;
 
-  @Indexed(alias = "User-Name")//  fieldName = "User-Name", schemaFieldType = SchemaFieldType.TAG
+  @Indexed(alias = "User-Name")
   @SerializedName("User-Name")
   @NonNull
   private String userName;
 
-  @Indexed
+  @Indexed(alias = "Event-Timestamp")
+  @SerializedName("Event-Timestamp")
   @NonNull
   private LocalDateTime eventTimestamp;
 

@@ -90,7 +90,8 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
     studentRepository.deleteAll();
     List<Student> students = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
-      students.add(Student.of((long) i, "Student" + i, LocalDateTime.now()));
+      students.add(Student.of((long) i, "Student" + i, i != 2 ? LocalDateTime.now() : LocalDateTime.of(2023, 6, 1, 1, 1,
+        1)));
     }
     studentRepository.saveAll(students);
   }
@@ -662,8 +663,8 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
     List<Student> result = studentRepository.findByUserName("Student2");
 
     assertAll( //
-      () -> assertThat(result).hasSize(1), () -> assertThat(result).extracting("userName").containsExactly("Student2")
-      //
+      () -> assertThat(result).hasSize(1), //
+      () -> assertThat(result).extracting("userName").containsExactly("Student2") //
     );
   }
 }

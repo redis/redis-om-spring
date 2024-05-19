@@ -1,8 +1,8 @@
 package com.redis.om.spring.repository.support;
 
 import com.google.gson.GsonBuilder;
-import com.redis.om.spring.RediSearchIndexer;
 import com.redis.om.spring.RedisOMProperties;
+import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.vectorize.FeatureExtractor;
 import org.springframework.beans.factory.annotation.Autowired;

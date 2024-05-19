@@ -1,6 +1,6 @@
 package com.redis.om.spring.search.stream.predicates.reference;
 
-import com.redis.om.spring.RediSearchIndexer;
+import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;

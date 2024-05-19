@@ -1,9 +1,9 @@
 package com.redis.om.spring.repository.query;
 
-import com.redis.om.spring.RediSearchIndexer;
 import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.annotations.*;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
+import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.query.autocomplete.AutoCompleteQueryExecutor;
@@ -264,7 +264,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     Optional<Order> maybeOrder = pt.getSort().stream().findFirst();
     if (maybeOrder.isPresent()) {
       Order order = maybeOrder.get();
-      sortBy = order.getProperty();
+      sortBy = QueryUtils.escape(order.getProperty());
       sortAscending = order.isAscending();
     }
   }
