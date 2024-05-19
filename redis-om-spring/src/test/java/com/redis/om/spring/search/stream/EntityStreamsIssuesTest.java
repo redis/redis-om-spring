@@ -13,10 +13,7 @@ import org.springframework.data.geo.Point;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
+import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -61,6 +58,7 @@ class EntityStreamsIssuesTest extends AbstractBaseDocumentTest {
   private Set<String> setThings;
   private List<String> listThings;
   private Instant instant;
+  private YearMonth yearMonth;
 
   @BeforeEach
   void beforeEach() throws IOException {
@@ -138,6 +136,7 @@ class EntityStreamsIssuesTest extends AbstractBaseDocumentTest {
     setThings = Set.of("thingOne", "thingTwo", "thingThree");
     listThings = List.of("redFish", "blueFish");
     instant = Instant.now();
+    yearMonth = YearMonth.of(1972, 6);
 
     KitchenSink ks = KitchenSink.builder() //
       .localDate(localDate) //
@@ -149,6 +148,7 @@ class EntityStreamsIssuesTest extends AbstractBaseDocumentTest {
       .setThings(setThings) //
       .listThings(listThings) //
       .instant(instant) //
+      .yearMonth(yearMonth) //
       .build();
 
     ks.setId("ks0");
@@ -163,6 +163,7 @@ class EntityStreamsIssuesTest extends AbstractBaseDocumentTest {
       .setThings(Set.of()) //
       .listThings(List.of()) //
       .instant(instant) //
+      .yearMonth(yearMonth) //
       .build();
 
     ks1.setId("ks1");
@@ -175,6 +176,7 @@ class EntityStreamsIssuesTest extends AbstractBaseDocumentTest {
       .point(point) //
       .ulid(ulid) //
       .instant(instant) //
+      .yearMonth(yearMonth) //
       .build();
 
     ks2.setId("ks2");

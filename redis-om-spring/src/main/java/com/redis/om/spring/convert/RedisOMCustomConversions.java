@@ -41,6 +41,11 @@ public class RedisOMCustomConversions extends RedisCustomConversions {
     // Boolean
     omConverters.add(new BooleanToBytesConverter());
     omConverters.add(new BytesToBooleanConverter());
+
+    // YearMonth
+    omConverters.add(new YearMonthToBytesConverter());
+    omConverters.add(new YearMonthToStringConverter());
+    omConverters.add(new BytesToYearMonthConverter());
   }
 
   /**

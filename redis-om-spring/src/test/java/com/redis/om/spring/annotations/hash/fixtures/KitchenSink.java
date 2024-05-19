@@ -10,6 +10,7 @@ import org.springframework.data.redis.core.RedisHash;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.YearMonth;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -42,6 +43,9 @@ public class KitchenSink {
   @NonNull
   @Indexed
   private Date date;
+  @NonNull
+  private YearMonth yearMonth;
+
   @NonNull
   @Indexed
   private Point point;
