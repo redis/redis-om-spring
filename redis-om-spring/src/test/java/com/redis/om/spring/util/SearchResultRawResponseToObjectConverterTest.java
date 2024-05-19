@@ -3,7 +3,6 @@ package com.redis.om.spring.util;
 import com.google.gson.Gson;
 import lombok.Data;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.Point;
 
 import java.util.Date;

@@ -1,7 +1,7 @@
 package com.redis.om.spring.annotations;
 
-import com.redis.om.spring.DistanceMetric;
-import com.redis.om.spring.VectorType;
+import com.redis.om.spring.indexing.DistanceMetric;
+import com.redis.om.spring.indexing.VectorType;
 import redis.clients.jedis.search.schemafields.VectorField.VectorAlgorithm;
 
 import java.lang.annotation.*;

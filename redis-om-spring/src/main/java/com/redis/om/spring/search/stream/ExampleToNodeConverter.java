@@ -1,6 +1,6 @@
 package com.redis.om.spring.search.stream;
 
-import com.redis.om.spring.RediSearchIndexer;
+import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.search.stream.predicates.jedis.JedisValues;
 import com.redis.om.spring.util.ObjectUtils;

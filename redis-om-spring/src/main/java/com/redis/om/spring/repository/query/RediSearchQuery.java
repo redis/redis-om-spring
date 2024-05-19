@@ -2,9 +2,9 @@ package com.redis.om.spring.repository.query;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.redis.om.spring.RediSearchIndexer;
 import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.annotations.*;
+import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.query.autocomplete.AutoCompleteQueryExecutor;
@@ -434,9 +434,9 @@ public class RediSearchQuery implements RepositoryQuery {
           query.limit(Math.toIntExact(pageable.getOffset()), pageable.getPageSize());
           needsLimit = false;
 
-          pageable.getSort();
           for (Order order : pageable.getSort()) {
-            query.setSortBy(order.getProperty(), order.isAscending());
+            var alias = QueryUtils.escape(indexer.getAlias(domainType, order.getProperty()));
+            query.setSortBy(alias, order.isAscending());
           }
         }
       }
@@ -452,7 +452,8 @@ public class RediSearchQuery implements RepositoryQuery {
     }
 
     if ((sortBy != null && !sortBy.isBlank())) {
-      query.setSortBy(sortBy, sortAscending);
+      var alias = indexer.getAlias(domainType, sortBy);
+      query.setSortBy(alias, sortAscending);
     }
 
     if (hasLanguageParameter) {

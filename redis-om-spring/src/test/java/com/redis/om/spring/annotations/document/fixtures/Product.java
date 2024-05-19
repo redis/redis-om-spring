@@ -1,8 +1,8 @@
 package com.redis.om.spring.annotations.document.fixtures;
 
-import com.redis.om.spring.DistanceMetric;
-import com.redis.om.spring.VectorType;
 import com.redis.om.spring.annotations.*;
+import com.redis.om.spring.indexing.DistanceMetric;
+import com.redis.om.spring.indexing.VectorType;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;

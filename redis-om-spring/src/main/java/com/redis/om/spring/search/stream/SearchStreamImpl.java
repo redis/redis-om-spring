@@ -2,9 +2,9 @@ package com.redis.om.spring.search.stream;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.redis.om.spring.RediSearchIndexer;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
+import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.indexed.NumericField;
 import com.redis.om.spring.ops.RedisModulesOperations;

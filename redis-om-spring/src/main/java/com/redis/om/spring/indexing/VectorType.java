@@ -1,4 +1,4 @@
-package com.redis.om.spring;
+package com.redis.om.spring.indexing;
 
 public enum VectorType {
   FLOAT32,

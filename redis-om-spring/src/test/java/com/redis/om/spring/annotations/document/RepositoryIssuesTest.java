@@ -40,7 +40,8 @@ class RepositoryIssuesTest extends AbstractBaseDocumentTest {
     studentRepository.deleteAll();
     List<Student> students = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
-      students.add(Student.of((long) i, "Student" + i, LocalDateTime.now()));
+      students.add(Student.of((long) i, "Student" + i, i != 2 ? LocalDateTime.now() : LocalDateTime.of(2023, 6, 1, 1, 1,
+        1)));
     }
     studentRepository.saveAll(students);
   }
@@ -85,10 +86,26 @@ class RepositoryIssuesTest extends AbstractBaseDocumentTest {
   @Test
   void testFindByPropertyWithAliasWithHyphens() {
     List<Student> result = studentRepository.findByUserName("Student2");
+    // "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.StudentIdx" "@User\\-Name:{Student2}" "LIMIT" "0" "10000"
 
     assertAll( //
-      () -> assertThat(result).hasSize(1), () -> assertThat(result).extracting("userName").containsExactly("Student2")
-      //
+      () -> assertThat(result).hasSize(1), //
+      () -> assertThat(result).extracting("userName").containsExactly("Student2") //
+    );
+  }
+
+  @Test
+  void testFindByPropertyWithAliasWithHyphensAndOrderBy() {
+    LocalDateTime beginLocalDateTime = LocalDateTime.of(2023, 1, 1, 1, 1,
+      1);
+    LocalDateTime endLocalDateTime = LocalDateTime.of(2023, 12, 1, 1, 1,
+      1);
+    List<Student> result = studentRepository.findByUserNameAndEventTimestampBetweenOrderByEventTimestampAsc("Student2", beginLocalDateTime,
+      endLocalDateTime);
+
+    assertAll( //
+      () -> assertThat(result).hasSize(1), //
+      () -> assertThat(result).extracting("userName").containsExactly("Student2") //
     );
   }
 }

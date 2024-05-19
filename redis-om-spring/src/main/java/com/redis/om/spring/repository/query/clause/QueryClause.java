@@ -236,7 +236,8 @@ public enum QueryClause {
                 return "@" + field + ":[" + p.getX() + " " + p.getY() + " .000001 ft]";
               }).collect(Collectors.joining(" "));
             } else {
-              value = c.stream().map(n -> QueryUtils.escape(ObjectUtils.asString(n, converter), false))
+              value = c.stream()//
+                .map(n -> QueryUtils.escape(ObjectUtils.asString(n, converter), false))
                 .collect(Collectors.joining("|"));
             }
 

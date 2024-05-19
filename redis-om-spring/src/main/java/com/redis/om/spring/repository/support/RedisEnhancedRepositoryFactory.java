@@ -1,7 +1,7 @@
 package com.redis.om.spring.repository.support;
 
-import com.redis.om.spring.RediSearchIndexer;
 import com.redis.om.spring.RedisOMProperties;
+import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.query.RedisEnhancedQuery;
 import com.redis.om.spring.vectorize.FeatureExtractor;
