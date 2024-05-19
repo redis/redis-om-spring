@@ -61,10 +61,7 @@ import redis.clients.jedis.bloom.CFReserveParams;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
+import java.time.*;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -99,6 +96,7 @@ public class RedisModulesConfiguration {
     builder.registerTypeAdapter(Ulid.class, UlidTypeAdapter.getInstance());
     builder.registerTypeAdapter(Instant.class, InstantTypeAdapter.getInstance());
     builder.registerTypeAdapter(OffsetDateTime.class, new OffsetDateTimeTypeAdapter());
+    builder.registerTypeAdapter(YearMonth.class, new YearMonthTypeAdapter());
 
     builder.addSerializationExclusionStrategy(GsonReferencesSerializationExclusionStrategy.INSTANCE);
 

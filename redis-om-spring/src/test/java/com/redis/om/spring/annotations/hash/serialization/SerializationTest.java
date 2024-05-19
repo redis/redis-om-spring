@@ -44,6 +44,7 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
   private LocalDateTime localDateTime;
   private OffsetDateTime localOffsetDateTime;
   private Date date;
+  private YearMonth yearMonth;
   private Point point;
   private Ulid ulid;
   private byte[] byteArray;
@@ -66,6 +67,7 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
     byteArray = "Hello World!".getBytes();
     byteArray2 = featureExtractor.getImageEmbeddingsAsByteArrayFor( //
       applicationContext.getResource("classpath:/images/cat.jpg").getInputStream());
+    yearMonth = YearMonth.of(1972, 6);
 
     List<String[]> listOfStringArrays = new ArrayList<>();
     listOfStringArrays.add(new String[] { "a", "b" });
@@ -86,6 +88,7 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
       .ulid(ulid) //
       .setThings(setThings) //
       .listThings(listThings) //
+      .yearMonth(yearMonth) //
       .build();
 
     ks1 = KitchenSink.builder() //
@@ -98,6 +101,7 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
       .ulid(ulid) //
       .setThings(Set.of()) //
       .listThings(List.of()) //
+      .yearMonth(yearMonth) //
       .build();
 
     ks2 = KitchenSink.builder() //
@@ -108,6 +112,7 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
       .date(date) //
       .point(point) //
       .ulid(ulid) //
+      .yearMonth(yearMonth) //
       .build();
 
     ks2.setSetThings(null);
@@ -122,6 +127,7 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
       .date(date) //
       .point(point) //
       .ulid(ulid) //
+      .yearMonth(yearMonth) //
       .build();
 
     ks3.setUlid(null);
@@ -135,6 +141,7 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
       .date(date) //
       .point(point) //
       .ulid(ulid) //
+      .yearMonth(yearMonth) //
       .build();
 
     ks4.setUlid(null);
@@ -168,6 +175,9 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
     long dateInMillis = date.getTime();
     long rawDate = Long.parseLong(Objects.requireNonNull(template.opsForHash().get(key, "date")).toString());
 
+    // YearMonth
+    String rawYearMonth = Objects.requireNonNull(template.opsForHash().get(key, "yearMonth")).toString();
+
     // Point
     String redisGeo = "-111.83592170193586,33.62826024782707";
 
@@ -186,6 +196,7 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
     assertThat(rawUlid).isEqualTo(ulid.toString());
     assertThat(rawSetThings.split("\\|")).containsExactlyInAnyOrder("thingOne", "thingTwo", "thingThree");
     assertThat(rawListThings).isEqualTo("redFish|blueFish");
+    assertThat(rawYearMonth).isEqualTo("1972-06");
   }
 
   @Test
@@ -202,6 +213,7 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
     assertThat(fromDb.get().getLocalOffsetDateTime()).isEqualToIgnoringNanos(localOffsetDateTime);
     assertThat(fromDb.get().getSetThings()).isEqualTo(setThings);
     assertThat(fromDb.get().getListThings()).isEqualTo(listThings);
+    assertThat(fromDb.get().getYearMonth()).isEqualTo(yearMonth);
   }
 
   @Test
@@ -218,6 +230,7 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
     assertThat(fromDb.get().getLocalOffsetDateTime()).isEqualToIgnoringNanos(localOffsetDateTime);
     assertThat(fromDb.get().getSetThings()).isEqualTo(setThings);
     assertThat(fromDb.get().getListThings()).isEqualTo(listThings);
+    assertThat(fromDb.get().getYearMonth()).isEqualTo(yearMonth);
   }
 
   @Test

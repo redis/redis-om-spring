@@ -42,6 +42,7 @@ class SerializationTest extends AbstractBaseDocumentTest {
   private Point point;
   private Ulid ulid;
   private Instant instant;
+  private YearMonth yearMonth;
 
   private Set<String> setThings;
   private List<String> listThings;
@@ -59,6 +60,7 @@ class SerializationTest extends AbstractBaseDocumentTest {
     setThings = Set.of("thingOne", "thingTwo", "thingThree");
     listThings = List.of("redFish", "blueFish");
     instant = Instant.now();
+    yearMonth = YearMonth.of(1972, 6);
 
     ks = KitchenSink.builder() //
       .localDate(localDate) //
@@ -70,6 +72,7 @@ class SerializationTest extends AbstractBaseDocumentTest {
       .setThings(setThings) //
       .listThings(listThings) //
       .instant(instant) //
+      .yearMonth(yearMonth) //
       .build();
 
     ks1 = KitchenSink.builder() //
@@ -82,6 +85,7 @@ class SerializationTest extends AbstractBaseDocumentTest {
       .setThings(Set.of()) //
       .listThings(List.of()) //
       .instant(instant) //
+      .yearMonth(yearMonth) //
       .build();
 
     ks2 = KitchenSink.builder() //
@@ -92,6 +96,7 @@ class SerializationTest extends AbstractBaseDocumentTest {
       .point(point) //
       .ulid(ulid) //
       .instant(instant) //
+      .yearMonth(yearMonth) //
       .build();
 
     ks2.setSetThings(null);
@@ -137,6 +142,7 @@ class SerializationTest extends AbstractBaseDocumentTest {
     assertThat(rawJSON.get("instant").getAsLong()).isEqualTo(instantInMillis);
     assertThat(Arrays.asList(rawJSON.get("setThings").getAsString().split("\\|"))).containsExactlyInAnyOrder("thingOne",
       "thingTwo", "thingThree");
+    assertThat(rawJSON.get("yearMonth").getAsString()).isEqualTo("1972-06");
     assertThat(rawJSON.get("listThings").getAsString()).isEqualTo("redFish|blueFish");
   }
 
@@ -155,6 +161,7 @@ class SerializationTest extends AbstractBaseDocumentTest {
     // NOTE: We lose nanosecond precision in order to store LocalDateTime as long in order to allow for RediSearch range queries
     assertThat(fromDb.get().getLocalDateTime()).isEqualToIgnoringNanos(localDateTime);
     assertThat(fromDb.get().getInstant().getEpochSecond()).isEqualTo(instant.getEpochSecond());
+    assertThat(fromDb.get().getYearMonth()).isEqualTo(yearMonth);
   }
 
   @Test
