@@ -5,11 +5,15 @@ import com.redis.om.spring.annotations.document.fixtures.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.repository.query.FluentQuery.FetchableFluentQuery;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -40,8 +44,10 @@ class RepositoryIssuesTest extends AbstractBaseDocumentTest {
     studentRepository.deleteAll();
     List<Student> students = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
-      students.add(Student.of((long) i, "Student" + i, i != 2 ? LocalDateTime.now() : LocalDateTime.of(2023, 6, 1, 1, 1,
-        1)));
+      var student = Student.of("Student" + i, i != 2 ? LocalDateTime.now() : LocalDateTime.of(2023, 6, 1, 1, 1,
+        1));
+      student.setId((long) i);
+      students.add(student);
     }
     studentRepository.saveAll(students);
   }
@@ -107,5 +113,19 @@ class RepositoryIssuesTest extends AbstractBaseDocumentTest {
       () -> assertThat(result).hasSize(1), //
       () -> assertThat(result).extracting("userName").containsExactly("Student2") //
     );
+  }
+
+  @Test
+  void testQBEWithAliasWithHyphensAndOrderBy() {
+    Function<FetchableFluentQuery<Student>, Student> sortFunction =
+      query -> query.sortBy(Sort.by("Event-Timestamp").descending()).firstValue();
+
+    var matcher = ExampleMatcher.matching().withMatcher("userName", ExampleMatcher.GenericPropertyMatcher::exact);
+
+    var student = new Student();
+    student.setUserName("Student2");
+
+    Student result = studentRepository.findFirstByPropertyOrderByEventTimestamp(student, matcher, sortFunction);
+    assertThat(result.getUserName()).isEqualTo("Student2");
   }
 }

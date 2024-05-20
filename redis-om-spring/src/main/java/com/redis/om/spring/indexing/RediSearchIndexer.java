@@ -50,7 +50,7 @@ public class RediSearchIndexer {
   private final Map<Class<?>, String> entityClassToKeySpace = new ConcurrentHashMap<>();
   private final Map<Class<?>, String> entityClassToIndexName = new ConcurrentHashMap<>();
   private final List<Class<?>> indexedEntityClasses = new ArrayList<>();
-  private final Map<Class<?>, List<SchemaField>> entityClassToSchema = new ConcurrentHashMap<>();
+  private final Map<Class<?>, List<SearchField>> entityClassToSchema = new ConcurrentHashMap<>();
   private final Map<Pair<Class<?>, String>, String> entityClassFieldToAlias = new ConcurrentHashMap<>();
   private final ApplicationContext ac;
   private final RedisModulesOperations<String> rmo;
@@ -135,7 +135,7 @@ public class RediSearchIndexer {
       addKeySpaceMapping(entityPrefix, cl);
       updateTTLSettings(cl, entityPrefix, isDocument, document, allClassFields);
       List<SchemaField> fields = searchFields.stream().map(SearchField::getSchemaField).toList();
-      entityClassToSchema.put(cl, fields);
+      entityClassToSchema.put(cl, searchFields);
       entityClassToIndexName.put(cl, indexName);
       opsForSearch.createIndex(params, fields);
     } catch (Exception e) {
@@ -201,7 +201,7 @@ public class RediSearchIndexer {
     return indexedEntityClasses.contains(entityClass);
   }
 
-  public List<SchemaField> getSchemaFor(Class<?> entityClass) {
+  public List<SearchField> getSchemaFor(Class<?> entityClass) {
     return entityClassToSchema.get(entityClass);
   }
 
