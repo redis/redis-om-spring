@@ -1,7 +1,12 @@
 package com.redis.om.spring.annotations.hash;
 
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.hash.fixtures.*;
+import com.redis.om.spring.fixtures.hash.model.Country;
+import com.redis.om.spring.fixtures.hash.model.Country$;
+import com.redis.om.spring.fixtures.hash.model.HashWithColonInPrefix;
+import com.redis.om.spring.fixtures.hash.model.HashWithColonInPrefix$;
+import com.redis.om.spring.fixtures.hash.repository.CountryRepository;
+import com.redis.om.spring.fixtures.hash.repository.HashWithColonInPrefixRepository;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.SearchStream;
 import org.junit.jupiter.api.BeforeEach;

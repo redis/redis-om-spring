@@ -59,7 +59,7 @@ public abstract class AbstractBaseDocumentSentinelTest {
   @SpringBootApplication
   @Configuration
   @EnableRedisDocumentRepositories(
-    basePackages = { "com.redis.om.spring.annotations.document.fixtures", "com.redis.om.spring.repository" }
+    basePackages = { "com.redis.om.spring.fixtures.document.model", "com.redis.om.spring.fixtures.document.repository", "com.redis.om.spring.repository" }
   )
   static class Config extends SentinelConfig {
   }

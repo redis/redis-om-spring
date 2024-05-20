@@ -1,7 +1,12 @@
 package com.redis.om.spring.annotations.hash;
 
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.hash.fixtures.*;
+import com.redis.om.spring.fixtures.hash.model.ExpiringPerson;
+import com.redis.om.spring.fixtures.hash.model.ExpiringPersonDifferentTimeUnit;
+import com.redis.om.spring.fixtures.hash.model.ExpiringPersonWithDefault;
+import com.redis.om.spring.fixtures.hash.repository.ExpiringPersonDifferentTimeUnitRepository;
+import com.redis.om.spring.fixtures.hash.repository.ExpiringPersonRepository;
+import com.redis.om.spring.fixtures.hash.repository.ExpiringPersonWithDefaultRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

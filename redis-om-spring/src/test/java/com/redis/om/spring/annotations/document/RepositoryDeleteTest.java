@@ -1,8 +1,8 @@
 package com.redis.om.spring.annotations.document;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.Fruit;
-import com.redis.om.spring.annotations.document.fixtures.FruitRepository;
+import com.redis.om.spring.fixtures.document.model.Fruit;
+import com.redis.om.spring.fixtures.document.repository.FruitRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

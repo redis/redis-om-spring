@@ -1,10 +1,10 @@
 package com.redis.om.spring.annotations.hash;
 
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.hash.fixtures.Direccion;
-import com.redis.om.spring.annotations.hash.fixtures.WithAlias;
-import com.redis.om.spring.annotations.hash.fixtures.WithAlias$;
-import com.redis.om.spring.annotations.hash.fixtures.WithAliasRepository;
+import com.redis.om.spring.fixtures.hash.model.Direccion;
+import com.redis.om.spring.fixtures.hash.model.WithAlias;
+import com.redis.om.spring.fixtures.hash.model.WithAlias$;
+import com.redis.om.spring.fixtures.hash.repository.WithAliasRepository;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.SearchStream;
 import org.junit.jupiter.api.AfterEach;

@@ -1,8 +1,8 @@
 package com.redis.om.spring.annotations.hash;
 
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.hash.fixtures.Hash4;
-import com.redis.om.spring.annotations.hash.fixtures.Hash4Repository;
+import com.redis.om.spring.fixtures.hash.model.Hash4;
+import com.redis.om.spring.fixtures.hash.repository.Hash4Repository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

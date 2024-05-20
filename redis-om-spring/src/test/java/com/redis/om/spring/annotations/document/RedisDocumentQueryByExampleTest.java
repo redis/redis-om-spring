@@ -1,7 +1,11 @@
 package com.redis.om.spring.annotations.document;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.*;
+import com.redis.om.spring.fixtures.document.model.Company;
+import com.redis.om.spring.fixtures.document.model.CompanyMeta;
+import com.redis.om.spring.fixtures.document.model.MyDoc;
+import com.redis.om.spring.fixtures.document.repository.CompanyRepository;
+import com.redis.om.spring.fixtures.document.repository.MyDocRepository;
 import com.redis.om.spring.search.stream.EntityStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

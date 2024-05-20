@@ -4,8 +4,8 @@ import com.google.gson.JsonObject;
 import com.redis.om.spring.AbstractBaseOMTest;
 import com.redis.om.spring.TestConfig;
 import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
-import com.redis.om.spring.annotations.document.fixtures.MyDoc;
-import com.redis.om.spring.annotations.document.fixtures.MyDocRepository;
+import com.redis.om.spring.fixtures.document.model.MyDoc;
+import com.redis.om.spring.fixtures.document.repository.MyDocRepository;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
@@ -71,7 +71,7 @@ class RedisDocumentCustomFallbackKeySpaceTest extends AbstractBaseOMTest {
   @Test
   void testSearchIndex() {
     SearchOperations<String> searchOps = modulesOperations.opsForSearch(
-      "com.redis.om.spring.annotations.document.fixtures.MyDocIdx");
+      MyDoc.class.getName() + "Idx");
 
     var info = searchOps.getInfo();
 
@@ -125,7 +125,7 @@ class RedisDocumentCustomFallbackKeySpaceTest extends AbstractBaseOMTest {
 
   @SpringBootApplication
   @Configuration
-  @EnableRedisDocumentRepositories(basePackages = "com.redis.om.spring.annotations.document.fixtures")
+  @EnableRedisDocumentRepositories(basePackages = {"com.redis.om.spring.fixtures.document.model", "com.redis.om.spring.fixtures.document.repository"})
   static class Config extends TestConfig {
     @Bean
     @Primary

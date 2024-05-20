@@ -1,7 +1,12 @@
 package com.redis.om.spring.search.stream;
 
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.hash.fixtures.*;
+import com.redis.om.spring.fixtures.hash.model.HashWithByteArrayFlatVector;
+import com.redis.om.spring.fixtures.hash.model.HashWithByteArrayFlatVector$;
+import com.redis.om.spring.fixtures.hash.model.HashWithByteArrayHNSWVector;
+import com.redis.om.spring.fixtures.hash.model.HashWithByteArrayHNSWVector$;
+import com.redis.om.spring.fixtures.hash.repository.HashWithByteArrayFlatVectorRepository;
+import com.redis.om.spring.fixtures.hash.repository.HashWithByteArrayHNSWVectorRepository;
 import com.redis.om.spring.tuple.Fields;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.util.ObjectUtils;

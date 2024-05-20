@@ -1,9 +1,9 @@
 package com.redis.om.spring.annotations.hash.vectorize;
 
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.hash.fixtures.Product;
-import com.redis.om.spring.annotations.hash.fixtures.Product$;
-import com.redis.om.spring.annotations.hash.fixtures.ProductRepository;
+import com.redis.om.spring.fixtures.hash.model.Product;
+import com.redis.om.spring.fixtures.hash.model.Product$;
+import com.redis.om.spring.fixtures.hash.repository.ProductRepository;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.SearchStream;
 import com.redis.om.spring.tuple.Fields;

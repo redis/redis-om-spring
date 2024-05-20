@@ -1,7 +1,12 @@
 package com.redis.om.spring.annotations.document;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.*;
+import com.redis.om.spring.fixtures.document.model.Country;
+import com.redis.om.spring.fixtures.document.model.Country$;
+import com.redis.om.spring.fixtures.document.model.DocWithColonInPrefix;
+import com.redis.om.spring.fixtures.document.model.DocWithColonInPrefix$;
+import com.redis.om.spring.fixtures.document.repository.CountryRepository;
+import com.redis.om.spring.fixtures.document.repository.DocWithColonInPrefixRepository;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.SearchStream;
 import org.junit.jupiter.api.BeforeEach;

@@ -1,8 +1,8 @@
 package com.redis.om.spring.search.stream;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.Doc;
-import com.redis.om.spring.annotations.document.fixtures.DocRepository;
+import com.redis.om.spring.fixtures.document.model.Doc;
+import com.redis.om.spring.fixtures.document.repository.DocRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 

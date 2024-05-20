@@ -1,8 +1,8 @@
 package com.redis.om.spring.search.stream;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.Game;
-import com.redis.om.spring.annotations.document.fixtures.GameRepository;
+import com.redis.om.spring.fixtures.document.model.Game;
+import com.redis.om.spring.fixtures.document.repository.GameRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -2,7 +2,8 @@ package com.redis.om.spring.search.stream;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.ReducerFunction;
-import com.redis.om.spring.annotations.document.fixtures.*;
+import com.redis.om.spring.fixtures.document.model.*;
+import com.redis.om.spring.fixtures.document.repository.*;
 import com.redis.om.spring.metamodel.Alias;
 import com.redis.om.spring.tuple.*;
 import org.junit.jupiter.api.BeforeEach;

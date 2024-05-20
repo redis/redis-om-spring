@@ -1,8 +1,8 @@
 package com.redis.om.spring.annotations.bloom;
 
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.hash.fixtures.Person;
-import com.redis.om.spring.annotations.hash.fixtures.PersonRepository;
+import com.redis.om.spring.fixtures.hash.model.Person;
+import com.redis.om.spring.fixtures.hash.repository.PersonRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,7 +1,12 @@
 package com.redis.om.spring.annotations.document;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.*;
+import com.redis.om.spring.fixtures.document.model.ExpiringPerson;
+import com.redis.om.spring.fixtures.document.model.ExpiringPersonDifferentTimeUnit;
+import com.redis.om.spring.fixtures.document.model.ExpiringPersonWithDefault;
+import com.redis.om.spring.fixtures.document.repository.ExpiringPersonDifferentTimeUnitRepository;
+import com.redis.om.spring.fixtures.document.repository.ExpiringPersonRepository;
+import com.redis.om.spring.fixtures.document.repository.ExpiringPersonWithDefaultRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

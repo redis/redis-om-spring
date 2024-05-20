@@ -1,9 +1,9 @@
 package com.redis.om.spring.annotations.document.vectorize;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.Product;
-import com.redis.om.spring.annotations.document.fixtures.Product$;
-import com.redis.om.spring.annotations.document.fixtures.ProductRepository;
+import com.redis.om.spring.fixtures.document.model.Product;
+import com.redis.om.spring.fixtures.document.model.Product$;
+import com.redis.om.spring.fixtures.document.repository.ProductRepository;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.SearchStream;
 import com.redis.om.spring.tuple.Fields;

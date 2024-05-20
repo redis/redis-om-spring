@@ -2,10 +2,10 @@ package com.redis.om.spring.annotations.document;
 
 import com.google.gson.Gson;
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.MultiLingualDoc;
-import com.redis.om.spring.annotations.document.fixtures.MultiLingualDocRepository;
-import com.redis.om.spring.annotations.document.fixtures.SpanishDoc;
-import com.redis.om.spring.annotations.document.fixtures.SpanishDocRepository;
+import com.redis.om.spring.fixtures.document.model.MultiLingualDoc;
+import com.redis.om.spring.fixtures.document.model.SpanishDoc;
+import com.redis.om.spring.fixtures.document.repository.MultiLingualDocRepository;
+import com.redis.om.spring.fixtures.document.repository.SpanishDocRepository;
 import com.redis.om.spring.repository.query.SearchLanguage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

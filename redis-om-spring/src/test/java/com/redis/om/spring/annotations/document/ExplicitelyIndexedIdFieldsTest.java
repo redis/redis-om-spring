@@ -1,7 +1,12 @@
 package com.redis.om.spring.annotations.document;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.*;
+import com.redis.om.spring.fixtures.document.model.DocWithIndexedId;
+import com.redis.om.spring.fixtures.document.model.DocWithSearchableId;
+import com.redis.om.spring.fixtures.document.model.DocWithTagIndexedId;
+import com.redis.om.spring.fixtures.document.repository.DocWithIndexedIdRepository;
+import com.redis.om.spring.fixtures.document.repository.DocWithSearchableIdRepository;
+import com.redis.om.spring.fixtures.document.repository.DocWithTagIndexedIdRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
