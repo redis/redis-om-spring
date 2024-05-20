@@ -24,7 +24,4 @@ public class SearchField {
   public static SearchField of(Field field, SchemaField schemaField) {
     return new SearchField(field, schemaField);
   }
-
-
-
 }
