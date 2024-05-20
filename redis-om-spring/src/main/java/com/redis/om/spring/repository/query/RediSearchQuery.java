@@ -622,10 +622,11 @@ public class RediSearchQuery implements RepositoryQuery {
           // sort by
           pageable.getSort();
           for (Order order : pageable.getSort()) {
+            var alias = indexer.getAlias(domainType, order.getProperty());
             if (order.isAscending()) {
-              aggregation.sortByAsc(order.getProperty());
+              aggregation.sortByAsc(alias);
             } else {
-              aggregation.sortByDesc(order.getProperty());
+              aggregation.sortByDesc(alias);
             }
           }
         }
@@ -633,7 +634,8 @@ public class RediSearchQuery implements RepositoryQuery {
     }
 
     if ((sortBy != null && !sortBy.isBlank())) {
-      aggregation.sortByAsc(sortBy);
+      var alias = indexer.getAlias(domainType, sortBy);
+      aggregation.sortByAsc(alias);
     } else if (!aggregationSortedFields.isEmpty()) {
       if (aggregationSortByMax != null) {
         aggregation.sortBy(aggregationSortByMax, aggregationSortedFields.toArray(new SortedField[] {}));
@@ -804,10 +806,11 @@ public class RediSearchQuery implements RepositoryQuery {
           // sort by
           pageable.getSort();
           for (Order order : pageable.getSort()) {
+            var alias = indexer.getAlias(domainType, order.getProperty());
             if (order.isAscending()) {
-              aggregation.sortByAsc(order.getProperty());
+              aggregation.sortByAsc(alias);
             } else {
-              aggregation.sortByDesc(order.getProperty());
+              aggregation.sortByDesc(alias);
             }
           }
         }
@@ -815,7 +818,8 @@ public class RediSearchQuery implements RepositoryQuery {
     }
 
     if ((sortBy != null && !sortBy.isBlank())) {
-      aggregation.sortByAsc(sortBy);
+      var alias = indexer.getAlias(domainType, sortBy);
+      aggregation.sortByAsc(alias);
     } else if (!aggregationSortedFields.isEmpty()) {
       if (aggregationSortByMax != null) {
         aggregation.sortBy(aggregationSortByMax, aggregationSortedFields.toArray(new SortedField[] {}));

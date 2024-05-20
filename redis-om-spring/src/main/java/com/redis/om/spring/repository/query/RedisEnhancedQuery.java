@@ -264,7 +264,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     Optional<Order> maybeOrder = pt.getSort().stream().findFirst();
     if (maybeOrder.isPresent()) {
       Order order = maybeOrder.get();
-      sortBy = QueryUtils.escape(order.getProperty());
+      sortBy = order.getProperty();
       sortAscending = order.isAscending();
     }
   }
@@ -452,7 +452,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     }
 
     if ((sortBy != null && !sortBy.isBlank())) {
-      query.setSortBy(sortBy, sortAscending);
+      var alias = indexer.getAlias(domainType, sortBy);
+      query.setSortBy(alias, sortAscending);
     }
 
     if (hasLanguageParameter) {
@@ -630,10 +631,11 @@ public class RedisEnhancedQuery implements RepositoryQuery {
           // sort by
           pageable.getSort();
           for (Order order : pageable.getSort()) {
+            var alias = indexer.getAlias(domainType, order.getProperty());
             if (order.isAscending()) {
-              aggregation.sortByAsc(order.getProperty());
+              aggregation.sortByAsc(alias);
             } else {
-              aggregation.sortByDesc(order.getProperty());
+              aggregation.sortByDesc(alias);
             }
           }
         }
@@ -641,7 +643,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     }
 
     if ((sortBy != null && !sortBy.isBlank())) {
-      aggregation.sortByAsc(sortBy);
+      var alias = indexer.getAlias(domainType, sortBy);
+      aggregation.sortByAsc(alias);
     } else if (!aggregationSortedFields.isEmpty()) {
       if (aggregationSortByMax != null) {
         aggregation.sortBy(aggregationSortByMax, aggregationSortedFields.toArray(new SortedField[] {}));
@@ -806,10 +809,11 @@ public class RedisEnhancedQuery implements RepositoryQuery {
           // sort by
           pageable.getSort();
           for (Order order : pageable.getSort()) {
+            var alias = indexer.getAlias(domainType, order.getProperty());
             if (order.isAscending()) {
-              aggregation.sortByAsc(order.getProperty());
+              aggregation.sortByAsc(alias);
             } else {
-              aggregation.sortByDesc(order.getProperty());
+              aggregation.sortByDesc(alias);
             }
           }
         }
@@ -817,7 +821,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     }
 
     if ((sortBy != null && !sortBy.isBlank())) {
-      aggregation.sortByAsc(sortBy);
+      var alias = indexer.getAlias(domainType, sortBy);
+      aggregation.sortByAsc(alias);
     } else if (!aggregationSortedFields.isEmpty()) {
       if (aggregationSortByMax != null) {
         aggregation.sortBy(aggregationSortByMax, aggregationSortedFields.toArray(new SortedField[] {}));

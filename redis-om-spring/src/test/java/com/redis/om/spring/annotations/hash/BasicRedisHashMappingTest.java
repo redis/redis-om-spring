@@ -10,19 +10,18 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
+import org.springframework.data.repository.query.FluentQuery.FetchableFluentQuery;
 import redis.clients.jedis.search.aggr.AggregationResult;
 
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
@@ -90,8 +89,10 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
     studentRepository.deleteAll();
     List<Student> students = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
-      students.add(Student.of((long) i, "Student" + i, i != 2 ? LocalDateTime.now() : LocalDateTime.of(2023, 6, 1, 1, 1,
-        1)));
+      var student = Student.of("Student" + i, i != 2 ? LocalDateTime.now() : LocalDateTime.of(2023, 6, 1, 1, 1,
+        1));
+      student.setId((long) i);
+      students.add(student);
     }
     studentRepository.saveAll(students);
   }
@@ -666,5 +667,34 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
       () -> assertThat(result).hasSize(1), //
       () -> assertThat(result).extracting("userName").containsExactly("Student2") //
     );
+  }
+
+  @Test
+  void testFindByPropertyWithAliasWithHyphensAndOrderBy() {
+    LocalDateTime beginLocalDateTime = LocalDateTime.of(2023, 1, 1, 1, 1,
+      1);
+    LocalDateTime endLocalDateTime = LocalDateTime.of(2023, 12, 1, 1, 1,
+      1);
+    List<Student> result = studentRepository.findByUserNameAndEventTimestampBetweenOrderByEventTimestampAsc("Student2", beginLocalDateTime,
+      endLocalDateTime);
+
+    assertAll( //
+      () -> assertThat(result).hasSize(1), //
+      () -> assertThat(result).extracting("userName").containsExactly("Student2") //
+    );
+  }
+
+  @Test
+  void testQBEWithAliasWithHyphensAndOrderBy() {
+    Function<FetchableFluentQuery<Student>, Student> sortFunction =
+      query -> query.sortBy(Sort.by("Event-Timestamp").descending()).firstValue();
+
+    var matcher = ExampleMatcher.matching().withMatcher("userName", ExampleMatcher.GenericPropertyMatcher::exact);
+
+    var student = new Student();
+    student.setUserName("Student2");
+
+    Student result = studentRepository.findFirstByPropertyOrderByEventTimestamp(student, matcher, sortFunction);
+    assertThat(result.getUserName()).isEqualTo("Student2");
   }
 }
