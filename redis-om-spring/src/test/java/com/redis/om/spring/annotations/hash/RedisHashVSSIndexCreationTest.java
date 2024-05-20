@@ -1,8 +1,8 @@
 package com.redis.om.spring.annotations.hash;
 
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.hash.fixtures.HashWithVectors;
-import com.redis.om.spring.annotations.hash.fixtures.HashWithVectorsRepository;
+import com.redis.om.spring.fixtures.hash.model.HashWithVectors;
+import com.redis.om.spring.fixtures.hash.repository.HashWithVectorsRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +18,7 @@ import java.util.Objects;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class RedisHashVSSIndexCreationTest extends AbstractBaseEnhancedRedisTest {
-  private static final String INDEX = "com.redis.om.spring.annotations.hash.fixtures.HashWithVectorsIdx";
+  private static final String INDEX = HashWithVectors.class.getName() + "Idx";
   @Autowired
   HashWithVectorsRepository repository;
   @Autowired
@@ -44,7 +44,7 @@ class RedisHashVSSIndexCreationTest extends AbstractBaseEnhancedRedisTest {
 
     Document doc1 = jedis.ftSearch(INDEX, "*=>[KNN 2 @flat $vec]", searchParams).getDocuments().get(0);
 
-    assertThat(doc1.getId()).isEqualTo("com.redis.om.spring.annotations.hash.fixtures.HashWithVectors:" + hwv1.getId());
+    assertThat(doc1.getId()).isEqualTo(HashWithVectors.class.getName() + ":" + hwv1.getId());
     assertThat(doc1.get("__flat_score")).isEqualTo("0");
   }
 
@@ -55,7 +55,7 @@ class RedisHashVSSIndexCreationTest extends AbstractBaseEnhancedRedisTest {
 
     Document doc1 = jedis.ftSearch(INDEX, "*=>[KNN 2 @hnsw $vec]", searchParams).getDocuments().get(0);
 
-    assertThat(doc1.getId()).isEqualTo("com.redis.om.spring.annotations.hash.fixtures.HashWithVectors:" + hwv1.getId());
+    assertThat(doc1.getId()).isEqualTo(HashWithVectors.class.getName() + ":" + hwv1.getId());
     assertThat(doc1.get("__hnsw_score")).isEqualTo("0");
   }
 
@@ -66,7 +66,7 @@ class RedisHashVSSIndexCreationTest extends AbstractBaseEnhancedRedisTest {
 
     Document doc1 = jedis.ftSearch(INDEX, "*=>[KNN 2 @flat2 $vec]", searchParams).getDocuments().get(0);
 
-    assertThat(doc1.getId()).isEqualTo("com.redis.om.spring.annotations.hash.fixtures.HashWithVectors:" + hwv1.getId());
+    assertThat(doc1.getId()).isEqualTo(HashWithVectors.class.getName() + ":" + hwv1.getId());
     assertThat(doc1.get("__flat2_score")).isEqualTo("0");
   }
 
@@ -77,7 +77,7 @@ class RedisHashVSSIndexCreationTest extends AbstractBaseEnhancedRedisTest {
 
     Document doc1 = jedis.ftSearch(INDEX, "*=>[KNN 2 @hnsw2 $vec]", searchParams).getDocuments().get(0);
 
-    assertThat(doc1.getId()).isEqualTo("com.redis.om.spring.annotations.hash.fixtures.HashWithVectors:" + hwv1.getId());
+    assertThat(doc1.getId()).isEqualTo(HashWithVectors.class.getName() + ":" + hwv1.getId());
     assertThat(doc1.get("__hnsw2_score")).isEqualTo("0");
   }
 }

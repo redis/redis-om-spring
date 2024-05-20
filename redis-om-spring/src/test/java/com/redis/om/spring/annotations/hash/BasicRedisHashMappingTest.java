@@ -2,8 +2,9 @@ package com.redis.om.spring.annotations.hash;
 
 import com.google.common.collect.Ordering;
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.document.fixtures.MyJavaEnum;
-import com.redis.om.spring.annotations.hash.fixtures.*;
+import com.redis.om.spring.fixtures.document.model.MyJavaEnum;
+import com.redis.om.spring.fixtures.hash.model.*;
+import com.redis.om.spring.fixtures.hash.repository.*;
 import com.redis.om.spring.repository.query.QueryUtils;
 import org.assertj.core.util.Arrays;
 import org.junit.jupiter.api.Assertions;

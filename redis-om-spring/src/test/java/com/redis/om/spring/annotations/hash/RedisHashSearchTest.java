@@ -1,8 +1,8 @@
 package com.redis.om.spring.annotations.hash;
 
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.hash.fixtures.MyHash;
-import com.redis.om.spring.annotations.hash.fixtures.MyHashRepository;
+import com.redis.om.spring.fixtures.hash.model.MyHash;
+import com.redis.om.spring.fixtures.hash.repository.MyHashRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;

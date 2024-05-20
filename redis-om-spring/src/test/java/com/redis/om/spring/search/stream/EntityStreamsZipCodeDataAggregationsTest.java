@@ -2,9 +2,9 @@ package com.redis.om.spring.search.stream;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.ReducerFunction;
-import com.redis.om.spring.annotations.document.fixtures.ZipCode;
-import com.redis.om.spring.annotations.document.fixtures.ZipCode$;
-import com.redis.om.spring.annotations.document.fixtures.ZipCodeRepository;
+import com.redis.om.spring.fixtures.document.model.ZipCode;
+import com.redis.om.spring.fixtures.document.model.ZipCode$;
+import com.redis.om.spring.fixtures.document.repository.ZipCodeRepository;
 import com.redis.om.spring.metamodel.Alias;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.Quintuple;

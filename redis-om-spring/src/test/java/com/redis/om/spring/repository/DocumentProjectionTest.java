@@ -1,9 +1,9 @@
 package com.redis.om.spring.repository;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.DocumentProjection;
-import com.redis.om.spring.annotations.document.fixtures.DocumentProjectionPojo;
-import com.redis.om.spring.annotations.document.fixtures.DocumentProjectionRepository;
+import com.redis.om.spring.fixtures.document.model.DocumentProjectionPojo;
+import com.redis.om.spring.fixtures.document.repository.DocumentProjection;
+import com.redis.om.spring.fixtures.document.repository.DocumentProjectionRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

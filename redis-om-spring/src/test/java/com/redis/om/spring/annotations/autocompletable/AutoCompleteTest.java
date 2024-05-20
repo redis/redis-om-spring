@@ -2,9 +2,9 @@ package com.redis.om.spring.annotations.autocompletable;
 
 import com.google.common.io.Files;
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.Airport;
-import com.redis.om.spring.annotations.document.fixtures.AirportsRepository;
 import com.redis.om.spring.autocomplete.Suggestion;
+import com.redis.om.spring.fixtures.document.model.Airport;
+import com.redis.om.spring.fixtures.document.repository.AirportsRepository;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.query.autocomplete.AutoCompleteOptions;
 import org.assertj.core.util.DoubleComparator;

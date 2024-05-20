@@ -3,11 +3,11 @@ package com.redis.om.spring.annotations.document;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.Developer;
-import com.redis.om.spring.annotations.document.fixtures.DeveloperRepository;
-import com.redis.om.spring.annotations.document.fixtures.DeveloperState;
-import com.redis.om.spring.annotations.document.fixtures.DeveloperType;
 import com.redis.om.spring.client.RedisModulesClient;
+import com.redis.om.spring.fixtures.document.model.Developer;
+import com.redis.om.spring.fixtures.document.model.DeveloperState;
+import com.redis.om.spring.fixtures.document.model.DeveloperType;
+import com.redis.om.spring.fixtures.document.repository.DeveloperRepository;
 import lombok.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,7 +42,7 @@ class EnumeratedTest extends AbstractBaseDocumentTest {
     var search = redisModulesClient.clientForSearch();
     Gson gson = new Gson();
 
-    var data = search.ftSearch("com.redis.om.spring.annotations.document.fixtures.DeveloperIdx").getDocuments().stream()
+    var data = search.ftSearch(Developer.class.getName() + "Idx").getDocuments().stream()
       .map(el -> gson.fromJson((String) el.get("$"), DeveloperNative.class))
       .collect(Collectors.toMap(DeveloperNative::getId, Function.identity()));
 

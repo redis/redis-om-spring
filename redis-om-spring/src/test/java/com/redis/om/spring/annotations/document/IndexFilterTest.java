@@ -1,9 +1,9 @@
 package com.redis.om.spring.annotations.document;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.Vehicle;
-import com.redis.om.spring.annotations.document.fixtures.VehicleRepository;
-import com.redis.om.spring.annotations.document.fixtures.VehicleType;
+import com.redis.om.spring.fixtures.document.model.Vehicle;
+import com.redis.om.spring.fixtures.document.model.VehicleType;
+import com.redis.om.spring.fixtures.document.repository.VehicleRepository;
 import com.redis.om.spring.search.stream.EntityStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

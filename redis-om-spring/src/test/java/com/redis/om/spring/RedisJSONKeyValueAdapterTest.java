@@ -1,8 +1,8 @@
 package com.redis.om.spring;
 
-import com.redis.om.spring.annotations.document.fixtures.Company;
-import com.redis.om.spring.annotations.document.fixtures.CompanyMeta;
-import com.redis.om.spring.annotations.document.fixtures.CompanyRepository;
+import com.redis.om.spring.fixtures.document.model.Company;
+import com.redis.om.spring.fixtures.document.model.CompanyMeta;
+import com.redis.om.spring.fixtures.document.repository.CompanyRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +44,7 @@ class RedisJSONKeyValueAdapterTest extends AbstractBaseDocumentTest {
   @Test
   void testGetAllOf() {
     assertEquals(2, repository.count());
-    Iterable<Company> companies = adapter.getAllOf("com.redis.om.spring.annotations.document.fixtures.Company",
+    Iterable<Company> companies = adapter.getAllOf(Company.class.getName(),
       Company.class);
     assertAll( //
       () -> assertThat(companies).hasSize(2) //
@@ -54,7 +54,7 @@ class RedisJSONKeyValueAdapterTest extends AbstractBaseDocumentTest {
   @Test
   void testGetAllOfWithRowsSet() {
     assertEquals(2, repository.count());
-    Iterable<Company> companies = adapter.getAllOf("com.redis.om.spring.annotations.document.fixtures.Company",
+    Iterable<Company> companies = adapter.getAllOf(Company.class.getName(),
       Company.class, 0, 1);
     assertAll( //
       () -> assertThat(companies).hasSize(1) //
@@ -63,7 +63,7 @@ class RedisJSONKeyValueAdapterTest extends AbstractBaseDocumentTest {
 
   @Test
   void testGetAllKeys() {
-    String keyspace = "com.redis.om.spring.annotations.document.fixtures.Company";
+    String keyspace = Company.class.getName();
     assertEquals(2, repository.count());
     List<String> keys = adapter.getAllKeys(keyspace, Company.class);
     assertAll( //

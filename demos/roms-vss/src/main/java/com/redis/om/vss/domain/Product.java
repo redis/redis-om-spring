@@ -1,11 +1,11 @@
 package com.redis.om.vss.domain;
 
-import com.redis.om.spring.indexing.DistanceMetric;
-import com.redis.om.spring.indexing.VectorType;
 import com.redis.om.spring.annotations.EmbeddingType;
 import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.SchemaFieldType;
 import com.redis.om.spring.annotations.Vectorize;
+import com.redis.om.spring.indexing.DistanceMetric;
+import com.redis.om.spring.indexing.VectorType;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;

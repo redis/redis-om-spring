@@ -1,8 +1,8 @@
 package com.redis.om.spring.annotations.cuckoo;
 
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.hash.fixtures.Person2;
-import com.redis.om.spring.annotations.hash.fixtures.Person2Repository;
+import com.redis.om.spring.fixtures.hash.model.Person2;
+import com.redis.om.spring.fixtures.hash.repository.Person2Repository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

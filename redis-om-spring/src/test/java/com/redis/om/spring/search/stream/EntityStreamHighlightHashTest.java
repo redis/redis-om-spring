@@ -1,9 +1,9 @@
 package com.redis.om.spring.search.stream;
 
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.hash.fixtures.Text;
-import com.redis.om.spring.annotations.hash.fixtures.Text$;
-import com.redis.om.spring.annotations.hash.fixtures.TextRepository;
+import com.redis.om.spring.fixtures.hash.model.Text;
+import com.redis.om.spring.fixtures.hash.model.Text$;
+import com.redis.om.spring.fixtures.hash.repository.TextRepository;
 import com.redis.om.spring.tuple.Tuples;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

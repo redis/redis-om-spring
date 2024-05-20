@@ -1,7 +1,12 @@
 package com.redis.om.spring.annotations.document;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.document.fixtures.*;
+import com.redis.om.spring.fixtures.document.model.SKU;
+import com.redis.om.spring.fixtures.document.model.Student;
+import com.redis.om.spring.fixtures.document.model.User2;
+import com.redis.om.spring.fixtures.document.repository.SKUCacheRepository;
+import com.redis.om.spring.fixtures.document.repository.StudentRepository;
+import com.redis.om.spring.fixtures.document.repository.User2Repository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,7 +1,7 @@
 package com.redis.om.spring;
 
-import com.redis.om.spring.annotations.hash.fixtures.Company;
-import com.redis.om.spring.annotations.hash.fixtures.CompanyRepository;
+import com.redis.om.spring.fixtures.hash.model.Company;
+import com.redis.om.spring.fixtures.hash.repository.CompanyRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,7 +60,7 @@ class RedisEnhancedKeyValueAdapterTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testGetAllOf() {
-    Iterable<Company> companies = adapter.getAllOf("com.redis.om.spring.annotations.hash.fixtures.Company",
+    Iterable<Company> companies = adapter.getAllOf(Company.class.getName(),
       Company.class);
     assertAll( //
       () -> assertThat(repository.count()).isEqualTo(2), () -> assertThat(companies).hasSize(2) //
@@ -70,7 +70,7 @@ class RedisEnhancedKeyValueAdapterTest extends AbstractBaseEnhancedRedisTest {
   @Test
   void testGetAllOfWithRowsSet() {
     assertEquals(2, repository.count());
-    Iterable<Company> companies = adapter.getAllOf("com.redis.om.spring.annotations.hash.fixtures.Company",
+    Iterable<Company> companies = adapter.getAllOf(Company.class.getName(),
       Company.class, 0, 1);
     assertAll( //
       () -> assertThat(companies).hasSize(1) //
@@ -79,7 +79,7 @@ class RedisEnhancedKeyValueAdapterTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testGetAllIds() {
-    String keyspace = "com.redis.om.spring.annotations.hash.fixtures.Company";
+    String keyspace = Company.class.getName();
     assertEquals(2, repository.count());
     List<String> keys = adapter.getAllIds(keyspace, Company.class);
     assertAll( //

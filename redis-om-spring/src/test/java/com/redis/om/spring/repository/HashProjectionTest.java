@@ -1,9 +1,9 @@
 package com.redis.om.spring.repository;
 
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.annotations.hash.fixtures.HashProjection;
-import com.redis.om.spring.annotations.hash.fixtures.HashProjectionPojo;
-import com.redis.om.spring.annotations.hash.fixtures.HashProjectionRepository;
+import com.redis.om.spring.fixtures.hash.model.HashProjectionPojo;
+import com.redis.om.spring.fixtures.hash.repository.HashProjection;
+import com.redis.om.spring.fixtures.hash.repository.HashProjectionRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
