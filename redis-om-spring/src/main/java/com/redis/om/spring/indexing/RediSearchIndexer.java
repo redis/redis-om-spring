@@ -812,10 +812,7 @@ public class RediSearchIndexer {
       QueryUtils.searchIndexFieldAliasFor(field, prefix) :
       maybeAlias.get();
 
-    FieldName fieldName = FieldName.of(name);
-    fieldName = fieldName.as(alias);
-
-    return fieldName;
+    return FieldName.of(name).as(alias);
   }
 
   public String getAlias(Class<?> cl, String fieldName) {
