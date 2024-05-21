@@ -386,7 +386,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       return new PageImpl<>(result, Pageable.unpaged(), result.size());
     }
 
-    if (indexer.indexExistsFor(metadata.getJavaType())) {
+    if (indexer.indexDefinitionExistsFor(metadata.getJavaType())) {
       Optional<String> maybeSearchIndex = indexer.getIndexName(metadata.getJavaType());
       if (maybeSearchIndex.isPresent()) {
         String searchIndex = maybeSearchIndex.get();
