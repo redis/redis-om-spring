@@ -29,6 +29,8 @@ jobs:
     - run: mvn dependency:go-offline
     - name: Build
       run: mvn clean process-test-classes verify
-    - name: codecov
-      run: |
-        curl -s https://raw.githubusercontent.com/codecov/codecov-bash/master/codecov
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4.0.1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
