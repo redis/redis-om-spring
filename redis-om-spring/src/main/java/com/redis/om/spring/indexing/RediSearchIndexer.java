@@ -26,6 +26,7 @@ import org.springframework.data.redis.core.mapping.RedisPersistentEntity;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
+import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.search.FTCreateParams;
 import redis.clients.jedis.search.FieldName;
 import redis.clients.jedis.search.IndexDataType;
@@ -92,6 +93,7 @@ public class RediSearchIndexer {
     boolean isDocument = idxType == IndexDataType.JSON;
     Optional<Document> document = isDocument ? Optional.of(cl.getAnnotation(Document.class)) : Optional.empty();
     Optional<RedisHash> hash = !isDocument ? Optional.of(cl.getAnnotation(RedisHash.class)) : Optional.empty();
+    Optional<IndexingOptions> maybeIndexingOptions = Optional.ofNullable(cl.getAnnotation(IndexingOptions.class));
 
     String indexName = "";
     Optional<String> maybeScoreField;
@@ -137,7 +139,30 @@ public class RediSearchIndexer {
       List<SchemaField> fields = searchFields.stream().map(SearchField::getSchemaField).toList();
       entityClassToSchema.put(cl, searchFields);
       entityClassToIndexName.put(cl, indexName);
-      opsForSearch.createIndex(params, fields);
+      if (maybeIndexingOptions.isPresent()) {
+        IndexingOptions options = maybeIndexingOptions.get();
+        switch (options.creationMode()) {
+          case SKIP_IF_EXIST:
+            opsForSearch.createIndex(params, fields);
+            logger.info(String.format("Created index %s...", indexName));
+            break;
+          case DROP_AND_RECREATE:
+            if (indexExistsFor(cl)) {
+              opsForSearch.dropIndex();
+              logger.info(String.format("Dropped index %s", indexName));
+            }
+            opsForSearch.createIndex(params, fields);
+            logger.info(String.format("Created index %s", indexName));
+            break;
+          case SKIP_ALWAYS:
+            // do nothing and like it!
+            logger.info(String.format("Skipped index creation for %s", cl.getSimpleName()));
+            break;
+        }
+      } else {
+        opsForSearch.createIndex(params, fields);
+        logger.info(String.format("Created index %s", indexName));
+      }
     } catch (Exception e) {
       logger.warn(String.format(SKIPPING_INDEX_CREATION, indexName, e.getMessage()));
     }
@@ -197,8 +222,26 @@ public class RediSearchIndexer {
     return keyspace;
   }
 
-  public boolean indexExistsFor(Class<?> entityClass) {
+  public boolean indexDefinitionExistsFor(Class<?> entityClass) {
     return indexedEntityClasses.contains(entityClass);
+  }
+
+  public boolean indexExistsFor(Class<?> entityClass) {
+    try {
+      return getIndexInfo(entityClass) != null;
+    } catch (JedisDataException jde) {
+      if (jde.getMessage().contains("Unknown index name")) {
+        return false;
+      } else {
+        throw jde;
+      }
+    }
+  }
+
+  Map<String,Object> getIndexInfo(Class<?> entityClass) {
+    String indexName = entityClassToIndexName.get(entityClass);
+    SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
+    return opsForSearch.getInfo();
   }
 
   public List<SearchField> getSchemaFor(Class<?> entityClass) {
