@@ -1,5 +1,6 @@
 autocomplete
 Backend
+codecov
 CodeQL
 De
 ec
