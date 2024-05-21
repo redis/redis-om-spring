@@ -99,10 +99,20 @@ public class RediSearchIndexer {
     Optional<String> maybeScoreField;
     try {
       if (isDocument) {
-        indexName = document.get().indexName();
+        // IndexingOptions overrides Document#
+        if (maybeIndexingOptions.isPresent()) {
+          indexName = maybeIndexingOptions.get().indexName();
+        } else {
+          indexName = document.get().indexName();
+        }
         indexName = indexName.isBlank() ? cl.getName() + "Idx" : indexName;
       } else {
-        indexName = cl.getName() + "Idx";
+        if (maybeIndexingOptions.isPresent()) {
+          indexName = maybeIndexingOptions.get().indexName();
+          indexName = indexName.isBlank() ? cl.getName() + "Idx" : indexName;
+        } else {
+          indexName = cl.getName() + "Idx";
+        }
       }
 
       logger.info(String.format("Found @%s annotated class: %s", idxType, cl.getName()));

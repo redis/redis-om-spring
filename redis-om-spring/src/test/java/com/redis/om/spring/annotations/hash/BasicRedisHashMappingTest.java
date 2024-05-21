@@ -6,6 +6,7 @@ import com.redis.om.spring.fixtures.document.model.MyJavaEnum;
 import com.redis.om.spring.fixtures.hash.model.*;
 import com.redis.om.spring.fixtures.hash.repository.*;
 import com.redis.om.spring.repository.query.QueryUtils;
+import com.redis.om.spring.search.stream.EntityStream;
 import org.assertj.core.util.Arrays;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +16,10 @@ import org.springframework.data.domain.*;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.repository.query.FluentQuery.FetchableFluentQuery;
+import redis.clients.jedis.JedisPooled;
+import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.search.aggr.AggregationResult;
 
 import java.time.Duration;
@@ -56,8 +60,22 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   @Autowired
   StudentRepository studentRepository;
 
+  @Autowired
+  CustomIndexHashRepository customIndexHashRepository;
+
+  @Autowired
+  EntityStream es;
+
+  @Autowired
+  JedisConnectionFactory jedisConnectionFactory;
+
+  private UnifiedJedis jedis;
+
   @BeforeEach
   void createTestDataIfNeeded() {
+    jedis = new JedisPooled(Objects.requireNonNull(jedisConnectionFactory.getPoolConfig()),
+      jedisConnectionFactory.getHostName(), jedisConnectionFactory.getPort());
+
     flushSearchIndexFor(Company.class);
     flushSearchIndexFor(Person.class);
     john = Person.of("John Cleese", "john.cleese@mp.com", "john");
@@ -90,8 +108,7 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
     studentRepository.deleteAll();
     List<Student> students = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
-      var student = Student.of("Student" + i, i != 2 ? LocalDateTime.now() : LocalDateTime.of(2023, 6, 1, 1, 1,
-        1));
+      var student = Student.of("Student" + i, i != 2 ? LocalDateTime.now() : LocalDateTime.of(2023, 6, 1, 1, 1, 1));
       student.setId((long) i);
       students.add(student);
     }
@@ -672,12 +689,10 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testFindByPropertyWithAliasWithHyphensAndOrderBy() {
-    LocalDateTime beginLocalDateTime = LocalDateTime.of(2023, 1, 1, 1, 1,
-      1);
-    LocalDateTime endLocalDateTime = LocalDateTime.of(2023, 12, 1, 1, 1,
-      1);
-    List<Student> result = studentRepository.findByUserNameAndEventTimestampBetweenOrderByEventTimestampAsc("Student2", beginLocalDateTime,
-      endLocalDateTime);
+    LocalDateTime beginLocalDateTime = LocalDateTime.of(2023, 1, 1, 1, 1, 1);
+    LocalDateTime endLocalDateTime = LocalDateTime.of(2023, 12, 1, 1, 1, 1);
+    List<Student> result = studentRepository.findByUserNameAndEventTimestampBetweenOrderByEventTimestampAsc("Student2",
+      beginLocalDateTime, endLocalDateTime);
 
     assertAll( //
       () -> assertThat(result).hasSize(1), //
@@ -687,8 +702,8 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testQBEWithAliasWithHyphensAndOrderBy() {
-    Function<FetchableFluentQuery<Student>, Student> sortFunction =
-      query -> query.sortBy(Sort.by("Event-Timestamp").descending()).firstValue();
+    Function<FetchableFluentQuery<Student>, Student> sortFunction = query -> query.sortBy(
+      Sort.by("Event-Timestamp").descending()).firstValue();
 
     var matcher = ExampleMatcher.matching().withMatcher("userName", ExampleMatcher.GenericPropertyMatcher::exact);
 
@@ -697,5 +712,33 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
     Student result = studentRepository.findFirstByPropertyOrderByEventTimestamp(student, matcher, sortFunction);
     assertThat(result.getUserName()).isEqualTo("Student2");
+  }
+
+  //customIndexHashRepository
+
+  @Test
+  void testCustomIndexName() {
+    // CustomIndexHash is a Hash that has a custom index name defined in the @IndexingOptions annotation
+    var indices = jedis.ftList();
+    assertThat(indices).contains("MyCustomHashIndex");
+  }
+
+  @Test
+  void testFreeFormTextSearchOrderIssue() {
+    customIndexHashRepository.deleteAll();
+    CustomIndexHash redis1 = customIndexHashRepository.save(CustomIndexHash.of("Redis", "wwwabccom"));
+    CustomIndexHash redis2 = customIndexHashRepository.save(CustomIndexHash.of("Redis", "wwwxyznet"));
+    CustomIndexHash microsoft1 = customIndexHashRepository.save(CustomIndexHash.of("Microsoft", "wwwabcnet"));
+    CustomIndexHash microsoft2 = customIndexHashRepository.save(CustomIndexHash.of("Microsoft", "wwwxyzcom"));
+
+    var withFreeTextFirst = es.of(CustomIndexHash.class).filter("*co*").filter(CustomIndexHash$.FIRST.eq("Microsoft"))
+      .collect(Collectors.toList());
+
+    var withFreeTextLast = es.of(CustomIndexHash.class).filter(CustomIndexHash$.FIRST.eq("Microsoft")).filter("*co*")
+      .collect(Collectors.toList());
+
+    assertAll( //
+      () -> assertThat(withFreeTextLast).containsExactly(microsoft2),
+      () -> assertThat(withFreeTextFirst).containsExactly(microsoft2));
   }
 }
