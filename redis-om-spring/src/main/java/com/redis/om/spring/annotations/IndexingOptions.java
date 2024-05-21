@@ -6,5 +6,6 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE })
 public @interface IndexingOptions {
+  String indexName() default "";
   IndexCreationMode creationMode() default IndexCreationMode.SKIP_IF_EXIST;
 }
