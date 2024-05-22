@@ -86,8 +86,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     this.indexer = indexer;
     this.modulesOperations = modulesOperations;
     this.entityClass = entityClass;
-    Optional<String> maybeIndex = this.indexer.getIndexName(entityClass);
-    this.searchIndex = maybeIndex.orElse(entityClass.getName() + "Idx");
+    this.searchIndex = this.indexer.getIndexName(entityClass);
     this.search = modulesOperations.opsForSearch(searchIndex);
     this.json = modulesOperations.opsForJSON();
     this.gsonBuilder = gsonBuilder;

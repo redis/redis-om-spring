@@ -149,46 +149,35 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public <T> List<T> getAllOf(String keyspace, Class<T> type, long offset, int rows) {
-    Optional<String> maybeSearchIndex = indexer.getIndexName(keyspace);
-
-    List<T> result = List.of();
-    if (maybeSearchIndex.isPresent()) {
-      SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
-      Query query = new Query("*");
-      offset = Math.max(0, offset);
-      int limit = rows;
-      if (limit <= 0) {
-        limit = redisOMProperties.getRepository().getQuery().getLimit();
-      }
-      query.limit(Math.toIntExact(offset), limit);
-      SearchResult searchResult = searchOps.search(query);
-      Gson gson = gsonBuilder.create();
-      result = searchResult.getDocuments().stream()
-        .map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get("$")), type)) //
-        .toList();
+    String searchIndex = indexer.getIndexName(keyspace);
+    SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
+    Query query = new Query("*");
+    offset = Math.max(0, offset);
+    int limit = rows;
+    if (limit <= 0) {
+      limit = redisOMProperties.getRepository().getQuery().getLimit();
     }
-
-    return result;
+    query.limit(Math.toIntExact(offset), limit);
+    SearchResult searchResult = searchOps.search(query);
+    Gson gson = gsonBuilder.create();
+    return searchResult.getDocuments().stream()
+      .map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get("$")), type)) //
+      .toList();
   }
 
   public <T> List<String> getAllKeys(String keyspace, Class<T> type) {
-    Optional<String> maybeSearchIndex = indexer.getIndexName(keyspace);
+    String searchIndex = indexer.getIndexName(keyspace);
+    SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
+    Optional<Field> maybeIdField = ObjectUtils.getIdFieldForEntityClass(type);
+    String idField = maybeIdField.map(Field::getName).orElse("id");
 
-    List<String> keys = List.of();
-    if (maybeSearchIndex.isPresent()) {
-      SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
-      Optional<Field> maybeIdField = ObjectUtils.getIdFieldForEntityClass(type);
-      String idField = maybeIdField.map(Field::getName).orElse("id");
+    Query query = new Query("*");
+    query.returnFields(idField);
+    SearchResult searchResult = searchOps.search(query);
 
-      Query query = new Query("*");
-      query.returnFields(idField);
-      SearchResult searchResult = searchOps.search(query);
-
-      keys = searchResult.getDocuments().stream().map(Document::getId) //
-        .toList();
-    }
-
-    return keys;
+    return searchResult.getDocuments().stream() //
+      .map(Document::getId) //
+      .toList();
   }
 
   /*
@@ -219,12 +208,10 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   @Override
   public void deleteAllOf(String keyspace) {
     Class<?> type = indexer.getEntityClassForKeyspace(keyspace);
-    Optional<String> maybeSearchIndex = indexer.getIndexName(keyspace);
-    if (maybeSearchIndex.isPresent()) {
-      SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
-      searchOps.dropIndexAndDocuments();
-      indexer.createIndexFor(type);
-    }
+    String searchIndex = indexer.getIndexName(keyspace);
+    SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
+    searchOps.dropIndexAndDocuments();
+    indexer.createIndexFor(type);
   }
 
   /*
@@ -236,18 +223,15 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   @Override
   public long count(String keyspace) {
     long count = 0L;
-    Optional<String> maybeIndexName = indexer.getIndexName(keyspace);
-    if (maybeIndexName.isPresent()) {
-      SearchOperations<String> search = modulesOperations.opsForSearch(maybeIndexName.get());
-      // FT.SEARCH index * LIMIT 0 0
-      Query query = new Query("*");
-      query.limit(0, 0);
+    String indexName = indexer.getIndexName(keyspace);
+    SearchOperations<String> search = modulesOperations.opsForSearch(indexName);
+    // FT.SEARCH index * LIMIT 0 0
+    Query query = new Query("*");
+    query.limit(0, 0);
 
-      SearchResult result = search.search(query);
+    SearchResult result = search.search(query);
 
-      count = result.getTotalResults();
-    }
-    return count;
+    return result.getTotalResults();
   }
 
   /*

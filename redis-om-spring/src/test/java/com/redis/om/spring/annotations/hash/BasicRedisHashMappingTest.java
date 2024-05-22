@@ -721,6 +721,7 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
     // CustomIndexHash is a Hash that has a custom index name defined in the @IndexingOptions annotation
     var indices = jedis.ftList();
     assertThat(indices).contains("MyCustomHashIndex");
+    assertThat(indices).contains("myIndexStudent");
   }
 
   @Test

@@ -207,33 +207,26 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   @Override
   public void deleteAllOf(String keyspace) {
     Class<?> type = indexer.getEntityClassForKeyspace(keyspace);
-    Optional<String> maybeSearchIndex = indexer.getIndexName(keyspace);
-    if (maybeSearchIndex.isPresent()) {
-      SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
-      searchOps.dropIndexAndDocuments();
-      indexer.createIndexFor(type);
-    }
+    String searchIndex = indexer.getIndexName(keyspace);
+    SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
+    searchOps.dropIndexAndDocuments();
+    indexer.createIndexFor(type);
   }
 
   public <T> List<String> getAllIds(String keyspace, Class<T> type) {
-    Optional<String> maybeSearchIndex = indexer.getIndexName(keyspace);
-    List<String> keys = List.of();
-    if (maybeSearchIndex.isPresent()) {
-      SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
-      Optional<Field> maybeIdField = getIdFieldForEntityClass(type);
-      String idField = maybeIdField.map(Field::getName).orElse("id");
+    String searchIndex = indexer.getIndexName(keyspace);
+    SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
+    Optional<Field> maybeIdField = getIdFieldForEntityClass(type);
+    String idField = maybeIdField.map(Field::getName).orElse("id");
 
-      Query query = new Query("*");
-      query.returnFields(idField);
-      SearchResult searchResult = searchOps.search(query);
+    Query query = new Query("*");
+    query.returnFields(idField);
+    SearchResult searchResult = searchOps.search(query);
 
-      keys = searchResult.getDocuments().stream()
-        .map(d -> documentToObject(d, type, (MappingRedisOMConverter) converter))
-        .map(e -> maybeIdField.map(field -> getIdFieldForEntity(field, e)).orElse(null)).filter(Objects::nonNull)
-        .map(Object::toString).toList();
-    }
-
-    return keys;
+    return searchResult.getDocuments().stream()
+      .map(d -> documentToObject(d, type, (MappingRedisOMConverter) converter))
+      .map(e -> maybeIdField.map(field -> getIdFieldForEntity(field, e)).orElse(null)).filter(Objects::nonNull)
+      .map(Object::toString).toList();
   }
 
   /**
@@ -250,26 +243,20 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   @SuppressWarnings("unchecked")
   @Override
   public <T> List<T> getAllOf(String keyspace, Class<T> type, long offset, int rows) {
-    Optional<String> maybeSearchIndex = indexer.getIndexName(keyspace);
-
-    List<T> result = List.of();
-    if (maybeSearchIndex.isPresent()) {
-      SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
-      Query query = new Query("*");
-      offset = Math.max(0, offset);
-      int limit = rows;
-      if (limit <= 0) {
-        limit = redisOMProperties.getRepository().getQuery().getLimit();
-      }
-      query.limit(Math.toIntExact(offset), limit);
-      SearchResult searchResult = searchOps.search(query);
-
-      result = (List<T>) searchResult.getDocuments().stream() //
-        .map(d -> documentToObject(d, type, (MappingRedisOMConverter) converter)) //
-        .toList();
+    String searchIndex = indexer.getIndexName(keyspace);
+    SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
+    Query query = new Query("*");
+    offset = Math.max(0, offset);
+    int limit = rows;
+    if (limit <= 0) {
+      limit = redisOMProperties.getRepository().getQuery().getLimit();
     }
+    query.limit(Math.toIntExact(offset), limit);
+    SearchResult searchResult = searchOps.search(query);
 
-    return result;
+  return (List<T>) searchResult.getDocuments().stream() //
+    .map(d -> documentToObject(d, type, (MappingRedisOMConverter) converter)) //
+    .toList();
   }
 
   /*
@@ -304,19 +291,15 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public long count(String keyspace) {
-    long count = 0L;
-    Optional<String> maybeIndexName = indexer.getIndexName(keyspace);
-    if (maybeIndexName.isPresent()) {
-      SearchOperations<String> search = modulesOperations.opsForSearch(maybeIndexName.get());
-      // FT.SEARCH index * LIMIT 0 0
-      Query query = new Query("*");
-      query.limit(0, 0);
+    String indexName = indexer.getIndexName(keyspace);
+    SearchOperations<String> search = modulesOperations.opsForSearch(indexName);
+    // FT.SEARCH index * LIMIT 0 0
+    Query query = new Query("*");
+    query.limit(0, 0);
 
-      SearchResult result = search.search(query);
+    SearchResult result = search.search(query);
 
-      count = result.getTotalResults();
-    }
-    return count;
+    return result.getTotalResults();
   }
 
   /*
