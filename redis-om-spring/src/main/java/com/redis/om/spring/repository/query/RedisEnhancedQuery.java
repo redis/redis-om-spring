@@ -54,7 +54,6 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   private static final Log logger = LogFactory.getLog(RedisEnhancedQuery.class);
 
   private final QueryMethod queryMethod;
-  private final String searchIndex;
   private final RedisOMProperties redisOMProperties;
   private final boolean hasLanguageParameter;
   // aggregation fields
@@ -106,8 +105,6 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.queryMethod = queryMethod;
     this.domainType = this.queryMethod.getEntityInformation().getJavaType();
-    Optional<String> maybeIndex = indexer.getIndexName(this.domainType);
-    this.searchIndex = maybeIndex.orElse(this.domainType.getName() + "Idx");
     this.redisOMProperties = redisOMProperties;
     this.redisOperations = redisOperations;
     this.mappingConverter = new MappingRedisOMConverter(null, new ReferenceResolverImpl(redisOperations));
@@ -402,7 +399,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     ParameterAccessor accessor = new ParametersParameterAccessor(queryMethod.getParameters(), parameters);
     ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(accessor);
 
-    SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
+    String indexName = indexer.getIndexName(this.domainType);
+    SearchOperations<String> ops = modulesOperations.opsForSearch(indexName);
     boolean excludeNullParams = !isNullParamQuery;
     String preparedQuery = prepareQuery(parameters, excludeNullParams);
     Query query = new Query(preparedQuery);
@@ -511,7 +509,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   }
 
   private Object executeDeleteQuery(Object[] parameters) {
-    SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
+    String indexName = indexer.getIndexName(this.domainType);
+    SearchOperations<String> ops = modulesOperations.opsForSearch(indexName);
     String baseQuery = prepareQuery(parameters, true);
     AggregationBuilder aggregation = new AggregationBuilder(baseQuery);
 
@@ -580,7 +579,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   }
 
   private Object executeAggregation(Object[] parameters) {
-    SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
+    String indexName = indexer.getIndexName(this.domainType);
+    SearchOperations<String> ops = modulesOperations.opsForSearch(indexName);
 
     // build the aggregation
     AggregationBuilder aggregation = new AggregationBuilder(value);
@@ -692,7 +692,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   }
 
   private Object executeFtTagVals() {
-    SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
+    String indexName = indexer.getIndexName(this.domainType);
+    SearchOperations<String> ops = modulesOperations.opsForSearch(indexName);
 
     return ops.tagVals(this.value);
   }
@@ -769,7 +770,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   }
 
   private Object executeNullQuery(Object[] parameters) {
-    SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
+    String indexName = indexer.getIndexName(this.domainType);
+    SearchOperations<String> ops = modulesOperations.opsForSearch(indexName);
     String baseQuery = prepareQuery(parameters, true);
 
     AggregationBuilder aggregation = new AggregationBuilder(baseQuery);

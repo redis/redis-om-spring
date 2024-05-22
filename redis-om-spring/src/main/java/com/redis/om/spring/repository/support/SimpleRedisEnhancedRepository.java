@@ -92,25 +92,20 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   @Override
   public Iterable<ID> getIds() {
     String keyspace = indexer.getKeyspaceForEntityClass(metadata.getJavaType());
-    Optional<String> maybeSearchIndex = indexer.getIndexName(keyspace);
-    List<ID> result = List.of();
-    if (maybeSearchIndex.isPresent()) {
-      SearchOperations<String> searchOps = modulesOperations.opsForSearch(maybeSearchIndex.get());
-      Optional<Field> maybeIdField = ObjectUtils.getIdFieldForEntityClass(metadata.getJavaType());
-      String idField = maybeIdField.map(Field::getName).orElse("id");
+    String searchIndex = indexer.getIndexName(keyspace);
 
-      Query query = new Query("*");
-      query.limit(0, MAX_SEARCH_RESULTS);
-      query.returnFields(idField);
-      SearchResult searchResult = searchOps.search(query);
+    SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
+    Optional<Field> maybeIdField = ObjectUtils.getIdFieldForEntityClass(metadata.getJavaType());
+    String idField = maybeIdField.map(Field::getName).orElse("id");
+    Query query = new Query("*");
+    query.limit(0, MAX_SEARCH_RESULTS);
+    query.returnFields(idField);
+    SearchResult searchResult = searchOps.search(query);
 
-      result = (List<ID>) searchResult.getDocuments().stream() //
-        .map(d -> ObjectUtils.documentToObject(d, metadata.getJavaType(), mappingConverter)) //
-        .map(e -> ObjectUtils.getIdFieldForEntity(maybeIdField.get(), e)) //
-        .toList();
-    }
-
-    return result;
+    return (List<ID>) searchResult.getDocuments().stream() //
+      .map(d -> ObjectUtils.documentToObject(d, metadata.getJavaType(), mappingConverter)) //
+      .map(e -> ObjectUtils.getIdFieldForEntity(maybeIdField.get(), e)) //
+      .toList();
   }
 
   @Override
@@ -191,29 +186,26 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     }
 
     if (indexer.indexDefinitionExistsFor(metadata.getJavaType())) {
-      Optional<String> maybeSearchIndex = indexer.getIndexName(metadata.getJavaType());
-      if (maybeSearchIndex.isPresent()) {
-        String searchIndex = maybeSearchIndex.get();
-        SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
-        Query query = new Query("*");
-        query.limit(Math.toIntExact(pageable.getOffset()), pageable.getPageSize());
+      String searchIndex = indexer.getIndexName(metadata.getJavaType());
+      SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
+      Query query = new Query("*");
+      query.limit(Math.toIntExact(pageable.getOffset()), pageable.getPageSize());
 
-        pageable.getSort();
-        for (Order order : pageable.getSort()) {
-          query.setSortBy(order.getProperty(), order.isAscending());
-        }
+      pageable.getSort();
+      for (Order order : pageable.getSort()) {
+        query.setSortBy(order.getProperty(), order.isAscending());
+      }
 
-        SearchResult searchResult = searchOps.search(query);
+      SearchResult searchResult = searchOps.search(query);
 
+      if (searchResult.getTotalResults() > 0) {
         @SuppressWarnings("unchecked") List<T> content = (List<T>) searchResult.getDocuments().stream() //
           .map(d -> ObjectUtils.documentToObject(d, metadata.getJavaType(), mappingConverter)) //
           .toList();
-
         return new PageImpl<>(content, pageable, searchResult.getTotalResults());
       } else {
         return Page.empty();
       }
-
     } else {
       Iterable<T> content = operations.findInRange(pageable.getOffset(), pageable.getPageSize(), pageable.getSort(),
         metadata.getJavaType());
@@ -330,7 +322,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
 
   private SearchOperations<String> getSearchOps() {
     String keyspace = indexer.getKeyspaceForEntityClass(metadata.getJavaType());
-    Optional<String> maybeSearchIndex = indexer.getIndexName(keyspace);
-    return modulesOperations.opsForSearch(maybeSearchIndex.get());
+    String searchIndex = indexer.getIndexName(keyspace);
+    return modulesOperations.opsForSearch(searchIndex);
   }
 }

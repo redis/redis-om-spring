@@ -190,15 +190,15 @@ public class RediSearchIndexer {
     dropIndex(cl, false, false);
   }
 
-  public Optional<String> getIndexName(String keyspace) {
+  public String getIndexName(String keyspace) {
     return getIndexName(keyspaceToEntityClass.get(getKeyspace(keyspace)));
   }
 
-  public Optional<String> getIndexName(Class<?> entityClass) {
+  public String getIndexName(Class<?> entityClass) {
     if (entityClass != null && entityClassToIndexName.containsKey(entityClass)) {
-      return Optional.of(entityClassToIndexName.get(entityClass));
+      return entityClassToIndexName.get(entityClass);
     } else {
-      return Optional.empty();
+      return entityClass.getName() + "Idx";
     }
   }
 

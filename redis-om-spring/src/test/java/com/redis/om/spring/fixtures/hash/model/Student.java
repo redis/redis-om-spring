@@ -1,6 +1,8 @@
 package com.redis.om.spring.fixtures.hash.model;
 
+import com.redis.om.spring.annotations.IndexCreationMode;
 import com.redis.om.spring.annotations.Indexed;
+import com.redis.om.spring.annotations.IndexingOptions;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -13,7 +15,8 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @RequiredArgsConstructor(staticName = "of")
-@RedisHash
+@IndexingOptions(creationMode = IndexCreationMode.SKIP_IF_EXIST, indexName = "myIndexStudent")
+@RedisHash("my:key:space")
 public class Student {
 
   @Id

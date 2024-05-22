@@ -387,20 +387,20 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     }
 
     if (indexer.indexDefinitionExistsFor(metadata.getJavaType())) {
-      Optional<String> maybeSearchIndex = indexer.getIndexName(metadata.getJavaType());
-      if (maybeSearchIndex.isPresent()) {
-        String searchIndex = maybeSearchIndex.get();
-        SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
-        Query query = new Query("*");
-        query.limit(Math.toIntExact(pageable.getOffset()), pageable.getPageSize());
+      String searchIndex = indexer.getIndexName(metadata.getJavaType());
 
-        for (Order order : pageable.getSort()) {
-          query.setSortBy(order.getProperty(), order.isAscending());
-        }
+      SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
+      Query query = new Query("*");
+      query.limit(Math.toIntExact(pageable.getOffset()), pageable.getPageSize());
 
-        SearchResult searchResult = searchOps.search(query);
-        Gson gson = gsonBuilder.create();
+      for (Order order : pageable.getSort()) {
+        query.setSortBy(order.getProperty(), order.isAscending());
+      }
 
+      SearchResult searchResult = searchOps.search(query);
+      Gson gson = gsonBuilder.create();
+
+      if (searchResult.getTotalResults() > 0) {
         List<T> content = searchResult.getDocuments().stream()
           .map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get("$")), metadata.getJavaType())).toList();
 
@@ -408,7 +408,6 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       } else {
         return Page.empty();
       }
-
     } else {
       return super.findAll(pageable);
     }
@@ -454,8 +453,8 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
   private SearchOperations<String> getSearchOps() {
     String keyspace = indexer.getKeyspaceForEntityClass(metadata.getJavaType());
-    Optional<String> maybeSearchIndex = indexer.getIndexName(keyspace);
-    return modulesOperations.opsForSearch(maybeSearchIndex.get());
+    String searchIndex = indexer.getIndexName(keyspace);
+    return modulesOperations.opsForSearch(searchIndex);
   }
 
 }
