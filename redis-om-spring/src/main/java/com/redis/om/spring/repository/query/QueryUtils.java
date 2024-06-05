@@ -19,6 +19,9 @@ public class QueryUtils {
   }
 
   public static String escape(String text, boolean querying) {
+    if (text == null) {
+      return null;
+    }
     var sb = new StringBuilder();
     char[] chars = text.toCharArray();
 
