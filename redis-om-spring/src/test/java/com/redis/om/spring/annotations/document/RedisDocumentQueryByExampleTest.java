@@ -24,7 +24,8 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
   @Autowired
@@ -541,5 +542,29 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
     MyDoc doc1 = repository.findBy(example, it -> it.project("aNumber").firstValue());
     assertThat(doc1.getANumber()).isNotNull();
     assertThat(doc1.getTitle()).isNull();
+  }
+
+  @Test
+  void testTagEscapeCharsWithProjection() {
+    Company template = new Company();
+    template.setEmail("stack@redis.com");
+
+    Example<Company> example = Example.of(template);
+
+    Company result = companyRepository.findBy(example, it -> it.project("name").firstValue());
+
+    assertThat(result.getName()).isEqualTo("RedisInc");
+  }
+
+  @Test
+  void testTagEscapeCharsFindByShouldReturnOneResult() {
+    Company template = new Company();
+    template.setEmail("stack@redis.com");
+
+    Example<Company> example = Example.of(template);
+
+    Company result = companyRepository.findBy(example, FetchableFluentQuery::oneValue);
+    assertThat(result).isNotNull().hasFieldOrPropertyWithValue("email", "stack@redis.com");
+    assertThat(result.getName()).isEqualTo("RedisInc");
   }
 }

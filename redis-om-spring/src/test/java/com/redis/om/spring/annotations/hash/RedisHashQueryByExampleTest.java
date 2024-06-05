@@ -454,4 +454,28 @@ public class RedisHashQueryByExampleTest extends AbstractBaseEnhancedRedisTest {
     assertThat(doc1.getTitle()).isNull();
   }
 
+  @Test
+  void testTagEscapeCharsWithProjection() {
+    Company template = new Company();
+    template.setEmail("stack@redis.com");
+
+    Example<Company> example = Example.of(template);
+
+    Company result = companyRepository.findBy(example, it -> it.project("name").firstValue());
+
+    assertThat(result.getName()).isEqualTo("RedisInc");
+  }
+
+  @Test
+  void testTagEscapeCharsFindByShouldReturnOneResult() {
+    Company template = new Company();
+    template.setEmail("stack@redis.com");
+
+    Example<Company> example = Example.of(template);
+
+    Company result = companyRepository.findBy(example, FetchableFluentQuery::oneValue);
+    assertThat(result).isNotNull().hasFieldOrPropertyWithValue("email", "stack@redis.com");
+    assertThat(result.getName()).isEqualTo("RedisInc");
+  }
+
 }
