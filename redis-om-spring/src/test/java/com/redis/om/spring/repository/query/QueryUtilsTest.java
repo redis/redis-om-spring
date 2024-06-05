@@ -30,4 +30,14 @@ class QueryUtilsTest {
     assertEquals(field.getName(), outputWhenPrefixBlank);
     assertEquals("roger_green_redis", outputWhenPrefixValid);
   }
+
+  @Test
+  void testEscapeWithNullValue() {
+    assertEquals(null, QueryUtils.escape(null));
+  }
+
+  @Test
+  void testEscapeWithBlankValue() {
+    assertEquals("", QueryUtils.escape(""));
+  }
 }
