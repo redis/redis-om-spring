@@ -5,6 +5,7 @@ import com.redis.om.spring.RedisEnhancedKeyValueAdapter;
 import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.audit.EntityAuditor;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
+import com.redis.om.spring.id.IdentifierFilter;
 import com.redis.om.spring.id.ULIDIdentifierGenerator;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.metamodel.MetamodelField;
@@ -40,6 +41,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -144,6 +146,12 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     return template.getExpire(getKey(id));
   }
 
+  @Override
+  public boolean setExpiration(ID id, Long expiration, TimeUnit timeUnit) {
+    RedisTemplate<String, String> template = modulesOperations.template();
+    return Boolean.TRUE.equals(template.expire(getKey(id), expiration, timeUnit));
+  }
+
   /* (non-Javadoc)
    *
    * @see org.springframework.data.repository.CrudRepository#findAll() */
@@ -220,6 +228,11 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   }
 
   private String getKey(Object id) {
+    var maybeIdentifierFilter = indexer.getIdentifierFilterFor(metadata.getJavaType());
+    if (maybeIdentifierFilter.isPresent()) {
+      IdentifierFilter<String> filter = (IdentifierFilter<String>) maybeIdentifierFilter.get();
+      id = filter.filter(id.toString());
+    }
     return getKeyspace() + id.toString();
   }
 
@@ -266,6 +279,13 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   }
 
   public byte[] createKey(String keyspace, String id) {
+    // handle IdFilters
+    var maybeIdentifierFilter = indexer.getIdentifierFilterFor(keyspace);
+    if (maybeIdentifierFilter.isPresent()) {
+      IdentifierFilter<String> filter = (IdentifierFilter<String>) maybeIdentifierFilter.get();
+      id = filter.filter(id);
+    }
+
     return this.mappingConverter.toBytes(keyspace.endsWith(":") ? keyspace + id : keyspace + ":" + id);
   }
 

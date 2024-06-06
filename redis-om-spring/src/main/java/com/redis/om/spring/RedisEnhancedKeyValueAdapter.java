@@ -3,6 +3,7 @@ package com.redis.om.spring;
 import com.redis.om.spring.audit.EntityAuditor;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.convert.RedisOMCustomConversions;
+import com.redis.om.spring.id.IdentifierFilter;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
@@ -485,5 +486,22 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     void addFieldToRemove(byte[] field) {
       fieldsToRemove.add(field);
     }
+  }
+
+  /**
+   * Creates a new {@link byte[] key} using the given {@link String keyspace} and {@link String id}.
+   *
+   * @param keyspace {@link String name} of the Redis {@literal keyspace}.
+   * @param id       {@link String} identifying the key.
+   * @return a {@link byte[]} constructed from the {@link String keyspace} and {@link String id}.
+   */
+  public byte[] createKey(String keyspace, String id) {
+    // handle IdFilters
+    var maybeIdentifierFilter = indexer.getIdentifierFilterFor(keyspace);
+    if (maybeIdentifierFilter.isPresent()) {
+      IdentifierFilter<String> filter = (IdentifierFilter<String>) maybeIdentifierFilter.get();
+      id = filter.filter(id);
+    }
+    return toBytes(keyspace + ":" + id);
   }
 }

@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.redis.om.spring.audit.EntityAuditor;
 import com.redis.om.spring.convert.RedisOMCustomConversions;
+import com.redis.om.spring.id.IdentifierFilter;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
@@ -41,7 +42,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import static com.redis.om.spring.util.ObjectUtils.getKey;
 import static com.redis.om.spring.util.ObjectUtils.isPrimitiveOfType;
 
 public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
@@ -63,14 +63,14 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    * @param redisOps           must not be {@literal null}.
    * @param rmo                must not be {@literal null}.
    * @param mappingContext     must not be {@literal null}.
-   * @param keyspaceToIndexMap must not be {@literal null}.
+   * @param indexer must not be {@literal null}.
    */
   @SuppressWarnings("unchecked")
   public RedisJSONKeyValueAdapter( //
     RedisOperations<?, ?> redisOps, //
     RedisModulesOperations<?> rmo, //
     RedisMappingContext mappingContext, //
-    RediSearchIndexer keyspaceToIndexMap, //
+      RediSearchIndexer indexer, //
     GsonBuilder gsonBuilder, //
     FeatureExtractor featureExtractor, //
     RedisOMProperties redisOMProperties) {
@@ -79,7 +79,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     this.redisJSONOperations = modulesOperations.opsForJSON();
     this.redisOperations = redisOps;
     this.mappingContext = mappingContext;
-    this.indexer = keyspaceToIndexMap;
+    this.indexer = indexer;
     this.auditor = new EntityAuditor(this.redisOperations);
     this.gsonBuilder = gsonBuilder;
     this.featureExtractor = featureExtractor;
@@ -98,7 +98,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     logger.debug(String.format("%s, %s, %s", id, item, keyspace));
     @SuppressWarnings("unchecked") JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
 
-    String key = getKey(keyspace, id);
+    String key = createKeyAsString(keyspace, id);
 
     processVersion(key, item);
     auditor.processEntity(key, item);
@@ -129,7 +129,8 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   @Nullable
   @Override
   public <T> T get(Object id, String keyspace, Class<T> type) {
-    return get(getKey(keyspace, id), type);
+    String key = createKeyAsString(keyspace, id);
+    return get(key, type);
   }
 
   @Nullable
@@ -192,7 +193,8 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     @SuppressWarnings("unchecked") JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
     T entity = get(id, keyspace, type);
     if (entity != null) {
-      ops.del(getKey(keyspace, id), Path2.ROOT_PATH);
+      String key = createKeyAsString(keyspace, id);
+      ops.del(key, Path2.ROOT_PATH);
     }
 
     return entity;
@@ -243,8 +245,8 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public boolean contains(Object id, String keyspace) {
-    Boolean exists = redisOperations.execute(
-      (RedisCallback<Boolean>) connection -> connection.keyCommands().exists(toBytes(getKey(keyspace, id))));
+    Boolean exists = redisOperations.execute((RedisCallback<Boolean>) connection -> connection.keyCommands()
+        .exists(toBytes(createKeyAsString(keyspace, id))));
 
     return exists != null && exists;
   }
@@ -359,5 +361,17 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     }.getRawType();
     Long[] dbVersionArray = (Long[]) ops.get(key, type, Path2.of("$." + versionProperty));
     return dbVersionArray != null ? dbVersionArray[0] : null;
+  }
+
+  public String createKeyAsString(String keyspace, Object id) {
+    String format = keyspace.endsWith(":") ? "%s%s" : "%s:%s";
+
+    // handle IdFilters
+    var maybeIdentifierFilter = indexer.getIdentifierFilterFor(keyspace);
+    if (maybeIdentifierFilter.isPresent()) {
+      IdentifierFilter<String> filter = (IdentifierFilter<String>) maybeIdentifierFilter.get();
+      id = filter.filter(id.toString());
+    }
+    return String.format(format, keyspace, id);
   }
 }

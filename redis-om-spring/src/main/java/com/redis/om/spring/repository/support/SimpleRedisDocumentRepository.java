@@ -7,6 +7,7 @@ import com.google.gson.reflect.TypeToken;
 import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.audit.EntityAuditor;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
+import com.redis.om.spring.id.IdentifierFilter;
 import com.redis.om.spring.id.ULIDIdentifierGenerator;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.metamodel.MetamodelField;
@@ -156,6 +157,12 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   }
 
   @Override
+  public boolean setExpiration(ID id, Long expiration, TimeUnit timeUnit) {
+    RedisTemplate<String, String> template = modulesOperations.template();
+    return Boolean.TRUE.equals(template.expire(getKey(id), expiration, timeUnit));
+  }
+
+  @Override
   public <S extends T> List<S> saveAll(Iterable<S> entities) {
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
     List<S> saved = new ArrayList<>();
@@ -241,10 +248,22 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   }
 
   private String getKey(Object id) {
+    var maybeIdentifierFilter = indexer.getIdentifierFilterFor(metadata.getJavaType());
+    if (maybeIdentifierFilter.isPresent()) {
+      IdentifierFilter<String> filter = (IdentifierFilter<String>) maybeIdentifierFilter.get();
+      id = filter.filter(id.toString());
+    }
     return getKeyspace() + id.toString();
   }
 
   public byte[] createKey(String keyspace, String id) {
+    // handle IdFilters
+    var maybeIdentifierFilter = indexer.getIdentifierFilterFor(keyspace);
+    if (maybeIdentifierFilter.isPresent()) {
+      IdentifierFilter<String> filter = (IdentifierFilter<String>) maybeIdentifierFilter.get();
+      id = filter.filter(id);
+    }
+
     return this.mappingConverter.toBytes(keyspace.endsWith(":") ? keyspace + id : keyspace + ":" + id);
   }
 
