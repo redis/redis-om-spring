@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.QueryByExampleExecutor;
 import redis.clients.jedis.json.Path2;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 @NoRepositoryBean
 public interface RedisDocumentRepository<T, ID> extends KeyValueRepository<T, ID>, QueryByExampleExecutor<T> {
@@ -31,6 +32,8 @@ public interface RedisDocumentRepository<T, ID> extends KeyValueRepository<T, ID
   <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field);
 
   Long getExpiration(ID id);
+
+  boolean setExpiration(ID id, Long expiration, TimeUnit timeUnit);
 
   Iterable<T> bulkLoad(String file) throws IOException;
 

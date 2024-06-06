@@ -5,6 +5,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 import com.redis.om.spring.annotations.*;
+import com.redis.om.spring.id.IdFilter;
+import com.redis.om.spring.id.IdentifierFilter;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.query.QueryUtils;
@@ -32,6 +34,7 @@ import redis.clients.jedis.search.FieldName;
 import redis.clients.jedis.search.IndexDataType;
 import redis.clients.jedis.search.schemafields.*;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.Instant;
@@ -50,6 +53,7 @@ public class RediSearchIndexer {
   private final Map<String, Class<?>> keyspaceToEntityClass = new ConcurrentHashMap<>();
   private final Map<Class<?>, String> entityClassToKeySpace = new ConcurrentHashMap<>();
   private final Map<Class<?>, String> entityClassToIndexName = new ConcurrentHashMap<>();
+  private final Map<Class<?>, IdentifierFilter<?>> entityClassToIdentifierFilter = new ConcurrentHashMap<>();
   private final List<Class<?>> indexedEntityClasses = new ArrayList<>();
   private final Map<Class<?>, List<SearchField>> entityClassToSchema = new ConcurrentHashMap<>();
   private final Map<Pair<Class<?>, String>, String> entityClassFieldToAlias = new ConcurrentHashMap<>();
@@ -218,6 +222,18 @@ public class RediSearchIndexer {
 
   public Class<?> getEntityClassForKeyspace(String keyspace) {
     return keyspaceToEntityClass.get(getKeyspace(keyspace));
+  }
+
+  public Optional<IdentifierFilter<?>> getIdentifierFilterFor(Class<?> entityClass) {
+    if (entityClass != null && entityClassToIdentifierFilter.containsKey(entityClass)) {
+      return Optional.of(entityClassToIdentifierFilter.get(entityClass));
+    } else {
+      return Optional.empty();
+    }
+  }
+
+  public Optional<IdentifierFilter<?>> getIdentifierFilterFor(String keyspace) {
+    return getIdentifierFilterFor(keyspaceToEntityClass.get(keyspace.endsWith(":") ? keyspace : keyspace + ":"));
   }
 
   public String getKeyspaceForEntityClass(Class<?> entityClass) {
@@ -778,6 +794,21 @@ public class RediSearchIndexer {
             indexAsTagFieldFor(maybeIdField.get(), isDocument, "", false, "|", Integer.MIN_VALUE, null)));
         }
       }
+
+      // register any @IdFilter annotation
+      if (idField.isAnnotationPresent(IdFilter.class)) {
+        IdFilter idFilter = idField.getAnnotation(IdFilter.class);
+        var identifierFilterClass = idFilter.value();
+        try {
+          var identifierFilter = (IdentifierFilter<?>) identifierFilterClass.getDeclaredConstructor().newInstance();
+          entityClassToIdentifierFilter.put(cl, identifierFilter);
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                 NoSuchMethodException idFilterInstantiationException) {
+          logger.error(String.format("Could not instantiate IdFilter of type %s applied to class %s",
+                  identifierFilterClass.getSimpleName(), cl), idFilterInstantiationException);
+        }
+      }
+
     }
     return result;
   }

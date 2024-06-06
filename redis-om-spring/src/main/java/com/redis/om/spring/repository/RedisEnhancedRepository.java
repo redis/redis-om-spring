@@ -7,6 +7,8 @@ import org.springframework.data.keyvalue.repository.KeyValueRepository;
 import org.springframework.data.repository.NoRepositoryBean;
 import org.springframework.data.repository.query.QueryByExampleExecutor;
 
+import java.util.concurrent.TimeUnit;
+
 @NoRepositoryBean
 public interface RedisEnhancedRepository<T, ID> extends KeyValueRepository<T, ID>, QueryByExampleExecutor<T> {
 
@@ -26,6 +28,8 @@ public interface RedisEnhancedRepository<T, ID> extends KeyValueRepository<T, ID
   <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field);
 
   Long getExpiration(ID id);
+
+  boolean setExpiration(ID id, Long expiration, TimeUnit timeUnit);
 
   String getKeyspace();
 }
