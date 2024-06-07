@@ -490,6 +490,11 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   }
 
   @Override
+  public boolean isDocument() {
+    return isDocument;
+  }
+
+  @Override
   public SearchStream<T> findFirstOrElse(Supplier<? extends T> supplier) {
     throw new UnsupportedOperationException("findFirstOrElse is not supported on a ReturnFieldSearchStream");
   }

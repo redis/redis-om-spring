@@ -353,4 +353,9 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
     throw new UnsupportedOperationException("findFirstOrElse is not supported on a WrappedSearchStream");
   }
 
+  @Override
+  public boolean isDocument() {
+    return false;
+  }
+
 }
