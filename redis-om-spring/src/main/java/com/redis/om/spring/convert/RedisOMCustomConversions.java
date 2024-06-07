@@ -37,7 +37,7 @@ public class RedisOMCustomConversions extends RedisCustomConversions {
     omConverters.add(new LocalDateTimeToBytesConverter());
     omConverters.add(new BytesToLocalDateTimeConverter());
     omConverters.add(new LocalDateTimeToStringConverter());
-    
+
     // Boolean
     omConverters.add(new BooleanToBytesConverter());
     omConverters.add(new BytesToBooleanConverter());

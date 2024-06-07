@@ -59,7 +59,7 @@ public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicat
       // Any Numeric class -> Numeric Search Field
       //
       else if (Number.class.isAssignableFrom(
-        field.getType()) || (field.getType() == LocalDateTime.class) || (field.getType() == LocalDate.class) || (field.getType() == Date.class) || (field.getType() == Instant.class)) {
+          field.getType()) || (field.getType() == LocalDateTime.class) || (field.getType() == LocalDate.class) || (field.getType() == Date.class) || (field.getType() == Instant.class)) {
         result = FieldType.NUMERIC;
       }
       //

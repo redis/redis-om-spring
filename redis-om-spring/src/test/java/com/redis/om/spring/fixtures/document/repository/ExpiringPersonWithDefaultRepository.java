@@ -5,5 +5,5 @@ import com.redis.om.spring.repository.RedisDocumentRepository;
 
 @SuppressWarnings("unused")
 public interface ExpiringPersonWithDefaultRepository
-  extends RedisDocumentRepository<ExpiringPersonWithDefault, String> {
+    extends RedisDocumentRepository<ExpiringPersonWithDefault, String> {
 }

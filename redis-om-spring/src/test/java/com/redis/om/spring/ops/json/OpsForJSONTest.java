@@ -104,13 +104,13 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
     assertEquals(qux1, oneQux.get(0));
 
     Qux testQux1 = allQux.stream() //
-      .filter(q -> q.quux.equals("quux1")) //
-      .findFirst() //
-      .orElseThrow(() -> new NullPointerException(""));
+        .filter(q -> q.quux.equals("quux1")) //
+        .findFirst() //
+        .orElseThrow(() -> new NullPointerException(""));
     Qux testQux2 = allQux.stream() //
-      .filter(q -> q.quux.equals("quux2")) //
-      .findFirst() //
-      .orElseThrow(() -> new NullPointerException(""));
+        .filter(q -> q.quux.equals("quux2")) //
+        .findFirst() //
+        .orElseThrow(() -> new NullPointerException(""));
 
     assertEquals(qux1, testQux1);
     assertEquals(qux2, testQux2);
@@ -232,8 +232,8 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
       Baz other = (Baz) o;
 
       return Objects.equals(quuz, other.quuz) && //
-        Objects.equals(grault, other.grault) && //
-        Objects.equals(waldo, other.waldo);
+          Objects.equals(grault, other.grault) && //
+          Objects.equals(waldo, other.waldo);
     }
   }
 
@@ -262,9 +262,9 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
       Qux other = (Qux) o;
 
       return Objects.equals(quux, other.quux) && //
-        Objects.equals(corge, other.corge) && //
-        Objects.equals(garply, other.garply) && //
-        Objects.equals(baz, other.baz);
+          Objects.equals(corge, other.corge) && //
+          Objects.equals(garply, other.garply) && //
+          Objects.equals(baz, other.baz);
     }
   }
 

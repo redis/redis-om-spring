@@ -30,12 +30,11 @@ import static org.junit.jupiter.api.Assertions.*;
 @SuppressWarnings("SpellCheckingInspection")
 class JSONSearchTest extends AbstractBaseDocumentTest {
   public static final String searchIndex = "idx";
+  private final ObjectMapper objectMapper = new ObjectMapper();
   @Autowired
   RedisModulesOperations<String> modulesOperations;
   @Autowired
   private StringRedisTemplate template;
-
-  private final ObjectMapper objectMapper = new ObjectMapper();
 
   @BeforeEach
   void setup() {
@@ -49,8 +48,8 @@ class JSONSearchTest extends AbstractBaseDocumentTest {
 
     // FT.CREATE idx ON JSON SCHEMA $.title AS title TEXT $.tag[*] AS tag TAG
     Schema sc = new Schema() //
-      .addField(new TextField(FieldName.of("$.title").as("title"))) //
-      .addField(new Field(FieldName.of("$.tag[*]").as("tag"), FieldType.TAG));
+        .addField(new TextField(FieldName.of("$.title").as("title"))) //
+        .addField(new Field(FieldName.of("$.tag[*]").as("tag"), FieldType.TAG));
 
     IndexDefinition def = new IndexDefinition(IndexDefinition.Type.JSON);
     ops.createIndex(sc, IndexOptions.defaultOptions().setDefinition(def));
@@ -81,8 +80,11 @@ class JSONSearchTest extends AbstractBaseDocumentTest {
     assertEquals(1.0, doc.getScore(), 0);
 
     String jsonString = SafeEncoder.encode((byte[]) doc.get("$"));
-    Map<String, Object> actualMap = objectMapper.readValue(jsonString, new TypeReference<Map<String, Object>>() {});
-    Map<String, Object> expectedMap = objectMapper.readValue("{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}", new TypeReference<Map<String, Object>>() {});
+    Map<String, Object> actualMap = objectMapper.readValue(jsonString, new TypeReference<Map<String, Object>>() {
+    });
+    Map<String, Object> expectedMap = objectMapper.readValue(
+        "{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}", new TypeReference<Map<String, Object>>() {
+        });
 
     assertEquals(expectedMap, actualMap);
   }
@@ -102,9 +104,9 @@ class JSONSearchTest extends AbstractBaseDocumentTest {
     Document doc = result.getDocuments().get(0);
     assertEquals(1.0, doc.getScore(), 0);
     assertTrue(StreamSupport //
-      .stream(doc.getProperties().spliterator(), false) //
-      .anyMatch(
-        p -> p.getKey().contentEquals("first_tag") && SafeEncoder.encode((byte[]) p.getValue()).equals("news")));
+        .stream(doc.getProperties().spliterator(), false) //
+        .anyMatch(
+            p -> p.getKey().contentEquals("first_tag") && SafeEncoder.encode((byte[]) p.getValue()).equals("news")));
   }
 
   /**

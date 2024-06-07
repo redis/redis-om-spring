@@ -3,7 +3,7 @@ package com.redis.om.spring.tuple.impl;
 import com.redis.om.spring.tuple.Nonuple;
 
 public final class NonupleImpl<T0, T1, T2, T3, T4, T5, T6, T7, T8> extends AbstractTuple
-  implements Nonuple<T0, T1, T2, T3, T4, T5, T6, T7, T8> {
+    implements Nonuple<T0, T1, T2, T3, T4, T5, T6, T7, T8> {
 
   public NonupleImpl(String[] labels, T0 e0, T1 e1, T2 e2, T3 e3, T4 e4, T5 e5, T6 e6, T7 e7, T8 e8) {
     super(NonupleImpl.class, labels, e0, e1, e2, e3, e4, e5, e6, e7, e8);

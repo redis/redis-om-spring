@@ -36,7 +36,7 @@ class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
   void loadTestData() {
     Custom c1 = Custom.of("foofoo");
     var nl1 = NestLevel1.of("nl-1-1", "Louis, I think this is the beginning of a beautiful friendship.",
-      NestLevel2.of("nl-2-1", "Here's looking at you, kid."));
+        NestLevel2.of("nl-2-1", "Here's looking at you, kid."));
     c1.setNest_level1(nl1);
     Custom c2 = Custom.of("barbar");
     Custom c3 = Custom.of("bazbaz");
@@ -99,7 +99,7 @@ class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
     Optional<Custom> maybeC1After = repository.findById(id1);
 
     assertAll( //
-      () -> assertTrue(maybeC1After.isPresent()), () -> assertEquals("fufoo", maybeC1After.get().getName()) //
+        () -> assertTrue(maybeC1After.isPresent()), () -> assertEquals("fufoo", maybeC1After.get().getName()) //
     );
   }
 
@@ -112,19 +112,19 @@ class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
     Optional<Custom> dn1After = repository.findById(id1);
 
     assertAll( //
-      () -> assertThat(dn1.get().getName()).isNotEqualTo("dos-uno"), //
-      () -> assertTrue(dn1After.isPresent()), //
-      () -> assertEquals("dos-uno", dn1After.get().getNest_level1().getNestLevel2().getName()) //
+        () -> assertThat(dn1.get().getName()).isNotEqualTo("dos-uno"), //
+        () -> assertTrue(dn1After.isPresent()), //
+        () -> assertEquals("dos-uno", dn1After.get().getNest_level1().getNestLevel2().getName()) //
     );
   }
 
   @Test
   void testSaveAllWithNonStringKey() {
     CompanyWithLongId redis = CompanyWithLongId.of("RedisInc", 2011, LocalDate.of(2021, 5, 1),
-      new Point(-122.066540, 37.377690), "stack@redis.com");
+        new Point(-122.066540, 37.377690), "stack@redis.com");
 
     CompanyWithLongId microsoft = CompanyWithLongId.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
-      new Point(-122.124500, 47.640160), "research@microsoft.com");
+        new Point(-122.124500, 47.640160), "research@microsoft.com");
 
     companyRepo.saveAll(List.of(redis, microsoft));
 

@@ -33,7 +33,7 @@ class CuckooTest extends AbstractBaseEnhancedRedisTest {
     Person2 kaitlyn = Person2.of("Kaitlyn Michael", "kaitlyn@redis.com", "kaitlyn");
     Person2 josefin = Person2.of("Josefin Sjoeberg", "josefin.sjoeberg@redis.com", "josefin");
     List<Person2> persons = List.of(guyr, guyk, simon, justin, steve, kyleo, kyleb, andrew, alex, lance, rachel,
-      kaitlyn, josefin);
+        kaitlyn, josefin);
 
     repository.saveAll(persons);
   }

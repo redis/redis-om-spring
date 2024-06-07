@@ -35,7 +35,7 @@ public interface Triple<E1, E2, E3> extends Tuple {
       case 1 -> getSecond();
       case 2 -> getThird();
       default -> throw new IndexOutOfBoundsException(
-        String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
+          String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
     };
   }
 }

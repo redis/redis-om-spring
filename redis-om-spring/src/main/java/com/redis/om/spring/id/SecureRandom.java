@@ -23,7 +23,7 @@ public class SecureRandom {
     }
 
     throw new InvalidDataAccessApiUsageException(
-      "Could not create SecureRandom instance for any of the specified algorithms: " + StringUtils.collectionToCommaDelimitedString(
-        OsTools.secureRandomAlgorithmNames()));
+        "Could not create SecureRandom instance for any of the specified algorithms: " + StringUtils.collectionToCommaDelimitedString(
+            OsTools.secureRandomAlgorithmNames()));
   }
 }

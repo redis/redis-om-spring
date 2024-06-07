@@ -63,11 +63,11 @@ class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
   void testUnsupportedIdTypesThrowException() {
     BadDoc badDoc = new BadDoc();
     InvalidDataAccessApiUsageException exception = Assertions.assertThrows(InvalidDataAccessApiUsageException.class,
-      () -> badDocRepo.save(badDoc));
+        () -> badDocRepo.save(badDoc));
 
     String expectedErrorMessage = String.format(
-      "Identifier cannot be generated for %s. Supported types are: ULID, String, Integer, and Long.",
-      BigInteger.class.getName());
+        "Identifier cannot be generated for %s. Supported types are: ULID, String, Integer, and Long.",
+        BigInteger.class.getName());
     Assertions.assertEquals(expectedErrorMessage, exception.getMessage());
   }
 
@@ -79,7 +79,7 @@ class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
     Ulid generatedId = docWithUlidRepo.save(ulidDoc).getId();
 
     JsonObject rawJSON = ops.get(DocWithExplicitUlidId.class.getName() + ":" + generatedId.toString(),
-      JsonObject.class);
+        JsonObject.class);
     String ulidAsString = Objects.requireNonNull(rawJSON).get("id").getAsString();
     Ulid ulidFromRawJSON = Ulid.from(ulidAsString);
 
@@ -89,7 +89,7 @@ class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
   @Test
   void shouldThrowExceptionForUnsupportedType() {
     assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(
-      () -> generator.generateIdentifierOfType(TypeInformation.of(Date.class)));
+        () -> generator.generateIdentifierOfType(TypeInformation.of(Date.class)));
   }
 
   @Test

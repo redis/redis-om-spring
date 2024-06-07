@@ -46,8 +46,8 @@ public class CuckooAspect implements Ordered {
       if (field.isAnnotationPresent(Cuckoo.class)) {
         Cuckoo cuckoo = field.getAnnotation(Cuckoo.class);
         String filterName = !ObjectUtils.isEmpty(cuckoo.name()) ?
-          cuckoo.name() :
-          String.format("cf:%s:%s", entity.getClass().getSimpleName(), field.getName());
+            cuckoo.name() :
+            String.format("cf:%s:%s", entity.getClass().getSimpleName(), field.getName());
         try {
           PropertyDescriptor pd = new PropertyDescriptor(field.getName(), entity.getClass());
           ops.add(filterName, pd.getReadMethod().invoke(entity).toString());
@@ -78,8 +78,8 @@ public class CuckooAspect implements Ordered {
         if (field.isAnnotationPresent(Cuckoo.class)) {
           Cuckoo cuckoo = field.getAnnotation(Cuckoo.class);
           String filterName = !ObjectUtils.isEmpty(cuckoo.name()) ?
-            cuckoo.name() :
-            String.format("cf:%s:%s", entity.getClass().getSimpleName(), field.getName());
+              cuckoo.name() :
+              String.format("cf:%s:%s", entity.getClass().getSimpleName(), field.getName());
           try {
             PropertyDescriptor pd = new PropertyDescriptor(field.getName(), entity.getClass());
             ops.add(filterName, pd.getReadMethod().invoke(entity).toString());

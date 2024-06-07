@@ -70,8 +70,7 @@ class RedisDocumentCustomFallbackKeySpaceTest extends AbstractBaseOMTest {
 
   @Test
   void testSearchIndex() {
-    SearchOperations<String> searchOps = modulesOperations.opsForSearch(
-      MyDoc.class.getName() + "Idx");
+    SearchOperations<String> searchOps = modulesOperations.opsForSearch(MyDoc.class.getName() + "Idx");
 
     var info = searchOps.getInfo();
 
@@ -125,7 +124,10 @@ class RedisDocumentCustomFallbackKeySpaceTest extends AbstractBaseOMTest {
 
   @SpringBootApplication
   @Configuration
-  @EnableRedisDocumentRepositories(basePackages = {"com.redis.om.spring.fixtures.document.model", "com.redis.om.spring.fixtures.document.repository"})
+  @EnableRedisDocumentRepositories(
+      basePackages = { "com.redis.om.spring.fixtures.document.model",
+          "com.redis.om.spring.fixtures.document.repository" }
+  )
   static class Config extends TestConfig {
     @Bean
     @Primary

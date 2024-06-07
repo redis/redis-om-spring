@@ -23,13 +23,13 @@ public interface GameRepository extends RedisEnhancedRepository<Game, String> {
    */
   @Aggregation( //
                 groupBy = { //
-                  @GroupBy( //
-                            properties = "@brand", //
-                            reduce = { @Reducer(func = ReducerFunction.COUNT, alias = "count") } //
-                            ) //
+                    @GroupBy( //
+                              properties = "@brand", //
+                              reduce = { @Reducer(func = ReducerFunction.COUNT, alias = "count") } //
+                              ) //
                 }, //
                 sortBy = { //
-                  @SortBy(field = "@count", direction = Direction.DESC), //
+                    @SortBy(field = "@count", direction = Direction.DESC), //
                 }
   )
   //
@@ -47,15 +47,15 @@ public interface GameRepository extends RedisEnhancedRepository<Game, String> {
   @Aggregation( //
                 value = "sony", //
                 groupBy = { //
-                  @GroupBy( //
-                            properties = "@brand", //
-                            reduce = { //
-                              @Reducer(func = ReducerFunction.COUNT), //
-                              @Reducer(func = ReducerFunction.MIN, args = { "@price" }, alias = "minPrice") } //
-                            ) //
+                    @GroupBy( //
+                              properties = "@brand", //
+                              reduce = { //
+                                  @Reducer(func = ReducerFunction.COUNT), //
+                                  @Reducer(func = ReducerFunction.MIN, args = { "@price" }, alias = "minPrice") } //
+                              ) //
                 }, //
                 sortBy = { //
-                  @SortBy(field = "@minPrice", direction = Direction.DESC), //
+                    @SortBy(field = "@minPrice", direction = Direction.DESC), //
                 }
   )
   //
@@ -73,15 +73,15 @@ public interface GameRepository extends RedisEnhancedRepository<Game, String> {
   @Aggregation( //
                 value = "sony", //
                 groupBy = { //
-                  @GroupBy( //
-                            properties = "@brand", //
-                            reduce = { //
-                              @Reducer(func = ReducerFunction.COUNT), //
-                              @Reducer(func = ReducerFunction.MAX, args = { "@price" }, alias = "maxPrice") } //
-                            ) //
+                    @GroupBy( //
+                              properties = "@brand", //
+                              reduce = { //
+                                  @Reducer(func = ReducerFunction.COUNT), //
+                                  @Reducer(func = ReducerFunction.MAX, args = { "@price" }, alias = "maxPrice") } //
+                              ) //
                 }, //
                 sortBy = { //
-                  @SortBy(field = "@maxPrice", direction = Direction.DESC), //
+                    @SortBy(field = "@maxPrice", direction = Direction.DESC), //
                 }
   )
   //
@@ -99,19 +99,19 @@ public interface GameRepository extends RedisEnhancedRepository<Game, String> {
    */
   @Aggregation( //
                 groupBy = { //
-                  @GroupBy( //
-                            properties = "@brand", //
-                            reduce = { //
-                              @Reducer(
-                                func = ReducerFunction.COUNT_DISTINCT, args = { "@title" },
-                                alias = "count_distinct(title)"
-                              ), //
-                              @Reducer(func = ReducerFunction.COUNT) //
-                            } //
-                            ) //
+                    @GroupBy( //
+                              properties = "@brand", //
+                              reduce = { //
+                                  @Reducer(
+                                      func = ReducerFunction.COUNT_DISTINCT, args = { "@title" },
+                                      alias = "count_distinct(title)"
+                                  ), //
+                                  @Reducer(func = ReducerFunction.COUNT) //
+                              } //
+                              ) //
                 }, //
                 sortBy = { //
-                  @SortBy(field = "@count_distinct(title)", direction = Direction.DESC), //
+                    @SortBy(field = "@count_distinct(title)", direction = Direction.DESC), //
                 }, limit = 5
   )
   //
@@ -131,19 +131,22 @@ public interface GameRepository extends RedisEnhancedRepository<Game, String> {
    */
   @Aggregation( //
                 groupBy = { //
-                  @GroupBy( //
-                            properties = "@brand", //
-                            reduce = { //
-                              @Reducer(func = ReducerFunction.QUANTILE, args = { "@price", "0.50" }, alias = "q50"), //
-                              @Reducer(func = ReducerFunction.QUANTILE, args = { "@price", "0.90" }, alias = "q90"), //
-                              @Reducer(func = ReducerFunction.QUANTILE, args = { "@price", "0.95" }, alias = "q95"), //
-                              @Reducer(func = ReducerFunction.AVG, args = { "@price" }), //
-                              @Reducer(func = ReducerFunction.COUNT, alias = "rowcount") //
-                            } //
-                            ) //
+                    @GroupBy( //
+                              properties = "@brand", //
+                              reduce = { //
+                                  @Reducer(func = ReducerFunction.QUANTILE, args = { "@price", "0.50" }, alias = "q50"),
+                                  //
+                                  @Reducer(func = ReducerFunction.QUANTILE, args = { "@price", "0.90" }, alias = "q90"),
+                                  //
+                                  @Reducer(func = ReducerFunction.QUANTILE, args = { "@price", "0.95" }, alias = "q95"),
+                                  //
+                                  @Reducer(func = ReducerFunction.AVG, args = { "@price" }), //
+                                  @Reducer(func = ReducerFunction.COUNT, alias = "rowcount") //
+                              } //
+                              ) //
                 }, //
                 sortBy = { //
-                  @SortBy(field = "@rowcount", direction = Direction.DESC), //
+                    @SortBy(field = "@rowcount", direction = Direction.DESC), //
                 }, sortByMax = 1 //
                 )
   //
@@ -163,20 +166,21 @@ public interface GameRepository extends RedisEnhancedRepository<Game, String> {
    */
   @Aggregation( //
                 groupBy = { //
-                  @GroupBy( //
-                            properties = "@brand", //
-                            reduce = { //
-                              @Reducer(func = ReducerFunction.STDDEV, args = { "@price" }, alias = "stddev(price)"), //
-                              @Reducer(func = ReducerFunction.AVG, args = { "@price" }, alias = "avgPrice"), //
-                              @Reducer(
-                                func = ReducerFunction.QUANTILE, args = { "@price", "0.50" }, alias = "q50Price"
-                              ), //
-                              @Reducer(func = ReducerFunction.COUNT, alias = "rowcount") //
-                            } //
-                            ) //
+                    @GroupBy( //
+                              properties = "@brand", //
+                              reduce = { //
+                                  @Reducer(func = ReducerFunction.STDDEV, args = { "@price" }, alias = "stddev(price)"),
+                                  //
+                                  @Reducer(func = ReducerFunction.AVG, args = { "@price" }, alias = "avgPrice"), //
+                                  @Reducer(
+                                      func = ReducerFunction.QUANTILE, args = { "@price", "0.50" }, alias = "q50Price"
+                                  ), //
+                                  @Reducer(func = ReducerFunction.COUNT, alias = "rowcount") //
+                              } //
+                              ) //
                 }, //
                 sortBy = { //
-                  @SortBy(field = "@rowcount", direction = Direction.DESC), //
+                    @SortBy(field = "@rowcount", direction = Direction.DESC), //
                 }, limit = 10 //
                 )
   //
@@ -194,14 +198,14 @@ public interface GameRepository extends RedisEnhancedRepository<Game, String> {
    */
   @Aggregation( //
                 groupBy = { //
-                  @GroupBy( //
-                            properties = "@brand", //
-                            reduce = { @Reducer(func = ReducerFunction.COUNT, alias = "count") } //
-                            ) //
+                    @GroupBy( //
+                              properties = "@brand", //
+                              reduce = { @Reducer(func = ReducerFunction.COUNT, alias = "count") } //
+                              ) //
                 }, //
                 apply = { //
-                  @Apply(expression = "timefmt(1517417144)", alias = "dt"), //
-                  @Apply(expression = "parsetime(@dt, \"%FT%TZ\")", alias = "parsed_dt"), //
+                    @Apply(expression = "timefmt(1517417144)", alias = "dt"), //
+                    @Apply(expression = "parsetime(@dt, \"%FT%TZ\")", alias = "parsed_dt"), //
                 }, //
                 limit = 1 //
                 )
@@ -219,18 +223,18 @@ public interface GameRepository extends RedisEnhancedRepository<Game, String> {
    */
   @Aggregation( //
                 groupBy = { //
-                  @GroupBy( //
-                            properties = "@brand", //
-                            reduce = { //
-                              @Reducer(func = ReducerFunction.COUNT, alias = "num"), //
-                              @Reducer(
-                                func = ReducerFunction.RANDOM_SAMPLE, args = { "@price", "10" }, alias = "sample"
+                    @GroupBy( //
+                              properties = "@brand", //
+                              reduce = { //
+                                  @Reducer(func = ReducerFunction.COUNT, alias = "num"), //
+                                  @Reducer(
+                                      func = ReducerFunction.RANDOM_SAMPLE, args = { "@price", "10" }, alias = "sample"
+                                  ) //
+                              } //
                               ) //
-                            } //
-                            ) //
                 }, //
                 sortBy = { //
-                  @SortBy(field = "@num", direction = Direction.DESC), //
+                    @SortBy(field = "@num", direction = Direction.DESC), //
                 }, sortByMax = 10
   )
   //
@@ -254,15 +258,15 @@ public interface GameRepository extends RedisEnhancedRepository<Game, String> {
    */
   @Aggregation( //
                 apply = { @Apply(expression = "1517417144", alias = "dt"), //
-                  @Apply(expression = "timefmt(@dt)", alias = "timefmt"), //
-                  @Apply(expression = "day(@dt)", alias = "day"), //
-                  @Apply(expression = "hour(@dt)", alias = "hour"), //
-                  @Apply(expression = "minute(@dt)", alias = "minute"), //
-                  @Apply(expression = "month(@dt)", alias = "month"), //
-                  @Apply(expression = "dayofweek(@dt)", alias = "dayofweek"), //
-                  @Apply(expression = "dayofmonth(@dt)", alias = "dayofmonth"), //
-                  @Apply(expression = "dayofyear(@dt)", alias = "dayofyear"), //
-                  @Apply(expression = "year(@dt)", alias = "year"), //
+                    @Apply(expression = "timefmt(@dt)", alias = "timefmt"), //
+                    @Apply(expression = "day(@dt)", alias = "day"), //
+                    @Apply(expression = "hour(@dt)", alias = "hour"), //
+                    @Apply(expression = "minute(@dt)", alias = "minute"), //
+                    @Apply(expression = "month(@dt)", alias = "month"), //
+                    @Apply(expression = "dayofweek(@dt)", alias = "dayofweek"), //
+                    @Apply(expression = "dayofmonth(@dt)", alias = "dayofmonth"), //
+                    @Apply(expression = "dayofyear(@dt)", alias = "dayofyear"), //
+                    @Apply(expression = "year(@dt)", alias = "year"), //
                 }, limit = 1
   )
   //
@@ -279,16 +283,16 @@ public interface GameRepository extends RedisEnhancedRepository<Game, String> {
    */
   @Aggregation( //
                 groupBy = { //
-                  @GroupBy( //
-                            properties = { "@title", "@brand" }, //
-                            reduce = { //
-                              @Reducer(func = ReducerFunction.COUNT), //
-                              @Reducer(func = ReducerFunction.MAX, args = { "@price" }, alias = "price") //
-                            } //
-                            ) //
+                    @GroupBy( //
+                              properties = { "@title", "@brand" }, //
+                              reduce = { //
+                                  @Reducer(func = ReducerFunction.COUNT), //
+                                  @Reducer(func = ReducerFunction.MAX, args = { "@price" }, alias = "price") //
+                              } //
+                              ) //
                 }, //
                 apply = { @Apply(
-                  expression = "format(\"%s|%s|%s|%s\", @title, @brand, \"Mark\", @price)", alias = "titleBrand"
+                    expression = "format(\"%s|%s|%s|%s\", @title, @brand, \"Mark\", @price)", alias = "titleBrand"
                 ), //
                 }, limit = 10
   )
@@ -307,16 +311,16 @@ public interface GameRepository extends RedisEnhancedRepository<Game, String> {
    */
   @Aggregation( //
                 groupBy = { //
-                  @GroupBy( //
-                            properties = { "@brand" }, //
-                            reduce = { //
-                              @Reducer(func = ReducerFunction.COUNT, alias = "count"), //
-                              @Reducer(func = ReducerFunction.SUM, args = { "@price" }, alias = "sum(price)") //
-                            } //
-                            ) //
+                    @GroupBy( //
+                              properties = { "@brand" }, //
+                              reduce = { //
+                                  @Reducer(func = ReducerFunction.COUNT, alias = "count"), //
+                                  @Reducer(func = ReducerFunction.SUM, args = { "@price" }, alias = "sum(price)") //
+                              } //
+                              ) //
                 }, //
                 sortBy = { //
-                  @SortBy(field = "@sum(price)", direction = Direction.DESC), //
+                    @SortBy(field = "@sum(price)", direction = Direction.DESC), //
                 }, limit = 5 //
                 )
   //
@@ -338,10 +342,10 @@ public interface GameRepository extends RedisEnhancedRepository<Game, String> {
    */
   @Aggregation( //
                 groupBy = { //
-                  @GroupBy( //
-                            properties = { "@brand" }, //
-                            reduce = { @Reducer(func = ReducerFunction.COUNT, alias = "count") } //
-                            ) //
+                    @GroupBy( //
+                              properties = { "@brand" }, //
+                              reduce = { @Reducer(func = ReducerFunction.COUNT, alias = "count") } //
+                              ) //
                 }, //
                 filter = { "@count < 5", "@count > 2 && @brand != \"\"" }
   )
@@ -360,16 +364,16 @@ public interface GameRepository extends RedisEnhancedRepository<Game, String> {
    */
   @Aggregation( //
                 groupBy = { //
-                  @GroupBy( //
-                            properties = { "@brand" }, //
-                            reduce = { //
-                              @Reducer(func = ReducerFunction.COUNT_DISTINCT, args = "@price", alias = "count"), //
-                              @Reducer(func = ReducerFunction.TOLIST, args = "@price", alias = "prices") //
-                            } //
-                            ) //
+                    @GroupBy( //
+                              properties = { "@brand" }, //
+                              reduce = { //
+                                  @Reducer(func = ReducerFunction.COUNT_DISTINCT, args = "@price", alias = "count"), //
+                                  @Reducer(func = ReducerFunction.TOLIST, args = "@price", alias = "prices") //
+                              } //
+                              ) //
                 }, //
                 sortBy = { //
-                  @SortBy(field = "@count", direction = Direction.DESC), //
+                    @SortBy(field = "@count", direction = Direction.DESC), //
                 }, limit = 5 //
                 )
   //
@@ -387,15 +391,15 @@ public interface GameRepository extends RedisEnhancedRepository<Game, String> {
    */
   @Aggregation( //
                 groupBy = { //
-                  @GroupBy( //
-                            properties = { "@brand" }, //
-                            reduce = { @Reducer(func = ReducerFunction.SUM, args = "@price", alias = "price") } //
-                            ) //
+                    @GroupBy( //
+                              properties = { "@brand" }, //
+                              reduce = { @Reducer(func = ReducerFunction.SUM, args = "@price", alias = "price") } //
+                              ) //
                 }, //
                 apply = { @Apply(expression = "(@price % 10)", alias = "price") }, //
                 sortBy = { //
-                  @SortBy(field = "@price", direction = Direction.ASC), //
-                  @SortBy(field = "@brand", direction = Direction.DESC), //
+                    @SortBy(field = "@price", direction = Direction.ASC), //
+                    @SortBy(field = "@brand", direction = Direction.DESC), //
                 }, sortByMax = 10
   )
   //

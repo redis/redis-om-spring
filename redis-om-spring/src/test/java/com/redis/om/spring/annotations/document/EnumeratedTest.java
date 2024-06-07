@@ -43,8 +43,8 @@ class EnumeratedTest extends AbstractBaseDocumentTest {
     Gson gson = new Gson();
 
     var data = search.ftSearch(Developer.class.getName() + "Idx").getDocuments().stream()
-      .map(el -> gson.fromJson((String) el.get("$"), DeveloperNative.class))
-      .collect(Collectors.toMap(DeveloperNative::getId, Function.identity()));
+        .map(el -> gson.fromJson((String) el.get("$"), DeveloperNative.class))
+        .collect(Collectors.toMap(DeveloperNative::getId, Function.identity()));
 
     assertThat(data.get("1").getOrdinal()).isEqualTo(DeveloperType.JAVA.ordinal());
     assertThat(data.get("2").getOrdinal()).isEqualTo(DeveloperType.CPP.ordinal());

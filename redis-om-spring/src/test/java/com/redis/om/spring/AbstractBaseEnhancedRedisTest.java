@@ -15,7 +15,8 @@ public abstract class AbstractBaseEnhancedRedisTest extends AbstractBaseOMTest {
   @SpringBootApplication
   @Configuration
   @EnableRedisEnhancedRepositories(
-    basePackages = { "com.redis.om.spring.fixtures.hash.model", "com.redis.om.spring.fixtures.hash.repository", "com.redis.om.spring.repository" }
+      basePackages = { "com.redis.om.spring.fixtures.hash.model", "com.redis.om.spring.fixtures.hash.repository",
+          "com.redis.om.spring.repository" }
   )
   static class Config extends TestConfig {
   }

@@ -48,12 +48,12 @@ public class RedisJSONRepositoryConfigurationExtension extends RedisRepositoryCo
    */
   @Override
   protected AbstractBeanDefinition getDefaultKeyValueTemplateBeanDefinition(
-    RepositoryConfigurationSource configurationSource) {
+      RepositoryConfigurationSource configurationSource) {
 
     return BeanDefinitionBuilder.rootBeanDefinition(CustomRedisKeyValueTemplate.class) //
-      .addConstructorArgReference(REDIS_ADAPTER_BEAN_NAME) //
-      .addConstructorArgReference(MAPPING_CONTEXT_BEAN_NAME) //
-      .getBeanDefinition();
+        .addConstructorArgReference(REDIS_ADAPTER_BEAN_NAME) //
+        .addConstructorArgReference(MAPPING_CONTEXT_BEAN_NAME) //
+        .getBeanDefinition();
   }
 
   /*

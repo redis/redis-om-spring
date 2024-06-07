@@ -16,7 +16,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, ID>
-  extends KeyValueRepositoryFactoryBean<T, S, ID> {
+    extends KeyValueRepositoryFactoryBean<T, S, ID> {
 
   @Autowired
   private @Nullable RedisModulesOperations<String> rmo;
@@ -44,12 +44,12 @@ public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, 
 
   @Override
   protected final RedisDocumentRepositoryFactory createRepositoryFactory( //
-    KeyValueOperations operations, //
-    Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
-    Class<? extends RepositoryQuery> repositoryQueryType //
+      KeyValueOperations operations, //
+      Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
+      Class<? extends RepositoryQuery> repositoryQueryType //
   ) {
     return new RedisDocumentRepositoryFactory(operations, rmo, indexer, queryCreator, repositoryQueryType,
-      this.mappingContext, this.gsonBuilder, this.featureExtractor, this.properties);
+        this.mappingContext, this.gsonBuilder, this.featureExtractor, this.properties);
   }
 
   @Override

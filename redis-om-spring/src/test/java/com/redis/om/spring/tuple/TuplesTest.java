@@ -69,7 +69,7 @@ final class TuplesTest {
   @Test
   void toQuad() {
     final Function<Integer, Quad<Integer, Integer, Integer, Integer>> mapper = Tuples.toTuple(i -> i, i -> i + 1,
-      i -> i + 2, i -> i + 3);
+        i -> i + 2, i -> i + 3);
     assertTuple(mapper.apply(0), 4);
   }
 
@@ -81,7 +81,7 @@ final class TuplesTest {
   @Test
   void toQuintuple() {
     final Function<Integer, Quintuple<Integer, Integer, Integer, Integer, Integer>> mapper = Tuples.toTuple(i -> i,
-      i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4);
+        i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4);
     assertTuple(mapper.apply(0), 5);
   }
 
@@ -93,7 +93,7 @@ final class TuplesTest {
   @Test
   void toHextuple() {
     final Function<Integer, Hextuple<Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples.toTuple(
-      i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5);
+        i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5);
     assertTuple(mapper.apply(0), 6);
   }
 
@@ -105,7 +105,7 @@ final class TuplesTest {
   @Test
   void toSeptuple() {
     final Function<Integer, Septuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples.toTuple(
-      i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6);
+        i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6);
     assertTuple(mapper.apply(0), 7);
   }
 
@@ -117,7 +117,7 @@ final class TuplesTest {
   @Test
   void toOctuple() {
     final Function<Integer, Octuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples.toTuple(
-      i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7);
+        i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7);
     assertTuple(mapper.apply(0), 8);
   }
 
@@ -129,7 +129,7 @@ final class TuplesTest {
   @Test
   void toNonuple() {
     final Function<Integer, Nonuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples.toTuple(
-      i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8);
+        i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8);
     assertTuple(mapper.apply(0), 9);
   }
 
@@ -141,8 +141,8 @@ final class TuplesTest {
   @Test
   void toDecuple() {
     final Function<Integer, Decuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples.toTuple(
-      i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
-      i -> i + 9);
+        i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
+        i -> i + 9);
     assertTuple(mapper.apply(0), 10);
   }
 
@@ -154,8 +154,8 @@ final class TuplesTest {
   @Test
   void toUndecuple() {
     final Function<Integer, Undecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples.toTuple(
-      i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
-      i -> i + 9, i -> i + 10);
+        i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
+        i -> i + 9, i -> i + 10);
     assertTuple(mapper.apply(0), 11);
   }
 
@@ -167,8 +167,8 @@ final class TuplesTest {
   @Test
   void toDuodecuple() {
     final Function<Integer, Duodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples.toTuple(
-      i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
-      i -> i + 9, i -> i + 10, i -> i + 11);
+        i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
+        i -> i + 9, i -> i + 10, i -> i + 11);
     assertTuple(mapper.apply(0), 12);
   }
 
@@ -180,8 +180,8 @@ final class TuplesTest {
   @Test
   void toTredecuple() {
     final Function<Integer, Tredecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples.toTuple(
-      i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
-      i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12);
+        i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
+        i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12);
     assertTuple(mapper.apply(0), 13);
   }
 
@@ -193,8 +193,8 @@ final class TuplesTest {
   @Test
   void toQuattuordecuple() {
     final Function<Integer, Quattuordecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples.toTuple(
-      i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
-      i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12, i -> i + 13);
+        i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
+        i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12, i -> i + 13);
     assertTuple(mapper.apply(0), 14);
   }
 
@@ -206,8 +206,8 @@ final class TuplesTest {
   @Test
   void toQuindecuple() {
     final Function<Integer, Quindecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples.toTuple(
-      i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
-      i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12, i -> i + 13, i -> i + 14);
+        i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
+        i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12, i -> i + 13, i -> i + 14);
     assertTuple(mapper.apply(0), 15);
   }
 
@@ -219,8 +219,8 @@ final class TuplesTest {
   @Test
   void toSexdecuple() {
     final Function<Integer, Sexdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples.toTuple(
-      i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
-      i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12, i -> i + 13, i -> i + 14, i -> i + 15);
+        i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
+        i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12, i -> i + 13, i -> i + 14, i -> i + 15);
     assertTuple(mapper.apply(0), 16);
   }
 
@@ -232,8 +232,8 @@ final class TuplesTest {
   @Test
   void toSeptendecuple() {
     final Function<Integer, Septendecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples.toTuple(
-      i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
-      i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12, i -> i + 13, i -> i + 14, i -> i + 15, i -> i + 16);
+        i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
+        i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12, i -> i + 13, i -> i + 14, i -> i + 15, i -> i + 16);
     assertTuple(mapper.apply(0), 17);
   }
 
@@ -245,9 +245,9 @@ final class TuplesTest {
   @Test
   void toOctodecuple() {
     final Function<Integer, Octodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples.toTuple(
-      i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
-      i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12, i -> i + 13, i -> i + 14, i -> i + 15, i -> i + 16,
-      i -> i + 17);
+        i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
+        i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12, i -> i + 13, i -> i + 14, i -> i + 15, i -> i + 16,
+        i -> i + 17);
     assertTuple(mapper.apply(0), 18);
   }
 
@@ -259,9 +259,9 @@ final class TuplesTest {
   @Test
   void toNovemdecuple() {
     final Function<Integer, Novemdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples.toTuple(
-      i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
-      i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12, i -> i + 13, i -> i + 14, i -> i + 15, i -> i + 16,
-      i -> i + 17, i -> i + 18);
+        i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
+        i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12, i -> i + 13, i -> i + 14, i -> i + 15, i -> i + 16,
+        i -> i + 17, i -> i + 18);
     assertTuple(mapper.apply(0), 19);
   }
 
@@ -273,9 +273,9 @@ final class TuplesTest {
   @Test
   void toVigintuple() {
     final Function<Integer, Vigintuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>> mapper = Tuples.toTuple(
-      i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
-      i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12, i -> i + 13, i -> i + 14, i -> i + 15, i -> i + 16,
-      i -> i + 17, i -> i + 18, i -> i + 19);
+        i -> i, i -> i + 1, i -> i + 2, i -> i + 3, i -> i + 4, i -> i + 5, i -> i + 6, i -> i + 7, i -> i + 8,
+        i -> i + 9, i -> i + 10, i -> i + 11, i -> i + 12, i -> i + 13, i -> i + 14, i -> i + 15, i -> i + 16,
+        i -> i + 17, i -> i + 18, i -> i + 19);
     assertTuple(mapper.apply(0), 20);
   }
 
@@ -332,7 +332,7 @@ final class TuplesTest {
   @Test
   void testQuintupleGetters() {
     final Quintuple<Integer, Integer, String, Long, BigInteger> quintuple = Tuples.of(0, 1, "Foobar", 42L,
-      BigInteger.ONE);
+        BigInteger.ONE);
     final FirstAccessor<Quintuple<Integer, Integer, String, Long, BigInteger>, Integer> firstGetter = Quintuple.getFirstGetter();
     final SecondAccessor<Quintuple<Integer, Integer, String, Long, BigInteger>, Integer> secondGetter = Quintuple.getSecondGetter();
     final ThirdAccessor<Quintuple<Integer, Integer, String, Long, BigInteger>, String> thirdGetter = Quintuple.getThirdGetter();
@@ -353,7 +353,7 @@ final class TuplesTest {
   @Test
   void testHextupleGetters() {
     final Hextuple<Integer, Integer, String, Long, BigInteger, String> hextuple = Tuples.of(0, 1, "Foobar", 42L,
-      BigInteger.ONE, "qux");
+        BigInteger.ONE, "qux");
     final FirstAccessor<Hextuple<Integer, Integer, String, Long, BigInteger, String>, Integer> firstGetter = Hextuple.getFirstGetter();
     final SecondAccessor<Hextuple<Integer, Integer, String, Long, BigInteger, String>, Integer> secondGetter = Hextuple.getSecondGetter();
     final ThirdAccessor<Hextuple<Integer, Integer, String, Long, BigInteger, String>, String> thirdGetter = Hextuple.getThirdGetter();
@@ -377,7 +377,7 @@ final class TuplesTest {
   @Test
   void testSeptupleGetters() {
     final Septuple<Integer, Integer, String, Long, BigInteger, String, Integer> septuple = Tuples.of(0, 1, "Foobar",
-      42L, BigInteger.ONE, "qux", 20);
+        42L, BigInteger.ONE, "qux", 20);
     final FirstAccessor<Septuple<Integer, Integer, String, Long, BigInteger, String, Integer>, Integer> firstGetter = Septuple.getFirstGetter();
     final SecondAccessor<Septuple<Integer, Integer, String, Long, BigInteger, String, Integer>, Integer> secondGetter = Septuple.getSecondGetter();
     final ThirdAccessor<Septuple<Integer, Integer, String, Long, BigInteger, String, Integer>, String> thirdGetter = Septuple.getThirdGetter();
@@ -404,7 +404,7 @@ final class TuplesTest {
   @Test
   void testOctupleGetters() {
     final Octuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger> octuple = Tuples.of(0, 1,
-      "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN);
+        "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN);
     final FirstAccessor<Octuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger>, Integer> firstGetter = Octuple.getFirstGetter();
     final SecondAccessor<Octuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger>, Integer> secondGetter = Octuple.getSecondGetter();
     final ThirdAccessor<Octuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger>, String> thirdGetter = Octuple.getThirdGetter();
@@ -434,7 +434,7 @@ final class TuplesTest {
   @Test
   void testNonupleGetters() {
     final Nonuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer> nonuple = Tuples.of(
-      0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22);
+        0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22);
     final FirstAccessor<Nonuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer>, Integer> firstGetter = Nonuple.getFirstGetter();
     final SecondAccessor<Nonuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer>, Integer> secondGetter = Nonuple.getSecondGetter();
     final ThirdAccessor<Nonuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer>, String> thirdGetter = Nonuple.getThirdGetter();
@@ -467,7 +467,7 @@ final class TuplesTest {
   @Test
   void testDecupleGetters() {
     final Decuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String> decuple = Tuples.of(
-      0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge");
+        0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge");
     final FirstAccessor<Decuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String>, Integer> firstGetter = Decuple.getFirstGetter();
     final SecondAccessor<Decuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String>, Integer> secondGetter = Decuple.getSecondGetter();
     final ThirdAccessor<Decuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String>, String> thirdGetter = Decuple.getThirdGetter();
@@ -503,7 +503,7 @@ final class TuplesTest {
   @Test
   void testUndecupleGetters() {
     final Undecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long> undecuple = Tuples.of(
-      0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L);
+        0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L);
     final FirstAccessor<Undecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long>, Integer> firstGetter = Undecuple.getFirstGetter();
     final SecondAccessor<Undecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long>, Integer> secondGetter = Undecuple.getSecondGetter();
     final ThirdAccessor<Undecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long>, String> thirdGetter = Undecuple.getThirdGetter();
@@ -542,7 +542,7 @@ final class TuplesTest {
   @Test
   void testDuodecupleGetters() {
     final Duodecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer> duodecuple = Tuples.of(
-      0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L, 1);
+        0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L, 1);
     final FirstAccessor<Duodecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer>, Integer> firstGetter = Duodecuple.getFirstGetter();
     final SecondAccessor<Duodecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer>, Integer> secondGetter = Duodecuple.getSecondGetter();
     final ThirdAccessor<Duodecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer>, String> thirdGetter = Duodecuple.getThirdGetter();
@@ -584,7 +584,7 @@ final class TuplesTest {
   @Test
   void testTredecupleGetters() {
     final Tredecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String> tredecuple = Tuples.of(
-      0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L, 1, "grault");
+        0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L, 1, "grault");
     final FirstAccessor<Tredecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String>, Integer> firstGetter = Tredecuple.getFirstGetter();
     final SecondAccessor<Tredecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String>, Integer> secondGetter = Tredecuple.getSecondGetter();
     final ThirdAccessor<Tredecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String>, String> thirdGetter = Tredecuple.getThirdGetter();
@@ -629,7 +629,7 @@ final class TuplesTest {
   @Test
   void testQuattuordecupleGetters() {
     final Quattuordecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer> quattuordecuple = Tuples.of(
-      0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L, 1, "grault", 2);
+        0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L, 1, "grault", 2);
     final FirstAccessor<Quattuordecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer>, Integer> firstGetter = Quattuordecuple.getFirstGetter();
     final SecondAccessor<Quattuordecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer>, Integer> secondGetter = Quattuordecuple.getSecondGetter();
     final ThirdAccessor<Quattuordecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer>, String> thirdGetter = Quattuordecuple.getThirdGetter();
@@ -677,7 +677,7 @@ final class TuplesTest {
   @Test
   void testQuindecupleGetters() {
     final Quindecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String> quindecuple = Tuples.of(
-      0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L, 1, "grault", 2, "garply");
+        0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L, 1, "grault", 2, "garply");
     final FirstAccessor<Quindecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String>, Integer> firstGetter = Quindecuple.getFirstGetter();
     final SecondAccessor<Quindecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String>, Integer> secondGetter = Quindecuple.getSecondGetter();
     final ThirdAccessor<Quindecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String>, String> thirdGetter = Quindecuple.getThirdGetter();
@@ -728,7 +728,7 @@ final class TuplesTest {
   @Test
   void testSexdecupleGetters() {
     final Sexdecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer> sexdecuple = Tuples.of(
-      0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L, 1, "grault", 2, "garply", 3);
+        0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L, 1, "grault", 2, "garply", 3);
     final FirstAccessor<Sexdecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer>, Integer> firstGetter = Sexdecuple.getFirstGetter();
     final SecondAccessor<Sexdecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer>, Integer> secondGetter = Sexdecuple.getSecondGetter();
     final ThirdAccessor<Sexdecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer>, String> thirdGetter = Sexdecuple.getThirdGetter();
@@ -782,8 +782,8 @@ final class TuplesTest {
   @Test
   void testSeptendecupleGetters() {
     final Septendecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer, String> septendecuple = Tuples.of(
-      0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L, 1, "grault", 2, "garply", 3,
-      "waldo");
+        0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L, 1, "grault", 2, "garply", 3,
+        "waldo");
     final FirstAccessor<Septendecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer, String>, Integer> firstGetter = Septendecuple.getFirstGetter();
     final SecondAccessor<Septendecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer, String>, Integer> secondGetter = Septendecuple.getSecondGetter();
     final ThirdAccessor<Septendecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer, String>, String> thirdGetter = Septendecuple.getThirdGetter();
@@ -840,8 +840,8 @@ final class TuplesTest {
   @Test
   void testOctodecupleGetters() {
     final Octodecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer, String, Integer> octodecuple = Tuples.of(
-      0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L, 1, "grault", 2, "garply", 3,
-      "waldo", 4);
+        0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L, 1, "grault", 2, "garply", 3,
+        "waldo", 4);
     final FirstAccessor<Octodecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer, String, Integer>, Integer> firstGetter = Octodecuple.getFirstGetter();
     final SecondAccessor<Octodecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer, String, Integer>, Integer> secondGetter = Octodecuple.getSecondGetter();
     final ThirdAccessor<Octodecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer, String, Integer>, String> thirdGetter = Octodecuple.getThirdGetter();
@@ -901,8 +901,8 @@ final class TuplesTest {
   @Test
   void testNovemdecupleGetters() {
     final Novemdecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer, String, Integer, String> novemdecuple = Tuples.of(
-      0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L, 1, "grault", 2, "garply", 3,
-      "waldo", 4, "fred");
+        0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L, 1, "grault", 2, "garply", 3,
+        "waldo", 4, "fred");
     final FirstAccessor<Novemdecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer, String, Integer, String>, Integer> firstGetter = Novemdecuple.getFirstGetter();
     final SecondAccessor<Novemdecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer, String, Integer, String>, Integer> secondGetter = Novemdecuple.getSecondGetter();
     final ThirdAccessor<Novemdecuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer, String, Integer, String>, String> thirdGetter = Novemdecuple.getThirdGetter();
@@ -965,8 +965,8 @@ final class TuplesTest {
   @Test
   void testVigintupleGetters() {
     final Vigintuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer, String, Integer, String, Integer> vigintuple = Tuples.of(
-      0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L, 1, "grault", 2, "garply", 3,
-      "waldo", 4, "fred", 5);
+        0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L, 1, "grault", 2, "garply", 3,
+        "waldo", 4, "fred", 5);
     final FirstAccessor<Vigintuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer, String, Integer, String, Integer>, Integer> firstGetter = Vigintuple.getFirstGetter();
     final SecondAccessor<Vigintuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer, String, Integer, String, Integer>, Integer> secondGetter = Vigintuple.getSecondGetter();
     final ThirdAccessor<Vigintuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer, String, Integer, String, Integer>, String> thirdGetter = Vigintuple.getThirdGetter();

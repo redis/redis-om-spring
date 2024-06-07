@@ -46,17 +46,17 @@ class EntityStreamHighlightHashTest extends AbstractBaseEnhancedRedisTest {
     SearchStream<Text> stream = entityStream.of(Text.class);
 
     List<Text> texts = stream //
-      .filter("abraham isaac jacob") //
-      .summarize(Text$.BODY) //
-      .highlight(Text$.BODY) //
-      .collect(Collectors.toList());
+        .filter("abraham isaac jacob") //
+        .summarize(Text$.BODY) //
+        .highlight(Text$.BODY) //
+        .collect(Collectors.toList());
 
     String result = texts.stream().findFirst().map(Text::getBody).get();
 
     assertAll( //
-      () -> assertThat(result).contains("<b>Abraham</b>"), //
-      () -> assertThat(result).contains("<b>Isaac</b>"), //
-      () -> assertThat(result).contains("<b>Jacob</b>"));
+        () -> assertThat(result).contains("<b>Abraham</b>"), //
+        () -> assertThat(result).contains("<b>Isaac</b>"), //
+        () -> assertThat(result).contains("<b>Jacob</b>"));
   }
 
   /**
@@ -70,17 +70,17 @@ class EntityStreamHighlightHashTest extends AbstractBaseEnhancedRedisTest {
     SearchStream<Text> stream = entityStream.of(Text.class);
 
     List<Text> texts = stream //
-      .filter("abraham isaac jacob") //
-      .summarize(Text$.BODY) //
-      .highlight(Text$.BODY, Tuples.of("<strong>", "</strong>")) //
-      .collect(Collectors.toList());
+        .filter("abraham isaac jacob") //
+        .summarize(Text$.BODY) //
+        .highlight(Text$.BODY, Tuples.of("<strong>", "</strong>")) //
+        .collect(Collectors.toList());
 
     String result = texts.stream().findFirst().map(Text::getBody).get();
 
     assertAll( //
-      () -> assertThat(result).contains("<strong>Abraham</strong>"), //
-      () -> assertThat(result).contains("<strong>Isaac</strong>"), //
-      () -> assertThat(result).contains("<strong>Jacob</strong>"));
+        () -> assertThat(result).contains("<strong>Abraham</strong>"), //
+        () -> assertThat(result).contains("<strong>Isaac</strong>"), //
+        () -> assertThat(result).contains("<strong>Jacob</strong>"));
   }
 
   /**
@@ -93,12 +93,12 @@ class EntityStreamHighlightHashTest extends AbstractBaseEnhancedRedisTest {
     SearchStream<Text> stream = entityStream.of(Text.class);
 
     List<Text> texts = stream //
-      .filter("abraham isaac jacob") //
-      .summarize(Text$.BODY, SummarizeParams.instance().fragments(100).separator("<frag/>")) //
-      .collect(Collectors.toList());
+        .filter("abraham isaac jacob") //
+        .summarize(Text$.BODY, SummarizeParams.instance().fragments(100).separator("<frag/>")) //
+        .collect(Collectors.toList());
 
     List<String> fragments = Arrays.stream(texts.stream().findFirst().map(Text::getBody).get().split("<frag/>"))
-      .toList();
+        .toList();
     assertThat(fragments).hasSize(100);
   }
 
@@ -112,13 +112,13 @@ class EntityStreamHighlightHashTest extends AbstractBaseEnhancedRedisTest {
     SearchStream<Text> stream = entityStream.of(Text.class);
 
     List<Text> texts = stream //
-      .filter("isaac") //
-      .summarize(Text$.BODY, SummarizeParams.instance().fragments(4).size(3).separator("\r\n")) //
-      .collect(Collectors.toList());
+        .filter("isaac") //
+        .summarize(Text$.BODY, SummarizeParams.instance().fragments(4).size(3).separator("\r\n")) //
+        .collect(Collectors.toList());
 
     String result = texts.stream().findFirst().map(Text::getBody).get();
     assertThat(result).isEqualTo(
-      "name Isaac: and\r\nwith Isaac,\r\nIsaac. {21:4} And Abraham circumcised his son Isaac\r\nson Isaac was\r\n");
+        "name Isaac: and\r\nwith Isaac,\r\nIsaac. {21:4} And Abraham circumcised his son Isaac\r\nson Isaac was\r\n");
   }
 
   /**
@@ -132,9 +132,9 @@ class EntityStreamHighlightHashTest extends AbstractBaseEnhancedRedisTest {
     SearchStream<Text> stream = entityStream.of(Text.class);
 
     List<Text> texts = stream //
-      .filter("-blah") //
-      .summarize(Text$.BODY, SummarizeParams.instance().size(3)) //
-      .collect(Collectors.toList());
+        .filter("-blah") //
+        .summarize(Text$.BODY, SummarizeParams.instance().size(3)) //
+        .collect(Collectors.toList());
 
     String result = texts.stream().findFirst().map(Text::getBody).get();
     assertThat(result).isEqualTo(" The First Book of Moses, called Genesis {1:1} In");

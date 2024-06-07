@@ -38,7 +38,7 @@ public class EqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
       return QueryBuilders.intersect(root).add(getSearchAlias(), Values.eq(Long.parseLong(referenceKey.toString())));
     } else if (cls == Double.class) {
       return QueryBuilders.intersect(root)
-        .add(getSearchAlias(), Values.eq(Double.parseDouble(referenceKey.toString())));
+          .add(getSearchAlias(), Values.eq(Double.parseDouble(referenceKey.toString())));
     } else if (CharSequence.class.isAssignableFrom(cls)) {
       return QueryBuilders.intersect(root).add(getSearchAlias(), "{" + referenceKey + "}");
     } else {

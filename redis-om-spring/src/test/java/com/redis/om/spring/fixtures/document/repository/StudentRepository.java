@@ -13,12 +13,12 @@ import java.util.function.Function;
 
 public interface StudentRepository extends RedisDocumentRepository<Student, Long>, QueryByExampleExecutor<Student> {
   List<Student> findByUserName(String userName);
-  List<Student> findByUserNameAndEventTimestampBetweenOrderByEventTimestampAsc(String userName, LocalDateTime fromDate, LocalDateTime toDate);
 
-  default Student findFirstByPropertyOrderByEventTimestamp(
-    Student student,
-    ExampleMatcher exampleMatcher,
-    Function<FetchableFluentQuery<Student>, Student> queryFunction) {
+  List<Student> findByUserNameAndEventTimestampBetweenOrderByEventTimestampAsc(String userName, LocalDateTime fromDate,
+      LocalDateTime toDate);
+
+  default Student findFirstByPropertyOrderByEventTimestamp(Student student, ExampleMatcher exampleMatcher,
+      Function<FetchableFluentQuery<Student>, Student> queryFunction) {
     return findBy(Example.of(student, exampleMatcher), queryFunction);
   }
 }

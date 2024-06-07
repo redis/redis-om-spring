@@ -60,20 +60,20 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    * Creates new {@link RedisKeyValueAdapter} with default
    * {@link RedisCustomConversions}.
    *
-   * @param redisOps           must not be {@literal null}.
-   * @param rmo                must not be {@literal null}.
-   * @param mappingContext     must not be {@literal null}.
-   * @param indexer must not be {@literal null}.
+   * @param redisOps       must not be {@literal null}.
+   * @param rmo            must not be {@literal null}.
+   * @param mappingContext must not be {@literal null}.
+   * @param indexer        must not be {@literal null}.
    */
   @SuppressWarnings("unchecked")
   public RedisJSONKeyValueAdapter( //
-    RedisOperations<?, ?> redisOps, //
-    RedisModulesOperations<?> rmo, //
-    RedisMappingContext mappingContext, //
+      RedisOperations<?, ?> redisOps, //
+      RedisModulesOperations<?> rmo, //
+      RedisMappingContext mappingContext, //
       RediSearchIndexer indexer, //
-    GsonBuilder gsonBuilder, //
-    FeatureExtractor featureExtractor, //
-    RedisOMProperties redisOMProperties) {
+      GsonBuilder gsonBuilder, //
+      FeatureExtractor featureExtractor, //
+      RedisOMProperties redisOMProperties) {
     super(redisOps, mappingContext, new RedisOMCustomConversions());
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.redisJSONOperations = modulesOperations.opsForJSON();
@@ -162,8 +162,8 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     SearchResult searchResult = searchOps.search(query);
     Gson gson = gsonBuilder.create();
     return searchResult.getDocuments().stream()
-      .map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get("$")), type)) //
-      .toList();
+        .map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get("$")), type)) //
+        .toList();
   }
 
   public <T> List<String> getAllKeys(String keyspace, Class<T> type) {
@@ -177,8 +177,8 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     SearchResult searchResult = searchOps.search(query);
 
     return searchResult.getDocuments().stream() //
-      .map(Document::getId) //
-      .toList();
+        .map(Document::getId) //
+        .toList();
   }
 
   /*
@@ -289,14 +289,14 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       Field versionField = fields.get(0);
       String property = versionField.getName();
       if ((versionField.getType() == Integer.class || isPrimitiveOfType(versionField.getType(),
-        Integer.class)) || (versionField.getType() == Long.class || isPrimitiveOfType(versionField.getType(),
-        Long.class))) {
+          Integer.class)) || (versionField.getType() == Long.class || isPrimitiveOfType(versionField.getType(),
+          Long.class))) {
         Number version = (Number) wrapper.getPropertyValue(property);
         Number dbVersion = getEntityVersion(key, property);
 
         if (dbVersion != null && version != null && dbVersion.longValue() != version.longValue()) {
           throw new OptimisticLockingFailureException(
-            String.format("Cannot insert/update entity %s with version %s as it already exists", item, version));
+              String.format("Cannot insert/update entity %s with version %s as it already exists", item, version));
         } else {
           Number nextVersion = version == null ? 0 : version.longValue() + 1;
           try {

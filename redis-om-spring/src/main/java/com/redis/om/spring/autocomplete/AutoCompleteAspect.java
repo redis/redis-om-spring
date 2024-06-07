@@ -115,12 +115,12 @@ public class AutoCompleteAspect implements Ordered {
         if (field.isAnnotationPresent(AutoComplete.class)) {
           AutoComplete suggestible = field.getAnnotation(AutoComplete.class);
           String key = !ObjectUtils.isEmpty(suggestible.name()) ?
-            suggestible.name() :
-            String.format(Suggestion.KEY_FORMAT_STRING, entity.getClass().getSimpleName(), field.getName());
+              suggestible.name() :
+              String.format(Suggestion.KEY_FORMAT_STRING, entity.getClass().getSimpleName(), field.getName());
 
           String payLoadKey = !ObjectUtils.isEmpty(suggestible.name()) ?
-            suggestible.name() :
-            String.format(Suggestion.PAYLOAD_KEY_FORMAT_STRING, entity.getClass().getSimpleName(), field.getName());
+              suggestible.name() :
+              String.format(Suggestion.PAYLOAD_KEY_FORMAT_STRING, entity.getClass().getSimpleName(), field.getName());
 
           try {
             PropertyDescriptor pd = new PropertyDescriptor(field.getName(), entity.getClass());
@@ -177,7 +177,7 @@ public class AutoCompleteAspect implements Ordered {
 
   private void processSuggestionsForEntity(Object entity) {
     final List<Field> entityClassFields = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(
-      entity.getClass());
+        entity.getClass());
     for (Field field : entityClassFields) {
       if (field.isAnnotationPresent(AutoComplete.class)) {
         String suggestion = "";
@@ -185,8 +185,8 @@ public class AutoCompleteAspect implements Ordered {
 
         AutoComplete suggestible = field.getAnnotation(AutoComplete.class);
         String key = !ObjectUtils.isEmpty(suggestible.name()) ?
-          suggestible.name() :
-          String.format(Suggestion.KEY_FORMAT_STRING, entity.getClass().getSimpleName(), field.getName());
+            suggestible.name() :
+            String.format(Suggestion.KEY_FORMAT_STRING, entity.getClass().getSimpleName(), field.getName());
         SearchOperations<String> ops = rmo.opsForSearch(key);
         try {
           PropertyDescriptor pd = new PropertyDescriptor(field.getName(), entity.getClass());
@@ -200,8 +200,8 @@ public class AutoCompleteAspect implements Ordered {
           if (field2.isAnnotationPresent(AutoCompletePayload.class)) {
             AutoCompletePayload suggestiblePayload = field2.getAnnotation(AutoCompletePayload.class);
             boolean inPayload = (!suggestiblePayload.value().isBlank() && suggestiblePayload.value()
-              .equalsIgnoreCase(field.getName())) || (Arrays.asList(suggestiblePayload.fields())
-              .contains(field.getName()));
+                .equalsIgnoreCase(field.getName())) || (Arrays.asList(suggestiblePayload.fields())
+                .contains(field.getName()));
             if (inPayload) {
               try {
                 payload = payload == null ? new HashMap<>() : payload;
@@ -216,8 +216,8 @@ public class AutoCompleteAspect implements Ordered {
         }
         if (payload != null && !payload.isEmpty()) {
           String payLoadKey = !ObjectUtils.isEmpty(suggestible.name()) ?
-            suggestible.name() :
-            String.format(Suggestion.PAYLOAD_KEY_FORMAT_STRING, entity.getClass().getSimpleName(), field.getName());
+              suggestible.name() :
+              String.format(Suggestion.PAYLOAD_KEY_FORMAT_STRING, entity.getClass().getSimpleName(), field.getName());
           template.opsForHash().put(payLoadKey, suggestion, gson.toJson(payload));
         }
 
@@ -231,8 +231,8 @@ public class AutoCompleteAspect implements Ordered {
       if (field.isAnnotationPresent(AutoComplete.class)) {
         AutoComplete suggestible = field.getAnnotation(AutoComplete.class);
         String key = !ObjectUtils.isEmpty(suggestible.name()) ?
-          suggestible.name() :
-          String.format(Suggestion.KEY_FORMAT_STRING, entity.getClass().getSimpleName(), field.getName());
+            suggestible.name() :
+            String.format(Suggestion.KEY_FORMAT_STRING, entity.getClass().getSimpleName(), field.getName());
         try {
           PropertyDescriptor pd = new PropertyDescriptor(field.getName(), entity.getClass());
           SearchOperations<String> ops = rmo.opsForSearch(key);
@@ -242,8 +242,8 @@ public class AutoCompleteAspect implements Ordered {
           ops.deleteSuggestion(key, suggestion);
 
           String payLoadKey = !ObjectUtils.isEmpty(suggestible.name()) ?
-            suggestible.name() :
-            String.format("sugg:payload:%s:%s", entity.getClass().getSimpleName(), field.getName());
+              suggestible.name() :
+              String.format("sugg:payload:%s:%s", entity.getClass().getSimpleName(), field.getName());
           template.opsForHash().delete(payLoadKey, suggestion);
         } catch (IllegalArgumentException | IntrospectionException | IllegalAccessException |
                  InvocationTargetException e) {

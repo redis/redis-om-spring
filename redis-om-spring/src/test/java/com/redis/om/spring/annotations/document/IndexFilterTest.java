@@ -43,8 +43,9 @@ public class IndexFilterTest extends AbstractBaseDocumentTest {
     List<Vehicle> vehicles = entityStream.of(Vehicle.class).collect(Collectors.toList());
 
     assertAll( //
-      () -> assertThat(vehicles.size()).isEqualTo(3), //
-      () -> assertThat(vehicles).extracting("model").containsExactlyInAnyOrder("Beetle", "911 S 2.4", "Thunderbird"), //
-      () -> assertThat(vehicles).allMatch(v -> v.getVehicleType().equals(VehicleType.COUPE)));
+        () -> assertThat(vehicles.size()).isEqualTo(3), //
+        () -> assertThat(vehicles).extracting("model").containsExactlyInAnyOrder("Beetle", "911 S 2.4", "Thunderbird"),
+        //
+        () -> assertThat(vehicles).allMatch(v -> v.getVehicleType().equals(VehicleType.COUPE)));
   }
 }

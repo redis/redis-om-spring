@@ -37,8 +37,8 @@ public class SentinelConfig {
     final int timeout = 10000;
 
     final JedisClientConfiguration jedisClientConfiguration = JedisClientConfiguration.builder()
-      .connectTimeout(Duration.ofMillis(timeout)).readTimeout(Duration.ofMillis(timeout)).usePooling()
-      .poolConfig(poolConfig).build();
+        .connectTimeout(Duration.ofMillis(timeout)).readTimeout(Duration.ofMillis(timeout)).usePooling()
+        .poolConfig(poolConfig).build();
 
     return new JedisConnectionFactory(sentinelConfig, jedisClientConfiguration);
   }

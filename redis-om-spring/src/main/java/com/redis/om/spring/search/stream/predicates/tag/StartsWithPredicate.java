@@ -35,7 +35,7 @@ public class StartsWithPredicate<E, T> extends BaseAbstractPredicate<E, T> {
       return QueryBuilders.intersect(root, and);
     } else {
       return QueryBuilders.intersect(root)
-        .add(getSearchAlias(), "{" + QueryUtils.escape(value.toString(), true) + "*}");
+          .add(getSearchAlias(), "{" + QueryUtils.escape(value.toString(), true) + "*}");
     }
   }
 

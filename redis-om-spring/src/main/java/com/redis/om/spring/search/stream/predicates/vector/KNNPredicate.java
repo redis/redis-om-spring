@@ -43,7 +43,7 @@ public class KNNPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   @Override
   public Node apply(Node root) {
     String query = String.format("(%s)=>[KNN $K @%s $%s]", root.toString().isBlank() ? "*" : root.toString(),
-      getSearchAlias(), getBlobAttributeName());
+        getSearchAlias(), getBlobAttributeName());
 
     return new Node() {
       @Override

@@ -20,7 +20,7 @@ public abstract class BaseAbstractAction implements TakesJSONOperations {
       this.idField = maybeId.get();
     } else {
       throw new NullPointerException(
-        String.format("Entity Class %s does not have an ID field", entityClass.getSimpleName()));
+          String.format("Entity Class %s does not have an ID field", entityClass.getSimpleName()));
     }
   }
 

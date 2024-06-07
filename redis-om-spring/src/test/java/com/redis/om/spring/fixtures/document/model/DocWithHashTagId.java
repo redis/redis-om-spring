@@ -6,7 +6,6 @@ import com.redis.om.spring.id.IdAsHashTag;
 import com.redis.om.spring.id.IdFilter;
 import lombok.*;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.redis.core.RedisHash;
 
 @Data
 @RequiredArgsConstructor(staticName = "of")
@@ -14,11 +13,11 @@ import org.springframework.data.redis.core.RedisHash;
 @NoArgsConstructor(force = true)
 @Document("dwht")
 public class DocWithHashTagId {
-    @Id
-    @IdFilter(value = IdAsHashTag.class)
-    private String id;
+  @Id
+  @IdFilter(value = IdAsHashTag.class)
+  private String id;
 
-    @Indexed
-    @NonNull
-    private String name;
+  @Indexed
+  @NonNull
+  private String name;
 }

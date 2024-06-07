@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.domain.*;
-import org.springframework.data.domain.ExampleMatcher.GenericPropertyMatcher;
 import org.springframework.data.domain.ExampleMatcher.StringMatcher;
 import org.springframework.data.geo.Point;
 import org.springframework.data.repository.query.FluentQuery;
@@ -78,11 +77,11 @@ public class RedisHashQueryByExampleTest extends AbstractBaseEnhancedRedisTest {
 
     companyRepository.deleteAll();
     Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
-      "stack@redis.com");
+        "stack@redis.com");
     redis.setTags(Set.of("RedisTag", "CommonTag"));
 
     Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
-      "research@microsoft.com");
+        "research@microsoft.com");
     microsoft.setTags(Set.of("MsTag", "CommonTag"));
 
     companyRepository.saveAll(List.of(redis, microsoft));
@@ -326,9 +325,9 @@ public class RedisHashQueryByExampleTest extends AbstractBaseEnhancedRedisTest {
     Iterable<Company> shouldBeBoth = companyRepository.findAll(bothExample);
 
     assertAll( //
-      () -> assertThat(shouldBeOnlyRedis).map(Company::getName).containsExactly("RedisInc"), //
-      () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft"), //
-      () -> assertThat(shouldBeBoth).map(Company::getName).containsExactlyInAnyOrder("RedisInc", "Microsoft") //
+        () -> assertThat(shouldBeOnlyRedis).map(Company::getName).containsExactly("RedisInc"), //
+        () -> assertThat(shouldBeOnlyMS).map(Company::getName).containsExactly("Microsoft"), //
+        () -> assertThat(shouldBeBoth).map(Company::getName).containsExactlyInAnyOrder("RedisInc", "Microsoft") //
     );
   }
 
@@ -360,7 +359,7 @@ public class RedisHashQueryByExampleTest extends AbstractBaseEnhancedRedisTest {
     ExampleMatcher matcher = ExampleMatcher.matching().withStringMatcher(StringMatcher.CONTAINING);
 
     assertThatExceptionOfType(IncorrectResultSizeDataAccessException.class).isThrownBy(
-      () -> repository.findBy(Example.of(moreThanOneMatchTemplate, matcher), FluentQuery.FetchableFluentQuery::one));
+        () -> repository.findBy(Example.of(moreThanOneMatchTemplate, matcher), FluentQuery.FetchableFluentQuery::one));
   }
 
   @Test
@@ -379,15 +378,15 @@ public class RedisHashQueryByExampleTest extends AbstractBaseEnhancedRedisTest {
     Company probe = new Company();
 
     List<Company> result = companyRepository.findBy( //
-      Example.of(probe), //
-      it -> it.sortBy(Sort.by("name")).all() //
+        Example.of(probe), //
+        it -> it.sortBy(Sort.by("name")).all() //
     );
 
     assertThat(result).map(Company::getName).containsExactly("Microsoft", "RedisInc");
 
     result = companyRepository.findBy( //
-      Example.of(probe), //
-      it -> it.sortBy(Sort.by(Sort.Direction.DESC, "name")).all() //
+        Example.of(probe), //
+        it -> it.sortBy(Sort.by(Sort.Direction.DESC, "name")).all() //
     );
     assertThat(result).map(Company::getName).containsExactly("RedisInc", "Microsoft");
   }
@@ -398,14 +397,14 @@ public class RedisHashQueryByExampleTest extends AbstractBaseEnhancedRedisTest {
     template.setLocation(new Point(-122.066540, 37.377690));
 
     Page<MyHash> firstPage = repository.findBy(Example.of(template),
-      it -> it.page(PageRequest.of(0, 2, Sort.by("name"))));
+        it -> it.page(PageRequest.of(0, 2, Sort.by("name"))));
     assertThat(firstPage.getTotalElements()).isEqualTo(3);
     assertThat(firstPage.getContent().size()).isEqualTo(2);
     assertThat(firstPage.getContent().stream().toList()).map(MyHash::getTitle)
-      .containsExactly("hello mundo", "ola mundo");
+        .containsExactly("hello mundo", "ola mundo");
 
     Page<MyHash> secondPage = repository.findBy(Example.of(template),
-      it -> it.page(PageRequest.of(1, 2, Sort.by("name"))));
+        it -> it.page(PageRequest.of(1, 2, Sort.by("name"))));
 
     assertThat(secondPage.getTotalElements()).isEqualTo(3);
     assertThat(secondPage.getContent().size()).isEqualTo(1);

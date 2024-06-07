@@ -15,7 +15,7 @@ public class QueryClauseTemplate {
   private final Integer numberOfArguments;
 
   private QueryClauseTemplate(Schema.FieldType indexType, Part.Type queryPartType, String querySegmentTemplate,
-    Integer numberOfArguments) {
+      Integer numberOfArguments) {
     this.indexType = indexType;
     this.queryPartType = queryPartType;
     this.querySegmentTemplate = querySegmentTemplate;
@@ -23,7 +23,7 @@ public class QueryClauseTemplate {
   }
 
   public static QueryClauseTemplate of(Schema.FieldType indexType, Part.Type queryPartType, String querySegmentTemplate,
-    Integer numberOfArguments) {
+      Integer numberOfArguments) {
     return new QueryClauseTemplate(indexType, queryPartType, querySegmentTemplate, numberOfArguments);
   }
 

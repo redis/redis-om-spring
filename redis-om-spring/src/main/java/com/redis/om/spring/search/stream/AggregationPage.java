@@ -24,7 +24,7 @@ public class AggregationPage<E> implements Slice<E>, Serializable {
   private AggregationResult aggregationResult;
 
   public AggregationPage(AggregationStream<E> aggregationStream, Pageable pageable, Class<E> entityClass, Gson gson,
-    MappingRedisOMConverter mappingConverter, boolean isDocument) {
+      MappingRedisOMConverter mappingConverter, boolean isDocument) {
     this.aggregationStream = aggregationStream;
     this.pageable = pageable;
     this.entityClass = entityClass;
@@ -34,7 +34,7 @@ public class AggregationPage<E> implements Slice<E>, Serializable {
   }
 
   public AggregationPage(AggregationResult aggregationResult, Pageable pageable, Class<E> entityClass, Gson gson,
-    MappingRedisOMConverter mappingConverter, boolean isDocument) {
+      MappingRedisOMConverter mappingConverter, boolean isDocument) {
     this.aggregationResult = aggregationResult;
     this.pageable = pageable;
     this.entityClass = entityClass;
@@ -150,10 +150,10 @@ public class AggregationPage<E> implements Slice<E>, Serializable {
   List<E> toEntityList(AggregationResult aggregationResult) {
     if (isDocument) {
       return aggregationResult.getResults().stream().map(d -> gson.fromJson(d.get("$").toString(), entityClass))
-        .toList();
+          .toList();
     } else {
       return aggregationResult.getResults().stream()
-        .map(h -> (E) ObjectUtils.mapToObject(h, entityClass, mappingConverter)).toList();
+          .map(h -> (E) ObjectUtils.mapToObject(h, entityClass, mappingConverter)).toList();
     }
   }
 }

@@ -10,7 +10,7 @@ import java.util.Set;
 public class RedisRepositoriesExcludeFilter implements AutoConfigurationImportFilter {
 
   private static final Set<String> SHOULD_SKIP = new HashSet<>(
-    List.of("org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration"));
+      List.of("org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration"));
 
   @Override
   public boolean[] match(String[] autoConfigurationClasses, AutoConfigurationMetadata autoConfigurationMetadata) {

@@ -66,7 +66,7 @@ public class OptimisticLockingTest extends AbstractBaseDocumentTest {
     repository.save(versionedEntity);
 
     assertThatThrownBy(() -> repository.save(new VersionedEntity(42, 5, "f"))).isInstanceOf(
-      OptimisticLockingFailureException.class);
+        OptimisticLockingFailureException.class);
   }
 
   @Test
@@ -88,7 +88,7 @@ public class OptimisticLockingTest extends AbstractBaseDocumentTest {
     repository.save(new VersionedEntity(45));
 
     assertThatThrownBy(() -> repository.delete(new VersionedEntity(45))).isInstanceOf(
-      OptimisticLockingFailureException.class);
+        OptimisticLockingFailureException.class);
 
     Optional<VersionedEntity> maybeLoaded = repository.findById(45L);
     assertThat(maybeLoaded).isPresent();

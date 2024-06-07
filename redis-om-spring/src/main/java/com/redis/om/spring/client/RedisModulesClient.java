@@ -72,14 +72,14 @@ public class RedisModulesClient {
       var masterNode = sentinelConfiguration.getMaster();
       var master = masterNode != null ? masterNode.getName() : "mymaster";
       var sentinels = sentinelConfiguration.getSentinels().stream().map(RedisModulesClient::apply)
-        .collect(Collectors.toSet());
+          .collect(Collectors.toSet());
       var password = sentinelConfiguration.getPassword();
       var sentinelPassword = sentinelConfiguration.getSentinelPassword();
       var username = sentinelConfiguration.getUsername();
       var masterClientConfig = createClientConfig(jedisConnectionFactory.getDatabase(), username, password,
-        jedisConnectionFactory.getClientConfiguration());
+          jedisConnectionFactory.getClientConfiguration());
       var sentinelClientConfig = createClientConfig(jedisConnectionFactory.getDatabase(), username, sentinelPassword,
-        jedisConnectionFactory.getClientConfiguration());
+          jedisConnectionFactory.getClientConfiguration());
       logger.info("Modules Client connecting in Sentinel mode, master: " + master);
 
       return new JedisSentineled(master, masterClientConfig, sentinels, sentinelClientConfig);
@@ -98,7 +98,7 @@ public class RedisModulesClient {
       logger.info("Modules Client connecting with standalone pool");
 
       return new JedisPooled(Objects.requireNonNull(jedisConnectionFactory.getPoolConfig()), hostAndPort,
-        jedisClientConfig);
+          jedisClientConfig);
     }
   }
 
@@ -125,7 +125,7 @@ public class RedisModulesClient {
   }
 
   private JedisClientConfig createClientConfig(int database, @Nullable String username, RedisPassword password,
-    JedisClientConfiguration clientConfiguration) {
+      JedisClientConfiguration clientConfiguration) {
 
     DefaultJedisClientConfig.Builder jedisConfigBuilder = DefaultJedisClientConfig.builder();
 

@@ -38,11 +38,11 @@ public class DefaultFeatureExtractor implements FeatureExtractor {
   private final ImageFeatureExtractor imageFeatureExtractor;
 
   public DefaultFeatureExtractor( //
-    ApplicationContext applicationContext, //
-    ZooModel<Image, byte[]> imageEmbeddingModel, //
-    ZooModel<Image, float[]> faceEmbeddingModel, //
-    ImageFactory imageFactory, //
-    Pipeline imagePipeline, HuggingFaceTokenizer sentenceTokenizer) {
+      ApplicationContext applicationContext, //
+      ZooModel<Image, byte[]> imageEmbeddingModel, //
+      ZooModel<Image, float[]> faceEmbeddingModel, //
+      ImageFactory imageFactory, //
+      Pipeline imagePipeline, HuggingFaceTokenizer sentenceTokenizer) {
     this.applicationContext = applicationContext;
     this.imageEmbeddingModel = imageEmbeddingModel;
     this.faceEmbeddingModel = faceEmbeddingModel;
@@ -116,10 +116,10 @@ public class DefaultFeatureExtractor implements FeatureExtractor {
               try {
                 if (isDocument) {
                   accessor.setPropertyValue(vectorize.destination(),
-                    getImageEmbeddingsAsFloatArrayFor(resource.getInputStream()));
+                      getImageEmbeddingsAsFloatArrayFor(resource.getInputStream()));
                 } else {
                   accessor.setPropertyValue(vectorize.destination(),
-                    getImageEmbeddingsAsByteArrayFor(resource.getInputStream()));
+                      getImageEmbeddingsAsByteArrayFor(resource.getInputStream()));
                 }
               } catch (IOException e) {
                 logger.warn("Error generating image embedding", e);
@@ -133,10 +133,10 @@ public class DefaultFeatureExtractor implements FeatureExtractor {
               try {
                 if (isDocument) {
                   accessor.setPropertyValue(vectorize.destination(),
-                    getFacialImageEmbeddingsAsFloatArrayFor(resource.getInputStream()));
+                      getFacialImageEmbeddingsAsFloatArrayFor(resource.getInputStream()));
                 } else {
                   accessor.setPropertyValue(vectorize.destination(),
-                    getFacialImageEmbeddingsAsByteArrayFor(resource.getInputStream()));
+                      getFacialImageEmbeddingsAsByteArrayFor(resource.getInputStream()));
                 }
               } catch (IOException | TranslateException e) {
                 logger.warn("Error generating facial image embedding", e);
@@ -145,10 +145,10 @@ public class DefaultFeatureExtractor implements FeatureExtractor {
             case SENTENCE -> {
               if (isDocument) {
                 accessor.setPropertyValue(vectorize.destination(),
-                  getSentenceEmbeddingAsFloatArrayFor(fieldValue.toString()));
+                    getSentenceEmbeddingAsFloatArrayFor(fieldValue.toString()));
               } else {
                 accessor.setPropertyValue(vectorize.destination(),
-                  getSentenceEmbeddingsAsByteArrayFor(fieldValue.toString()));
+                    getSentenceEmbeddingsAsByteArrayFor(fieldValue.toString()));
               }
             }
           }

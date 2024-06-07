@@ -63,41 +63,41 @@ class SerializationTest extends AbstractBaseDocumentTest {
     yearMonth = YearMonth.of(1972, 6);
 
     ks = KitchenSink.builder() //
-      .localDate(localDate) //
-      .localDateTime(localDateTime) //
-      .localOffsetDateTime(localOffsetDateTime) //
-      .date(date) //
-      .point(point) //
-      .ulid(ulid) //
-      .setThings(setThings) //
-      .listThings(listThings) //
-      .instant(instant) //
-      .yearMonth(yearMonth) //
-      .build();
+        .localDate(localDate) //
+        .localDateTime(localDateTime) //
+        .localOffsetDateTime(localOffsetDateTime) //
+        .date(date) //
+        .point(point) //
+        .ulid(ulid) //
+        .setThings(setThings) //
+        .listThings(listThings) //
+        .instant(instant) //
+        .yearMonth(yearMonth) //
+        .build();
 
     ks1 = KitchenSink.builder() //
-      .localDate(localDate) //
-      .localDateTime(localDateTime) //
-      .localOffsetDateTime(localOffsetDateTime) //
-      .date(date) //
-      .point(point) //
-      .ulid(ulid) //
-      .setThings(Set.of()) //
-      .listThings(List.of()) //
-      .instant(instant) //
-      .yearMonth(yearMonth) //
-      .build();
+        .localDate(localDate) //
+        .localDateTime(localDateTime) //
+        .localOffsetDateTime(localOffsetDateTime) //
+        .date(date) //
+        .point(point) //
+        .ulid(ulid) //
+        .setThings(Set.of()) //
+        .listThings(List.of()) //
+        .instant(instant) //
+        .yearMonth(yearMonth) //
+        .build();
 
     ks2 = KitchenSink.builder() //
-      .localDate(localDate) //
-      .localDateTime(localDateTime) //
-      .localOffsetDateTime(localOffsetDateTime) //
-      .date(date) //
-      .point(point) //
-      .ulid(ulid) //
-      .instant(instant) //
-      .yearMonth(yearMonth) //
-      .build();
+        .localDate(localDate) //
+        .localDateTime(localDateTime) //
+        .localOffsetDateTime(localOffsetDateTime) //
+        .date(date) //
+        .point(point) //
+        .ulid(ulid) //
+        .instant(instant) //
+        .yearMonth(yearMonth) //
+        .build();
 
     ks2.setSetThings(null);
     ks2.setListThings(null);
@@ -141,7 +141,7 @@ class SerializationTest extends AbstractBaseDocumentTest {
     assertThat(rawJSON.get("ulid").getAsString()).isEqualTo(ulid.toString());
     assertThat(rawJSON.get("instant").getAsLong()).isEqualTo(instantInMillis);
     assertThat(Arrays.asList(rawJSON.get("setThings").getAsString().split("\\|"))).containsExactlyInAnyOrder("thingOne",
-      "thingTwo", "thingThree");
+        "thingTwo", "thingThree");
     assertThat(rawJSON.get("yearMonth").getAsString()).isEqualTo("1972-06");
     assertThat(rawJSON.get("listThings").getAsString()).isEqualTo("redFish|blueFish");
   }

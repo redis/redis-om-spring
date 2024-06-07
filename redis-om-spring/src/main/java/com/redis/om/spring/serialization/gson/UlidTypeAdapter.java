@@ -18,7 +18,7 @@ public class UlidTypeAdapter implements JsonSerializer<Ulid>, JsonDeserializer<U
 
   @Override
   public Ulid deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
-    throws JsonParseException {
+      throws JsonParseException {
     String ulidAsString = json.getAsString();
 
     return Ulid.from(ulidAsString);

@@ -27,8 +27,8 @@ public enum ULIDIdentifierGenerator implements IdentifierGenerator {
     }
 
     throw new InvalidDataAccessApiUsageException(
-      String.format("Identifier cannot be generated for %s. Supported types are: ULID, String, Integer, and Long.",
-        identifierType.getType().getName()));
+        String.format("Identifier cannot be generated for %s. Supported types are: ULID, String, Integer, and Long.",
+            identifierType.getType().getName()));
   }
 }
 

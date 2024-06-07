@@ -53,11 +53,11 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * @param indexer  must not be {@literal null}.
    */
   public RedisEnhancedKeyValueAdapter( //
-    RedisOperations<?, ?> redisOps, //
-    RedisModulesOperations<?> rmo, //
-    RediSearchIndexer indexer, //
-    FeatureExtractor featureExtractor, //
-    RedisOMProperties redisOMProperties) {
+      RedisOperations<?, ?> redisOps, //
+      RedisModulesOperations<?> rmo, //
+      RediSearchIndexer indexer, //
+      FeatureExtractor featureExtractor, //
+      RedisOMProperties redisOMProperties) {
     this(redisOps, rmo, new RedisMappingContext(), indexer, featureExtractor, redisOMProperties);
   }
 
@@ -71,12 +71,12 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * @param indexer        must not be {@literal null}.
    */
   public RedisEnhancedKeyValueAdapter( //
-    RedisOperations<?, ?> redisOps, //
-    RedisModulesOperations<?> rmo, //
-    RedisMappingContext mappingContext, //
-    RediSearchIndexer indexer, //
-    FeatureExtractor featureExtractor, //
-    RedisOMProperties redisOMProperties) {
+      RedisOperations<?, ?> redisOps, //
+      RedisModulesOperations<?> rmo, //
+      RedisMappingContext mappingContext, //
+      RediSearchIndexer indexer, //
+      FeatureExtractor featureExtractor, //
+      RedisOMProperties redisOMProperties) {
     this(redisOps, rmo, mappingContext, new RedisOMCustomConversions(), indexer, featureExtractor, redisOMProperties);
   }
 
@@ -91,22 +91,22 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @SuppressWarnings("unchecked")
   public RedisEnhancedKeyValueAdapter( //
-    RedisOperations<?, ?> redisOps, //
-    RedisModulesOperations<?> rmo, //
-    RedisMappingContext mappingContext, //
-    @Nullable CustomConversions customConversions, //
-    RediSearchIndexer indexer, //
-    FeatureExtractor featureExtractor, //
-    RedisOMProperties redisOMProperties) {
+      RedisOperations<?, ?> redisOps, //
+      RedisModulesOperations<?> rmo, //
+      RedisMappingContext mappingContext, //
+      @Nullable CustomConversions customConversions, //
+      RediSearchIndexer indexer, //
+      FeatureExtractor featureExtractor, //
+      RedisOMProperties redisOMProperties) {
     super(redisOps, mappingContext, customConversions);
 
     Assert.notNull(redisOps, "RedisOperations must not be null!");
     Assert.notNull(mappingContext, "RedisMappingContext must not be null!");
 
     MappingRedisOMConverter mappingConverter = new MappingRedisOMConverter(mappingContext,
-      new ReferenceResolverImpl(redisOps));
+        new ReferenceResolverImpl(redisOps));
     mappingConverter.setCustomConversions(
-      customConversions == null ? new RedisOMCustomConversions() : customConversions);
+        customConversions == null ? new RedisOMCustomConversions() : customConversions);
     mappingConverter.afterPropertiesSet();
 
     this.converter = mappingConverter;
@@ -185,7 +185,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     byte[] binId = createKey(stringKeyspace, stringId);
 
     Map<byte[], byte[]> raw = redisOperations.execute(
-      (RedisCallback<Map<byte[], byte[]>>) connection -> connection.hashCommands().hGetAll(binId));
+        (RedisCallback<Map<byte[], byte[]>>) connection -> connection.hashCommands().hGetAll(binId));
 
     if (CollectionUtils.isEmpty(raw)) {
       return null;
@@ -224,10 +224,9 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     query.returnFields(idField);
     SearchResult searchResult = searchOps.search(query);
 
-    return searchResult.getDocuments().stream()
-      .map(d -> documentToObject(d, type, (MappingRedisOMConverter) converter))
-      .map(e -> maybeIdField.map(field -> getIdFieldForEntity(field, e)).orElse(null)).filter(Objects::nonNull)
-      .map(Object::toString).toList();
+    return searchResult.getDocuments().stream().map(d -> documentToObject(d, type, (MappingRedisOMConverter) converter))
+        .map(e -> maybeIdField.map(field -> getIdFieldForEntity(field, e)).orElse(null)).filter(Objects::nonNull)
+        .map(Object::toString).toList();
   }
 
   /**
@@ -255,9 +254,9 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     query.limit(Math.toIntExact(offset), limit);
     SearchResult searchResult = searchOps.search(query);
 
-  return (List<T>) searchResult.getDocuments().stream() //
-    .map(d -> documentToObject(d, type, (MappingRedisOMConverter) converter)) //
-    .toList();
+    return (List<T>) searchResult.getDocuments().stream() //
+        .map(d -> documentToObject(d, type, (MappingRedisOMConverter) converter)) //
+        .toList();
   }
 
   /*
@@ -313,7 +312,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   @Override
   public boolean contains(Object id, String keyspace) {
     Boolean exists = redisOperations.execute(
-      (RedisCallback<Boolean>) connection -> connection.keyCommands().exists(toBytes(getKey(keyspace, id))));
+        (RedisCallback<Boolean>) connection -> connection.keyCommands().exists(toBytes(getKey(keyspace, id))));
 
     return exists != null && exists;
   }
@@ -322,7 +321,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   public void update(PartialUpdate<?> update) {
 
     RedisPersistentEntity<?> entity = this.converter.getMappingContext()
-      .getRequiredPersistentEntity(update.getTarget());
+        .getRequiredPersistentEntity(update.getTarget());
 
     String keyspace = sanitizeKeyspace(entity.getKeySpace());
     Object id = update.getId();
@@ -341,9 +340,9 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
         String propertyPath = pUpdate.getPropertyPath();
 
         if (UpdateCommand.DEL.equals(
-          pUpdate.getCmd()) || pUpdate.getValue() instanceof Collection || pUpdate.getValue() instanceof Map || (pUpdate.getValue() != null && pUpdate.getValue()
-          .getClass().isArray()) || (pUpdate.getValue() != null && !converter.getConversionService()
-          .canConvert(pUpdate.getValue().getClass(), byte[].class))) {
+            pUpdate.getCmd()) || pUpdate.getValue() instanceof Collection || pUpdate.getValue() instanceof Map || (pUpdate.getValue() != null && pUpdate.getValue()
+            .getClass().isArray()) || (pUpdate.getValue() != null && !converter.getConversionService()
+            .canConvert(pUpdate.getValue().getClass(), byte[].class))) {
 
           redisUpdateObject = fetchDeletePathsFromHash(redisUpdateObject, propertyPath, connection);
         }
@@ -351,14 +350,14 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
       if (!redisUpdateObject.fieldsToRemove.isEmpty()) {
         connection.hashCommands().hDel(redisKey,
-          redisUpdateObject.fieldsToRemove.toArray(new byte[redisUpdateObject.fieldsToRemove.size()][]));
+            redisUpdateObject.fieldsToRemove.toArray(new byte[redisUpdateObject.fieldsToRemove.size()][]));
       }
 
       if (!rdo.getBucket().isEmpty() &&  //
-        ( //
-          rdo.getBucket().size() > 1 || //
-            (rdo.getBucket().size() == 1 && !rdo.getBucket().asMap().containsKey("_class")) //
-        )) {
+          ( //
+              rdo.getBucket().size() > 1 || //
+                  (rdo.getBucket().size() == 1 && !rdo.getBucket().asMap().containsKey("_class")) //
+          )) {
         connection.hashCommands().hMSet(redisKey, rdo.getBucket().rawMap());
       }
 
@@ -376,7 +375,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   }
 
   private RedisUpdateObject fetchDeletePathsFromHash(RedisUpdateObject redisUpdateObject, String path,
-    RedisConnection connection) {
+      RedisConnection connection) {
 
     redisUpdateObject.addFieldToRemove(toBytes(path));
     byte[] value = connection.hashCommands().hGet(redisUpdateObject.targetKey, toBytes(path));
@@ -444,7 +443,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
         PersistentPropertyAccessor<T> propertyAccessor = entity.getPropertyAccessor(target);
 
         propertyAccessor.setProperty(ttlProperty,
-          converter.getConversionService().convert(timeout, ttlProperty.getType()));
+            converter.getConversionService().convert(timeout, ttlProperty.getType()));
 
         target = propertyAccessor.getBean();
       }
@@ -469,6 +468,23 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   }
 
   /**
+   * Creates a new {@link byte[] key} using the given {@link String keyspace} and {@link String id}.
+   *
+   * @param keyspace {@link String name} of the Redis {@literal keyspace}.
+   * @param id       {@link String} identifying the key.
+   * @return a {@link byte[]} constructed from the {@link String keyspace} and {@link String id}.
+   */
+  public byte[] createKey(String keyspace, String id) {
+    // handle IdFilters
+    var maybeIdentifierFilter = indexer.getIdentifierFilterFor(keyspace);
+    if (maybeIdentifierFilter.isPresent()) {
+      IdentifierFilter<String> filter = (IdentifierFilter<String>) maybeIdentifierFilter.get();
+      id = filter.filter(id);
+    }
+    return toBytes(keyspace + ":" + id);
+  }
+
+  /**
    * Container holding update information like fields to remove from the Redis
    * Hash.
    *
@@ -486,22 +502,5 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     void addFieldToRemove(byte[] field) {
       fieldsToRemove.add(field);
     }
-  }
-
-  /**
-   * Creates a new {@link byte[] key} using the given {@link String keyspace} and {@link String id}.
-   *
-   * @param keyspace {@link String name} of the Redis {@literal keyspace}.
-   * @param id       {@link String} identifying the key.
-   * @return a {@link byte[]} constructed from the {@link String keyspace} and {@link String id}.
-   */
-  public byte[] createKey(String keyspace, String id) {
-    // handle IdFilters
-    var maybeIdentifierFilter = indexer.getIdentifierFilterFor(keyspace);
-    if (maybeIdentifierFilter.isPresent()) {
-      IdentifierFilter<String> filter = (IdentifierFilter<String>) maybeIdentifierFilter.get();
-      id = filter.filter(id);
-    }
-    return toBytes(keyspace + ":" + id);
   }
 }

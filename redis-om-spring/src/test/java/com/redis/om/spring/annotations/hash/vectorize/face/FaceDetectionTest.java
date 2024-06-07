@@ -38,14 +38,14 @@ class FaceDetectionTest extends AbstractBaseEnhancedRedisTest {
       try (Predictor<Image, DetectedObjects> predictor = faceDetectionModel.newPredictor()) {
         DetectedObjects detection = predictor.predict(img);
         List<DetectedObject> detectedObjects = IntStream //
-          .range(0, detection.getNumberOfObjects()) //
-          .mapToObj(i -> (DetectedObject) detection.item(i)) //
-          .collect(Collectors.toList());
+            .range(0, detection.getNumberOfObjects()) //
+            .mapToObj(i -> (DetectedObject) detection.item(i)) //
+            .collect(Collectors.toList());
 
         assertAll( //
-          () -> assertThat(detectedObjects).hasSize(338),
-          () -> assertThat(detectedObjects).map(DetectedObject::getClassName)
-            .allMatch(cn -> cn.equalsIgnoreCase("Face")));
+            () -> assertThat(detectedObjects).hasSize(338),
+            () -> assertThat(detectedObjects).map(DetectedObject::getClassName)
+                .allMatch(cn -> cn.equalsIgnoreCase("Face")));
       }
     }
   }
@@ -60,7 +60,7 @@ class FaceDetectionTest extends AbstractBaseEnhancedRedisTest {
         byte[] embeddingAsByteArray = floatArrayToByteArray(embedding);
 
         assertAll( //
-          () -> assertThat(embedding).hasSize(512), () -> assertThat(embeddingAsByteArray).hasSize(2048));
+            () -> assertThat(embedding).hasSize(512), () -> assertThat(embeddingAsByteArray).hasSize(2048));
       }
     }
   }

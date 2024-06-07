@@ -111,7 +111,7 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
         if (options.isWithPayload()) {
           String[] keyParts = key.split(":");
           String payLoadKey = String.format("sugg:payload:%s:%s", keyParts[keyParts.length - 2],
-            keyParts[keyParts.length - 1]);
+              keyParts[keyParts.length - 1]);
           Object payload = template.opsForHash().get(payLoadKey, suggestion);
           String json = payload != null ? payload.toString() : "{}";
           Map<String, Object> payloadMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
@@ -127,7 +127,7 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
         if (options.isWithPayload()) {
           String[] keyParts = key.split(":");
           String payLoadKey = String.format("sugg:payload:%s:%s", keyParts[keyParts.length - 2],
-            keyParts[keyParts.length - 1]);
+              keyParts[keyParts.length - 1]);
           Object payload = template.opsForHash().get(payLoadKey, suggestion);
           String json = payload != null ? payload.toString() : "{}";
           Map<String, Object> payloadMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {

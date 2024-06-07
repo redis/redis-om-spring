@@ -9,8 +9,8 @@ public class IllegalJavaBeanException extends RuntimeException {
 
   public IllegalJavaBeanException(final Class<?> clazz, final String fieldName) {
     super(String.format(
-      "The field '%s.%s' could not be matched to any getter. Please update your %s class to reflect standard JavaBean notation.",
-      clazz.getName(), fieldName, clazz.getName()));
+        "The field '%s.%s' could not be matched to any getter. Please update your %s class to reflect standard JavaBean notation.",
+        clazz.getName(), fieldName, clazz.getName()));
   }
 
 }

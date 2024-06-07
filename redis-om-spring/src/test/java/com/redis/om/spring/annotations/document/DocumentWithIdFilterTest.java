@@ -96,7 +96,6 @@ class DocumentWithIdFilterTest extends AbstractBaseDocumentTest {
     assertThat(all).hasSize(3);
   }
 
-
   @Test
   void testDeleteOne() {
     DocWithHashTagId dwht1 = DocWithHashTagId.of("dwht1");
@@ -163,8 +162,8 @@ class DocumentWithIdFilterTest extends AbstractBaseDocumentTest {
     repository.updateField(dwht1, DocWithHashTagId$.NAME, "Rocinante");
     Optional<DocWithHashTagId> maybedwht1 = repository.findById(dwht1.getId());
     assertAll( //
-            () -> assertThat(maybedwht1).isPresent(), //
-            () -> assertThat(maybedwht1.get().getName()).isEqualTo("Rocinante")//
+        () -> assertThat(maybedwht1).isPresent(), //
+        () -> assertThat(maybedwht1.get().getName()).isEqualTo("Rocinante")//
     );
   }
 
@@ -212,6 +211,5 @@ class DocumentWithIdFilterTest extends AbstractBaseDocumentTest {
     Iterable<String> ids = List.of(dwht1.getId(), dwht3.getId());
     assertThat(repository.findAllById(ids)).contains(dwht1, dwht3);
   }
-
 
 }

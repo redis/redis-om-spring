@@ -19,7 +19,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, ID>
-  extends RepositoryFactoryBeanSupport<T, S, ID> {
+    extends RepositoryFactoryBeanSupport<T, S, ID> {
 
   private @Nullable KeyValueOperations operations;
   private @Nullable RedisModulesOperations<String> rmo;
@@ -41,12 +41,12 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
    * @param indexer             must not be {@literal null}.
    */
   public RedisEnhancedRepositoryFactoryBean( //
-    Class<? extends T> repositoryInterface, //
-    RedisOperations<?, ?> redisOperations, //
-    RedisModulesOperations<?> rmo, //
-    RediSearchIndexer indexer, //
-    FeatureExtractor featureExtractor, //
-    RedisOMProperties properties) {
+      Class<? extends T> repositoryInterface, //
+      RedisOperations<?, ?> redisOperations, //
+      RedisModulesOperations<?> rmo, //
+      RediSearchIndexer indexer, //
+      FeatureExtractor featureExtractor, //
+      RedisOMProperties properties) {
     super(repositoryInterface);
     setRedisModulesOperations(rmo);
     setRedisOperations(redisOperations);
@@ -158,12 +158,12 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
    * @return must not be {@literal null}.
    */
   protected RedisEnhancedRepositoryFactory createRepositoryFactory( //
-    KeyValueOperations operations, //
-    Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
-    Class<? extends RepositoryQuery> repositoryQueryType //
+      KeyValueOperations operations, //
+      Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
+      Class<? extends RepositoryQuery> repositoryQueryType //
   ) {
     return new RedisEnhancedRepositoryFactory(operations, redisOperations, rmo, indexer, featureExtractor, queryCreator,
-      RedisEnhancedQuery.class, properties);
+        RedisEnhancedQuery.class, properties);
   }
 
   /* (non-Javadoc)

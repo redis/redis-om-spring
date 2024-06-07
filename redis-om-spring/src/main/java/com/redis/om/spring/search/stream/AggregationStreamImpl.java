@@ -37,7 +37,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
 
   @SafeVarargs
   public AggregationStreamImpl(String searchIndex, RedisModulesOperations<String> modulesOperations, Gson gson,
-    Class<E> entityClass, String query, MetamodelField<E, ?>... fields) {
+      Class<E> entityClass, String query, MetamodelField<E, ?>... fields) {
     this.entityClass = entityClass;
     search = modulesOperations.opsForSearch(searchIndex);
     aggregation = new AggregationBuilder(query);
@@ -110,7 +110,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
         if (params.length > 0 && params[0].getClass().isAssignableFrom(Order.class)) {
           Order o = (Order) params[0];
           SortedField sf = new SortedField(o.getProperty(),
-            o.getDirection() == Direction.ASC ? SortOrder.ASC : SortOrder.DESC);
+              o.getDirection() == Direction.ASC ? SortOrder.ASC : SortOrder.DESC);
           r = Reducers.first_value(alias, sf);
         } else {
           r = Reducers.first_value(alias);
@@ -189,14 +189,14 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
 
   private List<String> extractAliases(Order[] fields) {
     return Arrays.stream(fields) //
-      .map(f -> f.getProperty().startsWith("@") ? f.getProperty().substring(1) : f.getProperty()) //
-      .toList();
+        .map(f -> f.getProperty().startsWith("@") ? f.getProperty().substring(1) : f.getProperty()) //
+        .toList();
   }
 
   private SortedField[] mapToSortedFields(Order... fields) {
     return Arrays.stream(fields) //
-      .map(f -> f.isDescending() ? SortedField.desc(f.getProperty()) : SortedField.asc(f.getProperty())).toList() //
-      .toArray(SortedField[]::new);
+        .map(f -> f.isDescending() ? SortedField.desc(f.getProperty()) : SortedField.asc(f.getProperty())).toList() //
+        .toArray(SortedField[]::new);
   }
 
   @Override
@@ -329,46 +329,47 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
         case 6 -> Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5]);
         case 7 -> Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6]);
         case 8 ->
-          Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7]);
+            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7]);
         case 9 ->
-          Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-            values[8]);
+            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
+                values[8]);
         case 10 ->
-          Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-            values[8], values[9]);
+            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
+                values[8], values[9]);
         case 11 ->
-          Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-            values[8], values[9], values[10]);
+            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
+                values[8], values[9], values[10]);
         case 12 ->
-          Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-            values[8], values[9], values[10], values[11]);
+            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
+                values[8], values[9], values[10], values[11]);
         case 13 ->
-          Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-            values[8], values[9], values[10], values[11], values[12]);
+            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
+                values[8], values[9], values[10], values[11], values[12]);
         case 14 ->
-          Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-            values[8], values[9], values[10], values[11], values[12], values[13]);
+            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
+                values[8], values[9], values[10], values[11], values[12], values[13]);
         case 15 ->
-          Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-            values[8], values[9], values[10], values[11], values[12], values[13], values[14]);
+            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
+                values[8], values[9], values[10], values[11], values[12], values[13], values[14]);
         case 16 ->
-          Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-            values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15]);
+            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
+                values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15]);
         case 17 ->
-          Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-            values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15], values[16]);
+            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
+                values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15],
+                values[16]);
         case 18 ->
-          Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-            values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15], values[16],
-            values[17]);
+            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
+                values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15],
+                values[16], values[17]);
         case 19 ->
-          Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-            values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15], values[16],
-            values[17], values[18]);
+            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
+                values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15],
+                values[16], values[17], values[18]);
         case 20 ->
-          Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-            values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15], values[16],
-            values[17], values[18], values[19]);
+            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
+                values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15],
+                values[16], values[17], values[18], values[19]);
         default -> Tuples.of();
       };
     }).toList();
@@ -432,7 +433,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
     return switch (reducerFieldPair.getReducerFunction()) {
       case COUNT, COUNT_DISTINCT, COUNT_DISTINCTISH -> Long.class;
       case SUM, MIN, MAX, QUANTILE, FIRST_VALUE, TOLIST, RANDOM_SAMPLE ->
-        fieldTargetClass != null ? fieldTargetClass : String.class;
+          fieldTargetClass != null ? fieldTargetClass : String.class;
       case AVG, STDDEV -> Double.class;
     };
   }
@@ -441,10 +442,10 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
   List<E> toEntityList(AggregationResult aggregationResult) {
     if (isDocument) {
       return aggregationResult.getResults().stream().map(d -> gson.fromJson(d.get("$").toString(), entityClass))
-        .toList();
+          .toList();
     } else {
       return aggregationResult.getResults().stream()
-        .map(h -> (E) ObjectUtils.mapToObject(h, entityClass, mappingConverter)).toList();
+          .map(h -> (E) ObjectUtils.mapToObject(h, entityClass, mappingConverter)).toList();
     }
   }
 

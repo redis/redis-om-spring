@@ -72,8 +72,8 @@ public class GsonReferenceSerializerRegistrar {
     }
 
     builder.registerTypeAdapter(typeToken.getType(),
-      new ReferenceDeserializer(field, ops, ac.getBean(RedisOMProperties.class),
-        ac.getBean("redisOMCacheManager", CacheManager.class)));
+        new ReferenceDeserializer(field, ops, ac.getBean(RedisOMProperties.class),
+            ac.getBean("redisOMCacheManager", CacheManager.class)));
     processEntity(field.getType());
   }
 

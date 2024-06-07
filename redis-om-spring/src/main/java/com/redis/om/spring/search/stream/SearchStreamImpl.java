@@ -84,7 +84,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private boolean isQBE = false;
 
   public SearchStreamImpl(Class<E> entityClass, RedisModulesOperations<String> modulesOperations,
-    GsonBuilder gsonBuilder, RediSearchIndexer indexer) {
+      GsonBuilder gsonBuilder, RediSearchIndexer indexer) {
     this.indexer = indexer;
     this.modulesOperations = modulesOperations;
     this.entityClass = entityClass;
@@ -154,7 +154,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private Node processPredicate(Predicate<?> predicate) {
     if (SearchFieldPredicate.class.isAssignableFrom(predicate.getClass())) {
       @SuppressWarnings(
-        "unchecked"
+          "unchecked"
       ) SearchFieldPredicate<? super E, ?> p = (SearchFieldPredicate<? super E, ?>) predicate;
       return processPredicate(p);
     }
@@ -436,8 +436,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     if (knnPredicate != null) {
       query = new Query(knnPredicate.apply(rootNode).toString());
       query.addParam(knnPredicate.getBlobAttributeName(), knnPredicate.getBlobAttribute() != null ?
-        knnPredicate.getBlobAttribute() :
-        floatArrayToByteArray(knnPredicate.getDoublesAttribute()));
+          knnPredicate.getBlobAttribute() :
+          floatArrayToByteArray(knnPredicate.getDoublesAttribute()));
       query.addParam("K", knnPredicate.getK());
       query.dialect(2);
     } else {
@@ -454,25 +454,27 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
     if (!summaryFields.isEmpty()) {
       var fields = summaryFields.stream() //
-        .map(foi -> ObjectUtils.isCollection(foi.getTargetClass()) ? "$." + foi.getSearchAlias() : foi.getSearchAlias())
-        .collect(toCollection(ArrayList::new));
+          .map(foi -> ObjectUtils.isCollection(foi.getTargetClass()) ?
+              "$." + foi.getSearchAlias() :
+              foi.getSearchAlias()).collect(toCollection(ArrayList::new));
 
       if (summarizeParams == null) {
         query.summarizeFields(fields.toArray(String[]::new));
       } else {
         query.summarizeFields( //
-          summarizeParams.getFragSize(), //
-          summarizeParams.getFragsNum(), //
-          summarizeParams.getSeparator(), //
-          fields.toArray(String[]::new) //
+            summarizeParams.getFragSize(), //
+            summarizeParams.getFragsNum(), //
+            summarizeParams.getSeparator(), //
+            fields.toArray(String[]::new) //
         );
       }
     }
 
     if (!highlightFields.isEmpty()) {
       var fields = highlightFields.stream() //
-        .map(foi -> ObjectUtils.isCollection(foi.getTargetClass()) ? "$." + foi.getSearchAlias() : foi.getSearchAlias())
-        .collect(toCollection(ArrayList::new));
+          .map(foi -> ObjectUtils.isCollection(foi.getTargetClass()) ?
+              "$." + foi.getSearchAlias() :
+              foi.getSearchAlias()).collect(toCollection(ArrayList::new));
 
       if (highlightTags == null) {
         query.highlightFields(fields.toArray(String[]::new));
@@ -486,8 +488,9 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       query.returnFields(idField.getName());
     } else if (!projections.isEmpty()) {
       var returnFields = projections.stream() //
-        .map(foi -> ObjectUtils.isCollection(foi.getTargetClass()) ? "$." + foi.getSearchAlias() : foi.getSearchAlias())
-        .collect(toCollection(ArrayList::new));
+          .map(foi -> ObjectUtils.isCollection(foi.getTargetClass()) ?
+              "$." + foi.getSearchAlias() :
+              foi.getSearchAlias()).collect(toCollection(ArrayList::new));
       returnFields.add(idField.getName());
 
       query.returnFields(returnFields.toArray(String[]::new));
@@ -502,7 +505,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     } catch (JedisDataException jde) {
       if (isQBE && jde.getMessage().contains("not loaded nor in schema")) {
         throw new UnsupportedOperationException("The example object properties are not part of the search schema", jde);
-      } else throw jde;
+      } else
+        throw jde;
     }
   }
 
@@ -512,16 +516,16 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       if (isDocument) {
         Gson g = getGson();
         return searchResult.getDocuments().stream()
-          .map(d -> g.fromJson(SafeEncoder.encode((byte[]) d.get("$")), entityClass)).toList();
+            .map(d -> g.fromJson(SafeEncoder.encode((byte[]) d.get("$")), entityClass)).toList();
       } else {
         return searchResult.getDocuments().stream()
-          .map(d -> (E) ObjectUtils.documentToObject(d, entityClass, mappingConverter)).toList();
+            .map(d -> (E) ObjectUtils.documentToObject(d, entityClass, mappingConverter)).toList();
       }
     } else {
       List<E> projectedEntities = new ArrayList<>();
       searchResult.getDocuments().forEach(doc -> {
         Map<String, Object> props = StreamSupport.stream(doc.getProperties().spliterator(), false)
-          .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+            .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
 
         E entity = BeanUtils.instantiateClass(this.entityClass);
         projections.forEach(foi -> {
@@ -569,25 +573,26 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
       Method idSetter = ObjectUtils.getSetterForField(entityClass, idField);
       Stream<E> wrappedIds = (Stream<E>) executeQuery().getDocuments() //
-        .stream() //
-        .map(d -> {
-          try {
-            String key = idField.getType().getDeclaredConstructor(idField.getType()).newInstance(d.getId()).toString();
-            return key.substring(key.indexOf(":") + 1);
-          } catch (Exception e) {
-            return null;
-          }
-        }).filter(Objects::nonNull).map(id -> {
-          Object entity;
-          try {
-            entity = entityClass.getDeclaredConstructor().newInstance();
-            idSetter.invoke(entity, id);
-          } catch (Exception e) {
-            entity = null;
-          }
+          .stream() //
+          .map(d -> {
+            try {
+              String key = idField.getType().getDeclaredConstructor(idField.getType()).newInstance(d.getId())
+                  .toString();
+              return key.substring(key.indexOf(":") + 1);
+            } catch (Exception e) {
+              return null;
+            }
+          }).filter(Objects::nonNull).map(id -> {
+            Object entity;
+            try {
+              entity = entityClass.getDeclaredConstructor().newInstance();
+              idSetter.invoke(entity, id);
+            } catch (Exception e) {
+              entity = null;
+            }
 
-          return entity;
-        });
+            return entity;
+          });
 
       result = wrappedIds.mapToLong(mapper).boxed();
     }
@@ -614,7 +619,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     resolvedStream = Stream.empty();
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
     AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(),
-      entityClass, query);
+        entityClass, query);
     aggregationStream.apply(expression, alias);
     return aggregationStream;
   }
@@ -625,7 +630,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     resolvedStream = Stream.empty();
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
     AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(),
-      entityClass, query);
+        entityClass, query);
     aggregationStream.load(fields);
     return aggregationStream;
   }
@@ -635,7 +640,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     resolvedStream = Stream.empty();
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
     AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(),
-      entityClass, query);
+        entityClass, query);
     aggregationStream.loadAll();
     return aggregationStream;
   }
@@ -645,7 +650,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     resolvedStream = Stream.empty();
     String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
     AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(),
-      entityClass, query);
+        entityClass, query);
     aggregationStream.cursor(count, timeout);
     return aggregationStream;
   }
@@ -654,26 +659,26 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   public Optional<E> min(NumericField<E, ?> field) {
     resolvedStream = Stream.empty();
     List<Pair<String, ?>> minByField = this //
-      .load(new MetamodelField<E, String>("__key", String.class)) //
-      .sorted(Order.asc("@" + field.getSearchAlias())).limit(1) //
-      .toList(String.class, Double.class);
+        .load(new MetamodelField<E, String>("__key", String.class)) //
+        .sorted(Order.asc("@" + field.getSearchAlias())).limit(1) //
+        .toList(String.class, Double.class);
 
     return minByField.isEmpty() ?
-      Optional.empty() :
-      Optional.ofNullable(json.get(minByField.get(0).getFirst(), entityClass));
+        Optional.empty() :
+        Optional.ofNullable(json.get(minByField.get(0).getFirst(), entityClass));
   }
 
   @Override
   public Optional<E> max(NumericField<E, ?> field) {
     resolvedStream = Stream.empty();
     List<Pair<String, ?>> maxByField = this //
-      .load(new MetamodelField<E, String>("__key", String.class)) //
-      .sorted(1, Order.desc("@" + field.getSearchAlias())).limit(1) //
-      .toList(String.class, Double.class);
+        .load(new MetamodelField<E, String>("__key", String.class)) //
+        .sorted(1, Order.desc("@" + field.getSearchAlias())).limit(1) //
+        .toList(String.class, Double.class);
 
     return maxByField.isEmpty() ?
-      Optional.empty() :
-      Optional.ofNullable(json.get(maxByField.get(0).getFirst(), entityClass));
+        Optional.empty() :
+        Optional.ofNullable(json.get(maxByField.get(0).getFirst(), entityClass));
   }
 
   @Override

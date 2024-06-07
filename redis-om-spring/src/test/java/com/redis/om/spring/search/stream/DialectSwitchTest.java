@@ -31,18 +31,18 @@ class DialectSwitchTest extends AbstractBaseDocumentTest {
     Doc goodbyeMoon = docRepository.save(Doc.of("doc2", "goodbye moon"));
 
     var dialectOne = entityStream.of(Doc.class) //
-      .dialect(1) //
-      .filter("hello world | \"goodbye\" moon") //
-      .collect(Collectors.toList());
+        .dialect(1) //
+        .filter("hello world | \"goodbye\" moon") //
+        .collect(Collectors.toList());
 
     var dialectTwo = entityStream.of(Doc.class) //
-      .dialect(2) //
-      .filter("hello world | \"goodbye\" moon") //
-      .collect(Collectors.toList());
+        .dialect(2) //
+        .filter("hello world | \"goodbye\" moon") //
+        .collect(Collectors.toList());
 
     assertAll( //
-      () -> assertThat(dialectOne).containsExactly(goodbyeMoon),
-      () -> assertThat(dialectTwo).containsExactly(helloWorld, goodbyeMoon));
+        () -> assertThat(dialectOne).containsExactly(goodbyeMoon),
+        () -> assertThat(dialectTwo).containsExactly(helloWorld, goodbyeMoon));
   }
 
   /**
@@ -61,17 +61,18 @@ class DialectSwitchTest extends AbstractBaseDocumentTest {
     docRepository.save(Doc.of("doc3", "hello world"));
 
     var dialectOne = entityStream.of(Doc.class) //
-      .dialect(1) //
-      .filter("-hello world") //
-      .collect(Collectors.toList());
+        .dialect(1) //
+        .filter("-hello world") //
+        .collect(Collectors.toList());
 
     var dialectTwo = entityStream.of(Doc.class) //
-      .dialect(2) //
-      .filter("-hello world") //
-      .collect(Collectors.toList());
+        .dialect(2) //
+        .filter("-hello world") //
+        .collect(Collectors.toList());
 
     assertAll( //
-      () -> assertThat(dialectOne).containsExactly(hello, world), () -> assertThat(dialectTwo).containsExactly(world));
+        () -> assertThat(dialectOne).containsExactly(hello, world),
+        () -> assertThat(dialectTwo).containsExactly(world));
   }
 
 }

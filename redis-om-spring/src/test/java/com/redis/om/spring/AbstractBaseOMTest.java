@@ -31,22 +31,17 @@ public abstract class AbstractBaseOMTest {
   }
 
   @Autowired
+  @Qualifier("featureExtractor")
+  public FeatureExtractor featureExtractor;
+  @Autowired
   protected StringRedisTemplate template;
-
   @Autowired
   protected RedisModulesOperations<String> modulesOperations;
-
   @Autowired
   @Qualifier("redisCustomKeyValueTemplate")
   protected CustomRedisKeyValueTemplate kvTemplate;
-
   @Autowired
   protected RediSearchIndexer indexer;
-
-  @Autowired
-  @Qualifier("featureExtractor")
-  public FeatureExtractor featureExtractor;
-
   protected Comparator<Double> closeToComparator = new Comparator<Double>() {
     @Override
     public int compare(Double o1, Double o2) {

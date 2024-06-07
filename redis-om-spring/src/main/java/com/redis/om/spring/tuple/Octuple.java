@@ -68,7 +68,7 @@ public interface Octuple<E1, E2, E3, E4, E5, E6, E7, T7> extends Tuple {
       case 6 -> getSeventh();
       case 7 -> getEighth();
       default -> throw new IndexOutOfBoundsException(
-        String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
+          String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
     };
   }
 }

@@ -74,7 +74,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
    * @param referenceResolver can be not be {@literal null}.
    */
   public MappingRedisOMConverter(@Nullable RedisMappingContext mappingContext,
-    @Nullable ReferenceResolver referenceResolver) {
+      @Nullable ReferenceResolver referenceResolver) {
     this(mappingContext, referenceResolver, null);
   }
 
@@ -87,7 +87,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
    * @param typeMapper        can be {@literal null}.
    */
   public MappingRedisOMConverter(@Nullable RedisMappingContext mappingContext,
-    @Nullable ReferenceResolver referenceResolver, @Nullable RedisTypeMapper typeMapper) {
+      @Nullable ReferenceResolver referenceResolver, @Nullable RedisTypeMapper typeMapper) {
 
     this.mappingContext = mappingContext != null ? mappingContext : new RedisMappingContext();
 
@@ -95,8 +95,8 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     this.conversionService = new DefaultConversionService();
     this.customConversions = new RedisOMCustomConversions();
     this.typeMapper = typeMapper != null ?
-      typeMapper :
-      new DefaultRedisTypeMapper(DefaultRedisTypeMapper.DEFAULT_TYPE_KEY, this.mappingContext);
+        typeMapper :
+        new DefaultRedisTypeMapper(DefaultRedisTypeMapper.DEFAULT_TYPE_KEY, this.mappingContext);
     this.projectionFactory = new SpelAwareProxyProjectionFactory();
     this.referenceResolver = referenceResolver;
     afterPropertiesSet();
@@ -164,7 +164,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
 
     if (conversionService.canConvert(byte[].class, readType.getType())) {
       return (R) conversionService.convert(source.getBucket().get(StringUtils.hasText(path) ? path : "_raw"),
-        readType.getType());
+          readType.getType());
     }
 
     RedisPersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(readType);
@@ -175,9 +175,9 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       instance = source.getBucket().asMap();
     } else {
       instance = instantiator.createInstance((RedisPersistentEntity<RedisPersistentProperty>) entity,
-        new PersistentEntityParameterValueProvider<>(entity,
-          new ConverterAwareParameterValueProvider(entityClass, path, source, conversionService),
-          this.conversionService));
+          new PersistentEntityParameterValueProvider<>(entity,
+              new ConverterAwareParameterValueProvider(entityClass, path, source, conversionService),
+              this.conversionService));
     }
 
     if (type.isInterface()) {
@@ -220,7 +220,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
 
   @Nullable
   protected Object readProperty(Class<?> entityClass, String path, RedisData source,
-    RedisPersistentProperty persistentProperty) {
+      RedisPersistentProperty persistentProperty) {
 
     String currentPath = !path.isEmpty() ? path + "." + persistentProperty.getName() : persistentProperty.getName();
 
@@ -236,29 +236,29 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
 
       if (conversionService.canConvert(byte[].class, mapValueType)) {
         return readMapOfSimpleTypes(currentPath, typeInformation.getType(),
-          typeInformation.getRequiredComponentType().getType(), mapValueType, source);
+            typeInformation.getRequiredComponentType().getType(), mapValueType, source);
       }
 
       return readMapOfComplexTypes(entityClass, currentPath, typeInformation.getType(),
-        typeInformation.getRequiredComponentType().getType(), mapValueType, source);
+          typeInformation.getRequiredComponentType().getType(), mapValueType, source);
     }
 
     if (typeInformation.isCollectionLike()) {
 
       if (!isByteArray(typeInformation)) {
         return readCollectionOrArray(entityClass, currentPath, typeInformation.getType(),
-          typeInformation.getRequiredComponentType().getType(), source.getBucket());
+            typeInformation.getRequiredComponentType().getType(), source.getBucket());
       }
 
       if (!source.getBucket().hasValue(currentPath) && isByteArray(typeInformation)) {
 
         return readCollectionOrArray(entityClass, currentPath, typeInformation.getType(),
-          typeInformation.getRequiredComponentType().getType(), source.getBucket());
+            typeInformation.getRequiredComponentType().getType(), source.getBucket());
       }
     }
 
     if (persistentProperty.isEntity() && !conversionService.canConvert(byte[].class,
-      typeInformation.getRequiredActualType().getType())) {
+        typeInformation.getRequiredActualType().getType())) {
 
       Bucket bucket = source.getBucket().extract(currentPath + ".");
 
@@ -291,20 +291,20 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
   }
 
   private void readAssociation(String path, RedisData source, RedisPersistentEntity<?> entity,
-    PersistentPropertyAccessor<?> accessor) {
+      PersistentPropertyAccessor<?> accessor) {
 
     entity.doWithAssociations((AssociationHandler<RedisPersistentProperty>) association -> {
 
       String currentPath = !path.isEmpty() ?
-        path + "." + association.getInverse().getName() :
-        association.getInverse().getName();
+          path + "." + association.getInverse().getName() :
+          association.getInverse().getName();
 
       if (association.getInverse().isCollectionLike()) {
 
         Bucket bucket = source.getBucket().extract(currentPath + ".[");
 
         Collection<Object> target = CollectionFactory.createCollection(association.getInverse().getType(),
-          association.getInverse().getComponentType(), bucket.size());
+            association.getInverse().getComponentType(), bucket.size());
 
         for (Entry<String, byte[]> entry : bucket.entrySet()) {
 
@@ -316,7 +316,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
 
           KeyspaceIdentifier identifier = KeyspaceIdentifier.of(referenceKey);
           Map<byte[], byte[]> rawHash = referenceResolver.resolveReference(identifier.getId(),
-            identifier.getKeyspace());
+              identifier.getKeyspace());
 
           if (!CollectionUtils.isEmpty(rawHash)) {
             target.add(read(association.getInverse().getActualType(), new RedisData(rawHash)));
@@ -338,11 +338,11 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
           KeyspaceIdentifier identifier = KeyspaceIdentifier.of(referenceKey);
 
           Map<byte[], byte[]> rawHash = referenceResolver.resolveReference(identifier.getId(),
-            identifier.getKeyspace());
+              identifier.getKeyspace());
 
           if (!CollectionUtils.isEmpty(rawHash)) {
             accessor.setProperty(association.getInverse(),
-              read(association.getInverse().getActualType(), new RedisData(rawHash)));
+                read(association.getInverse().getActualType(), new RedisData(rawHash)));
           }
         }
       }
@@ -384,7 +384,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
 
     if (entity.getTypeInformation().isCollectionLike()) {
       writeCollection(entity.getType(), entity.getKeySpace(), "", (List) source,
-        entity.getTypeInformation().getRequiredComponentType(), sink);
+          entity.getTypeInformation().getRequiredComponentType(), sink);
     } else {
       writeInternal(entity.getKeySpace(), "", source, entity.getTypeInformation(), sink);
     }
@@ -440,7 +440,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
    * @param path
    */
   private void writePartialPropertyUpdate(PartialUpdate<?> update, PropertyUpdate pUpdate, RedisData sink,
-    RedisPersistentEntity<?> entity, String path) {
+      RedisPersistentEntity<?> entity, String path) {
 
     RedisPersistentProperty targetProperty = getTargetPropertyOrNullForPath(path, update.getTarget());
 
@@ -449,12 +449,12 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       targetProperty = getTargetPropertyOrNullForPath(path.replaceAll("\\.\\[.*]", ""), update.getTarget());
 
       TypeInformation<?> ti = targetProperty == null ?
-        TypeInformation.OBJECT :
-        (targetProperty.isMap() ?
-          (targetProperty.getTypeInformation().getMapValueType() != null ?
-            targetProperty.getTypeInformation().getRequiredMapValueType() :
-            TypeInformation.OBJECT) :
-          targetProperty.getTypeInformation().getActualType());
+          TypeInformation.OBJECT :
+          (targetProperty.isMap() ?
+              (targetProperty.getTypeInformation().getMapValueType() != null ?
+                  targetProperty.getTypeInformation().getRequiredMapValueType() :
+                  TypeInformation.OBJECT) :
+              targetProperty.getTypeInformation().getActualType());
 
       writeInternal(entity.getKeySpace(), pUpdate.getPropertyPath(), pUpdate.getValue(), ti, sink);
       return;
@@ -465,8 +465,8 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       if (targetProperty.isCollectionLike()) {
 
         RedisPersistentEntity<?> ref = mappingContext.getPersistentEntity(
-          targetProperty.getRequiredAssociation().getInverse().getTypeInformation().getRequiredComponentType()
-            .getRequiredActualType());
+            targetProperty.getRequiredAssociation().getInverse().getTypeInformation().getRequiredComponentType()
+                .getRequiredActualType());
 
         int i = 0;
         for (Object o : (Collection<?>) pUpdate.getValue()) {
@@ -480,7 +480,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       } else {
 
         RedisPersistentEntity<?> ref = mappingContext.getRequiredPersistentEntity(
-          targetProperty.getRequiredAssociation().getInverse().getTypeInformation());
+            targetProperty.getRequiredAssociation().getInverse().getTypeInformation());
 
         Object refId = ref.getPropertyAccessor(pUpdate.getValue()).getProperty(ref.getRequiredIdProperty());
         if (refId != null) {
@@ -490,10 +490,10 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     } else if (targetProperty.isCollectionLike() && isByteArray(targetProperty)) {
 
       Collection<?> collection = pUpdate.getValue() instanceof Collection ?
-        (Collection<?>) pUpdate.getValue() :
-        Collections.singleton(pUpdate.getValue());
+          (Collection<?>) pUpdate.getValue() :
+          Collections.singleton(pUpdate.getValue());
       writeCollection(entity.getType(), entity.getKeySpace(), pUpdate.getPropertyPath(), collection,
-        targetProperty.getTypeInformation().getRequiredActualType(), sink);
+          targetProperty.getTypeInformation().getRequiredActualType(), sink);
     } else if (targetProperty.isMap()) {
 
       Map<Object, Object> map = new HashMap<>();
@@ -504,16 +504,16 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
         map.put(((Entry<?, ?>) pUpdate.getValue()).getKey(), ((Entry<?, ?>) pUpdate.getValue()).getValue());
       } else {
         throw new MappingException(
-          String.format("Cannot set update value for map property '%s' to '%s'. Please use a Map or Map.Entry.",
-            pUpdate.getPropertyPath(), pUpdate.getValue()));
+            String.format("Cannot set update value for map property '%s' to '%s'. Please use a Map or Map.Entry.",
+                pUpdate.getPropertyPath(), pUpdate.getValue()));
       }
 
       writeMap(entity.getType(), entity.getKeySpace(), pUpdate.getPropertyPath(), targetProperty.getMapValueType(), map,
-        sink);
+          sink);
     } else {
 
       writeInternal(entity.getKeySpace(), pUpdate.getPropertyPath(), pUpdate.getValue(),
-        targetProperty.getTypeInformation(), sink);
+          targetProperty.getTypeInformation(), sink);
     }
   }
 
@@ -523,7 +523,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     try {
 
       PersistentPropertyPath<RedisPersistentProperty> persistentPropertyPath = mappingContext.getPersistentPropertyPath(
-        path, type);
+          path, type);
       return persistentPropertyPath.getLeafProperty();
     } catch (Exception e) {
       // that's just fine
@@ -540,7 +540,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
    * @param sink
    */
   private void writeInternal(@Nullable String keyspace, String path, @Nullable Object value,
-    TypeInformation<?> typeHint, RedisData sink) {
+      TypeInformation<?> typeHint, RedisData sink) {
 
     if (value == null) {
       return;
@@ -551,13 +551,13 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       Optional<Class<?>> targetType = customConversions.getCustomWriteTarget(value.getClass());
 
       if (!StringUtils.hasText(path) && targetType.isPresent() && ClassUtils.isAssignable(byte[].class,
-        targetType.get())) {
+          targetType.get())) {
         sink.getBucket().put(StringUtils.hasText(path) ? path : "_raw", conversionService.convert(value, byte[].class));
       } else {
 
         if (!ClassUtils.isAssignable(typeHint.getType(), value.getClass())) {
           throw new MappingException(
-            String.format(INVALID_TYPE_ASSIGNMENT, value.getClass(), path, typeHint.getType()));
+              String.format(INVALID_TYPE_ASSIGNMENT, value.getClass(), path, typeHint.getType()));
         }
         writeToBucket(path, value, sink, typeHint.getType());
       }
@@ -593,23 +593,23 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
 
         if (propertyValue != null) {
           writeMap(entity.getType(), keyspace, propertyStringPath, persistentProperty.getMapValueType(),
-            (Map<?, ?>) propertyValue, sink);
+              (Map<?, ?>) propertyValue, sink);
         }
       } else if (persistentProperty.isCollectionLike() && isByteArray(persistentProperty)) {
 
         if (propertyValue == null) {
           writeCollection(entity.getType(), keyspace, propertyStringPath, null,
-            persistentProperty.getTypeInformation().getRequiredComponentType(), sink);
+              persistentProperty.getTypeInformation().getRequiredComponentType(), sink);
         } else {
 
           if (Iterable.class.isAssignableFrom(propertyValue.getClass())) {
 
             writeCollection(entity.getType(), keyspace, propertyStringPath, (Iterable<?>) propertyValue,
-              persistentProperty.getTypeInformation().getRequiredComponentType(), sink);
+                persistentProperty.getTypeInformation().getRequiredComponentType(), sink);
           } else if (propertyValue.getClass().isArray()) {
 
             writeCollection(entity.getType(), keyspace, propertyStringPath, CollectionUtils.arrayToList(propertyValue),
-              persistentProperty.getTypeInformation().getRequiredComponentType(), sink);
+                persistentProperty.getTypeInformation().getRequiredComponentType(), sink);
           } else {
 
             throw new RuntimeException("Don't know how to handle " + propertyValue.getClass() + " type collection");
@@ -620,7 +620,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
 
         if (propertyValue != null) {
           writeInternal(keyspace, propertyStringPath, propertyValue,
-            persistentProperty.getTypeInformation().getRequiredActualType(), sink);
+              persistentProperty.getTypeInformation().getRequiredActualType(), sink);
         }
       } else {
 
@@ -651,7 +651,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       if (association.getInverse().isCollectionLike()) {
 
         RedisPersistentEntity<?> ref = mappingContext.getRequiredPersistentEntity(
-          association.getInverse().getTypeInformation().getRequiredComponentType().getRequiredActualType());
+            association.getInverse().getTypeInformation().getRequiredComponentType().getRequiredActualType());
 
         String keyspace = ref.getKeySpace();
         String propertyStringPath = (!path.isEmpty() ? path + "." : "") + association.getInverse().getName();
@@ -669,7 +669,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       } else {
 
         RedisPersistentEntity<?> ref = mappingContext.getRequiredPersistentEntity(
-          association.getInverse().getTypeInformation());
+            association.getInverse().getTypeInformation());
         String keyspace = ref.getKeySpace();
 
         if (keyspace != null) {
@@ -693,7 +693,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
    * @param sink
    */
   private void writeCollection(Class<?> entityClass, @Nullable String keyspace, String path,
-    @Nullable Iterable<?> values, TypeInformation<?> typeHint, RedisData sink) {
+      @Nullable Iterable<?> values, TypeInformation<?> typeHint, RedisData sink) {
 
     if (values == null) {
       return;
@@ -719,10 +719,10 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     }
 
     if ((field != null) && (collectionElementType != null) && (indexed != null || tagIndexed != null) && CharSequence.class.isAssignableFrom(
-      collectionElementType)) {
+        collectionElementType)) {
       @SuppressWarnings("null") String separator = indexed != null ? indexed.separator() : tagIndexed.separator();
       String value = StreamSupport.stream(values.spliterator(), false).map(Object::toString).map(QueryUtils::escape)
-        .collect(Collectors.joining(separator));
+          .collect(Collectors.joining(separator));
       writeInternal(keyspace, path, value, typeHint, sink);
     } else {
       int i = 0;
@@ -736,7 +736,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
 
         if (!ClassUtils.isAssignable(typeHint.getType(), value.getClass())) {
           throw new MappingException(
-            String.format(INVALID_TYPE_ASSIGNMENT, value.getClass(), currentPath, typeHint.getType()));
+              String.format(INVALID_TYPE_ASSIGNMENT, value.getClass(), currentPath, typeHint.getType()));
         }
 
         if (customConversions.hasCustomWriteTarget(value.getClass())) {
@@ -765,7 +765,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       Optional<Class<?>> targetType = customConversions.getCustomWriteTarget(value.getClass());
 
       if (!propertyType.isPrimitive() && targetType.filter(it -> ClassUtils.isAssignable(Map.class, it))
-        .isEmpty() && customConversions.isSimpleType(value.getClass()) && value.getClass() != propertyType) {
+          .isEmpty() && customConversions.isSimpleType(value.getClass()) && value.getClass() != propertyType) {
         typeMapper.writeType(value.getClass(), sink.getBucket().getPropertyPath(path));
       }
 
@@ -774,20 +774,20 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
         Map<?, ?> map = (Map<?, ?>) conversionService.convert(value, targetType.get());
         for (Map.Entry<?, ?> entry : map.entrySet()) {
           sink.getBucket()
-            .put(path + (StringUtils.hasText(path) ? "." : "") + entry.getKey(), toBytes(entry.getValue()));
+              .put(path + (StringUtils.hasText(path) ? "." : "") + entry.getKey(), toBytes(entry.getValue()));
         }
       } else if (targetType.filter(it -> ClassUtils.isAssignable(byte[].class, it)).isPresent()) {
         sink.getBucket().put(path, toBytes(value));
       } else {
         throw new IllegalArgumentException(
-          String.format("Cannot convert value '%s' of type %s to bytes.", value, value.getClass()));
+            String.format("Cannot convert value '%s' of type %s to bytes.", value, value.getClass()));
       }
     }
   }
 
   @Nullable
   private Object readCollectionOrArray(Class<?> entityClass, String path, Class<?> collectionType, Class<?> valueType,
-    Bucket bucket) {
+      Bucket bucket) {
     Field field = null;
     Class<?> collectionElementType = null;
     Indexed indexed = null;
@@ -796,7 +796,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       field = ReflectionUtils.findField(entityClass, path);
       if (field != null) {
         Optional<Class<?>> maybeCollectionElementType = com.redis.om.spring.util.ObjectUtils.getCollectionElementClass(
-          field);
+            field);
         collectionElementType = maybeCollectionElementType.orElse(null);
         if (field.isAnnotationPresent(Indexed.class)) {
           indexed = field.getAnnotation(Indexed.class);
@@ -812,11 +812,11 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     boolean isArray = collectionType.isArray();
 
     if ((field != null) && (indexed != null || tagIndexed != null) && (collectionElementType != null && CharSequence.class.isAssignableFrom(
-      collectionElementType))) {
+        collectionElementType))) {
       @SuppressWarnings("null") String separator = indexed != null ? indexed.separator() : tagIndexed.separator();
       Bucket elementData = bucket.extract(path);
       TypeInformation<?> typeInformation = typeMapper.readType(elementData.getPropertyPath(path),
-        TypeInformation.of(valueType));
+          TypeInformation.of(valueType));
       Class<?> collectionTypeToUse = isArray ? ArrayList.class : collectionType;
       Class<?> typeToUse = typeInformation.getType();
       String collectionAsString;
@@ -829,7 +829,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
         collectionAsString = "";
       }
       @SuppressWarnings("Annotator") List<String> values = Arrays.stream(collectionAsString.split("\\" + separator))
-        .map(QueryUtils::unescape).toList();
+          .map(QueryUtils::unescape).toList();
       target = CollectionFactory.createCollection(collectionTypeToUse, valueType, values.size());
       target.addAll(values);
     } else {
@@ -848,7 +848,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
         Bucket elementData = bucket.extract(key);
 
         TypeInformation<?> typeInformation = typeMapper.readType(elementData.getPropertyPath(key),
-          TypeInformation.of(valueType));
+            TypeInformation.of(valueType));
 
         Class<?> typeToUse = typeInformation.getType();
         if (conversionService.canConvert(byte[].class, typeToUse)) {
@@ -870,7 +870,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
    * @param sink
    */
   private void writeMap(Class<?> entityClass, @Nullable String keyspace, String path, Class<?> mapValueType,
-    Map<?, ?> source, RedisData sink) {
+      Map<?, ?> source, RedisData sink) {
 
     if (CollectionUtils.isEmpty(source)) {
       return;
@@ -886,7 +886,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
 
       if (!ClassUtils.isAssignable(mapValueType, entry.getValue().getClass())) {
         throw new MappingException(
-          String.format(INVALID_TYPE_ASSIGNMENT, entry.getValue().getClass(), currentPath, mapValueType));
+            String.format(INVALID_TYPE_ASSIGNMENT, entry.getValue().getClass(), currentPath, mapValueType));
       }
 
       if (customConversions.hasCustomWriteTarget(entry.getValue().getClass())) {
@@ -916,7 +916,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
    */
   @Nullable
   private Map<?, ?> readMapOfSimpleTypes(String path, Class<?> mapType, Class<?> keyType, Class<?> valueType,
-    RedisData source) {
+      RedisData source) {
 
     Bucket partial = source.getBucket().extract(path + ".[");
 
@@ -946,7 +946,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
    */
   @Nullable
   private Map<?, ?> readMapOfComplexTypes(Class<?> entityClass, String path, Class<?> mapType, Class<?> keyType,
-    Class<?> valueType, RedisData source) {
+      Class<?> valueType, RedisData source) {
 
     Set<String> keys = source.getBucket().extractAllKeysFor(path);
 
@@ -959,7 +959,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       Object mapKey = extractMapKeyForPath(path, key, keyType);
 
       TypeInformation<?> typeInformation = typeMapper.readType(source.getBucket().getPropertyPath(key),
-        TypeInformation.of(valueType));
+          TypeInformation.of(valueType));
 
       Object o = readInternal(entityClass, key, typeInformation.getType(), new RedisData(partial));
       target.put(mapKey, o);
@@ -977,7 +977,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     Matcher matcher = pattern.matcher(key);
     if (!matcher.find()) {
       throw new IllegalArgumentException(
-        String.format("Cannot extract map value for key '%s' in path '%s'.", key, path));
+          String.format("Cannot extract map value for key '%s' in path '%s'.", key, path));
     }
 
     Object mapKey = matcher.group(2);
@@ -992,7 +992,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
   private Class<?> getTypeHint(String path, Bucket bucket, Class<?> fallback) {
 
     TypeInformation<?> typeInformation = typeMapper.readType(bucket.getPropertyPath(path),
-      TypeInformation.of(fallback));
+        TypeInformation.of(fallback));
     return typeInformation.getType();
   }
 
@@ -1417,7 +1417,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     private final Class<?> entityClass;
 
     ConverterAwareParameterValueProvider(Class<?> entityClass, String path, RedisData source,
-      ConversionService conversionService) {
+        ConversionService conversionService) {
       this.entityClass = entityClass;
       this.path = path;
       this.source = source;

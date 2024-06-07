@@ -22,7 +22,7 @@ class InheritingDocumentTest extends AbstractBaseDocumentTest {
 
   @Autowired
   InheritingDocumentTest(InheritingDocumentRepository inheritingDocumentRepository,
-    RedisModulesOperations<String> redisModulesOperations) {
+      RedisModulesOperations<String> redisModulesOperations) {
     this.inheritingDocumentRepository = inheritingDocumentRepository;
     this.searchOperations = redisModulesOperations.opsForSearch(InheritingDocument.class.getName() + "Idx");
   }
@@ -42,18 +42,19 @@ class InheritingDocumentTest extends AbstractBaseDocumentTest {
     assertThat(rawAttributes).isNotNull().isInstanceOf(List.class);
     List<?> attributes = (List<?>) rawAttributes;
     assertThat(attributes).hasSize(3).allSatisfy(element -> {
-        assertThat(element).isInstanceOf(List.class);
-        assertThat((List<?>) element).allSatisfy(item -> assertThat(item).isInstanceOf(String.class));
-      }).map(element -> (List<String>) element) // cast is checked through assertion
-      .extracting((List<String> attribute) -> {
-        for (int i = 0; i < attribute.size(); i++) {
-          String value = attribute.get(i);
-          if ("attribute".equals(value)) {
-            return attribute.get(i + 1);
+          assertThat(element).isInstanceOf(List.class);
+          assertThat((List<?>) element).allSatisfy(item -> assertThat(item).isInstanceOf(String.class));
+        }).map(element -> (List<String>) element) // cast is checked through assertion
+        .extracting((List<String> attribute) -> {
+          for (int i = 0; i < attribute.size(); i++) {
+            String value = attribute.get(i);
+            if ("attribute".equals(value)) {
+              return attribute.get(i + 1);
+            }
           }
-        }
-        return null;
-      }).doesNotContain((String) null).containsExactlyInAnyOrderElementsOf(List.of("id", "inherited", "notInherited"));
+          return null;
+        }).doesNotContain((String) null)
+        .containsExactlyInAnyOrderElementsOf(List.of("id", "inherited", "notInherited"));
   }
 
   @Test

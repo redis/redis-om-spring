@@ -40,7 +40,7 @@ public class FaceDetectionTranslator implements Translator<Image, DetectedObject
   private int height;
 
   public FaceDetectionTranslator(double confThresh, double nmsThresh, double[] variance, int topK, int[][] scales,
-    int[] steps) {
+      int[] steps) {
     this.confThresh = confThresh;
     this.nmsThresh = nmsThresh;
     this.variance = variance;
@@ -83,7 +83,7 @@ public class FaceDetectionTranslator implements Translator<Image, DetectedObject
     NDArray boundingBoxes = list.get(0);
     NDArray bbWH = boundingBoxes.get(":, 2:").mul(scaleWH).exp().mul(boxRecover.get(":, 2:"));
     NDArray bbXY = boundingBoxes.get(":, :2").mul(scaleXY).mul(boxRecover.get(":, 2:")).add(boxRecover.get(":, :2"))
-      .sub(bbWH.mul(0.5f));
+        .sub(bbWH.mul(0.5f));
 
     boundingBoxes = NDArrays.concat(new NDList(bbXY, bbWH), 1);
 

@@ -21,7 +21,7 @@ public class YearMonthTypeAdapter implements JsonSerializer<YearMonth>, JsonDese
 
   @Override
   public YearMonth deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
-    throws JsonParseException {
+      throws JsonParseException {
     return YearMonth.parse(json.getAsString(), formatter);
   }
 

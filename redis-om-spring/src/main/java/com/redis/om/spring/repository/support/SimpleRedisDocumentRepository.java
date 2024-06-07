@@ -68,7 +68,7 @@ import static com.redis.om.spring.util.ObjectUtils.*;
 import static redis.clients.jedis.json.JsonProtocol.JsonCommand;
 
 public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueRepository<T, ID>
-  implements RedisDocumentRepository<T, ID> {
+    implements RedisDocumentRepository<T, ID> {
 
   protected final RedisModulesOperations<String> modulesOperations;
   protected final EntityInformation<T, ID> metadata;
@@ -85,12 +85,12 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
   @SuppressWarnings("unchecked")
   public SimpleRedisDocumentRepository( //
-    EntityInformation<T, ID> metadata, //
-    KeyValueOperations operations, //
-    @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo, //
-    RediSearchIndexer indexer, //
-    RedisMappingContext mappingContext, GsonBuilder gsonBuilder, FeatureExtractor featureExtractor, //
-    RedisOMProperties properties) {
+      EntityInformation<T, ID> metadata, //
+      KeyValueOperations operations, //
+      @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo, //
+      RediSearchIndexer indexer, //
+      RedisMappingContext mappingContext, GsonBuilder gsonBuilder, FeatureExtractor featureExtractor, //
+      RedisOMProperties properties) {
     super(metadata, operations);
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.metadata = metadata;
@@ -118,7 +118,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     SearchResult searchResult = getSearchOps().search(query);
 
     return searchResult.getDocuments().stream()
-      .map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get(idField)), metadata.getIdType())).toList();
+        .map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get(idField)), metadata.getIdType())).toList();
   }
 
   @Override
@@ -139,7 +139,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   @Override
   public void updateField(T entity, MetamodelField<T, ?> field, Object value) {
     modulesOperations.opsForJSON()
-      .set(getKey(Objects.requireNonNull(metadata.getId(entity))), value, Path2.of(field.getJSONPath()));
+        .set(getKey(Objects.requireNonNull(metadata.getId(entity))), value, Path2.of(field.getJSONPath()));
   }
 
   @SuppressWarnings("unchecked")
@@ -147,7 +147,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   public <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field) {
     String[] keys = StreamSupport.stream(ids.spliterator(), false).map(this::getKey).toArray(String[]::new);
     return (Iterable<F>) modulesOperations.opsForJSON().mget(Path2.of(field.getJSONPath()), List.class, keys).stream()
-      .flatMap(List::stream).toList();
+        .flatMap(List::stream).toList();
   }
 
   @Override
@@ -174,12 +174,12 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
         boolean isNew = metadata.isNew(entity);
 
         KeyValuePersistentEntity<?, ?> keyValueEntity = mappingConverter.getMappingContext()
-          .getRequiredPersistentEntity(ClassUtils.getUserClass(entity));
+            .getRequiredPersistentEntity(ClassUtils.getUserClass(entity));
         Object id = isNew ?
-          generator.generateIdentifierOfType(
-            Objects.requireNonNull(keyValueEntity.getIdProperty()).getTypeInformation()) :
-          keyValueEntity.getPropertyAccessor(entity)
-            .getProperty(Objects.requireNonNull(keyValueEntity.getIdProperty()));
+            generator.generateIdentifierOfType(
+                Objects.requireNonNull(keyValueEntity.getIdProperty()).getTypeInformation()) :
+            keyValueEntity.getPropertyAccessor(entity)
+                .getProperty(Objects.requireNonNull(keyValueEntity.getIdProperty()));
         keyValueEntity.getPropertyAccessor(entity).setProperty(keyValueEntity.getIdProperty(), id);
 
         String keyspace = keyValueEntity.getKeySpace();
@@ -319,7 +319,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
           Field fld = ReflectionUtils.findField(entity.getClass(), settings.getTimeToLivePropertyName());
           ttlGetter = ObjectUtils.getGetterForField(entity.getClass(), Objects.requireNonNull(fld));
           long ttlPropertyValue = ((Number) Objects.requireNonNull(
-            ReflectionUtils.invokeMethod(ttlGetter, entity))).longValue();
+              ReflectionUtils.invokeMethod(ttlGetter, entity))).longValue();
 
           ReflectionUtils.invokeMethod(ttlGetter, entity);
 
@@ -346,14 +346,14 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       Field versionField = fields.get(0);
       String property = versionField.getName();
       if ((versionField.getType() == Integer.class || isPrimitiveOfType(versionField.getType(),
-        Integer.class)) || (versionField.getType() == Long.class || isPrimitiveOfType(versionField.getType(),
-        Long.class))) {
+          Integer.class)) || (versionField.getType() == Long.class || isPrimitiveOfType(versionField.getType(),
+          Long.class))) {
         Number version = (Number) wrapper.getPropertyValue(property);
         Number dbVersion = getEntityVersion(getKey(this.metadata.getRequiredId(entity)), property);
 
         if (dbVersion != null && version != null && dbVersion.longValue() != version.longValue()) {
           throw new OptimisticLockingFailureException(
-            String.format("Cannot delete entity %s with version %s as it is outdated", entity, version));
+              String.format("Cannot delete entity %s with version %s as it is outdated", entity, version));
         }
       }
     }
@@ -421,7 +421,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
       if (searchResult.getTotalResults() > 0) {
         List<T> content = searchResult.getDocuments().stream()
-          .map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get("$")), metadata.getJavaType())).toList();
+            .map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get("$")), metadata.getJavaType())).toList();
 
         return new PageImpl<>(content, pageable, searchResult.getTotalResults());
       } else {
@@ -467,7 +467,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     Assert.notNull(queryFunction, "Query function must not be null");
 
     return queryFunction.apply(
-      new FluentQueryByExample<>(example, example.getProbeType(), entityStream, getSearchOps()));
+        new FluentQueryByExample<>(example, example.getProbeType(), entityStream, getSearchOps()));
   }
 
   private SearchOperations<String> getSearchOps() {

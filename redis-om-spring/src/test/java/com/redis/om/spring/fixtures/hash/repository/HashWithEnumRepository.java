@@ -1,6 +1,5 @@
 package com.redis.om.spring.fixtures.hash.repository;
 
-
 import com.redis.om.spring.fixtures.document.model.MyJavaEnum;
 import com.redis.om.spring.fixtures.hash.model.HashWithEnum;
 import com.redis.om.spring.repository.RedisEnhancedRepository;

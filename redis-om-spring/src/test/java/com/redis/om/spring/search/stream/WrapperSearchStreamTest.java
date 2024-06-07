@@ -39,20 +39,20 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
     repository.deleteAll();
 
     Company redis = repository.save(
-      Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
     redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
 
     Set<Employee> employees = Sets.newHashSet(Employee.of("Brian Sam-Bodden"), Employee.of("Guy Royse"),
-      Employee.of("Justin Castilla"));
+        Employee.of("Justin Castilla"));
     redis.setEmployees(employees);
 
     Company microsoft = repository.save(
-      Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
-        "research@microsoft.com"));
+        Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
+            "research@microsoft.com"));
     microsoft.setTags(Set.of("innovative", "reliable", "os", "ai"));
 
     Company tesla = repository.save(
-      Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903, 30.2210767), "elon@tesla.com"));
+        Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903, 30.2210767), "elon@tesla.com"));
     tesla.setTags(Set.of("innovative", "futuristic", "ai"));
 
     repository.saveAll(List.of(redis, microsoft, tesla));
@@ -60,7 +60,7 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
     // users
     userRepository.deleteAll();
     List<User> users = List.of(User.of("Steve Lorello", .9999), User.of("Nava Levy", 1234.5678),
-      User.of("Savannah Norem", 999.99), User.of("Suze Shardlow", 899.0));
+        User.of("Savannah Norem", 999.99), User.of("Suze Shardlow", 899.0));
     for (User user : users) {
       user.setRoles(List.of("devrel", "educator", "guru"));
     }
@@ -106,11 +106,11 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   void testFilterOnWrapperSearchStream() {
     Predicate<Integer> predicate = i -> (i > 2000);
     List<Integer> foundedAfter2000 = entityStream //
-      .of(Company.class) //
-      .map(Company$.YEAR_FOUNDED) //
-      .sequential() //
-      .filter(predicate) //
-      .collect(Collectors.toList());
+        .of(Company.class) //
+        .map(Company$.YEAR_FOUNDED) //
+        .sequential() //
+        .filter(predicate) //
+        .collect(Collectors.toList());
 
     assertThat(foundedAfter2000).contains(2011, 2003);
   }
@@ -127,10 +127,10 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
 
     // actual
     IntStream tagLengthIntStream = entityStream //
-      .of(Company.class) //
-      .map(Company$.TAGS) //
-      .sequential() //
-      .flatMapToInt(tags -> tags.stream().mapToInt(String::length));
+        .of(Company.class) //
+        .map(Company$.TAGS) //
+        .sequential() //
+        .flatMapToInt(tags -> tags.stream().mapToInt(String::length));
 
     List<Integer> actual = tagLengthIntStream.boxed().collect(Collectors.toList());
 
@@ -149,10 +149,10 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
 
     // actual
     LongStream tagLengthIntStream = entityStream //
-      .of(Company.class) //
-      .map(Company$.TAGS) //
-      .sequential() //
-      .flatMapToLong(tags -> tags.stream().mapToLong(String::length));
+        .of(Company.class) //
+        .map(Company$.TAGS) //
+        .sequential() //
+        .flatMapToLong(tags -> tags.stream().mapToLong(String::length));
 
     List<Long> actual = tagLengthIntStream.boxed().collect(Collectors.toList());
 
@@ -171,10 +171,10 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
 
     // actual
     DoubleStream tagLengthDoubleStream = entityStream //
-      .of(Company.class) //
-      .map(Company$.TAGS) //
-      .sequential() //
-      .flatMapToDouble(tags -> tags.stream().mapToDouble(String::length));
+        .of(Company.class) //
+        .map(Company$.TAGS) //
+        .sequential() //
+        .flatMapToDouble(tags -> tags.stream().mapToDouble(String::length));
 
     List<Double> actual = tagLengthDoubleStream.boxed().collect(Collectors.toList());
 
@@ -184,10 +184,10 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   @Test
   void testMapToIntOnReturnFields() {
     IntStream intStream = entityStream //
-      .of(Company.class) //
-      .map(Company$.YEAR_FOUNDED) //
-      .sequential() //
-      .mapToInt(i -> i);
+        .of(Company.class) //
+        .map(Company$.YEAR_FOUNDED) //
+        .sequential() //
+        .mapToInt(i -> i);
 
     assertThat(intStream.boxed().collect(Collectors.toList())).contains(2011, 1975, 2003);
   }
@@ -195,10 +195,10 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   @Test
   void testMapToLongOnReturnFields() {
     LongStream longStream = entityStream //
-      .of(Company.class) //
-      .map(Company$.YEAR_FOUNDED) //
-      .sequential() //
-      .mapToLong(i -> i);
+        .of(Company.class) //
+        .map(Company$.YEAR_FOUNDED) //
+        .sequential() //
+        .mapToLong(i -> i);
 
     assertThat(longStream.boxed().collect(Collectors.toList())).contains(2011L, 1975L, 2003L);
   }
@@ -206,10 +206,10 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   @Test
   void testMapToDoubleOnReturnFields() {
     DoubleStream doubleStream = entityStream //
-      .of(User.class) //
-      .map(User$.LOTTERY_WINNINGS) //
-      .sequential() //
-      .mapToDouble(w -> w);
+        .of(User.class) //
+        .map(User$.LOTTERY_WINNINGS) //
+        .sequential() //
+        .mapToDouble(w -> w);
 
     assertThat(doubleStream.boxed().collect(Collectors.toList())).contains(.9999, 1234.5678, 999.99, 899.0);
   }
@@ -219,10 +219,10 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
     List<String> names = new ArrayList<>();
     Consumer<? super String> testConsumer = names::add;
     entityStream //
-      .of(Company.class) //
-      .map(Company$.NAME) //
-      .sequential() //
-      .forEachOrdered(testConsumer);
+        .of(Company.class) //
+        .map(Company$.NAME) //
+        .sequential() //
+        .forEachOrdered(testConsumer);
 
     assertEquals(3, names.size());
 
@@ -236,10 +236,10 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
     List<String> names = new ArrayList<>();
     Consumer<? super String> testConsumer = names::add;
     entityStream //
-      .of(Company.class) //
-      .map(Company$.NAME) //
-      .sequential() //
-      .forEach(testConsumer);
+        .of(Company.class) //
+        .map(Company$.NAME) //
+        .sequential() //
+        .forEach(testConsumer);
 
     assertEquals(3, names.size());
 
@@ -251,10 +251,10 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   @Test
   void testToArrayOnMappedField() {
     Object[] allCompanies = entityStream //
-      .of(Company.class) //
-      .map(Company$.NAME) //
-      .sequential() //
-      .toArray();
+        .of(Company.class) //
+        .map(Company$.NAME) //
+        .sequential() //
+        .toArray();
 
     assertEquals(3, allCompanies.length);
 
@@ -268,10 +268,10 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   @Test
   void testToArrayTypedOnMappedField() {
     String[] namesArray = entityStream //
-      .of(Company.class) //
-      .map(Company$.NAME) //
-      .sequential() //
-      .toArray(String[]::new);
+        .of(Company.class) //
+        .map(Company$.NAME) //
+        .sequential() //
+        .toArray(String[]::new);
 
     assertEquals(3, namesArray.length);
 
@@ -284,14 +284,14 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   @Test
   void testCountOnMappedField() {
     long count = entityStream //
-      .of(Company.class) //
-      .filter( //
-        Company$.NAME.notEq("RedisInc") //
-          .and(Company$.NAME.notEq("Microsoft")) //
-      ) //
-      .map(Company$.NAME) //
-      .sequential() //
-      .count();
+        .of(Company.class) //
+        .filter( //
+            Company$.NAME.notEq("RedisInc") //
+                .and(Company$.NAME.notEq("Microsoft")) //
+        ) //
+        .map(Company$.NAME) //
+        .sequential() //
+        .count();
 
     assertEquals(1, count);
   }
@@ -299,11 +299,11 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   @Test
   void testLimitOnMappedField() {
     List<String> companies = entityStream //
-      .of(Company.class) //
-      .map(Company$.NAME) //
-      .sequential() //
-      .limit(2) //
-      .collect(Collectors.toList());
+        .of(Company.class) //
+        .map(Company$.NAME) //
+        .sequential() //
+        .limit(2) //
+        .collect(Collectors.toList());
 
     assertEquals(2, companies.size());
   }
@@ -311,11 +311,11 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   @Test
   void testSkipOnMappedField() {
     List<String> companies = entityStream //
-      .of(Company.class) //
-      .map(Company$.NAME) //
-      .sequential() //
-      .skip(1) //
-      .collect(Collectors.toList());
+        .of(Company.class) //
+        .map(Company$.NAME) //
+        .sequential() //
+        .skip(1) //
+        .collect(Collectors.toList());
 
     assertEquals(2, companies.size());
   }
@@ -323,11 +323,11 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   @Test
   void testSortOnMappedField() {
     List<String> names = entityStream //
-      .of(Company.class) //
-      .map(Company$.NAME) //
-      .sequential() //
-      .sorted(Comparator.reverseOrder()) //
-      .collect(Collectors.toList());
+        .of(Company.class) //
+        .map(Company$.NAME) //
+        .sequential() //
+        .sorted(Comparator.reverseOrder()) //
+        .collect(Collectors.toList());
 
     assertEquals(3, names.size());
 
@@ -340,12 +340,12 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   void testPeekOnMappedField() {
     final List<String> peekedEmails = new ArrayList<>();
     List<String> emails = entityStream //
-      .of(Company.class) //
-      .filter(Company$.NAME.eq("RedisInc")) //
-      .map(Company$.EMAIL) //
-      .sequential() //
-      .peek(peekedEmails::add) //
-      .collect(Collectors.toList());
+        .of(Company.class) //
+        .filter(Company$.NAME.eq("RedisInc")) //
+        .map(Company$.EMAIL) //
+        .sequential() //
+        .peek(peekedEmails::add) //
+        .collect(Collectors.toList());
 
     assertThat(peekedEmails).containsExactly("stack@redis.com");
 
@@ -355,10 +355,10 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   @Test
   void testFindFirstOnMappedField() {
     Optional<String> maybeEmail = entityStream.of(Company.class) //
-      .filter(Company$.NAME.eq("RedisInc")) //
-      .map(Company$.EMAIL) //
-      .sequential() //
-      .findFirst();
+        .filter(Company$.NAME.eq("RedisInc")) //
+        .map(Company$.EMAIL) //
+        .sequential() //
+        .findFirst();
 
     assertTrue(maybeEmail.isPresent());
     assertEquals("stack@redis.com", maybeEmail.get());
@@ -367,10 +367,10 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   @Test
   void testFindAnyOnMappedField() {
     Optional<String> maybeEmail = entityStream.of(Company.class) //
-      .filter(Company$.NAME.eq("RedisInc")) //
-      .map(Company$.EMAIL) //
-      .sequential() //
-      .findAny();
+        .filter(Company$.NAME.eq("RedisInc")) //
+        .map(Company$.EMAIL) //
+        .sequential() //
+        .findAny();
 
     assertTrue(maybeEmail.isPresent());
     assertEquals("stack@redis.com", maybeEmail.get());
@@ -379,10 +379,10 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   @Test
   void testReduceWithMethodReferenceOnMappedField() {
     int result = entityStream //
-      .of(Company.class) //
-      .map(Company$.YEAR_FOUNDED) //
-      .sequential() //
-      .reduce(0, (t, u) -> Integer.sum(t, u));
+        .of(Company.class) //
+        .map(Company$.YEAR_FOUNDED) //
+        .sequential() //
+        .reduce(0, (t, u) -> Integer.sum(t, u));
 
     assertThat(result).isEqualTo(2011 + 1975 + 2003);
   }
@@ -390,10 +390,10 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   @Test
   void testReduceWithLambdaOnMappedField() {
     int result = entityStream //
-      .of(Company.class) //
-      .map(Company$.YEAR_FOUNDED) //
-      .sequential() //
-      .reduce(0, (t, u) -> Integer.sum(t, u));
+        .of(Company.class) //
+        .map(Company$.YEAR_FOUNDED) //
+        .sequential() //
+        .reduce(0, (t, u) -> Integer.sum(t, u));
 
     assertThat(result).isEqualTo(2011 + 1975 + 2003);
   }
@@ -403,24 +403,24 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
     BinaryOperator<Integer> establishedFirst = (c1, c2) -> c1 < c2 ? c1 : c2;
 
     Optional<Integer> firstEstablish = entityStream //
-      .of(Company.class) //
-      .map(Company$.YEAR_FOUNDED) //
-      .sequential() //
-      .reduce(establishedFirst);
+        .of(Company.class) //
+        .map(Company$.YEAR_FOUNDED) //
+        .sequential() //
+        .reduce(establishedFirst);
 
     assertAll( //
-      () -> assertThat(firstEstablish).isPresent(), //
-      () -> assertThat(firstEstablish).contains(1975) //
+        () -> assertThat(firstEstablish).isPresent(), //
+        () -> assertThat(firstEstablish).contains(1975) //
     );
   }
 
   @Test
   void testReduceWithIdentityBifunctionAndBinaryOperatorOnMappedField() {
     Integer firstEstablish = entityStream //
-      .of(Company.class) //
-      .map(Company$.YEAR_FOUNDED) //
-      .sequential() //
-      .reduce(Integer.MAX_VALUE, (t, u) -> Integer.min(t, u), (t, u) -> Integer.min(t, u));
+        .of(Company.class) //
+        .map(Company$.YEAR_FOUNDED) //
+        .sequential() //
+        .reduce(Integer.MAX_VALUE, (t, u) -> Integer.min(t, u), (t, u) -> Integer.min(t, u));
     assertThat(firstEstablish).isEqualTo(1975);
   }
 
@@ -432,10 +432,10 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
     BiConsumer<AtomicInteger, AtomicInteger> combiner = (a1, a2) -> a1.set(a1.get() + a2.get());
 
     AtomicInteger result = entityStream //
-      .of(Company.class) //
-      .map(Company$.YEAR_FOUNDED) //
-      .sequential() //
-      .collect(supplier, accumulator, combiner);
+        .of(Company.class) //
+        .map(Company$.YEAR_FOUNDED) //
+        .sequential() //
+        .collect(supplier, accumulator, combiner);
 
     assertThat(result.intValue()).isEqualTo(2011 + 1975 + 2003);
   }
@@ -443,42 +443,42 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   @Test
   void testMinOnMappedField() {
     Optional<Integer> firstEstablish = entityStream //
-      .of(Company.class) //
-      .map(Company$.YEAR_FOUNDED) //
-      .sequential() //
-      .min(Integer::compareTo);
+        .of(Company.class) //
+        .map(Company$.YEAR_FOUNDED) //
+        .sequential() //
+        .min(Integer::compareTo);
     assertAll( //
-      () -> assertThat(firstEstablish).isPresent(), //
-      () -> assertThat(firstEstablish).contains(1975) //
+        () -> assertThat(firstEstablish).isPresent(), //
+        () -> assertThat(firstEstablish).contains(1975) //
     );
   }
 
   @Test
   void testMaxOnMappedField() {
     Optional<Integer> lastEstablish = entityStream //
-      .of(Company.class) //
-      .map(Company$.YEAR_FOUNDED) //
-      .sequential() //
-      .max(Integer::compareTo);
+        .of(Company.class) //
+        .map(Company$.YEAR_FOUNDED) //
+        .sequential() //
+        .max(Integer::compareTo);
     assertAll( //
-      () -> assertThat(lastEstablish).isPresent(), //
-      () -> assertThat(lastEstablish).contains(2011) //
+        () -> assertThat(lastEstablish).isPresent(), //
+        () -> assertThat(lastEstablish).contains(2011) //
     );
   }
 
   @Test
   void testAnyMatchOnMappedField() {
     boolean c1975 = entityStream //
-      .of(Company.class) //
-      .map(Company$.YEAR_FOUNDED) //
-      .sequential() //
-      .anyMatch(c -> c == 1975);
+        .of(Company.class) //
+        .map(Company$.YEAR_FOUNDED) //
+        .sequential() //
+        .anyMatch(c -> c == 1975);
 
     boolean c1976 = entityStream //
-      .of(Company.class) //
-      .map(Company$.YEAR_FOUNDED) //
-      .sequential() //
-      .anyMatch(c -> c == 1976);
+        .of(Company.class) //
+        .map(Company$.YEAR_FOUNDED) //
+        .sequential() //
+        .anyMatch(c -> c == 1976);
 
     assertThat(c1975).isTrue();
     assertThat(c1976).isFalse();
@@ -487,16 +487,16 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   @Test
   void testAllMatchOnMappedField() {
     boolean allEstablishedBefore1970 = entityStream //
-      .of(Company.class) //
-      .map(Company$.YEAR_FOUNDED) //
-      .sequential() //
-      .allMatch(c -> c < 1970);
+        .of(Company.class) //
+        .map(Company$.YEAR_FOUNDED) //
+        .sequential() //
+        .allMatch(c -> c < 1970);
 
     boolean allEstablishedOnOrAfter1970 = entityStream //
-      .of(Company.class) //
-      .map(Company$.YEAR_FOUNDED) //
-      .sequential() //
-      .allMatch(c -> c >= 1970);
+        .of(Company.class) //
+        .map(Company$.YEAR_FOUNDED) //
+        .sequential() //
+        .allMatch(c -> c >= 1970);
 
     assertThat(allEstablishedOnOrAfter1970).isTrue();
     assertThat(allEstablishedBefore1970).isFalse();
@@ -505,16 +505,16 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   @Test
   void testNoneMatchOnMappedField() {
     boolean noneIn1975 = entityStream //
-      .of(Company.class) //
-      .map(Company$.YEAR_FOUNDED) //
-      .sequential() //
-      .noneMatch(c -> c == 1975);
+        .of(Company.class) //
+        .map(Company$.YEAR_FOUNDED) //
+        .sequential() //
+        .noneMatch(c -> c == 1975);
 
     boolean noneIn1976 = entityStream //
-      .of(Company.class) //
-      .map(Company$.YEAR_FOUNDED) //
-      .sequential() //
-      .noneMatch(c -> c == 1976);
+        .of(Company.class) //
+        .map(Company$.YEAR_FOUNDED) //
+        .sequential() //
+        .noneMatch(c -> c == 1976);
 
     assertThat(noneIn1976).isTrue();
     assertThat(noneIn1975).isFalse();
@@ -525,14 +525,14 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
     ToLongFunction<Integer> func = y -> y - 1;
 
     List<Long> yearsMinusOne = entityStream.of(Company.class) //
-      .map(Company$.YEAR_FOUNDED) //
-      .sequential() //
-      .map(func) //
-      .collect(Collectors.toList());
+        .map(Company$.YEAR_FOUNDED) //
+        .sequential() //
+        .map(func) //
+        .collect(Collectors.toList());
 
     assertAll( //
-      () -> assertThat(yearsMinusOne).hasSize(3), //
-      () -> assertThat(yearsMinusOne).containsExactly(2010L, 1974L, 2002L) //
+        () -> assertThat(yearsMinusOne).hasSize(3), //
+        () -> assertThat(yearsMinusOne).containsExactly(2010L, 1974L, 2002L) //
     );
   }
 

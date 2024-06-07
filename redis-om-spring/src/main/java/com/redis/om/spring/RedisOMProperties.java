@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @ConfigurationProperties(
-  prefix = "redis.om.spring", ignoreInvalidFields = true
+    prefix = "redis.om.spring", ignoreInvalidFields = true
 )
 public class RedisOMProperties {
   public static final int MAX_SEARCH_RESULTS = 10000;

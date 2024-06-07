@@ -41,8 +41,8 @@ public class BloomQueryExecutor {
         if (field.isAnnotationPresent(Bloom.class)) {
           Bloom bloom = field.getAnnotation(Bloom.class);
           return Optional.of(!org.apache.commons.lang3.ObjectUtils.isEmpty(bloom.name()) ?
-            bloom.name() :
-            String.format("bf:%s:%s", entityClass.getSimpleName(), field.getName()));
+              bloom.name() :
+              String.format("bf:%s:%s", entityClass.getSimpleName(), field.getName()));
         }
       } catch (SecurityException e) {
         // NO-OP
