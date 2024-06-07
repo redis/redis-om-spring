@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.domain.*;
+import org.springframework.data.domain.ExampleMatcher.GenericPropertyMatcher;
 import org.springframework.data.domain.ExampleMatcher.StringMatcher;
 import org.springframework.data.geo.Point;
 import org.springframework.data.repository.query.FluentQuery;
@@ -166,15 +167,15 @@ public class RedisHashQueryByExampleTest extends AbstractBaseEnhancedRedisTest {
   @Test
   void testFindByFieldWithExplicitGeoIndexedAnnotation() {
     MyHash template = new MyHash();
-    template.setLocation(new Point(-122.066540, 37.377690));
+    template.setLocation(new Point(-122.124500, 47.640160));
 
     Example<MyHash> example = Example.of(template);
 
     Optional<MyHash> maybeDoc1 = repository.findOne(example);
     assertThat(maybeDoc1).isPresent();
     MyHash doc1 = maybeDoc1.get();
-    assertThat(doc1.getTitle()).isEqualTo("hello mundo");
-    assertThat(doc1.getANumber()).isEqualTo(2);
+    assertThat(doc1.getTitle()).isEqualTo("hello world");
+    assertThat(doc1.getANumber()).isEqualTo(1);
   }
 
   @Test

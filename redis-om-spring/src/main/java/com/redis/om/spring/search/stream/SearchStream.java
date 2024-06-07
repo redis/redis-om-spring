@@ -132,4 +132,6 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
   <R> SearchStream<E> highlight(Function<? super E, ? extends R> field);
 
   <R> SearchStream<E> highlight(Function<? super E, ? extends R> field, Pair<String, String> tags);
+
+  boolean isDocument();
 }
