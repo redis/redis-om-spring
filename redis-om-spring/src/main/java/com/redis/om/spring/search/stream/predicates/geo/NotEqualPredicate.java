@@ -43,9 +43,10 @@ public class NotEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   @Override
   public Node apply(Node root) {
     boolean paramsPresent = ObjectUtils.isNotEmpty(x) && ObjectUtils.isNotEmpty(y);
+    //TODO: default and default distance metric should be obtained from RedisOMProperties
     return paramsPresent ?
       QueryBuilders.intersect(root)
-        .add(QueryBuilders.disjunct(getSearchAlias(), Values.value(String.format("[%s %s 0.0001 mi]", x, y)))) :
+        .add(QueryBuilders.disjunct(getSearchAlias(), Values.value(String.format("[%s %s 0.0005 mi]", x, y)))) :
       root;
   }
 

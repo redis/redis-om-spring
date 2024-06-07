@@ -149,10 +149,11 @@ public class RedisModulesConfiguration {
   }
 
   @Bean(name = "rediSearchIndexer")
-  public RediSearchIndexer redisearchIndexer(ApplicationContext ac,
-    @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder) {
+  public RediSearchIndexer redisearchIndexer(ApplicationContext ac, //
+      RedisOMProperties properties, //
+      @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder) {
 
-    return new RediSearchIndexer(ac, gsonBuilder);
+    return new RediSearchIndexer(ac, properties, gsonBuilder);
   }
 
   @Bean(name = "djlImageFactory")
