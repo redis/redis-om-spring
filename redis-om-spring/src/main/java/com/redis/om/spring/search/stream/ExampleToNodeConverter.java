@@ -6,6 +6,7 @@ import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.search.stream.predicates.jedis.JedisValues;
 import com.redis.om.spring.util.ObjectUtils;
 import org.springframework.data.domain.Example;
+import org.springframework.data.geo.Metrics;
 import org.springframework.data.geo.Point;
 import org.springframework.expression.spel.SpelEvaluationException;
 import redis.clients.jedis.search.querybuilder.Node;
@@ -26,9 +27,13 @@ import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
 public class ExampleToNodeConverter<E> {
 
   private final RediSearchIndexer indexer;
+  private final double defaultDistance;
+  private final Metrics defaultDistanceMetric;
 
   public ExampleToNodeConverter(RediSearchIndexer indexer) {
     this.indexer = indexer;
+    this.defaultDistance = indexer.getProperties().getRepository().getQuery().getDefaultDistance();
+    this.defaultDistanceMetric = indexer.getProperties().getRepository().getQuery().getDefaultDistanceMetrics();
   }
 
   private static Optional<String> getAliasForSchemaField(SchemaField schemaField) {
@@ -120,18 +125,19 @@ public class ExampleToNodeConverter<E> {
               x = point.getX();
               y = point.getY();
               if (matchingAll) {
-                rootNode = QueryBuilders.intersect(rootNode).add(fieldName, String.format("[%s %s 0.0001 mi]", x, y));
+                rootNode = QueryBuilders.intersect(rootNode).add(fieldName, String.format("[%s %s %s %s]", x, y,
+                    this.defaultDistance, this.defaultDistanceMetric.getAbbreviation()));
               } else {
-                rootNode = QueryBuilders.union(rootNode).add(fieldName, String.format("[%s %s 0.0001 mi]", x, y));
+                rootNode = QueryBuilders.union(rootNode).add(fieldName, String.format("[%s %s %s %s]", x, y, this.defaultDistance, this.defaultDistanceMetric.getAbbreviation()));
               }
             } else if (CharSequence.class.isAssignableFrom(cls)) {
               String[] coordinates = value.toString().split(",");
               x = Double.parseDouble(coordinates[0]);
               y = Double.parseDouble(coordinates[1]);
               if (matchingAll) {
-                rootNode = QueryBuilders.intersect(rootNode).add(fieldName, String.format("[%s %s 0.0001 mi]", x, y));
+                rootNode = QueryBuilders.intersect(rootNode).add(fieldName, String.format("[%s %s %s %s]", x, y, this.defaultDistance, this.defaultDistanceMetric.getAbbreviation()));
               } else {
-                rootNode = QueryBuilders.union(rootNode).add(fieldName, String.format("[%s %s 0.0001 mi]", x, y));
+                rootNode = QueryBuilders.union(rootNode).add(fieldName, String.format("[%s %s %s %s]", x, y, this.defaultDistance, this.defaultDistanceMetric.getAbbreviation()));
               }
             }
           }

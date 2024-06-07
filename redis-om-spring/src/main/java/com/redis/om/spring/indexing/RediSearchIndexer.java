@@ -4,6 +4,7 @@ import com.github.f4b6a3.ulid.Ulid;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
+import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.annotations.*;
 import com.redis.om.spring.id.IdFilter;
 import com.redis.om.spring.id.IdentifierFilter;
@@ -61,10 +62,12 @@ public class RediSearchIndexer {
   private final RedisModulesOperations<String> rmo;
   private final RedisMappingContext mappingContext;
   private final GsonBuilder gsonBuilder;
+  private final RedisOMProperties properties;
 
   @SuppressWarnings("unchecked")
-  public RediSearchIndexer(ApplicationContext ac, GsonBuilder gsonBuilder) {
+  public RediSearchIndexer(ApplicationContext ac, RedisOMProperties properties, GsonBuilder gsonBuilder) {
     this.ac = ac;
+    this.properties = properties;
     rmo = (RedisModulesOperations<String>) ac.getBean("redisModulesOperations");
     mappingContext = (RedisMappingContext) ac.getBean("keyValueMappingContext");
     this.gsonBuilder = gsonBuilder;
@@ -902,5 +905,9 @@ public class RediSearchIndexer {
   public String getAlias(Class<?> cl, String fieldName) {
     var alias = entityClassFieldToAlias.get(Tuples.of(cl, fieldName));
     return alias != null ? alias : fieldName;
+  }
+
+  public RedisOMProperties getProperties() {
+    return properties;
   }
 }
