@@ -24,6 +24,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.*;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
+import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.Query.HighlightTags;
 import redis.clients.jedis.search.SearchResult;
@@ -80,6 +81,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private int dialect = 1;
   private SummarizeParams summarizeParams;
   private Pair<String, String> highlightTags;
+  private boolean isQBE = false;
 
   public SearchStreamImpl(Class<E> entityClass, RedisModulesOperations<String> modulesOperations,
     GsonBuilder gsonBuilder, RediSearchIndexer indexer) {
@@ -140,6 +142,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public SearchStream<E> filter(Example<E> example) {
+    isQBE = true;
     rootNode = exampleToNodeConverter.processExample(example, rootNode);
     return this;
   }
@@ -494,7 +497,13 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   private SearchResult executeQuery() {
-    return search.search(prepareQuery());
+    try {
+      return search.search(prepareQuery());
+    } catch (JedisDataException jde) {
+      if (isQBE && jde.getMessage().contains("not loaded nor in schema")) {
+        throw new UnsupportedOperationException("The example object properties are not part of the search schema", jde);
+      } else throw jde;
+    }
   }
 
   @SuppressWarnings("unchecked")
@@ -769,6 +778,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     return highlight(field);
   }
 
+  @Override
   public boolean isDocument() {
     return isDocument;
   }
