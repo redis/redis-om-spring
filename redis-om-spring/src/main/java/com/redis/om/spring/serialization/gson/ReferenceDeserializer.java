@@ -32,11 +32,11 @@ public class ReferenceDeserializer implements JsonDeserializer<Object> {
 
   @SuppressWarnings("unchecked")
   public ReferenceDeserializer(Field field, JSONOperations<?> ops, RedisOMProperties properties,
-    CacheManager cacheManager) {
+      CacheManager cacheManager) {
     this.ops = (JSONOperations<String>) ops;
     Map<Type, InstanceCreator<?>> instanceCreators = new HashMap<>();
     ConstructorConstructor constructorConstructor = new ConstructorConstructor(instanceCreators, true,
-      Collections.emptyList());
+        Collections.emptyList());
     if (ObjectUtils.isCollection(field)) {
       Optional<Class<?>> collectionType = ObjectUtils.getCollectionElementClass(field);
       if (collectionType.isPresent()) {
@@ -57,7 +57,7 @@ public class ReferenceDeserializer implements JsonDeserializer<Object> {
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public Object deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
-    throws JsonParseException {
+      throws JsonParseException {
     Object reference = null;
     JsonObject jsonObject;
     if (json.isJsonPrimitive()) {
@@ -82,16 +82,16 @@ public class ReferenceDeserializer implements JsonDeserializer<Object> {
       reference = instantiateCollection(typeOfT);
 
       String[] keys = jsonArray.asList().stream().filter(JsonElement::isJsonPrimitive)
-        .map(jsonElement -> ObjectUtils.unQuote(jsonElement.toString())).toArray(String[]::new);
+          .map(jsonElement -> ObjectUtils.unQuote(jsonElement.toString())).toArray(String[]::new);
 
       List<String> values;
       if (keys.length > 0) {
         if (shouldCache(type)) {
           values = Arrays.stream(keys).map(key -> referenceCache.get(key, String.class)).filter(Objects::nonNull)
-            .collect(Collectors.toList());
+              .collect(Collectors.toList());
           if (values.size() < keys.length) {
             String[] missingKeys = Arrays.stream(keys).filter(key -> referenceCache.get(key, String.class) == null)
-              .toArray(String[]::new);
+                .toArray(String[]::new);
             List<String> fetchedValues = ops.mget(missingKeys);
             for (int i = 0; i < missingKeys.length; i++) {
               referenceCache.put(missingKeys[i], fetchedValues.get(i));
@@ -102,8 +102,8 @@ public class ReferenceDeserializer implements JsonDeserializer<Object> {
           values = ops.mget(keys);
         }
         ((Collection) reference).addAll(
-          values.stream().map(raw -> gson.fromJson(raw, JsonObject.class)).map(jo -> deserializeEntity(jo, context))
-            .toList());
+            values.stream().map(raw -> gson.fromJson(raw, JsonObject.class)).map(jo -> deserializeEntity(jo, context))
+                .toList());
       }
     }
 

@@ -36,8 +36,8 @@ public abstract class AbstractBaseDocumentSentinelTest {
   static {
     try {
       SENTINEL = new DockerComposeContainer<>(new ClassPathResource(dockerComposeFile).getFile()).withExposedService(
-          "redis-master_1", REDIS_PORT, Wait.forListeningPort())
-        .withExposedService("redis-sentinel_1", SENTINEL_PORT, Wait.forListeningPort());
+              "redis-master_1", REDIS_PORT, Wait.forListeningPort())
+          .withExposedService("redis-sentinel_1", SENTINEL_PORT, Wait.forListeningPort());
       SENTINEL.start();
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -52,14 +52,15 @@ public abstract class AbstractBaseDocumentSentinelTest {
     registry.add("spring.redis.sentinel.master", () -> "mymaster");
 
     registry.add("spring.redis.sentinel.nodes",
-      () -> SENTINEL.getServiceHost("redis-sentinel_1", SENTINEL_PORT) + ":" + SENTINEL.getServicePort(
-        "redis-sentinel_1", SENTINEL_PORT));
+        () -> SENTINEL.getServiceHost("redis-sentinel_1", SENTINEL_PORT) + ":" + SENTINEL.getServicePort(
+            "redis-sentinel_1", SENTINEL_PORT));
   }
 
   @SpringBootApplication
   @Configuration
   @EnableRedisDocumentRepositories(
-    basePackages = { "com.redis.om.spring.fixtures.document.model", "com.redis.om.spring.fixtures.document.repository", "com.redis.om.spring.repository" }
+      basePackages = { "com.redis.om.spring.fixtures.document.model",
+          "com.redis.om.spring.fixtures.document.repository", "com.redis.om.spring.repository" }
   )
   static class Config extends SentinelConfig {
   }

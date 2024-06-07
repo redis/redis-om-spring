@@ -20,7 +20,7 @@ public interface Single<T0> extends Tuple {
       return getFirst();
     } else {
       throw new IndexOutOfBoundsException(
-        String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
+          String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
     }
   }
 }

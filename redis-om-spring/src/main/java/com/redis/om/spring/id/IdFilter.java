@@ -14,5 +14,5 @@ import static java.lang.annotation.ElementType.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(value = { FIELD, METHOD, ANNOTATION_TYPE })
 public @interface IdFilter {
-    Class<? extends IdentifierFilter<?>> value();
+  Class<? extends IdentifierFilter<?>> value();
 }

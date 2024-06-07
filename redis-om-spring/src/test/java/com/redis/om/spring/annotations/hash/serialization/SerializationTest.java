@@ -66,7 +66,7 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
     ulid = UlidCreator.getMonotonicUlid();
     byteArray = "Hello World!".getBytes();
     byteArray2 = featureExtractor.getImageEmbeddingsAsByteArrayFor( //
-      applicationContext.getResource("classpath:/images/cat.jpg").getInputStream());
+        applicationContext.getResource("classpath:/images/cat.jpg").getInputStream());
     yearMonth = YearMonth.of(1972, 6);
 
     List<String[]> listOfStringArrays = new ArrayList<>();
@@ -79,70 +79,70 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
     listThings = List.of("redFish", "blueFish");
 
     ks = KitchenSink.builder() //
-      .name("ks") //
-      .localDate(localDate) //
-      .localDateTime(localDateTime) //
-      .localOffsetDateTime(localOffsetDateTime) //
-      .date(date) //
-      .point(point) //
-      .ulid(ulid) //
-      .setThings(setThings) //
-      .listThings(listThings) //
-      .yearMonth(yearMonth) //
-      .build();
+        .name("ks") //
+        .localDate(localDate) //
+        .localDateTime(localDateTime) //
+        .localOffsetDateTime(localOffsetDateTime) //
+        .date(date) //
+        .point(point) //
+        .ulid(ulid) //
+        .setThings(setThings) //
+        .listThings(listThings) //
+        .yearMonth(yearMonth) //
+        .build();
 
     ks1 = KitchenSink.builder() //
-      .name("ks1") //
-      .localDate(localDate) //
-      .localDateTime(localDateTime) //
-      .localOffsetDateTime(localOffsetDateTime) //
-      .date(date) //
-      .point(point) //
-      .ulid(ulid) //
-      .setThings(Set.of()) //
-      .listThings(List.of()) //
-      .yearMonth(yearMonth) //
-      .build();
+        .name("ks1") //
+        .localDate(localDate) //
+        .localDateTime(localDateTime) //
+        .localOffsetDateTime(localOffsetDateTime) //
+        .date(date) //
+        .point(point) //
+        .ulid(ulid) //
+        .setThings(Set.of()) //
+        .listThings(List.of()) //
+        .yearMonth(yearMonth) //
+        .build();
 
     ks2 = KitchenSink.builder() //
-      .name("ks2") //
-      .localDate(localDate) //
-      .localDateTime(localDateTime) //
-      .localOffsetDateTime(localOffsetDateTime) //
-      .date(date) //
-      .point(point) //
-      .ulid(ulid) //
-      .yearMonth(yearMonth) //
-      .build();
+        .name("ks2") //
+        .localDate(localDate) //
+        .localDateTime(localDateTime) //
+        .localOffsetDateTime(localOffsetDateTime) //
+        .date(date) //
+        .point(point) //
+        .ulid(ulid) //
+        .yearMonth(yearMonth) //
+        .build();
 
     ks2.setSetThings(null);
     ks2.setListThings(null);
     ks2.setByteArray(byteArray2);
 
     ks3 = KitchenSink.builder() //
-      .name("ks3") //
-      .localDate(localDate) //
-      .localDateTime(localDateTime) //
-      .localOffsetDateTime(localOffsetDateTime) //
-      .date(date) //
-      .point(point) //
-      .ulid(ulid) //
-      .yearMonth(yearMonth) //
-      .build();
+        .name("ks3") //
+        .localDate(localDate) //
+        .localDateTime(localDateTime) //
+        .localOffsetDateTime(localOffsetDateTime) //
+        .date(date) //
+        .point(point) //
+        .ulid(ulid) //
+        .yearMonth(yearMonth) //
+        .build();
 
     ks3.setUlid(null);
     ks3.setByteArray(byteArray);
 
     ks4 = KitchenSink.builder() //
-      .name("ks4") //
-      .localDate(localDate) //
-      .localDateTime(localDateTime) //
-      .localOffsetDateTime(localOffsetDateTime) //
-      .date(date) //
-      .point(point) //
-      .ulid(ulid) //
-      .yearMonth(yearMonth) //
-      .build();
+        .name("ks4") //
+        .localDate(localDate) //
+        .localDateTime(localDateTime) //
+        .localOffsetDateTime(localOffsetDateTime) //
+        .date(date) //
+        .point(point) //
+        .ulid(ulid) //
+        .yearMonth(yearMonth) //
+        .build();
 
     ks4.setUlid(null);
     ks4.setByteArray(null);
@@ -163,13 +163,13 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
     Instant localDateTimeInstant = localDateTime.atZone(ZoneId.systemDefault()).toInstant();
     long localDateTimeInMillis = localDateTimeInstant.toEpochMilli();
     long rawLocalDateTime = Long.parseLong(
-      Objects.requireNonNull(template.opsForHash().get(key, "localDateTime")).toString());
+        Objects.requireNonNull(template.opsForHash().get(key, "localDateTime")).toString());
 
     // OffsetDateTime
     Instant localOffsetDateTimeInstant = localOffsetDateTime.atZoneSameInstant(ZoneId.systemDefault()).toInstant();
     long localOffsetDateTimeInMillis = localOffsetDateTimeInstant.toEpochMilli();
     long rawlocalOffsetDateTime = Long.parseLong(
-      Objects.requireNonNull(template.opsForHash().get(key, "localOffsetDateTime")).toString());
+        Objects.requireNonNull(template.opsForHash().get(key, "localOffsetDateTime")).toString());
 
     // Date
     long dateInMillis = date.getTime();

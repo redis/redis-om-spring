@@ -34,16 +34,16 @@ public class ExplicitPrefixesDocumentTest extends AbstractBaseDocumentTest {
     countryRepository.deleteAll();
 
     var countriesInBulk = Set.of( //
-      Country.of("Mexico"), Country.of("Canada"), //
-      Country.of("Panama"), Country.of("Venezuela") //
+        Country.of("Mexico"), Country.of("Canada"), //
+        Country.of("Panama"), Country.of("Venezuela") //
     );
     countryRepository.saveAll(countriesInBulk);
     countryRepository.save(Country.of("USA"));
 
     docWithColonInPrefixRepository.deleteAll();
     var countriesInBulk2 = Set.of( //
-      DocWithColonInPrefix.of("Mexico"), DocWithColonInPrefix.of("Canada"), //
-      DocWithColonInPrefix.of("Panama"), DocWithColonInPrefix.of("Venezuela") //
+        DocWithColonInPrefix.of("Mexico"), DocWithColonInPrefix.of("Canada"), //
+        DocWithColonInPrefix.of("Panama"), DocWithColonInPrefix.of("Venezuela") //
     );
     docWithColonInPrefixRepository.saveAll(countriesInBulk2);
     docWithColonInPrefixRepository.save(DocWithColonInPrefix.of("USA"));
@@ -54,9 +54,9 @@ public class ExplicitPrefixesDocumentTest extends AbstractBaseDocumentTest {
     try (SearchStream<Country> stream = entityStream.of(Country.class)) {
       var countries = stream.map(Country$._KEY).collect(Collectors.toSet());
       assertThat(countries).containsExactlyInAnyOrder( //
-        "country:Mexico", "country:Canada", //
-        "country:Panama", "country:Venezuela", //
-        "country:USA" //
+          "country:Mexico", "country:Canada", //
+          "country:Panama", "country:Venezuela", //
+          "country:USA" //
       );
     }
   }
@@ -66,9 +66,9 @@ public class ExplicitPrefixesDocumentTest extends AbstractBaseDocumentTest {
     try (SearchStream<DocWithColonInPrefix> stream = entityStream.of(DocWithColonInPrefix.class)) {
       var countries = stream.map(DocWithColonInPrefix$._KEY).collect(Collectors.toSet());
       assertThat(countries).containsExactlyInAnyOrder( //
-        "dwcip:Mexico", "dwcip:Canada", //
-        "dwcip:Panama", "dwcip:Venezuela", //
-        "dwcip:USA" //
+          "dwcip:Mexico", "dwcip:Canada", //
+          "dwcip:Panama", "dwcip:Venezuela", //
+          "dwcip:USA" //
       );
     }
   }

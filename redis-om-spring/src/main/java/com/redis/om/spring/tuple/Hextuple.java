@@ -54,7 +54,7 @@ public interface Hextuple<E1, E2, E3, E4, E5, E6> extends Tuple {
       case 4 -> getFifth();
       case 5 -> getSixth();
       default -> throw new IndexOutOfBoundsException(
-        String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
+          String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
     };
   }
 }

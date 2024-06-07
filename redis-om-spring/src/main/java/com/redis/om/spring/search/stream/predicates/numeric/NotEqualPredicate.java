@@ -33,25 +33,25 @@ public class NotEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     Class<?> cls = value.getClass();
     if (cls == LocalDate.class) {
       return QueryBuilders.intersect(root)
-        .add(QueryBuilders.disjunct(getSearchAlias(), JedisValues.eq((LocalDate) getValue())));
+          .add(QueryBuilders.disjunct(getSearchAlias(), JedisValues.eq((LocalDate) getValue())));
     } else if (cls == Date.class) {
       return QueryBuilders.intersect(root)
-        .add(QueryBuilders.disjunct(getSearchAlias(), JedisValues.eq((Date) getValue())));
+          .add(QueryBuilders.disjunct(getSearchAlias(), JedisValues.eq((Date) getValue())));
     } else if (cls == LocalDateTime.class) {
       return QueryBuilders.intersect(root)
-        .add(QueryBuilders.disjunct(getSearchAlias(), JedisValues.eq((LocalDateTime) getValue())));
+          .add(QueryBuilders.disjunct(getSearchAlias(), JedisValues.eq((LocalDateTime) getValue())));
     } else if (cls == Instant.class) {
       return QueryBuilders.intersect(root)
-        .add(QueryBuilders.disjunct(getSearchAlias(), JedisValues.eq((Instant) getValue())));
+          .add(QueryBuilders.disjunct(getSearchAlias(), JedisValues.eq((Instant) getValue())));
     } else if (cls == Integer.class) {
       return QueryBuilders.intersect(root)
-        .add(QueryBuilders.disjunct(getSearchAlias(), Values.eq(Integer.parseInt(getValue().toString()))));
+          .add(QueryBuilders.disjunct(getSearchAlias(), Values.eq(Integer.parseInt(getValue().toString()))));
     } else if (cls == Long.class) {
       return QueryBuilders.intersect(root)
-        .add(QueryBuilders.disjunct(getSearchAlias(), Values.eq(Long.parseLong(getValue().toString()))));
+          .add(QueryBuilders.disjunct(getSearchAlias(), Values.eq(Long.parseLong(getValue().toString()))));
     } else if (cls == Double.class) {
       return QueryBuilders.intersect(root)
-        .add(QueryBuilders.disjunct(getSearchAlias(), Values.eq(Double.parseDouble(getValue().toString()))));
+          .add(QueryBuilders.disjunct(getSearchAlias(), Values.eq(Double.parseDouble(getValue().toString()))));
     } else {
       return root;
     }

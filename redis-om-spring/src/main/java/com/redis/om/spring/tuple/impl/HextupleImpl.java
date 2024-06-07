@@ -3,7 +3,7 @@ package com.redis.om.spring.tuple.impl;
 import com.redis.om.spring.tuple.Hextuple;
 
 public final class HextupleImpl<T0, T1, T2, T3, T4, T5> extends AbstractTuple
-  implements Hextuple<T0, T1, T2, T3, T4, T5> {
+    implements Hextuple<T0, T1, T2, T3, T4, T5> {
 
   public HextupleImpl(String[] labels, T0 e0, T1 e1, T2 e2, T3 e3, T4 e4, T5 e5) {
     super(HextupleImpl.class, labels, e0, e1, e2, e3, e4, e5);

@@ -16,116 +16,117 @@ import java.util.stream.Collectors;
 public enum QueryClause {
   // FULL TEXT
   TEXT_ALL( //
-    QueryClauseTemplate.of(FieldType.TEXT, Part.Type.SIMPLE_PROPERTY, QueryClause.FIRST_PARAM, 1) //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.SIMPLE_PROPERTY, QueryClause.FIRST_PARAM, 1) //
   ),
   TEXT_SIMPLE_PROPERTY( //
-    QueryClauseTemplate.of(FieldType.TEXT, Part.Type.SIMPLE_PROPERTY, QueryClause.FIELD_EQUAL, 1) //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.SIMPLE_PROPERTY, QueryClause.FIELD_EQUAL, 1) //
   ),
   TEXT_NEGATING_SIMPLE_PROPERTY( //
-    QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.SIMPLE_PROPERTY, QueryClause.FIELD_NON_EQUAL_PARAM_0, 1) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.SIMPLE_PROPERTY, QueryClause.FIELD_NON_EQUAL_PARAM_0, 1) //
   ),
   TEXT_STARTING_WITH( //
-    QueryClauseTemplate.of(FieldType.TEXT, Part.Type.STARTING_WITH, QueryClause.FIELD_TEXT_STARTING_WITH, 1) //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.STARTING_WITH, QueryClause.FIELD_TEXT_STARTING_WITH, 1) //
   ),
   TEXT_ENDING_WITH( //
-    QueryClauseTemplate.of(FieldType.TEXT, Part.Type.ENDING_WITH, QueryClause.FIELD_TEXT_ENDING_WITH, 1) //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.ENDING_WITH, QueryClause.FIELD_TEXT_ENDING_WITH, 1) //
   ),
   TEXT_LIKE( //
-    QueryClauseTemplate.of(FieldType.TEXT, Part.Type.LIKE, QueryClause.FIELD_LIKE, 1) //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.LIKE, QueryClause.FIELD_LIKE, 1) //
   ),
   TEXT_NOT_LIKE( //
-    QueryClauseTemplate.of(FieldType.TEXT, Part.Type.NOT_LIKE, QueryClause.FIELD_NOT_LIKE, 1) //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.NOT_LIKE, QueryClause.FIELD_NOT_LIKE, 1) //
   ),
   TEXT_CONTAINING( //
-    QueryClauseTemplate.of(FieldType.TEXT, Part.Type.CONTAINING, QueryClause.FIELD_LIKE, 1) //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.CONTAINING, QueryClause.FIELD_LIKE, 1) //
   ),
   TEXT_NOT_CONTAINING( //
-    QueryClauseTemplate.of(FieldType.TEXT, Part.Type.NOT_CONTAINING, QueryClause.FIELD_NOT_LIKE, 1) //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.NOT_CONTAINING, QueryClause.FIELD_NOT_LIKE, 1) //
   ),
   TEXT_NOT_IN( //
-    QueryClauseTemplate.of(FieldType.TEXT, Part.Type.NOT_IN, QueryClause.FIELD_EQUAL, 1) //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.NOT_IN, QueryClause.FIELD_EQUAL, 1) //
   ),
   TEXT_IN( //
-    QueryClauseTemplate.of(FieldType.TEXT, Part.Type.IN, QueryClause.FIELD_EQUAL, 1) //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.IN, QueryClause.FIELD_EQUAL, 1) //
   ),
   // NUMERIC
   NUMERIC_SIMPLE_PROPERTY( //
-    QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.SIMPLE_PROPERTY, QueryClause.FIELD_NUMERIC_EQUAL_PARAM_0, 1) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.SIMPLE_PROPERTY, QueryClause.FIELD_NUMERIC_EQUAL_PARAM_0, 1)
+      //
   ),
   NUMERIC_NEGATING_SIMPLE_PROPERTY( //
-    QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.SIMPLE_PROPERTY, QueryClause.FIELD_NUMERIC_NOT_EQUAL, 1) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.SIMPLE_PROPERTY, QueryClause.FIELD_NUMERIC_NOT_EQUAL, 1) //
   ),
   NUMERIC_BETWEEN( //
-    QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.BETWEEN, QueryClause.FIELD_NUMERIC_BETWEEN, 2) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.BETWEEN, QueryClause.FIELD_NUMERIC_BETWEEN, 2) //
   ),
   NUMERIC_LESS_THAN( //
-    QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.LESS_THAN, QueryClause.FIELD_NUMERIC_LESS_THAN, 1) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.LESS_THAN, QueryClause.FIELD_NUMERIC_LESS_THAN, 1) //
   ),
   NUMERIC_LESS_THAN_EQUAL( //
-    QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.LESS_THAN_EQUAL, QueryClause.FIELD_NUMERIC_LESS_THAN_EQUAL, 1)
-    //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.LESS_THAN_EQUAL, QueryClause.FIELD_NUMERIC_LESS_THAN_EQUAL, 1)
+      //
   ),
   NUMERIC_GREATER_THAN( //
-    QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.GREATER_THAN, QueryClause.FIELD_NUMERIC_GREATER_THAN, 1) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.GREATER_THAN, QueryClause.FIELD_NUMERIC_GREATER_THAN, 1) //
   ),
   NUMERIC_GREATER_THAN_EQUAL( //
-    QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.GREATER_THAN_EQUAL,
-      QueryClause.FIELD_NUMERIC_GREATER_THAN_EQUAL, 1) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.GREATER_THAN_EQUAL,
+          QueryClause.FIELD_NUMERIC_GREATER_THAN_EQUAL, 1) //
   ),
   NUMERIC_BEFORE( //
-    QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.BEFORE, QueryClause.FIELD_NUMERIC_BEFORE, 1) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.BEFORE, QueryClause.FIELD_NUMERIC_BEFORE, 1) //
   ),
   NUMERIC_AFTER( //
-    QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.AFTER, QueryClause.FIELD_NUMERIC_AFTER, 1) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.AFTER, QueryClause.FIELD_NUMERIC_AFTER, 1) //
   ),
   NUMERIC_CONTAINING( //
-    QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.CONTAINING, QueryClause.FIRST_PARAM, 1) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.CONTAINING, QueryClause.FIRST_PARAM, 1) //
   ),
   NUMERIC_CONTAINING_ALL( //
-    QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.CONTAINING, QueryClause.FIRST_PARAM, 1) //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.CONTAINING, QueryClause.FIRST_PARAM, 1) //
   ),
   // GEO
   GEO_NEAR( //
-    QueryClauseTemplate.of(FieldType.GEO, Part.Type.NEAR, QueryClause.FIELD_GEO_NEAR, 2) //
+      QueryClauseTemplate.of(FieldType.GEO, Part.Type.NEAR, QueryClause.FIELD_GEO_NEAR, 2) //
   ),
   GEO_CONTAINING( //
-    QueryClauseTemplate.of(FieldType.GEO, Part.Type.CONTAINING, QueryClause.FIRST_PARAM, 1) //
+      QueryClauseTemplate.of(FieldType.GEO, Part.Type.CONTAINING, QueryClause.FIRST_PARAM, 1) //
   ),
   GEO_CONTAINING_ALL( //
-    QueryClauseTemplate.of(FieldType.GEO, Part.Type.CONTAINING, QueryClause.FIRST_PARAM, 1) //
+      QueryClauseTemplate.of(FieldType.GEO, Part.Type.CONTAINING, QueryClause.FIRST_PARAM, 1) //
   ),
   // TAG
   TAG_SIMPLE_PROPERTY( //
-    QueryClauseTemplate.of(FieldType.TAG, Part.Type.SIMPLE_PROPERTY, QueryClause.FIELD_TAG_EQUAL, 1) //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.SIMPLE_PROPERTY, QueryClause.FIELD_TAG_EQUAL, 1) //
   ),
   TAG_NOT_IN( //
-    QueryClauseTemplate.of(FieldType.TAG, Part.Type.NOT_IN, QueryClause.FIELD_TAG_EQUAL, 1) //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.NOT_IN, QueryClause.FIELD_TAG_EQUAL, 1) //
   ),
   TAG_IN( //
-    QueryClauseTemplate.of(FieldType.TAG, Part.Type.IN, QueryClause.FIELD_TAG_EQUAL, 1) //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.IN, QueryClause.FIELD_TAG_EQUAL, 1) //
   ),
   TAG_CONTAINING( //
-    QueryClauseTemplate.of(FieldType.TAG, Part.Type.CONTAINING, QueryClause.FIELD_EQUAL, 1) //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.CONTAINING, QueryClause.FIELD_EQUAL, 1) //
   ),
   TAG_CONTAINING_ALL( //
-    QueryClauseTemplate.of(FieldType.TAG, Part.Type.CONTAINING, QueryClause.FIRST_PARAM, 1) //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.CONTAINING, QueryClause.FIRST_PARAM, 1) //
   ),
   TAG_STARTING_WITH( //
-    QueryClauseTemplate.of(FieldType.TAG, Part.Type.STARTING_WITH, QueryClause.FIELD_TAG_STARTING_WITH, 1) //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.STARTING_WITH, QueryClause.FIELD_TAG_STARTING_WITH, 1) //
   ),
   TAG_ENDING_WITH( //
-    QueryClauseTemplate.of(FieldType.TAG, Part.Type.ENDING_WITH, QueryClause.FIELD_TAG_ENDING_WITH, 1) //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.ENDING_WITH, QueryClause.FIELD_TAG_ENDING_WITH, 1) //
   ),
   // ALL FIELDS
   IS_NULL( //
-    QueryClauseTemplate.of(FieldType.TAG, Part.Type.IS_NULL, QueryClause.FIELD_IS_NULL, 0) //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.IS_NULL, QueryClause.FIELD_IS_NULL, 0) //
   ),
   IS_NOT_NULL( //
-    QueryClauseTemplate.of(FieldType.TAG, Type.IS_NOT_NULL, QueryClause.FIELD_IS_NOT_NULL, 0) //
+      QueryClauseTemplate.of(FieldType.TAG, Type.IS_NOT_NULL, QueryClause.FIELD_IS_NOT_NULL, 0) //
   );
 
   public static final Map<String, String> methodNameMap = Map.of("IsContainingAll", "IsContaining", "ContainingAll",
-    "Containing", "ContainsAll", "Contains");
+      "Containing", "ContainsAll", "Contains");
   public static final Pattern CONTAINING_ALL_PATTERN = Pattern.compile("(IsContainingAll|ContainingAll|ContainsAll)");
   private static final String PARAM_PREFIX = "$param_";
   private static final String FIRST_PARAM = "$param_0";
@@ -172,7 +173,7 @@ public enum QueryClause {
   public static String getPostProcessMethodName(String methodName) {
     if (hasContainingAllClause(methodName)) {
       Optional<String> maybeMatchSubstring = CONTAINING_ALL_PATTERN.matcher(methodName).results().map(mr -> mr.group(1))
-        .findFirst();
+          .findFirst();
       if (maybeMatchSubstring.isPresent()) {
         String matchSubstring = maybeMatchSubstring.get();
         return methodName.replace(matchSubstring, methodNameMap.get(matchSubstring));
@@ -190,8 +191,8 @@ public enum QueryClause {
 
   public String prepareQuery(String field, Object... params) {
     String prepared = field.equalsIgnoreCase("__ALL__") ?
-      clauseTemplate.getQuerySegmentTemplate() :
-      clauseTemplate.getQuerySegmentTemplate().replace("$field", field);
+        clauseTemplate.getQuerySegmentTemplate() :
+        clauseTemplate.getQuerySegmentTemplate().replace("$field", field);
 
     Iterator<Object> iter = Arrays.asList(params).iterator();
 
@@ -215,16 +216,16 @@ public enum QueryClause {
             String value;
             if (this == QueryClause.TAG_CONTAINING_ALL) {
               value = c.stream()
-                .map(n -> "@" + field + ":{" + QueryUtils.escape(ObjectUtils.asString(n, converter)) + "}")
-                .collect(Collectors.joining(" "));
+                  .map(n -> "@" + field + ":{" + QueryUtils.escape(ObjectUtils.asString(n, converter)) + "}")
+                  .collect(Collectors.joining(" "));
             } else if (this == QueryClause.NUMERIC_CONTAINING) {
               value = c.stream().map(n -> "@" + field + ":[" + QueryUtils.escape(
-                  ObjectUtils.asString(n, converter)) + " " + QueryUtils.escape(ObjectUtils.asString(n, converter)) + "]")
-                .collect(Collectors.joining("|"));
+                  ObjectUtils.asString(n, converter)) + " " + QueryUtils.escape(
+                  ObjectUtils.asString(n, converter)) + "]").collect(Collectors.joining("|"));
             } else if (this == QueryClause.NUMERIC_CONTAINING_ALL) {
               value = c.stream().map(n -> "@" + field + ":[" + QueryUtils.escape(
-                  ObjectUtils.asString(n, converter)) + " " + QueryUtils.escape(ObjectUtils.asString(n, converter)) + "]")
-                .collect(Collectors.joining(" "));
+                  ObjectUtils.asString(n, converter)) + " " + QueryUtils.escape(
+                  ObjectUtils.asString(n, converter)) + "]").collect(Collectors.joining(" "));
             } else if (this == QueryClause.GEO_CONTAINING) {
               value = c.stream().map(n -> {
                 Point p = (Point) n;
@@ -237,8 +238,8 @@ public enum QueryClause {
               }).collect(Collectors.joining(" "));
             } else {
               value = c.stream()//
-                .map(n -> QueryUtils.escape(ObjectUtils.asString(n, converter), false))
-                .collect(Collectors.joining("|"));
+                  .map(n -> QueryUtils.escape(ObjectUtils.asString(n, converter), false))
+                  .collect(Collectors.joining("|"));
             }
 
             prepared = prepared.replace(PARAM_PREFIX + i++, value);
@@ -247,7 +248,7 @@ public enum QueryClause {
               prepared = prepared.replace(PARAM_PREFIX + i++, param.toString());
             } else {
               prepared = prepared.replace(PARAM_PREFIX + i++,
-                QueryUtils.escape(ObjectUtils.asString(param, converter)));
+                  QueryUtils.escape(ObjectUtils.asString(param, converter)));
             }
           }
           break;

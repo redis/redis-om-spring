@@ -25,7 +25,7 @@ public class LocalDateTypeAdapter implements JsonSerializer<LocalDate>, JsonDese
 
   @Override
   public LocalDate deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
-    throws JsonParseException {
+      throws JsonParseException {
     return LocalDate.ofInstant(Instant.ofEpochSecond(json.getAsLong()), ZoneId.systemDefault());
   }
 

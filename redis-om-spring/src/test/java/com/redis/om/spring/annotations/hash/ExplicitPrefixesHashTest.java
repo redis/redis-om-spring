@@ -34,16 +34,16 @@ public class ExplicitPrefixesHashTest extends AbstractBaseEnhancedRedisTest {
     countryRepository.deleteAll();
 
     var countriesInBulk = Set.of( //
-      Country.of("Mexico"), Country.of("Canada"), //
-      Country.of("Panama"), Country.of("Venezuela") //
+        Country.of("Mexico"), Country.of("Canada"), //
+        Country.of("Panama"), Country.of("Venezuela") //
     );
     countryRepository.saveAll(countriesInBulk);
     countryRepository.save(Country.of("USA"));
 
     hashWithColonInPrefixRepository.deleteAll();
     var countriesInBulk2 = Set.of( //
-      HashWithColonInPrefix.of("Mexico"), HashWithColonInPrefix.of("Canada"), //
-      HashWithColonInPrefix.of("Panama"), HashWithColonInPrefix.of("Venezuela") //
+        HashWithColonInPrefix.of("Mexico"), HashWithColonInPrefix.of("Canada"), //
+        HashWithColonInPrefix.of("Panama"), HashWithColonInPrefix.of("Venezuela") //
     );
     hashWithColonInPrefixRepository.saveAll(countriesInBulk2);
     hashWithColonInPrefixRepository.save(HashWithColonInPrefix.of("USA"));
@@ -54,9 +54,9 @@ public class ExplicitPrefixesHashTest extends AbstractBaseEnhancedRedisTest {
     try (SearchStream<Country> stream = entityStream.of(Country.class)) {
       var countries = stream.map(Country$._KEY).collect(Collectors.toSet());
       assertThat(countries).containsExactlyInAnyOrder( //
-        "country:Mexico", "country:Canada", //
-        "country:Panama", "country:Venezuela", //
-        "country:USA" //
+          "country:Mexico", "country:Canada", //
+          "country:Panama", "country:Venezuela", //
+          "country:USA" //
       );
     }
   }
@@ -66,9 +66,9 @@ public class ExplicitPrefixesHashTest extends AbstractBaseEnhancedRedisTest {
     try (SearchStream<HashWithColonInPrefix> stream = entityStream.of(HashWithColonInPrefix.class)) {
       var countries = stream.map(HashWithColonInPrefix$._KEY).collect(Collectors.toSet());
       assertThat(countries).containsExactlyInAnyOrder( //
-        "hwcip:Mexico", "hwcip:Canada", //
-        "hwcip:Panama", "hwcip:Venezuela", //
-        "hwcip:USA" //
+          "hwcip:Mexico", "hwcip:Canada", //
+          "hwcip:Panama", "hwcip:Venezuela", //
+          "hwcip:USA" //
       );
     }
   }

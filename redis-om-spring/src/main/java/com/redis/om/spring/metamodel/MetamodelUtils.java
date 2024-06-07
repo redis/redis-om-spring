@@ -25,7 +25,7 @@ public class MetamodelUtils {
   }
 
   public static List<MetamodelField<?, ?>> getMetamodelFieldsForProperties(Class<?> entityClass,
-    Collection<String> properties) {
+      Collection<String> properties) {
     List<MetamodelField<?, ?>> result = new ArrayList<>();
     try {
       Class<?> metamodel = Class.forName(entityClass.getName() + "$");

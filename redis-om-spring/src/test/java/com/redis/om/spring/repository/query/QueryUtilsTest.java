@@ -6,6 +6,7 @@ import org.mockito.Mockito;
 import java.lang.reflect.Field;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class QueryUtilsTest {
   @Test
@@ -33,7 +34,7 @@ class QueryUtilsTest {
 
   @Test
   void testEscapeWithNullValue() {
-    assertEquals(null, QueryUtils.escape(null));
+    assertNull(QueryUtils.escape(null));
   }
 
   @Test

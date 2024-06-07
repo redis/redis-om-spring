@@ -36,7 +36,7 @@ public interface PersonRepository extends RedisEnhancedRepository<Person, String
   // LOAD 1 name
   // APPLY upper(@name) AS upcasedName
   @Aggregation(
-    load = { @Load(property = "name") }, apply = { @Apply(expression = "upper(@name)", alias = "upcasedName") }
+      load = { @Load(property = "name") }, apply = { @Apply(expression = "upper(@name)", alias = "upcasedName") }
   )
   AggregationResult allNamesInUppercase();
 }

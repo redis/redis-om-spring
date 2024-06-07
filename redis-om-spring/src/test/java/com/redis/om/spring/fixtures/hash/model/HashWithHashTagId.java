@@ -13,11 +13,11 @@ import org.springframework.data.redis.core.RedisHash;
 @NoArgsConstructor(force = true)
 @RedisHash("hwht")
 public class HashWithHashTagId {
-    @Id
-    @IdFilter(value = IdAsHashTag.class)
-    private String id;
+  @Id
+  @IdFilter(value = IdAsHashTag.class)
+  private String id;
 
-    @Indexed
-    @NonNull
-    private String name;
+  @Indexed
+  @NonNull
+  private String name;
 }

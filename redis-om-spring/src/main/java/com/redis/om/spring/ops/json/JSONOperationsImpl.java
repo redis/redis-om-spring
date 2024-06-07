@@ -66,9 +66,9 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
   @Override
   public final List<String> mget(K... keys) {
     return (keys.length > 0) ?
-      client.clientForJSON().jsonMGet(getKeysAsString(keys)).stream().filter(Objects::nonNull)
-        .map(jsonArr -> jsonArr.get(0)).map(Object::toString).toList() :
-      List.of();
+        client.clientForJSON().jsonMGet(getKeysAsString(keys)).stream().filter(Objects::nonNull)
+            .map(jsonArr -> jsonArr.get(0)).map(Object::toString).toList() :
+        List.of();
   }
 
   @SafeVarargs
@@ -76,9 +76,9 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
   public final <T> List<T> mget(Class<T> clazz, K... keys) {
     Gson g = getGson();
     return (keys.length > 0) ?
-      client.clientForJSON().jsonMGet(getKeysAsString(keys)).stream().filter(Objects::nonNull)
-        .map(jsonArr -> jsonArr.get(0)).map(Object::toString).map(str -> g.fromJson(str, clazz)).toList() :
-      List.of();
+        client.clientForJSON().jsonMGet(getKeysAsString(keys)).stream().filter(Objects::nonNull)
+            .map(jsonArr -> jsonArr.get(0)).map(Object::toString).map(str -> g.fromJson(str, clazz)).toList() :
+        List.of();
   }
 
   @SafeVarargs
@@ -86,9 +86,9 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
   public final <T> List<T> mget(Path2 path, Class<T> clazz, K... keys) {
     Gson g = getGson();
     return (keys.length > 0) ?
-      client.clientForJSON().jsonMGet(path, getKeysAsString(keys)).stream().map(Object::toString)
-        .map(str -> g.fromJson(str, clazz)).toList() :
-      List.of();
+        client.clientForJSON().jsonMGet(path, getKeysAsString(keys)).stream().map(Object::toString)
+            .map(str -> g.fromJson(str, clazz)).toList() :
+        List.of();
   }
 
   @Override
@@ -159,13 +159,13 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
   @Override
   public <T> List<T> arrPop(K key, Class<T> clazz, Path2 path, Integer index) {
     return client.clientForJSON().jsonArrPop(key.toString(), path, index).stream().map(Object::toString)
-      .map(str -> getGson().fromJson(str, clazz)).toList();
+        .map(str -> getGson().fromJson(str, clazz)).toList();
   }
 
   @Override
   public <T> List<T> arrPop(K key, Class<T> clazz, Path2 path) {
     return client.clientForJSON().jsonArrPop(key.toString(), path).stream().map(Object::toString)
-      .map(str -> getGson().fromJson(str, clazz)).toList();
+        .map(str -> getGson().fromJson(str, clazz)).toList();
   }
 
   @Override

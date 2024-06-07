@@ -4,5 +4,5 @@ import com.redis.om.spring.fixtures.hash.model.HashWithByteArrayFlatVector;
 import com.redis.om.spring.repository.RedisEnhancedRepository;
 
 public interface HashWithByteArrayFlatVectorRepository
-  extends RedisEnhancedRepository<HashWithByteArrayFlatVector, String> {
+    extends RedisEnhancedRepository<HashWithByteArrayFlatVector, String> {
 }

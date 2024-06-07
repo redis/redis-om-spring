@@ -173,7 +173,7 @@ final class TupleTest {
   @Test
   void septuple() {
     final Septuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples.of(0, 1, 2, 3, 4, 5,
-      6);
+        6);
     tupleTest(tuple);
     final Septuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Septuple<>() {
       @Override
@@ -217,7 +217,7 @@ final class TupleTest {
   @Test
   void octuple() {
     final Octuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples.of(0, 1, 2, 3,
-      4, 5, 6, 7);
+        4, 5, 6, 7);
     tupleTest(tuple);
     final Octuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Octuple<>() {
       @Override
@@ -266,7 +266,7 @@ final class TupleTest {
   @Test
   void nonuple() {
     final Nonuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples.of(0,
-      1, 2, 3, 4, 5, 6, 7, 8);
+        1, 2, 3, 4, 5, 6, 7, 8);
     tupleTest(tuple);
     final Nonuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Nonuple<>() {
       @Override
@@ -320,7 +320,7 @@ final class TupleTest {
   @Test
   void decuple() {
     final Decuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples.of(
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
     tupleTest(tuple);
     final Decuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Decuple<>() {
       @Override
@@ -379,7 +379,7 @@ final class TupleTest {
   @Test
   void undecuple() {
     final Undecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples.of(
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
     tupleTest(tuple);
     final Undecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Undecuple<>() {
       @Override
@@ -443,7 +443,7 @@ final class TupleTest {
   @Test
   void duodecuple() {
     final Duodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples.of(
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
     tupleTest(tuple);
     final Duodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Duodecuple<>() {
       @Override
@@ -512,7 +512,7 @@ final class TupleTest {
   @Test
   void tredecuple() {
     final Tredecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples.of(
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
     tupleTest(tuple);
     final Tredecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Tredecuple<>() {
       @Override
@@ -586,7 +586,7 @@ final class TupleTest {
   @Test
   void quattuordecuple() {
     final Quattuordecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples.of(
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13);
     tupleTest(tuple);
     final Quattuordecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Quattuordecuple<>() {
       @Override
@@ -665,7 +665,7 @@ final class TupleTest {
   @Test
   void quindecuple() {
     final Quindecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples.of(
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14);
     tupleTest(tuple);
     final Quindecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Quindecuple<>() {
       @Override
@@ -749,7 +749,7 @@ final class TupleTest {
   @Test
   void sexdecuple() {
     final Sexdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples.of(
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
     tupleTest(tuple);
     final Sexdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Sexdecuple<>() {
       @Override
@@ -838,7 +838,7 @@ final class TupleTest {
   @Test
   void septendecuple() {
     final Septendecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples.of(
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
     tupleTest(tuple);
     final Septendecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Septendecuple<>() {
       @Override
@@ -932,7 +932,7 @@ final class TupleTest {
   @Test
   void octodecuple() {
     final Octodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples.of(
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17);
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17);
     tupleTest(tuple);
     final Octodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Octodecuple<>() {
       @Override
@@ -1031,7 +1031,7 @@ final class TupleTest {
   @Test
   void novemdecuple() {
     final Novemdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples.of(
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18);
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18);
     tupleTest(tuple);
     final Novemdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Novemdecuple<>() {
       @Override
@@ -1135,7 +1135,7 @@ final class TupleTest {
   @Test
   void vigintuple() {
     final Vigintuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple = Tuples.of(
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19);
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19);
     tupleTest(tuple);
     final Vigintuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> defaultTuple = new Vigintuple<>() {
       @Override
@@ -1426,7 +1426,7 @@ final class TupleTest {
   }
 
   private void tupleTest(
-    final Nonuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
+      final Nonuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
     final FirstAccessor<Nonuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter0 = Nonuple.getFirstGetter();
     final SecondAccessor<Nonuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter1 = Nonuple.getSecondGetter();
     final ThirdAccessor<Nonuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter2 = Nonuple.getThirdGetter();
@@ -1468,7 +1468,7 @@ final class TupleTest {
   }
 
   private void tupleTest(
-    final Decuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
+      final Decuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
     final FirstAccessor<Decuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter0 = Decuple.getFirstGetter();
     final SecondAccessor<Decuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter1 = Decuple.getSecondGetter();
     final ThirdAccessor<Decuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter2 = Decuple.getThirdGetter();
@@ -1514,7 +1514,7 @@ final class TupleTest {
   }
 
   private void tupleTest(
-    final Undecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
+      final Undecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
     final FirstAccessor<Undecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter0 = Undecuple.getFirstGetter();
     final SecondAccessor<Undecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter1 = Undecuple.getSecondGetter();
     final ThirdAccessor<Undecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter2 = Undecuple.getThirdGetter();
@@ -1564,7 +1564,7 @@ final class TupleTest {
   }
 
   private void tupleTest(
-    final Duodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
+      final Duodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
     final FirstAccessor<Duodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter0 = Duodecuple.getFirstGetter();
     final SecondAccessor<Duodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter1 = Duodecuple.getSecondGetter();
     final ThirdAccessor<Duodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter2 = Duodecuple.getThirdGetter();
@@ -1618,7 +1618,7 @@ final class TupleTest {
   }
 
   private void tupleTest(
-    final Tredecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
+      final Tredecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
     final FirstAccessor<Tredecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter0 = Tredecuple.getFirstGetter();
     final SecondAccessor<Tredecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter1 = Tredecuple.getSecondGetter();
     final ThirdAccessor<Tredecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter2 = Tredecuple.getThirdGetter();
@@ -1676,7 +1676,7 @@ final class TupleTest {
   }
 
   private void tupleTest(
-    final Quattuordecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
+      final Quattuordecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
     final FirstAccessor<Quattuordecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter0 = Quattuordecuple.getFirstGetter();
     final SecondAccessor<Quattuordecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter1 = Quattuordecuple.getSecondGetter();
     final ThirdAccessor<Quattuordecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter2 = Quattuordecuple.getThirdGetter();
@@ -1738,7 +1738,7 @@ final class TupleTest {
   }
 
   private void tupleTest(
-    final Quindecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
+      final Quindecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
     final FirstAccessor<Quindecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter0 = Quindecuple.getFirstGetter();
     final SecondAccessor<Quindecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter1 = Quindecuple.getSecondGetter();
     final ThirdAccessor<Quindecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter2 = Quindecuple.getThirdGetter();
@@ -1804,7 +1804,7 @@ final class TupleTest {
   }
 
   private void tupleTest(
-    final Sexdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
+      final Sexdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
     final FirstAccessor<Sexdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter0 = Sexdecuple.getFirstGetter();
     final SecondAccessor<Sexdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter1 = Sexdecuple.getSecondGetter();
     final ThirdAccessor<Sexdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter2 = Sexdecuple.getThirdGetter();
@@ -1874,7 +1874,7 @@ final class TupleTest {
   }
 
   private void tupleTest(
-    final Septendecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
+      final Septendecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
     final FirstAccessor<Septendecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter0 = Septendecuple.getFirstGetter();
     final SecondAccessor<Septendecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter1 = Septendecuple.getSecondGetter();
     final ThirdAccessor<Septendecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter2 = Septendecuple.getThirdGetter();
@@ -1948,7 +1948,7 @@ final class TupleTest {
   }
 
   private void tupleTest(
-    final Octodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
+      final Octodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
     final FirstAccessor<Octodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter0 = Octodecuple.getFirstGetter();
     final SecondAccessor<Octodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter1 = Octodecuple.getSecondGetter();
     final ThirdAccessor<Octodecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter2 = Octodecuple.getThirdGetter();
@@ -2026,7 +2026,7 @@ final class TupleTest {
   }
 
   private void tupleTest(
-    final Novemdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
+      final Novemdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
     final FirstAccessor<Novemdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter0 = Novemdecuple.getFirstGetter();
     final SecondAccessor<Novemdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter1 = Novemdecuple.getSecondGetter();
     final ThirdAccessor<Novemdecuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter2 = Novemdecuple.getThirdGetter();
@@ -2108,7 +2108,7 @@ final class TupleTest {
   }
 
   private void tupleTest(
-    final Vigintuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
+      final Vigintuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> tuple) {
     final FirstAccessor<Vigintuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter0 = Vigintuple.getFirstGetter();
     final SecondAccessor<Vigintuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter1 = Vigintuple.getSecondGetter();
     final ThirdAccessor<Vigintuple<Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer>, Integer> getter2 = Vigintuple.getThirdGetter();
@@ -2200,12 +2200,12 @@ final class TupleTest {
   @Test
   void testTuplesStream() {
     final Vigintuple<Integer, Integer, String, Long, BigInteger, String, Integer, BigInteger, Integer, String, Long, Integer, String, Integer, String, Integer, String, Integer, String, Integer> vigintuple = Tuples.of(
-      0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L, 1, "grault", 2, "garply", 3,
-      "waldo", 4, "fred", 5);
+        0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L, 1, "grault", 2, "garply", 3,
+        "waldo", 4, "fred", 5);
     List<Object> parts = vigintuple.stream().collect(Collectors.toList());
 
     assertThat(parts).containsExactly(0, 1, "Foobar", 42L, BigInteger.ONE, "qux", 20, BigInteger.TEN, 22, "corge", 1L,
-      1, "grault", 2, "garply", 3, "waldo", 4, "fred", 5);
+        1, "grault", 2, "garply", 3, "waldo", 4, "fred", 5);
   }
 
   @Test
@@ -2222,8 +2222,8 @@ final class TupleTest {
     final Triple<Integer, Integer, Integer> anotherTriple = Tuples.of(0, 1, 42);
 
     assertAll( //
-      () -> assertThat(oneTriple).hasSameHashCodeAs(anotherTriple), //
-      () -> assertThat(oneTriple).isEqualTo(anotherTriple) //
+        () -> assertThat(oneTriple).hasSameHashCodeAs(anotherTriple), //
+        () -> assertThat(oneTriple).isEqualTo(anotherTriple) //
     );
   }
 
@@ -2231,10 +2231,10 @@ final class TupleTest {
   void testTuplesEqualsWithBasicTuple() {
     final Triple<Integer, Integer, Integer> oneTriple = Tuples.of(0, 1, 42);
     assertThat(oneTriple) //
-      .isNotNull() //
-      .isEqualTo(oneTriple) //
-      .isEqualTo(Tuples.of(0, 1, 42) //
-      );
+        .isNotNull() //
+        .isEqualTo(oneTriple) //
+        .isEqualTo(Tuples.of(0, 1, 42) //
+        );
   }
 
   @Test
@@ -2255,8 +2255,8 @@ final class TupleTest {
     Map<String, Object> labelledMap = pair.labelledMap();
 
     assertThat(labelledMap) //
-      .containsEntry("lastName", "Jordan") //
-      .containsEntry("number", 23);
+        .containsEntry("lastName", "Jordan") //
+        .containsEntry("number", 23);
   }
 
   @Test
@@ -2264,9 +2264,9 @@ final class TupleTest {
     final Pair<String, Integer> pair = Tuples.of(new String[] { "lastName", "number" }, "Jordan", 23);
     final Pair<String, Integer> other = Tuples.of(new String[] { "lastName", "number" }, "Jordan", 23);
     assertThat(pair) //
-      .isEqualTo(other) //
-      .isNotEqualTo(null) //
-      .isNotEqualTo("foo");
+        .isEqualTo(other) //
+        .isNotEqualTo(null) //
+        .isNotEqualTo("foo");
   }
 
 }

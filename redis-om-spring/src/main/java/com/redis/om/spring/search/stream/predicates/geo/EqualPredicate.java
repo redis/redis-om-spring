@@ -43,8 +43,8 @@ public class EqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   public Node apply(Node root) {
     boolean paramsPresent = ObjectUtils.isNotEmpty(x) && ObjectUtils.isNotEmpty(y);
     return paramsPresent ?
-      QueryBuilders.intersect(root).add(getSearchAlias(), String.format("[%s %s 0.0005 mi]", x, y)) :
-      root;
+        QueryBuilders.intersect(root).add(getSearchAlias(), String.format("[%s %s 0.0005 mi]", x, y)) :
+        root;
   }
 
 }

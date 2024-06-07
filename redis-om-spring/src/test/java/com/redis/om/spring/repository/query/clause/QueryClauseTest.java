@@ -73,9 +73,9 @@ class QueryClauseTest {
     List<Object> numericContaining = new ArrayList<>(Arrays.asList(1, 2, 3));
     List<Object> numericContainingAll = new ArrayList<>(Arrays.asList(1, 2, 3));
     List<Object> geoContaining = new ArrayList<>(
-      Arrays.asList(new Point(-122.066540, 37.377690), new Point(122.066540, -37.377690)));
+        Arrays.asList(new Point(-122.066540, 37.377690), new Point(122.066540, -37.377690)));
     List<Object> geoContainingAll = new ArrayList<>(
-      Arrays.asList(new Point(-122.066540, 37.377690), new Point(122.066540, -37.377690)));
+        Arrays.asList(new Point(-122.066540, 37.377690), new Point(122.066540, -37.377690)));
     List<Object> numericGreaterThan = new ArrayList<>(Arrays.asList(5, 10));
 
     // Act
@@ -91,9 +91,9 @@ class QueryClauseTest {
     assertEquals("@number:[1 1]|@number:[2 2]|@number:[3 3]", numericContainingQuery);
     assertEquals("@number:[1 1] @number:[2 2] @number:[3 3]", numericContainingAllQuery);
     assertEquals("@location:[-122.06654 37.37769 .000001 ft]|@location:[122.06654 -37.37769 .000001 ft]",
-      geoContainingQuery);
+        geoContainingQuery);
     assertEquals("@location:[-122.06654 37.37769 .000001 ft] @location:[122.06654 -37.37769 .000001 ft]",
-      geoContainigAllQuery);
+        geoContainigAllQuery);
     assertEquals("@number:[(5|10 inf]", numericGreaterThanQuery);
   }
 

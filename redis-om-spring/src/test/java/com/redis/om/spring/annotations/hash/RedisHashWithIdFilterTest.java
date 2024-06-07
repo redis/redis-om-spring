@@ -1,7 +1,6 @@
 package com.redis.om.spring.annotations.hash;
 
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.fixtures.document.model.Company;
 import com.redis.om.spring.fixtures.hash.model.HashWithHashTagId;
 import com.redis.om.spring.fixtures.hash.model.HashWithHashTagId$;
 import com.redis.om.spring.fixtures.hash.repository.HashWithHashTagIdRepository;
@@ -97,7 +96,6 @@ class RedisHashWithIdFilterTest extends AbstractBaseEnhancedRedisTest {
     assertThat(all).hasSize(3);
   }
 
-
   @Test
   void testDeleteOne() {
     HashWithHashTagId hwht1 = HashWithHashTagId.of("hwht1");
@@ -164,8 +162,8 @@ class RedisHashWithIdFilterTest extends AbstractBaseEnhancedRedisTest {
     repository.updateField(hwht1, HashWithHashTagId$.NAME, "Rocinante");
     Optional<HashWithHashTagId> maybehwht1 = repository.findById(hwht1.getId());
     assertAll( //
-            () -> assertThat(maybehwht1).isPresent(), //
-            () -> assertThat(maybehwht1.get().getName()).isEqualTo("Rocinante")//
+        () -> assertThat(maybehwht1).isPresent(), //
+        () -> assertThat(maybehwht1.get().getName()).isEqualTo("Rocinante")//
     );
   }
 
@@ -213,6 +211,5 @@ class RedisHashWithIdFilterTest extends AbstractBaseEnhancedRedisTest {
     Iterable<String> ids = List.of(hwht1.getId(), hwht3.getId());
     assertThat(repository.findAllById(ids)).contains(hwht1, hwht3);
   }
-
 
 }

@@ -71,7 +71,7 @@ public class ExampleToNodeConverter<E> {
             if (Iterable.class.isAssignableFrom(value.getClass())) {
               Iterable<?> values = (Iterable<?>) value;
               values = StreamSupport.stream(values.spliterator(), false) //
-                .filter(Objects::nonNull).collect(Collectors.toList());
+                  .filter(Objects::nonNull).collect(Collectors.toList());
               if (values.iterator().hasNext()) {
                 QueryNode and = QueryBuilders.intersect();
                 for (Object v : values) {
@@ -98,18 +98,18 @@ public class ExampleToNodeConverter<E> {
           else if (schemaField instanceof TextField) {
             switch (example.getMatcher().getDefaultStringMatcher()) {
               case DEFAULT, EXACT -> rootNode = isNotEmpty(value) ?
-                QueryBuilders.intersect(rootNode).add(fieldName, QueryUtils.escape(value.toString(), false)) :
-                rootNode;
+                  QueryBuilders.intersect(rootNode).add(fieldName, QueryUtils.escape(value.toString(), false)) :
+                  rootNode;
               case STARTING -> rootNode = isNotEmpty(value) ?
-                QueryBuilders.intersect(rootNode).add(fieldName, QueryUtils.escape(value.toString(), false) + "*") :
-                rootNode;
+                  QueryBuilders.intersect(rootNode).add(fieldName, QueryUtils.escape(value.toString(), false) + "*") :
+                  rootNode;
               case ENDING -> rootNode = isNotEmpty(value) ?
-                QueryBuilders.intersect(rootNode).add(fieldName, "*" + QueryUtils.escape(value.toString(), false)) :
-                rootNode;
+                  QueryBuilders.intersect(rootNode).add(fieldName, "*" + QueryUtils.escape(value.toString(), false)) :
+                  rootNode;
               case CONTAINING -> rootNode = isNotEmpty(value) ?
-                QueryBuilders.intersect(rootNode)
-                  .add(fieldName, "*" + QueryUtils.escape(value.toString(), false) + "*") :
-                rootNode;
+                  QueryBuilders.intersect(rootNode)
+                      .add(fieldName, "*" + QueryUtils.escape(value.toString(), false) + "*") :
+                  rootNode;
               case REGEX -> {
                 // NOT SUPPORTED
               }
@@ -125,19 +125,26 @@ public class ExampleToNodeConverter<E> {
               x = point.getX();
               y = point.getY();
               if (matchingAll) {
-                rootNode = QueryBuilders.intersect(rootNode).add(fieldName, String.format("[%s %s %s %s]", x, y,
-                    this.defaultDistance, this.defaultDistanceMetric.getAbbreviation()));
+                rootNode = QueryBuilders.intersect(rootNode).add(fieldName,
+                    String.format("[%s %s %s %s]", x, y, this.defaultDistance,
+                        this.defaultDistanceMetric.getAbbreviation()));
               } else {
-                rootNode = QueryBuilders.union(rootNode).add(fieldName, String.format("[%s %s %s %s]", x, y, this.defaultDistance, this.defaultDistanceMetric.getAbbreviation()));
+                rootNode = QueryBuilders.union(rootNode).add(fieldName,
+                    String.format("[%s %s %s %s]", x, y, this.defaultDistance,
+                        this.defaultDistanceMetric.getAbbreviation()));
               }
             } else if (CharSequence.class.isAssignableFrom(cls)) {
               String[] coordinates = value.toString().split(",");
               x = Double.parseDouble(coordinates[0]);
               y = Double.parseDouble(coordinates[1]);
               if (matchingAll) {
-                rootNode = QueryBuilders.intersect(rootNode).add(fieldName, String.format("[%s %s %s %s]", x, y, this.defaultDistance, this.defaultDistanceMetric.getAbbreviation()));
+                rootNode = QueryBuilders.intersect(rootNode).add(fieldName,
+                    String.format("[%s %s %s %s]", x, y, this.defaultDistance,
+                        this.defaultDistanceMetric.getAbbreviation()));
               } else {
-                rootNode = QueryBuilders.union(rootNode).add(fieldName, String.format("[%s %s %s %s]", x, y, this.defaultDistance, this.defaultDistanceMetric.getAbbreviation()));
+                rootNode = QueryBuilders.union(rootNode).add(fieldName,
+                    String.format("[%s %s %s %s]", x, y, this.defaultDistance,
+                        this.defaultDistanceMetric.getAbbreviation()));
               }
             }
           }
@@ -148,7 +155,7 @@ public class ExampleToNodeConverter<E> {
             if (Iterable.class.isAssignableFrom(value.getClass())) {
               Iterable<?> values = (Iterable<?>) value;
               values = StreamSupport.stream(values.spliterator(), false) //
-                .filter(Objects::nonNull).collect(Collectors.toList());
+                  .filter(Objects::nonNull).collect(Collectors.toList());
 
               if (values.iterator().hasNext()) {
                 Class<?> elementClass = values.iterator().next().getClass();
@@ -165,13 +172,13 @@ public class ExampleToNodeConverter<E> {
                       and.add(QueryBuilders.intersect(rootNode).add(fieldName, JedisValues.eq((Instant) v)));
                     } else if (elementClass == Integer.class) {
                       and.add(
-                        QueryBuilders.intersect(rootNode).add(fieldName, Values.eq(Integer.parseInt(v.toString()))));
+                          QueryBuilders.intersect(rootNode).add(fieldName, Values.eq(Integer.parseInt(v.toString()))));
                     } else if (elementClass == Long.class) {
                       and.add(
-                        QueryBuilders.intersect(rootNode).add(fieldName, Values.eq(Long.parseLong(v.toString()))));
+                          QueryBuilders.intersect(rootNode).add(fieldName, Values.eq(Long.parseLong(v.toString()))));
                     } else if (elementClass == Double.class) {
                       and.add(QueryBuilders.intersect(rootNode)
-                        .add(fieldName, Values.eq(Double.parseDouble(v.toString()))));
+                          .add(fieldName, Values.eq(Double.parseDouble(v.toString()))));
                     }
                   } else {
                     if (elementClass == LocalDate.class) {
@@ -183,13 +190,12 @@ public class ExampleToNodeConverter<E> {
                     } else if (elementClass == Instant.class) {
                       and.add(QueryBuilders.union(rootNode).add(fieldName, JedisValues.eq((Instant) v)));
                     } else if (elementClass == Integer.class) {
-                      and.add(
-                        QueryBuilders.union(rootNode).add(fieldName, Values.eq(Integer.parseInt(v.toString()))));
+                      and.add(QueryBuilders.union(rootNode).add(fieldName, Values.eq(Integer.parseInt(v.toString()))));
                     } else if (elementClass == Long.class) {
                       and.add(QueryBuilders.union(rootNode).add(fieldName, Values.eq(Long.parseLong(v.toString()))));
                     } else if (elementClass == Double.class) {
                       and.add(
-                        QueryBuilders.union(rootNode).add(fieldName, Values.eq(Double.parseDouble(v.toString()))));
+                          QueryBuilders.union(rootNode).add(fieldName, Values.eq(Double.parseDouble(v.toString()))));
                     }
                   }
                 }
@@ -211,13 +217,13 @@ public class ExampleToNodeConverter<E> {
                   rootNode = QueryBuilders.intersect(rootNode).add(fieldName, JedisValues.eq((Instant) value));
                 } else if (cls == Integer.class) {
                   rootNode = QueryBuilders.intersect(rootNode)
-                    .add(fieldName, Values.eq(Integer.parseInt(value.toString())));
+                      .add(fieldName, Values.eq(Integer.parseInt(value.toString())));
                 } else if (cls == Long.class) {
                   rootNode = QueryBuilders.intersect(rootNode)
-                    .add(fieldName, Values.eq(Long.parseLong(value.toString())));
+                      .add(fieldName, Values.eq(Long.parseLong(value.toString())));
                 } else if (cls == Double.class) {
                   rootNode = QueryBuilders.intersect(rootNode)
-                    .add(fieldName, Values.eq(Double.parseDouble(value.toString())));
+                      .add(fieldName, Values.eq(Double.parseDouble(value.toString())));
                 }
               } else {
                 if (cls == LocalDate.class) {
@@ -230,13 +236,12 @@ public class ExampleToNodeConverter<E> {
                   rootNode = QueryBuilders.union(rootNode).add(fieldName, JedisValues.eq((Instant) value));
                 } else if (cls == Integer.class) {
                   rootNode = QueryBuilders.union(rootNode)
-                    .add(fieldName, Values.eq(Integer.parseInt(value.toString())));
+                      .add(fieldName, Values.eq(Integer.parseInt(value.toString())));
                 } else if (cls == Long.class) {
-                  rootNode = QueryBuilders.union(rootNode)
-                    .add(fieldName, Values.eq(Long.parseLong(value.toString())));
+                  rootNode = QueryBuilders.union(rootNode).add(fieldName, Values.eq(Long.parseLong(value.toString())));
                 } else if (cls == Double.class) {
                   rootNode = QueryBuilders.union(rootNode)
-                    .add(fieldName, Values.eq(Double.parseDouble(value.toString())));
+                      .add(fieldName, Values.eq(Double.parseDouble(value.toString())));
                 }
               }
             }

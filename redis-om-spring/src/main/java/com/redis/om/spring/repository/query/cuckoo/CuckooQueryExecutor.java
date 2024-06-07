@@ -41,8 +41,8 @@ public class CuckooQueryExecutor {
         if (field.isAnnotationPresent(Cuckoo.class)) {
           Cuckoo cuckoo = field.getAnnotation(Cuckoo.class);
           return Optional.of(!org.apache.commons.lang3.ObjectUtils.isEmpty(cuckoo.name()) ?
-            cuckoo.name() :
-            String.format("cf:%s:%s", entityClass.getSimpleName(), field.getName()));
+              cuckoo.name() :
+              String.format("cf:%s:%s", entityClass.getSimpleName(), field.getName()));
         }
       } catch (SecurityException e) {
         // NO-OP

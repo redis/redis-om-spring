@@ -34,16 +34,16 @@ public class NotEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     Class<?> cls = referenceKey.getClass();
     if (cls == Integer.class) {
       return QueryBuilders.intersect(root)
-        .add(QueryBuilders.disjunct(getSearchAlias(), Values.eq(Integer.parseInt(referenceKey.toString()))));
+          .add(QueryBuilders.disjunct(getSearchAlias(), Values.eq(Integer.parseInt(referenceKey.toString()))));
     } else if (cls == Long.class) {
       return QueryBuilders.intersect(root)
-        .add(QueryBuilders.disjunct(getSearchAlias(), Values.eq(Long.parseLong(referenceKey.toString()))));
+          .add(QueryBuilders.disjunct(getSearchAlias(), Values.eq(Long.parseLong(referenceKey.toString()))));
     } else if (cls == Double.class) {
       return QueryBuilders.intersect(root)
-        .add(QueryBuilders.disjunct(getSearchAlias(), Values.eq(Double.parseDouble(referenceKey.toString()))));
+          .add(QueryBuilders.disjunct(getSearchAlias(), Values.eq(Double.parseDouble(referenceKey.toString()))));
     } else if (CharSequence.class.isAssignableFrom(cls)) {
       return QueryBuilders.intersect(root)
-        .add(QueryBuilders.disjunct(getSearchAlias(), Values.value("{" + referenceKey + "}")));
+          .add(QueryBuilders.disjunct(getSearchAlias(), Values.value("{" + referenceKey + "}")));
     } else {
       return root;
     }

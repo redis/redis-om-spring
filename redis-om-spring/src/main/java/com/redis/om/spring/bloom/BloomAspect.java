@@ -46,8 +46,8 @@ public class BloomAspect implements Ordered {
       if (field.isAnnotationPresent(Bloom.class)) {
         Bloom bloom = field.getAnnotation(Bloom.class);
         String filterName = !ObjectUtils.isEmpty(bloom.name()) ?
-          bloom.name() :
-          String.format("bf:%s:%s", entity.getClass().getSimpleName(), field.getName());
+            bloom.name() :
+            String.format("bf:%s:%s", entity.getClass().getSimpleName(), field.getName());
         try {
           PropertyDescriptor pd = new PropertyDescriptor(field.getName(), entity.getClass());
           ops.add(filterName, pd.getReadMethod().invoke(entity).toString());
@@ -78,8 +78,8 @@ public class BloomAspect implements Ordered {
         if (field.isAnnotationPresent(Bloom.class)) {
           Bloom bloom = field.getAnnotation(Bloom.class);
           String filterName = !ObjectUtils.isEmpty(bloom.name()) ?
-            bloom.name() :
-            String.format("bf:%s:%s", entity.getClass().getSimpleName(), field.getName());
+              bloom.name() :
+              String.format("bf:%s:%s", entity.getClass().getSimpleName(), field.getName());
           try {
             PropertyDescriptor pd = new PropertyDescriptor(field.getName(), entity.getClass());
             ops.add(filterName, pd.getReadMethod().invoke(entity).toString());

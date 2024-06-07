@@ -19,7 +19,7 @@ public class OffsetDateTimeTypeAdapter implements JsonSerializer<OffsetDateTime>
   }
 
   public OffsetDateTime deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
-    throws JsonParseException {
+      throws JsonParseException {
     return OffsetDateTime.ofInstant(Instant.ofEpochMilli(json.getAsLong()), ZoneId.systemDefault());
   }
 }

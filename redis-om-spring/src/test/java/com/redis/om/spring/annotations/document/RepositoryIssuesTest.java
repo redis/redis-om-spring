@@ -49,8 +49,7 @@ class RepositoryIssuesTest extends AbstractBaseDocumentTest {
     studentRepository.deleteAll();
     List<Student> students = new ArrayList<>();
     for (int i = 0; i < 10; i++) {
-      var student = Student.of("Student" + i, i != 2 ? LocalDateTime.now() : LocalDateTime.of(2023, 6, 1, 1, 1,
-        1));
+      var student = Student.of("Student" + i, i != 2 ? LocalDateTime.now() : LocalDateTime.of(2023, 6, 1, 1, 1, 1));
       student.setId((long) i);
       students.add(student);
     }
@@ -70,8 +69,8 @@ class RepositoryIssuesTest extends AbstractBaseDocumentTest {
     List<SKU> result = skuCacheRepository.findAllBySkuNameIn(Set.of("SKU 1", "SKU 2"));
 
     assertAll( //
-      () -> assertThat(result).hasSize(2),
-      () -> assertThat(result).extracting("skuName").containsExactlyInAnyOrder("SKU 1", "SKU 2") //
+        () -> assertThat(result).hasSize(2),
+        () -> assertThat(result).extracting("skuName").containsExactlyInAnyOrder("SKU 1", "SKU 2") //
     );
   }
 
@@ -80,8 +79,8 @@ class RepositoryIssuesTest extends AbstractBaseDocumentTest {
     List<SKU> result = skuCacheRepository.findAllBySkuNumberIn(Set.of("A11111", "A00000"));
 
     assertAll( //
-      () -> assertThat(result).hasSize(2),
-      () -> assertThat(result).extracting("skuNumber").containsExactlyInAnyOrder("A11111", "A00000") //
+        () -> assertThat(result).hasSize(2),
+        () -> assertThat(result).extracting("skuNumber").containsExactlyInAnyOrder("A11111", "A00000") //
     );
   }
 
@@ -90,7 +89,7 @@ class RepositoryIssuesTest extends AbstractBaseDocumentTest {
     SKU result = skuCacheRepository.findOneBySkuNumber("A11111").orElseThrow();
 
     assertAll( //
-      () -> assertThat(result).isNotNull(), () -> assertThat(result.getSkuNumber()).isEqualTo("A11111") //
+        () -> assertThat(result).isNotNull(), () -> assertThat(result.getSkuNumber()).isEqualTo("A11111") //
     );
   }
 
@@ -100,30 +99,28 @@ class RepositoryIssuesTest extends AbstractBaseDocumentTest {
     // "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.StudentIdx" "@User\\-Name:{Student2}" "LIMIT" "0" "10000"
 
     assertAll( //
-      () -> assertThat(result).hasSize(1), //
-      () -> assertThat(result).extracting("userName").containsExactly("Student2") //
+        () -> assertThat(result).hasSize(1), //
+        () -> assertThat(result).extracting("userName").containsExactly("Student2") //
     );
   }
 
   @Test
   void testFindByPropertyWithAliasWithHyphensAndOrderBy() {
-    LocalDateTime beginLocalDateTime = LocalDateTime.of(2023, 1, 1, 1, 1,
-      1);
-    LocalDateTime endLocalDateTime = LocalDateTime.of(2023, 12, 1, 1, 1,
-      1);
-    List<Student> result = studentRepository.findByUserNameAndEventTimestampBetweenOrderByEventTimestampAsc("Student2", beginLocalDateTime,
-      endLocalDateTime);
+    LocalDateTime beginLocalDateTime = LocalDateTime.of(2023, 1, 1, 1, 1, 1);
+    LocalDateTime endLocalDateTime = LocalDateTime.of(2023, 12, 1, 1, 1, 1);
+    List<Student> result = studentRepository.findByUserNameAndEventTimestampBetweenOrderByEventTimestampAsc("Student2",
+        beginLocalDateTime, endLocalDateTime);
 
     assertAll( //
-      () -> assertThat(result).hasSize(1), //
-      () -> assertThat(result).extracting("userName").containsExactly("Student2") //
+        () -> assertThat(result).hasSize(1), //
+        () -> assertThat(result).extracting("userName").containsExactly("Student2") //
     );
   }
 
   @Test
   void testQBEWithAliasWithHyphensAndOrderBy() {
-    Function<FetchableFluentQuery<Student>, Student> sortFunction =
-      query -> query.sortBy(Sort.by("Event-Timestamp").descending()).firstValue();
+    Function<FetchableFluentQuery<Student>, Student> sortFunction = query -> query.sortBy(
+        Sort.by("Event-Timestamp").descending()).firstValue();
 
     var matcher = ExampleMatcher.matching().withMatcher("userName", ExampleMatcher.GenericPropertyMatcher::exact);
 

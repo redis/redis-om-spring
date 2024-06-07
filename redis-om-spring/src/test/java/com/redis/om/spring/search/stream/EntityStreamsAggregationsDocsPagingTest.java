@@ -47,7 +47,7 @@ class EntityStreamsAggregationsDocsPagingTest extends AbstractBaseDocumentTest {
   @Test
   void testLoadAllWithEntityReturn() {
     List<Game> result = entityStream.of(Game.class) //
-      .loadAll().limit(100).toList(Game.class);
+        .loadAll().limit(100).toList(Game.class);
 
     assertThat(result).hasSize(100);
   }
@@ -69,7 +69,7 @@ class EntityStreamsAggregationsDocsPagingTest extends AbstractBaseDocumentTest {
     SearchStream<Game> searchStream = entityStream.of(Game.class);
 
     AggregationResult result = searchStream //
-      .cursor(pageSize, Duration.ofSeconds(300)).loadAll().limit(300).aggregate();
+        .cursor(pageSize, Duration.ofSeconds(300)).loadAll().limit(300).aggregate();
 
     // get the cursor id
     long cursorId = result.getCursorId();
@@ -87,9 +87,9 @@ class EntityStreamsAggregationsDocsPagingTest extends AbstractBaseDocumentTest {
 
     // assert the page counts
     assertAll("page counts", () -> assertEquals(6, pageCounts.size()), () -> assertEquals(45, pageCounts.get(0)),
-      () -> assertEquals(45, pageCounts.get(1)), () -> assertEquals(45, pageCounts.get(2)),
-      () -> assertEquals(45, pageCounts.get(3)), () -> assertEquals(45, pageCounts.get(4)),
-      () -> assertEquals(30, pageCounts.get(5)));
+        () -> assertEquals(45, pageCounts.get(1)), () -> assertEquals(45, pageCounts.get(2)),
+        () -> assertEquals(45, pageCounts.get(3)), () -> assertEquals(45, pageCounts.get(4)),
+        () -> assertEquals(30, pageCounts.get(5)));
   }
 
   /**
@@ -109,7 +109,7 @@ class EntityStreamsAggregationsDocsPagingTest extends AbstractBaseDocumentTest {
     SearchStream<Game> searchStream = entityStream.of(Game.class);
 
     Slice<Game> page = searchStream //
-      .loadAll().limit(300).toList(PageRequest.ofSize(pageSize), Game.class);
+        .loadAll().limit(300).toList(PageRequest.ofSize(pageSize), Game.class);
 
     // loop through the slices using the SearchStream.getSlice method passing the next page request
     // obtained from the current page
@@ -123,9 +123,9 @@ class EntityStreamsAggregationsDocsPagingTest extends AbstractBaseDocumentTest {
 
     // assert the page counts
     assertAll("page counts", () -> assertEquals(pageSize, pageCounts.get(0)),
-      () -> assertEquals(pageSize, pageCounts.get(1)), () -> assertEquals(pageSize, pageCounts.get(2)),
-      () -> assertEquals(pageSize, pageCounts.get(3)), () -> assertEquals(pageSize, pageCounts.get(4)),
-      () -> assertEquals(pageSize, pageCounts.get(5)), () -> assertEquals(30, pageCounts.get(6)));
+        () -> assertEquals(pageSize, pageCounts.get(1)), () -> assertEquals(pageSize, pageCounts.get(2)),
+        () -> assertEquals(pageSize, pageCounts.get(3)), () -> assertEquals(pageSize, pageCounts.get(4)),
+        () -> assertEquals(pageSize, pageCounts.get(5)), () -> assertEquals(30, pageCounts.get(6)));
   }
 
 }

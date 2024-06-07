@@ -43,8 +43,8 @@ public class AutoCompleteQueryExecutor {
         if (field.isAnnotationPresent(AutoComplete.class)) {
           AutoComplete bloom = field.getAnnotation(AutoComplete.class);
           return Optional.of(!org.apache.commons.lang3.ObjectUtils.isEmpty(bloom.name()) ?
-            bloom.name() :
-            String.format(Suggestion.KEY_FORMAT_STRING, entityClass.getSimpleName(), field.getName()));
+              bloom.name() :
+              String.format(Suggestion.KEY_FORMAT_STRING, entityClass.getSimpleName(), field.getName()));
         }
       } catch (SecurityException e) {
         return Optional.empty();

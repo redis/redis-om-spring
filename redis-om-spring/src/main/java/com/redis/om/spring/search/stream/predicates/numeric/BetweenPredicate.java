@@ -45,18 +45,18 @@ public class BetweenPredicate<E, T> extends BaseAbstractPredicate<E, T> {
       return QueryBuilders.intersect(root).add(getSearchAlias(), JedisValues.between((Date) min, (Date) max));
     } else if (cls == LocalDateTime.class) {
       return QueryBuilders.intersect(root)
-        .add(getSearchAlias(), JedisValues.between((LocalDateTime) min, (LocalDateTime) max));
+          .add(getSearchAlias(), JedisValues.between((LocalDateTime) min, (LocalDateTime) max));
     } else if (cls == Instant.class) {
       return QueryBuilders.intersect(root).add(getSearchAlias(), JedisValues.between((Instant) min, (Instant) max));
     } else if (cls == Integer.class) {
       return QueryBuilders.intersect(root).add(getSearchAlias(),
-        Values.between(Integer.parseInt(getMin().toString()), Integer.parseInt(getMax().toString())));
+          Values.between(Integer.parseInt(getMin().toString()), Integer.parseInt(getMax().toString())));
     } else if (cls == Long.class) {
       return QueryBuilders.intersect(root).add(getSearchAlias(),
-        Values.between(Long.parseLong(getMin().toString()), Long.parseLong(getMax().toString())));
+          Values.between(Long.parseLong(getMin().toString()), Long.parseLong(getMax().toString())));
     } else if (cls == Double.class) {
       return QueryBuilders.intersect(root).add(getSearchAlias(),
-        Values.between(Double.parseDouble(getMin().toString()), Double.parseDouble(getMax().toString())));
+          Values.between(Double.parseDouble(getMin().toString()), Double.parseDouble(getMax().toString())));
     } else {
       return root;
     }

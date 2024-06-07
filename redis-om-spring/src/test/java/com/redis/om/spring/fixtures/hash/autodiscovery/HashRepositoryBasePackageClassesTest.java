@@ -31,7 +31,7 @@ class HashRepositoryBasePackageClassesTest extends AbstractBaseOMTest {
   @Test
   void testBasePackageClassesAreFound() {
     Company redis = repository.save(
-      Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
 
     assertEquals(1, repository.count());
 

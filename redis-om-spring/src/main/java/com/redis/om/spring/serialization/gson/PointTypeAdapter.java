@@ -20,7 +20,7 @@ public class PointTypeAdapter implements JsonSerializer<Point>, JsonDeserializer
 
   @Override
   public Point deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
-    throws JsonParseException {
+      throws JsonParseException {
     String lon;
     String lat;
     if (json.isJsonArray()) {

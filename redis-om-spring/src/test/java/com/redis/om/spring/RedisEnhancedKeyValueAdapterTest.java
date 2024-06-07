@@ -52,28 +52,26 @@ class RedisEnhancedKeyValueAdapterTest extends AbstractBaseEnhancedRedisTest {
     adapter = (RedisEnhancedKeyValueAdapter) kvTemplate.getAdapter();
     repository.deleteAll();
     redis = repository.save(
-      Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
     microsoft = repository.save(
-      Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
-        "research@microsoft.com"));
+        Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
+            "research@microsoft.com"));
   }
 
   @Test
   void testGetAllOf() {
-    Iterable<Company> companies = adapter.getAllOf(Company.class.getName(),
-      Company.class);
+    Iterable<Company> companies = adapter.getAllOf(Company.class.getName(), Company.class);
     assertAll( //
-      () -> assertThat(repository.count()).isEqualTo(2), () -> assertThat(companies).hasSize(2) //
+        () -> assertThat(repository.count()).isEqualTo(2), () -> assertThat(companies).hasSize(2) //
     );
   }
 
   @Test
   void testGetAllOfWithRowsSet() {
     assertEquals(2, repository.count());
-    Iterable<Company> companies = adapter.getAllOf(Company.class.getName(),
-      Company.class, 0, 1);
+    Iterable<Company> companies = adapter.getAllOf(Company.class.getName(), Company.class, 0, 1);
     assertAll( //
-      () -> assertThat(companies).hasSize(1) //
+        () -> assertThat(companies).hasSize(1) //
     );
   }
 
@@ -83,9 +81,9 @@ class RedisEnhancedKeyValueAdapterTest extends AbstractBaseEnhancedRedisTest {
     assertEquals(2, repository.count());
     List<String> keys = adapter.getAllIds(keyspace, Company.class);
     assertAll( //
-      () -> assertThat(keys).hasSize(2), //
-      () -> assertThat(keys).contains(redis.getId()), //
-      () -> assertThat(keys).contains(microsoft.getId()) //
+        () -> assertThat(keys).hasSize(2), //
+        () -> assertThat(keys).contains(redis.getId()), //
+        () -> assertThat(keys).contains(microsoft.getId()) //
     );
   }
 }

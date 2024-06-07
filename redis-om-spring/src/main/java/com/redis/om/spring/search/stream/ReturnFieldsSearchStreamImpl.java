@@ -47,18 +47,18 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   private Runnable closeHandler;
 
   public ReturnFieldsSearchStreamImpl( //
-    SearchStreamImpl<E> entitySearchStream, //
-    List<MetamodelField<E, ?>> returning, //
-    MappingRedisOMConverter mappingConverter, //
-    Gson gson, //
-    boolean isDocument //
+      SearchStreamImpl<E> entitySearchStream, //
+      List<MetamodelField<E, ?>> returning, //
+      MappingRedisOMConverter mappingConverter, //
+      Gson gson, //
+      boolean isDocument //
   ) {
     this.entitySearchStream = entitySearchStream;
     this.returning = returning;
     this.gson = gson;
     this.mappingConverter = mappingConverter;
     this.useNoContent = returning.size() == 1 && returning.get(0).getSearchFieldAccessor() != null && returning.get(0)
-      .getSearchFieldAccessor().getField().isAnnotationPresent(Id.class);
+        .getSearchFieldAccessor().getField().isAnnotationPresent(Id.class);
     this.isDocument = isDocument;
   }
 
@@ -300,18 +300,18 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
           String keySample = searchResult.getDocuments().get(0).getId();
           int idBegin = keySample.indexOf(":") + 1;
           resolvedStream = (Stream<T>) searchResult.getDocuments().stream().map(Document::getId)
-            .map(key -> key.substring(idBegin));
+              .map(key -> key.substring(idBegin));
         } else {
           resolvedStream = Stream.empty();
         }
       } else {
         boolean returningFullEntity = (returning.stream()
-          .anyMatch(foi -> foi.getSearchAlias().equalsIgnoreCase("__this")));
+            .anyMatch(foi -> foi.getSearchAlias().equalsIgnoreCase("__this")));
 
         String[] returnFields = !returningFullEntity ? returning.stream() //
-          .map(
-            foi -> ObjectUtils.isCollection(foi.getTargetClass()) ? "$." + foi.getSearchAlias() : foi.getSearchAlias())
-          .toArray(String[]::new) : new String[] {};
+            .map(foi -> ObjectUtils.isCollection(foi.getTargetClass()) ?
+                "$." + foi.getSearchAlias() :
+                foi.getSearchAlias()).toArray(String[]::new) : new String[] {};
 
         boolean resultSetHasNonIndexedFields = returning.stream().anyMatch(foi -> !foi.isIndexed());
 
@@ -319,14 +319,14 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
           SearchResult searchResult = entitySearchStream.getOps().search(query);
 
           List<E> entities = searchResult.getDocuments() //
-            .stream() //
-            .map(d -> { //
-              if (isDocument) {
-                return gson.fromJson(SafeEncoder.encode((byte[]) d.get("$")), entitySearchStream.getEntityClass());
-              } else {
-                return (E) ObjectUtils.documentToObject(d, entitySearchStream.getEntityClass(), mappingConverter);
-              }
-            }).toList();
+              .stream() //
+              .map(d -> { //
+                if (isDocument) {
+                  return gson.fromJson(SafeEncoder.encode((byte[]) d.get("$")), entitySearchStream.getEntityClass());
+                } else {
+                  return (E) ObjectUtils.documentToObject(d, entitySearchStream.getEntityClass(), mappingConverter);
+                }
+              }).toList();
 
           results = toResultTuple(entities, returnFields);
 
@@ -345,7 +345,7 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     List<T> results = new ArrayList<>();
     searchResult.getDocuments().forEach(doc -> {
       Map<String, Object> props = StreamSupport.stream(doc.getProperties().spliterator(), false)
-        .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+          .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
 
       List<Object> mappedResults = new ArrayList<>();
       returning.forEach(foi -> {

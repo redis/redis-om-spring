@@ -32,11 +32,11 @@ class ExplicitelyIndexedIdFieldsTest extends AbstractBaseDocumentTest {
   @BeforeEach
   void cleanUp() {
     docWithIndexedIdRepository.saveAll(
-      List.of(DocWithIndexedId.of("DWII01", "DWII01"), DocWithIndexedId.of("DWII02", "DWII02")));
+        List.of(DocWithIndexedId.of("DWII01", "DWII01"), DocWithIndexedId.of("DWII02", "DWII02")));
     docWithSearchableIdRepository.saveAll(
-      List.of(DocWithSearchableId.of("DWSI01", "DWSI01"), DocWithSearchableId.of("DWSI02", "DWSI02")));
+        List.of(DocWithSearchableId.of("DWSI01", "DWSI01"), DocWithSearchableId.of("DWSI02", "DWSI02")));
     docWithTagIndexedIdRepository.saveAll(
-      List.of(DocWithTagIndexedId.of("DWTII01", "DWTII01"), DocWithTagIndexedId.of("DWTII02", "DWTII02")));
+        List.of(DocWithTagIndexedId.of("DWTII01", "DWTII01"), DocWithTagIndexedId.of("DWTII02", "DWTII02")));
   }
 
   @Test
@@ -46,9 +46,9 @@ class ExplicitelyIndexedIdFieldsTest extends AbstractBaseDocumentTest {
     Optional<DocWithTagIndexedId> maybeDWTII01 = docWithTagIndexedIdRepository.findById("DWTII01");
 
     assertAll( //
-      () -> assertThat(maybeDWII01).isPresent(), //
-      () -> assertThat(maybeDWSI01).isPresent(), //
-      () -> assertThat(maybeDWTII01).isPresent() //
+        () -> assertThat(maybeDWII01).isPresent(), //
+        () -> assertThat(maybeDWSI01).isPresent(), //
+        () -> assertThat(maybeDWTII01).isPresent() //
     );
   }
 
@@ -59,9 +59,9 @@ class ExplicitelyIndexedIdFieldsTest extends AbstractBaseDocumentTest {
     var allDWTII = docWithTagIndexedIdRepository.findAll();
 
     assertAll( //
-      () -> assertThat(allDWII).hasSize(2), //
-      () -> assertThat(allDWSI).hasSize(2), //
-      () -> assertThat(allDWTII).hasSize(2) //
+        () -> assertThat(allDWII).hasSize(2), //
+        () -> assertThat(allDWSI).hasSize(2), //
+        () -> assertThat(allDWTII).hasSize(2) //
     );
   }
 }

@@ -25,11 +25,11 @@ class BasicSentinelTest extends AbstractBaseDocumentSentinelTest {
   @DisabledIfEnvironmentVariable(named = "GITHUB_ACTIONS", matches = "true")
   void testBasicCrudOperations() {
     Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
-      "stack@redis.com");
+        "stack@redis.com");
     redis.setMetaList(Set.of(CompanyMeta.of("Redis", 100, Set.of("RedisTag"))));
 
     Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
-      "research@microsoft.com");
+        "research@microsoft.com");
     microsoft.setMetaList(Set.of(CompanyMeta.of("MS", 50, Set.of("MsTag"))));
 
     repository.saveAll(List.of(redis, microsoft));

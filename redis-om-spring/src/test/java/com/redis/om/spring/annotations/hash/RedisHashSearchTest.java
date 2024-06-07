@@ -213,7 +213,7 @@ class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
     assertEquals("hello mundo", doc.getTitle());
 
     @SuppressWarnings("unused") NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class,
-      iter::next);
+        iter::next);
   }
 
   @Test
@@ -226,7 +226,7 @@ class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
     assertEquals("hello mundo", doc.getTitle());
 
     @SuppressWarnings("unused") NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class,
-      iter::next);
+        iter::next);
   }
 
   @Test
@@ -243,21 +243,21 @@ class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
     repository.deleteAll();
     Point point = new Point(-122.066540, 37.377690);
     repository.saveAll(List.of(MyHash.of("predisposition", point, point, 4), //
-      MyHash.of("predestination", point, point, 8), //
-      MyHash.of("prepublication", point, point, 15), //
-      MyHash.of("predestinarian", point, point, 16), //
-      MyHash.of("preadolescence", point, point, 23), //
-      MyHash.of("premillenarian", point, point, 42), //
-      MyHash.of("precipitinogen", point, point, 4), //
-      MyHash.of("precipitations", point, point, 8), //
-      MyHash.of("precociousness", point, point, 15), //
-      MyHash.of("precombustions", point, point, 16), //
-      MyHash.of("preconditioned", point, point, 23), //
-      MyHash.of("preconceptions", point, point, 42), //
-      MyHash.of("precipitancies", point, point, 4), //
-      MyHash.of("preciousnesses", point, point, 8), //
-      MyHash.of("precentorships", point, point, 15), //
-      MyHash.of("preceptorships", point, point, 16) //
+        MyHash.of("predestination", point, point, 8), //
+        MyHash.of("prepublication", point, point, 15), //
+        MyHash.of("predestinarian", point, point, 16), //
+        MyHash.of("preadolescence", point, point, 23), //
+        MyHash.of("premillenarian", point, point, 42), //
+        MyHash.of("precipitinogen", point, point, 4), //
+        MyHash.of("precipitations", point, point, 8), //
+        MyHash.of("precociousness", point, point, 15), //
+        MyHash.of("precombustions", point, point, 16), //
+        MyHash.of("preconditioned", point, point, 23), //
+        MyHash.of("preconceptions", point, point, 42), //
+        MyHash.of("precipitancies", point, point, 4), //
+        MyHash.of("preciousnesses", point, point, 8), //
+        MyHash.of("precentorships", point, point, 15), //
+        MyHash.of("preceptorships", point, point, 16) //
     ));
 
     SearchResult result = repository.customFindAllByTitleStartingWithReturnFieldsAndLimit("pre");
@@ -283,31 +283,31 @@ class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
     repository.deleteAll();
     Point point = new Point(-122.066540, 37.377690);
     repository.saveAll(List.of(MyHash.of("predisposition", point, point, 4), //
-      MyHash.of("predestination", point, point, 8), //
-      MyHash.of("prepublication", point, point, 15), //
-      MyHash.of("predestinarian", point, point, 16), //
-      MyHash.of("preadolescence", point, point, 23), //
-      MyHash.of("premillenarian", point, point, 42), //
-      MyHash.of("precipitinogen", point, point, 4), //
-      MyHash.of("precipitations", point, point, 8), //
-      MyHash.of("precociousness", point, point, 15), //
-      MyHash.of("precombustions", point, point, 16), //
-      MyHash.of("preconditioned", point, point, 23), //
-      MyHash.of("preconceptions", point, point, 42), //
-      MyHash.of("precipitancies", point, point, 4), //
-      MyHash.of("preciousnesses", point, point, 8), //
-      MyHash.of("precentorships", point, point, 15), //
-      MyHash.of("preceptorships", point, point, 16) //
+        MyHash.of("predestination", point, point, 8), //
+        MyHash.of("prepublication", point, point, 15), //
+        MyHash.of("predestinarian", point, point, 16), //
+        MyHash.of("preadolescence", point, point, 23), //
+        MyHash.of("premillenarian", point, point, 42), //
+        MyHash.of("precipitinogen", point, point, 4), //
+        MyHash.of("precipitations", point, point, 8), //
+        MyHash.of("precociousness", point, point, 15), //
+        MyHash.of("precombustions", point, point, 16), //
+        MyHash.of("preconditioned", point, point, 23), //
+        MyHash.of("preconceptions", point, point, 42), //
+        MyHash.of("precipitancies", point, point, 4), //
+        MyHash.of("preciousnesses", point, point, 8), //
+        MyHash.of("precentorships", point, point, 15), //
+        MyHash.of("preceptorships", point, point, 16) //
     ));
 
     List<MyHash> endsWithTion = repository.findAllByTitleEndingWith("tion");
     List<MyHash> endsWithTions = repository.findAllByTitleEndingWith("tions");
 
     assertAll( //
-      () -> assertThat(endsWithTion).extracting("title")
-        .containsExactlyInAnyOrder("predisposition", "predestination", "prepublication"),
-      () -> assertThat(endsWithTions).extracting("title")
-        .containsExactlyInAnyOrder("precipitations", "precombustions", "preconceptions"));
+        () -> assertThat(endsWithTion).extracting("title")
+            .containsExactlyInAnyOrder("predisposition", "predestination", "prepublication"),
+        () -> assertThat(endsWithTions).extracting("title")
+            .containsExactlyInAnyOrder("precipitations", "precombustions", "preconceptions"));
   }
 
 }

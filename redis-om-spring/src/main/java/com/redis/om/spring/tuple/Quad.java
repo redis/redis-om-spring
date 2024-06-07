@@ -43,7 +43,7 @@ public interface Quad<E1, E2, E3, E4> extends Tuple {
       case 2 -> getThird();
       case 3 -> getFourth();
       default -> throw new IndexOutOfBoundsException(
-        String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
+          String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
     };
   }
 }

@@ -5,5 +5,5 @@ import com.redis.om.spring.repository.RedisEnhancedRepository;
 
 @SuppressWarnings("unused")
 public interface ExpiringPersonDifferentTimeUnitRepository
-  extends RedisEnhancedRepository<ExpiringPersonDifferentTimeUnit, String> {
+    extends RedisEnhancedRepository<ExpiringPersonDifferentTimeUnit, String> {
 }

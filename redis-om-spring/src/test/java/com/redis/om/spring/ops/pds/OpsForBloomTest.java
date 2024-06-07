@@ -72,7 +72,7 @@ class OpsForBloomTest extends AbstractBaseDocumentTest {
   @Test
   void reserveExpansionNoCreate() {
     JedisDataException exception = Assertions.assertThrows(JedisDataException.class,
-      () -> bloom.insert("bfexpansion", BFInsertParams.insertParams().noCreate(), "a", "b", "c"));
+        () -> bloom.insert("bfexpansion", BFInsertParams.insertParams().noCreate(), "a", "b", "c"));
 
     Assertions.assertEquals("ERR not found", exception.getMessage());
     template.delete("bfexpansion");
@@ -81,7 +81,7 @@ class OpsForBloomTest extends AbstractBaseDocumentTest {
   @Test
   void reserveExpansion() {
     assertThat(bloom.insert("bfexpansion2", BFInsertParams.insertParams().capacity(1000), "a", "b", "c")).isEqualTo(
-      List.of(true, true, true));
+        List.of(true, true, true));
     template.delete("bfexpansion2");
   }
 

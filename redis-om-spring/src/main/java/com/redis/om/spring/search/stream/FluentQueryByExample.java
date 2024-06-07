@@ -21,10 +21,10 @@ public class FluentQueryByExample<T> implements FluentQuery.FetchableFluentQuery
   private final SearchOperations<String> searchOps;
 
   public FluentQueryByExample( //
-    Example<T> example, //
-    Class<T> probeType, //
-    EntityStream entityStream, //
-    SearchOperations<String> searchOps //
+      Example<T> example, //
+      Class<T> probeType, //
+      EntityStream entityStream, //
+      SearchOperations<String> searchOps //
   ) {
     this.probeType = probeType;
     this.searchOps = searchOps;
@@ -83,7 +83,7 @@ public class FluentQueryByExample<T> implements FluentQuery.FetchableFluentQuery
     SearchResult searchResult = searchOps.search(query);
     var count = searchResult.getTotalResults();
     var pageContents = searchStream.limit(pageable.getPageSize()).skip(pageable.getOffset())
-      .collect(Collectors.toList());
+        .collect(Collectors.toList());
     return new PageImpl<>(pageContents, pageable, count);
   }
 

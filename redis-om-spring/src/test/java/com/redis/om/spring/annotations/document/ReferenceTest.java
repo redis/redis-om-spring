@@ -57,15 +57,15 @@ class ReferenceTest extends AbstractBaseDocumentTest {
     statesRepository.save(States.of("East Of Mississippi", Set.of(oh, ga)));
 
     var cities = Set.of( //
-      City.of("San Francisco", ca), City.of("San Jose", ca), //
-      City.of("Los Angeles", ca), City.of("Scottsdale", az), //
-      City.of("Phoenix", az), City.of("Flagstaff", az), //
-      City.of("Columbus", oh), City.of("Cleveland", oh), //
-      City.of("Cincinnati", oh), City.of("Houston", tx), //
-      City.of("Dallas", tx), City.of("Austin", tx), //
-      City.of("Seattle", wa), City.of("Spokane", wa), //
-      City.of("Tacoma", wa), City.of("Atlanta", ga), //
-      City.of("Savannah", ga), City.of("Augusta", ga) //
+        City.of("San Francisco", ca), City.of("San Jose", ca), //
+        City.of("Los Angeles", ca), City.of("Scottsdale", az), //
+        City.of("Phoenix", az), City.of("Flagstaff", az), //
+        City.of("Columbus", oh), City.of("Cleveland", oh), //
+        City.of("Cincinnati", oh), City.of("Houston", tx), //
+        City.of("Dallas", tx), City.of("Austin", tx), //
+        City.of("Seattle", wa), City.of("Spokane", wa), //
+        City.of("Tacoma", wa), City.of("Atlanta", ga), //
+        City.of("Savannah", ga), City.of("Augusta", ga) //
     );
     cityRepository.saveAll(cities);
 
@@ -116,9 +116,9 @@ class ReferenceTest extends AbstractBaseDocumentTest {
   @Test
   void testMultilevelReferencesWithEntityStreams() {
     List<City> cities = entityStream //
-      .of(City.class) //
-      .filter(City$.ID.eq("Scottsdale")) //
-      .collect(Collectors.toList());
+        .of(City.class) //
+        .filter(City$.ID.eq("Scottsdale")) //
+        .collect(Collectors.toList());
 
     assertThat(cities).hasSize(1);
 
@@ -141,9 +141,9 @@ class ReferenceTest extends AbstractBaseDocumentTest {
   @Test
   void testReferencedClassCanBeDeserializedWithFullPayloadWithEntityStreams() {
     List<Country> countries = entityStream //
-      .of(Country.class) //
-      .filter(Country$.ID.eq("USA")) //
-      .collect(Collectors.toList());
+        .of(Country.class) //
+        .filter(Country$.ID.eq("USA")) //
+        .collect(Collectors.toList());
 
     assertThat(countries).hasSize(1);
     Country usa = countries.get(0);
@@ -161,9 +161,9 @@ class ReferenceTest extends AbstractBaseDocumentTest {
   @Test
   void testReferencedClassWithReferencesCanBeDeserializedWithFullPayloadWithEntityStreams() {
     List<State> states = entityStream //
-      .of(State.class) //
-      .filter(State$.ID.eq("AZ")) //
-      .collect(Collectors.toList());
+        .of(State.class) //
+        .filter(State$.ID.eq("AZ")) //
+        .collect(Collectors.toList());
 
     assertThat(states).hasSize(1);
     State arizona = states.get(0);
@@ -202,9 +202,9 @@ class ReferenceTest extends AbstractBaseDocumentTest {
     var ga = maybeGa.get();
 
     List<States> states = entityStream //
-      .of(States.class) //
-      .filter(States$.ID.eq("East\\ Of\\ Mississippi")) //
-      .collect(Collectors.toList());
+        .of(States.class) //
+        .filter(States$.ID.eq("East\\ Of\\ Mississippi")) //
+        .collect(Collectors.toList());
 
     assertThat(states).hasSize(1);
     States eom = states.get(0);
@@ -231,9 +231,9 @@ class ReferenceTest extends AbstractBaseDocumentTest {
     var cincinnati = maybeCincinnati.get();
 
     List<City> ohioCities = entityStream //
-      .of(City.class) //
-      .filter(City$.STATE.eq(oh)) //
-      .collect(Collectors.toList());
+        .of(City.class) //
+        .filter(City$.STATE.eq(oh)) //
+        .collect(Collectors.toList());
 
     assertThat(ohioCities).hasSize(3);
     assertThat(ohioCities).containsExactlyInAnyOrder(cincinnati, cleveland, columbus);
@@ -256,9 +256,9 @@ class ReferenceTest extends AbstractBaseDocumentTest {
     var cincinnati = maybeCincinnati.get();
 
     List<City> ohioCities = entityStream //
-      .of(City.class) //
-      .filter(City$.STATE.notEq(oh)) //
-      .collect(Collectors.toList());
+        .of(City.class) //
+        .filter(City$.STATE.notEq(oh)) //
+        .collect(Collectors.toList());
 
     assertThat(ohioCities).hasSize(15);
     assertThat(ohioCities).doesNotContain(cincinnati, cleveland, columbus);

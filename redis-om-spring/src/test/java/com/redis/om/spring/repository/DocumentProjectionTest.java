@@ -60,7 +60,7 @@ class DocumentProjectionTest extends AbstractBaseDocumentTest {
   @Test
   void testProjectionPageReturnType() {
     Page<DocumentProjection> byNameProjection = documentProjectionRepository.findAllByName(TEST_NAME,
-      Pageable.ofSize(1));
+        Pageable.ofSize(1));
     assertNotNull(byNameProjection);
     assertEquals(1, byNameProjection.getNumberOfElements());
     assertEquals(2, byNameProjection.getTotalPages());

@@ -19,7 +19,8 @@ public abstract class AbstractBaseDocumentTest extends AbstractBaseOMTest {
   @SpringBootApplication
   @Configuration
   @EnableRedisDocumentRepositories(
-    basePackages = { "com.redis.om.spring.fixtures.document.model", "com.redis.om.spring.fixtures.document.repository", "com.redis.om.spring.repository" }
+      basePackages = { "com.redis.om.spring.fixtures.document.model",
+          "com.redis.om.spring.fixtures.document.repository", "com.redis.om.spring.repository" }
   )
   static class Config extends TestConfig {
   }

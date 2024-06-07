@@ -50,7 +50,7 @@ import static com.redis.om.spring.RedisOMProperties.MAX_SEARCH_RESULTS;
 import static com.redis.om.spring.util.ObjectUtils.pageFromSlice;
 
 public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueRepository<T, ID>
-  implements RedisEnhancedRepository<T, ID> {
+    implements RedisEnhancedRepository<T, ID> {
 
   protected final RedisModulesOperations<String> modulesOperations;
   protected final EntityInformation<T, ID> metadata;
@@ -68,12 +68,12 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
 
   @SuppressWarnings("unchecked")
   public SimpleRedisEnhancedRepository( //
-    EntityInformation<T, ID> metadata, //
-    KeyValueOperations operations, //
-    @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo, //
-    RediSearchIndexer indexer, //
-    FeatureExtractor featureExtractor, //
-    RedisOMProperties properties //
+      EntityInformation<T, ID> metadata, //
+      KeyValueOperations operations, //
+      @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo, //
+      RediSearchIndexer indexer, //
+      FeatureExtractor featureExtractor, //
+      RedisOMProperties properties //
   ) {
     super(metadata, operations);
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
@@ -82,7 +82,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     this.indexer = indexer;
     this.mappingConverter = new MappingRedisOMConverter(null, new ReferenceResolverImpl(modulesOperations.template()));
     this.enhancedKeyValueAdapter = new RedisEnhancedKeyValueAdapter(rmo.template(), rmo, indexer, featureExtractor,
-      properties);
+        properties);
     this.generator = ULIDIdentifierGenerator.INSTANCE;
     this.auditor = new EntityAuditor(modulesOperations.template());
     this.featureExtractor = featureExtractor;
@@ -105,9 +105,9 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     SearchResult searchResult = searchOps.search(query);
 
     return (List<ID>) searchResult.getDocuments().stream() //
-      .map(d -> ObjectUtils.documentToObject(d, metadata.getJavaType(), mappingConverter)) //
-      .map(e -> ObjectUtils.getIdFieldForEntity(maybeIdField.get(), e)) //
-      .toList();
+        .map(d -> ObjectUtils.documentToObject(d, metadata.getJavaType(), mappingConverter)) //
+        .map(e -> ObjectUtils.getIdFieldForEntity(maybeIdField.get(), e)) //
+        .toList();
   }
 
   @Override
@@ -123,7 +123,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   @Override
   public void updateField(T entity, MetamodelField<T, ?> field, Object value) {
     PartialUpdate<?> update = new PartialUpdate<>(metadata.getId(entity).toString(), metadata.getJavaType()).set(
-      field.getSearchAlias(), value);
+        field.getSearchAlias(), value);
 
     enhancedKeyValueAdapter.update(update);
   }
@@ -133,11 +133,11 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   public <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field) {
     RedisTemplate<String, String> template = modulesOperations.template();
     List<String> keys = StreamSupport.stream(ids.spliterator(), false) //
-      .map(this::getKey).toList();
+        .map(this::getKey).toList();
 
     return (Iterable<F>) keys.stream() //
-      .map(key -> template.opsForHash().get(key, field.getSearchAlias())) //
-      .collect(Collectors.toList());
+        .map(key -> template.opsForHash().get(key, field.getSearchAlias())) //
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -208,15 +208,15 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
 
       if (searchResult.getTotalResults() > 0) {
         @SuppressWarnings("unchecked") List<T> content = (List<T>) searchResult.getDocuments().stream() //
-          .map(d -> ObjectUtils.documentToObject(d, metadata.getJavaType(), mappingConverter)) //
-          .toList();
+            .map(d -> ObjectUtils.documentToObject(d, metadata.getJavaType(), mappingConverter)) //
+            .toList();
         return new PageImpl<>(content, pageable, searchResult.getTotalResults());
       } else {
         return Page.empty();
       }
     } else {
       Iterable<T> content = operations.findInRange(pageable.getOffset(), pageable.getPageSize(), pageable.getSort(),
-        metadata.getJavaType());
+          metadata.getJavaType());
 
       return new PageImpl<>(IterableConverter.toList(content), pageable, this.operations.count(metadata.getJavaType()));
     }
@@ -248,10 +248,10 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
         boolean isNew = metadata.isNew(entity);
 
         KeyValuePersistentEntity<?, ?> keyValueEntity = mappingConverter.getMappingContext()
-          .getRequiredPersistentEntity(ClassUtils.getUserClass(entity));
+            .getRequiredPersistentEntity(ClassUtils.getUserClass(entity));
         Object id = isNew ?
-          generator.generateIdentifierOfType(keyValueEntity.getIdProperty().getTypeInformation()) :
-          keyValueEntity.getPropertyAccessor(entity).getProperty(keyValueEntity.getIdProperty());
+            generator.generateIdentifierOfType(keyValueEntity.getIdProperty().getTypeInformation()) :
+            keyValueEntity.getPropertyAccessor(entity).getProperty(keyValueEntity.getIdProperty());
         keyValueEntity.getPropertyAccessor(entity).setProperty(keyValueEntity.getIdProperty(), id);
 
         String keyspace = keyValueEntity.getKeySpace();
@@ -337,7 +337,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     Assert.notNull(queryFunction, "Query function must not be null");
 
     return queryFunction.apply(
-      new FluentQueryByExample<>(example, example.getProbeType(), entityStream, getSearchOps()));
+        new FluentQueryByExample<>(example, example.getProbeType(), entityStream, getSearchOps()));
   }
 
   private SearchOperations<String> getSearchOps() {
