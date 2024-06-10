@@ -428,7 +428,6 @@ public class RedisHashQueryByExampleTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testFindByShouldReportExists() {
-
     MyHash template = new MyHash();
     template.setLocation(new Point(-122.066540, 37.377690));
 

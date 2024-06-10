@@ -132,15 +132,15 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
   @Test
   void testFindOneByExampleWithFieldWithExplicitGeoIndexedAnnotation() {
     MyDoc template = new MyDoc();
-    template.setLocation(new Point(-122.066540, 37.377690));
+    template.setLocation(new Point(-122.124500, 47.640160));
 
     Example<MyDoc> example = Example.of(template);
 
     Optional<MyDoc> maybeDoc1 = repository.findOne(example);
     assertThat(maybeDoc1).isPresent();
     MyDoc doc1 = maybeDoc1.get();
-    assertThat(doc1.getTitle()).isEqualTo("hello mundo");
-    assertThat(doc1.getANumber()).isEqualTo(2);
+    assertThat(doc1.getTitle()).isEqualTo("hello world");
+    assertThat(doc1.getANumber()).isEqualTo(1);
   }
 
   @Test

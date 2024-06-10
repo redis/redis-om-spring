@@ -1,5 +1,6 @@
 package com.redis.om.spring;
 
+import com.google.gson.GsonBuilder;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.vectorize.FeatureExtractor;
@@ -41,6 +42,9 @@ public abstract class AbstractBaseOMTest {
   protected CustomRedisKeyValueTemplate kvTemplate;
   @Autowired
   protected RediSearchIndexer indexer;
+  @Autowired
+  @Qualifier("omGsonBuilder")
+  public GsonBuilder gsonBuilder;
 
   protected Comparator<Double> closeToComparator = new Comparator<Double>() {
     @Override

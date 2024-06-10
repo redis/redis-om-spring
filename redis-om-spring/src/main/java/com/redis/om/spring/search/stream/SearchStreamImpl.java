@@ -556,6 +556,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     return resolvedStream;
   }
 
+  @Override
   public Class<E> getEntityClass() {
     return entityClass;
   }

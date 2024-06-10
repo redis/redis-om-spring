@@ -135,6 +135,11 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   }
 
   @Override
+  public Class<T> getEntityClass() {
+    return null;
+  }
+
+  @Override
   public IntStream mapToInt(ToIntFunction<? super T> mapper) {
     return resolveStream().mapToInt(mapper);
   }

@@ -101,6 +101,11 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
   }
 
   @Override
+  public Class<E> getEntityClass() {
+    return null;
+  }
+
+  @Override
   public IntStream mapToInt(ToIntFunction<? super E> mapper) {
     return backingStream.mapToInt(mapper);
   }
