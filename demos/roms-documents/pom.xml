@@ -24,7 +24,7 @@
     <maven.test.source>17</maven.test.source>
     <maven.test.target>17</maven.test.target>
     <maven.deploy.skip>true</maven.deploy.skip>
-    <testcontainers.redis.version>2.2.0</testcontainers.redis.version>
+    <testcontainers.redis.version>2.2.2</testcontainers.redis.version>
   </properties>
 
   <dependencies>
@@ -65,11 +65,6 @@
       <version>${testcontainers.redis.version}</version>
       <scope>test</scope>
     </dependency>
-    <!--    <dependency>-->
-    <!--      <groupId>org.springdoc</groupId>-->
-    <!--      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>-->
-    <!--      <version>2.0.0</version>-->
-    <!--    </dependency>-->
   </dependencies>
 
   <repositories>
@@ -137,7 +132,6 @@
             <path>
               <groupId>org.springframework.boot</groupId>
               <artifactId>spring-boot-configuration-processor</artifactId>
-              <version>3.2.0</version>
             </path>
             <path>
               <groupId>org.projectlombok</groupId>
