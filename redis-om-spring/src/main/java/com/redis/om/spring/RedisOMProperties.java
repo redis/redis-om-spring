@@ -1,6 +1,7 @@
 package com.redis.om.spring;
 
 import jakarta.validation.constraints.NotNull;
+import org.springframework.ai.openai.api.OpenAiApi.EmbeddingModel;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.data.geo.Metrics;
 
@@ -18,6 +19,12 @@ public class RedisOMProperties {
   private final Repository repository = new Repository();
   private final References references = new References();
   private final Djl djl = new Djl();
+  private final OpenAi openAi = new OpenAi();
+  private final AzureOpenAi azureOpenAi = new AzureOpenAi();
+  private final VertexAi vertexAi = new VertexAi();
+  private final BedrockCohere bedrockCohere = new BedrockCohere();
+  private final BedrockTitan bedrockTitan = new BedrockTitan();
+  private final Ollama ollama = new Ollama();
 
   public Repository getRepository() {
     return repository;
@@ -29,6 +36,30 @@ public class RedisOMProperties {
 
   public Djl getDjl() {
     return djl;
+  }
+
+  public OpenAi getOpenAi() {
+    return openAi;
+  }
+
+  public AzureOpenAi getAzureOpenAi() {
+    return azureOpenAi;
+  }
+
+  public VertexAi getVertexAi() {
+    return vertexAi;
+  }
+
+  public BedrockCohere getBedrockCohere() {
+    return bedrockCohere;
+  }
+
+  public BedrockTitan getBedrockTitan() {
+    return bedrockTitan;
+  }
+
+  public Ollama getOllama() {
+    return ollama;
   }
 
   public static class Repository {
@@ -254,4 +285,176 @@ public class RedisOMProperties {
       return "RedisOMSpringProperties.Djl(enabled=" + this.isEnabled() + ", imageEmbeddingModelEngine=" + this.getImageEmbeddingModelEngine() + ", imageEmbeddingModelModelUrls=" + this.getImageEmbeddingModelModelUrls() + ", defaultImagePipelineResizeWidth=" + this.getDefaultImagePipelineResizeWidth() + ", defaultImagePipelineResizeHeight=" + this.getDefaultImagePipelineResizeHeight() + ", defaultImagePipelineCenterCrop=" + this.isDefaultImagePipelineCenterCrop() + ", sentenceTokenizerMaxLength=" + this.getSentenceTokenizerMaxLength() + ", sentenceTokenizerModelMaxLength=" + this.getSentenceTokenizerModelMaxLength() + ", sentenceTokenizerModel=" + this.getSentenceTokenizerModel() + ", faceDetectionModelEngine=" + this.getFaceDetectionModelEngine() + ", faceDetectionModelName=" + this.getFaceDetectionModelName() + ", faceDetectionModelModelUrls=" + this.getFaceDetectionModelModelUrls() + ", faceEmbeddingModelEngine=" + this.getFaceEmbeddingModelEngine() + ", faceEmbeddingModelName=" + this.getFaceEmbeddingModelName() + ", faceEmbeddingModelModelUrls=" + this.getFaceEmbeddingModelModelUrls() + ")";
     }
   }
+
+  public static class OpenAi {
+    private String apiKey;
+    private String model = EmbeddingModel.TEXT_EMBEDDING_ADA_002.getValue();
+
+    public String getApiKey() {
+      return apiKey;
+    }
+
+    public void setApiKey(String apiKey) {
+      this.apiKey = apiKey;
+    }
+
+    public String getModel() {
+      return model;
+    }
+
+    public void setModel(String model) {
+      this.model = model;
+    }
+  }
+
+  public static class Ollama {
+    private String baseUrl = "http://localhost:11434";
+
+    public String getBaseUrl() {
+      return baseUrl;
+    }
+
+    public void setBaseUrl(String baseUrl) {
+      this.baseUrl = baseUrl;
+    }
+  }
+
+  public static class AzureOpenAi {
+    private String apiKey;
+    private String endPoint;
+    private String model;
+
+    public String getApiKey() {
+      return apiKey;
+    }
+
+    public void setApiKey(String apiKey) {
+      this.apiKey = apiKey;
+    }
+
+    public String getEndPoint() {
+      return endPoint;
+    }
+
+    public void setEndPoint(String endPoint) {
+      this.endPoint = endPoint;
+    }
+
+    public String getModel() {
+      return model;
+    }
+
+    public void setModel(String model) {
+      this.model = model;
+    }
+  }
+
+  public static class VertexAi {
+    private String apiKey;
+    private String endPoint;
+    private String model;
+
+    public String getApiKey() {
+      return apiKey;
+    }
+
+    public void setApiKey(String apiKey) {
+      this.apiKey = apiKey;
+    }
+
+    public String getEndPoint() {
+      return endPoint;
+    }
+
+    public void setEndPoint(String endPoint) {
+      this.endPoint = endPoint;
+    }
+
+    public String getModel() {
+      return model;
+    }
+
+    public void setModel(String model) {
+      this.model = model;
+    }
+  }
+
+  public static class BedrockCohere {
+    private String region;
+    private String accessKey;
+    private String secretKey;
+    private String model;
+
+    public String getRegion() {
+      return region;
+    }
+
+    public void setRegion(String region) {
+      this.region = region;
+    }
+
+    public String getAccessKey() {
+      return accessKey;
+    }
+
+    public void setAccessKey(String accessKey) {
+      this.accessKey = accessKey;
+    }
+
+    public String getSecretKey() {
+      return secretKey;
+    }
+
+    public void setSecretKey(String secretKey) {
+      this.secretKey = secretKey;
+    }
+
+    public String getModel() {
+      return model;
+    }
+
+    public void setModel(String model) {
+      this.model = model;
+    }
+  }
+
+  public static class BedrockTitan {
+    private String region;
+    private String accessKey;
+    private String secretKey;
+    private String model;
+
+    public String getRegion() {
+      return region;
+    }
+
+    public void setRegion(String region) {
+      this.region = region;
+    }
+
+    public String getAccessKey() {
+      return accessKey;
+    }
+
+    public void setAccessKey(String accessKey) {
+      this.accessKey = accessKey;
+    }
+
+    public String getSecretKey() {
+      return secretKey;
+    }
+
+    public void setSecretKey(String secretKey) {
+      this.secretKey = secretKey;
+    }
+
+    public String getModel() {
+      return model;
+    }
+
+    public void setModel(String model) {
+      this.model = model;
+    }
+  }
+
 }

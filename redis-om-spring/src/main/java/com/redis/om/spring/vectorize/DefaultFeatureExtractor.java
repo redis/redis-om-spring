@@ -9,19 +9,48 @@ import ai.djl.modality.cv.translator.ImageFeatureExtractor;
 import ai.djl.repository.zoo.ZooModel;
 import ai.djl.translate.Pipeline;
 import ai.djl.translate.TranslateException;
+import com.azure.ai.openai.OpenAIClient;
+import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.Vectorize;
 import com.redis.om.spring.util.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.ai.azure.openai.AzureOpenAiEmbeddingModel;
+import org.springframework.ai.azure.openai.AzureOpenAiEmbeddingOptions;
+import org.springframework.ai.bedrock.cohere.BedrockCohereEmbeddingModel;
+import org.springframework.ai.bedrock.cohere.api.CohereEmbeddingBedrockApi;
+import org.springframework.ai.bedrock.cohere.api.CohereEmbeddingBedrockApi.CohereEmbeddingModel;
+import org.springframework.ai.bedrock.titan.BedrockTitanEmbeddingModel;
+import org.springframework.ai.bedrock.titan.api.TitanEmbeddingBedrockApi;
+import org.springframework.ai.bedrock.titan.api.TitanEmbeddingBedrockApi.TitanEmbeddingModel;
+import org.springframework.ai.document.MetadataMode;
+import org.springframework.ai.embedding.Embedding;
+import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.embedding.EmbeddingResponse;
+import org.springframework.ai.model.ModelOptionsUtils;
+import org.springframework.ai.ollama.OllamaEmbeddingModel;
+import org.springframework.ai.ollama.api.OllamaApi;
+import org.springframework.ai.ollama.api.OllamaOptions;
+import org.springframework.ai.openai.OpenAiEmbeddingModel;
+import org.springframework.ai.openai.OpenAiEmbeddingOptions;
+import org.springframework.ai.openai.api.OpenAiApi;
+import org.springframework.ai.retry.RetryUtils;
+import org.springframework.ai.vertexai.palm2.VertexAiPaLm2EmbeddingModel;
+import org.springframework.ai.vertexai.palm2.api.VertexAiPaLm2Api;
 import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.Resource;
+import org.springframework.web.client.RestClient;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.time.Duration;
 import java.util.List;
 
 import static com.redis.om.spring.util.ObjectUtils.byteArrayToFloatArray;
@@ -36,13 +65,29 @@ public class DefaultFeatureExtractor implements FeatureExtractor {
   private final ImageFactory imageFactory;
   private final ApplicationContext applicationContext;
   private final ImageFeatureExtractor imageFeatureExtractor;
+  private final OpenAiEmbeddingModel defaultOpenAITextVectorizer;
+  private final OllamaEmbeddingModel defaultOllamaEmbeddingModel;
+  private final RedisOMProperties properties;
+  private final OllamaApi ollamaApi;
+  private final OpenAIClient azureOpenAIClient;
+  private final VertexAiPaLm2EmbeddingModel vertexAiPaLm2EmbeddingModel;
+  private final BedrockCohereEmbeddingModel bedrockCohereEmbeddingModel;
+  private final BedrockTitanEmbeddingModel bedrockTitanEmbeddingModel;
 
   public DefaultFeatureExtractor( //
       ApplicationContext applicationContext, //
       ZooModel<Image, byte[]> imageEmbeddingModel, //
       ZooModel<Image, float[]> faceEmbeddingModel, //
       ImageFactory imageFactory, //
-      Pipeline imagePipeline, HuggingFaceTokenizer sentenceTokenizer) {
+      Pipeline imagePipeline, //
+      HuggingFaceTokenizer sentenceTokenizer, //
+      OpenAiEmbeddingModel openAITextVectorizer, //
+      OpenAIClient azureOpenAIClient, //
+      VertexAiPaLm2EmbeddingModel vertexAiPaLm2EmbeddingModel, //
+      BedrockCohereEmbeddingModel bedrockCohereEmbeddingModel, //
+      BedrockTitanEmbeddingModel bedrockTitanEmbeddingModel, //
+      RedisOMProperties properties //
+  ) {
     this.applicationContext = applicationContext;
     this.imageEmbeddingModel = imageEmbeddingModel;
     this.faceEmbeddingModel = faceEmbeddingModel;
@@ -52,10 +97,20 @@ public class DefaultFeatureExtractor implements FeatureExtractor {
 
     // feature extractor
     this.imageFeatureExtractor = ImageFeatureExtractor.builder().setPipeline(imagePipeline).build();
+    this.defaultOpenAITextVectorizer = openAITextVectorizer;
+    this.azureOpenAIClient = azureOpenAIClient;
+    this.vertexAiPaLm2EmbeddingModel = vertexAiPaLm2EmbeddingModel;
+    this.bedrockCohereEmbeddingModel = bedrockCohereEmbeddingModel;
+    this.bedrockTitanEmbeddingModel = bedrockTitanEmbeddingModel;
+    this.properties = properties;
+
+    this.ollamaApi = new OllamaApi(properties.getOllama().getBaseUrl());
+
+    this.defaultOllamaEmbeddingModel = new OllamaEmbeddingModel(ollamaApi,
+        new OllamaOptions().withModel(OllamaOptions.DEFAULT_MODEL));
   }
 
-  @Override
-  public byte[] getImageEmbeddingsAsByteArrayFor(InputStream is) {
+  private byte[] getImageEmbeddingsAsByteArrayFor(InputStream is) {
     try {
       var img = imageFactory.fromInputStream(is);
       Predictor<Image, byte[]> predictor = imageEmbeddingModel.newPredictor(imageFeatureExtractor);
@@ -66,34 +121,41 @@ public class DefaultFeatureExtractor implements FeatureExtractor {
     }
   }
 
-  @Override
-  public float[] getImageEmbeddingsAsFloatArrayFor(InputStream is) {
+  private float[] getImageEmbeddingsAsFloatArrayFor(InputStream is) {
     return byteArrayToFloatArray(getImageEmbeddingsAsByteArrayFor(is));
   }
 
-  @Override
-  public byte[] getFacialImageEmbeddingsAsByteArrayFor(InputStream is) throws IOException, TranslateException {
+  private byte[] getFacialImageEmbeddingsAsByteArrayFor(InputStream is) throws IOException, TranslateException {
     return ObjectUtils.floatArrayToByteArray(getFacialImageEmbeddingsAsFloatArrayFor(is));
   }
 
-  @Override
-  public float[] getFacialImageEmbeddingsAsFloatArrayFor(InputStream is) throws IOException, TranslateException {
+  private float[] getFacialImageEmbeddingsAsFloatArrayFor(InputStream is) throws IOException, TranslateException {
     try (Predictor<Image, float[]> predictor = faceEmbeddingModel.newPredictor()) {
       var img = imageFactory.fromInputStream(is);
       return predictor.predict(img);
     }
   }
 
-  @Override
-  public byte[] getSentenceEmbeddingsAsByteArrayFor(String text) {
+  private byte[] getSentenceEmbeddingsAsByteArrayFor(String text) {
     Encoding encoding = sentenceTokenizer.encode(text);
     return ObjectUtils.longArrayToByteArray(encoding.getIds());
   }
 
-  @Override
-  public float[] getSentenceEmbeddingAsFloatArrayFor(String text) {
+  private float[] getSentenceEmbeddingAsFloatArrayFor(String text) {
     Encoding encoding = sentenceTokenizer.encode(text);
     return longArrayToFloatArray(encoding.getIds());
+  }
+
+  private byte[] getEmbeddingsAsByteArrayFor(String text, EmbeddingModel model) {
+    EmbeddingResponse embeddingResponse = model.embedForResponse(List.of(text));
+    Embedding embedding = embeddingResponse.getResults().get(0);
+    return ObjectUtils.doubleListToByteArray(embedding.getOutput());
+  }
+
+  private float[] getEmbeddingAsFloatArrayFor(String text, EmbeddingModel model) {
+    EmbeddingResponse embeddingResponse = model.embedForResponse(List.of(text));
+    Embedding embedding = embeddingResponse.getResults().get(0);
+    return ObjectUtils.doubleListToFloatArray(embedding.getOutput());
   }
 
   @Override
@@ -111,50 +173,186 @@ public class DefaultFeatureExtractor implements FeatureExtractor {
 
         if (fieldValue != null) {
           switch (vectorize.embeddingType()) {
-            case IMAGE -> {
-              Resource resource = applicationContext.getResource(fieldValue.toString());
-              try {
-                if (isDocument) {
-                  accessor.setPropertyValue(vectorize.destination(),
-                      getImageEmbeddingsAsFloatArrayFor(resource.getInputStream()));
-                } else {
-                  accessor.setPropertyValue(vectorize.destination(),
-                      getImageEmbeddingsAsByteArrayFor(resource.getInputStream()));
-                }
-              } catch (IOException e) {
-                logger.warn("Error generating image embedding", e);
-              }
-            }
+            case IMAGE -> processImageEmbedding(accessor, vectorize, fieldValue, isDocument);
             case WORD -> {
               //TODO: implement me!
             }
-            case FACE -> {
-              Resource resource = applicationContext.getResource(fieldValue.toString());
-              try {
-                if (isDocument) {
-                  accessor.setPropertyValue(vectorize.destination(),
-                      getFacialImageEmbeddingsAsFloatArrayFor(resource.getInputStream()));
-                } else {
-                  accessor.setPropertyValue(vectorize.destination(),
-                      getFacialImageEmbeddingsAsByteArrayFor(resource.getInputStream()));
-                }
-              } catch (IOException | TranslateException e) {
-                logger.warn("Error generating facial image embedding", e);
-              }
-            }
-            case SENTENCE -> {
-              if (isDocument) {
-                accessor.setPropertyValue(vectorize.destination(),
-                    getSentenceEmbeddingAsFloatArrayFor(fieldValue.toString()));
-              } else {
-                accessor.setPropertyValue(vectorize.destination(),
-                    getSentenceEmbeddingsAsByteArrayFor(fieldValue.toString()));
-              }
-            }
+            case FACE -> processFaceEmbedding(accessor, vectorize, fieldValue, isDocument);
+            case SENTENCE -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
           }
         }
       });
     }
+  }
+
+  private void processImageEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
+      boolean isDocument) {
+    Resource resource = applicationContext.getResource(fieldValue.toString());
+    try {
+      if (isDocument) {
+        accessor.setPropertyValue(vectorize.destination(),
+            getImageEmbeddingsAsFloatArrayFor(resource.getInputStream()));
+      } else {
+        accessor.setPropertyValue(vectorize.destination(), getImageEmbeddingsAsByteArrayFor(resource.getInputStream()));
+      }
+    } catch (IOException e) {
+      logger.warn("Error generating image embedding", e);
+    }
+  }
+
+  private void processFaceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
+      boolean isDocument) {
+    Resource resource = applicationContext.getResource(fieldValue.toString());
+    try {
+      if (isDocument) {
+        accessor.setPropertyValue(vectorize.destination(),
+            getFacialImageEmbeddingsAsFloatArrayFor(resource.getInputStream()));
+      } else {
+        accessor.setPropertyValue(vectorize.destination(),
+            getFacialImageEmbeddingsAsByteArrayFor(resource.getInputStream()));
+      }
+    } catch (IOException | TranslateException e) {
+      logger.warn("Error generating facial image embedding", e);
+    }
+  }
+
+  private void processSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
+      boolean isDocument) {
+    switch (vectorize.provider()) {
+      case DJL -> processDjlSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
+      case OPENAI -> processOpenAiSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
+      case OLLAMA -> processOllamaSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
+      case AZURE_OPENAI -> processAzureOpenAiSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
+      case VERTEX_AI -> processVertexAiSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
+      case AMAZON_BEDROCK_COHERE -> processBedrockCohereSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
+      case AMAZON_BEDROCK_TITAN -> processBedrockTitanSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
+    }
+  }
+
+  private void processDjlSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
+      boolean isDocument) {
+    if (isDocument) {
+      accessor.setPropertyValue(vectorize.destination(), getSentenceEmbeddingAsFloatArrayFor(fieldValue.toString()));
+    } else {
+      accessor.setPropertyValue(vectorize.destination(), getSentenceEmbeddingsAsByteArrayFor(fieldValue.toString()));
+    }
+  }
+
+  private void processOpenAiSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
+      boolean isDocument) {
+    OpenAiEmbeddingModel model = getOpenAiEmbeddingModel(vectorize);
+    if (isDocument) {
+      accessor.setPropertyValue(vectorize.destination(), getEmbeddingAsFloatArrayFor(fieldValue.toString(), model));
+    } else {
+      accessor.setPropertyValue(vectorize.destination(), getEmbeddingsAsByteArrayFor(fieldValue.toString(), model));
+    }
+  }
+
+  private void processOllamaSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
+      boolean isDocument) {
+    OllamaEmbeddingModel model = getOllamaEmbeddingModel(vectorize);
+    if (isDocument) {
+      accessor.setPropertyValue(vectorize.destination(), getEmbeddingAsFloatArrayFor(fieldValue.toString(), model));
+    } else {
+      accessor.setPropertyValue(vectorize.destination(), getEmbeddingsAsByteArrayFor(fieldValue.toString(), model));
+    }
+  }
+
+  private void processAzureOpenAiSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
+      boolean isDocument) {
+    AzureOpenAiEmbeddingModel model = getAzureOpenAiEmbeddingModel(vectorize);
+    if (isDocument) {
+      accessor.setPropertyValue(vectorize.destination(), getEmbeddingAsFloatArrayFor(fieldValue.toString(), model));
+    } else {
+      accessor.setPropertyValue(vectorize.destination(), getEmbeddingsAsByteArrayFor(fieldValue.toString(), model));
+    }
+  }
+
+  private void processVertexAiSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
+      boolean isDocument) {
+    VertexAiPaLm2EmbeddingModel model = getVertexAiPaLm2EmbeddingModel(vectorize);
+    if (isDocument) {
+      accessor.setPropertyValue(vectorize.destination(), getEmbeddingAsFloatArrayFor(fieldValue.toString(), model));
+    } else {
+      accessor.setPropertyValue(vectorize.destination(), getEmbeddingsAsByteArrayFor(fieldValue.toString(), model));
+    }
+  }
+
+  private void processBedrockCohereSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
+      boolean isDocument) {
+    BedrockCohereEmbeddingModel model = getBedrockCohereEmbeddingModel(vectorize);
+    if (isDocument) {
+      accessor.setPropertyValue(vectorize.destination(), getEmbeddingAsFloatArrayFor(fieldValue.toString(), model));
+    } else {
+      accessor.setPropertyValue(vectorize.destination(), getEmbeddingsAsByteArrayFor(fieldValue.toString(), model));
+    }
+  }
+
+  private void processBedrockTitanSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
+      boolean isDocument) {
+    BedrockTitanEmbeddingModel model = getBedrockTitanEmbeddingModel(vectorize);
+    if (isDocument) {
+      accessor.setPropertyValue(vectorize.destination(), getEmbeddingAsFloatArrayFor(fieldValue.toString(), model));
+    } else {
+      accessor.setPropertyValue(vectorize.destination(), getEmbeddingsAsByteArrayFor(fieldValue.toString(), model));
+    }
+  }
+
+  private OpenAiEmbeddingModel getOpenAiEmbeddingModel(Vectorize vectorize) {
+    if (vectorize.openAiEmbeddingModel() != org.springframework.ai.openai.api.OpenAiApi.EmbeddingModel.TEXT_EMBEDDING_ADA_002) {
+      var openAiApi = new OpenAiApi(properties.getOpenAi().getApiKey());
+      return new OpenAiEmbeddingModel(openAiApi, MetadataMode.EMBED,
+          OpenAiEmbeddingOptions.builder().withModel(vectorize.openAiEmbeddingModel().getValue()).build(),
+          RetryUtils.DEFAULT_RETRY_TEMPLATE);
+    }
+    return this.defaultOpenAITextVectorizer;
+  }
+
+  private OllamaEmbeddingModel getOllamaEmbeddingModel(Vectorize vectorize) {
+    if (!vectorize.ollamaEmbeddingModel().id().equals(OllamaOptions.DEFAULT_MODEL)) {
+      return new OllamaEmbeddingModel(ollamaApi, new OllamaOptions().withModel(vectorize.ollamaEmbeddingModel().id()));
+    }
+    return this.defaultOllamaEmbeddingModel;
+  }
+
+  private AzureOpenAiEmbeddingModel getAzureOpenAiEmbeddingModel(Vectorize vectorize) {
+    AzureOpenAiEmbeddingOptions options = AzureOpenAiEmbeddingOptions.builder()
+        .withDeploymentName(vectorize.azureOpenAiDeploymentName()).build();
+    return new AzureOpenAiEmbeddingModel(this.azureOpenAIClient, MetadataMode.EMBED, options);
+  }
+
+  private VertexAiPaLm2EmbeddingModel getVertexAiPaLm2EmbeddingModel(Vectorize vectorize) {
+    if (!vectorize.vertexAiPaLm2ApiModel().equals(VertexAiPaLm2Api.DEFAULT_EMBEDDING_MODEL)) {
+      VertexAiPaLm2Api vertexAiApi = new VertexAiPaLm2Api(properties.getVertexAi().getEndPoint(),
+          properties.getVertexAi().getApiKey(), VertexAiPaLm2Api.DEFAULT_GENERATE_MODEL,
+          vectorize.vertexAiPaLm2ApiModel(), RestClient.builder());
+      return new VertexAiPaLm2EmbeddingModel(vertexAiApi);
+    }
+    return this.vertexAiPaLm2EmbeddingModel;
+  }
+
+  private BedrockCohereEmbeddingModel getBedrockCohereEmbeddingModel(Vectorize vectorize) {
+    if (!vectorize.cohereEmbeddingModel().equals(CohereEmbeddingModel.COHERE_EMBED_MULTILINGUAL_V1)) {
+      AwsCredentials credentials = AwsBasicCredentials.create(properties.getBedrockCohere().getAccessKey(),
+          properties.getBedrockCohere().getSecretKey());
+      var cohereEmbeddingApi = new CohereEmbeddingBedrockApi(vectorize.cohereEmbeddingModel().id(),
+          StaticCredentialsProvider.create(credentials), properties.getBedrockCohere().getRegion(),
+          ModelOptionsUtils.OBJECT_MAPPER);
+      return new BedrockCohereEmbeddingModel(cohereEmbeddingApi);
+    }
+    return this.bedrockCohereEmbeddingModel;
+  }
+
+  private BedrockTitanEmbeddingModel getBedrockTitanEmbeddingModel(Vectorize vectorize) {
+    if (!vectorize.titanEmbeddingModel().equals(TitanEmbeddingModel.TITAN_EMBED_IMAGE_V1)) {
+      AwsCredentials credentials = AwsBasicCredentials.create(properties.getBedrockCohere().getAccessKey(),
+          properties.getBedrockCohere().getSecretKey());
+      var titanEmbeddingApi = new TitanEmbeddingBedrockApi(vectorize.cohereEmbeddingModel().id(),
+          StaticCredentialsProvider.create(credentials), properties.getBedrockTitan().getRegion(),
+          ModelOptionsUtils.OBJECT_MAPPER, Duration.ofMinutes(5L));
+      return new BedrockTitanEmbeddingModel(titanEmbeddingApi);
+    }
+    return this.bedrockTitanEmbeddingModel;
   }
 
   @Override
