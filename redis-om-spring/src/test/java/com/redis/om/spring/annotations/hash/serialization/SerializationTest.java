@@ -5,6 +5,7 @@ import com.github.f4b6a3.ulid.UlidCreator;
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
 import com.redis.om.spring.fixtures.hash.model.KitchenSink;
 import com.redis.om.spring.fixtures.hash.repository.KitchenSinkRepository;
+import com.redis.om.spring.vectorize.DefaultFeatureExtractor;
 import com.redis.om.spring.vectorize.FeatureExtractor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,8 @@ import org.springframework.data.geo.Point;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.time.*;
 import java.util.*;
 
@@ -54,7 +57,7 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
   private List<String> listThings;
 
   @BeforeEach
-  public void cleanUp() throws IOException {
+  public void cleanUp() throws IOException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
     repository.deleteAll();
     flushSearchIndexFor(KitchenSink.class);
 
@@ -65,7 +68,12 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
     point = new Point(-111.83592170193586, 33.62826024782707);
     ulid = UlidCreator.getMonotonicUlid();
     byteArray = "Hello World!".getBytes();
-    byteArray2 = featureExtractor.getImageEmbeddingsAsByteArrayFor( //
+
+    java.lang.reflect.Method method = DefaultFeatureExtractor.class.getDeclaredMethod(
+        "getImageEmbeddingsAsByteArrayFor", InputStream.class);
+    method.setAccessible(true);
+
+    byteArray2 = (byte[]) method.invoke(featureExtractor,
         applicationContext.getResource("classpath:/images/cat.jpg").getInputStream());
     yearMonth = YearMonth.of(1972, 6);
 

@@ -6,7 +6,6 @@ import com.redis.om.spring.vectorize.FeatureExtractor;
 import com.redis.testcontainers.RedisStackContainer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -42,6 +41,7 @@ public abstract class AbstractBaseOMTest {
   protected CustomRedisKeyValueTemplate kvTemplate;
   @Autowired
   protected RediSearchIndexer indexer;
+
   protected Comparator<Double> closeToComparator = new Comparator<Double>() {
     @Override
     public int compare(Double o1, Double o2) {
