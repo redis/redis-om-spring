@@ -17,12 +17,13 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@DisabledIfEnvironmentVariable(named = "GITHUB_ACTIONS", matches = "true")
 class BasicSentinelTest extends AbstractBaseDocumentSentinelTest {
   @Autowired
   CompanyRepository repository;
 
   @Test
-  @DisabledIfEnvironmentVariable(named = "GITHUB_ACTIONS", matches = "true")
+
   void testBasicCrudOperations() {
     Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
         "stack@redis.com");
