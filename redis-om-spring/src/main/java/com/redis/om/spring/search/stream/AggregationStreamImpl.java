@@ -10,7 +10,7 @@ import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.search.stream.aggregations.filters.AggregationFilter;
 import com.redis.om.spring.tuple.Tuples;
 import com.redis.om.spring.util.ObjectUtils;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.domain.Sort.Order;
@@ -208,7 +208,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
   }
 
   @Override
-  public AggregationStream<T> limit(int offset, int limit) {
+  public AggregationStream<T> limit(int limit, int offset) {
     applyCurrentGroupBy();
     aggregation.limit(offset, limit);
     limitSet = true;
@@ -387,7 +387,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
 
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
-  public <R extends T> Slice<R> toList(PageRequest pageRequest, Class<?>... contentTypes) {
+  public <R extends T> Slice<R> toList(Pageable pageRequest, Class<?>... contentTypes) {
     applyCurrentGroupBy();
     aggregation.cursor(pageRequest.getPageSize(), 300000);
     return new AggregationPage(this, pageRequest, entityClass, gson, mappingConverter, isDocument);
@@ -395,7 +395,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
 
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
-  public <R extends T> Slice<R> toList(PageRequest pageRequest, Duration timeout, Class<?>... contentTypes) {
+  public <R extends T> Slice<R> toList(Pageable pageRequest, Duration timeout, Class<?>... contentTypes) {
     applyCurrentGroupBy();
     aggregation.cursor(pageRequest.getPageSize(), timeout.toMillis());
     return new AggregationPage(this, pageRequest, entityClass, gson, mappingConverter, isDocument);

@@ -1,5 +1,6 @@
 package com.redis.om.spring.repository.support;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -17,7 +18,8 @@ import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.RedisDocumentRepository;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.EntityStreamImpl;
-import com.redis.om.spring.search.stream.FluentQueryByExample;
+import com.redis.om.spring.search.stream.RedisFluentQueryByExample;
+import com.redis.om.spring.search.stream.SearchStream;
 import com.redis.om.spring.serialization.gson.GsonListOfType;
 import com.redis.om.spring.util.ObjectUtils;
 import com.redis.om.spring.vectorize.FeatureExtractor;
@@ -26,6 +28,7 @@ import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.annotation.Reference;
 import org.springframework.data.annotation.Version;
@@ -89,7 +92,9 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       KeyValueOperations operations, //
       @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo, //
       RediSearchIndexer indexer, //
-      RedisMappingContext mappingContext, GsonBuilder gsonBuilder, FeatureExtractor featureExtractor, //
+      RedisMappingContext mappingContext, //
+      GsonBuilder gsonBuilder, //
+      FeatureExtractor featureExtractor, //
       RedisOMProperties properties) {
     super(metadata, operations);
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
@@ -373,7 +378,13 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
   @Override
   public <S extends T> Optional<S> findOne(Example<S> example) {
-    return entityStream.of(example.getProbeType()).filter(example).findFirst();
+    Iterable<S> result = findAll(example);
+    var size = Iterables.size(result);
+    if (size > 1) {
+      throw new IncorrectResultSizeDataAccessException("Query returned non unique result", 1);
+    }
+
+    return StreamSupport.stream(result.spliterator(), false).findFirst();
   }
 
   @Override
@@ -388,7 +399,13 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
   @Override
   public <S extends T> Page<S> findAll(Example<S> example, Pageable pageable) {
-    return pageFromSlice(entityStream.of(example.getProbeType()).filter(example).getSlice(pageable));
+    SearchStream<S> stream = entityStream.of(example.getProbeType());
+    var offset = pageable.getOffset() * pageable.getPageSize();
+    var limit = pageable.getPageSize();
+    Slice<S> slice = stream.filter(example).loadAll().limit(limit, Math.toIntExact(offset))
+        .toList(pageable, stream.getEntityClass());
+
+    return pageFromSlice(slice);
   }
 
   /* (non-Javadoc)
@@ -467,7 +484,8 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     Assert.notNull(queryFunction, "Query function must not be null");
 
     return queryFunction.apply(
-        new FluentQueryByExample<>(example, example.getProbeType(), entityStream, getSearchOps()));
+        new RedisFluentQueryByExample<>(example, example.getProbeType(), entityStream, getSearchOps(),
+            mappingConverter.getMappingContext()));
   }
 
   private SearchOperations<String> getSearchOps() {

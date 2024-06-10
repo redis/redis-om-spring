@@ -3,7 +3,7 @@ package com.redis.om.spring.search.stream;
 import com.redis.om.spring.annotations.ReducerFunction;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.search.stream.aggregations.filters.AggregationFilter;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort.Order;
 import redis.clients.jedis.search.aggr.AggregationResult;
@@ -53,7 +53,7 @@ public interface AggregationStream<T> {
   // Cursor API
   AggregationStream<T> cursor(int i, Duration duration);
 
-  <R extends T> Slice<R> toList(PageRequest pageRequest, Class<?>... contentTypes);
+  <R extends T> Slice<R> toList(Pageable pageRequest, Class<?>... contentTypes);
 
-  <R extends T> Slice<R> toList(PageRequest pageRequest, Duration duration, Class<?>... contentTypes);
+  <R extends T> Slice<R> toList(Pageable pageRequest, Duration duration, Class<?>... contentTypes);
 }

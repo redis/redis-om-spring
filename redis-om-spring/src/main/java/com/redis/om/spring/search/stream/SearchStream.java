@@ -30,6 +30,8 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
 
   <R> SearchStream<R> map(Function<? super E, ? extends R> field);
 
+  Class<E> getEntityClass();
+
   Stream<Long> map(ToLongFunction<? super E> mapper);
 
   IntStream mapToInt(ToIntFunction<? super E> mapper);
