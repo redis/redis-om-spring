@@ -5,8 +5,8 @@ import com.github.f4b6a3.ulid.UlidCreator;
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
 import com.redis.om.spring.fixtures.hash.model.KitchenSink;
 import com.redis.om.spring.fixtures.hash.repository.KitchenSinkRepository;
-import com.redis.om.spring.vectorize.DefaultFeatureExtractor;
-import com.redis.om.spring.vectorize.FeatureExtractor;
+import com.redis.om.spring.vectorize.DefaultEmbedder;
+import com.redis.om.spring.vectorize.Embedder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +32,7 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
   KitchenSinkRepository repository;
 
   @Autowired
-  FeatureExtractor featureExtractor;
+  Embedder embedder;
 
   @Autowired
   private ApplicationContext applicationContext;
@@ -69,11 +69,11 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
     ulid = UlidCreator.getMonotonicUlid();
     byteArray = "Hello World!".getBytes();
 
-    java.lang.reflect.Method method = DefaultFeatureExtractor.class.getDeclaredMethod(
+    java.lang.reflect.Method method = DefaultEmbedder.class.getDeclaredMethod(
         "getImageEmbeddingsAsByteArrayFor", InputStream.class);
     method.setAccessible(true);
 
-    byteArray2 = (byte[]) method.invoke(featureExtractor,
+    byteArray2 = (byte[]) method.invoke(embedder,
         applicationContext.getResource("classpath:/images/cat.jpg").getInputStream());
     yearMonth = YearMonth.of(1972, 6);
 

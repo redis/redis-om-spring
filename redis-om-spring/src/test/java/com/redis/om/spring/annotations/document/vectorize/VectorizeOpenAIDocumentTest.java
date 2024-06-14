@@ -10,7 +10,7 @@ import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.SearchStream;
 import com.redis.om.spring.tuple.Fields;
 import com.redis.om.spring.tuple.Pair;
-import com.redis.om.spring.vectorize.FeatureExtractor;
+import com.redis.om.spring.vectorize.Embedder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
@@ -42,7 +42,7 @@ class VectorizeOpenAIDocumentTest extends AbstractBaseDocumentTest {
   EntityStream entityStream;
 
   @Autowired
-  FeatureExtractor featureExtractor;
+  Embedder embedder;
 
   @BeforeEach
   void loadTestData() throws IOException {
@@ -76,7 +76,6 @@ class VectorizeOpenAIDocumentTest extends AbstractBaseDocumentTest {
       )
   void testSentenceIsVectorized() {
     Optional<DocWithOpenAIEmbedding> cat = repository.findFirstByName("cat");
-    System.out.println("TEXT EMBEDDING SIZE: " + cat.get().getTextEmbedding().length);
     assertAll( //
         () -> assertThat(cat).isPresent(), //
         () -> assertThat(cat.get()).extracting("textEmbedding").isNotNull(), //
@@ -91,7 +90,6 @@ class VectorizeOpenAIDocumentTest extends AbstractBaseDocumentTest {
       )
   void testSentenceIsVectorizedWithCustomModel() {
     Optional<DocWithCustomModelOpenAIEmbedding> cat = repository2.findFirstByName("cat");
-    System.out.println("TEXT EMBEDDING SIZE: " + cat.get().getTextEmbedding().length);
     assertAll( //
         () -> assertThat(cat).isPresent(), //
         () -> assertThat(cat.get()).extracting("textEmbedding").isNotNull(), //

@@ -31,9 +31,9 @@ import com.redis.om.spring.ops.pds.CuckooFilterOperations;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.EntityStreamImpl;
 import com.redis.om.spring.serialization.gson.*;
-import com.redis.om.spring.vectorize.DefaultFeatureExtractor;
-import com.redis.om.spring.vectorize.FeatureExtractor;
-import com.redis.om.spring.vectorize.NoopFeatureExtractor;
+import com.redis.om.spring.vectorize.DefaultEmbedder;
+import com.redis.om.spring.vectorize.Embedder;
+import com.redis.om.spring.vectorize.NoopEmbedder;
 import com.redis.om.spring.vectorize.face.FaceDetectionTranslator;
 import com.redis.om.spring.vectorize.face.FaceFeatureTranslator;
 import org.apache.commons.lang3.ObjectUtils;
@@ -562,7 +562,7 @@ public class RedisModulesConfiguration {
   }
 
   @Bean(name = "featureExtractor")
-  public FeatureExtractor featureExtractor(
+  public Embedder featureExtractor(
       @Nullable @Qualifier("djlImageEmbeddingModel") ZooModel<Image, byte[]> imageEmbeddingModel,
       @Nullable @Qualifier("djlFaceEmbeddingModel") ZooModel<Image, float[]> faceEmbeddingModel,
       @Nullable @Qualifier("djlImageFactory") ImageFactory imageFactory,
@@ -574,10 +574,10 @@ public class RedisModulesConfiguration {
       @Nullable BedrockTitanEmbeddingModel bedrockTitanEmbeddingModel, RedisOMProperties properties,
       ApplicationContext ac) {
     return properties.getDjl().isEnabled() ?
-        new DefaultFeatureExtractor(ac, imageEmbeddingModel, faceEmbeddingModel, imageFactory, defaultImagePipeline,
+        new DefaultEmbedder(ac, imageEmbeddingModel, faceEmbeddingModel, imageFactory, defaultImagePipeline,
             sentenceTokenizer, openAITextVectorizer, azureOpenAIClient, vertexAiPaLm2EmbeddingModel,
             bedrockCohereEmbeddingModel, bedrockTitanEmbeddingModel, properties) :
-        new NoopFeatureExtractor();
+        new NoopEmbedder();
   }
 
   @Bean(name = "redisJSONKeyValueAdapter")
@@ -588,9 +588,9 @@ public class RedisModulesConfiguration {
       RediSearchIndexer indexer, //
       @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder, //
       RedisOMProperties properties, //
-      @Nullable @Qualifier("featureExtractor") FeatureExtractor featureExtractor) {
+      @Nullable @Qualifier("featureExtractor") Embedder embedder) {
     return new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, gsonBuilder,
-        featureExtractor, properties);
+        embedder, properties);
   }
 
   @Bean(name = "redisJSONKeyValueTemplate")
@@ -601,10 +601,10 @@ public class RedisModulesConfiguration {
       RediSearchIndexer indexer, //
       @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder, //
       RedisOMProperties properties, //
-      @Nullable @Qualifier("featureExtractor") FeatureExtractor featureExtractor) {
+      @Nullable @Qualifier("featureExtractor") Embedder embedder) {
     return new CustomRedisKeyValueTemplate(
-        new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, gsonBuilder,
-            featureExtractor, properties), mappingContext);
+        new RedisJSONKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, gsonBuilder, embedder,
+            properties), mappingContext);
   }
 
   @Bean(name = "redisCustomKeyValueTemplate")
@@ -614,9 +614,9 @@ public class RedisModulesConfiguration {
       RedisMappingContext mappingContext, //
       RediSearchIndexer indexer, //
       RedisOMProperties properties, //
-      @Nullable @Qualifier("featureExtractor") FeatureExtractor featureExtractor) {
+      @Nullable @Qualifier("featureExtractor") Embedder embedder) {
     return new CustomRedisKeyValueTemplate(
-        new RedisEnhancedKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, featureExtractor,
+        new RedisEnhancedKeyValueAdapter(redisOps, redisModulesOperations, mappingContext, indexer, embedder,
             properties), //
         mappingContext);
   }

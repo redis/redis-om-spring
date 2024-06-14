@@ -4,7 +4,7 @@ import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.query.RedisEnhancedQuery;
-import com.redis.om.spring.vectorize.FeatureExtractor;
+import com.redis.om.spring.vectorize.Embedder;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.repository.config.QueryCreatorType;
 import org.springframework.data.mapping.context.MappingContext;
@@ -27,7 +27,7 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
   private @Nullable RediSearchIndexer indexer;
   private @Nullable Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
   private @Nullable Class<? extends RepositoryQuery> repositoryQueryType;
-  private @Nullable FeatureExtractor featureExtractor;
+  private @Nullable Embedder embedder;
 
   private RedisOMProperties properties;
 
@@ -45,20 +45,20 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
       RedisOperations<?, ?> redisOperations, //
       RedisModulesOperations<?> rmo, //
       RediSearchIndexer indexer, //
-      FeatureExtractor featureExtractor, //
+      Embedder embedder, //
       RedisOMProperties properties) {
     super(repositoryInterface);
     setRedisModulesOperations(rmo);
     setRedisOperations(redisOperations);
     setKeyspaceToIndexMap(indexer);
-    setFeatureExtractor(featureExtractor);
+    setFeatureExtractor(embedder);
     setRedisOMSpringProperties(properties);
   }
 
-  private void setFeatureExtractor(FeatureExtractor featureExtractor) {
+  private void setFeatureExtractor(Embedder embedder) {
     Assert.notNull(rmo, "FeatureExtractor must not be null!");
 
-    this.featureExtractor = featureExtractor;
+    this.embedder = embedder;
   }
 
   /**
@@ -162,7 +162,7 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
       Class<? extends RepositoryQuery> repositoryQueryType //
   ) {
-    return new RedisEnhancedRepositoryFactory(operations, redisOperations, rmo, indexer, featureExtractor, queryCreator,
+    return new RedisEnhancedRepositoryFactory(operations, redisOperations, rmo, indexer, embedder, queryCreator,
         RedisEnhancedQuery.class, properties);
   }
 
@@ -179,7 +179,7 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
     Assert.notNull(queryCreator, "Query creator must not be null!");
     Assert.notNull(repositoryQueryType, "RepositoryQueryType must not be null!");
     Assert.notNull(indexer, "RediSearchIndexer type must not be null");
-    Assert.notNull(featureExtractor, "FeatureExtractor type must not be null!");
+    Assert.notNull(embedder, "FeatureExtractor type must not be null!");
 
     super.afterPropertiesSet();
   }

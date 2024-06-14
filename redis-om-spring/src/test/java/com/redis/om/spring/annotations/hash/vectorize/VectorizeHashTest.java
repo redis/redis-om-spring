@@ -8,7 +8,7 @@ import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.SearchStream;
 import com.redis.om.spring.tuple.Fields;
 import com.redis.om.spring.tuple.Pair;
-import com.redis.om.spring.vectorize.FeatureExtractor;
+import com.redis.om.spring.vectorize.Embedder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +29,7 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
   EntityStream entityStream;
 
   @Autowired
-  FeatureExtractor featureExtractor;
+  Embedder embedder;
 
   @BeforeEach
   void loadTestData() throws IOException {
@@ -165,4 +165,21 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
             .containsExactly(0.0, 0.6704, 0.7162, 0.7705, 0.8107) //
     );
   }
+
+  @Test
+  @EnabledIf(
+      expression = "#{@featureExtractor.isReady()}", //
+      loadContext = true //
+      )
+  void testEmbedderCanVectorizeSentence() {
+    Optional<Product> maybeCat = repository.findFirstByName("cat");
+    assertThat(maybeCat).isPresent();
+    Product cat = maybeCat.get();
+    var catEmbedding = cat.getSentenceEmbedding();
+    List<byte[]> embeddings = embedder.getTextEmbeddingsAsBytes(List.of(cat.getDescription()), Product$.DESCRIPTION);
+    assertAll( //
+        () -> assertThat(embeddings).isNotEmpty(), //
+        () -> assertThat(embeddings.get(0)).isEqualTo(catEmbedding));
+  }
+
 }

@@ -18,7 +18,7 @@ import com.redis.om.spring.search.stream.EntityStreamImpl;
 import com.redis.om.spring.search.stream.RedisFluentQueryByExample;
 import com.redis.om.spring.search.stream.SearchStream;
 import com.redis.om.spring.util.ObjectUtils;
-import com.redis.om.spring.vectorize.FeatureExtractor;
+import com.redis.om.spring.vectorize.Embedder;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.domain.*;
@@ -62,7 +62,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   protected final MappingRedisOMConverter mappingConverter;
   protected final RedisEnhancedKeyValueAdapter enhancedKeyValueAdapter;
   protected final EntityAuditor auditor;
-  protected final FeatureExtractor featureExtractor;
+  protected final Embedder embedder;
 
   private final ULIDIdentifierGenerator generator;
   private final RedisOMProperties properties;
@@ -75,7 +75,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
       KeyValueOperations operations, //
       @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo, //
       RediSearchIndexer indexer, //
-      FeatureExtractor featureExtractor, //
+      Embedder embedder, //
       RedisOMProperties properties //
   ) {
     super(metadata, operations);
@@ -84,11 +84,11 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     this.operations = operations;
     this.indexer = indexer;
     this.mappingConverter = new MappingRedisOMConverter(null, new ReferenceResolverImpl(modulesOperations.template()));
-    this.enhancedKeyValueAdapter = new RedisEnhancedKeyValueAdapter(rmo.template(), rmo, indexer, featureExtractor,
+    this.enhancedKeyValueAdapter = new RedisEnhancedKeyValueAdapter(rmo.template(), rmo, indexer, embedder,
         properties);
     this.generator = ULIDIdentifierGenerator.INSTANCE;
     this.auditor = new EntityAuditor(modulesOperations.template());
-    this.featureExtractor = featureExtractor;
+    this.embedder = embedder;
     this.properties = properties;
     this.entityStream = new EntityStreamImpl(modulesOperations, modulesOperations.gsonBuilder(), indexer);
   }
@@ -262,7 +262,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
 
         // process entity pre-save mutation
         auditor.processEntity(entity, isNew);
-        featureExtractor.processEntity(entity);
+        embedder.processEntity(entity);
 
         RedisData rdo = new RedisData();
         mappingConverter.write(entity, rdo);
