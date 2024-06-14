@@ -409,6 +409,27 @@ Iterable<MyDoc> allMatches = repository.findAll(example);
 </dependency>
 ```
 
+> ⚠️ Redis OM Spring versions greater than `v0.9.2` require the addition 
+of the [**Spring Milestone Repository**](https://repo.spring.io/milestone) to account
+for the recent integration with the [**Spring AI**](https://docs.spring.io/spring-ai/reference/) project. When Spring AI `v1.0.0` is
+released we will drop this requirement.
+
+```xml
+<repository>
+  <id>spring-milestones</id>
+  <name>Spring Milestones</name>
+  <url>https://repo.spring.io/milestone</url>
+</repository>
+```
+
+of if using Gradle:
+
+```groovy
+repositories {
+  maven("https://repo.spring.io/milestone" )
+}
+```
+
 #### Explicitly configuring OM as an annotation processor
 
 For Maven, things normally just work, when you run `./mvnw spring-boot:run`. Some users have experienced this not being
