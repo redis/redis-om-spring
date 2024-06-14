@@ -55,7 +55,7 @@ class QueryByExampleDocumentRepositoryIntegrationTests extends AbstractBaseDocum
         indexer, //
         mappingContext, //
         gsonBuilder, //
-        featureExtractor,
+        embedder,
       new RedisOMProperties());
     repository.deleteAll();
 

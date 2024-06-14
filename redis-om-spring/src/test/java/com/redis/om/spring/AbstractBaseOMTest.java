@@ -3,7 +3,7 @@ package com.redis.om.spring;
 import com.google.gson.GsonBuilder;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.vectorize.FeatureExtractor;
+import com.redis.om.spring.vectorize.Embedder;
 import com.redis.testcontainers.RedisStackContainer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -32,7 +32,7 @@ public abstract class AbstractBaseOMTest {
 
   @Autowired
   @Qualifier("featureExtractor")
-  public FeatureExtractor featureExtractor;
+  public Embedder embedder;
   @Autowired
   protected StringRedisTemplate template;
   @Autowired

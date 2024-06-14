@@ -11,7 +11,7 @@ import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.util.ObjectUtils;
-import com.redis.om.spring.vectorize.FeatureExtractor;
+import com.redis.om.spring.vectorize.Embedder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.*;
@@ -53,7 +53,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private final RediSearchIndexer indexer;
   private final GsonBuilder gsonBuilder;
   private final EntityAuditor auditor;
-  private final FeatureExtractor featureExtractor;
+  private final Embedder embedder;
   private final RedisOMProperties redisOMProperties;
 
   /**
@@ -72,7 +72,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       RedisMappingContext mappingContext, //
       RediSearchIndexer indexer, //
       GsonBuilder gsonBuilder, //
-      FeatureExtractor featureExtractor, //
+      Embedder embedder, //
       RedisOMProperties redisOMProperties) {
     super(redisOps, mappingContext, new RedisOMCustomConversions());
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
@@ -82,7 +82,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     this.indexer = indexer;
     this.auditor = new EntityAuditor(this.redisOperations);
     this.gsonBuilder = gsonBuilder;
-    this.featureExtractor = featureExtractor;
+    this.embedder = embedder;
     this.redisOMProperties = redisOMProperties;
   }
 
@@ -102,7 +102,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
 
     processVersion(key, item);
     auditor.processEntity(key, item);
-    featureExtractor.processEntity(item);
+    embedder.processEntity(item);
     Optional<Long> maybeTtl = getTTLForEntity(item);
 
     ops.set(key, item);

@@ -5,7 +5,7 @@ import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.query.RediSearchQuery;
-import com.redis.om.spring.vectorize.FeatureExtractor;
+import com.redis.om.spring.vectorize.Embedder;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.repository.query.KeyValuePartTreeQuery;
@@ -42,7 +42,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
   private final RediSearchIndexer indexer;
   private final GsonBuilder gsonBuilder;
   private final RedisMappingContext mappingContext;
-  private final FeatureExtractor featureExtractor;
+  private final Embedder embedder;
   private final RedisOMProperties properties;
 
   /**
@@ -54,7 +54,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
    * @param indexer            must not be {@literal null}.
    * @param mappingContext     must not be {@literal null}.
    * @param gsonBuilder        must not be {@literal null}.
-   * @param featureExtractor   must not be {@literal null}.
+   * @param embedder   must not be {@literal null}.
    * @param properties         must not be {@literal null}.
    */
   public RedisDocumentRepositoryFactory( //
@@ -63,7 +63,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
       RediSearchIndexer indexer, //
       RedisMappingContext mappingContext, //
       GsonBuilder gsonBuilder, //
-      FeatureExtractor featureExtractor, //
+      Embedder embedder, //
       RedisOMProperties properties //
   ) {
     this( //
@@ -73,7 +73,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
         DEFAULT_QUERY_CREATOR, //
         mappingContext, //
         gsonBuilder, //
-        featureExtractor, //
+        embedder, //
         properties //
     ); //
   }
@@ -96,7 +96,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
       RedisMappingContext mappingContext, //
       GsonBuilder gsonBuilder, //
-      FeatureExtractor featureExtractor, //
+      Embedder embedder, //
       RedisOMProperties properties //
   ) {
     this( //
@@ -107,7 +107,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
         RediSearchQuery.class, //
         mappingContext, //
         gsonBuilder, //
-        featureExtractor, //
+        embedder, //
         properties //
     );
   }
@@ -123,7 +123,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
    * @param repositoryQueryType must not be {@literal null}.
    * @param mappingContext      must not be {@literal null}.
    * @param gsonBuilder         must not be {@literal null}.
-   * @param featureExtractor    must not be {@literal null}.
+   * @param embedder    must not be {@literal null}.
    * @param properties          must not be {@literal null}.
    */
   public RedisDocumentRepositoryFactory( //
@@ -134,7 +134,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
       Class<? extends RepositoryQuery> repositoryQueryType, //
       RedisMappingContext mappingContext, //
       GsonBuilder gsonBuilder, //
-      FeatureExtractor featureExtractor, //
+      Embedder embedder, //
       RedisOMProperties properties //
   ) {
 
@@ -145,7 +145,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
     Assert.notNull(indexer, "RediSearchIndexer must not be null!");
     Assert.notNull(queryCreator, "Query creator type must not be null!");
     Assert.notNull(repositoryQueryType, "RepositoryQueryType type must not be null!");
-    Assert.notNull(featureExtractor, "FeatureExtractor type must not be null!");
+    Assert.notNull(embedder, "FeatureExtractor type must not be null!");
     Assert.notNull(properties, "RedisOMSpringProperties type must not be null!");
 
     this.keyValueOperations = keyValueOperations;
@@ -155,7 +155,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
     this.repositoryQueryType = repositoryQueryType;
     this.mappingContext = mappingContext;
     this.gsonBuilder = gsonBuilder;
-    this.featureExtractor = featureExtractor;
+    this.embedder = embedder;
     this.properties = properties;
   }
 
@@ -170,7 +170,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
         indexer, //
         mappingContext, //
         gsonBuilder, //
-        featureExtractor, //
+        embedder, //
         properties //
     );
   }

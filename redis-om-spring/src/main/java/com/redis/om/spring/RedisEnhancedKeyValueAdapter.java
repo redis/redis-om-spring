@@ -7,7 +7,7 @@ import com.redis.om.spring.id.IdentifierFilter;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
-import com.redis.om.spring.vectorize.FeatureExtractor;
+import com.redis.om.spring.vectorize.Embedder;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.redis.connection.RedisConnection;
@@ -41,7 +41,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   private final RedisModulesOperations<String> modulesOperations;
   private final RediSearchIndexer indexer;
   private final EntityAuditor auditor;
-  private final FeatureExtractor featureExtractor;
+  private final Embedder embedder;
   private final RedisOMProperties redisOMProperties;
 
   /**
@@ -56,9 +56,9 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       RedisOperations<?, ?> redisOps, //
       RedisModulesOperations<?> rmo, //
       RediSearchIndexer indexer, //
-      FeatureExtractor featureExtractor, //
+      Embedder embedder, //
       RedisOMProperties redisOMProperties) {
-    this(redisOps, rmo, new RedisMappingContext(), indexer, featureExtractor, redisOMProperties);
+    this(redisOps, rmo, new RedisMappingContext(), indexer, embedder, redisOMProperties);
   }
 
   /**
@@ -75,9 +75,9 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       RedisModulesOperations<?> rmo, //
       RedisMappingContext mappingContext, //
       RediSearchIndexer indexer, //
-      FeatureExtractor featureExtractor, //
+      Embedder embedder, //
       RedisOMProperties redisOMProperties) {
-    this(redisOps, rmo, mappingContext, new RedisOMCustomConversions(), indexer, featureExtractor, redisOMProperties);
+    this(redisOps, rmo, mappingContext, new RedisOMCustomConversions(), indexer, embedder, redisOMProperties);
   }
 
   /**
@@ -96,7 +96,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       RedisMappingContext mappingContext, //
       @Nullable CustomConversions customConversions, //
       RediSearchIndexer indexer, //
-      FeatureExtractor featureExtractor, //
+      Embedder embedder, //
       RedisOMProperties redisOMProperties) {
     super(redisOps, mappingContext, customConversions);
 
@@ -114,7 +114,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.indexer = indexer;
     this.auditor = new EntityAuditor(this.redisOperations);
-    this.featureExtractor = featureExtractor;
+    this.embedder = embedder;
     this.redisOMProperties = redisOMProperties;
   }
 
@@ -141,7 +141,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       }
       byte[] redisKey = createKey(sanitizeKeyspace(keyspace), idAsString);
       auditor.processEntity(redisKey, item);
-      featureExtractor.processEntity(item);
+      embedder.processEntity(item);
 
       rdo = new RedisData();
       converter.write(item, rdo);

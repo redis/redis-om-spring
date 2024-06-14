@@ -700,16 +700,10 @@ public class ObjectUtils {
   }
 
   public static byte[] doubleListToByteArray(List<Double> doubleList) {
-    // Allocate ByteBuffer of appropriate size
-    ByteBuffer buffer = ByteBuffer.allocate(doubleList.size() * Double.BYTES);
-
-    // Fill the ByteBuffer with double values from the list
-    for (Double value : doubleList) {
-      buffer.putDouble(value);
-    }
-
-    // Convert ByteBuffer to byte[]
-    return buffer.array();
+    byte[] bytes = new byte[Float.BYTES * doubleList.size()];
+    float[] input = doubleListToFloatArray(doubleList);
+    ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).asFloatBuffer().put(input);
+    return bytes;
   }
 
   public static float[] doubleListToFloatArray(List<Double> doubleList) {

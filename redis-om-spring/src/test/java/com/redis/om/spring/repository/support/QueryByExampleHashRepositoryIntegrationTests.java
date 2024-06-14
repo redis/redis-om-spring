@@ -50,7 +50,7 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   void before() {
 
     repository = new SimpleRedisEnhancedRepository<>(getEntityInformation(Person.class),
-      new KeyValueTemplate(new RedisKeyValueAdapter(template)), modulesOperations, indexer, featureExtractor,
+        new KeyValueTemplate(new RedisKeyValueAdapter(template)), modulesOperations, indexer, embedder,
       new RedisOMProperties());
     repository.deleteAll();
 

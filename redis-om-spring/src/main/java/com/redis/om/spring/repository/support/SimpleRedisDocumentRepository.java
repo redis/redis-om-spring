@@ -22,7 +22,7 @@ import com.redis.om.spring.search.stream.RedisFluentQueryByExample;
 import com.redis.om.spring.search.stream.SearchStream;
 import com.redis.om.spring.serialization.gson.GsonListOfType;
 import com.redis.om.spring.util.ObjectUtils;
-import com.redis.om.spring.vectorize.FeatureExtractor;
+import com.redis.om.spring.vectorize.Embedder;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.PropertyAccessor;
@@ -79,7 +79,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   protected final RediSearchIndexer indexer;
   protected final MappingRedisOMConverter mappingConverter;
   protected final EntityAuditor auditor;
-  protected final FeatureExtractor featureExtractor;
+  protected final Embedder embedder;
   private final GsonBuilder gsonBuilder;
   private final ULIDIdentifierGenerator generator;
   private final RedisOMProperties properties;
@@ -94,7 +94,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       RediSearchIndexer indexer, //
       RedisMappingContext mappingContext, //
       GsonBuilder gsonBuilder, //
-      FeatureExtractor featureExtractor, //
+      Embedder embedder, //
       RedisOMProperties properties) {
     super(metadata, operations);
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
@@ -106,7 +106,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     this.gsonBuilder = gsonBuilder;
     this.mappingContext = mappingContext;
     this.auditor = new EntityAuditor(modulesOperations.template());
-    this.featureExtractor = featureExtractor;
+    this.embedder = embedder;
     this.properties = properties;
     this.entityStream = new EntityStreamImpl(modulesOperations, modulesOperations.gsonBuilder(), indexer);
   }
@@ -192,7 +192,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
         // process entity pre-save mutation
         auditor.processEntity(entity, isNew);
-        featureExtractor.processEntity(entity);
+        embedder.processEntity(entity);
 
         Optional<Long> maybeTtl = getTTLForEntity(entity);
 
