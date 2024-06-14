@@ -434,7 +434,7 @@ repositories {
 
 For Maven, things normally just work, when you run `./mvnw spring-boot:run`. Some users have experienced this not being
 the case, in which I recommend to explicitly declaring the `maven-compiler-plugin` in the case below it is paired with
-an app created with [`start.spring.io`](https://start.spring.io/) with Spring Boot `v3.0.4` (all other versions can be
+an app created with [`start.spring.io`](https://start.spring.io/) with Spring Boot `v3.3.0` (all other versions can be
 inherited from the parent poms):
 
 ```xml
@@ -447,7 +447,7 @@ inherited from the parent poms):
       <path>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-configuration-processor</artifactId>
-        <version>3.2.3</version>
+        <version>3.3.0</version>
       </path>
       <path>
         <groupId>org.projectlombok</groupId>
