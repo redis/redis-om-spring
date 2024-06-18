@@ -45,6 +45,7 @@ import java.util.stream.*;
 
 import static com.redis.om.spring.metamodel.MetamodelUtils.getMetamodelForIdField;
 import static com.redis.om.spring.util.ObjectUtils.floatArrayToByteArray;
+import static com.redis.om.spring.util.ObjectUtils.pageFromSlice;
 import static java.util.stream.Collectors.toCollection;
 
 public class SearchStreamImpl<E> implements SearchStream<E> {
@@ -556,6 +557,10 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     return resolvedStream;
   }
 
+  private boolean isStreamResolved() {
+    return resolvedStream != null;
+  }
+
   @Override
   public Class<E> getEntityClass() {
     return entityClass;
@@ -695,13 +700,24 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public Slice<E> getSlice(Pageable pageable) {
-    resolvedStream = Stream.empty();
     if (pageable.getClass().isAssignableFrom(AggregationPageable.class)) {
+      resolvedStream = Stream.empty();
       AggregationPageable ap = (AggregationPageable) pageable;
       AggregationResult ar = search.cursorRead(ap.getCursorId(), pageable.getPageSize());
       return new AggregationPage<>(ar, pageable, entityClass, getGson(), mappingConverter, isDocument);
     } else {
-      return Page.empty(pageable);
+      if (!isStreamResolved()) {
+        this.sorted(pageable.getSort()).limit(pageable.getPageSize()).skip(Math.toIntExact(pageable.getOffset()));
+        // issue a count query to answer the hasNext? question for the slice/page
+        Query countQuery = (rootNode.toString().isBlank()) ? new Query() : new Query(rootNode.toString());
+        countQuery.limit(Math.toIntExact(pageable.getOffset() + pageable.getPageSize()), pageable.getPageSize());
+        SearchResult searchResult = search.search(countQuery);
+
+        return new SliceImpl<>(this.resolveStream().toList(), pageable, !searchResult.getDocuments().isEmpty());
+      } else {
+        return new SliceImpl<E>(List.of());
+      }
+
     }
   }
 
