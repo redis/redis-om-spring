@@ -16,6 +16,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import com.redis.om.spring.repository.query.Sort;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Metrics;
 import org.springframework.data.geo.Point;
@@ -2723,5 +2726,67 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
     assertTrue(updatedCompany.getTags().contains("innovative"));
 
     repository.delete(updatedCompany);
+  }
+
+  @Test
+  void testManualPagination() {
+    int PAGE_SIZE = 2;
+    int page = 0;
+
+    // get first page
+    List<Company> page0 = entityStream.of(Company.class) //
+        .sorted(Company$.NAME) //
+        .skip(page * PAGE_SIZE) //
+        .limit(PAGE_SIZE) //
+        .collect(Collectors.toList());
+
+    assertThat(page0).hasSize(PAGE_SIZE);
+
+    List<String> names0 = page0.stream().map(Company::getName).collect(Collectors.toList());
+    assertThat(names0).containsExactly("Microsoft", "RedisInc");
+
+    // get second page
+    page = 1;
+    List<Company> page1 = entityStream.of(Company.class) //
+        .sorted(Company$.NAME) //
+        .skip(page * PAGE_SIZE) //
+        .limit(PAGE_SIZE) //
+        .collect(Collectors.toList());
+
+    assertThat(page1).hasSize(1);
+
+    List<String> names1 = page1.stream().map(Company::getName).collect(Collectors.toList());
+    assertThat(names1).containsExactly("Tesla");
+  }
+
+  @Test
+  void testPageablePagination() {
+    int PAGE_SIZE = 2;
+    int page = 0;
+
+    var page0Request = PageRequest.of(page, PAGE_SIZE, Sort.by(Company$.NAME));
+
+    // get first page
+    Slice<Company> page0 = entityStream.of(Company.class) //
+        .getSlice(page0Request);
+
+
+    assertThat(page0).hasSize(PAGE_SIZE);
+    assertThat(page0.hasNext()).isTrue();
+
+    List<String> names0 = page0.stream().map(Company::getName).collect(Collectors.toList());
+    assertThat(names0).containsExactly("Microsoft", "RedisInc");
+
+    // get second page
+    page = 1;
+    var page1Request = PageRequest.of(page, PAGE_SIZE, Sort.by(Company$.NAME));
+    Slice<Company> page1 = entityStream.of(Company.class) //
+        .getSlice(page1Request);
+
+    assertThat(page1).hasSize(1);
+    assertThat(page1.hasNext()).isFalse();
+
+    List<String> names1 = page1.stream().map(Company::getName).collect(Collectors.toList());
+    assertThat(names1).containsExactly("Tesla");
   }
 }
