@@ -1,6 +1,7 @@
 package com.redis.om.spring.client;
 
 import com.google.gson.GsonBuilder;
+import com.redis.om.spring.RedisOMProperties;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.data.redis.connection.RedisNode;
@@ -132,8 +133,10 @@ public class RedisModulesClient {
     clientConfiguration.getClientName().ifPresent(jedisConfigBuilder::clientName);
     jedisConfigBuilder.connectionTimeoutMillis(Math.toIntExact(clientConfiguration.getConnectTimeout().toMillis()));
     jedisConfigBuilder.socketTimeoutMillis(Math.toIntExact(clientConfiguration.getReadTimeout().toMillis()));
-
     jedisConfigBuilder.database(database);
+
+    jedisConfigBuilder.clientSetInfoConfig(
+        ClientSetInfoConfig.withLibNameSuffix("redis-om-spring_v" + RedisOMProperties.ROMS_VERSION));
 
     if (!ObjectUtils.isEmpty(username)) {
       jedisConfigBuilder.user(username);
