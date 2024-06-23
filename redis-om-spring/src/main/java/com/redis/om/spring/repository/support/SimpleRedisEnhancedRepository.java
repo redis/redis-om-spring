@@ -10,6 +10,7 @@ import com.redis.om.spring.id.IdentifierFilter;
 import com.redis.om.spring.id.ULIDIdentifierGenerator;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.metamodel.MetamodelField;
+import com.redis.om.spring.metamodel.MetamodelUtils;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.RedisEnhancedRepository;
@@ -39,18 +40,17 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
+import redis.clients.jedis.util.SafeEncoder;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static com.redis.om.spring.RedisOMProperties.MAX_SEARCH_RESULTS;
-import static com.redis.om.spring.util.ObjectUtils.pageFromSlice;
+import static com.redis.om.spring.util.ObjectUtils.*;
 
 public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueRepository<T, ID>
     implements RedisEnhancedRepository<T, ID> {
@@ -230,6 +230,85 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     return indexer.getKeyspaceForEntityClass(metadata.getJavaType());
   }
 
+  @Override
+  public <S extends T> S update(Example<S> example) {
+    S probe = example.getProbe();
+    ExampleMatcher matcher = example.getMatcher();
+    ID id = metadata.getId(probe);
+
+    if (id == null) {
+      throw new IllegalArgumentException("Example object must have an ID");
+    }
+
+    String key = getKey(id);
+
+    Class<?> entityType = metadata.getJavaType();
+    List<UpdateOperation> updateOperations = new ArrayList<>();
+
+    List<MetamodelField<?, ?>> metamodelFields = MetamodelUtils.getMetamodelFieldsForProperties(entityType,
+        getAllProperties(entityType));
+
+    for (MetamodelField<?, ?> metamodelField : metamodelFields) {
+      String propertyName = metamodelField.getSearchAlias();
+
+      if (propertyName.equals("id")) {
+        continue;
+      }
+
+      if (shouldIncludeProperty(matcher, propertyName)) {
+        Object value = getPropertyValue(probe, propertyName);
+
+        if (value != null) {
+          updateOperations.add(new UpdateOperation(key, metamodelField, value));
+        }
+      }
+    }
+
+    if (!updateOperations.isEmpty()) {
+      executePipelinedUpdates(updateOperations);
+    }
+
+    return (S) findById(id).orElseThrow(() -> new RuntimeException("Failed to fetch updated entity"));
+  }
+
+  @Override
+  public <S extends T> void updateAll(Iterable<Example<S>> examples) {
+    if (!examples.iterator().hasNext()) {
+      return; // No examples to process
+    }
+
+    List<UpdateOperation> updateOperations = new ArrayList<>();
+    Class<?> entityType = metadata.getJavaType();
+    List<MetamodelField<?, ?>> metamodelFields = MetamodelUtils.getMetamodelFieldsForProperties(entityType,
+        getAllProperties(entityType));
+
+    for (Example<S> example : examples) {
+      S probe = example.getProbe();
+      ExampleMatcher matcher = example.getMatcher();
+      ID id = metadata.getId(probe);
+
+      if (id == null) {
+        throw new IllegalArgumentException("Example object must have an ID");
+      }
+
+      String key = getKey(id);
+
+      for (MetamodelField<?, ?> metamodelField : metamodelFields) {
+        String propertyName = metamodelField.getSearchAlias();
+
+        if (shouldIncludeProperty(matcher, propertyName)) {
+          Object value = getPropertyValue(probe, propertyName);
+
+          if (value != null) {
+            updateOperations.add(new UpdateOperation(key, metamodelField, value));
+          }
+        }
+      }
+    }
+
+    executePipelinedUpdates(updateOperations);
+  }
+
   private String getKey(Object id) {
     var maybeIdentifierFilter = indexer.getIdentifierFilterFor(metadata.getJavaType());
     if (maybeIdentifierFilter.isPresent()) {
@@ -354,6 +433,43 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     return queryFunction.apply(
         new RedisFluentQueryByExample<>(example, example.getProbeType(), entityStream, getSearchOps(),
             mappingConverter.getMappingContext()));
+  }
+
+  private void executePipelinedUpdates(List<UpdateOperation> updateOperations) {
+    try (Jedis jedis = modulesOperations.client().getJedis().get()) {
+      Pipeline pipeline = jedis.pipelined();
+
+      Map<String, Map<byte[], byte[]>> updates = new HashMap<>();
+
+      for (UpdateOperation op : updateOperations) {
+        byte[] value = convertToBinary(op.field, op.value);
+        if (value != null && value.length > 0) {
+          updates.computeIfAbsent(op.key, k -> new HashMap<>())
+              .put(SafeEncoder.encode(op.field.getSearchAlias()), value);
+        }
+      }
+
+      for (Map.Entry<String, Map<byte[], byte[]>> entry : updates.entrySet()) {
+        if (!entry.getValue().isEmpty()) {
+          pipeline.hmset(SafeEncoder.encode(entry.getKey()), entry.getValue());
+        }
+      }
+
+      pipeline.sync();
+    }
+  }
+
+  private byte[] convertToBinary(MetamodelField<?, ?> field, Object value) {
+    if (value == null) {
+      return null;
+    }
+    if (value instanceof String) {
+      return SafeEncoder.encode((String) value);
+    }
+    RedisData redisData = new RedisData();
+    mappingConverter.write(value, redisData);
+    byte[] binaryValue = redisData.getBucket().get(field.getSearchAlias());
+    return binaryValue != null && binaryValue.length > 0 ? binaryValue : null;
   }
 
   private SearchOperations<String> getSearchOps() {

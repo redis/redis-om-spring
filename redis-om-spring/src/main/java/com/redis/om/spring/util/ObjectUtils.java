@@ -12,10 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
 import org.springframework.data.redis.core.convert.Bucket;
@@ -31,6 +28,7 @@ import redis.clients.jedis.search.Schema;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -727,5 +725,33 @@ public class ObjectUtils {
       return Tuples.of(true, enclosingElement.getSimpleName().toString());
     }
     return Tuples.of(false, null);
+  }
+
+  public static List<String> getAllProperties(Class<?> entityType) {
+    List<String> properties = new ArrayList<>();
+    for (Field field : entityType.getDeclaredFields()) {
+      properties.add(field.getName());
+    }
+    return properties;
+  }
+
+  public static boolean shouldIncludeProperty(ExampleMatcher matcher, String propertyName) {
+    ExampleMatcher.PropertySpecifier specifier = matcher.getPropertySpecifiers().getForPath(propertyName);
+    if (specifier != null) {
+      // If a specific matcher is defined for this property, include it
+      return true;
+    }
+    // If no specific matcher is defined, include the property if it's not in the ignored paths
+    return !matcher.isIgnoredPath(propertyName);
+  }
+
+  public static Object getPropertyValue(Object object, String propertyName) {
+    try {
+      PropertyDescriptor propertyDescriptor = new PropertyDescriptor(propertyName, object.getClass());
+      Method getter = propertyDescriptor.getReadMethod();
+      return getter.invoke(object);
+    } catch (Exception e) {
+      throw new RuntimeException("Error getting property value", e);
+    }
   }
 }

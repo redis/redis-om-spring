@@ -56,7 +56,6 @@ import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.util.SafeEncoder;
 
-import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.Field;
@@ -568,14 +567,6 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     return modulesOperations.opsForJSON();
   }
 
-  private List<String> getAllProperties(Class<?> entityType) {
-    List<String> properties = new ArrayList<>();
-    for (Field field : entityType.getDeclaredFields()) {
-      properties.add(field.getName());
-    }
-    return properties;
-  }
-
   private void executePipelinedUpdates(List<UpdateOperation> updateOperations) {
     try (Jedis jedis = modulesOperations.client().getJedis().get()) {
       Pipeline pipeline = jedis.pipelined();
@@ -594,42 +585,10 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     }
   }
 
-  private boolean shouldIncludeProperty(ExampleMatcher matcher, String propertyName) {
-    ExampleMatcher.PropertySpecifier specifier = matcher.getPropertySpecifiers().getForPath(propertyName);
-    if (specifier != null) {
-      // If a specific matcher is defined for this property, include it
-      return true;
-    }
-    // If no specific matcher is defined, include the property if it's not in the ignored paths
-    return !matcher.isIgnoredPath(propertyName);
-  }
-
-  private Object getPropertyValue(Object object, String propertyName) {
-    try {
-      PropertyDescriptor propertyDescriptor = new PropertyDescriptor(propertyName, object.getClass());
-      Method getter = propertyDescriptor.getReadMethod();
-      return getter.invoke(object);
-    } catch (Exception e) {
-      throw new RuntimeException("Error getting property value", e);
-    }
-  }
-
   private SearchOperations<String> getSearchOps() {
     String keyspace = indexer.getKeyspaceForEntityClass(metadata.getJavaType());
     String searchIndex = indexer.getIndexName(keyspace);
     return modulesOperations.opsForSearch(searchIndex);
-  }
-
-  private static class UpdateOperation {
-    final String key;
-    final MetamodelField<?, ?> field;
-    final Object value;
-
-    UpdateOperation(String key, MetamodelField<?, ?> field, Object value) {
-      this.key = key;
-      this.field = field;
-      this.value = value;
-    }
   }
 
 }

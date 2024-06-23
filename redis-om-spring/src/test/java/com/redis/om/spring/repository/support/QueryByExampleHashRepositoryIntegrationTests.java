@@ -2,17 +2,13 @@ package com.redis.om.spring.repository.support;
 
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
 import com.redis.om.spring.RedisOMProperties;
-import com.redis.om.spring.annotations.Indexed;
+import com.redis.om.spring.fixtures.hash.model.CityHash;
+import com.redis.om.spring.fixtures.hash.model.PersonHash;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.data.keyvalue.core.KeyValueTemplate;
-import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.RedisKeyValueAdapter;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.redis.core.mapping.RedisPersistentEntity;
@@ -20,10 +16,7 @@ import org.springframework.data.redis.repository.core.MappingRedisEntityInformat
 import org.springframework.data.redis.repository.support.QueryByExampleRedisExecutor;
 import org.springframework.data.repository.query.FluentQuery;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.*;
@@ -42,26 +35,26 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
 
   private final RedisMappingContext mappingContext = new RedisMappingContext();
 
-  private Person walt, hank, gus;
+  private PersonHash walt, hank, gus;
 
-  private SimpleRedisEnhancedRepository<Person, String> repository;
+  private SimpleRedisEnhancedRepository<PersonHash, String> repository;
 
   @BeforeEach
   void before() {
 
-    repository = new SimpleRedisEnhancedRepository<>(getEntityInformation(Person.class),
+    repository = new SimpleRedisEnhancedRepository<>(getEntityInformation(PersonHash.class),
         new KeyValueTemplate(new RedisKeyValueAdapter(template)), modulesOperations, indexer, embedder,
       new RedisOMProperties());
     repository.deleteAll();
 
-    walt = new Person("Walter", "White");
-    walt.setHometown(new City("Albuquerqe"));
+    walt = new PersonHash("Walter", "White");
+    walt.setHometown(new CityHash("Albuquerqe"));
 
-    hank = new Person("Hank", "Schrader");
-    hank.setHometown(new City("Albuquerqe"));
+    hank = new PersonHash("Hank", "Schrader");
+    hank.setHometown(new CityHash("Albuquerqe"));
 
-    gus = new Person("Gus", "Fring");
-    gus.setHometown(new City("Albuquerqe"));
+    gus = new PersonHash("Gus", "Fring");
+    gus.setHometown(new CityHash("Albuquerqe"));
 
     repository.saveAll(Arrays.asList(walt, hank, gus));
   }
@@ -69,7 +62,7 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   @Test
     // DATAREDIS-605
   void shouldFindOneByExample() {
-    Optional<Person> result = repository.findOne(Example.of(walt));
+    Optional<PersonHash> result = repository.findOne(Example.of(walt));
 
     assertThat(result).contains(walt);
   }
@@ -77,7 +70,7 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   @Test
     // DATAREDIS-605
   void shouldThrowExceptionWhenFindOneByExampleReturnsNonUniqueResult() {
-    Person person = new Person();
+    PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
 
     assertThatThrownBy(() -> repository.findOne(Example.of(person))).isInstanceOf(
@@ -87,24 +80,24 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   @Test
     // DATAREDIS-605
   void shouldNotFindOneByExample() {
-    Optional<Person> result = repository.findOne(Example.of(new Person("Skyler", "White")));
+    Optional<PersonHash> result = repository.findOne(Example.of(new PersonHash("Skyler", "White")));
     assertThat(result).isEmpty();
   }
 
   @Test
     // DATAREDIS-605, GH-2880
   void shouldFindAllByExample() {
-    Person person = new Person();
+    PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
 
-    Iterable<Person> result = repository.findAll(Example.of(person));
+    Iterable<PersonHash> result = repository.findAll(Example.of(person));
     assertThat(result).contains(walt, gus, hank);
   }
 
   @Test
     // DATAREDIS-605
   void shouldNotSupportFindAllOrdered() {
-    Person person = new Person();
+    PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
 
     assertThatThrownBy(() -> repository.findAll(Example.of(person), Sort.by("foo"))).isInstanceOf(
@@ -114,41 +107,41 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   @Test
     // DATAREDIS-605
   void shouldFindAllPagedByExample() {
-    Person person = new Person();
+    PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
 
-    Page<Person> result = repository.findAll(Example.of(person), PageRequest.of(0, 2));
+    Page<PersonHash> result = repository.findAll(Example.of(person), PageRequest.of(0, 2));
     assertThat(result).hasSize(2);
   }
 
   @Test
     // DATAREDIS-605
   void shouldCountCorrectly() {
-    Person person = new Person();
+    PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
 
     assertThat(repository.count(Example.of(person))).isEqualTo(3);
     assertThat(repository.count(Example.of(walt))).isEqualTo(1);
-    assertThat(repository.count(Example.of(new Person()))).isEqualTo(3);
-    assertThat(repository.count(Example.of(new Person("Foo", "Bar")))).isZero();
+    assertThat(repository.count(Example.of(new PersonHash()))).isEqualTo(3);
+    assertThat(repository.count(Example.of(new PersonHash("Foo", "Bar")))).isZero();
   }
 
   @Test
     // DATAREDIS-605
   void shouldReportExistenceCorrectly() {
-    Person person = new Person();
+    PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
 
     assertThat(repository.exists(Example.of(person))).isTrue();
     assertThat(repository.exists(Example.of(walt))).isTrue();
-    assertThat(repository.exists(Example.of(new Person()))).isTrue();
-    assertThat(repository.exists(Example.of(new Person("Foo", "Bar")))).isFalse();
+    assertThat(repository.exists(Example.of(new PersonHash()))).isTrue();
+    assertThat(repository.exists(Example.of(new PersonHash("Foo", "Bar")))).isFalse();
   }
 
   @Test
     // GH-2150
   void findByShouldFindFirst() {
-    Person person = new Person();
+    PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
 
     assertThat((Object) repository.findBy(Example.of(person), FluentQuery.FetchableFluentQuery::first)).isNotNull();
@@ -161,7 +154,7 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   @Test
     // GH-2150
   void findByShouldFindFirstAsDto() {
-    Person person = new Person();
+    PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
 
     assertThat(repository.findBy(Example.of(walt), it -> it.as(PersonDto.class).firstValue()).getFirstname()).isEqualTo(
@@ -171,7 +164,7 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   @Test
     // GH-2150
   void findByShouldFindOne() {
-    Person person = new Person();
+    PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
 
     assertThatExceptionOfType(IncorrectResultSizeDataAccessException.class).isThrownBy(
@@ -184,10 +177,11 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   @Test
     // GH-2150
   void findByShouldFindAll() {
-    Person person = new Person();
+    PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
 
-    assertThat((List<Person>) repository.findBy(Example.of(person), FluentQuery.FetchableFluentQuery::all)).hasSize(3);
+    assertThat((List<PersonHash>) repository.findBy(Example.of(person), FluentQuery.FetchableFluentQuery::all)).hasSize(
+        3);
     List<PersonProjection> people = repository.findBy(Example.of(walt), it -> it.as(PersonProjection.class).all());
     assertThat(people).hasSize(1);
     assertThat(people).hasOnlyElementsOfType(PersonProjection.class);
@@ -196,10 +190,10 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   @Test
     // GH-2150
   void findByShouldFindPage() {
-    Person person = new Person();
+    PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
 
-    Page<Person> result = repository.findBy(Example.of(person), it -> it.page(PageRequest.of(0, 2)));
+    Page<PersonHash> result = repository.findBy(Example.of(person), it -> it.page(PageRequest.of(0, 2)));
     assertThat(result).hasSize(2);
     assertThat(result.getTotalElements()).isEqualTo(3);
   }
@@ -207,17 +201,17 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   @Test
     // GH-2150
   void findByShouldFindStream() {
-    Person person = new Person();
+    PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
 
-    Stream<Person> result = repository.findBy(Example.of(person), FluentQuery.FetchableFluentQuery::stream);
+    Stream<PersonHash> result = repository.findBy(Example.of(person), FluentQuery.FetchableFluentQuery::stream);
     assertThat(result).hasSize(3);
   }
 
   @Test
     // GH-2150
   void findByShouldCount() {
-    Person person = new Person();
+    PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
 
     assertThat((Long) repository.findBy(Example.of(person), FluentQuery.FetchableFluentQuery::count)).isEqualTo(3);
@@ -226,125 +220,200 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   @Test
     // GH-2150
   void findByShouldExists() {
-    Person person = new Person();
+    PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
 
     assertThat((Boolean) repository.findBy(Example.of(person), FluentQuery.FetchableFluentQuery::exists)).isTrue();
+  }
+
+  @Test
+  void shouldUpdateSingleFieldByExample() {
+    PersonHash updateProbe = new PersonHash();
+    updateProbe.setId(walt.getId());
+    updateProbe.setFirstname("Walter Jr.");
+
+    repository.update(Example.of(updateProbe));
+
+    PersonHash updated = repository.findById(walt.getId()).orElseThrow();
+
+    assertThat(updated).isNotNull();
+    assertThat(updated.getId()).isEqualTo(walt.getId());
+    assertThat(updated.getFirstname()).isEqualTo("Walter Jr.");
+    assertThat(updated.getLastname()).isEqualTo(walt.getLastname());
+    assertThat(updated.getHometown()).isEqualTo(walt.getHometown());
+  }
+
+  @Test
+  void shouldUpdateMultipleFieldsByExample() {
+    PersonHash updateProbe = new PersonHash();
+    updateProbe.setId(hank.getId());
+    updateProbe.setFirstname("Henry");
+    updateProbe.setLastname("Schrader Jr.");
+
+    repository.update(Example.of(updateProbe));
+
+    PersonHash updated = repository.findById(hank.getId()).orElseThrow();
+
+    assertThat(updated).isNotNull();
+    assertThat(updated.getId()).isEqualTo(hank.getId());
+    assertThat(updated.getFirstname()).isEqualTo("Henry");
+    assertThat(updated.getLastname()).isEqualTo("Schrader Jr.");
+    assertThat(updated.getHometown()).isEqualTo(hank.getHometown());
+  }
+
+  @Test
+  void shouldNotUpdateNullFieldsByExample() {
+    PersonHash updateProbe = new PersonHash();
+    updateProbe.setId(gus.getId());
+    updateProbe.setFirstname("Gustavo");
+    updateProbe.setLastname(null);
+
+    repository.update(Example.of(updateProbe));
+
+    PersonHash updated = repository.findById(gus.getId()).orElseThrow();
+
+    assertThat(updated).isNotNull();
+    assertThat(updated.getId()).isEqualTo(gus.getId());
+    assertThat(updated.getFirstname()).isEqualTo("Gustavo");
+    assertThat(updated.getLastname()).isEqualTo(gus.getLastname());
+    assertThat(updated.getHometown()).isEqualTo(gus.getHometown());
+  }
+
+  @Test
+  void shouldUpdateNestedObjectByExample() {
+    PersonHash updateProbe = new PersonHash();
+    updateProbe.setId(walt.getId());
+    updateProbe.setHometown(new CityHash("Albuquerque"));
+
+    repository.update(Example.of(updateProbe));
+
+    PersonHash updated = repository.findById(walt.getId()).orElseThrow();
+
+    assertThat(updated).isNotNull();
+    assertThat(updated.getId()).isEqualTo(walt.getId());
+    assertThat(updated.getFirstname()).isEqualTo(walt.getFirstname());
+    assertThat(updated.getLastname()).isEqualTo(walt.getLastname());
+    assertThat(updated.getHometown().getName()).isEqualTo("Albuquerqe");
+  }
+
+  @Test
+  void shouldNotUpdateIgnoredFieldsByExample() {
+    PersonHash updateProbe = new PersonHash();
+    updateProbe.setId(walt.getId());
+    updateProbe.setFirstname("Walter Jr.");
+    updateProbe.setLastname("White Jr.");
+
+    ExampleMatcher matcher = ExampleMatcher.matching().withIgnorePaths("lastname");
+
+    repository.update(Example.of(updateProbe, matcher));
+
+    PersonHash updated = repository.findById(walt.getId()).orElseThrow();
+
+    assertThat(updated).isNotNull();
+    assertThat(updated.getId()).isEqualTo(walt.getId());
+    assertThat(updated.getFirstname()).isEqualTo("Walter Jr.");
+    assertThat(updated.getLastname()).isEqualTo(walt.getLastname());
+    assertThat(updated.getHometown()).isEqualTo(walt.getHometown());
+  }
+
+  // updateAll Tests
+
+  @Test
+  void shouldUpdateMultipleEntitiesByExample() {
+    PersonHash vincent = new PersonHash("Vincent", "Vega");
+    vincent.setId("pf1");
+    vincent.setHometown(new CityHash("Los Angeles"));
+
+    PersonHash jules = new PersonHash("Jules", "Winnfield");
+    jules.setId("pf2");
+    jules.setHometown(new CityHash("Los Angeles"));
+
+    PersonHash mia = new PersonHash("Mia", "Wallace");
+    mia.setId("pf3");
+    mia.setHometown(new CityHash("Los Angeles"));
+
+    repository.saveAll(Arrays.asList(vincent, jules, mia));
+
+    PersonHash vincentUpdate = new PersonHash();
+    vincentUpdate.setId("pf1");
+    vincentUpdate.setLastname("Vega-Update");
+
+    PersonHash julesUpdate = new PersonHash();
+    julesUpdate.setId("pf2");
+    julesUpdate.setFirstname("Jules-Update");
+
+    List<Example<PersonHash>> examples = Arrays.asList(Example.of(vincentUpdate), Example.of(julesUpdate));
+
+    repository.updateAll(examples);
+
+    PersonHash updatedVincent = repository.findById("pf1").orElseThrow();
+    PersonHash updatedJules = repository.findById("pf2").orElseThrow();
+    PersonHash unchangedMia = repository.findById("pf3").orElseThrow();
+
+    assertThat(updatedVincent.getFirstname()).isEqualTo("Vincent");
+    assertThat(updatedVincent.getLastname()).isEqualTo("Vega-Update");
+    assertThat(updatedJules.getFirstname()).isEqualTo("Jules-Update");
+    assertThat(updatedJules.getLastname()).isEqualTo("Winnfield");
+    assertThat(unchangedMia.getFirstname()).isEqualTo("Mia");
+    assertThat(unchangedMia.getLastname()).isEqualTo("Wallace");
+  }
+
+  @Test
+  void shouldRespectExampleMatcherInUpdateAll() {
+    PersonHash butch = new PersonHash("Butch", "Coolidge");
+    butch.setId("pf4");
+    butch.setHometown(new CityHash("Los Angeles"));
+
+    PersonHash savedButch = repository.save(butch);
+    assertThat(savedButch).isNotNull();
+    assertThat(savedButch.getId()).isEqualTo("pf4");
+
+    // Verify the entity was saved correctly
+    Optional<PersonHash> retrievedButch = repository.findById("pf4");
+    assertThat(retrievedButch).isPresent();
+    assertThat(retrievedButch.get().getFirstname()).isEqualTo("Butch");
+    assertThat(retrievedButch.get().getLastname()).isEqualTo("Coolidge");
+
+    PersonHash butchUpdate = new PersonHash();
+    butchUpdate.setId("pf4");
+    butchUpdate.setFirstname("BUTCH");
+    butchUpdate.setLastname("COOLIDGE");
+
+    ExampleMatcher matcher = ExampleMatcher.matching().withIgnorePaths("lastname")
+        .withMatcher("firstname", ExampleMatcher.GenericPropertyMatchers.ignoreCase());
+
+    repository.updateAll(Collections.singletonList(Example.of(butchUpdate, matcher)));
+
+    // Use findById and isPresent check instead of orElseThrow
+    Optional<PersonHash> maybeUpdatedButch = repository.findById("pf4");
+    assertThat(maybeUpdatedButch).isPresent();
+
+    PersonHash updatedButch = maybeUpdatedButch.get();
+    assertThat(updatedButch.getFirstname()).isEqualTo("BUTCH");
+    assertThat(updatedButch.getLastname()).isEqualTo("Coolidge"); // Not updated due to ignored path
+  }
+
+  @Test
+  void shouldHandleEmptyExamplesList() {
+    List<Example<PersonHash>> emptyList = Collections.emptyList();
+    assertThatCode(() -> repository.updateAll(emptyList)).doesNotThrowAnyException();
+  }
+
+  @Test
+  void shouldThrowExceptionForExampleWithoutId() {
+    PersonHash invalidUpdate = new PersonHash();
+    invalidUpdate.setFirstname("Marsellus");
+
+    List<Example<PersonHash>> examples = Collections.singletonList(Example.of(invalidUpdate));
+
+    assertThatThrownBy(() -> repository.updateAll(examples)).isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Example object must have an ID");
   }
 
   @SuppressWarnings("unchecked")
   private <T> MappingRedisEntityInformation<T, String> getEntityInformation(Class<T> entityClass) {
     return new MappingRedisEntityInformation<>(
       (RedisPersistentEntity) mappingContext.getRequiredPersistentEntity(entityClass));
-  }
-
-  @RedisHash("persons")
-  static class Person {
-
-    private @Id String id;
-    private @Indexed String firstname;
-    private String lastname;
-    private @Indexed City hometown;
-
-    Person() {
-    }
-
-    Person(String firstname, String lastname) {
-      this.firstname = firstname;
-      this.lastname = lastname;
-    }
-
-    public String getId() {
-      return this.id;
-    }
-
-    public void setId(String id) {
-      this.id = id;
-    }
-
-    public String getFirstname() {
-      return this.firstname;
-    }
-
-    public void setFirstname(String firstname) {
-      this.firstname = firstname;
-    }
-
-    public String getLastname() {
-      return this.lastname;
-    }
-
-    public void setLastname(String lastname) {
-      this.lastname = lastname;
-    }
-
-    public City getHometown() {
-      return this.hometown;
-    }
-
-    public void setHometown(City hometown) {
-      this.hometown = hometown;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-
-      if (this == obj) {
-        return true;
-      }
-
-      if (!(obj instanceof Person that)) {
-        return false;
-      }
-
-      return Objects.equals(this.getId(), that.getId()) && Objects.equals(this.getFirstname(),
-        that.getFirstname()) && Objects.equals(this.getLastname(), that.getLastname()) && Objects.equals(
-        this.getHometown(), that.getHometown());
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(getId(), getFirstname(), getLastname(), getHometown());
-    }
-  }
-
-  static class City {
-
-    private @Indexed String name;
-
-    public City() {
-    }
-
-    public City(String name) {
-      this.name = name;
-    }
-
-    public String getName() {
-      return name;
-    }
-
-    public void setName(String name) {
-      this.name = name;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-
-      if (this == obj) {
-        return true;
-      }
-
-      if (!(obj instanceof City that)) {
-        return false;
-      }
-
-      return Objects.equals(this.getName(), that.getName());
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(getName());
-    }
   }
 
   static class PersonDto {
@@ -366,7 +435,7 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
         return true;
       }
 
-      if (!(obj instanceof Person that)) {
+      if (!(obj instanceof PersonHash that)) {
         return false;
       }
 
