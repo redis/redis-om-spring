@@ -1,6 +1,7 @@
 package com.redis.om.spring.repository;
 
 import com.redis.om.spring.metamodel.MetamodelField;
+import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.keyvalue.repository.KeyValueRepository;
@@ -32,4 +33,10 @@ public interface RedisEnhancedRepository<T, ID> extends KeyValueRepository<T, ID
   boolean setExpiration(ID id, Long expiration, TimeUnit timeUnit);
 
   String getKeyspace();
+
+  // QBE Extensions
+
+  <S extends T> S update(Example<S> example);
+
+  <S extends T> void updateAll(Iterable<Example<S>> examples);
 }
