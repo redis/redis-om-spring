@@ -3,6 +3,7 @@ package com.redis.om.spring.util;
 import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
 import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
+import com.redis.om.spring.tuple.Tuples;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
@@ -28,6 +29,8 @@ import redis.clients.jedis.args.GeoUnit;
 import redis.clients.jedis.search.Document;
 import redis.clients.jedis.search.Schema;
 
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -716,5 +719,13 @@ public class ObjectUtils {
     }
 
     return floatArray;
+  }
+
+  public static com.redis.om.spring.tuple.Pair<Boolean, String> isInnerClassWithEnclosing(Element element) {
+    Element enclosingElement = element.getEnclosingElement();
+    if (enclosingElement.getKind() == ElementKind.CLASS) {
+      return Tuples.of(true, enclosingElement.getSimpleName().toString());
+    }
+    return Tuples.of(false, null);
   }
 }
