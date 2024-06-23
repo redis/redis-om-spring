@@ -7,6 +7,7 @@ import com.redis.om.spring.vectorize.Embedder;
 import com.redis.testcontainers.RedisStackContainer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -45,6 +46,8 @@ public abstract class AbstractBaseOMTest {
   @Autowired
   @Qualifier("omGsonBuilder")
   public GsonBuilder gsonBuilder;
+  @Autowired
+  public RedisOperations<?, ?> redisOperations;
 
   protected Comparator<Double> closeToComparator = new Comparator<Double>() {
     @Override

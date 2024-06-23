@@ -27,8 +27,11 @@ public class MetamodelUtils {
   public static List<MetamodelField<?, ?>> getMetamodelFieldsForProperties(Class<?> entityClass,
       Collection<String> properties) {
     List<MetamodelField<?, ?>> result = new ArrayList<>();
+
+    String metamodelClassName = getMetamodelClassName(entityClass);
+
     try {
-      Class<?> metamodel = Class.forName(entityClass.getName() + "$");
+      Class<?> metamodel = Class.forName(metamodelClassName);
       for (var property : properties) {
         try {
           result.add((MetamodelField<?, ?>) metamodel.getField(ObjectUtils.staticField(property)).get(null));
@@ -40,5 +43,18 @@ public class MetamodelUtils {
       // NOOP
     }
     return result;
+  }
+
+  private static String getMetamodelClassName(Class<?> entityClass) {
+    if (entityClass.isMemberClass()) {
+      // For both static and non-static nested classes
+      Class<?> enclosingClass = entityClass.getEnclosingClass();
+      String enclosingClassName = enclosingClass.getSimpleName();
+      String entityClassName = entityClass.getSimpleName();
+      return entityClass.getPackage().getName() + "." + enclosingClassName + "_" + entityClassName + "$";
+    } else {
+      // For top-level classes
+      return entityClass.getName() + "$";
+    }
   }
 }

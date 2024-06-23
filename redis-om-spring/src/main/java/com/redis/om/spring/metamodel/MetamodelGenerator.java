@@ -38,6 +38,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.redis.om.spring.util.ObjectUtils.isInnerClassWithEnclosing;
 import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 
 @SupportedAnnotationTypes(
@@ -110,23 +111,35 @@ public final class MetamodelGenerator extends AbstractProcessor {
   }
 
   void generateMetaModelClass(final Element annotatedElement) throws IOException {
-    String qualifiedGenEntityName = annotatedElement.asType().toString() + "$";
-    final String entityName = ObjectUtils.shortName(annotatedElement.asType().toString());
-    final String genEntityName = entityName + "$";
+    Pair<Boolean, String> innerClassInfo = isInnerClassWithEnclosing(annotatedElement);
+    boolean isInnerClass = innerClassInfo.getFirst();
+    String enclosingClassName = innerClassInfo.getSecond();
+
+    String qualifiedName = annotatedElement.asType().toString();
+
+    final String entityName;
+    final String packageName;
+    final String genEntityName;
+
+    PackageElement packageElement = processingEnvironment.getElementUtils().getPackageOf(annotatedElement);
+    if (packageElement.isUnnamed()) {
+      messager.printMessage(Diagnostic.Kind.WARNING,
+          "Class " + annotatedElement.getSimpleName() + " has an unnamed package.");
+      packageName = "";
+      entityName = qualifiedName; // Use the full name as the entity name for packageless classes
+    } else {
+      packageName = packageElement.getQualifiedName().toString();
+      entityName = isInnerClass ? annotatedElement.getSimpleName().toString() : ObjectUtils.shortName(qualifiedName);
+    }
+
+    genEntityName = entityName + "$";
+
+    String qualifiedGenEntityName = (packageName.isEmpty() ? "" : packageName + ".") + genEntityName;
     TypeName entity = TypeName.get(annotatedElement.asType());
 
     messager.printMessage(Diagnostic.Kind.NOTE, "Generating Entity Metamodel: " + qualifiedGenEntityName);
 
     Map<? extends Element, String> enclosedFields = getInstanceFields(annotatedElement);
-
-    final PackageElement packageElement = processingEnvironment.getElementUtils().getPackageOf(annotatedElement);
-    String packageName;
-    if (packageElement.isUnnamed()) {
-      messager.printMessage(Diagnostic.Kind.WARNING, "Class " + entityName + " has an unnamed package.");
-      packageName = "";
-    } else {
-      packageName = packageElement.getQualifiedName().toString();
-    }
 
     List<FieldSpec> interceptors = new ArrayList<>();
     List<ObjectGraphFieldSpec> fields = new ArrayList<>();

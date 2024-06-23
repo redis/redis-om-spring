@@ -1,29 +1,21 @@
 package com.redis.om.spring.repository.support;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.RedisOMProperties;
-import com.redis.om.spring.annotations.Document;
-import com.redis.om.spring.annotations.Indexed;
+import com.redis.om.spring.fixtures.document.model.CityDoc;
+import com.redis.om.spring.fixtures.document.model.PersonDoc;
+import com.redis.om.spring.fixtures.document.repository.PersonDocRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.keyvalue.core.KeyValueTemplate;
-import org.springframework.data.redis.core.RedisKeyValueAdapter;
+import org.springframework.data.domain.*;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.redis.core.mapping.RedisPersistentEntity;
 import org.springframework.data.redis.repository.core.MappingRedisEntityInformation;
 import org.springframework.data.redis.repository.support.QueryByExampleRedisExecutor;
 import org.springframework.data.repository.query.FluentQuery;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.*;
@@ -44,29 +36,21 @@ class QueryByExampleDocumentRepositoryIntegrationTests extends AbstractBaseDocum
 
   private PersonDoc walt, hank, gus;
 
-  private SimpleRedisDocumentRepository<PersonDoc, String> repository;
+  @Autowired
+  private PersonDocRepository repository;
 
   @BeforeEach
   void before() {
-    repository = new SimpleRedisDocumentRepository<>(
-        getEntityInformation(PersonDoc.class), //
-      new KeyValueTemplate(new RedisKeyValueAdapter(template)), //
-        modulesOperations, //
-        indexer, //
-        mappingContext, //
-        gsonBuilder, //
-        embedder,
-      new RedisOMProperties());
     repository.deleteAll();
 
     walt = new PersonDoc("Walter", "White");
-    walt.setHometown(new City("Albuquerqe"));
+    walt.setHometown(new CityDoc("Albuquerqe"));
 
     hank = new PersonDoc("Hank", "Schrader");
-    hank.setHometown(new City("Albuquerqe"));
+    hank.setHometown(new CityDoc("Albuquerqe"));
 
     gus = new PersonDoc("Gus", "Fring");
-    gus.setHometown(new City("Albuquerqe"));
+    gus.setHometown(new CityDoc("Albuquerqe"));
 
     repository.saveAll(Arrays.asList(walt, hank, gus));
   }
@@ -237,119 +221,194 @@ class QueryByExampleDocumentRepositoryIntegrationTests extends AbstractBaseDocum
     assertThat((Boolean) repository.findBy(Example.of(person), FluentQuery.FetchableFluentQuery::exists)).isTrue();
   }
 
+  @Test
+  void shouldUpdateSingleFieldByExample() {
+    PersonDoc updateProbe = new PersonDoc();
+    updateProbe.setId(walt.getId());
+    updateProbe.setFirstname("Walter Jr.");
+
+    repository.update(Example.of(updateProbe));
+
+    PersonDoc updated = repository.findById(walt.getId()).orElseThrow();
+
+    assertThat(updated).isNotNull();
+    assertThat(updated.getId()).isEqualTo(walt.getId());
+    assertThat(updated.getFirstname()).isEqualTo("Walter Jr.");
+    assertThat(updated.getLastname()).isEqualTo(walt.getLastname());
+    assertThat(updated.getHometown()).isEqualTo(walt.getHometown());
+  }
+
+  @Test
+  void shouldUpdateMultipleFieldsByExample() {
+    PersonDoc updateProbe = new PersonDoc();
+    updateProbe.setId(hank.getId());
+    updateProbe.setFirstname("Henry");
+    updateProbe.setLastname("Schrader Jr.");
+
+    repository.update(Example.of(updateProbe));
+
+    PersonDoc updated = repository.findById(hank.getId()).orElseThrow();
+
+    assertThat(updated).isNotNull();
+    assertThat(updated.getId()).isEqualTo(hank.getId());
+    assertThat(updated.getFirstname()).isEqualTo("Henry");
+    assertThat(updated.getLastname()).isEqualTo("Schrader Jr.");
+    assertThat(updated.getHometown()).isEqualTo(hank.getHometown());
+  }
+
+  @Test
+  void shouldNotUpdateNullFieldsByExample() {
+    PersonDoc updateProbe = new PersonDoc();
+    updateProbe.setId(gus.getId());
+    updateProbe.setFirstname("Gustavo");
+    updateProbe.setLastname(null);
+
+    repository.update(Example.of(updateProbe));
+
+    PersonDoc updated = repository.findById(gus.getId()).orElseThrow();
+
+    assertThat(updated).isNotNull();
+    assertThat(updated.getId()).isEqualTo(gus.getId());
+    assertThat(updated.getFirstname()).isEqualTo("Gustavo");
+    assertThat(updated.getLastname()).isEqualTo(gus.getLastname());
+    assertThat(updated.getHometown()).isEqualTo(gus.getHometown());
+  }
+
+  @Test
+  void shouldUpdateNestedObjectByExample() {
+    PersonDoc updateProbe = new PersonDoc();
+    updateProbe.setId(walt.getId());
+    updateProbe.setHometown(new CityDoc("Albuquerque"));
+
+    repository.update(Example.of(updateProbe));
+
+    PersonDoc updated = repository.findById(walt.getId()).orElseThrow();
+
+    assertThat(updated).isNotNull();
+    assertThat(updated.getId()).isEqualTo(walt.getId());
+    assertThat(updated.getFirstname()).isEqualTo(walt.getFirstname());
+    assertThat(updated.getLastname()).isEqualTo(walt.getLastname());
+    assertThat(updated.getHometown().getName()).isEqualTo("Albuquerqe");
+  }
+
+  @Test
+  void shouldNotUpdateIgnoredFieldsByExample() {
+    PersonDoc updateProbe = new PersonDoc();
+    updateProbe.setId(walt.getId());
+    updateProbe.setFirstname("Walter Jr.");
+    updateProbe.setLastname("White Jr.");
+
+    ExampleMatcher matcher = ExampleMatcher.matching().withIgnorePaths("lastname");
+
+    repository.update(Example.of(updateProbe, matcher));
+
+    PersonDoc updated = repository.findById(walt.getId()).orElseThrow();
+
+    assertThat(updated).isNotNull();
+    assertThat(updated.getId()).isEqualTo(walt.getId());
+    assertThat(updated.getFirstname()).isEqualTo("Walter Jr.");
+    assertThat(updated.getLastname()).isEqualTo(walt.getLastname());
+    assertThat(updated.getHometown()).isEqualTo(walt.getHometown());
+  }
+
+  // updateAll Tests
+
+  @Test
+  void shouldUpdateMultipleEntitiesByExample() {
+    PersonDoc vincent = new PersonDoc("Vincent", "Vega");
+    vincent.setId("pf1");
+    vincent.setHometown(new CityDoc("Los Angeles"));
+
+    PersonDoc jules = new PersonDoc("Jules", "Winnfield");
+    jules.setId("pf2");
+    jules.setHometown(new CityDoc("Los Angeles"));
+
+    PersonDoc mia = new PersonDoc("Mia", "Wallace");
+    mia.setId("pf3");
+    mia.setHometown(new CityDoc("Los Angeles"));
+
+    repository.saveAll(Arrays.asList(vincent, jules, mia));
+
+    PersonDoc vincentUpdate = new PersonDoc();
+    vincentUpdate.setId("pf1");
+    vincentUpdate.setLastname("Vega-Update");
+
+    PersonDoc julesUpdate = new PersonDoc();
+    julesUpdate.setId("pf2");
+    julesUpdate.setFirstname("Jules-Update");
+
+    List<Example<PersonDoc>> examples = Arrays.asList(Example.of(vincentUpdate), Example.of(julesUpdate));
+
+    repository.updateAll(examples);
+
+    PersonDoc updatedVincent = repository.findById("pf1").orElseThrow();
+    PersonDoc updatedJules = repository.findById("pf2").orElseThrow();
+    PersonDoc unchangedMia = repository.findById("pf3").orElseThrow();
+
+    assertThat(updatedVincent.getFirstname()).isEqualTo("Vincent");
+    assertThat(updatedVincent.getLastname()).isEqualTo("Vega-Update");
+    assertThat(updatedJules.getFirstname()).isEqualTo("Jules-Update");
+    assertThat(updatedJules.getLastname()).isEqualTo("Winnfield");
+    assertThat(unchangedMia.getFirstname()).isEqualTo("Mia");
+    assertThat(unchangedMia.getLastname()).isEqualTo("Wallace");
+  }
+
+  @Test
+  void shouldRespectExampleMatcherInUpdateAll() {
+    PersonDoc butch = new PersonDoc("Butch", "Coolidge");
+    butch.setId("pf4");
+    butch.setHometown(new CityDoc("Los Angeles"));
+
+    PersonDoc savedButch = repository.save(butch);
+    assertThat(savedButch).isNotNull();
+    assertThat(savedButch.getId()).isEqualTo("pf4");
+
+    // Verify the entity was saved correctly
+    Optional<PersonDoc> retrievedButch = repository.findById("pf4");
+    assertThat(retrievedButch).isPresent();
+    assertThat(retrievedButch.get().getFirstname()).isEqualTo("Butch");
+    assertThat(retrievedButch.get().getLastname()).isEqualTo("Coolidge");
+
+    PersonDoc butchUpdate = new PersonDoc();
+    butchUpdate.setId("pf4");
+    butchUpdate.setFirstname("BUTCH");
+    butchUpdate.setLastname("COOLIDGE");
+
+    ExampleMatcher matcher = ExampleMatcher.matching().withIgnorePaths("lastname")
+        .withMatcher("firstname", ExampleMatcher.GenericPropertyMatchers.ignoreCase());
+
+    repository.updateAll(Collections.singletonList(Example.of(butchUpdate, matcher)));
+
+    // Use findById and isPresent check instead of orElseThrow
+    Optional<PersonDoc> maybeUpdatedButch = repository.findById("pf4");
+    assertThat(maybeUpdatedButch).isPresent();
+
+    PersonDoc updatedButch = maybeUpdatedButch.get();
+    assertThat(updatedButch.getFirstname()).isEqualTo("BUTCH");
+    assertThat(updatedButch.getLastname()).isEqualTo("Coolidge"); // Not updated due to ignored path
+  }
+
+  @Test
+  void shouldHandleEmptyExamplesList() {
+    List<Example<PersonDoc>> emptyList = Collections.emptyList();
+    assertThatCode(() -> repository.updateAll(emptyList)).doesNotThrowAnyException();
+  }
+
+  @Test
+  void shouldThrowExceptionForExampleWithoutId() {
+    PersonDoc invalidUpdate = new PersonDoc();
+    invalidUpdate.setFirstname("Marsellus");
+
+    List<Example<PersonDoc>> examples = Collections.singletonList(Example.of(invalidUpdate));
+
+    assertThatThrownBy(() -> repository.updateAll(examples)).isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Example object must have an ID");
+  }
+
   @SuppressWarnings("unchecked")
   private <T> MappingRedisEntityInformation<T, String> getEntityInformation(Class<T> entityClass) {
     return new MappingRedisEntityInformation<>(
       (RedisPersistentEntity) mappingContext.getRequiredPersistentEntity(entityClass));
-  }
-
-  @Document("dpersons")
-  static class PersonDoc {
-
-    private @Id String id;
-    private @Indexed String firstname;
-    private String lastname;
-    private @Indexed City hometown;
-
-    PersonDoc() {
-    }
-
-    PersonDoc(String firstname, String lastname) {
-      this.firstname = firstname;
-      this.lastname = lastname;
-    }
-
-    public String getId() {
-      return this.id;
-    }
-
-    public void setId(String id) {
-      this.id = id;
-    }
-
-    public String getFirstname() {
-      return this.firstname;
-    }
-
-    public void setFirstname(String firstname) {
-      this.firstname = firstname;
-    }
-
-    public String getLastname() {
-      return this.lastname;
-    }
-
-    public void setLastname(String lastname) {
-      this.lastname = lastname;
-    }
-
-    public City getHometown() {
-      return this.hometown;
-    }
-
-    public void setHometown(City hometown) {
-      this.hometown = hometown;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-
-      if (this == obj) {
-        return true;
-      }
-
-      if (!(obj instanceof PersonDoc that)) {
-        return false;
-      }
-
-      return Objects.equals(this.getId(), that.getId()) && Objects.equals(this.getFirstname(),
-        that.getFirstname()) && Objects.equals(this.getLastname(), that.getLastname()) && Objects.equals(
-        this.getHometown(), that.getHometown());
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(getId(), getFirstname(), getLastname(), getHometown());
-    }
-  }
-
-  static class City {
-
-    private @Indexed String name;
-
-    public City() {
-    }
-
-    public City(String name) {
-      this.name = name;
-    }
-
-    public String getName() {
-      return name;
-    }
-
-    public void setName(String name) {
-      this.name = name;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-
-      if (this == obj) {
-        return true;
-      }
-
-      if (!(obj instanceof City that)) {
-        return false;
-      }
-
-      return Objects.equals(this.getName(), that.getName());
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(getName());
-    }
   }
 
   static class PersonDto {

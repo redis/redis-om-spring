@@ -12,6 +12,7 @@ import com.redis.om.spring.id.IdentifierFilter;
 import com.redis.om.spring.id.ULIDIdentifierGenerator;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.metamodel.MetamodelField;
+import com.redis.om.spring.metamodel.MetamodelUtils;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
@@ -55,6 +56,7 @@ import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.util.SafeEncoder;
 
+import java.beans.PropertyDescriptor;
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.Field;
@@ -488,10 +490,146 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
             mappingConverter.getMappingContext()));
   }
 
+  @Override
+  public <S extends T> S update(Example<S> example) {
+    S probe = example.getProbe();
+    ExampleMatcher matcher = example.getMatcher();
+    ID id = metadata.getId(probe);
+
+    if (id == null) {
+      throw new IllegalArgumentException("Example object must have an ID");
+    }
+
+    String key = getKey(id);
+
+    Class<?> entityType = metadata.getJavaType();
+    List<UpdateOperation> updateOperations = new ArrayList<>();
+
+    List<MetamodelField<?, ?>> metamodelFields = MetamodelUtils.getMetamodelFieldsForProperties(entityType,
+        getAllProperties(entityType));
+
+    for (MetamodelField<?, ?> metamodelField : metamodelFields) {
+      String propertyName = metamodelField.getSearchAlias();
+
+      if (shouldIncludeProperty(matcher, propertyName)) {
+        Object value = getPropertyValue(probe, propertyName);
+
+        if (value != null) {
+          updateOperations.add(new UpdateOperation(key, metamodelField, value));
+        }
+      }
+    }
+
+    executePipelinedUpdates(updateOperations);
+
+    // Use JSON GET operation to fetch the updated entity
+    return (S) getJSONOperations().get(key, entityType);
+  }
+
+  @Override
+  public <S extends T> void updateAll(Iterable<Example<S>> examples) {
+    if (!examples.iterator().hasNext()) {
+      return; // No examples to process
+    }
+
+    List<UpdateOperation> updateOperations = new ArrayList<>();
+    Class<?> entityType = metadata.getJavaType();
+    List<MetamodelField<?, ?>> metamodelFields = MetamodelUtils.getMetamodelFieldsForProperties(entityType,
+        getAllProperties(entityType));
+
+    for (Example<S> example : examples) {
+      S probe = example.getProbe();
+      ExampleMatcher matcher = example.getMatcher();
+      ID id = metadata.getId(probe);
+
+      if (id == null) {
+        throw new IllegalArgumentException("Example object must have an ID");
+      }
+
+      String key = getKey(id);
+
+      for (MetamodelField<?, ?> metamodelField : metamodelFields) {
+        String propertyName = metamodelField.getSearchAlias();
+
+        if (shouldIncludeProperty(matcher, propertyName)) {
+          Object value = getPropertyValue(probe, propertyName);
+
+          if (value != null) {
+            updateOperations.add(new UpdateOperation(key, metamodelField, value));
+          }
+        }
+      }
+    }
+
+    executePipelinedUpdates(updateOperations);
+  }
+
+  private JSONOperations<String> getJSONOperations() {
+    return modulesOperations.opsForJSON();
+  }
+
+  private List<String> getAllProperties(Class<?> entityType) {
+    List<String> properties = new ArrayList<>();
+    for (Field field : entityType.getDeclaredFields()) {
+      properties.add(field.getName());
+    }
+    return properties;
+  }
+
+  private void executePipelinedUpdates(List<UpdateOperation> updateOperations) {
+    try (Jedis jedis = modulesOperations.client().getJedis().get()) {
+      Pipeline pipeline = jedis.pipelined();
+
+      for (UpdateOperation op : updateOperations) {
+        List<byte[]> args = new ArrayList<>(4);
+        args.add(SafeEncoder.encode(op.key));
+        args.add(SafeEncoder.encode(Path2.of(op.field.getJSONPath()).toString()));
+        args.add(SafeEncoder.encode(new Gson().toJson(op.value)));
+        args.add(SafeEncoder.encode("XX"));
+
+        pipeline.sendCommand(JsonCommand.SET, args.toArray(new byte[0][]));
+      }
+
+      pipeline.sync();
+    }
+  }
+
+  private boolean shouldIncludeProperty(ExampleMatcher matcher, String propertyName) {
+    ExampleMatcher.PropertySpecifier specifier = matcher.getPropertySpecifiers().getForPath(propertyName);
+    if (specifier != null) {
+      // If a specific matcher is defined for this property, include it
+      return true;
+    }
+    // If no specific matcher is defined, include the property if it's not in the ignored paths
+    return !matcher.isIgnoredPath(propertyName);
+  }
+
+  private Object getPropertyValue(Object object, String propertyName) {
+    try {
+      PropertyDescriptor propertyDescriptor = new PropertyDescriptor(propertyName, object.getClass());
+      Method getter = propertyDescriptor.getReadMethod();
+      return getter.invoke(object);
+    } catch (Exception e) {
+      throw new RuntimeException("Error getting property value", e);
+    }
+  }
+
   private SearchOperations<String> getSearchOps() {
     String keyspace = indexer.getKeyspaceForEntityClass(metadata.getJavaType());
     String searchIndex = indexer.getIndexName(keyspace);
     return modulesOperations.opsForSearch(searchIndex);
+  }
+
+  private static class UpdateOperation {
+    final String key;
+    final MetamodelField<?, ?> field;
+    final Object value;
+
+    UpdateOperation(String key, MetamodelField<?, ?> field, Object value) {
+      this.key = key;
+      this.field = field;
+      this.value = value;
+    }
   }
 
 }
