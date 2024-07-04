@@ -409,7 +409,7 @@ Iterable<MyDoc> allMatches = repository.findAll(example);
 </dependency>
 ```
 
-> ⚠️ Redis OM Spring versions greater than `v0.9.2` require the addition
+> ⚠️ Redis OM Spring versions greater than `v0.9.1` require the addition
 of the [**Spring Milestone Repository**](https://repo.spring.io/milestone) to account
 for the recent integration with the [**Spring AI**](https://docs.spring.io/spring-ai/reference/) project. When Spring AI `v1.0.0` is
 released we will drop this requirement.
