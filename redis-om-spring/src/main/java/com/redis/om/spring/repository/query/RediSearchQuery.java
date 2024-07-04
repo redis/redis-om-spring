@@ -501,18 +501,13 @@ public class RediSearchQuery implements RepositoryQuery {
   }
 
   private Object parseDocumentResult(redis.clients.jedis.search.Document doc) {
+    if (doc == null || doc.get("$") == null) {
+      return null;
+    }
+
     Gson gsonInstance = getGson();
 
-    if (doc == null) {
-      return gsonInstance.fromJson("", domainType);
-    }
-
-    if (doc.get("$") != null) {
-      return gsonInstance.fromJson(SafeEncoder.encode((byte[]) doc.get("$")), domainType);
-    }
-
-    return gsonInstance.fromJson(gsonInstance.toJsonTree(StreamSupport.stream(doc.getProperties().spliterator(), false)
-        .collect(Collectors.toMap(Entry::getKey, entry -> SafeEncoder.encode((byte[]) entry.getValue())))), domainType);
+    return gsonInstance.fromJson(SafeEncoder.encode((byte[]) doc.get("$")), domainType);
   }
 
   private Object executeDeleteQuery(Object[] parameters) {
