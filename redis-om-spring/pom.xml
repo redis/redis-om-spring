@@ -115,10 +115,6 @@
             <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
         </repository>
         <repository>
-            <id>elementary-releases</id>
-            <url>https://repo.karuslabs.com/repository/elementary-releases/</url>
-        </repository>
-        <repository>
             <id>spring-milestones</id>
             <name>Spring Milestones</name>
             <url>https://repo.spring.io/milestone</url>
