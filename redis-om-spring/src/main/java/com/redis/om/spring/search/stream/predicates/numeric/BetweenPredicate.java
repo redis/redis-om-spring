@@ -7,6 +7,7 @@ import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import redis.clients.jedis.search.querybuilder.Values;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -57,6 +58,10 @@ public class BetweenPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     } else if (cls == Double.class) {
       return QueryBuilders.intersect(root).add(getSearchAlias(),
           Values.between(Double.parseDouble(getMin().toString()), Double.parseDouble(getMax().toString())));
+    } else if (cls == BigDecimal.class) {
+      BigDecimal min = (BigDecimal) getMin();
+      BigDecimal max = (BigDecimal) getMax();
+      return QueryBuilders.intersect(root).add(getSearchAlias(), Values.between(min.doubleValue(), max.doubleValue()));
     } else {
       return root;
     }
