@@ -3,16 +3,18 @@ package com.redis.om.spring.metamodel;
 import com.redis.om.spring.search.stream.aggregations.filters.AggregationFilter;
 import com.redis.om.spring.search.stream.aggregations.filters.ExistsFilter;
 import com.redis.om.spring.search.stream.aggregations.filters.NotExistsFilter;
+import com.redis.om.spring.util.ObjectUtils;
 import org.springframework.data.domain.Sort.Order;
 
+import java.lang.reflect.Field;
 import java.util.Comparator;
 import java.util.function.Function;
 
 public class MetamodelField<E, T> implements Comparator<E>, Function<E, T> {
 
-  protected final SearchFieldAccessor searchFieldAccessor;
-  protected final boolean indexed;
-  protected final String alias;
+  protected SearchFieldAccessor searchFieldAccessor;
+  protected boolean indexed;
+  protected String alias;
   protected Class<?> targetClass;
 
   public MetamodelField(SearchFieldAccessor searchFieldAccessor, boolean indexed) {
@@ -33,6 +35,19 @@ public class MetamodelField<E, T> implements Comparator<E>, Function<E, T> {
     this.indexed = false;
     this.alias = alias;
     this.targetClass = targetClass;
+  }
+
+  public MetamodelField(Class<E> targetClass, String fieldName) {
+    Field field;
+    try {
+      field = ObjectUtils.getDeclaredFieldTransitively(targetClass, fieldName);
+    } catch (NoSuchFieldException e) {
+      throw new RuntimeException(e);
+    }
+    SearchFieldAccessor sfa = new SearchFieldAccessor(fieldName, "$."+fieldName, field);
+    this.searchFieldAccessor = sfa;
+    this.indexed = true;
+    this.alias = fieldName;
   }
 
   public SearchFieldAccessor getSearchFieldAccessor() {

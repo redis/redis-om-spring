@@ -10,6 +10,10 @@ public class DateField<E, T> extends MetamodelField<E, T> {
     super(field, indexed);
   }
 
+  public DateField(Class<E> targetClass, String fieldName) {
+    super(targetClass, fieldName);
+  }
+
   public EqualPredicate<E, T> eq(T value) {
     return new EqualPredicate<>(searchFieldAccessor, value);
   }

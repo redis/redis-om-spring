@@ -15,6 +15,10 @@ public class TextTagField<E, T> extends TagField<E, T> {
     super(field, indexed);
   }
 
+  public TextTagField(Class<E> targetClass, String fieldName) {
+    super(targetClass, fieldName);
+  }
+
   public StartsWithPredicate<E, T> startsWith(T value) {
     return new StartsWithPredicate<>(searchFieldAccessor, value);
   }
