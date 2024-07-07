@@ -104,6 +104,29 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     this.exampleToNodeConverter = new ExampleToNodeConverter<>(indexer);
   }
 
+  public SearchStreamImpl(Class<E> entityClass, String searchIndex, Field idField, RedisModulesOperations<String> modulesOperations, GsonBuilder gsonBuilder,
+      RediSearchIndexer indexer) {
+    this.indexer = indexer;
+    this.modulesOperations = modulesOperations;
+    this.entityClass = entityClass;
+    this.searchIndex = searchIndex;
+    this.search = modulesOperations.opsForSearch(searchIndex);
+    this.json = modulesOperations.opsForJSON();
+    this.gsonBuilder = gsonBuilder;
+    this.idField = idField;
+    List indexDefinition = (List)search.getInfo().get("index_definition");
+    String keyType = IntStream.range(0, indexDefinition.size() - 1)
+        .filter(i -> "key_type".equals(indexDefinition.get(i)))
+        .mapToObj(i -> indexDefinition.get(i + 1))
+        .findFirst()
+        .map(Object::toString)
+        .orElse(null);
+
+    this.isDocument = "JSON".equals(keyType);
+    this.mappingConverter = new MappingRedisOMConverter(null, new ReferenceResolverImpl(modulesOperations.template()));
+    this.exampleToNodeConverter = new ExampleToNodeConverter<>(indexer);
+  }
+
   @Override
   @SuppressWarnings("unchecked")
   public SearchStream<E> filter(SearchFieldPredicate<? super E, ?> predicate) {

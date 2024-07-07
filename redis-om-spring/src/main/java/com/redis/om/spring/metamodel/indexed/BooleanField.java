@@ -10,6 +10,10 @@ public class BooleanField<E, T> extends TagField<E, T> {
     super(field, indexed);
   }
 
+  public BooleanField(Class<E> targetClass, String fieldName) {
+    super(targetClass, fieldName);
+  }
+
   public Consumer<E> toggle() {
     return new ToggleAction<>(searchFieldAccessor);
   }

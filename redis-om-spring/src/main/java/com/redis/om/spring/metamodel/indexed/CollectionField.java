@@ -6,4 +6,8 @@ public class CollectionField<E, T> extends TagField<E, T> {
   public CollectionField(SearchFieldAccessor searchFieldAccessor, boolean indexed) {
     super(searchFieldAccessor, indexed);
   }
+
+  public CollectionField(Class<E> targetClass, String fieldName) {
+    super(targetClass, fieldName);
+  }
 }
