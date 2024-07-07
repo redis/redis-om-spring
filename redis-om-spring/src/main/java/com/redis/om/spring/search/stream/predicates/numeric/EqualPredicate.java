@@ -7,6 +7,7 @@ import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import redis.clients.jedis.search.querybuilder.Values;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -45,6 +46,9 @@ public class EqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
       return QueryBuilders.intersect(root).add(getSearchAlias(), Values.eq(Long.parseLong(getValue().toString())));
     } else if (cls == Double.class) {
       return QueryBuilders.intersect(root).add(getSearchAlias(), Values.eq(Double.parseDouble(getValue().toString())));
+    } else if (cls == BigDecimal.class) {
+      BigDecimal bigDecimal = (BigDecimal) getValue();
+      return QueryBuilders.intersect(root).add(getSearchAlias(), Values.eq(bigDecimal.doubleValue()));
     } else {
       return root;
     }

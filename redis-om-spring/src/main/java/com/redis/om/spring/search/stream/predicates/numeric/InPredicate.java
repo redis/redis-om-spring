@@ -8,6 +8,7 @@ import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import redis.clients.jedis.search.querybuilder.QueryNode;
 import redis.clients.jedis.search.querybuilder.Values;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -50,6 +51,9 @@ public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
         or.add(getSearchAlias(), JedisValues.eq((LocalDateTime) value));
       } else if (cls == Instant.class) {
         or.add(getSearchAlias(), JedisValues.eq((Instant) value));
+      } else if (cls == BigDecimal.class) {
+        BigDecimal bigDecimal = (BigDecimal) value;
+        or.add(getSearchAlias(), Values.eq(bigDecimal.doubleValue()));
       } else {
         or.add(getSearchAlias(), Values.eq(Double.parseDouble(value.toString())));
       }
