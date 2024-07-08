@@ -314,7 +314,8 @@ public final class MetamodelGenerator extends AbstractProcessor {
         //
         // Any Character class -> Tag Search Field
         //
-        if (CharSequence.class.isAssignableFrom(targetCls) || (targetCls == Ulid.class)) {
+        if (CharSequence.class.isAssignableFrom(targetCls) || (UUID.class.isAssignableFrom(
+            targetCls)) || (targetCls == Ulid.class)) {
           targetInterceptor = TextTagField.class;
         }
         //

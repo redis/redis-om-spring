@@ -55,6 +55,12 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   CustomIndexDocRepository customIndexDocRepository;
 
   @Autowired
+  TypeKitchenSinkRepository typeKitchenSinkRepository;
+
+  @Autowired
+  HiveRepository hiveRepository;
+
+  @Autowired
   JedisConnectionFactory jedisConnectionFactory;
 
   @Autowired
@@ -62,10 +68,16 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
 
   private UnifiedJedis jedis;
 
+  private List<UUID> uuids;
+
   @BeforeEach
   void cleanUp() {
+    uuids = IntStream.range(0, 10).mapToObj(i -> UUID.randomUUID()).toList();
+
     flushSearchIndexFor(Company.class);
     flushSearchIndexFor(DocWithSets.class);
+    flushSearchIndexFor(Hive.class);
+    flushSearchIndexFor(TypeKitchenSink.class);
 
     if (deepNestRepository.count() == 0) {
       DeepNest dn1 = DeepNest.of("dn-1",
@@ -78,6 +90,38 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
           NestLevel1.of("nl-1-3", "A good body with a dull brain is as cheap as life itself.",
               NestLevel2.of("nl-2-3", "I'm Spartacus!")));
       deepNestRepository.saveAll(List.of(dn1, dn2, dn3));
+    }
+
+    if (typeKitchenSinkRepository.count() == 0) {
+      for (UUID uuid : uuids) {
+        TypeKitchenSink tks = TypeKitchenSink.of(uuid);
+        typeKitchenSinkRepository.save(tks);
+      }
+    }
+
+    if (hiveRepository.count() == 0) {
+      Hive hive1 = new Hive();
+      hive1.setId(uuids.get(0));
+
+      Hive hive2 = new Hive();
+      hive2.setId(uuids.get(1));
+
+      Drone drone1 = new Drone();
+      drone1.setContent(uuids.get(2));
+
+      Drone drone2 = new Drone();
+      drone2.setContent(uuids.get(3));
+
+      Drone drone3 = new Drone();
+      drone3.setContent(uuids.get(4));
+
+      Drone drone4 = new Drone();
+      drone4.setContent(uuids.get(5));
+
+      hive1.setDrones(Set.of(drone1, drone2));
+      hive2.setDrones(Set.of(drone3, drone4));
+
+      hiveRepository.saveAll(List.of(hive1, hive2));
     }
 
     jedis = new JedisPooled(Objects.requireNonNull(jedisConnectionFactory.getPoolConfig()),
@@ -799,5 +843,21 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
     assertAll( //
         () -> assertThat(withFreeTextLast).containsExactly(microsoft2),
         () -> assertThat(withFreeTextFirst).containsExactly(microsoft2));
+  }
+
+  @Test
+  void testFindByUUIDFieldEscapesUUIDinQuery() {
+    Optional<TypeKitchenSink> maybeTypeKitchenSink = typeKitchenSinkRepository.findFirstByUuid(uuids.get(0));
+    assertThat(maybeTypeKitchenSink).isPresent();
+    assertThat(maybeTypeKitchenSink.get().getUuid()).isEqualTo(uuids.get(0));
+  }
+
+  @Test
+  void testFindByNestedUUIDFieldEscapesUUIDinQuery() {
+    var hives = hiveRepository.findByDrones_Content(uuids.get(3));
+    assertThat(hives).hasSize(1);
+    Hive result = hives.iterator().next();
+    assertThat(result).isNotNull();
+    assertThat(result.getId()).isEqualTo(uuids.get(0));
   }
 }

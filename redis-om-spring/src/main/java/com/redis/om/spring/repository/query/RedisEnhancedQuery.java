@@ -1,5 +1,6 @@
 package com.redis.om.spring.repository.query;
 
+import com.github.f4b6a3.ulid.Ulid;
 import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.annotations.*;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
@@ -309,7 +310,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       //
       // Any Character class, Enums or Boolean -> Tag Search Field
       //
-      if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class) || (fieldType.isEnum())) {
+      if (CharSequence.class.isAssignableFrom(
+          fieldType) || (fieldType == Boolean.class) || (fieldType == UUID.class) || (fieldType == Ulid.class) || (fieldType.isEnum())) {
         qf.add(Pair.of(actualKey, QueryClause.get(FieldType.TAG, part.getType())));
       }
       //
