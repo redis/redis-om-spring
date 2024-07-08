@@ -1,5 +1,6 @@
 package com.redis.om.spring.repository.query;
 
+import com.github.f4b6a3.ulid.Ulid;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.redis.om.spring.RedisOMProperties;
@@ -307,7 +308,8 @@ public class RediSearchQuery implements RepositoryQuery {
       //
       // Any Character class, Enums or Boolean -> Tag Search Field
       //
-      if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class) || (fieldType.isEnum())) {
+      if (CharSequence.class.isAssignableFrom(
+          fieldType) || (fieldType == Boolean.class) || (fieldType == UUID.class) || (fieldType == Ulid.class) || (fieldType.isEnum())) {
         qf.add(Pair.of(actualKey, QueryClause.get(FieldType.TAG, part.getType())));
       }
       //
