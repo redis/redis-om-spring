@@ -3,6 +3,7 @@ package com.redis.om.spring.repository.query;
 import com.github.f4b6a3.ulid.Ulid;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.annotations.*;
 import com.redis.om.spring.indexing.RediSearchIndexer;
@@ -85,6 +86,7 @@ public class RediSearchQuery implements RepositoryQuery {
   private Boolean aggregationVerbatim;
   private Gson gson;
   private boolean isNullParamQuery;
+  private Dialect dialect = Dialect.ONE;
 
   @SuppressWarnings("unchecked")
   public RediSearchQuery(//
@@ -123,6 +125,13 @@ public class RediSearchQuery implements RepositoryQuery {
 
     try {
       java.lang.reflect.Method method = repoClass.getMethod(queryMethod.getName(), params);
+
+      // set dialect if @UseDialect is present
+      if (method.isAnnotationPresent(UseDialect.class)) {
+        UseDialect dialectAnnotation = method.getAnnotation(UseDialect.class);
+        this.dialect = dialectAnnotation.dialect();
+      }
+
       if (method.isAnnotationPresent(com.redis.om.spring.annotations.Query.class)) {
         com.redis.om.spring.annotations.Query queryAnnotation = method.getAnnotation(
             com.redis.om.spring.annotations.Query.class);
@@ -475,10 +484,14 @@ public class RediSearchQuery implements RepositoryQuery {
       }
     }
 
+    // Set query dialect
+    query.dialect(dialect.getValue());
+
     SearchResult searchResult = ops.search(query);
 
     // what to return
     Object result = null;
+
     if (queryMethod.getReturnedObjectType() == SearchResult.class) {
       result = searchResult;
     } else if (queryMethod.isPageQuery()) {
@@ -509,7 +522,11 @@ public class RediSearchQuery implements RepositoryQuery {
 
     Gson gsonInstance = getGson();
 
-    return gsonInstance.fromJson(SafeEncoder.encode((byte[]) doc.get("$")), domainType);
+    return switch (dialect) {
+      case ONE, TWO -> gsonInstance.fromJson(SafeEncoder.encode((byte[]) doc.get("$")), domainType);
+      case THREE -> gsonInstance.fromJson(
+          gsonInstance.fromJson(SafeEncoder.encode((byte[]) doc.get("$")), JsonArray.class).get(0), domainType);
+    };
   }
 
   private Object executeDeleteQuery(Object[] parameters) {
@@ -537,6 +554,9 @@ public class RediSearchQuery implements RepositoryQuery {
 
     aggregation.sortBy(aggregationSortedFields.toArray(new SortedField[] {}));
     aggregation.limit(0, redisOMProperties.getRepository().getQuery().getLimit());
+
+    // Set query dialect
+    aggregation.dialect(dialect.getValue());
 
     // Execute the aggregation query
     AggregationResult aggregationResult = ops.aggregate(aggregation);
@@ -654,6 +674,9 @@ public class RediSearchQuery implements RepositoryQuery {
         aggregation.limit(0, redisOMProperties.getRepository().getQuery().getLimit());
       }
     }
+
+    // Set query dialect
+    aggregation.dialect(dialect.getValue());
 
     // execute the aggregation
     AggregationResult aggregationResult = ops.aggregate(aggregation);
@@ -835,6 +858,9 @@ public class RediSearchQuery implements RepositoryQuery {
         aggregation.limit(0, redisOMProperties.getRepository().getQuery().getLimit());
       }
     }
+
+    // Set query dialect
+    aggregation.dialect(dialect.getValue());
 
     // Execute the aggregation query
     AggregationResult aggregationResult = ops.aggregate(aggregation);

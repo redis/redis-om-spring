@@ -89,6 +89,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   private Long aggregationTimeout;
   private Boolean aggregationVerbatim;
   private boolean isNullParamQuery;
+  private Dialect dialect = Dialect.ONE;
 
   @SuppressWarnings("unchecked")
   public RedisEnhancedQuery(QueryMethod queryMethod, //
@@ -126,6 +127,13 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
     try {
       java.lang.reflect.Method method = repoClass.getDeclaredMethod(queryMethod.getName(), params);
+
+      // set dialect if @UseDialect is present
+      if (method.isAnnotationPresent(UseDialect.class)) {
+        UseDialect dialectAnnotation = method.getAnnotation(UseDialect.class);
+        this.dialect = dialectAnnotation.dialect();
+      }
+
       if (method.isAnnotationPresent(com.redis.om.spring.annotations.Query.class)) {
         com.redis.om.spring.annotations.Query queryAnnotation = method.getAnnotation(
             com.redis.om.spring.annotations.Query.class);
@@ -475,8 +483,12 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       }
     }
 
+    // Set query dialect
+    query.dialect(dialect.getValue());
+
     SearchResult searchResult = ops.search(query);
 
+    // what to return
     Object result;
 
     if (queryMethod.getReturnedObjectType() == SearchResult.class) {
@@ -535,6 +547,9 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
     aggregation.sortBy(aggregationSortedFields.toArray(new SortedField[] {}));
     aggregation.limit(0, redisOMProperties.getRepository().getQuery().getLimit());
+
+    // Set query dialect
+    aggregation.dialect(dialect.getValue());
 
     // Execute the aggregation query
     AggregationResult aggregationResult = ops.aggregate(aggregation);
@@ -668,6 +683,9 @@ public class RedisEnhancedQuery implements RepositoryQuery {
         aggregation.limit(0, redisOMProperties.getRepository().getQuery().getLimit());
       }
     }
+
+    // Set query dialect
+    aggregation.dialect(dialect.getValue());
 
     // execute the aggregation
     AggregationResult aggregationResult = ops.aggregate(aggregation);
@@ -843,6 +861,9 @@ public class RedisEnhancedQuery implements RepositoryQuery {
         aggregation.limit(0, redisOMProperties.getRepository().getQuery().getLimit());
       }
     }
+
+    // Set query dialect
+    aggregation.dialect(dialect.getValue());
 
     // Execute the aggregation query
     AggregationResult aggregationResult = ops.aggregate(aggregation);
