@@ -65,9 +65,27 @@ public class RedisOMProperties {
 
   public static class Repository {
     private final Query query = new Query();
+    private boolean dropAndRecreateIndexOnDeleteAll = false;
+    private int deleteBatchSize = 500;
 
     public Query getQuery() {
       return query;
+    }
+
+    public boolean isDropAndRecreateIndexOnDeleteAll() {
+      return dropAndRecreateIndexOnDeleteAll;
+    }
+
+    public void setDropAndRecreateIndexOnDeleteAll(boolean dropAndRecreateIndexOnDeleteAll) {
+      this.dropAndRecreateIndexOnDeleteAll = dropAndRecreateIndexOnDeleteAll;
+    }
+
+    public int getDeleteBatchSize() {
+      return deleteBatchSize;
+    }
+
+    public void setDeleteBatchSize(int deleteBatchSize) {
+      this.deleteBatchSize = deleteBatchSize;
     }
 
     public static class Query {

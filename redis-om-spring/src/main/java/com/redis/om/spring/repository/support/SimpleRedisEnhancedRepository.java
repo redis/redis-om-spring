@@ -103,7 +103,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     Optional<Field> maybeIdField = ObjectUtils.getIdFieldForEntityClass(metadata.getJavaType());
     String idField = maybeIdField.map(Field::getName).orElse("id");
     Query query = new Query("*");
-    query.limit(0, MAX_SEARCH_RESULTS);
+    query.limit(0, properties.getRepository().getQuery().getLimit());
     query.returnFields(idField);
     SearchResult searchResult = searchOps.search(query);
 
