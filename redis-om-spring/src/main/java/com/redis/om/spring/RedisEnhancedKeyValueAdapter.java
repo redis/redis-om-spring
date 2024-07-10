@@ -11,6 +11,7 @@ import com.redis.om.spring.vectorize.Embedder;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.RedisKeyCommands;
 import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.core.PartialUpdate.PropertyUpdate;
 import org.springframework.data.redis.core.PartialUpdate.UpdateCommand;
@@ -25,6 +26,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
+import redis.clients.jedis.commands.KeyCommands;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 
@@ -210,8 +212,30 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     Class<?> type = indexer.getEntityClassForKeyspace(keyspace);
     String searchIndex = indexer.getIndexName(keyspace);
     SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
-    searchOps.dropIndexAndDocuments();
-    indexer.createIndexFor(type);
+    if (redisOMProperties.getRepository().isDropAndRecreateIndexOnDeleteAll()) {
+      searchOps.dropIndexAndDocuments();
+      indexer.createIndexFor(type);
+    } else {
+      boolean moreRecords = true;
+      while (moreRecords) {
+        Query query = new Query("*");
+        query.limit(0, redisOMProperties.getRepository().getDeleteBatchSize());
+        query.setNoContent();
+        SearchResult searchResult = searchOps.search(query);
+        if (searchResult.getTotalResults() > 0) {
+          List<byte[]> keys = searchResult.getDocuments().stream().map(k -> toBytes(k.getId())).toList();
+          redisOperations.executePipelined((RedisCallback<Object>) connection -> {
+            RedisKeyCommands keyCommands = connection.keyCommands();
+            for (byte[] key : keys) {
+              keyCommands.del(key);
+            }
+            return null;
+          });
+        } else {
+          moreRecords = false;
+        }
+      }
+    }
   }
 
   public <T> List<String> getAllIds(String keyspace, Class<T> type) {

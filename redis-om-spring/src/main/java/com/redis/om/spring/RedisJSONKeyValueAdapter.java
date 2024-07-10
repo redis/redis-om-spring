@@ -18,6 +18,7 @@ import org.springframework.beans.*;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.annotation.Reference;
 import org.springframework.data.annotation.Version;
+import org.springframework.data.redis.connection.RedisKeyCommands;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisKeyValueAdapter;
 import org.springframework.data.redis.core.RedisOperations;
@@ -212,8 +213,30 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     Class<?> type = indexer.getEntityClassForKeyspace(keyspace);
     String searchIndex = indexer.getIndexName(keyspace);
     SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
-    searchOps.dropIndexAndDocuments();
-    indexer.createIndexFor(type);
+    if (redisOMProperties.getRepository().isDropAndRecreateIndexOnDeleteAll()) {
+      searchOps.dropIndexAndDocuments();
+      indexer.createIndexFor(type);
+    } else {
+      boolean moreRecords = true;
+      while (moreRecords) {
+        Query query = new Query("*");
+        query.limit(0, redisOMProperties.getRepository().getDeleteBatchSize());
+        query.setNoContent();
+        SearchResult searchResult = searchOps.search(query);
+        if (searchResult.getTotalResults() > 0) {
+          List<byte[]> keys = searchResult.getDocuments().stream().map(k -> toBytes(k.getId())).toList();
+          redisOperations.executePipelined((RedisCallback<Object>) connection -> {
+            RedisKeyCommands keyCommands = connection.keyCommands();
+            for (byte[] key : keys) {
+              keyCommands.del(key);
+            }
+            return null;
+          });
+        } else {
+          moreRecords = false;
+        }
+      }
+    }
   }
 
   /*
