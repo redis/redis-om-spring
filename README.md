@@ -457,7 +457,7 @@ inherited from the parent poms):
       <path>
         <groupId>com.redis.om</groupId>
         <artifactId>redis-om-spring</artifactId>
-        <version>0.9.4-SNAPSHOT</version>
+        <version>0.9.4</version>
       </path>
     </annotationProcessorPaths>
   </configuration>
@@ -504,7 +504,7 @@ repositories {
 
 ```groovy
 ext {
-  redisOmVersion = '0.9.4-SNAPSHOT'
+  redisOmVersion = '0.9.4'
 }
 
 dependencies {

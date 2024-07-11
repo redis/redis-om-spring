@@ -6,7 +6,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.redis.om</groupId>
   <artifactId>redis-om-spring-parent</artifactId>
-  <version>0.9.4-SNAPSHOT</version>
+  <version>0.9.4</version>
   <name>redis-om-spring-parent</name>
   <packaging>pom</packaging>
 
