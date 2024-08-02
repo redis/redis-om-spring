@@ -401,12 +401,27 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   @Override
   public <S extends T> Page<S> findAll(Example<S> example, Pageable pageable) {
     SearchStream<S> stream = entityStream.of(example.getProbeType());
-    var offset = pageable.getOffset() * pageable.getPageSize();
+    var offset = pageable.getPageNumber() * pageable.getPageSize();
     var limit = pageable.getPageSize();
     Slice<S> slice = stream.filter(example).loadAll().limit(limit, Math.toIntExact(offset))
         .toList(pageable, stream.getEntityClass());
 
-    return pageFromSlice(slice);
+    if (indexer.indexDefinitionExistsFor(metadata.getJavaType())) {
+      String searchIndex = indexer.getIndexName(metadata.getJavaType());
+
+      SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
+      Query query = new Query(stream.backingQuery());
+      query.setNoContent();
+
+      for (Order order : pageable.getSort()) {
+        query.setSortBy(order.getProperty(), order.isAscending());
+      }
+
+      SearchResult searchResult = searchOps.search(query);
+      return pageFromSlice(slice, searchResult.getTotalResults(), pageable.getPageSize());
+    } else {
+      return pageFromSlice(slice);
+    }
   }
 
   /* (non-Javadoc)
