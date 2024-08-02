@@ -468,15 +468,19 @@ public class ObjectUtils {
   }
 
   public static <T> Page<T> pageFromSlice(Slice<T> slice) {
+    return pageFromSlice(slice, Long.MAX_VALUE, slice.getPageable().getPageSize());
+  }
+
+  public static <T> Page<T> pageFromSlice(Slice<T> slice, long totalElements, int pageSize) {
     return new Page<>() {
       @Override
       public int getTotalPages() {
-        return -1;
+        return (totalElements == 0 || pageSize == 0) ? 0 : (int) Math.ceil((double) totalElements / (double) pageSize);
       }
 
       @Override
       public long getTotalElements() {
-        return -1;
+        return totalElements;
       }
 
       @Override
@@ -516,22 +520,22 @@ public class ObjectUtils {
 
       @Override
       public boolean isFirst() {
-        return slice.isFirst();
+        return getNumber() == 0;
       }
 
       @Override
       public boolean isLast() {
-        return slice.isLast();
+        return getNumber() + 1 == getTotalPages();
       }
 
       @Override
       public boolean hasNext() {
-        return slice.hasNext();
+        return getNumber() + 1 < getTotalPages();
       }
 
       @Override
       public boolean hasPrevious() {
-        return slice.hasPrevious();
+        return getNumber() > 0;
       }
 
       @Override

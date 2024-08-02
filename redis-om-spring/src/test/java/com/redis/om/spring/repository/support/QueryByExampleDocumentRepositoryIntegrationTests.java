@@ -106,8 +106,19 @@ class QueryByExampleDocumentRepositoryIntegrationTests extends AbstractBaseDocum
     PersonDoc person = new PersonDoc();
     person.setHometown(walt.getHometown());
 
-    Page<PersonDoc> result = repository.findAll(Example.of(person), PageRequest.of(0, 2));
+    Pageable firstPage = PageRequest.of(0, 2);
+    Page<PersonDoc> result = repository.findAll(Example.of(person), firstPage);
     assertThat(result).hasSize(2);
+    assertThat(result.getTotalElements()).isEqualTo(3);
+    assertThat(result.getTotalPages()).isEqualTo(2);
+    assertThat(result.hasNext()).isTrue();
+
+    Pageable nextPage = result.nextPageable();
+    Page<PersonDoc> next = repository.findAll(Example.of(person), nextPage);
+    assertThat(next).hasSize(1);
+    assertThat(next.getTotalElements()).isEqualTo(3);
+    assertThat(next.getTotalPages()).isEqualTo(2);
+    assertThat(next.hasNext()).isFalse();
   }
 
   @Test
