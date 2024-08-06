@@ -153,10 +153,9 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       rdo.setId(converter.getConversionService().convert(id, String.class));
     }
 
-    byte[] objectKey = createKey(sanitizeKeyspace(rdo.getKeyspace()), rdo.getId());
-    redisOperations.execute((RedisCallback<Boolean>) connection -> connection.keyCommands().del(objectKey) == 0);
-
     redisOperations.executePipelined((RedisCallback<Object>) connection -> {
+      byte[] objectKey = createKey(sanitizeKeyspace(rdo.getKeyspace()), rdo.getId());
+      connection.keyCommands().del(objectKey);
       Map<byte[], byte[]> rawMap = rdo.getBucket().rawMap();
       connection.hashCommands().hMSet(objectKey, rawMap);
 
