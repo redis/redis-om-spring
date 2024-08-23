@@ -5,6 +5,7 @@ import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.query.RedisEnhancedQuery;
 import com.redis.om.spring.vectorize.Embedder;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.repository.config.QueryCreatorType;
 import org.springframework.data.mapping.context.MappingContext;
@@ -21,38 +22,30 @@ import org.springframework.util.Assert;
 public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, ID>
     extends RepositoryFactoryBeanSupport<T, S, ID> {
 
-  private @Nullable KeyValueOperations operations;
+  @Autowired
   private @Nullable RedisModulesOperations<String> rmo;
+  @Autowired
   private @Nullable RedisOperations<?, ?> redisOperations;
+  @Autowired
   private @Nullable RediSearchIndexer indexer;
+  @Autowired
+  private @Nullable Embedder embedder;
+  @Autowired
+  private RedisOMProperties properties;
+
+  private @Nullable KeyValueOperations operations;
   private @Nullable Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
   private @Nullable Class<? extends RepositoryQuery> repositoryQueryType;
-  private @Nullable Embedder embedder;
-
-  private RedisOMProperties properties;
 
   /**
    * Creates a new {@link RedisRepositoryFactoryBean} for the given repository
    * interface.
    *
    * @param repositoryInterface must not be {@literal null}.
-   * @param redisOperations     must not be {@literal null}.
-   * @param rmo                 must not be {@literal null}.
-   * @param indexer             must not be {@literal null}.
    */
   public RedisEnhancedRepositoryFactoryBean( //
-      Class<? extends T> repositoryInterface, //
-      RedisOperations<?, ?> redisOperations, //
-      RedisModulesOperations<?> rmo, //
-      RediSearchIndexer indexer, //
-      Embedder embedder, //
-      RedisOMProperties properties) {
+      Class<? extends T> repositoryInterface) {
     super(repositoryInterface);
-    setRedisModulesOperations(rmo);
-    setRedisOperations(redisOperations);
-    setKeyspaceToIndexMap(indexer);
-    setFeatureExtractor(embedder);
-    setRedisOMSpringProperties(properties);
   }
 
   private void setFeatureExtractor(Embedder embedder) {
