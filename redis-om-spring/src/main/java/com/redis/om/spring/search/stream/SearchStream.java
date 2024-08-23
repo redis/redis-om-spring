@@ -6,8 +6,8 @@ import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
 import com.redis.om.spring.tuple.Pair;
 import org.springframework.data.domain.Example;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
@@ -118,7 +118,7 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
 
   SearchOperations<String> getSearchOperations();
 
-  Slice<E> getSlice(Pageable pageable);
+  Page<E> getPage(Pageable pageable);
 
   <R> SearchStream<E> project(Function<? super E, ? extends R> field);
 

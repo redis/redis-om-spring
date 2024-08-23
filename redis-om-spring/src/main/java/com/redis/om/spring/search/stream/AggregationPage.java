@@ -2,9 +2,13 @@ package com.redis.om.spring.search.stream;
 
 import com.google.gson.Gson;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
+import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.util.ObjectUtils;
 import org.springframework.data.domain.*;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.util.Assert;
+import redis.clients.jedis.search.Query;
+import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.AggregationResult;
 
 import java.io.Serializable;
@@ -12,29 +16,32 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 
-public class AggregationPage<E> implements Slice<E>, Serializable {
+public class AggregationPage<E> implements Page<E>, Serializable {
   private final transient Pageable pageable;
   private final transient Gson gson;
   private final Class<E> entityClass;
   private final boolean isDocument;
   private final transient MappingRedisOMConverter mappingConverter;
+  private final SearchOperations<String> search;
   private List<E> content;
   private transient AggregationStream<E> aggregationStream;
   private long cursorId = -1;
   private AggregationResult aggregationResult;
+  private Long totalElementCount;
 
   public AggregationPage(AggregationStream<E> aggregationStream, Pageable pageable, Class<E> entityClass, Gson gson,
-      MappingRedisOMConverter mappingConverter, boolean isDocument) {
+      MappingRedisOMConverter mappingConverter, boolean isDocument, SearchOperations<String> search) {
     this.aggregationStream = aggregationStream;
     this.pageable = pageable;
     this.entityClass = entityClass;
     this.gson = gson;
     this.isDocument = isDocument;
     this.mappingConverter = mappingConverter;
+    this.search = search;
   }
 
   public AggregationPage(AggregationResult aggregationResult, Pageable pageable, Class<E> entityClass, Gson gson,
-      MappingRedisOMConverter mappingConverter, boolean isDocument) {
+      MappingRedisOMConverter mappingConverter, boolean isDocument, SearchOperations<String> search) {
     this.aggregationResult = aggregationResult;
     this.pageable = pageable;
     this.entityClass = entityClass;
@@ -42,6 +49,7 @@ public class AggregationPage<E> implements Slice<E>, Serializable {
     this.cursorId = aggregationResult.getCursorId();
     this.isDocument = isDocument;
     this.mappingConverter = mappingConverter;
+    this.search = search;
   }
 
   @Override
@@ -86,7 +94,8 @@ public class AggregationPage<E> implements Slice<E>, Serializable {
 
   @Override
   public boolean hasNext() {
-    return cursorId == -1 || resolveCursorId() != 0;
+    //    return cursorId == -1 || resolveCursorId() != 0;
+    return aggregationStream != null ? getNumber() + 1 < getTotalPages() : cursorId == -1 || resolveCursorId() != 0;
   }
 
   @Override
@@ -96,8 +105,34 @@ public class AggregationPage<E> implements Slice<E>, Serializable {
   }
 
   @Override
-  public <U> Slice<U> map(Function<? super E, ? extends U> converter) {
-    return new SliceImpl<>(getConvertedContent(converter), pageable, hasNext());
+  public int getTotalPages() {
+    return (getTotalElements() == 0 || pageable.getPageSize() == 0) ?
+        0 :
+        (int) Math.ceil((double) getTotalElements() / (double) pageable.getPageSize());
+  }
+
+  @Override
+  public long getTotalElements() {
+    if (totalElementCount == null) {
+      if (aggregationStream != null) {
+        String baseQuery = aggregationStream.backingQuery();
+        Query countQuery = (baseQuery.isBlank()) ? new Query() : new Query(baseQuery);
+        countQuery.setNoContent();
+        for (Order order : pageable.getSort()) {
+          countQuery.setSortBy(order.getProperty(), order.isAscending());
+        }
+        SearchResult searchResult = search.search(countQuery);
+        totalElementCount = searchResult.getTotalResults();
+      } else {
+        totalElementCount = aggregationResult.getTotalResults(); // not quite sure about this shit
+      }
+    }
+    return totalElementCount;
+  }
+
+  @Override
+  public <U> Page<U> map(Function<? super E, ? extends U> converter) {
+    return new PageImpl<>(getConvertedContent(converter));
   }
 
   @Override

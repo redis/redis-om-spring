@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Slice;
 import redis.clients.jedis.search.aggr.AggregationResult;
 
 import java.io.IOException;
@@ -108,7 +107,7 @@ class EntityStreamsAggregationsDocsPagingTest extends AbstractBaseDocumentTest {
     int pageSize = 45;
     SearchStream<Game> searchStream = entityStream.of(Game.class);
 
-    Slice<Game> page = searchStream //
+    Page<Game> page = searchStream //
         .loadAll().limit(300).toList(PageRequest.ofSize(pageSize), Game.class);
 
     // loop through the slices using the SearchStream.getSlice method passing the next page request
@@ -118,7 +117,7 @@ class EntityStreamsAggregationsDocsPagingTest extends AbstractBaseDocumentTest {
       List<Game> contents = page.getContent();
       // collect the page counts
       pageCounts.put(page.getNumber(), contents.size());
-      page = page.hasNext() ? searchStream.getSlice(page.nextPageable()) : Page.empty();
+      page = page.hasNext() ? searchStream.getPage(page.nextPageable()) : Page.empty();
     }
 
     // assert the page counts

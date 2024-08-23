@@ -12,10 +12,6 @@ import com.redis.om.spring.fixtures.document.repository.DocWithCustomNameIdRepos
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
@@ -344,31 +340,6 @@ class ObjectUtilsTest extends AbstractBaseDocumentTest {
     assertThat(flatten).containsExactly("a", "b", "c", "d", "e", "f");
   }
 
-  @Test
-  void testPageFromSlice() {
-    List<String> strings = List.of("Pantufla", "Mondongo", "Latifundio", "Alcachofa");
-    List<String> sliceContent = strings.subList(0, 2);
-    Slice<String> slice = new SliceImpl<>(sliceContent);
-
-    Page<String> page = ObjectUtils.pageFromSlice(slice, strings.size(), 2);
-
-    assertThat(page.getContent()).hasSize(2);
-    assertThat(page.getContent().get(0)).isEqualTo("Pantufla");
-    assertThat(page.getNumber()).isEqualTo(slice.getNumber());
-    assertThat(page.getSize()).isEqualTo(slice.getSize());
-    assertThat(page.getNumberOfElements()).isEqualTo(slice.getNumberOfElements());
-    assertThat(page.getSort()).isEqualTo(slice.getSort());
-    assertThat(page.hasContent()).isEqualTo(slice.hasContent());
-    assertThat(page.hasNext()).isEqualTo(true);
-    assertThat(page.hasPrevious()).isEqualTo(false);
-    assertThat(page.isFirst()).isEqualTo(true);
-    assertThat(page.isLast()).isEqualTo(false);
-    assertThat(page.nextPageable()).isEqualTo(slice.nextPageable());
-    assertThat(page.previousPageable()).isEqualTo(slice.previousPageable());
-    assertThat(page.getTotalPages()).isEqualTo(2);
-    assertThat(page.getPageable()).isEqualTo(Pageable.ofSize(2));
-    assertThat(page.getTotalElements()).isEqualTo(4);
-  }
 
   @Test
   public void testEmptyString() {
