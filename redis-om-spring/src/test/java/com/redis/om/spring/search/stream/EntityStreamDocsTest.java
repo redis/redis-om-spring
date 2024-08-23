@@ -8,6 +8,7 @@ import com.redis.om.spring.fixtures.document.repository.CompanyRepository;
 import com.redis.om.spring.fixtures.document.repository.Doc3Repository;
 import com.redis.om.spring.fixtures.document.repository.NiCompanyRepository;
 import com.redis.om.spring.fixtures.document.repository.UserRepository;
+import com.redis.om.spring.repository.query.Sort;
 import com.redis.om.spring.tuple.Fields;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.Quad;
@@ -16,9 +17,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Slice;
-import com.redis.om.spring.repository.query.Sort;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Metrics;
 import org.springframework.data.geo.Point;
@@ -2767,8 +2767,8 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
     var page0Request = PageRequest.of(page, PAGE_SIZE, Sort.by(Company$.NAME));
 
     // get first page
-    Slice<Company> page0 = entityStream.of(Company.class) //
-        .getSlice(page0Request);
+    Page<Company> page0 = entityStream.of(Company.class) //
+        .getPage(page0Request);
 
 
     assertThat(page0).hasSize(PAGE_SIZE);
@@ -2780,8 +2780,8 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
     // get second page
     page = 1;
     var page1Request = PageRequest.of(page, PAGE_SIZE, Sort.by(Company$.NAME));
-    Slice<Company> page1 = entityStream.of(Company.class) //
-        .getSlice(page1Request);
+    Page<Company> page1 = entityStream.of(Company.class) //
+        .getPage(page1Request);
 
     assertThat(page1).hasSize(1);
     assertThat(page1.hasNext()).isFalse();

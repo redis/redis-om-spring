@@ -45,7 +45,6 @@ import java.util.stream.*;
 
 import static com.redis.om.spring.metamodel.MetamodelUtils.getMetamodelForIdField;
 import static com.redis.om.spring.util.ObjectUtils.floatArrayToByteArray;
-import static com.redis.om.spring.util.ObjectUtils.pageFromSlice;
 import static java.util.stream.Collectors.toCollection;
 
 public class SearchStreamImpl<E> implements SearchStream<E> {
@@ -722,12 +721,12 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   @Override
-  public Slice<E> getSlice(Pageable pageable) {
+  public Page<E> getPage(Pageable pageable) {
     if (pageable.getClass().isAssignableFrom(AggregationPageable.class)) {
       resolvedStream = Stream.empty();
       AggregationPageable ap = (AggregationPageable) pageable;
       AggregationResult ar = search.cursorRead(ap.getCursorId(), pageable.getPageSize());
-      return new AggregationPage<>(ar, pageable, entityClass, getGson(), mappingConverter, isDocument);
+      return new AggregationPage<>(ar, pageable, entityClass, getGson(), mappingConverter, isDocument, this.search);
     } else {
       if (!isStreamResolved()) {
         this.sorted(pageable.getSort()).limit(pageable.getPageSize()).skip(Math.toIntExact(pageable.getOffset()));
@@ -736,9 +735,9 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
         countQuery.limit(Math.toIntExact(pageable.getOffset() + pageable.getPageSize()), pageable.getPageSize());
         SearchResult searchResult = search.search(countQuery);
 
-        return new SliceImpl<>(this.resolveStream().toList(), pageable, !searchResult.getDocuments().isEmpty());
+        return new PageImpl<>(this.resolveStream().toList(), pageable, searchResult.getTotalResults());
       } else {
-        return new SliceImpl<E>(List.of());
+        return new PageImpl<E>(List.of());
       }
 
     }

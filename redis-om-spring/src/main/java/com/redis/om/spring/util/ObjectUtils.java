@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
 import org.springframework.data.redis.core.convert.Bucket;
@@ -465,94 +465,6 @@ public class ObjectUtils {
   public static String getKey(String keyspace, Object id) {
     String format = keyspace.endsWith(":") ? "%s%s" : "%s:%s";
     return String.format(format, keyspace, id);
-  }
-
-  public static <T> Page<T> pageFromSlice(Slice<T> slice) {
-    return pageFromSlice(slice, Long.MAX_VALUE, slice.getPageable().getPageSize());
-  }
-
-  public static <T> Page<T> pageFromSlice(Slice<T> slice, long totalElements, int pageSize) {
-    return new Page<>() {
-      @Override
-      public int getTotalPages() {
-        return (totalElements == 0 || pageSize == 0) ? 0 : (int) Math.ceil((double) totalElements / (double) pageSize);
-      }
-
-      @Override
-      public long getTotalElements() {
-        return totalElements;
-      }
-
-      @Override
-      public <U> Page<U> map(Function<? super T, ? extends U> converter) {
-        return pageFromSlice(slice.map(converter));
-      }
-
-      @Override
-      public int getNumber() {
-        return slice.getNumber();
-      }
-
-      @Override
-      public int getSize() {
-        return slice.getSize();
-      }
-
-      @Override
-      public int getNumberOfElements() {
-        return slice.getNumberOfElements();
-      }
-
-      @Override
-      public List<T> getContent() {
-        return slice.getContent();
-      }
-
-      @Override
-      public boolean hasContent() {
-        return slice.hasContent();
-      }
-
-      @Override
-      public Sort getSort() {
-        return slice.getSort();
-      }
-
-      @Override
-      public boolean isFirst() {
-        return getNumber() == 0;
-      }
-
-      @Override
-      public boolean isLast() {
-        return getNumber() + 1 == getTotalPages();
-      }
-
-      @Override
-      public boolean hasNext() {
-        return getNumber() + 1 < getTotalPages();
-      }
-
-      @Override
-      public boolean hasPrevious() {
-        return getNumber() > 0;
-      }
-
-      @Override
-      public Pageable nextPageable() {
-        return slice.nextPageable();
-      }
-
-      @Override
-      public Pageable previousPageable() {
-        return slice.previousPageable();
-      }
-
-      @Override
-      public Iterator<T> iterator() {
-        return slice.iterator();
-      }
-    };
   }
 
   public static Object getValueByPath(Object target, String path) {

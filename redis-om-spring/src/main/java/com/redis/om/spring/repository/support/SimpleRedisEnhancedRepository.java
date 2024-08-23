@@ -49,7 +49,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static com.redis.om.spring.RedisOMProperties.MAX_SEARCH_RESULTS;
 import static com.redis.om.spring.util.ObjectUtils.*;
 
 public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueRepository<T, ID>
@@ -405,25 +404,10 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     SearchStream<S> stream = entityStream.of(example.getProbeType());
     var offset = pageable.getPageNumber() * pageable.getPageSize();
     var limit = pageable.getPageSize();
-    Slice<S> slice = stream.filter(example).loadAll().limit(limit, Math.toIntExact(offset))
+    Page<S> page = stream.filter(example).loadAll().limit(limit, Math.toIntExact(offset))
         .toList(pageable, stream.getEntityClass());
 
-    if (indexer.indexDefinitionExistsFor(metadata.getJavaType())) {
-      String searchIndex = indexer.getIndexName(metadata.getJavaType());
-
-      SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
-      Query query = new Query(stream.backingQuery());
-      query.setNoContent();
-
-      for (Order order : pageable.getSort()) {
-        query.setSortBy(order.getProperty(), order.isAscending());
-      }
-
-      SearchResult searchResult = searchOps.search(query);
-      return pageFromSlice(slice, searchResult.getTotalResults(), pageable.getPageSize());
-    } else {
-      return pageFromSlice(slice);
-    }
+    return page;
   }
 
   @Override

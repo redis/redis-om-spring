@@ -10,8 +10,8 @@ import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.search.stream.aggregations.filters.AggregationFilter;
 import com.redis.om.spring.tuple.Tuples;
 import com.redis.om.spring.util.ObjectUtils;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
@@ -34,6 +34,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
   private Group currentGroup;
   private ReducerFieldPair currentReducer;
   private boolean limitSet = false;
+  private final String query;
 
   @SafeVarargs
   public AggregationStreamImpl(String searchIndex, RedisModulesOperations<String> modulesOperations, Gson gson,
@@ -42,6 +43,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
     search = modulesOperations.opsForSearch(searchIndex);
     aggregation = new AggregationBuilder(query);
     isDocument = entityClass.isAnnotationPresent(Document.class);
+    this.query = query;
     this.gson = gson;
     this.mappingConverter = new MappingRedisOMConverter(null, new ReferenceResolverImpl(modulesOperations.template()));
     createAggregationGroup(fields);
@@ -377,6 +379,11 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
   }
 
   @Override
+  public String backingQuery() {
+    return query;
+  }
+
+  @Override
   public AggregationStream<T> cursor(int count, Duration timeout) {
     applyCurrentGroupBy();
     aggregation.cursor(count, timeout.toMillis());
@@ -387,18 +394,18 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
 
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
-  public <R extends T> Slice<R> toList(Pageable pageRequest, Class<?>... contentTypes) {
+  public <R extends T> Page<R> toList(Pageable pageRequest, Class<?>... contentTypes) {
     applyCurrentGroupBy();
     aggregation.cursor(pageRequest.getPageSize(), 300000);
-    return new AggregationPage(this, pageRequest, entityClass, gson, mappingConverter, isDocument);
+    return new AggregationPage(this, pageRequest, entityClass, gson, mappingConverter, isDocument, this.search);
   }
 
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
-  public <R extends T> Slice<R> toList(Pageable pageRequest, Duration timeout, Class<?>... contentTypes) {
+  public <R extends T> Page<R> toList(Pageable pageRequest, Duration timeout, Class<?>... contentTypes) {
     applyCurrentGroupBy();
     aggregation.cursor(pageRequest.getPageSize(), timeout.toMillis());
-    return new AggregationPage(this, pageRequest, entityClass, gson, mappingConverter, isDocument);
+    return new AggregationPage(this, pageRequest, entityClass, gson, mappingConverter, isDocument, this.search);
   }
 
   private void applyCurrentGroupBy() {
