@@ -163,25 +163,26 @@ public class DefaultEmbedder implements Embedder {
   private List<byte[]> getEmbeddingsAsByteArrayFor(List<String> texts, EmbeddingModel model) {
     EmbeddingResponse embeddingResponse = model.embedForResponse(texts);
     List<Embedding> embeddings = embeddingResponse.getResults();
-    return embeddings.stream().map(e -> ObjectUtils.doubleListToByteArray(e.getOutput())).toList();
+
+    return embeddings.stream().map(e -> ObjectUtils.floatArrayToByteArray(e.getOutput())).toList();
   }
 
   private List<float[]> getEmbeddingAsFloatArrayFor(List<String> texts, EmbeddingModel model) {
     EmbeddingResponse embeddingResponse = model.embedForResponse(texts);
     List<Embedding> embeddings = embeddingResponse.getResults();
-    return embeddings.stream().map(e -> ObjectUtils.doubleListToFloatArray(e.getOutput())).toList();
+    return embeddings.stream().map(Embedding::getOutput).toList();
   }
 
   private byte[] getEmbeddingsAsByteArrayFor(String text, EmbeddingModel model) {
     EmbeddingResponse embeddingResponse = model.embedForResponse(List.of(text));
     Embedding embedding = embeddingResponse.getResult();
-    return ObjectUtils.doubleListToByteArray(embedding.getOutput());
+    return ObjectUtils.floatArrayToByteArray(embedding.getOutput());
   }
 
   private float[] getEmbeddingAsFloatArrayFor(String text, EmbeddingModel model) {
     EmbeddingResponse embeddingResponse = model.embedForResponse(List.of(text));
     Embedding embedding = embeddingResponse.getResult();
-    return ObjectUtils.doubleListToFloatArray(embedding.getOutput());
+    return embedding.getOutput();
   }
 
   @Override
