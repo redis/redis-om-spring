@@ -153,6 +153,7 @@ class VectorizeOllamaHashTest extends AbstractBaseEnhancedRedisTest {
     List<byte[]> embeddings = embedder.getTextEmbeddingsAsBytes(List.of(cat.getText()), HashWithOllamaEmbedding$.TEXT);
     assertAll( //
         () -> assertThat(embeddings).isNotEmpty(), //
+        () -> assertThat(embeddings.get(0).length).isEqualTo(catEmbedding.length), //
         () -> assertThat(embeddings.get(0)).isEqualTo(catEmbedding)
     );
   }

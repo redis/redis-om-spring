@@ -80,7 +80,7 @@
         <djl.starter.version>0.26</djl.starter.version>
         <djl.version>0.27.0</djl.version>
         <junit-bom.version>5.10.2</junit-bom.version>
-        <spring-ai.version>1.0.0-M1</spring-ai.version>
+        <spring-ai.version>1.0.0-M2</spring-ai.version>
     </properties>
 
     <dependencyManagement>
