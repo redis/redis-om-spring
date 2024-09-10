@@ -635,9 +635,9 @@ Redis OM uses the [MIT license][license-url].
 
 [redis-om-dotnet]: https://github.com/redis-om/redis-om-dotnet
 
-[redisearch-url]: https://oss.redis.com/redisearch/
+[redisearch-url]: https://redis.io/search/
 
-[redis-json-url]: https://oss.redis.com/redisjson/
+[redis-json-url]: https://redis.io/json/
 
 [ulid-url]: https://github.com/ulid/spec
 
