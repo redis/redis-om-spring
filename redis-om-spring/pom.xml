@@ -7,7 +7,7 @@
 
     <groupId>com.redis.om</groupId>
     <artifactId>redis-om-spring</artifactId>
-    <version>0.9.5</version>
+    <version>0.9.6-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>redis-om-spring</name>
@@ -55,12 +55,12 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.release>17</maven.compiler.release>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <maven.test.source>17</maven.test.source>
-        <maven.test.target>17</maven.test.target>
-        <java.version>17</java.version>
+        <maven.compiler.release>21</maven.compiler.release>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <maven.test.source>21</maven.test.source>
+        <maven.test.target>21</maven.test.target>
+        <java.version>21</java.version>
         <spring.version>3.3.2</spring.version>
         <sdr.version>3.3.2</sdr.version>
         <jedis.version>5.0.2</jedis.version>
@@ -374,8 +374,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.10.1</version>
                 <configuration>
-                    <source>${maven.compiler.source}</source>
-                    <target>${maven.compiler.target}</target>
+                    <source>21</source>
+                    <target>21</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
                     <parameters>true</parameters>
                 </configuration>
