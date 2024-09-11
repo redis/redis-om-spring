@@ -17,12 +17,12 @@
   <description>Demo project for Spring Boot</description>
 
   <properties>
-    <java.version>17</java.version>
-    <maven.compiler.release>17</maven.compiler.release>
-    <maven.compiler.source>17</maven.compiler.source>
-    <maven.compiler.target>17</maven.compiler.target>
-    <maven.test.source>17</maven.test.source>
-    <maven.test.target>17</maven.test.target>
+    <java.version>21</java.version>
+    <maven.compiler.release>21</maven.compiler.release>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
+    <maven.test.source>21</maven.test.source>
+    <maven.test.target>21</maven.test.target>
     <maven.deploy.skip>true</maven.deploy.skip>
   </properties>
 
