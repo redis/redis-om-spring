@@ -106,6 +106,12 @@ public class RedisModulesConfiguration {
 
   private static final Log logger = LogFactory.getLog(RedisModulesConfiguration.class);
 
+  @Bean(name = "keyValueMappingContext")
+  @ConditionalOnMissingBean
+  public RedisMappingContext redisMappingContext() {
+    return new RedisMappingContext();
+  }
+
   @Bean(name = "omGsonBuilder")
   public GsonBuilder gsonBuilder(List<GsonBuilderCustomizer> customizers) {
 
