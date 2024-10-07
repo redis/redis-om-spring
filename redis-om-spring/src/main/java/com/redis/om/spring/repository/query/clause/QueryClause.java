@@ -246,6 +246,8 @@ public enum QueryClause {
           } else {
             if (clauseTemplate.getIndexType() == FieldType.TEXT) {
               prepared = prepared.replace(PARAM_PREFIX + i++, param.toString());
+            } else if (clauseTemplate.getIndexType() == FieldType.NUMERIC) {
+              prepared = prepared.replace(PARAM_PREFIX + i++, param.toString());
             } else {
               prepared = prepared.replace(PARAM_PREFIX + i++,
                   QueryUtils.escape(ObjectUtils.asString(param, converter)));
