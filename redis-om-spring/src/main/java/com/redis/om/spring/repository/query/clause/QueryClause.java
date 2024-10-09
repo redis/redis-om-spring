@@ -246,7 +246,7 @@ public enum QueryClause {
           } else {
             if (clauseTemplate.getIndexType() == FieldType.TEXT) {
               prepared = prepared.replace(PARAM_PREFIX + i++, param.toString());
-            } else if (clauseTemplate.getIndexType() == FieldType.NUMERIC) {
+            } else if (clauseTemplate.getIndexType() == FieldType.NUMERIC && !paramClass.equalsIgnoreCase("java.time.LocalDateTime") && !paramClass.equalsIgnoreCase("java.time.LocalDate")) {
               prepared = prepared.replace(PARAM_PREFIX + i++, param.toString());
             } else {
               prepared = prepared.replace(PARAM_PREFIX + i++,
