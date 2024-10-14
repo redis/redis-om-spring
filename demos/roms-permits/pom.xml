@@ -34,7 +34,7 @@
     <dependency>
       <groupId>com.redis.om</groupId>
       <artifactId>redis-om-spring</artifactId>
-      <version>0.9.6</version>
+      <version>0.9.7-SNAPSHOT</version>
     </dependency>
 
     <dependency>
