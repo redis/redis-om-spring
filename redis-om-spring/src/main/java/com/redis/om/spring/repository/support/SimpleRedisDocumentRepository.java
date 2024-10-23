@@ -24,6 +24,8 @@ import com.redis.om.spring.search.stream.SearchStream;
 import com.redis.om.spring.serialization.gson.GsonListOfType;
 import com.redis.om.spring.util.ObjectUtils;
 import com.redis.om.spring.vectorize.Embedder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.PropertyAccessor;
@@ -51,6 +53,7 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
+import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.json.Path2;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
@@ -64,8 +67,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
 import static com.redis.om.spring.util.ObjectUtils.*;
@@ -73,6 +78,8 @@ import static redis.clients.jedis.json.JsonProtocol.JsonCommand;
 
 public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueRepository<T, ID>
     implements RedisDocumentRepository<T, ID> {
+
+  private final static Logger logger = LoggerFactory.getLogger(SimpleRedisDocumentRepository.class);
 
   protected final RedisModulesOperations<String> modulesOperations;
   protected final EntityInformation<T, ID> metadata;
@@ -172,6 +179,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   public <S extends T> List<S> saveAll(Iterable<S> entities) {
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
     List<S> saved = new ArrayList<>();
+    List<Object> entityIds = new ArrayList<>();
 
     try (Jedis jedis = modulesOperations.client().getJedis().get()) {
       Pipeline pipeline = jedis.pipelined();
@@ -187,6 +195,8 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
             keyValueEntity.getPropertyAccessor(entity)
                 .getProperty(Objects.requireNonNull(keyValueEntity.getIdProperty()));
         keyValueEntity.getPropertyAccessor(entity).setProperty(keyValueEntity.getIdProperty(), id);
+
+        entityIds.add(id);
 
         String keyspace = keyValueEntity.getKeySpace();
         byte[] objectKey = createKey(keyspace, Objects.requireNonNull(id).toString());
@@ -215,7 +225,22 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
         saved.add(entity);
       }
-      pipeline.sync();
+
+      List<Object> responses = pipeline.syncAndReturnAll();
+
+      // Process responses using streams to avoid iterator issues
+      if (responses != null && !responses.isEmpty()) {
+        long failedCount = IntStream.range(0, Math.min(responses.size(), entityIds.size()))
+            .filter(i -> responses.get(i) instanceof JedisDataException)
+            .peek(i -> logger.warn("Failed JSON.SET command for entity with id: {} Error: {}",
+                entityIds.get(i),
+                ((JedisDataException) responses.get(i)).getMessage()))
+            .count();
+
+        if (failedCount > 0) {
+          logger.warn("Total failed JSON.SET commands: {}", failedCount);
+        }
+      }
     }
 
     return saved;
