@@ -17,6 +17,10 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * This test won't succeed unless a Redis Container is running with a replica configured:
+ * Check docker-compose.yml
+ */
 @DisabledIfEnvironmentVariable(named = "GITHUB_ACTIONS", matches = "true")
 class BasicSentinelTest extends AbstractBaseDocumentSentinelTest {
   @Autowired

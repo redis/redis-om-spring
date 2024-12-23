@@ -105,6 +105,7 @@
                 <version>${spring-ai.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+                <optional>true</optional>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -173,48 +174,59 @@
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-openai</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>jakarta.websocket</groupId>
             <artifactId>jakarta.websocket-api</artifactId>
             <version>2.1.1</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>jakarta.websocket</groupId>
             <artifactId>jakarta.websocket-client-api</artifactId>
             <version>2.1.1</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-ollama</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-azure-openai</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-vertex-ai-palm2</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-bedrock</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-transformers</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-mistral-ai</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-minimax</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-zhipuai</artifactId>
+            <optional>true</optional>
         </dependency>
         <!-- Spring AI end -->
         <dependency>
@@ -258,16 +270,19 @@
             <groupId>ai.djl.spring</groupId>
             <artifactId>djl-spring-boot-starter-autoconfigure</artifactId>
             <version>${djl.starter.version}</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>ai.djl.spring</groupId>
             <artifactId>djl-spring-boot-starter-pytorch-auto</artifactId>
             <version>${djl.starter.version}</version>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>ai.djl.huggingface</groupId>
             <artifactId>tokenizers</artifactId>
             <version>${djl.version}</version>
+            <optional>true</optional>
         </dependency>
 
         <!-- test dependencies -->

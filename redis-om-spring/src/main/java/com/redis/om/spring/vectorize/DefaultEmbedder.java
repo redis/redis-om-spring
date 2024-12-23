@@ -10,7 +10,7 @@ import ai.djl.repository.zoo.ZooModel;
 import ai.djl.translate.Pipeline;
 import ai.djl.translate.TranslateException;
 import com.azure.ai.openai.OpenAIClient;
-import com.redis.om.spring.RedisOMProperties;
+import com.redis.om.spring.RedisOMAiProperties;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.Vectorize;
 import com.redis.om.spring.metamodel.MetamodelField;
@@ -71,7 +71,7 @@ public class DefaultEmbedder implements Embedder {
   private final ImageFeatureExtractor imageFeatureExtractor;
   private final OpenAiEmbeddingModel defaultOpenAITextVectorizer;
   private final OllamaEmbeddingModel defaultOllamaEmbeddingModel;
-  private final RedisOMProperties properties;
+  private final RedisOMAiProperties properties;
   private final OllamaApi ollamaApi;
   private final OpenAIClient azureOpenAIClient;
   private final VertexAiPaLm2EmbeddingModel vertexAiPaLm2EmbeddingModel;
@@ -90,7 +90,7 @@ public class DefaultEmbedder implements Embedder {
       VertexAiPaLm2EmbeddingModel vertexAiPaLm2EmbeddingModel, //
       BedrockCohereEmbeddingModel bedrockCohereEmbeddingModel, //
       BedrockTitanEmbeddingModel bedrockTitanEmbeddingModel, //
-      RedisOMProperties properties //
+      RedisOMAiProperties properties //
   ) {
     this.applicationContext = applicationContext;
     this.imageEmbeddingModel = imageEmbeddingModel;
