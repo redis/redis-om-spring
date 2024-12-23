@@ -1,5 +1,6 @@
 redis:
   om:
     spring:
-      djl:
-        enabled: true
+      ai:
+        djl:
+          enabled: true
