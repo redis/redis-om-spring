@@ -22,6 +22,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.boot.autoconfigure.gson.GsonBuilderCustomizer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -273,6 +274,7 @@ public class RedisModulesConfiguration {
     registrar.registerReferencesFor(RedisHash.class);
   }
 
+  @ConditionalOnProperty(name = "redis.om.spring.ai.djl.enabled", havingValue = "false", matchIfMissing = true)
   @Bean(name = "featureExtractor")
   public Embedder featureExtractor() {
     return new NoopEmbedder();
