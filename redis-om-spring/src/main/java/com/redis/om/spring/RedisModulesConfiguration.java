@@ -15,6 +15,7 @@ import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.EntityStreamImpl;
 import com.redis.om.spring.serialization.gson.*;
 import com.redis.om.spring.vectorize.Embedder;
+import com.redis.om.spring.vectorize.NoopEmbedder;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -270,5 +271,10 @@ public class RedisModulesConfiguration {
 
     registrar.registerReferencesFor(Document.class);
     registrar.registerReferencesFor(RedisHash.class);
+  }
+
+  @Bean(name = "featureExtractor")
+  public Embedder featureExtractor() {
+    return new NoopEmbedder();
   }
 }
