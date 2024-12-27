@@ -19,7 +19,6 @@ import com.azure.ai.openai.OpenAIClientBuilder;
 import com.azure.core.credential.AzureKeyCredential;
 import com.redis.om.spring.vectorize.DefaultEmbedder;
 import com.redis.om.spring.vectorize.Embedder;
-import com.redis.om.spring.vectorize.NoopEmbedder;
 import com.redis.om.spring.vectorize.face.FaceDetectionTranslator;
 import com.redis.om.spring.vectorize.face.FaceFeatureTranslator;
 import org.apache.commons.logging.Log;
@@ -446,6 +445,7 @@ public class RedisAiConfiguration {
     }
   }
 
+  @Primary
   @Bean(name = "featureExtractor")
   public Embedder featureExtractor(
       @Nullable @Qualifier("djlImageEmbeddingModel") ZooModel<Image, byte[]> imageEmbeddingModel,
@@ -459,10 +459,8 @@ public class RedisAiConfiguration {
       @Nullable BedrockTitanEmbeddingModel bedrockTitanEmbeddingModel,
       RedisOMAiProperties properties,
       ApplicationContext ac) {
-    return properties.getDjl().isEnabled() ?
-        new DefaultEmbedder(ac, imageEmbeddingModel, faceEmbeddingModel, imageFactory, defaultImagePipeline,
+    return new DefaultEmbedder(ac, imageEmbeddingModel, faceEmbeddingModel, imageFactory, defaultImagePipeline,
             sentenceTokenizer, openAITextVectorizer, azureOpenAIClient, vertexAiPaLm2EmbeddingModel,
-            bedrockCohereEmbeddingModel, bedrockTitanEmbeddingModel, properties) :
-        new NoopEmbedder();
+            bedrockCohereEmbeddingModel, bedrockTitanEmbeddingModel, properties);
   }
 }
