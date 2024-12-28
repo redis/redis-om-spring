@@ -24,7 +24,31 @@
     <maven.test.source>21</maven.test.source>
     <maven.test.target>21</maven.test.target>
     <maven.deploy.skip>true</maven.deploy.skip>
+    <spring.version>3.3.2</spring.version>
+    <spring-ai.version>1.0.0-M2</spring-ai.version>
+    <djl.starter.version>0.26</djl.starter.version>
+    <djl.version>0.27.0</djl.version>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework.ai</groupId>
+        <artifactId>spring-ai-bom</artifactId>
+        <version>${spring-ai.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+        <optional>true</optional>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>
@@ -87,6 +111,86 @@
       <version>1.1.2</version>
     </dependency>
     <!-- /webjars -->
+
+    <!-- Spring AI and DJL dependencies are optional and must be manually added in order to benefit from VSS features -->
+    <!-- Spring AI begin -->
+    <dependency>
+      <groupId>org.springframework.ai</groupId>
+      <artifactId>spring-ai-openai</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.websocket</groupId>
+      <artifactId>jakarta.websocket-api</artifactId>
+      <version>2.1.1</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.websocket</groupId>
+      <artifactId>jakarta.websocket-client-api</artifactId>
+      <version>2.1.1</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.ai</groupId>
+      <artifactId>spring-ai-ollama</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.ai</groupId>
+      <artifactId>spring-ai-azure-openai</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.ai</groupId>
+      <artifactId>spring-ai-vertex-ai-palm2</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.ai</groupId>
+      <artifactId>spring-ai-bedrock</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.ai</groupId>
+      <artifactId>spring-ai-transformers</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.ai</groupId>
+      <artifactId>spring-ai-mistral-ai</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.ai</groupId>
+      <artifactId>spring-ai-minimax</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.ai</groupId>
+      <artifactId>spring-ai-zhipuai</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <!-- Spring AI end -->
+    <!-- DJL Dependencies -->
+    <dependency>
+      <groupId>ai.djl.spring</groupId>
+      <artifactId>djl-spring-boot-starter-autoconfigure</artifactId>
+      <version>${djl.starter.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>ai.djl.spring</groupId>
+      <artifactId>djl-spring-boot-starter-pytorch-auto</artifactId>
+      <version>${djl.starter.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>ai.djl.huggingface</groupId>
+      <artifactId>tokenizers</artifactId>
+      <version>${djl.version}</version>
+      <optional>true</optional>
+    </dependency>
 
     <dependency>
       <groupId>org.springframework.boot</groupId>

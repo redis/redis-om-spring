@@ -408,7 +408,7 @@ Iterable<MyDoc> allMatches = repository.findAll(example);
   <version>${version}</version>
 </dependency>
 ```
-
+> Check below if using Redis OM Spring version greater than `0.9.7`
 > ⚠️ Redis OM Spring versions greater than `v0.9.1` require the addition
 of the [**Spring Milestone Repository**](https://repo.spring.io/milestone) to account
 for the recent integration with the [**Spring AI**](https://docs.spring.io/spring-ai/reference/) project. When Spring AI `v1.0.0` is
@@ -429,6 +429,84 @@ repositories {
   maven("https://repo.spring.io/milestone" )
 }
 ```
+
+> ⚠️ Redis OM Spring versions greater than `v0.9.7` made OPTIONAL the addition
+of the [**Spring Milestone Repository**](https://repo.spring.io/milestone) to account
+for the recent integration with the [**Spring AI**](https://docs.spring.io/spring-ai/reference/) project. When Spring AI `v1.0.0` is
+released we will drop this requirement. If you want to opt-in for Vector Similarity Search features, you need to manually add the dependencies below. Check the VSS demo for 
+for a full example.
+
+```xml
+  <!-- Spring AI and DJL dependencies are optional and must be manually added in order to benefit from VSS features -->
+  <!-- Spring AI begin -->
+<dependencies>
+  <dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-openai</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>jakarta.websocket</groupId>
+    <artifactId>jakarta.websocket-api</artifactId>
+    <version>2.1.1</version>
+  </dependency>
+  <dependency>
+    <groupId>jakarta.websocket</groupId>
+    <artifactId>jakarta.websocket-client-api</artifactId>
+    <version>2.1.1</version>
+  </dependency>
+  <dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-ollama</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-azure-openai</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-vertex-ai-palm2</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-bedrock</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-transformers</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-mistral-ai</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-minimax</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-zhipuai</artifactId>
+  </dependency>
+  <!-- Spring AI end -->
+  <!-- DJL Dependencies -->
+  <dependency>
+    <groupId>ai.djl.spring</groupId>
+    <artifactId>djl-spring-boot-starter-autoconfigure</artifactId>
+    <version>${djl.starter.version}</version>
+  </dependency>
+  <dependency>
+    <groupId>ai.djl.spring</groupId>
+    <artifactId>djl-spring-boot-starter-pytorch-auto</artifactId>
+    <version>${djl.starter.version}</version>
+  </dependency>
+  <dependency>
+    <groupId>ai.djl.huggingface</groupId>
+    <artifactId>tokenizers</artifactId>
+    <version>${djl.version}</version>
+  </dependency>
+</dependencies>
+```
+
+
 
 #### Explicitly configuring OM as an annotation processor
 
