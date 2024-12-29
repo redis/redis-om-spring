@@ -274,7 +274,7 @@ public class RedisModulesConfiguration {
     registrar.registerReferencesFor(RedisHash.class);
   }
 
-  @ConditionalOnProperty(name = "redis.om.spring.ai.djl.enabled", havingValue = "false", matchIfMissing = true)
+  @ConditionalOnProperty(name = "redis.om.spring.ai.enabled", havingValue = "false", matchIfMissing = true)
   @Bean(name = "featureExtractor")
   public Embedder featureExtractor() {
     return new NoopEmbedder();

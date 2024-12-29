@@ -5,11 +5,12 @@ import org.springframework.ai.openai.api.OpenAiApi.EmbeddingModel;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConditionalOnProperty(name = "redis.om.spring.ai.djl.enabled")
+@ConditionalOnProperty(name = "redis.om.spring.ai.enabled")
 @ConfigurationProperties(
     prefix = "redis.om.spring.ai", ignoreInvalidFields = true
 )
 public class RedisOMAiProperties {
+  private boolean enabled = false;
   private final Djl djl = new Djl();
   private final OpenAi openAi = new OpenAi();
   private final AzureOpenAi azureOpenAi = new AzureOpenAi();
@@ -17,6 +18,14 @@ public class RedisOMAiProperties {
   private final BedrockCohere bedrockCohere = new BedrockCohere();
   private final BedrockTitan bedrockTitan = new BedrockTitan();
   private final Ollama ollama = new Ollama();
+
+  public boolean isEnabled() {
+    return this.enabled;
+  }
+
+  public void setEnabled(boolean enabled) {
+    this.enabled = enabled;
+  }
 
   public Djl getDjl() {
     return djl;
@@ -49,7 +58,6 @@ public class RedisOMAiProperties {
   // DJL properties
   public static class Djl {
     private static final String DEFAULT_ENGINE = "PyTorch";
-    private boolean enabled = false;
     // image embedding settings
     @NotNull
     private String imageEmbeddingModelEngine = DEFAULT_ENGINE;
@@ -84,14 +92,6 @@ public class RedisOMAiProperties {
     private String faceEmbeddingModelModelUrls = "https://resources.djl.ai/test-models/pytorch/face_feature.zip";
 
     public Djl() {
-    }
-
-    public boolean isEnabled() {
-      return this.enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-      this.enabled = enabled;
     }
 
     public @NotNull String getImageEmbeddingModelEngine() {
@@ -207,7 +207,7 @@ public class RedisOMAiProperties {
     }
 
     public String toString() {
-      return "RedisOMSpringProperties.Djl(enabled=" + this.isEnabled() + ", imageEmbeddingModelEngine=" + this.getImageEmbeddingModelEngine() + ", imageEmbeddingModelModelUrls=" + this.getImageEmbeddingModelModelUrls() + ", defaultImagePipelineResizeWidth=" + this.getDefaultImagePipelineResizeWidth() + ", defaultImagePipelineResizeHeight=" + this.getDefaultImagePipelineResizeHeight() + ", defaultImagePipelineCenterCrop=" + this.isDefaultImagePipelineCenterCrop() + ", sentenceTokenizerMaxLength=" + this.getSentenceTokenizerMaxLength() + ", sentenceTokenizerModelMaxLength=" + this.getSentenceTokenizerModelMaxLength() + ", sentenceTokenizerModel=" + this.getSentenceTokenizerModel() + ", faceDetectionModelEngine=" + this.getFaceDetectionModelEngine() + ", faceDetectionModelName=" + this.getFaceDetectionModelName() + ", faceDetectionModelModelUrls=" + this.getFaceDetectionModelModelUrls() + ", faceEmbeddingModelEngine=" + this.getFaceEmbeddingModelEngine() + ", faceEmbeddingModelName=" + this.getFaceEmbeddingModelName() + ", faceEmbeddingModelModelUrls=" + this.getFaceEmbeddingModelModelUrls() + ")";
+      return "RedisOMSpringProperties.Ai.Djl(imageEmbeddingModelEngine=" + this.getImageEmbeddingModelEngine() + ", imageEmbeddingModelModelUrls=" + this.getImageEmbeddingModelModelUrls() + ", defaultImagePipelineResizeWidth=" + this.getDefaultImagePipelineResizeWidth() + ", defaultImagePipelineResizeHeight=" + this.getDefaultImagePipelineResizeHeight() + ", defaultImagePipelineCenterCrop=" + this.isDefaultImagePipelineCenterCrop() + ", sentenceTokenizerMaxLength=" + this.getSentenceTokenizerMaxLength() + ", sentenceTokenizerModelMaxLength=" + this.getSentenceTokenizerModelMaxLength() + ", sentenceTokenizerModel=" + this.getSentenceTokenizerModel() + ", faceDetectionModelEngine=" + this.getFaceDetectionModelEngine() + ", faceDetectionModelName=" + this.getFaceDetectionModelName() + ", faceDetectionModelModelUrls=" + this.getFaceDetectionModelModelUrls() + ", faceEmbeddingModelEngine=" + this.getFaceEmbeddingModelEngine() + ", faceEmbeddingModelName=" + this.getFaceEmbeddingModelName() + ", faceEmbeddingModelModelUrls=" + this.getFaceEmbeddingModelModelUrls() + ")";
     }
   }
 

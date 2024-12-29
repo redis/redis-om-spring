@@ -57,7 +57,7 @@ import java.net.InetAddress;
 import java.time.*;
 import java.util.Map;
 
-@ConditionalOnProperty(name = "redis.om.spring.ai.djl.enabled")
+@ConditionalOnProperty(name = "redis.om.spring.ai.enabled")
 @Configuration
 @EnableConfigurationProperties({ RedisOMAiProperties.class })
 public class RedisAiConfiguration {
@@ -71,10 +71,10 @@ public class RedisAiConfiguration {
 
   @Bean(name = "djlImageEmbeddingModelCriteria")
   public Criteria<Image, byte[]> imageEmbeddingModelCriteria(RedisOMAiProperties properties) {
-    return properties.getDjl().isEnabled() ? Criteria.builder().setTypes(Image.class, byte[].class) //
+    return Criteria.builder().setTypes(Image.class, byte[].class) //
         .optEngine(properties.getDjl().getImageEmbeddingModelEngine())  //
         .optModelUrls(properties.getDjl().getImageEmbeddingModelModelUrls()) //
-        .build() : null;
+        .build();
   }
 
   @Bean(name = "djlFaceDetectionTranslator")
@@ -93,20 +93,19 @@ public class RedisAiConfiguration {
       @Qualifier("djlFaceDetectionTranslator") Translator<Image, DetectedObjects> translator, //
       RedisOMAiProperties properties) {
 
-    return properties.getDjl().isEnabled() ? Criteria.builder().setTypes(Image.class, DetectedObjects.class) //
+    return Criteria.builder().setTypes(Image.class, DetectedObjects.class) //
         .optModelUrls(properties.getDjl().getFaceDetectionModelModelUrls()) //
         .optModelName(properties.getDjl().getFaceDetectionModelName()) //
         .optTranslator(translator) //
         .optEngine(properties.getDjl().getFaceDetectionModelEngine()) //
-        .build() : null;
+        .build();
   }
 
   @Bean(name = "djlFaceDetectionModel")
   public ZooModel<Image, DetectedObjects> faceDetectionModel(
-      @Nullable @Qualifier("djlFaceDetectionModelCriteria") Criteria<Image, DetectedObjects> criteria,
-      RedisOMAiProperties properties) {
+      @Nullable @Qualifier("djlFaceDetectionModelCriteria") Criteria<Image, DetectedObjects> criteria) {
     try {
-      return properties.getDjl().isEnabled() && (criteria != null) ? ModelZoo.loadModel(criteria) : null;
+      return criteria != null ? ModelZoo.loadModel(criteria) : null;
     } catch (IOException | ModelNotFoundException | MalformedModelException ex) {
       logger.warn("Error retrieving default DJL face detection model", ex);
       return null;
@@ -123,20 +122,19 @@ public class RedisAiConfiguration {
       @Qualifier("djlFaceEmbeddingTranslator") Translator<Image, float[]> translator, //
       RedisOMAiProperties properties) {
 
-    return properties.getDjl().isEnabled() ? Criteria.builder() //
+    return Criteria.builder() //
         .setTypes(Image.class, float[].class).optModelUrls(properties.getDjl().getFaceEmbeddingModelModelUrls()) //
         .optModelName(properties.getDjl().getFaceEmbeddingModelName()) //
         .optTranslator(translator) //
         .optEngine(properties.getDjl().getFaceEmbeddingModelEngine()) //
-        .build() : null;
+        .build();
   }
 
   @Bean(name = "djlFaceEmbeddingModel")
   public ZooModel<Image, float[]> faceEmbeddingModel(
-      @Nullable @Qualifier("djlFaceEmbeddingModelCriteria") Criteria<Image, float[]> criteria, //
-      RedisOMAiProperties properties) {
+      @Nullable @Qualifier("djlFaceEmbeddingModelCriteria") Criteria<Image, float[]> criteria) {
     try {
-      return properties.getDjl().isEnabled() && (criteria != null) ? ModelZoo.loadModel(criteria) : null;
+      return criteria != null ? ModelZoo.loadModel(criteria) : null;
     } catch (Exception e) {
       logger.warn("Error retrieving default DJL face embeddings model", e);
       return null;
@@ -145,46 +143,39 @@ public class RedisAiConfiguration {
 
   @Bean(name = "djlImageEmbeddingModel")
   public ZooModel<Image, byte[]> imageModel(
-      @Nullable @Qualifier("djlImageEmbeddingModelCriteria") Criteria<Image, byte[]> criteria,
-      RedisOMAiProperties properties) throws MalformedModelException, ModelNotFoundException, IOException {
-    return properties.getDjl().isEnabled() && (criteria != null) ? ModelZoo.loadModel(criteria) : null;
+      @Nullable @Qualifier("djlImageEmbeddingModelCriteria") Criteria<Image, byte[]> criteria) throws MalformedModelException, ModelNotFoundException, IOException {
+    return criteria != null ? ModelZoo.loadModel(criteria) : null;
   }
 
   @Bean(name = "djlDefaultImagePipeline")
   public Pipeline defaultImagePipeline(RedisOMAiProperties properties) {
-    if (properties.getDjl().isEnabled()) {
-      Pipeline pipeline = new Pipeline();
-      if (properties.getDjl().isDefaultImagePipelineCenterCrop()) {
-        pipeline.add(new CenterCrop());
-      }
-      return pipeline //
-          .add(new Resize( //
-              properties.getDjl().getDefaultImagePipelineResizeWidth(), //
-              properties.getDjl().getDefaultImagePipelineResizeHeight() //
-          )) //
-          .add(new ToTensor());
-    } else
-      return null;
+    Pipeline pipeline = new Pipeline();
+    if (properties.getDjl().isDefaultImagePipelineCenterCrop()) {
+      pipeline.add(new CenterCrop());
+    }
+    return pipeline //
+            .add(new Resize( //
+                    properties.getDjl().getDefaultImagePipelineResizeWidth(), //
+                    properties.getDjl().getDefaultImagePipelineResizeHeight() //
+            )) //
+            .add(new ToTensor());
   }
 
   @Bean(name = "djlSentenceTokenizer")
   public HuggingFaceTokenizer sentenceTokenizer(RedisOMAiProperties properties) {
-    if (properties.getDjl().isEnabled()) {
-      Map<String, String> options = Map.of( //
-          "maxLength", properties.getDjl().getSentenceTokenizerMaxLength(), //
-          "modelMaxLength", properties.getDjl().getSentenceTokenizerModelMaxLength() //
-      );
+    Map<String, String> options = Map.of( //
+            "maxLength", properties.getDjl().getSentenceTokenizerMaxLength(), //
+            "modelMaxLength", properties.getDjl().getSentenceTokenizerModelMaxLength() //
+    );
 
-      try {
-        //noinspection ResultOfMethodCallIgnored
-        InetAddress.getByName("www.huggingface.co").isReachable(5000);
-        return HuggingFaceTokenizer.newInstance(properties.getDjl().getSentenceTokenizerModel(), options);
-      } catch (IOException ioe) {
-        logger.warn("Error retrieving default DJL sentence tokenizer");
-        return null;
-      }
-    } else
+    try {
+      //noinspection ResultOfMethodCallIgnored
+      InetAddress.getByName("www.huggingface.co").isReachable(5000);
+      return HuggingFaceTokenizer.newInstance(properties.getDjl().getSentenceTokenizerModel(), options);
+    } catch (IOException ioe) {
+      logger.warn("Error retrieving default DJL sentence tokenizer");
       return null;
+    }
   }
 
   @ConditionalOnMissingBean

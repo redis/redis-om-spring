@@ -2,5 +2,4 @@ redis:
   om:
     spring:
       ai:
-        djl:
-          enabled: true
+        \enabled: true
