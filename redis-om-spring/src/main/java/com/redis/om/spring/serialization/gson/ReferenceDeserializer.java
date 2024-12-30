@@ -110,7 +110,7 @@ public class ReferenceDeserializer implements JsonDeserializer<Object> {
     return reference;
   }
 
-  public Collection<?> instantiateCollection(Type type) {
+  private Collection<?> instantiateCollection(Type type) {
     Class<?> rawType = (Class<?>) ((ParameterizedType) type).getRawType();
     if (rawType.isInterface()) {
       if (List.class.isAssignableFrom(rawType)) {
