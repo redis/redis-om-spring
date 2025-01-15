@@ -2,6 +2,7 @@ package com.redis.om.spring.repository.support;
 
 import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.indexing.RediSearchIndexer;
+import com.redis.om.spring.mapping.RedisEnhancedMappingContext;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.query.RedisEnhancedQuery;
 import com.redis.om.spring.vectorize.Embedder;
@@ -11,9 +12,11 @@ import org.springframework.data.keyvalue.repository.query.KeyValuePartTreeQuery;
 import org.springframework.data.keyvalue.repository.query.SpelQueryCreator;
 import org.springframework.data.keyvalue.repository.support.KeyValueRepositoryFactory;
 import org.springframework.data.mapping.PersistentEntity;
-import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.redis.core.RedisOperations;
+import org.springframework.data.redis.core.convert.KeyspaceConfiguration;
+import org.springframework.data.redis.core.convert.MappingConfiguration;
+import org.springframework.data.redis.core.index.IndexConfiguration;
 import org.springframework.data.repository.core.EntityInformation;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.RepositoryInformation;
@@ -42,11 +45,11 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
   private final RedisOperations<?, ?> redisOperations;
   private final RedisModulesOperations<?> rmo;
   private final RediSearchIndexer indexer;
-  private final MappingContext<?, ?> context;
   private final Class<? extends AbstractQueryCreator<?, ?>> queryCreator;
   private final Class<? extends RepositoryQuery> repositoryQueryType;
   private final Embedder embedder;
   private final RedisOMProperties properties;
+  private final RedisEnhancedMappingContext enhancedContext;
 
   /**
    * Creates a new {@link KeyValueRepositoryFactory} for the given
@@ -135,11 +138,13 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
     this.redisOperations = redisOperations;
     this.rmo = rmo;
     this.indexer = indexer;
-    this.context = keyValueOperations.getMappingContext();
     this.queryCreator = queryCreator;
     this.repositoryQueryType = repositoryQueryType;
     this.embedder = embedder;
     this.properties = properties;
+    MappingConfiguration mappingConfiguration = new MappingConfiguration(new IndexConfiguration(),
+        new KeyspaceConfiguration());
+    this.enhancedContext = new RedisEnhancedMappingContext(mappingConfiguration);
   }
 
   /* (non-Javadoc)
@@ -150,9 +155,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
   @Override
   @SuppressWarnings("unchecked")
   public <T, ID> EntityInformation<T, ID> getEntityInformation(Class<T> domainClass) {
-
-    PersistentEntity<T, ?> entity = (PersistentEntity<T, ?>) context.getRequiredPersistentEntity(domainClass);
-
+    PersistentEntity<T, ?> entity = (PersistentEntity<T, ?>) enhancedContext.getRequiredPersistentEntity(domainClass);
     return new PersistentEntityInformation<>(entity);
   }
 

@@ -11,12 +11,14 @@ import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.repository.query.KeyValuePartTreeQuery;
 import org.springframework.data.keyvalue.repository.query.SpelQueryCreator;
 import org.springframework.data.keyvalue.repository.support.KeyValueRepositoryFactory;
+import org.springframework.data.mapping.PersistentEntity;
 import org.springframework.data.projection.ProjectionFactory;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.repository.core.EntityInformation;
 import org.springframework.data.repository.core.NamedQueries;
 import org.springframework.data.repository.core.RepositoryInformation;
 import org.springframework.data.repository.core.RepositoryMetadata;
+import org.springframework.data.repository.core.support.PersistentEntityInformation;
 import org.springframework.data.repository.query.QueryLookupStrategy;
 import org.springframework.data.repository.query.QueryLookupStrategy.Key;
 import org.springframework.data.repository.query.QueryMethod;
@@ -157,6 +159,18 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
     this.gsonBuilder = gsonBuilder;
     this.embedder = embedder;
     this.properties = properties;
+  }
+
+  /* (non-Javadoc)
+   *
+   * @see
+   * org.springframework.data.repository.core.support.RepositoryFactorySupport#
+   * getEntityInformation(java.lang.Class) */
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T, ID> EntityInformation<T, ID> getEntityInformation(Class<T> domainClass) {
+    PersistentEntity<T, ?> entity = (PersistentEntity<T, ?>) mappingContext.getRequiredPersistentEntity(domainClass);
+    return new PersistentEntityInformation<>(entity);
   }
 
   @Override

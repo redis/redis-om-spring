@@ -5,9 +5,15 @@ import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.convert.RedisOMCustomConversions;
 import com.redis.om.spring.id.IdentifierFilter;
 import com.redis.om.spring.indexing.RediSearchIndexer;
+import com.redis.om.spring.mapping.RedisEnhancedMappingContext;
+import com.redis.om.spring.mapping.RedisEnhancedPersistentEntity;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.vectorize.Embedder;
+import jakarta.persistence.IdClass;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.BeanWrapper;
 import org.springframework.data.convert.CustomConversions;
 import org.springframework.data.mapping.PersistentPropertyAccessor;
 import org.springframework.data.redis.connection.RedisConnection;
@@ -22,11 +28,11 @@ import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.redis.core.mapping.RedisPersistentEntity;
 import org.springframework.data.redis.core.mapping.RedisPersistentProperty;
+import org.springframework.data.util.DirectFieldAccessFallbackBeanWrapper;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
-import redis.clients.jedis.commands.KeyCommands;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 
@@ -38,6 +44,7 @@ import static com.redis.om.spring.util.ObjectUtils.*;
 
 public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
+  private static final Log logger = LogFactory.getLog(RedisEnhancedKeyValueAdapter.class);
   private final RedisOperations<?, ?> redisOperations;
   private final RedisConverter converter;
   private final RedisModulesOperations<String> modulesOperations;
@@ -60,7 +67,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       RediSearchIndexer indexer, //
       Embedder embedder, //
       RedisOMProperties redisOMProperties) {
-    this(redisOps, rmo, new RedisMappingContext(), indexer, embedder, redisOMProperties);
+    this(redisOps, rmo, new RedisEnhancedMappingContext(), indexer, embedder, redisOMProperties);
   }
 
   /**
@@ -137,20 +144,14 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     if (item instanceof RedisData redisData) {
       rdo = redisData;
     } else {
-      String idAsString = converter.getConversionService().convert(id, String.class);
-      if (idAsString == null) {
-        idAsString = id.toString();
-      }
+      String idAsString = validateKeyForWriting(id, item);
       byte[] redisKey = createKey(sanitizeKeyspace(keyspace), idAsString);
       auditor.processEntity(redisKey, item);
       embedder.processEntity(item);
 
       rdo = new RedisData();
       converter.write(item, rdo);
-    }
-
-    if (rdo.getId() == null) {
-      rdo.setId(converter.getConversionService().convert(id, String.class));
+      rdo.setId(idAsString);
     }
 
     redisOperations.executePipelined((RedisCallback<Object>) connection -> {
@@ -181,7 +182,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   public <T> T get(Object id, String keyspace, Class<T> type) {
 
     String stringId = asStringValue(id);
-    String stringKeyspace = sanitizeKeyspace(asStringValue(keyspace));
+    String stringKeyspace = sanitizeKeyspace(keyspace);
 
     byte[] binId = createKey(stringKeyspace, stringId);
 
@@ -291,11 +292,14 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public <T> T delete(Object id, String keyspace, Class<T> type) {
-    T o = get(id, keyspace, type);
+    String stringId = asStringValue(id);
+    String stringKeyspace = sanitizeKeyspace(keyspace);
+
+    T o = get(stringId, stringKeyspace, type);
 
     if (o != null) {
 
-      byte[] keyToDelete = createKey(sanitizeKeyspace(asStringValue(keyspace)), asStringValue(id));
+      byte[] keyToDelete = createKey(stringKeyspace, stringId);
 
       redisOperations.execute((RedisCallback<Void>) connection -> {
         connection.keyCommands().unlink(keyToDelete);
@@ -334,8 +338,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public boolean contains(Object id, String keyspace) {
-    Boolean exists = redisOperations.execute(
-        (RedisCallback<Boolean>) connection -> connection.keyCommands().exists(toBytes(getKey(keyspace, id))));
+    Boolean exists = redisOperations.execute((RedisCallback<Boolean>) connection -> connection.keyCommands()
+        .exists(toBytes(getKey(keyspace, asStringValue(id)))));
 
     return exists != null && exists;
   }
@@ -348,8 +352,9 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
     String keyspace = sanitizeKeyspace(entity.getKeySpace());
     Object id = update.getId();
+    String stringId = asStringValue(id);
 
-    byte[] redisKey = createKey(keyspace, converter.getConversionService().convert(id, String.class));
+    byte[] redisKey = createKey(keyspace, stringId);
 
     RedisData rdo = new RedisData();
     this.converter.write(update, rdo);
@@ -423,10 +428,59 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   private String asStringValue(Object value) {
     if (value instanceof String valueAsString) {
       return valueAsString;
+    }
+
+    // For composite IDs used in @IdClass
+    if (value != null) {
+      // Get all persistent entities
+      for (RedisPersistentEntity<?> entity : converter.getMappingContext().getPersistentEntities()) {
+        // Find the entity that uses this ID class
+        IdClass idClassAnn = entity.getType().getAnnotation(IdClass.class);
+        if (idClassAnn != null && idClassAnn.value().equals(value.getClass())) {
+          // Found the entity that uses this ID class
+          BeanWrapper wrapper = new DirectFieldAccessFallbackBeanWrapper(value);
+          RedisEnhancedPersistentEntity<?> enhancedEntity = (RedisEnhancedPersistentEntity<?>) entity;
+
+          // Build composite key from ID properties in order
+          List<String> idParts = new ArrayList<>();
+          for (RedisPersistentProperty idProperty : enhancedEntity.getIdProperties()) {
+            Object propertyValue = wrapper.getPropertyValue(idProperty.getName());
+            if (propertyValue != null) {
+              idParts.add(propertyValue.toString());
+            }
+          }
+          return String.join(":", idParts);
+        }
+      }
+    }
+
+    return getConverter().getConversionService().convert(value, String.class);
+  }
+
+  private String validateKeyForWriting(Object id, Object item) {
+    // Get the mapping context's entity info
+    RedisEnhancedPersistentEntity<?> entity = (RedisEnhancedPersistentEntity<?>) converter.getMappingContext()
+        .getRequiredPersistentEntity(item.getClass());
+
+    // Handle composite IDs
+    if (entity.isIdClassComposite()) {
+      BeanWrapper wrapper = new DirectFieldAccessFallbackBeanWrapper(item);
+      List<String> idParts = new ArrayList<>();
+
+      for (RedisPersistentProperty idProperty : entity.getIdProperties()) {
+        Object propertyValue = wrapper.getPropertyValue(idProperty.getName());
+        if (propertyValue != null) {
+          idParts.add(propertyValue.toString());
+        }
+      }
+
+      return String.join(":", idParts);
     } else {
-      return getConverter().getConversionService().convert(value, String.class);
+      // Regular single ID handling
+      return converter.getConversionService().convert(id, String.class);
     }
   }
+
 
   /**
    * Read back and set {@link TimeToLive} for the property.
@@ -504,7 +558,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
       IdentifierFilter<String> filter = (IdentifierFilter<String>) maybeIdentifierFilter.get();
       id = filter.filter(id);
     }
-    return toBytes(keyspace + ":" + id);
+
+    return toBytes(keyspace.endsWith(":") ? keyspace + id : keyspace + ":" + id);
   }
 
   /**

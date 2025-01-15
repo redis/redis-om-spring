@@ -2,6 +2,7 @@ package com.redis.om.spring.convert;
 
 import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.TagIndexed;
+import com.redis.om.spring.mapping.RedisEnhancedMappingContext;
 import com.redis.om.spring.repository.query.QueryUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.CollectionFactory;
@@ -89,7 +90,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
   public MappingRedisOMConverter(@Nullable RedisMappingContext mappingContext,
       @Nullable ReferenceResolver referenceResolver, @Nullable RedisTypeMapper typeMapper) {
 
-    this.mappingContext = mappingContext != null ? mappingContext : new RedisMappingContext();
+    this.mappingContext = mappingContext != null ? mappingContext : new RedisEnhancedMappingContext();
 
     this.entityInstantiators = new EntityInstantiators();
     this.conversionService = new DefaultConversionService();

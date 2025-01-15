@@ -7,6 +7,7 @@ import com.redis.om.spring.annotations.Cuckoo;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.client.RedisModulesClient;
 import com.redis.om.spring.indexing.RediSearchIndexer;
+import com.redis.om.spring.mapping.RedisEnhancedMappingContext;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.pds.BloomOperations;
@@ -63,10 +64,10 @@ public class RedisModulesConfiguration {
 
   private static final Log logger = LogFactory.getLog(RedisModulesConfiguration.class);
 
-  @Bean(name = "keyValueMappingContext")
-  @ConditionalOnMissingBean
-  public RedisMappingContext redisMappingContext() {
-    return new RedisMappingContext();
+  @Bean(name = "redisEnhancedMappingContext")
+  @Primary
+  public RedisEnhancedMappingContext redisMappingContext() {
+    return new RedisEnhancedMappingContext();
   }
 
   @Bean(name = "omGsonBuilder")
@@ -147,7 +148,7 @@ public class RedisModulesConfiguration {
   RedisJSONKeyValueAdapter getRedisJSONKeyValueAdapter( //
       RedisOperations<?, ?> redisOps, //
       RedisModulesOperations<?> redisModulesOperations, //
-      RedisMappingContext mappingContext, //
+      @Qualifier("redisEnhancedMappingContext") RedisMappingContext mappingContext, //
       RediSearchIndexer indexer, //
       @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder, //
       RedisOMProperties properties, //
@@ -160,7 +161,7 @@ public class RedisModulesConfiguration {
   public CustomRedisKeyValueTemplate getRedisJSONKeyValueTemplate( //
       RedisOperations<?, ?> redisOps, //
       RedisModulesOperations<?> redisModulesOperations, //
-      RedisMappingContext mappingContext, //
+      @Qualifier("redisEnhancedMappingContext") RedisMappingContext mappingContext, //
       RediSearchIndexer indexer, //
       @Qualifier("omGsonBuilder") GsonBuilder gsonBuilder, //
       RedisOMProperties properties, //
@@ -174,7 +175,7 @@ public class RedisModulesConfiguration {
   public CustomRedisKeyValueTemplate getKeyValueTemplate( //
       RedisOperations<?, ?> redisOps, //
       RedisModulesOperations<?> redisModulesOperations, //
-      RedisMappingContext mappingContext, //
+      @Qualifier("redisEnhancedMappingContext") RedisMappingContext mappingContext, //
       RediSearchIndexer indexer, //
       RedisOMProperties properties, //
       @Nullable @Qualifier("featureExtractor") Embedder embedder) {
