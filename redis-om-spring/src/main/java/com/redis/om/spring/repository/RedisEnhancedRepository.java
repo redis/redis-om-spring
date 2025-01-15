@@ -39,4 +39,8 @@ public interface RedisEnhancedRepository<T, ID> extends KeyValueRepository<T, ID
   <S extends T> S update(Example<S> example);
 
   <S extends T> void updateAll(Iterable<Example<S>> examples);
+
+  // Key utilities
+
+  String getKeyFor(T entity);
 }

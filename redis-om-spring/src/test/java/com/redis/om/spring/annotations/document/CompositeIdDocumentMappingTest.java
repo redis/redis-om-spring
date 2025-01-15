@@ -138,4 +138,18 @@ class CompositeIdDocumentMappingTest extends AbstractBaseDocumentTest {
     assertFalse(accountRepository.existsById(id1));
     assertFalse(accountRepository.existsById(id2));
   }
+
+  @Test
+  void testRepositoryGetKeyForCompositeIds() {
+    // Save multiple accounts
+    Account savings = new Account("12345", "SAVINGS", 1000.0);
+    Account checking = new Account("12345", "CHECKING", 2000.0);
+    accountRepository.saveAll(List.of(savings, checking));
+
+    String savingsKey = accountRepository.getKeyFor(savings);
+    String checkingKey = accountRepository.getKeyFor(checking);
+
+    assertThat(savingsKey).isEqualTo("daccounts:12345:SAVINGS");
+    assertThat(checkingKey).isEqualTo("daccounts:12345:CHECKING");
+  }
 }

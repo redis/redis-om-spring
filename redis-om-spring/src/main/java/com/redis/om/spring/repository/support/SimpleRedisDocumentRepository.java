@@ -596,6 +596,40 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     executePipelinedUpdates(updateOperations);
   }
 
+  @Override
+  public String getKeyFor(T entity) {
+    // Get the mapping context's entity info
+    RedisEnhancedPersistentEntity<?> persistentEntity = (RedisEnhancedPersistentEntity<?>) mappingContext.getRequiredPersistentEntity(
+        entity.getClass());
+
+    String stringId;
+
+    // Handle composite IDs
+    if (persistentEntity.isIdClassComposite()) {
+      BeanWrapper wrapper = new DirectFieldAccessFallbackBeanWrapper(entity);
+      List<String> idParts = new ArrayList<>();
+
+      for (RedisPersistentProperty idProperty : persistentEntity.getIdProperties()) {
+        Object propertyValue = wrapper.getPropertyValue(idProperty.getName());
+        if (propertyValue != null) {
+          idParts.add(propertyValue.toString());
+        }
+      }
+
+      stringId = String.join(":", idParts);
+    } else {
+      Object id = getIdFieldForEntity(entity);
+      stringId = mappingConverter.getConversionService().convert(id, String.class);
+    }
+
+    var maybeIdentifierFilter = indexer.getIdentifierFilterFor(metadata.getJavaType());
+    if (maybeIdentifierFilter.isPresent()) {
+      IdentifierFilter<String> filter = (IdentifierFilter<String>) maybeIdentifierFilter.get();
+      stringId = filter.filter(stringId);
+    }
+    return getKeyspace() + stringId;
+  }
+
   private JSONOperations<String> getJSONOperations() {
     return modulesOperations.opsForJSON();
   }

@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
+import static com.redis.om.spring.util.ObjectUtils.getKey;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -741,5 +742,21 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
     assertAll( //
         () -> assertThat(withFreeTextLast).containsExactly(microsoft2),
         () -> assertThat(withFreeTextFirst).containsExactly(microsoft2));
+  }
+
+  @Test
+  void testRepositoryGetKeyFor() {
+    Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "stack@redis.com");
+
+    Company microsoft = Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
+        "research@microsoft.com");
+
+    companyRepo.saveAll(List.of(redis, microsoft));
+
+    String redisKey = companyRepo.getKeyFor(redis);
+    String microsoftKey = companyRepo.getKeyFor(microsoft);
+    assertThat(redisKey).isEqualTo(getKey(Company.class.getName(), redis.getId()));
+    assertThat(microsoftKey).isEqualTo(getKey(Company.class.getName(), microsoft.getId()));
   }
 }
