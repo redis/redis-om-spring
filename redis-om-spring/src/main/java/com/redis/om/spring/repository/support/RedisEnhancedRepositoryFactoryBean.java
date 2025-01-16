@@ -2,6 +2,7 @@ package com.redis.om.spring.repository.support;
 
 import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.indexing.RediSearchIndexer;
+import com.redis.om.spring.mapping.RedisEnhancedMappingContext;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.query.RedisEnhancedQuery;
 import com.redis.om.spring.vectorize.Embedder;
@@ -10,6 +11,9 @@ import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.repository.config.QueryCreatorType;
 import org.springframework.data.mapping.context.MappingContext;
 import org.springframework.data.redis.core.RedisOperations;
+import org.springframework.data.redis.core.convert.KeyspaceConfiguration;
+import org.springframework.data.redis.core.convert.MappingConfiguration;
+import org.springframework.data.redis.core.index.IndexConfiguration;
 import org.springframework.data.redis.repository.support.RedisRepositoryFactoryBean;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.core.support.RepositoryFactoryBeanSupport;
@@ -102,7 +106,15 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
    * MappingContext) */
   @Override
   public void setMappingContext(MappingContext<?, ?> mappingContext) {
-    super.setMappingContext(mappingContext);
+    // Create our own mapping configuration
+    MappingConfiguration mappingConfiguration = new MappingConfiguration(new IndexConfiguration(),
+        new KeyspaceConfiguration());
+
+    // Create our enhanced context
+    RedisEnhancedMappingContext enhancedContext = new RedisEnhancedMappingContext(mappingConfiguration);
+
+    // Set it to be our mapping context
+    super.setMappingContext(enhancedContext);
   }
 
   public void setKeyspaceToIndexMap(RediSearchIndexer keyspaceToIndexMap) {

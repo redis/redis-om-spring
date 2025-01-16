@@ -69,7 +69,7 @@ public class RediSearchIndexer {
     this.ac = ac;
     this.properties = properties;
     rmo = (RedisModulesOperations<String>) ac.getBean("redisModulesOperations");
-    mappingContext = (RedisMappingContext) ac.getBean("keyValueMappingContext");
+    mappingContext = (RedisMappingContext) ac.getBean("redisEnhancedMappingContext");
     this.gsonBuilder = gsonBuilder;
   }
 
@@ -133,8 +133,8 @@ public class RediSearchIndexer {
       }
 
       maybeScoreField = getDocumentScoreField(allClassFields, isDocument);
-      createIndexedFieldForIdField(cl, searchFields.stream().map(SearchField::getSchemaField).toList(),
-          isDocument).ifPresent(searchFields::add);
+      createIndexedFieldsForIdFields(cl, searchFields.stream().map(SearchField::getSchemaField).toList(),
+          isDocument).forEach(searchFields::add);
 
       SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
 
@@ -774,12 +774,11 @@ public class RediSearchIndexer {
         TextIndexed.class) && (fields.stream().noneMatch(f -> f.getName().equals(idField.getName()))));
   }
 
-  private Optional<SearchField> createIndexedFieldForIdField(Class<?> cl, List<SchemaField> fields,
+  private List<SearchField> createIndexedFieldsForIdFields(Class<?> cl, List<SchemaField> fields,
       boolean isDocument) {
-    Optional<SearchField> result = Optional.empty();
-    Optional<java.lang.reflect.Field> maybeIdField = getIdFieldForEntityClass(cl);
-    if (maybeIdField.isPresent()) {
-      java.lang.reflect.Field idField = maybeIdField.get();
+    List<SearchField> results = new ArrayList<>();
+    List<java.lang.reflect.Field> idFields = getIdFieldsForEntityClass(cl);
+    for (java.lang.reflect.Field idField : idFields) {
       // Only auto-index the @Id if not already indexed by the user (gh-135)
       if (isAnnotationPreset(idField, fields)) {
         Class<?> idClass = idField.getType();
@@ -793,30 +792,32 @@ public class RediSearchIndexer {
 
         // TODO: determine if we need to pass the alias
         if (Number.class.isAssignableFrom(idClass)) {
-          result = Optional.of(
-              SearchField.of(idField, indexAsNumericFieldFor(maybeIdField.get(), isDocument, "", true, false, null)));
+          results.add(SearchField.of(idField, indexAsNumericFieldFor(idField, isDocument, "", true, false, null)));
         } else {
-          result = Optional.of(SearchField.of(idField,
-              indexAsTagFieldFor(maybeIdField.get(), isDocument, "", false, "|", Integer.MIN_VALUE, null)));
+          results.add(SearchField.of(idField,
+              indexAsTagFieldFor(idField, isDocument, "", false, "|", Integer.MIN_VALUE, null)));
         }
       }
-
-      // register any @IdFilter annotation
-      if (idField.isAnnotationPresent(IdFilter.class)) {
-        IdFilter idFilter = idField.getAnnotation(IdFilter.class);
-        var identifierFilterClass = idFilter.value();
-        try {
-          var identifierFilter = (IdentifierFilter<?>) identifierFilterClass.getDeclaredConstructor().newInstance();
-          entityClassToIdentifierFilter.put(cl, identifierFilter);
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                 NoSuchMethodException idFilterInstantiationException) {
-          logger.error(String.format("Could not instantiate IdFilter of type %s applied to class %s",
-              identifierFilterClass.getSimpleName(), cl), idFilterInstantiationException);
-        }
-      }
-
     }
-    return result;
+
+    java.lang.reflect.Field idField = (!idFields.isEmpty()) ? idFields.get(0) : null;
+
+    // register any @IdFilter annotation
+    // TODO If multiple IDs which one does the IdFilter applies to? - for now the first
+    if (idField != null && idField.isAnnotationPresent(IdFilter.class)) {
+      IdFilter idFilter = idField.getAnnotation(IdFilter.class);
+      var identifierFilterClass = idFilter.value();
+      try {
+        var identifierFilter = (IdentifierFilter<?>) identifierFilterClass.getDeclaredConstructor().newInstance();
+        entityClassToIdentifierFilter.put(cl, identifierFilter);
+      } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+               NoSuchMethodException idFilterInstantiationException) {
+        logger.error(String.format("Could not instantiate IdFilter of type %s applied to class %s",
+            identifierFilterClass.getSimpleName(), cl), idFilterInstantiationException);
+      }
+    }
+
+    return results;
   }
 
   private Optional<SearchField> createIndexedFieldForReferenceIdField( //

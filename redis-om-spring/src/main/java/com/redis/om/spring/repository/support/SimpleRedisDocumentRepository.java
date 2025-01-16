@@ -11,6 +11,7 @@ import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.id.IdentifierFilter;
 import com.redis.om.spring.id.ULIDIdentifierGenerator;
 import com.redis.om.spring.indexing.RediSearchIndexer;
+import com.redis.om.spring.mapping.RedisEnhancedPersistentEntity;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.MetamodelUtils;
 import com.redis.om.spring.ops.RedisModulesOperations;
@@ -24,6 +25,7 @@ import com.redis.om.spring.search.stream.SearchStream;
 import com.redis.om.spring.serialization.gson.GsonListOfType;
 import com.redis.om.spring.util.ObjectUtils;
 import com.redis.om.spring.vectorize.Embedder;
+import jakarta.persistence.IdClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanWrapper;
@@ -46,8 +48,11 @@ import org.springframework.data.redis.core.convert.KeyspaceConfiguration;
 import org.springframework.data.redis.core.convert.RedisData;
 import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
+import org.springframework.data.redis.core.mapping.RedisPersistentEntity;
+import org.springframework.data.redis.core.mapping.RedisPersistentProperty;
 import org.springframework.data.repository.core.EntityInformation;
 import org.springframework.data.repository.query.FluentQuery.FetchableFluentQuery;
+import org.springframework.data.util.DirectFieldAccessFallbackBeanWrapper;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
@@ -67,7 +72,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -196,10 +200,12 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
                 .getProperty(Objects.requireNonNull(keyValueEntity.getIdProperty()));
         keyValueEntity.getPropertyAccessor(entity).setProperty(keyValueEntity.getIdProperty(), id);
 
-        entityIds.add(id);
+        String idAsString = validateKeyForWriting(id, entity);
+
+        entityIds.add(idAsString);
 
         String keyspace = keyValueEntity.getKeySpace();
-        byte[] objectKey = createKey(keyspace, Objects.requireNonNull(id).toString());
+        byte[] objectKey = createKey(keyspace, idAsString);
 
         // process entity pre-save mutation
         auditor.processEntity(entity, isNew);
@@ -209,6 +215,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
         RedisData rdo = new RedisData();
         mappingConverter.write(entity, rdo);
+        rdo.setId(idAsString);
 
         List<byte[]> args = new ArrayList<>(4);
         args.add(objectKey);
@@ -279,12 +286,13 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   }
 
   private String getKey(Object id) {
+    String stringId = asStringValue(id);
     var maybeIdentifierFilter = indexer.getIdentifierFilterFor(metadata.getJavaType());
     if (maybeIdentifierFilter.isPresent()) {
       IdentifierFilter<String> filter = (IdentifierFilter<String>) maybeIdentifierFilter.get();
-      id = filter.filter(id.toString());
+      stringId = filter.filter(stringId);
     }
-    return getKeyspace() + id.toString();
+    return getKeyspace() + stringId;
   }
 
   public byte[] createKey(String keyspace, String id) {
@@ -588,6 +596,40 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     executePipelinedUpdates(updateOperations);
   }
 
+  @Override
+  public String getKeyFor(T entity) {
+    // Get the mapping context's entity info
+    RedisEnhancedPersistentEntity<?> persistentEntity = (RedisEnhancedPersistentEntity<?>) mappingContext.getRequiredPersistentEntity(
+        entity.getClass());
+
+    String stringId;
+
+    // Handle composite IDs
+    if (persistentEntity.isIdClassComposite()) {
+      BeanWrapper wrapper = new DirectFieldAccessFallbackBeanWrapper(entity);
+      List<String> idParts = new ArrayList<>();
+
+      for (RedisPersistentProperty idProperty : persistentEntity.getIdProperties()) {
+        Object propertyValue = wrapper.getPropertyValue(idProperty.getName());
+        if (propertyValue != null) {
+          idParts.add(propertyValue.toString());
+        }
+      }
+
+      stringId = String.join(":", idParts);
+    } else {
+      Object id = getIdFieldForEntity(entity);
+      stringId = mappingConverter.getConversionService().convert(id, String.class);
+    }
+
+    var maybeIdentifierFilter = indexer.getIdentifierFilterFor(metadata.getJavaType());
+    if (maybeIdentifierFilter.isPresent()) {
+      IdentifierFilter<String> filter = (IdentifierFilter<String>) maybeIdentifierFilter.get();
+      stringId = filter.filter(stringId);
+    }
+    return getKeyspace() + stringId;
+  }
+
   private JSONOperations<String> getJSONOperations() {
     return modulesOperations.opsForJSON();
   }
@@ -614,6 +656,58 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     String keyspace = indexer.getKeyspaceForEntityClass(metadata.getJavaType());
     String searchIndex = indexer.getIndexName(keyspace);
     return modulesOperations.opsForSearch(searchIndex);
+  }
+
+  private String validateKeyForWriting(Object id, Object item) {
+    // Get the mapping context's entity info
+    RedisEnhancedPersistentEntity<?> entity = (RedisEnhancedPersistentEntity<?>) mappingContext.getRequiredPersistentEntity(
+        item.getClass());
+
+    // Handle composite IDs
+    if (entity.isIdClassComposite()) {
+      BeanWrapper wrapper = new DirectFieldAccessFallbackBeanWrapper(item);
+      List<String> idParts = new ArrayList<>();
+
+      for (RedisPersistentProperty idProperty : entity.getIdProperties()) {
+        Object propertyValue = wrapper.getPropertyValue(idProperty.getName());
+        if (propertyValue != null) {
+          idParts.add(propertyValue.toString());
+        }
+      }
+
+      return String.join(":", idParts);
+    } else {
+      // Regular single ID handling
+      return mappingConverter.getConversionService().convert(id, String.class);
+    }
+  }
+
+  private String asStringValue(Object value) {
+    // For composite IDs used in @IdClass
+    if (value != null) {
+      // Get all persistent entities
+      for (RedisPersistentEntity<?> entity : mappingContext.getPersistentEntities()) {
+        // Find the entity that uses this ID class
+        IdClass idClassAnn = entity.getType().getAnnotation(IdClass.class);
+        if (idClassAnn != null && idClassAnn.value().equals(value.getClass())) {
+          // Found the entity that uses this ID class
+          BeanWrapper wrapper = new DirectFieldAccessFallbackBeanWrapper(value);
+          RedisEnhancedPersistentEntity<?> enhancedEntity = (RedisEnhancedPersistentEntity<?>) entity;
+
+          // Build composite key from ID properties in order
+          List<String> idParts = new ArrayList<>();
+          for (RedisPersistentProperty idProperty : enhancedEntity.getIdProperties()) {
+            Object propertyValue = wrapper.getPropertyValue(idProperty.getName());
+            if (propertyValue != null) {
+              idParts.add(propertyValue.toString());
+            }
+          }
+          return String.join(":", idParts);
+        }
+      }
+    }
+
+    return mappingConverter.getConversionService().convert(value, String.class);
   }
 
 }

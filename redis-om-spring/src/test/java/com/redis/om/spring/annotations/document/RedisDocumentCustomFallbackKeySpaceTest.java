@@ -13,11 +13,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
@@ -42,8 +42,10 @@ class RedisDocumentCustomFallbackKeySpaceTest extends AbstractBaseOMTest {
 
   @Autowired
   MyDocRepository myDocRepository;
+
   @Autowired
   RedisTemplate<String, String> template;
+
   @Autowired
   RedisModulesOperations<String> modulesOperations;
   String myDoc1Id;
@@ -129,10 +131,12 @@ class RedisDocumentCustomFallbackKeySpaceTest extends AbstractBaseOMTest {
           "com.redis.om.spring.fixtures.document.repository" }
   )
   static class Config extends TestConfig {
+    @Autowired
+    @Qualifier("redisEnhancedMappingContext")
+    RedisMappingContext mappingContext;
+
     @Bean
-    @Primary
     public RedisMappingContext keyValueMappingContext() {
-      RedisMappingContext mappingContext = new RedisMappingContext();
       mappingContext.setKeySpaceResolver(type -> "CUSTOM_KEYSPACE" + ":" + type.getSimpleName());
       return mappingContext;
     }

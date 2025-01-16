@@ -154,6 +154,10 @@ public class ObjectUtils {
     return getDeclaredFieldsTransitively(cl).stream().filter(f -> f.isAnnotationPresent(Id.class)).findFirst();
   }
 
+  public static List<Field> getIdFieldsForEntityClass(Class<?> cl) {
+    return getDeclaredFieldsTransitively(cl).stream().filter(f -> f.isAnnotationPresent(Id.class)).toList();
+  }
+
   public static Object getIdFieldForEntity(Object entity) {
     Optional<Field> maybeIdField = getIdFieldForEntityClass(entity.getClass());
     if (maybeIdField.isEmpty())

@@ -408,7 +408,7 @@ Iterable<MyDoc> allMatches = repository.findAll(example);
   <version>${version}</version>
 </dependency>
 ```
-> Check below if using Redis OM Spring version greater than `0.9.7`
+> Check below if using Redis OM Spring version greater than `0.9.8-SNAPSHOT`
 > ⚠️ Redis OM Spring versions greater than `v0.9.1` require the addition
 of the [**Spring Milestone Repository**](https://repo.spring.io/milestone) to account
 for the recent integration with the [**Spring AI**](https://docs.spring.io/spring-ai/reference/) project. When Spring AI `v1.0.0` is
@@ -430,10 +430,10 @@ repositories {
 }
 ```
 
-> ⚠️ Redis OM Spring versions greater than `v0.9.7` made OPTIONAL the addition
+> ⚠️ Redis OM Spring versions greater than `v0.9.8-SNAPSHOT` made OPTIONAL the addition
 of the [**Spring Milestone Repository**](https://repo.spring.io/milestone) to account
 for the recent integration with the [**Spring AI**](https://docs.spring.io/spring-ai/reference/) project. When Spring AI `v1.0.0` is
-released we will drop this requirement. If you want to opt-in for Vector Similarity Search features, you need to manually add the dependencies below. Check the VSS demo for 
+released we will drop this requirement. If you want to opt-in for Vector Similarity Search features, you need to manually add the dependencies below. Check the VSS demo for
 for a full example.
 
 ```xml
@@ -535,7 +535,7 @@ inherited from the parent poms):
       <path>
         <groupId>com.redis.om</groupId>
         <artifactId>redis-om-spring</artifactId>
-        <version>0.9.7</version>
+        <version>0.9.8-SNAPSHOT</version>
       </path>
     </annotationProcessorPaths>
   </configuration>
@@ -582,7 +582,7 @@ repositories {
 
 ```groovy
 ext {
-  redisOmVersion = '0.9.7'
+  redisOmVersion = '0.9.8-SNAPSHOT'
 }
 
 dependencies {

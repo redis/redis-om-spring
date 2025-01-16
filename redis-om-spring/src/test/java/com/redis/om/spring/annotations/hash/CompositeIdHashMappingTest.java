@@ -1,0 +1,134 @@
+package com.redis.om.spring.annotations.hash;
+
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.fixtures.hash.model.Account;
+import com.redis.om.spring.fixtures.hash.model.AccountId;
+import com.redis.om.spring.fixtures.hash.repository.AccountRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Example;
+
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+
+class CompositeIdHashMappingTest extends AbstractBaseEnhancedRedisTest {
+
+  @Autowired
+  private AccountRepository accountRepository;
+
+  @BeforeEach
+  void setUp() {
+    accountRepository.deleteAll();
+  }
+
+  @Test
+  void testIdClassBasicCrud() {
+    // Create account with composite key
+    Account account = new Account("12345", "SAVINGS", 1000.0);
+    accountRepository.save(account);
+
+    // Test findById using composite key
+    AccountId id = new AccountId("12345", "SAVINGS");
+    Optional<Account> found = accountRepository.findById(id);
+
+    assertTrue(found.isPresent());
+    assertEquals("12345", found.get().getAccountNumber());
+    assertEquals("SAVINGS", found.get().getAccountType());
+    assertEquals(1000.0, found.get().getBalance());
+
+    // Update
+    found.get().setBalance(2000.0);
+    Account updated = accountRepository.save(found.get());
+    assertEquals(2000.0, updated.getBalance());
+
+    // Delete
+    accountRepository.deleteById(id);
+    assertFalse(accountRepository.findById(id).isPresent());
+  }
+
+  @Test
+  void testMultipleCompositeIds() {
+    // Save multiple accounts
+    Account savings = new Account("12345", "SAVINGS", 1000.0);
+    Account checking = new Account("12345", "CHECKING", 2000.0);
+    accountRepository.saveAll(List.of(savings, checking));
+
+    // Find all accounts
+    List<Account> accounts = accountRepository.findAll();
+    assertThat(accounts).hasSize(2);
+
+    // Find by example
+    Account example = new Account();
+    example.setAccountNumber("12345");
+    example.setAccountType("SAVINGS");
+
+    Optional<Account> found = accountRepository.findOne(Example.of(example));
+    assertTrue(found.isPresent());
+    assertEquals(1000.0, found.get().getBalance());
+  }
+
+  @Test
+  void testFindAllByIdForCompositeIds() {
+    // Save multiple accounts
+    Account savings = new Account("12345", "SAVINGS", 1000.0);
+    Account checking = new Account("12345", "CHECKING", 2000.0);
+    accountRepository.saveAll(List.of(savings, checking));
+
+    AccountId id1 = new AccountId("12345", "SAVINGS");
+    AccountId id2 = new AccountId("12345", "CHECKING");
+
+    List<Account> accounts = accountRepository.findAllById(List.of(id1, id2));
+    assertThat(accounts).hasSize(2);
+    assertThat(accounts).containsExactly(savings, checking);
+  }
+
+  @Test
+  void testExistsByIdForCompositeIds() {
+    // Save multiple accounts
+    Account savings = new Account("12345", "SAVINGS", 1000.0);
+    accountRepository.save(savings);
+
+    AccountId id1 = new AccountId("12345", "SAVINGS");
+    AccountId id2 = new AccountId("12345", "CHECKING");
+
+    assertTrue(accountRepository.existsById(id1));
+    assertFalse(accountRepository.existsById(id2));
+  }
+
+  @Test
+  void testDeleteAllByIdForCompositeIds() {
+    // Save multiple accounts
+    Account savings = new Account("12345", "SAVINGS", 1000.0);
+    Account checking = new Account("12345", "CHECKING", 2000.0);
+    accountRepository.saveAll(List.of(savings, checking));
+
+    AccountId id1 = new AccountId("12345", "SAVINGS");
+    AccountId id2 = new AccountId("12345", "CHECKING");
+
+    assertTrue(accountRepository.existsById(id1));
+    assertTrue(accountRepository.existsById(id2));
+
+    accountRepository.deleteAllById(List.of(id1, id2));
+
+    assertFalse(accountRepository.existsById(id1));
+    assertFalse(accountRepository.existsById(id2));
+  }
+
+  @Test
+  void testRepositoryGetKeyForCompositeIds() {
+    // Save multiple accounts
+    Account savings = new Account("12345", "SAVINGS", 1000.0);
+    Account checking = new Account("12345", "CHECKING", 2000.0);
+    accountRepository.saveAll(List.of(savings, checking));
+
+    String savingsKey = accountRepository.getKeyFor(savings);
+    String checkingKey = accountRepository.getKeyFor(checking);
+
+    assertThat(savingsKey).isEqualTo("accounts:12345:SAVINGS");
+    assertThat(checkingKey).isEqualTo("accounts:12345:CHECKING");
+  }
+}

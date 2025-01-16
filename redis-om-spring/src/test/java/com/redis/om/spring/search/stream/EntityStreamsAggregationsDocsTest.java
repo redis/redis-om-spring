@@ -580,6 +580,36 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*"
    *   "GROUPBY" "1" "@brand"
+   *   "REDUCE" "COUNT" "0" "AS" "count"
+   *   "FILTER" "@count < 5"
+   *   "FILTER" "@count > 2 && @brand != \"\""
+   * </pre>
+   */
+  @Test
+  void testDynamicFilters() {
+    // params
+    int countHigh = 5;
+    int countLow = 2;
+    String brand = "";
+
+    // aggregation with EntityStream
+    List<Pair<String, Long>> filtered = entityStream.of(Game.class) //
+        .groupBy(Game$.BRAND) //
+        .reduce(ReducerFunction.COUNT).as("count") //
+        .filter(String.format("@count < %s", countHigh)) //
+        .filter(String.format("@count > %s && @brand != \"%s\"", countLow, brand)) //
+        .toList(String.class, Long.class);
+
+    assertAll( //
+        () -> assertThat(filtered).isNotEmpty(), //
+        () -> assertThat(filtered).allSatisfy(e -> assertThat(e.getSecond()).isGreaterThan(2).isLessThan(5)) //
+    );
+  }
+
+  /**
+   * <pre>
+   * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*"
+   *   "GROUPBY" "1" "@brand"
    *   "REDUCE" "COUNT_DISTINCT" "1" "@price" "AS" "count"
    *   "REDUCE" "TOLIST" "1" "@price" "AS" "prices"
    *   "SORTBY" "2" "@count" "DESC"

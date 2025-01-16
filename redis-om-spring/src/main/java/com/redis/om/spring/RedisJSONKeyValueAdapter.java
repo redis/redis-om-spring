@@ -7,14 +7,17 @@ import com.redis.om.spring.audit.EntityAuditor;
 import com.redis.om.spring.convert.RedisOMCustomConversions;
 import com.redis.om.spring.id.IdentifierFilter;
 import com.redis.om.spring.indexing.RediSearchIndexer;
+import com.redis.om.spring.mapping.RedisEnhancedPersistentEntity;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.util.ObjectUtils;
 import com.redis.om.spring.vectorize.Embedder;
+import jakarta.persistence.IdClass;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.*;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.annotation.Reference;
 import org.springframework.data.annotation.Version;
@@ -26,6 +29,9 @@ import org.springframework.data.redis.core.TimeToLive;
 import org.springframework.data.redis.core.convert.KeyspaceConfiguration;
 import org.springframework.data.redis.core.convert.RedisCustomConversions;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
+import org.springframework.data.redis.core.mapping.RedisPersistentEntity;
+import org.springframework.data.redis.core.mapping.RedisPersistentProperty;
+import org.springframework.data.util.DirectFieldAccessFallbackBeanWrapper;
 import org.springframework.lang.Nullable;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
@@ -70,7 +76,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   public RedisJSONKeyValueAdapter( //
       RedisOperations<?, ?> redisOps, //
       RedisModulesOperations<?> rmo, //
-      RedisMappingContext mappingContext, //
+      @Qualifier("redisEnhancedMappingContext") RedisMappingContext mappingContext, //
       RediSearchIndexer indexer, //
       GsonBuilder gsonBuilder, //
       Embedder embedder, //
@@ -99,7 +105,9 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     logger.debug(String.format("%s, %s, %s", id, item, keyspace));
     @SuppressWarnings("unchecked") JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
 
-    String key = createKeyAsString(keyspace, id);
+    String stringId = validateKeyForWriting(id, item);
+
+    String key = createKeyAsString(keyspace, stringId);
 
     processVersion(key, item);
     auditor.processEntity(key, item);
@@ -130,7 +138,8 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   @Nullable
   @Override
   public <T> T get(Object id, String keyspace, Class<T> type) {
-    String key = createKeyAsString(keyspace, id);
+    String stringId = asStringValue(id);
+    String key = createKeyAsString(keyspace, stringId);
     return get(key, type);
   }
 
@@ -192,9 +201,10 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   @Override
   public <T> T delete(Object id, String keyspace, Class<T> type) {
     @SuppressWarnings("unchecked") JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
-    T entity = get(id, keyspace, type);
+    String stringId = asStringValue(id);
+    T entity = get(stringId, keyspace, type);
     if (entity != null) {
-      String key = createKeyAsString(keyspace, id);
+      String key = createKeyAsString(keyspace, stringId);
       ops.del(key, Path2.ROOT_PATH);
     }
 
@@ -247,7 +257,6 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public long count(String keyspace) {
-    long count = 0L;
     String indexName = indexer.getIndexName(keyspace);
     SearchOperations<String> search = modulesOperations.opsForSearch(indexName);
     // FT.SEARCH index * LIMIT 0 0
@@ -396,5 +405,57 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       id = filter.filter(id.toString());
     }
     return String.format(format, keyspace, id);
+  }
+
+  private String validateKeyForWriting(Object id, Object item) {
+    // Get the mapping context's entity info
+    RedisEnhancedPersistentEntity<?> entity = (RedisEnhancedPersistentEntity<?>) mappingContext.getRequiredPersistentEntity(
+        item.getClass());
+
+    // Handle composite IDs
+    if (entity.isIdClassComposite()) {
+      BeanWrapper wrapper = new DirectFieldAccessFallbackBeanWrapper(item);
+      List<String> idParts = new ArrayList<>();
+
+      for (RedisPersistentProperty idProperty : entity.getIdProperties()) {
+        Object propertyValue = wrapper.getPropertyValue(idProperty.getName());
+        if (propertyValue != null) {
+          idParts.add(propertyValue.toString());
+        }
+      }
+
+      return String.join(":", idParts);
+    } else {
+      // Regular single ID handling
+      return getConverter().getConversionService().convert(id, String.class);
+    }
+  }
+
+  private String asStringValue(Object value) {
+    // For composite IDs used in @IdClass
+    if (value != null) {
+      // Get all persistent entities
+      for (RedisPersistentEntity<?> entity : mappingContext.getPersistentEntities()) {
+        // Find the entity that uses this ID class
+        IdClass idClassAnn = entity.getType().getAnnotation(IdClass.class);
+        if (idClassAnn != null && idClassAnn.value().equals(value.getClass())) {
+          // Found the entity that uses this ID class
+          BeanWrapper wrapper = new DirectFieldAccessFallbackBeanWrapper(value);
+          RedisEnhancedPersistentEntity<?> enhancedEntity = (RedisEnhancedPersistentEntity<?>) entity;
+
+          // Build composite key from ID properties in order
+          List<String> idParts = new ArrayList<>();
+          for (RedisPersistentProperty idProperty : enhancedEntity.getIdProperties()) {
+            Object propertyValue = wrapper.getPropertyValue(idProperty.getName());
+            if (propertyValue != null) {
+              idParts.add(propertyValue.toString());
+            }
+          }
+          return String.join(":", idParts);
+        }
+      }
+    }
+
+    return getConverter().getConversionService().convert(value, String.class);
   }
 }
