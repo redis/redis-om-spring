@@ -1,10 +1,8 @@
 package com.redis.om.spring.annotations.document;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.fixtures.document.model.Country;
-import com.redis.om.spring.fixtures.document.model.Country$;
-import com.redis.om.spring.fixtures.document.model.DocWithColonInPrefix;
-import com.redis.om.spring.fixtures.document.model.DocWithColonInPrefix$;
+import com.redis.om.spring.fixtures.document.model.*;
+import com.redis.om.spring.fixtures.document.repository.ColonInPrefixRepository;
 import com.redis.om.spring.fixtures.document.repository.CountryRepository;
 import com.redis.om.spring.fixtures.document.repository.DocWithColonInPrefixRepository;
 import com.redis.om.spring.search.stream.EntityStream;
@@ -27,6 +25,9 @@ public class ExplicitPrefixesDocumentTest extends AbstractBaseDocumentTest {
   DocWithColonInPrefixRepository docWithColonInPrefixRepository;
 
   @Autowired
+  ColonInPrefixRepository colonInPrefixRepository;
+
+  @Autowired
   EntityStream entityStream;
 
   @BeforeEach
@@ -47,6 +48,13 @@ public class ExplicitPrefixesDocumentTest extends AbstractBaseDocumentTest {
     );
     docWithColonInPrefixRepository.saveAll(countriesInBulk2);
     docWithColonInPrefixRepository.save(DocWithColonInPrefix.of("USA"));
+
+    colonInPrefixRepository.deleteAll();
+    var colonInPrefixes = Set.of(//
+        ColonInPrefix.of("Numero1"),
+        ColonInPrefix.of("Numero2")
+    );
+    colonInPrefixRepository.saveAll(colonInPrefixes);
   }
 
   @Test
@@ -77,5 +85,12 @@ public class ExplicitPrefixesDocumentTest extends AbstractBaseDocumentTest {
   void testFindByIdForCustomPrefixWithColon() {
     Optional<DocWithColonInPrefix> maybePanama = docWithColonInPrefixRepository.findById("Panama");
     assertThat(maybePanama).isPresent();
+  }
+
+  @Test
+  void testMultipleColonInPrefixes() {
+    Optional<ColonInPrefix> maybeColonInPrefix = colonInPrefixRepository.findOneByName("Numero1");
+    assertThat(maybeColonInPrefix).isPresent();
+    assertThat(colonInPrefixRepository.getKeyFor(maybeColonInPrefix.get())).startsWith("aaa:bbb:ccc:");
   }
 }
