@@ -99,14 +99,6 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <dependency>
-                <groupId>org.springframework.ai</groupId>
-                <artifactId>spring-ai-bom</artifactId>
-                <version>${spring-ai.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-                <optional>true</optional>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -179,6 +171,7 @@
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-openai</artifactId>
+            <version>${spring-ai.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -196,41 +189,49 @@
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-ollama</artifactId>
+            <version>${spring-ai.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-azure-openai</artifactId>
+            <version>${spring-ai.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-vertex-ai-palm2</artifactId>
+            <version>${spring-ai.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-bedrock</artifactId>
+            <version>${spring-ai.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-transformers</artifactId>
+            <version>${spring-ai.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-mistral-ai</artifactId>
+            <version>${spring-ai.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-minimax</artifactId>
+            <version>${spring-ai.version}</version>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-zhipuai</artifactId>
+            <version>${spring-ai.version}</version>
             <optional>true</optional>
         </dependency>
         <!-- Spring AI end -->
