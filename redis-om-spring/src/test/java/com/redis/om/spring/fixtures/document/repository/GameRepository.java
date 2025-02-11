@@ -6,6 +6,7 @@ import com.redis.om.spring.repository.RedisDocumentRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.repository.query.Param;
 import redis.clients.jedis.search.aggr.AggregationResult;
 
 import java.util.Map;
@@ -60,6 +61,33 @@ public interface GameRepository extends RedisDocumentRepository<Game, String> {
   )
   //
   AggregationResult minPricesContainingSony();
+
+
+  /**
+   * <pre>
+   * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "sony"
+   *   "GROUPBY" "1" "@brand"
+   *   "REDUCE" "COUNT" "0"
+   *   "REDUCE" "MIN" "1" "@price" "AS" "minPrice"
+   *   "SORTBY" "2" "@minPrice" "DESC"
+   * </pre>
+   */
+  @Aggregation( //
+                value = "$brand", //
+                groupBy = { //
+                    @GroupBy( //
+                              properties = "@brand", //
+                              reduce = { //
+                                  @Reducer(func = ReducerFunction.COUNT), //
+                                  @Reducer(func = ReducerFunction.MIN, args = { "@price" }, alias = "minPrice") } //
+                              ) //
+                }, //
+                sortBy = { //
+                    @SortBy(field = "@minPrice", direction = Direction.DESC), //
+                }
+  )
+  //
+  AggregationResult minPricesByBrand(@Param("brand") String brand);
 
   /**
    * <pre>

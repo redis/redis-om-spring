@@ -359,4 +359,22 @@ class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
           .forEach(j -> assertThat(row.getString(expectedData[i][j][0])).isEqualTo(expectedData[i][j][1]));
     });
   }
+
+  @Test
+  void testAggregationParams() {
+    String[][] expectedData = { //
+        { "Genius", "88.54" }, { "Logitech", "78.98" }, { "Monster", "69.95" }, { "Goliton", "15.69" },
+        { "Lenmar", "15.41" }, { "Oceantree(TM)", "12.29" }, { "Oceantree", "11.39" }, { "oooo", "10.11" },
+        { "Case Logic", "9.99" }, { "Neewer", "9.71" } //
+    };
+    var result = repository.minPricesByBrand("sony");
+    assertThat(result.getTotalResults()).isEqualTo(27);
+
+    IntStream.range(0, expectedData.length - 1).forEach(i -> {
+      var row = result.getRow(i);
+      assertThat(row.getString("brand")).isEqualTo(expectedData[i][0].toLowerCase());
+      assertThat(row.getString("minPrice")).isEqualTo(expectedData[i][1]);
+    });
+  }
+
 }
