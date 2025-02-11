@@ -45,6 +45,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -590,8 +591,11 @@ public class RediSearchQuery implements RepositoryQuery {
     String indexName = indexer.getIndexName(this.domainType);
     SearchOperations<String> ops = modulesOperations.opsForSearch(indexName);
 
+    // Handle parameters in the base query
+    String preparedQuery = prepareQuery(parameters, true);
+
     // build the aggregation
-    AggregationBuilder aggregation = new AggregationBuilder(value);
+    AggregationBuilder aggregation = new AggregationBuilder(preparedQuery);
 
     // timeout
     if (aggregationTimeout != null) {
@@ -763,8 +767,8 @@ public class RediSearchQuery implements RepositoryQuery {
             v = parameters[index].toString();
           }
 
-          String regex = "\\$" + key + "\\b";
-          preparedQuery = new StringBuilder(preparedQuery.toString().replaceAll(regex, v));
+          var regex = "(\\$" + Pattern.quote(key) + "(?![a-zA-Z0-9_]))(\\W+|\\*|\\+|$)?";
+          preparedQuery = new StringBuilder(preparedQuery.toString().replaceAll(regex, v + "$2"));
         }
         index++;
       }
