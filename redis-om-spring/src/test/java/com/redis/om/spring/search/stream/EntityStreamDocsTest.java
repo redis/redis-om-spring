@@ -793,6 +793,19 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
   }
 
   @Test
+  void testFindByTagsContainsNoneSingleValue() {
+    List<String> names = entityStream //
+        .of(Company.class) //
+        .filter(Company$.TAGS.containsNone("innovative")) //
+        .map(Company$.NAME) //
+        .collect(Collectors.toList());
+
+    assertEquals(1, names.size());
+
+    assertTrue(names.contains("RedisInc"));
+  }
+
+  @Test
   void testFindFirst() {
     Optional<Company> maybeCompany = entityStream.of(Company.class) //
         .filter(Company$.NAME.eq("RedisInc")) //
