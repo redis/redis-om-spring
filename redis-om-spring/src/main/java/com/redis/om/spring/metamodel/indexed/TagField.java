@@ -7,8 +7,11 @@ import com.redis.om.spring.search.stream.predicates.tag.ContainsAllPredicate;
 import com.redis.om.spring.search.stream.predicates.tag.EqualPredicate;
 import com.redis.om.spring.search.stream.predicates.tag.InPredicate;
 import com.redis.om.spring.search.stream.predicates.tag.NotEqualPredicate;
+import com.redis.om.spring.util.ObjectUtils;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.ToLongFunction;
 
@@ -58,6 +61,14 @@ public class TagField<E, T> extends MetamodelField<E, T> {
     return new NotEqualPredicate<>(searchFieldAccessor, value);
   }
 
+  public NotEqualPredicate<E, ?> containsNone(String value) {
+    if (!ObjectUtils.isCollection(value.getClass())) {
+      return new NotEqualPredicate<>(searchFieldAccessor, Set.of(value));
+    } else {
+      return new NotEqualPredicate<>(searchFieldAccessor, value);
+    }
+  }
+
   public Consumer<E> add(Object value) {
     return new ArrayAppendAction<>(searchFieldAccessor, value);
   }
@@ -101,5 +112,4 @@ public class TagField<E, T> extends MetamodelField<E, T> {
   public Consumer<E> trimToRange(Integer begin, Integer end) {
     return new ArrayTrimAction<>(searchFieldAccessor, begin, end);
   }
-
 }
