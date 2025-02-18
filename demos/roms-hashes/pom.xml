@@ -30,7 +30,7 @@
     <dependency>
       <groupId>com.redis.om</groupId>
       <artifactId>redis-om-spring</artifactId>
-      <version>0.9.8</version>
+      <version>0.9.9-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
