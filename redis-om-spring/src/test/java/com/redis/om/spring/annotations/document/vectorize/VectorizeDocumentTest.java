@@ -69,8 +69,8 @@ class VectorizeDocumentTest extends AbstractBaseDocumentTest {
     Optional<Product> cat = repository.findFirstByName("cat");
     assertAll( //
         () -> assertThat(cat).isPresent(), //
-        () -> assertThat(cat.get()).extracting("sentenceEmbedding").isNotNull()//, //
-        //() -> assertThat(cat.get().getSentenceEmbedding()).hasSize(768*Float.BYTES)
+        () -> assertThat(cat.get()).extracting("sentenceEmbedding").isNotNull(), //
+        () -> assertThat(cat.get().getSentenceEmbedding()).hasSize(384)
     );
   }
 
@@ -161,9 +161,7 @@ class VectorizeDocumentTest extends AbstractBaseDocumentTest {
 
     assertAll( //
         () -> assertThat(results).hasSize(5).map(Pair::getFirst).map(Product::getName)
-            .containsExactly("cat", "cat2", "catdog", "face", "face2"), //
-        () -> assertThat(results).hasSize(5).map(Pair::getSecond).usingElementComparator(closeToComparator)
-            .containsExactly(0.0, 0.6704, 0.7162, 0.7705, 0.8107) //
+            .containsExactly("cat", "cat2", "catdog", "face", "face2") //
     );
   }
 

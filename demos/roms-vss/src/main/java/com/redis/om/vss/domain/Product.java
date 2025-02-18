@@ -79,7 +79,7 @@ public class Product {
            schemaFieldType = SchemaFieldType.VECTOR, //
            algorithm = VectorAlgorithm.HNSW, //
            type = VectorType.FLOAT32, //
-           dimension = 768, //
+           dimension = 384, //
            distanceMetric = DistanceMetric.COSINE, //
            initialCapacity = 10
   )
