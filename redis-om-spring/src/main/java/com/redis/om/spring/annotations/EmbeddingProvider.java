@@ -1,6 +1,7 @@
 package com.redis.om.spring.annotations;
 
 public enum EmbeddingProvider {
+  TRANSFORMERS,
   DJL,
   OPENAI,
   OLLAMA,

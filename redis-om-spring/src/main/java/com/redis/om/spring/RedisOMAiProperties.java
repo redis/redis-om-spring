@@ -5,6 +5,9 @@ import org.springframework.ai.openai.api.OpenAiApi.EmbeddingModel;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @ConditionalOnProperty(name = "redis.om.spring.ai.enabled")
 @ConfigurationProperties(
     prefix = "redis.om.spring.ai", ignoreInvalidFields = true
@@ -12,6 +15,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class RedisOMAiProperties {
   private boolean enabled = false;
   private final Djl djl = new Djl();
+  private final Transformers transformers = new Transformers();
   private final OpenAi openAi = new OpenAi();
   private final AzureOpenAi azureOpenAi = new AzureOpenAi();
   private final VertexAi vertexAi = new VertexAi();
@@ -29,6 +33,10 @@ public class RedisOMAiProperties {
 
   public Djl getDjl() {
     return djl;
+  }
+
+  public Transformers getTransformers() {
+    return transformers;
   }
 
   public OpenAi getOpenAi() {
@@ -55,6 +63,30 @@ public class RedisOMAiProperties {
     return ollama;
   }
 
+  // Transformer properties
+  public static class Transformers {
+    private String tokenizerResource;
+    private String modelResource;
+    private String resourceCacheDirectory;
+    private Map<String, String> tokenizerOptions = new HashMap<>();
+
+    public String getTokenizerResource() {
+      return tokenizerResource;
+    }
+
+    public String getModelResource() {
+      return modelResource;
+    }
+
+    public String getResourceCacheDirectory() {
+      return resourceCacheDirectory;
+    }
+
+    public Map<String, String> getTokenizerOptions() {
+      return tokenizerOptions;
+    }
+  }
+
   // DJL properties
   public static class Djl {
     private static final String DEFAULT_ENGINE = "PyTorch";
@@ -73,7 +105,7 @@ public class RedisOMAiProperties {
     @NotNull
     private String sentenceTokenizerModelMaxLength = "768";
     @NotNull
-    private String sentenceTokenizerModel = "sentence-transformers/all-mpnet-base-v2";
+    private String sentenceTokenizerModel = "sentence-transformers/msmarco-distilbert-dot-v5";
 
     // face detection
     @NotNull
@@ -90,6 +122,7 @@ public class RedisOMAiProperties {
     private String faceEmbeddingModelName = "face_feature";
     @NotNull
     private String faceEmbeddingModelModelUrls = "https://resources.djl.ai/test-models/pytorch/face_feature.zip";
+
 
     public Djl() {
     }
@@ -278,6 +311,24 @@ public class RedisOMAiProperties {
     private String apiKey;
     private String endPoint;
     private String model;
+    private String projectId;
+    private String location;
+
+    public String getProjectId() {
+      return projectId;
+    }
+
+    public void setProjectId(String projectId) {
+      this.projectId = projectId;
+    }
+
+    public String getLocation() {
+      return location;
+    }
+
+    public void setLocation(String location) {
+      this.location = location;
+    }
 
     public String getApiKey() {
       return apiKey;

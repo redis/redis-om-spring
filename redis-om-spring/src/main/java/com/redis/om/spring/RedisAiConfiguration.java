@@ -35,18 +35,21 @@ import org.springframework.ai.openai.OpenAiEmbeddingModel;
 import org.springframework.ai.openai.OpenAiEmbeddingOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.ai.retry.RetryUtils;
-import org.springframework.ai.vertexai.palm2.VertexAiPaLm2EmbeddingModel;
-import org.springframework.ai.vertexai.palm2.api.VertexAiPaLm2Api;
+import org.springframework.ai.transformers.TransformersEmbeddingModel;
+import org.springframework.ai.vertexai.embedding.VertexAiEmbeddingConnectionDetails;
+import org.springframework.ai.vertexai.embedding.text.VertexAiTextEmbeddingModel;
+import org.springframework.ai.vertexai.embedding.text.VertexAiTextEmbeddingOptions;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.RestClient;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -54,7 +57,7 @@ import software.amazon.awssdk.regions.Region;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.time.*;
+import java.time.Duration;
 import java.util.Map;
 
 @ConditionalOnProperty(name = "redis.om.spring.ai.enabled")
@@ -70,8 +73,8 @@ public class RedisAiConfiguration {
   }
 
   @Bean(name = "djlImageEmbeddingModelCriteria")
-  public Criteria<Image, byte[]> imageEmbeddingModelCriteria(RedisOMAiProperties properties) {
-    return Criteria.builder().setTypes(Image.class, byte[].class) //
+  public Criteria<Image, float[]> imageEmbeddingModelCriteria(RedisOMAiProperties properties) {
+    return Criteria.builder().setTypes(Image.class, float[].class) //
         .optEngine(properties.getDjl().getImageEmbeddingModelEngine())  //
         .optModelUrls(properties.getDjl().getImageEmbeddingModelModelUrls()) //
         .build();
@@ -123,7 +126,8 @@ public class RedisAiConfiguration {
       RedisOMAiProperties properties) {
 
     return Criteria.builder() //
-        .setTypes(Image.class, float[].class).optModelUrls(properties.getDjl().getFaceEmbeddingModelModelUrls()) //
+        .setTypes(Image.class, float[].class) //
+        .optModelUrls(properties.getDjl().getFaceEmbeddingModelModelUrls()) //
         .optModelName(properties.getDjl().getFaceEmbeddingModelName()) //
         .optTranslator(translator) //
         .optEngine(properties.getDjl().getFaceEmbeddingModelEngine()) //
@@ -142,8 +146,9 @@ public class RedisAiConfiguration {
   }
 
   @Bean(name = "djlImageEmbeddingModel")
-  public ZooModel<Image, byte[]> imageModel(
-      @Nullable @Qualifier("djlImageEmbeddingModelCriteria") Criteria<Image, byte[]> criteria) throws MalformedModelException, ModelNotFoundException, IOException {
+  public ZooModel<Image, float[]> imageModel(
+      @Nullable @Qualifier("djlImageEmbeddingModelCriteria") Criteria<Image, float[]> criteria)
+      throws MalformedModelException, ModelNotFoundException, IOException {
     return criteria != null ? ModelZoo.loadModel(criteria) : null;
   }
 
@@ -178,6 +183,28 @@ public class RedisAiConfiguration {
     }
   }
 
+  @Bean(name = "transformersEmbeddingModel")
+  public TransformersEmbeddingModel transformersEmbeddingModel(RedisOMAiProperties properties) {
+    TransformersEmbeddingModel embeddingModel = new TransformersEmbeddingModel();
+    if (properties.getTransformers().getTokenizerResource() != null) {
+      embeddingModel.setTokenizerResource(properties.getTransformers().getTokenizerResource());
+    }
+
+    if (properties.getTransformers().getModelResource() != null) {
+      embeddingModel.setModelResource(properties.getTransformers().getModelResource());
+    }
+
+    if (properties.getTransformers().getResourceCacheDirectory() != null) {
+      embeddingModel.setResourceCacheDirectory(properties.getTransformers().getResourceCacheDirectory());
+    }
+
+    if (!properties.getTransformers().getTokenizerOptions().isEmpty()) {
+      embeddingModel.setTokenizerOptions(properties.getTransformers().getTokenizerOptions());
+    }
+
+    return embeddingModel;
+  }
+
   @ConditionalOnMissingBean
   @Bean
   public OpenAiEmbeddingModel openAITextVectorizer(RedisOMAiProperties properties,
@@ -204,7 +231,7 @@ public class RedisAiConfiguration {
 
       // Rest of the configuration
       return new OpenAiEmbeddingModel(openAiApi, MetadataMode.EMBED,
-          OpenAiEmbeddingOptions.builder().withModel("text-embedding-ada-002").build(),
+          OpenAiEmbeddingOptions.builder().model("text-embedding-ada-002").build(),
           RetryUtils.DEFAULT_RETRY_TEMPLATE);
     } else {
       return null;
@@ -251,7 +278,7 @@ public class RedisAiConfiguration {
 
   @ConditionalOnMissingBean
   @Bean
-  VertexAiPaLm2EmbeddingModel vertexAiPaLm2EmbeddingModel(RedisOMAiProperties properties, //
+  VertexAiTextEmbeddingModel vertexAiEmbeddingModel(RedisOMAiProperties properties, //
       @Value("${spring.ai.vertex.ai.api-key:}") String apiKey,
       @Value("${spring.ai.vertex.ai.ai.base-url:}") String baseUrl) {
     if (!StringUtils.hasText(apiKey)) {
@@ -281,9 +308,15 @@ public class RedisAiConfiguration {
     }
 
     if (StringUtils.hasText(apiKey) && StringUtils.hasText(baseUrl)) {
-      VertexAiPaLm2Api vertexAiApi = new VertexAiPaLm2Api(baseUrl, apiKey, VertexAiPaLm2Api.DEFAULT_GENERATE_MODEL,
-          VertexAiPaLm2Api.DEFAULT_EMBEDDING_MODEL, RestClient.builder());
-      return new VertexAiPaLm2EmbeddingModel(vertexAiApi);
+
+      VertexAiEmbeddingConnectionDetails connectionDetails = VertexAiEmbeddingConnectionDetails.builder()
+          .projectId(System.getenv("VERTEX_AI_GEMINI_PROJECT_ID")).location(System.getenv("VERTEX_AI_GEMINI_LOCATION"))
+          .build();
+
+      VertexAiTextEmbeddingOptions options = VertexAiTextEmbeddingOptions.builder()
+          .model(VertexAiTextEmbeddingOptions.DEFAULT_MODEL_NAME).build();
+
+      return new VertexAiTextEmbeddingModel(connectionDetails, options);
     } else {
       return null;
     }
@@ -346,7 +379,7 @@ public class RedisAiConfiguration {
     if (!StringUtils.hasText(model)) {
       model = properties.getBedrockCohere().getModel();
       if (!StringUtils.hasText(model)) {
-        model = CohereEmbeddingModel.COHERE_EMBED_MULTILINGUAL_V1.id();
+        model = CohereEmbeddingModel.COHERE_EMBED_MULTILINGUAL_V3.id();
         properties.getBedrockCohere().setModel(model);
       }
     }
@@ -439,19 +472,19 @@ public class RedisAiConfiguration {
   @Primary
   @Bean(name = "featureExtractor")
   public Embedder featureExtractor(
-      @Nullable @Qualifier("djlImageEmbeddingModel") ZooModel<Image, byte[]> imageEmbeddingModel,
+      @Nullable @Qualifier("djlImageEmbeddingModel") ZooModel<Image, float[]> imageEmbeddingModel,
       @Nullable @Qualifier("djlFaceEmbeddingModel") ZooModel<Image, float[]> faceEmbeddingModel,
       @Nullable @Qualifier("djlImageFactory") ImageFactory imageFactory,
       @Nullable @Qualifier("djlDefaultImagePipeline") Pipeline defaultImagePipeline,
-      @Nullable @Qualifier("djlSentenceTokenizer") HuggingFaceTokenizer sentenceTokenizer,
+      @Nullable @Qualifier("transformersEmbeddingModel") TransformersEmbeddingModel transformersEmbeddingModel,
       @Nullable OpenAiEmbeddingModel openAITextVectorizer, @Nullable OpenAIClient azureOpenAIClient,
-      @Nullable VertexAiPaLm2EmbeddingModel vertexAiPaLm2EmbeddingModel,
+      @Nullable VertexAiTextEmbeddingModel vertexAiTextEmbeddingModel,
       @Nullable BedrockCohereEmbeddingModel bedrockCohereEmbeddingModel,
       @Nullable BedrockTitanEmbeddingModel bedrockTitanEmbeddingModel,
       RedisOMAiProperties properties,
       ApplicationContext ac) {
     return new DefaultEmbedder(ac, imageEmbeddingModel, faceEmbeddingModel, imageFactory, defaultImagePipeline,
-            sentenceTokenizer, openAITextVectorizer, azureOpenAIClient, vertexAiPaLm2EmbeddingModel,
+        transformersEmbeddingModel, openAITextVectorizer, azureOpenAIClient, vertexAiTextEmbeddingModel,
             bedrockCohereEmbeddingModel, bedrockTitanEmbeddingModel, properties);
   }
 }

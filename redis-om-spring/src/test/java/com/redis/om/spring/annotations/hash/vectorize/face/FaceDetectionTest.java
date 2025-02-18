@@ -10,6 +10,7 @@ import ai.djl.translate.TranslateException;
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.Resource;
 
@@ -26,6 +27,7 @@ class FaceDetectionTest extends AbstractBaseEnhancedRedisTest {
   @Autowired(required = false)
   public ZooModel<Image, DetectedObjects> faceDetectionModel;
   @Autowired(required = false)
+  @Qualifier("djlFaceEmbeddingModel")
   public ZooModel<Image, float[]> faceEmbeddingModel;
   @Autowired
   private ApplicationContext applicationContext;
