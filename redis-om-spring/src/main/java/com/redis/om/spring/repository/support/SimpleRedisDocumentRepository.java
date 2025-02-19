@@ -185,6 +185,8 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     List<S> saved = new ArrayList<>();
     List<Object> entityIds = new ArrayList<>();
 
+    embedder.processEntities(entities);
+
     try (Jedis jedis = modulesOperations.client().getJedis().get()) {
       Pipeline pipeline = jedis.pipelined();
       Gson gson = gsonBuilder.create();
@@ -209,7 +211,6 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
         // process entity pre-save mutation
         auditor.processEntity(entity, isNew);
-        embedder.processEntity(entity);
 
         Optional<Long> maybeTtl = getTTLForEntity(entity);
 

@@ -9,6 +9,8 @@ public interface Embedder {
 
   void processEntity(Object item);
 
+  <S> void processEntities(Iterable<S> items);
+
   boolean isReady();
 
   List<byte[]> getTextEmbeddingsAsBytes(List<String> texts, Field field);

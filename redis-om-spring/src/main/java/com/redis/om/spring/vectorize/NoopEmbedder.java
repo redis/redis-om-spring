@@ -13,6 +13,11 @@ public class NoopEmbedder implements Embedder {
   }
 
   @Override
+  public <S> void processEntities(Iterable<S> items) {
+    // NOOP
+  }
+
+  @Override
   public boolean isReady() {
     return false;
   }
