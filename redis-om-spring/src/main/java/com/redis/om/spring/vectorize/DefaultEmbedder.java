@@ -245,7 +245,7 @@ public class DefaultEmbedder implements Embedder {
       return;
     }
 
-    int batchSize = 100; // TODO Replace with a propoerty
+    int batchSize = properties.getEmbeddingBatchSize();
     List<FieldData> batch = new ArrayList<>(batchSize);
 
     for (Object item : items) {
