@@ -239,148 +239,148 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     ExampleMatcher matcher = example.getMatcher();
     ID id = metadata.getId(probe);
 
-    if (id == null) {
-      throw new IllegalArgumentException("Example object must have an ID");
+    if (id= =nu ll ){
+    tr hno eIw g l aA u egr n x tEcpenoma (e" Ep  olbejcms tuth a eanI D ") ;
     }
 
-    String key = getKey(id);
+   St ringk ey=e gtK ey (i) d;
 
-    Class<?> entityType = metadata.getJavaType();
-    List<UpdateOperation> updateOperations = new ArrayList<>();
+  Cl as<s>te ?inty aTp= em  td t . ge vtJa T ype () ;
+ Lis t<dO p  t epertiauo nO pdae rtoe iatns=A rnew y Lris t <>( ) ;
 
-    List<MetamodelField<?, ?>> metamodelFields = MetamodelUtils.getMetamodelFieldsForProperties(entityType,
-        getAllProperties(entityType));
+L is att M m dl Fi el <?d ,> e ?atd  el lFdea ts = emod lUt  tsg mM.teeed e FoFsllPdoro teepris (ett yi T ype,
+     e tgAlloPpr  e tinr (tsi Tty )yp e) ;
 
-    for (MetamodelField<?, ?> metamodelField : metamodelFields) {
-      String propertyName = metamodelField.getSearchAlias();
+  fSti(MnetgorpeeeyrtNamm?e=odaeltaoee d.eeSlmrtl iecahAl(as ;d) ){
 
-      if (propertyName.equals("id")) {
-        continue;
-      }
+   f i( po pt  ym"N. q easa  ( l id )" ){
+      o c ntinu e ;
+      }        l  c  l P p e   rh t  c  p
+        su oI hn d u ed rto( yt ae me  r or p e t N me   ){
+    i f(      t  lu e =e r Ptp   y  l( ,e b r e yra    )N
+      bO j c ea   =n gul l{ o dreV apu rp   e , pyo  r m ta )e ;
+       if (v lu ep!r tos) d (t n wU dd a epe  it    pm
+        u p ateO   i  .  pa p    y    (  )t Oa { (  e  a t
+     } a  pd t  a s Enm                    a)  r n ok y e  dome il e vd ,a ul e)) ;
+    u te  r s.e i u                              tee r ,
+   }   p Oe  s(                                     O   )
+     (iU i n                                          on
+  ifue a  a                                           p  ;
+ e e d te t                                            at s
+   x el d                                               i e
+  }r cP n                                                num
+ r S  if d                                              )> xe to "(   ia
+   u (  iB                                              t e c  i n  Fe l tdf ocet  hpudated ten)t iy ") ;
+  }t n)d (.                                           - (    p
+@vO r in )d o                                        w( w iE
+  u e rdxy  e v                                     o n R e
+p    ic  <e is>T r                                l xl<  > x amlps e) {
+  bil ! e e a  lo pEd u  h                (  T hbr< m e S >
+     f(Sx n per  teio p a e a l ots te  A )  tre Eap
+   }  rtU r ;/ /N .x em ).r  o tNr x esl e){ e a
+     t e d aO e pe t o  le sap es  rc(v sn  nA  ewr rL  s  <
+  Li ss< <  p  i  Ty   = u mtp Oap e etJ o s=e a    y i  t >  ();
+  Cl a<s ?e>edtt   aelp e>> dd am a.a ta i apy( ) ;m d U  te
+  Li st Mtta  m lFe   d , ? ?e >  tage F l Tl s Met o  l l i sg. eoelMmt aoeiF loF  stP rp (r e  ei  t yT ype,
+     eg  A l P<oe  i ms < ni m  t yeo d ;i e d =    a
+        E al l x  r > i( pet t yTp )l ))
+  fo r( pxm e  epeSe x. at o :ermpa )es   {
+    S r po be  =   a  pl e lP x  (e ; .e  t a
+  E x m  a le a cmh  a  g cbere a pl e     tc  er(  )h;
+      D id =m e ta  r t a  h(p m x  ); g M
+     iIf( id =e=nldl ){lg eredo tr e
+     h tr o wn e e I  lgg A m n xt epc inop(" xaEm bl j csemt ut hav eanI"D ) ;
+      }         w l  a       u
 
-      if (shouldIncludeProperty(matcher, propertyName)) {
-        Object value = getPropertyValue(probe, propertyName);
+   S  trin g key =ge teK) y(id  ;
 
-        if (value != null) {
-          updateOperations.add(new UpdateOperation(key, metamodelField, value));
-        }
-      }
-    }
+   (f ore t ao Me lF  <eid ?,>a dm to eem Fil d mt :da oe ilFl e s ) {
+     t Si n prg p e tNra emm= a mtF eoei d gee ct.Aa dSh lis a() ;
 
-    if (!updateOperations.isEmpty()) {
-      executePipelinedUpdates(updateOperations);
-    }
+      f ( ho uI d nclP eurt per yo(m, ra chr ep rNpta m ) )e  {
 
-    return (S) findById(id).orElseThrow(() -> new RuntimeException("Failed to fetch updated entity"));
-  }
+        Ob e c vPtal uet g eop ea (t  pe  b puoe  or tp eN  ea m);
 
-  @Override
-  public <S extends T> void updateAll(Iterable<Example<S>> examples) {
-    if (!examples.iterator().hasNext()) {
-      return; // No examples to process
-    }
-
-    List<UpdateOperation> updateOperations = new ArrayList<>();
-    Class<?> entityType = metadata.getJavaType();
-    List<MetamodelField<?, ?>> metamodelFields = MetamodelUtils.getMetamodelFieldsForProperties(entityType,
-        getAllProperties(entityType));
-
-    for (Example<S> example : examples) {
-      S probe = example.getProbe();
-      ExampleMatcher matcher = example.getMatcher();
-      ID id = metadata.getId(probe);
-
-      if (id == null) {
-        throw new IllegalArgumentException("Example object must have an ID");
-      }
-
-      String key = getKey(id);
-
-      for (MetamodelField<?, ?> metamodelField : metamodelFields) {
-        String propertyName = metamodelField.getSearchAlias();
-
-        if (shouldIncludeProperty(matcher, propertyName)) {
-          Object value = getPropertyValue(probe, propertyName);
-
-          if (value != null) {
-            updateOperations.add(new UpdateOperation(key, metamodelField, value));
+         i f(va u le!n= ul l) {
+         ud pateprO tao eneidsa  (nwpd aptUeOe at(iyon temm  la,eode l  d, valu e) );
           }
         }
       }
-    }
+    }                       ap  ae  ea o n);
+                   p  dte (u i d t O is
+ xee ceu P i ep n ei d  UsTn )t { r t
+  }                   r (y x  s ip
+     r  r d e     y  F ot  ney f o
+@ vOe  tcir  g ge t Kt etet y'n t
+pb uli Ge Smi a p  igc e  r Es  t
+   //   t t n eh epin en  n>it
+  Red iE h  n eP c  dst t ee ttg                                        En   C?)cein  tpi tigersari e ept  o a. g p nMi gntCex t ()
+    g   s  aeq ied rsse tE set  s
+       e. t Rr g r  P rn  t(?ti yC
+  Strin  tgs oim  nd;  e< i e a C
+       n d  l c  p so t es sE  lt t(
+  / /H seat e ti i i .EID ytyip t sF
+ i f(p n ra n rs a t t  ne l a   om ()l  >{                            e t )
+   B e W a  p r w npr rpi nCID ws ti e e)   )                   ;  ar p    y ;
+   Li t <rs  pg  d ae > t r=n  rAeri ysL  Ac  sa    l )  Be  a  W p (  nit
+      o d S Rtr  ii  ts r oe =e wyr dcdie it( ; s Flba  kt  i r  g et  r e t
+    fbfijp( opr ettyytuV!aelu=t wla epso t rP: ptVr luidtePy petrte g ta e r )) ;is) ) {
+       idP  rps  rp  Veal  = n ul ){ rt.  ei  e ;    a(    r      y
+        }    at .  a  d    p rV au . tS  r  (  )  )
+      }              d (o  r t yl  e o  n g
+       i  g d      .        (
+   sr ts  n{  =S it  rng ji  o n"    ":, id Pa  tr) s;
+    }e l e t I ge dt i Feld o E rn n ty
+  O  b je c  d  ai pn teg go Crn ett r (e tty i) ;
+   s t rn gd imn el  ieF  r t i esx r v Ser o  ce )n.v (i ocv trd (inS gtri  .sa lcs) ;
+ r  }ab e btd i Iee  inl  e. rt t >n  e    e
+v af m e I F r ref ) iF l (tre i  ( ) ntP t(t
+imte tt in= ripi t f S +f. g sa Ii tlr (s  d) dnef  il  erFm  (da eeo a. aa yJv )a Tp e );
+Idn}i  s fc ee s  y  b l  c iet xr  g  d ) dn i{ t
+tr  e fg  =e  n  r                n ed {rsd I r i   e<il rSt i)>gd b ya eeIfn tFi li  t.g  rt  ( );
+ng g Kj  i                            I r i g; ene t  i
+n  t K                                    e.I t;         f
+In  e                                          g            i e
+rda                                          n  {              ri tre d
+v                                                                F  oa (g
+i P                                                                Fr t ae  v
+me                                                                  l tety t aT
+bra                                             S                   b mf ar   a ype( ))  ;
+(ie                                                                   e i . eJ  e     r
+a ei                                                                 e i m ninf  F il  e. (etg );
+idefoi                                                                rS ad e i r     t
+ny i   r                                   )                          r i) t
+ite= it Ft e                                                        t li gI
+r t if d<r rFi (  es  t n        (                                   < >
+}} ef  rl ee  ecga  ( S(t ; dl) t) d
+v  Ogur i e  eyr p dr  tst ( ng; Ai  I                        >ti  e
+pble  c re etde(  )   S=ii<.i ve l(   e                   t S ti  so){ n
+ A sus<i tx SnK lts t ii d   a  >ie  v; t r       r  b e <e n m t n  b e ul l! " );
+      i Sn ot u Nt  Te ir  ss T Lh l () nIe b lte  fael  ie    s   t
+ L se(r  <>i se n e s (e Ay" ,   e< >  n  a  e e o  n t i   s u
+   tr ytJ a   ejd  pi =o dj  p e aOt  si l i  () d geJ i (tg) ).t e( ){
+   P  ip led sp  dl    er lui s r  e on  .c(n  t . e  s
+       e   in e ei t:mne= tee d p.i li ee) d;
+    f o (rSent t i yw= i i   .i){ sp  e(t i )t y
+      ob ole a n seN   n ei a  sd N ?w  V n      ;      m            t
+            ui  er  s i mt  n ta  y?  >y  lu aeE t it= p ap  igC o
+     e yKV alP  e   qse  te   t e n, t   ss a U n U yt  e r  nn  v ret  pg  M n  gpC tonx  et(  )
+         .e  tR uri  N er d si < E tite ( Cl  st l ig . se   t s( ts ni) y) ;
+      b Ojc et  id= ire I  ? Ptn  d iie y  ke  ( pe ytE  ilC a. p Id e r   o    g
+         gn eeta n .   .et w nPt en  f rf s T ag ( e.l  n y pt r eP ryl) ne(yT teIr en p Iofimt an () ):
+         ky eValu e Eoy   i e ayt rt  Aeo cr i s t n  e o Py rk a y ( e ni u et.Ey e rd P prot (  )y );
+    e yk V l    n  t  t e  o  rgA c ee sc   y  ee.s  e r tt   kta l  yt V t  te e  gg trp  y), (i d) ;
+           a u E  e t. et gt r et  p cs t t(r i ) ( nPt  reo (    yue  i VE y . Ir    d
+     t Sr i n i sg it y= Pnil a t yy eeF ri r t ng pe d t it y); e
+             d    S A r i gv   lE K y   oe  K i  ai  ( n
+     t Sn r iks ey a k= e Vae y u e  i tt  S. y g e pc  ) ;
+     y b[t ]eob  ejt K e  e  a  t k e nae  pe ,   S s ri gn)  ;
+                        =  y    K   s
 
-    executePipelinedUpdates(updateOperations);
-  }
+      // pc r oessnt eitpeyr  a  v m  uitt  on
+     u daio r rpoc .s sn i n yt y  et  t N ew)  ;
+                           t ,  ( s  i  i
 
-  @Override
-  public String getKeyFor(T entity) {
-    // Get the mapping context's entity info
-    RedisEnhancedPersistentEntity<?> persistentEntity = (RedisEnhancedPersistentEntity<?>) mappingConverter.getMappingContext()
-        .getRequiredPersistentEntity(entity.getClass());
-
-    String stringId;
-
-    // Handle composite IDs
-    if (persistentEntity.isIdClassComposite()) {
-      BeanWrapper wrapper = new DirectFieldAccessFallbackBeanWrapper(entity);
-      List<String> idParts = new ArrayList<>();
-
-      for (RedisPersistentProperty idProperty : persistentEntity.getIdProperties()) {
-        Object propertyValue = wrapper.getPropertyValue(idProperty.getName());
-        if (propertyValue != null) {
-          idParts.add(propertyValue.toString());
-        }
-      }
-
-      stringId = String.join(":", idParts);
-    } else {
-      Object id = getIdFieldForEntity(entity);
-      stringId = mappingConverter.getConversionService().convert(id, String.class);
-    }
-
-    var maybeIdentifierFilter = indexer.getIdentifierFilterFor(metadata.getJavaType());
-    if (maybeIdentifierFilter.isPresent()) {
-      IdentifierFilter<String> filter = (IdentifierFilter<String>) maybeIdentifierFilter.get();
-      stringId = filter.filter(stringId);
-    }
-    return getKeyspace() + stringId;
-  }
-
-  private String getKey(Object id) {
-    var maybeIdentifierFilter = indexer.getIdentifierFilterFor(metadata.getJavaType());
-    if (maybeIdentifierFilter.isPresent()) {
-      IdentifierFilter<String> filter = (IdentifierFilter<String>) maybeIdentifierFilter.get();
-      id = filter.filter(id.toString());
-    }
-    return getKeyspace() + id.toString();
-  }
-
-  @Override
-  public <S extends T> List<S> saveAll(Iterable<S> entities) {
-    Assert.notNull(entities, "The given Iterable of entities must not be null!");
-    List<S> saved = new ArrayList<>();
-
-    try (Jedis jedis = modulesOperations.client().getJedis().get()) {
-      Pipeline pipeline = jedis.pipelined();
-
-      for (S entity : entities) {
-        boolean isNew = metadata.isNew(entity);
-
-        KeyValuePersistentEntity<?, ?> keyValueEntity = mappingConverter.getMappingContext()
-            .getRequiredPersistentEntity(ClassUtils.getUserClass(entity));
-        Object id = isNew ?
-            generator.generateIdentifierOfType(keyValueEntity.getIdProperty().getTypeInformation()) :
-            keyValueEntity.getPropertyAccessor(entity).getProperty(keyValueEntity.getIdProperty());
-        keyValueEntity.getPropertyAccessor(entity).setProperty(keyValueEntity.getIdProperty(), id);
-
-        String idAsString = validateKeyForWriting(id, entity);
-
-        String keyspace = keyValueEntity.getKeySpace();
-        byte[] objectKey = createKey(keyspace, idAsString);
-
-        // process entity pre-save mutation
-        auditor.processEntity(entity, isNew);
-        embedder.processEntity(entity);
 
         RedisData rdo = new RedisData();
         mappingConverter.write(entity, rdo);
@@ -541,3 +541,11 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     }
   }
 }
+
+
+
+
+
+
+
+
