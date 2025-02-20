@@ -52,6 +52,7 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.redis.om.spring.annotations.EmbeddingType.SENTENCE;
@@ -391,12 +392,12 @@ public class DefaultEmbedder implements Embedder {
                 case TRANSFORMERS -> processDjlSentenceEmbedding(groupedFieldDataList);
                 case DJL -> {
                 }
-                case OPENAI -> processOpenAiSentenceEmbedding(groupedFieldDataList);
-                case OLLAMA -> processOllamaSentenceEmbedding(groupedFieldDataList);
-                case AZURE_OPENAI -> processAzureOpenAiSentenceEmbedding(groupedFieldDataList);
-                case VERTEX_AI -> processVertexAiSentenceEmbedding(groupedFieldDataList);
-                case AMAZON_BEDROCK_COHERE -> processBedrockCohereSentenceEmbedding(groupedFieldDataList);
-                case AMAZON_BEDROCK_TITAN -> processBedrockTitanSentenceEmbedding(groupedFieldDataList);
+                case OPENAI -> processSentenceEmbedding(groupedFieldDataList, this::getOpenAiEmbeddingModel);
+                case OLLAMA -> processSentenceEmbedding(groupedFieldDataList, this::getOllamaEmbeddingModel);
+                case AZURE_OPENAI -> processSentenceEmbedding(groupedFieldDataList, this::getAzureOpenAiEmbeddingModel);
+                case VERTEX_AI -> processSentenceEmbedding(groupedFieldDataList, this::getVertexAiPaLm2EmbeddingModel);
+                case AMAZON_BEDROCK_COHERE -> processSentenceEmbedding(groupedFieldDataList, this::getBedrockCohereEmbeddingModel);
+                case AMAZON_BEDROCK_TITAN -> processSentenceEmbedding(groupedFieldDataList, this::getBedrockTitanEmbeddingModel);
               }
             });
   }
@@ -407,12 +408,12 @@ public class DefaultEmbedder implements Embedder {
       case TRANSFORMERS -> processDjlSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
       case DJL -> {
       }
-      case OPENAI -> processOpenAiSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
-      case OLLAMA -> processOllamaSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
-      case AZURE_OPENAI -> processAzureOpenAiSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
-      case VERTEX_AI -> processVertexAiSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
-      case AMAZON_BEDROCK_COHERE -> processBedrockCohereSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
-      case AMAZON_BEDROCK_TITAN -> processBedrockTitanSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
+      case OPENAI -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getOpenAiEmbeddingModel);
+      case OLLAMA -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getOllamaEmbeddingModel);
+      case AZURE_OPENAI -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getAzureOpenAiEmbeddingModel);
+      case VERTEX_AI -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getVertexAiPaLm2EmbeddingModel);
+      case AMAZON_BEDROCK_COHERE -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getBedrockCohereEmbeddingModel);
+      case AMAZON_BEDROCK_TITAN -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getBedrockTitanEmbeddingModel);
     }
   }
 
@@ -453,14 +454,14 @@ public class DefaultEmbedder implements Embedder {
     }
   }
 
-  private void processOpenAiSentenceEmbedding(List<FieldData> fieldDataList) {
+  private void processSentenceEmbedding(List<FieldData> fieldDataList, Function<Vectorize, EmbeddingModel> modelFunction) {
     fieldDataList.stream()
             .collect(Collectors.groupingBy(FieldData::isDocument))
             .forEach((isDocument, groupedByIsDocument) ->
                     groupedByIsDocument.stream()
                             .collect(Collectors.groupingBy(FieldData::vectorize))
                             .forEach((vectorize, groupedByVectorize) -> {
-                              OpenAiEmbeddingModel model = getOpenAiEmbeddingModel(vectorize);
+                              EmbeddingModel model = modelFunction.apply(vectorize);
                               List<?> embeddings = isDocument
                                       ? getEmbeddingAsFloatArrayFor(mapValues(groupedByVectorize), model)
                                       : getEmbeddingsAsByteArrayFor(mapValues(groupedByVectorize), model);
@@ -472,154 +473,9 @@ public class DefaultEmbedder implements Embedder {
             );
   }
 
-  private void processOpenAiSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
-      boolean isDocument) {
-    OpenAiEmbeddingModel model = getOpenAiEmbeddingModel(vectorize);
-    if (isDocument) {
-      accessor.setPropertyValue(vectorize.destination(), getEmbeddingAsFloatArrayFor(fieldValue.toString(), model));
-    } else {
-      accessor.setPropertyValue(vectorize.destination(), getEmbeddingsAsByteArrayFor(fieldValue.toString(), model));
-    }
-  }
-
-  private void processOllamaSentenceEmbedding(List<FieldData> fieldDataList) {
-    fieldDataList.stream()
-            .collect(Collectors.groupingBy(FieldData::isDocument))
-            .forEach((isDocument, groupedByIsDocument) ->
-                    groupedByIsDocument.stream()
-                            .collect(Collectors.groupingBy(FieldData::vectorize))
-                            .forEach((vectorize, groupedByVectorize) -> {
-                              OllamaEmbeddingModel model = getOllamaEmbeddingModel(vectorize);
-                              List<?> embeddings = isDocument
-                                      ? getEmbeddingAsFloatArrayFor(mapValues(groupedByVectorize), model)
-                                      : getEmbeddingsAsByteArrayFor(mapValues(groupedByVectorize), model);
-
-                              if (embeddings != null) {
-                                applyEmbeddings(groupedByVectorize, embeddings, vectorize);
-                              }
-                            })
-            );
-  }
-
-  private void processOllamaSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
-      boolean isDocument) {
-    OllamaEmbeddingModel model = getOllamaEmbeddingModel(vectorize);
-    if (isDocument) {
-      accessor.setPropertyValue(vectorize.destination(), getEmbeddingAsFloatArrayFor(fieldValue.toString(), model));
-    } else {
-      accessor.setPropertyValue(vectorize.destination(), getEmbeddingsAsByteArrayFor(fieldValue.toString(), model));
-    }
-  }
-
-  private void processAzureOpenAiSentenceEmbedding(List<FieldData> fieldDataList) {
-    fieldDataList.stream()
-            .collect(Collectors.groupingBy(FieldData::isDocument))
-            .forEach((isDocument, groupedByIsDocument) ->
-                    groupedByIsDocument.stream()
-                            .collect(Collectors.groupingBy(FieldData::vectorize))
-                            .forEach((vectorize, groupedByVectorize) -> {
-                              AzureOpenAiEmbeddingModel model = getAzureOpenAiEmbeddingModel(vectorize);
-                              List<?> embeddings = isDocument
-                                      ? getEmbeddingAsFloatArrayFor(mapValues(groupedByVectorize), model)
-                                      : getEmbeddingsAsByteArrayFor(mapValues(groupedByVectorize), model);
-
-                              if (embeddings != null) {
-                                applyEmbeddings(groupedByVectorize, embeddings, vectorize);
-                              }
-                            })
-            );
-  }
-
-  private void processAzureOpenAiSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
-      boolean isDocument) {
-    AzureOpenAiEmbeddingModel model = getAzureOpenAiEmbeddingModel(vectorize);
-    if (isDocument) {
-      accessor.setPropertyValue(vectorize.destination(), getEmbeddingAsFloatArrayFor(fieldValue.toString(), model));
-    } else {
-      accessor.setPropertyValue(vectorize.destination(), getEmbeddingsAsByteArrayFor(fieldValue.toString(), model));
-    }
-  }
-
-  private void processVertexAiSentenceEmbedding(List<FieldData> fieldDataList) {
-    fieldDataList.stream()
-            .collect(Collectors.groupingBy(FieldData::isDocument))
-            .forEach((isDocument, groupedByIsDocument) ->
-                    groupedByIsDocument.stream()
-                            .collect(Collectors.groupingBy(FieldData::vectorize))
-                            .forEach((vectorize, groupedByVectorize) -> {
-                              VertexAiTextEmbeddingModel model = getVertexAiPaLm2EmbeddingModel(vectorize);
-                              List<?> embeddings = isDocument
-                                      ? getEmbeddingAsFloatArrayFor(mapValues(groupedByVectorize), model)
-                                      : getEmbeddingsAsByteArrayFor(mapValues(groupedByVectorize), model);
-
-                              if (embeddings != null) {
-                                applyEmbeddings(groupedByVectorize, embeddings, vectorize);
-                              }
-                            })
-            );
-  }
-
-  private void processVertexAiSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
-      boolean isDocument) {
-    VertexAiTextEmbeddingModel model = getVertexAiPaLm2EmbeddingModel(vectorize);
-    if (isDocument) {
-      accessor.setPropertyValue(vectorize.destination(), getEmbeddingAsFloatArrayFor(fieldValue.toString(), model));
-    } else {
-      accessor.setPropertyValue(vectorize.destination(), getEmbeddingsAsByteArrayFor(fieldValue.toString(), model));
-    }
-  }
-
-  private void processBedrockCohereSentenceEmbedding(List<FieldData> fieldDataList) {
-    fieldDataList.stream()
-            .collect(Collectors.groupingBy(FieldData::isDocument))
-            .forEach((isDocument, groupedByIsDocument) ->
-                    groupedByIsDocument.stream()
-                            .collect(Collectors.groupingBy(FieldData::vectorize))
-                            .forEach((vectorize, groupedByVectorize) -> {
-                              BedrockCohereEmbeddingModel model = getBedrockCohereEmbeddingModel(vectorize);
-                              List<?> embeddings = isDocument
-                                      ? getEmbeddingAsFloatArrayFor(mapValues(groupedByVectorize), model)
-                                      : getEmbeddingsAsByteArrayFor(mapValues(groupedByVectorize), model);
-
-                              if (embeddings != null) {
-                                applyEmbeddings(groupedByVectorize, embeddings, vectorize);
-                              }
-                            })
-            );
-  }
-
-  private void processBedrockCohereSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
-      boolean isDocument) {
-    BedrockCohereEmbeddingModel model = getBedrockCohereEmbeddingModel(vectorize);
-    if (isDocument) {
-      accessor.setPropertyValue(vectorize.destination(), getEmbeddingAsFloatArrayFor(fieldValue.toString(), model));
-    } else {
-      accessor.setPropertyValue(vectorize.destination(), getEmbeddingsAsByteArrayFor(fieldValue.toString(), model));
-    }
-  }
-
-  private void processBedrockTitanSentenceEmbedding(List<FieldData> fieldDataList) {
-    fieldDataList.stream()
-            .collect(Collectors.groupingBy(FieldData::isDocument))
-            .forEach((isDocument, groupedByIsDocument) ->
-                    groupedByIsDocument.stream()
-                            .collect(Collectors.groupingBy(FieldData::vectorize))
-                            .forEach((vectorize, groupedByVectorize) -> {
-                              BedrockTitanEmbeddingModel model = getBedrockTitanEmbeddingModel(vectorize);
-                              List<?> embeddings = isDocument
-                                      ? getEmbeddingAsFloatArrayFor(mapValues(groupedByVectorize), model)
-                                      : getEmbeddingsAsByteArrayFor(mapValues(groupedByVectorize), model);
-
-                              if (embeddings != null) {
-                                applyEmbeddings(groupedByVectorize, embeddings, vectorize);
-                              }
-                            })
-            );
-  }
-
-  private void processBedrockTitanSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
-      boolean isDocument) {
-    BedrockTitanEmbeddingModel model = getBedrockTitanEmbeddingModel(vectorize);
+  private void processSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
+                                        boolean isDocument, Function<Vectorize, EmbeddingModel> modelFunction) {
+    EmbeddingModel model = modelFunction.apply(vectorize);
     if (isDocument) {
       accessor.setPropertyValue(vectorize.destination(), getEmbeddingAsFloatArrayFor(fieldValue.toString(), model));
     } else {
