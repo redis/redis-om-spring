@@ -377,7 +377,7 @@ public class DefaultEmbedder implements Embedder {
     fieldDataList.stream().collect(Collectors.groupingBy(it -> it.vectorize().provider()))
             .forEach((provider, groupedFieldDataList) -> {
               switch (provider) {
-                case TRANSFORMERS -> processDjlSentenceEmbedding(groupedFieldDataList);
+                case TRANSFORMERS -> processSentenceEmbedding(groupedFieldDataList, this::getTransformersEmbeddingModel);
                 case DJL -> {
                 }
                 case OPENAI -> processSentenceEmbedding(groupedFieldDataList, this::getOpenAiEmbeddingModel);
@@ -403,24 +403,6 @@ public class DefaultEmbedder implements Embedder {
       case AMAZON_BEDROCK_COHERE -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getBedrockCohereEmbeddingModel);
       case AMAZON_BEDROCK_TITAN -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getBedrockTitanEmbeddingModel);
     }
-  }
-
-  private void processDjlSentenceEmbedding(List<FieldData> fieldDataList) {
-    fieldDataList.stream()
-            .collect(Collectors.groupingBy(FieldData::isDocument))
-            .forEach((isDocument, groupedByIsDocument) ->
-                    groupedByIsDocument.stream()
-                            .collect(Collectors.groupingBy(FieldData::vectorize))
-                            .forEach((vectorize, groupedByVectorize) -> {
-                              List<?> embeddings = isDocument
-                                      ? getSentenceEmbeddingAsFloats(mapValues(groupedByVectorize), vectorize)
-                                      : getSentenceEmbeddingAsBytes(mapValues(groupedByVectorize), vectorize);
-
-                              if (embeddings != null) {
-                                applyEmbeddings(groupedByVectorize, embeddings, vectorize);
-                              }
-                            })
-            );
   }
 
   private List<String> mapValues(List<FieldData> fieldDataList) {
