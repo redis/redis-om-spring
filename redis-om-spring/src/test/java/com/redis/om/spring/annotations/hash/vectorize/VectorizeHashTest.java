@@ -215,5 +215,7 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
                       .isEqualTo(saveAllEntity.getImageEmbedding())
       );
     });
+
+    repository.deleteAll();
   }
 }

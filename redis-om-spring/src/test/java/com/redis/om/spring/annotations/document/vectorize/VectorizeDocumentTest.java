@@ -33,7 +33,7 @@ class VectorizeDocumentTest extends AbstractBaseDocumentTest {
   Embedder embedder;
 
   @BeforeEach
-  void loadTestData() throws IOException {
+  void loadTestData() {
     if (repository.count() == 0) {
       repository.save(Product.of("cat", "classpath:/images/cat.jpg",
               "The cat (Felis catus) is a domestic species of small carnivorous mammal."));
@@ -215,5 +215,6 @@ class VectorizeDocumentTest extends AbstractBaseDocumentTest {
                       .isEqualTo(saveAllEntity.getImageEmbedding())
       );
     });
+    repository.deleteAll();
   }
 }
