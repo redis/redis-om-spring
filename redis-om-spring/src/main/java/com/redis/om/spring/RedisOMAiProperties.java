@@ -14,6 +14,7 @@ import java.util.Map;
 )
 public class RedisOMAiProperties {
   private boolean enabled = false;
+  private int embeddingBatchSize = 1000;
   private final Djl djl = new Djl();
   private final Transformers transformers = new Transformers();
   private final OpenAi openAi = new OpenAi();
@@ -63,7 +64,15 @@ public class RedisOMAiProperties {
     return ollama;
   }
 
-  // Transformer properties
+    public int getEmbeddingBatchSize() {
+        return embeddingBatchSize;
+    }
+
+    public void setEmbeddingBatchSize(int embeddingBatchSize) {
+        this.embeddingBatchSize = embeddingBatchSize;
+    }
+
+    // Transformer properties
   public static class Transformers {
     private String tokenizerResource;
     private String modelResource;
@@ -87,7 +96,6 @@ public class RedisOMAiProperties {
     }
   }
 
-  // DJL properties
   public static class Djl {
     private static final String DEFAULT_ENGINE = "PyTorch";
     // image embedding settings

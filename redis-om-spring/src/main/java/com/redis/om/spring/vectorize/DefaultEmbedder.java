@@ -10,6 +10,7 @@ import ai.djl.translate.TranslateException;
 import com.azure.ai.openai.OpenAIClient;
 import com.redis.om.spring.RedisOMAiProperties;
 import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.annotations.EmbeddingType;
 import com.redis.om.spring.annotations.Vectorize;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.util.ObjectUtils;
@@ -24,9 +25,7 @@ import org.springframework.ai.bedrock.titan.BedrockTitanEmbeddingModel;
 import org.springframework.ai.bedrock.titan.api.TitanEmbeddingBedrockApi;
 import org.springframework.ai.bedrock.titan.api.TitanEmbeddingBedrockApi.TitanEmbeddingModel;
 import org.springframework.ai.document.MetadataMode;
-import org.springframework.ai.embedding.Embedding;
 import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.ai.embedding.EmbeddingResponse;
 import org.springframework.ai.model.ModelOptionsUtils;
 import org.springframework.ai.ollama.OllamaEmbeddingModel;
 import org.springframework.ai.ollama.api.OllamaApi;
@@ -52,8 +51,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.time.Duration;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.redis.om.spring.annotations.EmbeddingType.SENTENCE;
 import static com.redis.om.spring.util.ObjectUtils.byteArrayToFloatArray;
@@ -114,6 +114,28 @@ public class DefaultEmbedder implements Embedder {
         .defaultOptions(OllamaOptions.builder().model(OllamaModel.MISTRAL.id()).build()).build();
   }
 
+  private List<byte[]> getImageEmbeddingsAsByteArrayFor(List<InputStream> isList) {
+     var imgs = isList.stream().map(is -> {
+         try {
+           return imageFactory.fromInputStream(is);
+         } catch (IOException e) {
+           logger.warn("Error generating image embedding", e);
+           return null;
+         }
+     }).toList();
+
+     try {
+       if (!imgs.contains(null)) {
+         Predictor<Image, float[]> predictor = imageEmbeddingModel.newPredictor(imageFeatureExtractor);
+         return predictor.batchPredict(imgs).stream().map(ObjectUtils::floatArrayToByteArray).toList();
+       }
+     } catch (TranslateException e) {
+      logger.warn("Error generating image embedding", e);
+     }
+
+     return List.of();
+  }
+
   private byte[] getImageEmbeddingsAsByteArrayFor(InputStream is) {
     try {
       var img = imageFactory.fromInputStream(is);
@@ -125,12 +147,40 @@ public class DefaultEmbedder implements Embedder {
     }
   }
 
+  private List<float[]> getImageEmbeddingsAsFloatArrayFor(List<InputStream> isList) {
+    return getImageEmbeddingsAsByteArrayFor(isList).stream().map(ObjectUtils::byteArrayToFloatArray).toList();
+  }
+
   private float[] getImageEmbeddingsAsFloatArrayFor(InputStream is) {
     return byteArrayToFloatArray(getImageEmbeddingsAsByteArrayFor(is));
   }
 
+  private List<byte[]> getFacialImageEmbeddingsAsByteArrayFor(List<InputStream> isList) {
+    return getFacialImageEmbeddingsAsFloatArrayFor(isList).stream().map(ObjectUtils::floatArrayToByteArray).toList();
+  }
+
   private byte[] getFacialImageEmbeddingsAsByteArrayFor(InputStream is) throws IOException, TranslateException {
     return ObjectUtils.floatArrayToByteArray(getFacialImageEmbeddingsAsFloatArrayFor(is));
+  }
+
+  private List<float[]> getFacialImageEmbeddingsAsFloatArrayFor(List<InputStream> isList) {
+    var imgs = isList.stream().map(is -> {
+      try {
+        return imageFactory.fromInputStream(is);
+      } catch (IOException e) {
+        logger.warn("Error generating face embedding", e);
+        return null;
+      }
+    }).toList();
+
+    if (!imgs.contains(null)) {
+      try (Predictor<Image, float[]> predictor = faceEmbeddingModel.newPredictor()) {
+        return predictor.batchPredict(imgs);
+      } catch (TranslateException e) {
+        logger.warn("Error generating face embedding", e);
+      }
+    }
+    return List.of();
   }
 
   private float[] getFacialImageEmbeddingsAsFloatArrayFor(InputStream is) throws IOException, TranslateException {
@@ -145,41 +195,20 @@ public class DefaultEmbedder implements Embedder {
     return encodings.stream().map(ObjectUtils::floatArrayToByteArray).toList();
   }
 
-  private List<float[]> getSentenceEmbeddingAsFloatArrayFor(List<String> texts) {
-    return transformersEmbeddingModel.embed(texts);
-  }
-
-  private byte[] getSentenceEmbeddingsAsByteArrayFor(String text) {
-    return ObjectUtils.floatArrayToByteArray(transformersEmbeddingModel.embed(text));
-  }
-
-  private float[] getSentenceEmbeddingAsFloatArrayFor(String text) {
-    return transformersEmbeddingModel.embed(text);
-  }
-
   private List<byte[]> getEmbeddingsAsByteArrayFor(List<String> texts, EmbeddingModel model) {
-    EmbeddingResponse embeddingResponse = model.embedForResponse(texts);
-    List<Embedding> embeddings = embeddingResponse.getResults();
-
-    return embeddings.stream().map(e -> ObjectUtils.floatArrayToByteArray(e.getOutput())).toList();
+    return model.embed(texts).stream().map(ObjectUtils::floatArrayToByteArray).toList();
   }
 
   private List<float[]> getEmbeddingAsFloatArrayFor(List<String> texts, EmbeddingModel model) {
-    EmbeddingResponse embeddingResponse = model.embedForResponse(texts);
-    List<Embedding> embeddings = embeddingResponse.getResults();
-    return embeddings.stream().map(Embedding::getOutput).toList();
+    return model.embed(texts);
   }
 
   private byte[] getEmbeddingsAsByteArrayFor(String text, EmbeddingModel model) {
-    EmbeddingResponse embeddingResponse = model.embedForResponse(List.of(text));
-    Embedding embedding = embeddingResponse.getResult();
-    return ObjectUtils.floatArrayToByteArray(embedding.getOutput());
+    return ObjectUtils.floatArrayToByteArray(model.embed(text));
   }
 
   private float[] getEmbeddingAsFloatArrayFor(String text, EmbeddingModel model) {
-    EmbeddingResponse embeddingResponse = model.embedForResponse(List.of(text));
-    Embedding embedding = embeddingResponse.getResult();
-    return embedding.getOutput();
+    return model.embed(text);
   }
 
   @Override
@@ -187,6 +216,7 @@ public class DefaultEmbedder implements Embedder {
     if (!isReady()) {
       return;
     }
+
     List<Field> fields = ObjectUtils.getFieldsWithAnnotation(item.getClass(), Vectorize.class);
     if (!fields.isEmpty()) {
       PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(item);
@@ -209,6 +239,90 @@ public class DefaultEmbedder implements Embedder {
     }
   }
 
+  @Override
+  public <S> void processEntities(Iterable<S> items) {
+    if (!isReady()) {
+      return;
+    }
+
+    int batchSize = properties.getEmbeddingBatchSize();
+    List<FieldData> batch = new ArrayList<>(batchSize);
+
+    for (Object item : items) {
+      List<Field> fields = ObjectUtils.getFieldsWithAnnotation(item.getClass(), Vectorize.class);
+      if (fields.isEmpty()) continue;
+
+      PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(item);
+      boolean isDocument = item.getClass().isAnnotationPresent(Document.class);
+
+      for (Field field : fields) {
+        Vectorize vectorize = field.getAnnotation(Vectorize.class);
+        Object fieldValue = accessor.getPropertyValue(field.getName());
+
+        if (fieldValue != null) {
+          batch.add(new FieldData(vectorize, item, field, accessor, fieldValue, isDocument));
+        }
+
+        if (batch.size() >= batchSize) {
+          processBatch(batch);
+          batch.clear();
+        }
+      }
+    }
+
+    // Process any remaining items
+    if (!batch.isEmpty()) {
+      processBatch(batch);
+    }
+  }
+
+  private void processBatch(List<FieldData> batch) {
+    batch.stream()
+            .collect(Collectors.groupingBy(fd -> fd.vectorize().embeddingType()))
+            .forEach(this::vectorizeBatch);
+  }
+
+  private void vectorizeBatch(EmbeddingType embeddingType, List<FieldData> fieldDataList) {
+    switch (embeddingType) {
+      case IMAGE -> processImageEmbedding(fieldDataList);
+      case WORD -> {
+        //TODO: implement me!
+      }
+      case FACE -> processFaceEmbedding(fieldDataList);
+      case SENTENCE -> processSentencesEmbedding(fieldDataList);
+    }
+  }
+
+  private void processImageEmbedding(List<FieldData> fieldDataList) {
+    fieldDataList.stream()
+            .collect(Collectors.groupingBy(FieldData::isDocument))
+            .forEach((isDocument, groupedByIsDocument) ->
+                    groupedByIsDocument.stream()
+                            .collect(Collectors.groupingBy(FieldData::vectorize))
+                            .forEach((vectorize, groupedByVectorize) -> {
+                              List<?> embeddings = isDocument
+                                      ? getImageEmbeddingsAsFloatArrayFor(mapValuesToResources(groupedByVectorize))
+                                      : getImageEmbeddingsAsByteArrayFor(mapValuesToResources(groupedByVectorize));
+
+                              if (embeddings != null) {
+                                applyEmbeddings(groupedByVectorize, embeddings, vectorize);
+                              }
+                            })
+            );
+  }
+
+  private List<InputStream> mapValuesToResources(List<FieldData> fieldDataList) {
+    var resources = fieldDataList.stream().map(it -> {
+        try {
+            return applicationContext.getResource(it.value().toString()).getInputStream();
+        } catch (IOException e) {
+          logger.info("Error embedding image: ()" + it.value());
+          return null;
+        }
+    }).toList();
+    return resources.contains(null) ? List.of() : resources;
+  }
+
   private void processImageEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
       boolean isDocument) {
     Resource resource = applicationContext.getResource(fieldValue.toString());
@@ -223,6 +337,25 @@ public class DefaultEmbedder implements Embedder {
       logger.warn("Error generating image embedding", e);
     }
   }
+
+  private void processFaceEmbedding(List<FieldData> fieldDataList) {
+    fieldDataList.stream()
+            .collect(Collectors.groupingBy(FieldData::isDocument))
+            .forEach((isDocument, groupedByIsDocument) ->
+                    groupedByIsDocument.stream()
+                            .collect(Collectors.groupingBy(FieldData::vectorize))
+                            .forEach((vectorize, groupedByVectorize) -> {
+                              List<?> embeddings = isDocument
+                                      ? getFacialImageEmbeddingsAsFloatArrayFor(mapValuesToResources(groupedByVectorize))
+                                      : getFacialImageEmbeddingsAsByteArrayFor(mapValuesToResources(groupedByVectorize));
+
+                              if (embeddings != null) {
+                                applyEmbeddings(groupedByVectorize, embeddings, vectorize);
+                              }
+                            })
+            );
+  }
+
 
   private void processFaceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
       boolean isDocument) {
@@ -240,63 +373,70 @@ public class DefaultEmbedder implements Embedder {
     }
   }
 
+  private void processSentencesEmbedding(List<FieldData> fieldDataList) {
+    fieldDataList.stream().collect(Collectors.groupingBy(it -> it.vectorize().provider()))
+            .forEach((provider, groupedFieldDataList) -> {
+              switch (provider) {
+                case TRANSFORMERS -> processSentenceEmbedding(groupedFieldDataList, this::getTransformersEmbeddingModel);
+                case DJL -> {
+                }
+                case OPENAI -> processSentenceEmbedding(groupedFieldDataList, this::getOpenAiEmbeddingModel);
+                case OLLAMA -> processSentenceEmbedding(groupedFieldDataList, this::getOllamaEmbeddingModel);
+                case AZURE_OPENAI -> processSentenceEmbedding(groupedFieldDataList, this::getAzureOpenAiEmbeddingModel);
+                case VERTEX_AI -> processSentenceEmbedding(groupedFieldDataList, this::getVertexAiPaLm2EmbeddingModel);
+                case AMAZON_BEDROCK_COHERE -> processSentenceEmbedding(groupedFieldDataList, this::getBedrockCohereEmbeddingModel);
+                case AMAZON_BEDROCK_TITAN -> processSentenceEmbedding(groupedFieldDataList, this::getBedrockTitanEmbeddingModel);
+              }
+            });
+  }
+
   private void processSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
       boolean isDocument) {
     switch (vectorize.provider()) {
-      case TRANSFORMERS -> processDjlSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
+      case TRANSFORMERS -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getTransformersEmbeddingModel);
       case DJL -> {
       }
-      case OPENAI -> processOpenAiSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
-      case OLLAMA -> processOllamaSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
-      case AZURE_OPENAI -> processAzureOpenAiSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
-      case VERTEX_AI -> processVertexAiSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
-      case AMAZON_BEDROCK_COHERE -> processBedrockCohereSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
-      case AMAZON_BEDROCK_TITAN -> processBedrockTitanSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
+      case OPENAI -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getOpenAiEmbeddingModel);
+      case OLLAMA -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getOllamaEmbeddingModel);
+      case AZURE_OPENAI -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getAzureOpenAiEmbeddingModel);
+      case VERTEX_AI -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getVertexAiPaLm2EmbeddingModel);
+      case AMAZON_BEDROCK_COHERE -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getBedrockCohereEmbeddingModel);
+      case AMAZON_BEDROCK_TITAN -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getBedrockTitanEmbeddingModel);
     }
   }
 
-  private void processDjlSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
-      boolean isDocument) {
-    if (isDocument) {
-      accessor.setPropertyValue(vectorize.destination(), getSentenceEmbeddingAsFloatArrayFor(fieldValue.toString()));
-    } else {
-      accessor.setPropertyValue(vectorize.destination(), getSentenceEmbeddingsAsByteArrayFor(fieldValue.toString()));
+  private List<String> mapValues(List<FieldData> fieldDataList) {
+    return fieldDataList.stream().map(it -> it.value().toString()).toList();
+  }
+
+  private void applyEmbeddings(List<FieldData> fieldDataList, List<?> embeddings, Vectorize vectorize) {
+    for (int i = 0; i < fieldDataList.size() && i < embeddings.size(); i++) {
+      fieldDataList.get(i).accessor().setPropertyValue(vectorize.destination(), embeddings.get(i));
     }
   }
 
-  private void processOpenAiSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
-      boolean isDocument) {
-    OpenAiEmbeddingModel model = getOpenAiEmbeddingModel(vectorize);
-    if (isDocument) {
-      accessor.setPropertyValue(vectorize.destination(), getEmbeddingAsFloatArrayFor(fieldValue.toString(), model));
-    } else {
-      accessor.setPropertyValue(vectorize.destination(), getEmbeddingsAsByteArrayFor(fieldValue.toString(), model));
-    }
+  private void processSentenceEmbedding(List<FieldData> fieldDataList, Function<Vectorize, EmbeddingModel> modelFunction) {
+    fieldDataList.stream()
+            .collect(Collectors.groupingBy(FieldData::isDocument))
+            .forEach((isDocument, groupedByIsDocument) ->
+                    groupedByIsDocument.stream()
+                            .collect(Collectors.groupingBy(FieldData::vectorize))
+                            .forEach((vectorize, groupedByVectorize) -> {
+                              EmbeddingModel model = modelFunction.apply(vectorize);
+                              List<?> embeddings = isDocument
+                                      ? getEmbeddingAsFloatArrayFor(mapValues(groupedByVectorize), model)
+                                      : getEmbeddingsAsByteArrayFor(mapValues(groupedByVectorize), model);
+
+                              if (embeddings != null) {
+                                applyEmbeddings(groupedByVectorize, embeddings, vectorize);
+                              }
+                            })
+            );
   }
 
-  private void processOllamaSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
-      boolean isDocument) {
-    OllamaEmbeddingModel model = getOllamaEmbeddingModel(vectorize);
-    if (isDocument) {
-      accessor.setPropertyValue(vectorize.destination(), getEmbeddingAsFloatArrayFor(fieldValue.toString(), model));
-    } else {
-      accessor.setPropertyValue(vectorize.destination(), getEmbeddingsAsByteArrayFor(fieldValue.toString(), model));
-    }
-  }
-
-  private void processAzureOpenAiSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
-      boolean isDocument) {
-    AzureOpenAiEmbeddingModel model = getAzureOpenAiEmbeddingModel(vectorize);
-    if (isDocument) {
-      accessor.setPropertyValue(vectorize.destination(), getEmbeddingAsFloatArrayFor(fieldValue.toString(), model));
-    } else {
-      accessor.setPropertyValue(vectorize.destination(), getEmbeddingsAsByteArrayFor(fieldValue.toString(), model));
-    }
-  }
-
-  private void processVertexAiSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
-      boolean isDocument) {
-    VertexAiTextEmbeddingModel model = getVertexAiPaLm2EmbeddingModel(vectorize);
+  private void processSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
+                                        boolean isDocument, Function<Vectorize, EmbeddingModel> modelFunction) {
+    EmbeddingModel model = modelFunction.apply(vectorize);
     if (isDocument) {
       accessor.setPropertyValue(vectorize.destination(), getEmbeddingAsFloatArrayFor(fieldValue.toString(), model));
     } else {
@@ -304,24 +444,8 @@ public class DefaultEmbedder implements Embedder {
     }
   }
 
-  private void processBedrockCohereSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
-      boolean isDocument) {
-    BedrockCohereEmbeddingModel model = getBedrockCohereEmbeddingModel(vectorize);
-    if (isDocument) {
-      accessor.setPropertyValue(vectorize.destination(), getEmbeddingAsFloatArrayFor(fieldValue.toString(), model));
-    } else {
-      accessor.setPropertyValue(vectorize.destination(), getEmbeddingsAsByteArrayFor(fieldValue.toString(), model));
-    }
-  }
-
-  private void processBedrockTitanSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
-      boolean isDocument) {
-    BedrockTitanEmbeddingModel model = getBedrockTitanEmbeddingModel(vectorize);
-    if (isDocument) {
-      accessor.setPropertyValue(vectorize.destination(), getEmbeddingAsFloatArrayFor(fieldValue.toString(), model));
-    } else {
-      accessor.setPropertyValue(vectorize.destination(), getEmbeddingsAsByteArrayFor(fieldValue.toString(), model));
-    }
+  private TransformersEmbeddingModel getTransformersEmbeddingModel(Vectorize vectorize) {
+    return this.transformersEmbeddingModel;
   }
 
   private OpenAiEmbeddingModel getOpenAiEmbeddingModel(Vectorize vectorize) {
@@ -438,7 +562,10 @@ public class DefaultEmbedder implements Embedder {
 
   private List<float[]> getSentenceEmbeddingAsFloats(List<String> texts, Vectorize vectorize) {
     return switch (vectorize.provider()) {
-      case TRANSFORMERS -> getSentenceEmbeddingAsFloatArrayFor(texts);
+      case TRANSFORMERS -> {
+        TransformersEmbeddingModel model = getTransformersEmbeddingModel(vectorize);
+        yield getEmbeddingAsFloatArrayFor(texts, model);
+      }
       case DJL -> Collections.emptyList(); //TODO what to do here?
       case OPENAI -> {
         OpenAiEmbeddingModel model = getOpenAiEmbeddingModel(vectorize);
@@ -489,3 +616,5 @@ public class DefaultEmbedder implements Embedder {
     return getTextEmbeddingsAsFloats(texts, metamodelField.getSearchFieldAccessor().getField());
   }
 }
+
+record FieldData(Vectorize vectorize, Object item, Field field, PropertyAccessor accessor, Object value, boolean isDocument) {}

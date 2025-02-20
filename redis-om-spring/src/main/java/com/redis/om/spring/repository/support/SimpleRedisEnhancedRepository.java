@@ -360,6 +360,8 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
     List<S> saved = new ArrayList<>();
 
+    embedder.processEntities(entities);
+
     try (Jedis jedis = modulesOperations.client().getJedis().get()) {
       Pipeline pipeline = jedis.pipelined();
 
@@ -380,7 +382,6 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
 
         // process entity pre-save mutation
         auditor.processEntity(entity, isNew);
-        embedder.processEntity(entity);
 
         RedisData rdo = new RedisData();
         mappingConverter.write(entity, rdo);
