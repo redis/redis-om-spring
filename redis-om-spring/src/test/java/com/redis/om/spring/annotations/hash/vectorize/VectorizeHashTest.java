@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.junit.jupiter.EnabledIf;
 
-import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -32,18 +32,20 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
   Embedder embedder;
 
   @BeforeEach
-  void loadTestData() throws IOException {
+  void loadTestData() {
     if (repository.count() == 0) {
       repository.save(Product.of("cat", "classpath:/images/cat.jpg",
           "The cat (Felis catus) is a domestic species of small carnivorous mammal."));
       repository.save(Product.of("cat2", "classpath:/images/cat2.jpg",
           "It is the only domesticated species in the family Felidae and is commonly referred to as the domestic cat or house cat"));
       repository.save(
-          Product.of("catdog", "classpath:/images/catdog.jpg", "This is a picture of a cat and a dog together"));
+          Product.of("catdog", "classpath:/images/catdog.jpg",
+                  "This is a picture of a cat and a dog together. And this sentence is just making the whole text longer."));
       repository.save(
-          Product.of("face", "classpath:/images/face.jpg", "Three years later, the coffin was still full of Jello."));
+          Product.of("face", "classpath:/images/face.jpg",
+                  "Three years later, the coffin was still full of Jello. And this sentence is just making the whole text longer."));
       repository.save(Product.of("face2", "classpath:/images/face2.jpg",
-          "The person box was packed with jelly many dozens of months later."));
+          "The person box was packed with jelly many dozens of months later. And this sentence is just making the whole text longer."));
     }
   }
 
@@ -180,4 +182,38 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
         () -> assertThat(embeddings.get(0)).isEqualTo(catEmbedding));
   }
 
+  @Test
+  @EnabledIf(
+          expression = "#{@featureExtractor.isReady()}", //
+          loadContext = true //
+  )
+  void testBulkEmbedMapEmbeddingsCorrectly() {
+    List<Product> saveAllEntities = repository.saveAll(List.of(
+                    Product.of("cat-saveAll", "classpath:/images/cat.jpg",
+                            "The cat (Felis catus) is a domestic species of small carnivorous mammal."),
+                    Product.of("cat2-saveAll", "classpath:/images/cat2.jpg",
+                            "It is the only domesticated species in the family Felidae and is commonly referred to as the domestic cat or house cat"),
+                    Product.of("catdog-saveAll", "classpath:/images/catdog.jpg", "This is a picture of a cat and a dog together. And this sentence is just making the whole text longer."),
+                    Product.of("face-saveAll", "classpath:/images/face.jpg", "Three years later, the coffin was still full of Jello. And this sentence is just making the whole text longer."),
+                    Product.of("face2-saveAll", "classpath:/images/face2.jpg", "The person box was packed with jelly many dozens of months later. And this sentence is just making the whole text longer.")
+            )
+    );
+
+    saveAllEntities.forEach(saveAllEntity -> {
+      Optional<Product> cat = repository.findFirstByName(saveAllEntity.getName().replace("-saveAll", ""));
+      Optional<Product> catSaveAll = repository.findFirstByName(saveAllEntity.getName());
+
+      assertAll( //
+              () -> assertThat(cat).isPresent(), //
+              () -> assertThat(cat.get().getSentenceEmbedding())
+                      .withFailMessage("Sentence embeddings aren't the same for: " + saveAllEntity.getName() + " and " + cat.get().getName() + "\n" +
+                              "Embedding 1: " + Arrays.toString(catSaveAll.get().getSentenceEmbedding()) + "\n" +
+                              "Embedding 2: " + Arrays.toString(cat.get().getSentenceEmbedding()))
+                      .isEqualTo(saveAllEntity.getSentenceEmbedding()),
+              () -> assertThat(cat.get().getImageEmbedding())
+                      .withFailMessage("Image embeddings aren't the same for: " + saveAllEntity.getName() + " and " + cat.get().getName())
+                      .isEqualTo(saveAllEntity.getImageEmbedding())
+      );
+    });
+  }
 }

@@ -25,9 +25,7 @@ import org.springframework.ai.bedrock.titan.BedrockTitanEmbeddingModel;
 import org.springframework.ai.bedrock.titan.api.TitanEmbeddingBedrockApi;
 import org.springframework.ai.bedrock.titan.api.TitanEmbeddingBedrockApi.TitanEmbeddingModel;
 import org.springframework.ai.document.MetadataMode;
-import org.springframework.ai.embedding.Embedding;
 import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.ai.embedding.EmbeddingResponse;
 import org.springframework.ai.model.ModelOptionsUtils;
 import org.springframework.ai.ollama.OllamaEmbeddingModel;
 import org.springframework.ai.ollama.api.OllamaApi;
@@ -209,28 +207,19 @@ public class DefaultEmbedder implements Embedder {
   }
 
   private List<byte[]> getEmbeddingsAsByteArrayFor(List<String> texts, EmbeddingModel model) {
-    EmbeddingResponse embeddingResponse = model.embedForResponse(texts);
-    List<Embedding> embeddings = embeddingResponse.getResults();
-
-    return embeddings.stream().map(e -> ObjectUtils.floatArrayToByteArray(e.getOutput())).toList();
+    return model.embed(texts).stream().map(ObjectUtils::floatArrayToByteArray).toList();
   }
 
   private List<float[]> getEmbeddingAsFloatArrayFor(List<String> texts, EmbeddingModel model) {
-    EmbeddingResponse embeddingResponse = model.embedForResponse(texts);
-    List<Embedding> embeddings = embeddingResponse.getResults();
-    return embeddings.stream().map(Embedding::getOutput).toList();
+    return model.embed(texts);
   }
 
   private byte[] getEmbeddingsAsByteArrayFor(String text, EmbeddingModel model) {
-    EmbeddingResponse embeddingResponse = model.embedForResponse(List.of(text));
-    Embedding embedding = embeddingResponse.getResult();
-    return ObjectUtils.floatArrayToByteArray(embedding.getOutput());
+    return ObjectUtils.floatArrayToByteArray(model.embed(text));
   }
 
   private float[] getEmbeddingAsFloatArrayFor(String text, EmbeddingModel model) {
-    EmbeddingResponse embeddingResponse = model.embedForResponse(List.of(text));
-    Embedding embedding = embeddingResponse.getResult();
-    return embedding.getOutput();
+    return model.embed(text);
   }
 
   @Override
@@ -238,6 +227,7 @@ public class DefaultEmbedder implements Embedder {
     if (!isReady()) {
       return;
     }
+
     List<Field> fields = ObjectUtils.getFieldsWithAnnotation(item.getClass(), Vectorize.class);
     if (!fields.isEmpty()) {
       PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(item);
