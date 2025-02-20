@@ -195,18 +195,6 @@ public class DefaultEmbedder implements Embedder {
     return encodings.stream().map(ObjectUtils::floatArrayToByteArray).toList();
   }
 
-  private List<float[]> getSentenceEmbeddingAsFloatArrayFor(List<String> texts) {
-    return transformersEmbeddingModel.embed(texts);
-  }
-
-  private byte[] getSentenceEmbeddingsAsByteArrayFor(String text) {
-    return ObjectUtils.floatArrayToByteArray(transformersEmbeddingModel.embed(text));
-  }
-
-  private float[] getSentenceEmbeddingAsFloatArrayFor(String text) {
-    return transformersEmbeddingModel.embed(text);
-  }
-
   private List<byte[]> getEmbeddingsAsByteArrayFor(List<String> texts, EmbeddingModel model) {
     return model.embed(texts).stream().map(ObjectUtils::floatArrayToByteArray).toList();
   }
@@ -405,7 +393,7 @@ public class DefaultEmbedder implements Embedder {
   private void processSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
       boolean isDocument) {
     switch (vectorize.provider()) {
-      case TRANSFORMERS -> processDjlSentenceEmbedding(accessor, vectorize, fieldValue, isDocument);
+      case TRANSFORMERS -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getTransformersEmbeddingModel);
       case DJL -> {
       }
       case OPENAI -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getOpenAiEmbeddingModel);
@@ -414,15 +402,6 @@ public class DefaultEmbedder implements Embedder {
       case VERTEX_AI -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getVertexAiPaLm2EmbeddingModel);
       case AMAZON_BEDROCK_COHERE -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getBedrockCohereEmbeddingModel);
       case AMAZON_BEDROCK_TITAN -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getBedrockTitanEmbeddingModel);
-    }
-  }
-
-  private void processDjlSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
-                                           boolean isDocument) {
-    if (isDocument) {
-      accessor.setPropertyValue(vectorize.destination(), getSentenceEmbeddingAsFloatArrayFor(fieldValue.toString()));
-    } else {
-      accessor.setPropertyValue(vectorize.destination(), getSentenceEmbeddingsAsByteArrayFor(fieldValue.toString()));
     }
   }
 
@@ -481,6 +460,10 @@ public class DefaultEmbedder implements Embedder {
     } else {
       accessor.setPropertyValue(vectorize.destination(), getEmbeddingsAsByteArrayFor(fieldValue.toString(), model));
     }
+  }
+
+  private TransformersEmbeddingModel getTransformersEmbeddingModel(Vectorize vectorize) {
+    return this.transformersEmbeddingModel;
   }
 
   private OpenAiEmbeddingModel getOpenAiEmbeddingModel(Vectorize vectorize) {
@@ -597,7 +580,10 @@ public class DefaultEmbedder implements Embedder {
 
   private List<float[]> getSentenceEmbeddingAsFloats(List<String> texts, Vectorize vectorize) {
     return switch (vectorize.provider()) {
-      case TRANSFORMERS -> getSentenceEmbeddingAsFloatArrayFor(texts);
+      case TRANSFORMERS -> {
+        TransformersEmbeddingModel model = getTransformersEmbeddingModel(vectorize);
+        yield getEmbeddingAsFloatArrayFor(texts, model);
+      }
       case DJL -> Collections.emptyList(); //TODO what to do here?
       case OPENAI -> {
         OpenAiEmbeddingModel model = getOpenAiEmbeddingModel(vectorize);
