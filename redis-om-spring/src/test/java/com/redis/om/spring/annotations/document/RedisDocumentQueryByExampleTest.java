@@ -21,6 +21,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -565,5 +566,41 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
     Company result = companyRepository.findBy(example, FetchableFluentQuery::oneValue);
     assertThat(result).isNotNull().hasFieldOrPropertyWithValue("email", "stack@redis.com");
     assertThat(result.getName()).isEqualTo("RedisInc");
+  }
+
+  @Test
+  void testFindByExampleWithOrAndConditions() {
+    // Example 1: OR conditions on title and tag
+    MyDoc template1 = new MyDoc();
+    template1.setTitle("mundo"); // OR condition
+    template1.setTag(Set.of("artigo")); // OR condition
+
+    ExampleMatcher matcher1 = ExampleMatcher.matchingAny() // OR between these fields
+        .withMatcher("title", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase())
+        .withMatcher("tag", ExampleMatcher.GenericPropertyMatchers.exact())
+        .withIgnorePaths("id");
+
+    Example<MyDoc> example1 = Example.of(template1, matcher1);
+
+    // Example 2: AND condition on aNumber
+    MyDoc template2 = new MyDoc();
+    template2.setANumber(3); // AND condition
+
+    ExampleMatcher matcher2 = ExampleMatcher.matching() // AND for aNumber
+        .withIgnorePaths("id");
+
+    Example<MyDoc> example2 = Example.of(template2, matcher2);
+
+    // Apply both examples (AND between the two, OR within each)
+    List<MyDoc> results = entityStream.of(MyDoc.class)
+        .filter(example1)
+        .filter(example2)
+        .collect(Collectors.toList());
+
+    // Verify results
+    assertThat(results).hasSize(1);
+    assertThat(results.get(0).getTitle()).isEqualTo("ola mundo");
+    assertThat(results.get(0).getTag()).contains("artigo");
+    assertThat(results.get(0).getANumber()).isEqualTo(3);
   }
 }
