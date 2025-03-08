@@ -148,10 +148,18 @@ public class RedisFluentQueryByExample<T, S extends T, R> implements FetchableFl
   public Page<R> page(Pageable pageable) {
     Assert.notNull(pageable, "Pageable must not be null");
 
-    Query query = (searchStream.backingQuery().isBlank()) ? new Query() : new Query(searchStream.backingQuery());
-    query.limit(0, 0);
-    SearchResult searchResult = searchOps.search(query);
-    var count = searchResult.getTotalResults();
+    long count = -1;
+    if (!searchStream.backingQuery().isBlank()) {
+      Query query = new Query(searchStream.backingQuery());
+      query.limit(0, 0);
+      SearchResult searchResult = searchOps.search(query);
+
+      count = searchResult.getTotalResults();
+    } else {
+      var info = searchOps.getInfo();
+      count = (long) info.get("num_docs");
+    }
+
     var pageContents = searchStream.limit(pageable.getPageSize()).skip(pageable.getOffset())
         .collect(Collectors.toList());
     return new PageImpl<>(pageContents, pageable, count);
