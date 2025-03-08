@@ -354,12 +354,17 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public long count() {
-    Query query = (rootNode.toString().isBlank()) ? new Query() : new Query(rootNode.toString());
-    query.limit(0, 0);
-    SearchResult searchResult = search.search(query);
-    resolvedStream = Stream.empty();
+    if (!rootNode.toString().isBlank()) {
+      Query query = new Query(rootNode.toString());
+      query.limit(0, 0);
+      SearchResult searchResult = search.search(query);
+      resolvedStream = Stream.empty();
 
-    return searchResult.getTotalResults();
+      return searchResult.getTotalResults();
+    } else {
+      var info = search.getInfo();
+      return (long) info.get("num_docs");
+    }
   }
 
   @Override

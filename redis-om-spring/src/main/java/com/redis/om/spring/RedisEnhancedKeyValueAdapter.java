@@ -320,13 +320,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   public long count(String keyspace) {
     String indexName = indexer.getIndexName(keyspace);
     SearchOperations<String> search = modulesOperations.opsForSearch(indexName);
-    // FT.SEARCH index * LIMIT 0 0
-    Query query = new Query("*");
-    query.limit(0, 0);
-
-    SearchResult result = search.search(query);
-
-    return result.getTotalResults();
+    var info = search.getInfo();
+    return (long) info.get("num_docs");
   }
 
   /*
