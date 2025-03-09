@@ -13,24 +13,34 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
-    - uses: actions/checkout@v3
-    - name: cache
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.mv2/repository
-        key: om-${{hashFiles('**/pom.xml')}}
+      - uses: actions/checkout@v3
 
-    - name: Set up JDK 21
-      uses: actions/setup-java@v2
-      with:
-        java-version: 21
-        distribution: 'zulu'
-    - run: mvn dependency:go-offline
-    - name: Build
-      run: mvn clean process-test-classes verify
+      - name: Cache Maven Repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: om-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            om-
 
-    - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v4.0.1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Set up JDK 21
+        uses: actions/setup-java@v2
+        with:
+          java-version: 21
+          distribution: 'zulu'
+
+      - run: mvn dependency:go-offline
+
+      - name: Build
+        run: mvn clean process-test-classes verify
+
+      - name: Save Maven Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: om-${{ hashFiles('**/pom.xml') }}
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
