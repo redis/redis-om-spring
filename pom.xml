@@ -23,6 +23,7 @@
   <modules>
     <!-- Main Project -->
     <module>redis-om-spring</module>
+    <module>tests</module>
     <!-- Demos -->
     <module>demos/roms-documents</module>
     <module>demos/roms-hashes</module>
