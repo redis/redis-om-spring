@@ -22,7 +22,7 @@ public class EqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   @Override
   public Node apply(Node root) {
     return ObjectUtils.isNotEmpty(getValue()) ?
-        QueryBuilders.intersect(root).add(getSearchAlias(), QueryUtils.escape(getValue().toString())) :
+        QueryBuilders.intersect(root).add(getSearchAlias(), "\"" + getValue().toString() + "\"") :
         root;
   }
 

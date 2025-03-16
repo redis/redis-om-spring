@@ -173,8 +173,6 @@ public class EntityStreamDocumentQBEAdvancedTest extends AbstractBaseDocumentTes
           .filter(example)
           .collect(Collectors.toList());
 
-      System.out.println("Results with orBetweenParameters=" + orBetweenParameters + ": " + results.size());
-
       // Log the results for debugging
       for (DunnageEntity result : results) {
         System.out.println("  Match: " + result.getDunnageCode() +
@@ -202,6 +200,30 @@ public class EntityStreamDocumentQBEAdvancedTest extends AbstractBaseDocumentTes
         }
       }
     }
+  }
+
+  @Test
+  void testSearchWithExactTextValue() {
+    DunnageEntity template = DunnageEntity.builder()
+        .material("CORREX + EPP")
+        .build();
+
+    ExampleMatcher matcher = ExampleMatcher.matching()
+        .withStringMatcher(StringMatcher.EXACT)
+        .withIgnoreCase()
+        .withIgnoreNullValues();
+
+    Example<DunnageEntity> example = Example.of(template, matcher);
+
+    // Using entity stream
+    List<DunnageEntity> results = entityStream.of(DunnageEntity.class)
+        .dialect(2)
+        .filter(example)
+        .collect(Collectors.toList());
+
+    // Should find entries with "FOAM" in description field despite case difference
+    assertThat(results).hasSize(1);
+    assertThat(results).extracting("dunnageCode").containsExactly("F375");
   }
 
   private DunnageEntity createDunnageEntity(String plant, String dunnageCode, String dunnageSuppcode,
