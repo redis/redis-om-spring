@@ -98,7 +98,7 @@ public class ExampleToNodeConverter<E> {
           else if (schemaField instanceof TextField) {
             switch (example.getMatcher().getDefaultStringMatcher()) {
               case DEFAULT, EXACT -> rootNode = isNotEmpty(value) ?
-                  QueryBuilders.intersect(rootNode).add(fieldName, QueryUtils.escape(value.toString(), false)) :
+                  QueryBuilders.intersect(rootNode).add(fieldName, "\"" + value.toString() + "\"") :
                   rootNode;
               case STARTING -> rootNode = isNotEmpty(value) ?
                   QueryBuilders.intersect(rootNode).add(fieldName, QueryUtils.escape(value.toString(), false) + "*") :
