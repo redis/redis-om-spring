@@ -1,6 +1,7 @@
 package com.redis.om.spring.search.stream;
 
 import com.google.gson.Gson;
+import com.redis.om.spring.annotations.Dialect;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.util.ObjectUtils;
@@ -118,6 +119,7 @@ public class AggregationPage<E> implements Page<E>, Serializable {
         String baseQuery = aggregationStream.backingQuery();
         Query countQuery = (baseQuery.isBlank()) ? new Query() : new Query(baseQuery);
         countQuery.setNoContent();
+        countQuery.dialect(Dialect.TWO.getValue());
         for (Order order : pageable.getSort()) {
           countQuery.setSortBy(order.getProperty(), order.isAscending());
         }

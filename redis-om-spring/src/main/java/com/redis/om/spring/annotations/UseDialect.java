@@ -8,5 +8,5 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 public @interface UseDialect {
-  Dialect dialect() default Dialect.ONE;
+  Dialect dialect() default Dialect.TWO;
 }

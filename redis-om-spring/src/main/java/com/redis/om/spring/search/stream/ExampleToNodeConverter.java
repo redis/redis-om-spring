@@ -86,9 +86,9 @@ public class ExampleToNodeConverter<E> {
               }
             } else {
               if (matchingAll) {
-                rootNode = QueryBuilders.intersect(rootNode).add(fieldName, "{" + QueryUtils.escape(value) + "}");
+                rootNode = QueryBuilders.intersect(rootNode).add(fieldName, "{\"" + value + "\"}");
               } else {
-                rootNode = QueryBuilders.union(rootNode).add(fieldName, "{" + QueryUtils.escape(value) + "}");
+                rootNode = QueryBuilders.union(rootNode).add(fieldName, "{\"" + value + "\"}");
               }
             }
           }

@@ -1,6 +1,7 @@
 package com.redis.om.spring.search.stream;
 
 import com.google.gson.Gson;
+import com.redis.om.spring.annotations.Dialect;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.ReducerFunction;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
@@ -42,6 +43,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
     this.entityClass = entityClass;
     search = modulesOperations.opsForSearch(searchIndex);
     aggregation = new AggregationBuilder(query);
+    aggregation.dialect(Dialect.TWO.getValue());
     isDocument = entityClass.isAnnotationPresent(Document.class);
     this.query = query;
     this.gson = gson;

@@ -19,7 +19,7 @@ public class NotEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   public NotEqualPredicate(SearchFieldAccessor field, T value) {
     super(field);
-    this.value = QueryUtils.escape(value);
+    this.value = value;
   }
 
   public NotEqualPredicate(SearchFieldAccessor field, List<String> list) {
@@ -38,7 +38,7 @@ public class NotEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     QueryNode and = QueryBuilders.intersect();
 
     StreamSupport.stream(getValues().spliterator(), false) //
-        .map(v -> Values.value("{" + v.toString() + "}"))
+        .map(v -> Values.value("{\"" + v.toString() + "\"}"))
         .forEach(val -> and.add(QueryBuilders.disjunct(getSearchAlias(), val)));
 
     return QueryBuilders.intersect(root, and);
