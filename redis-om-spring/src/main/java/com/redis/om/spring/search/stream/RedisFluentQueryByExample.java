@@ -1,5 +1,6 @@
 package com.redis.om.spring.search.stream;
 
+import com.redis.om.spring.annotations.Dialect;
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.MetamodelUtils;
 import com.redis.om.spring.ops.search.SearchOperations;
@@ -91,6 +92,7 @@ public class RedisFluentQueryByExample<T, S extends T, R> implements FetchableFl
     this.searchStream = entityStream.of(resultType);
     this.projectionFactory = new SpelAwareProxyProjectionFactory();
     this.mappingContext = mappingContext;
+    searchStream.dialect(Dialect.TWO.getValue());
     searchStream.filter((Example<R>)example);
   }
 
@@ -151,6 +153,7 @@ public class RedisFluentQueryByExample<T, S extends T, R> implements FetchableFl
     long count = -1;
     if (!searchStream.backingQuery().isBlank()) {
       Query query = new Query(searchStream.backingQuery());
+      query.dialect(Dialect.TWO.getValue());
       query.limit(0, 0);
       SearchResult searchResult = searchOps.search(query);
 

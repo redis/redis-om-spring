@@ -6,6 +6,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.redis.om.spring.RedisOMProperties;
+import com.redis.om.spring.annotations.Dialect;
 import com.redis.om.spring.audit.EntityAuditor;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.id.IdentifierFilter;
@@ -424,12 +425,12 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
   @Override
   public <S extends T> Iterable<S> findAll(Example<S> example) {
-    return entityStream.of(example.getProbeType()).filter(example).collect(Collectors.toList());
+    return entityStream.of(example.getProbeType()).dialect(Dialect.TWO.getValue()).filter(example).collect(Collectors.toList());
   }
 
   @Override
   public <S extends T> Iterable<S> findAll(Example<S> example, Sort sort) {
-    return entityStream.of(example.getProbeType()).filter(example).sorted(sort).collect(Collectors.toList());
+    return entityStream.of(example.getProbeType()).dialect(Dialect.TWO.getValue()).filter(example).sorted(sort).collect(Collectors.toList());
   }
 
   @Override
@@ -437,7 +438,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     SearchStream<S> stream = entityStream.of(example.getProbeType());
     var offset = pageable.getPageNumber() * pageable.getPageSize();
     var limit = pageable.getPageSize();
-    Page<S> page = stream.filter(example).loadAll().limit(limit, Math.toIntExact(offset))
+    Page<S> page = stream.filter(example).dialect(Dialect.TWO.getValue()).loadAll().limit(limit, Math.toIntExact(offset))
         .toList(pageable, stream.getEntityClass());
 
     return page;

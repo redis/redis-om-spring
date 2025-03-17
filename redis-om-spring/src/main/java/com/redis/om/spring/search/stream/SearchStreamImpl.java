@@ -2,6 +2,7 @@ package com.redis.om.spring.search.stream;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.redis.om.spring.annotations.Dialect;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.indexing.RediSearchIndexer;
@@ -78,7 +79,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private Runnable closeHandler;
   private Stream<E> resolvedStream;
   private KNNPredicate<E, ?> knnPredicate;
-  private int dialect = 1;
+  private int dialect = Dialect.TWO.getValue();
   private SummarizeParams summarizeParams;
   private Pair<String, String> highlightTags;
   private boolean isQBE = false;
@@ -357,6 +358,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     if (!rootNode.toString().isBlank()) {
       Query query = new Query(rootNode.toString());
       query.limit(0, 0);
+      query.dialect(Dialect.TWO.getValue());
       SearchResult searchResult = search.search(query);
       resolvedStream = Stream.empty();
 
@@ -463,13 +465,14 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
     if (knnPredicate != null) {
       query = new Query(knnPredicate.apply(rootNode).toString());
+      query.dialect(Dialect.TWO.getValue());
       query.addParam(knnPredicate.getBlobAttributeName(), knnPredicate.getBlobAttribute() != null ?
           knnPredicate.getBlobAttribute() :
           floatArrayToByteArray(knnPredicate.getDoublesAttribute()));
       query.addParam("K", knnPredicate.getK());
-      query.dialect(2);
     } else {
       query = (rootNode.toString().isBlank()) ? new Query() : new Query(rootNode.toString());
+      query.dialect(Dialect.TWO.getValue());
       query.dialect(dialect);
     }
 

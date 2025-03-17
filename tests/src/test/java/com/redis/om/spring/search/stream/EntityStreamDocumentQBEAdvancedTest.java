@@ -38,7 +38,7 @@ public class EntityStreamDocumentQBEAdvancedTest extends AbstractBaseDocumentTes
     // Data from the screenshot
     entities.add(createDunnageEntity("TMMFV", "T423", "F3483", "CTCI", "THERMOFORME", "NO", 0, 0f, "EUR", null, null, null));
     entities.add(createDunnageEntity("TMMFV", "F375", "F2413", "PPO", "CORREX + EPP", "1150X350X202", 750, 36.71f, "EUR", null, null, null));
-    entities.add(createDunnageEntity("TMMFV", "C035", "F1503", "JAMES LEIGH", "FOAM", "WHITE FOAM", 690, 14.1f, "GBP", null, null, null));
+    entities.add(createDunnageEntity("TMMFV", "C035", "F1-503", "JAMES LEIGH", "FOAM", "WHITE FOAM", 690, 14.1f, "GBP", null, null, null));
     entities.add(createDunnageEntity("TMMFV", "F519", "F3090", "CARPENTER", "FOAM", "NO", 100, 0f, "EURO", null, null, null));
     entities.add(createDunnageEntity("TMMFV", "J066", "20711", "FUJITSU TEN", "CARDBOARD DUNNAGE", "SPEAKER ASSY, RADIO", 100, 1f, "EURO", null, null, null));
     entities.add(createDunnageEntity("TMMFV", "S119", "F2168", "KAYSERSBERG", "TEXT EFFITEK+EVOLON", "540X340X290", 400, 25.56f, "EUR", null, null, null));
@@ -224,6 +224,30 @@ public class EntityStreamDocumentQBEAdvancedTest extends AbstractBaseDocumentTes
     // Should find entries with "FOAM" in description field despite case difference
     assertThat(results).hasSize(1);
     assertThat(results).extracting("dunnageCode").containsExactly("F375");
+  }
+
+  @Test
+  void testSearchWithExactTagValue() {
+    DunnageEntity template = DunnageEntity.builder()
+        .dunnageSuppcode("F1-503")
+        .build();
+
+    ExampleMatcher matcher = ExampleMatcher.matching()
+        .withStringMatcher(StringMatcher.EXACT)
+        .withIgnoreCase()
+        .withIgnoreNullValues();
+
+    Example<DunnageEntity> example = Example.of(template, matcher);
+
+    // Using entity stream
+    List<DunnageEntity> results = entityStream.of(DunnageEntity.class)
+        .dialect(2)
+        .filter(example)
+        .collect(Collectors.toList());
+
+    // Should find entries with "FOAM" in description field despite case difference
+    assertThat(results).hasSize(1);
+    assertThat(results).extracting("dunnageCode").containsExactly("C035");
   }
 
   private DunnageEntity createDunnageEntity(String plant, String dunnageCode, String dunnageSuppcode,

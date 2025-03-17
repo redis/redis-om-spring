@@ -14,7 +14,7 @@ public class EqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   public EqualPredicate(SearchFieldAccessor field, T value) {
     super(field);
-    this.value = QueryUtils.escape(value);
+    this.value = value;
   }
 
   public T getValue() {
@@ -29,11 +29,11 @@ public class EqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
       Iterable<?> values = (Iterable<?>) getValue();
       QueryNode and = QueryBuilders.intersect();
       for (Object v : values) {
-        and.add(getSearchAlias(), "{" + v.toString() + "}");
+        and.add(getSearchAlias(), "{\"" + v.toString() + "\"}");
       }
       return QueryBuilders.intersect(root, and);
     } else {
-      return QueryBuilders.intersect(root).add(getSearchAlias(), "{" + value.toString() + "}");
+      return QueryBuilders.intersect(root).add(getSearchAlias(), "{\"" + value.toString() + "\"}");
     }
   }
 

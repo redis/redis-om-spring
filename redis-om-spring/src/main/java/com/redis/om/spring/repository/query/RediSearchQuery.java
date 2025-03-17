@@ -87,7 +87,7 @@ public class RediSearchQuery implements RepositoryQuery {
   private Boolean aggregationVerbatim;
   private Gson gson;
   private boolean isNullParamQuery;
-  private Dialect dialect = Dialect.ONE;
+  private Dialect dialect = Dialect.TWO;
 
   @SuppressWarnings("unchecked")
   public RediSearchQuery(//
@@ -416,6 +416,7 @@ public class RediSearchQuery implements RepositoryQuery {
     boolean excludeNullParams = !isNullParamQuery;
     String preparedQuery = prepareQuery(parameters, excludeNullParams);
     Query query = new Query(preparedQuery);
+    query.dialect(2);
 
     ReturnedType returnedType = processor.getReturnedType();
 
