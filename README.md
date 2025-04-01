@@ -615,7 +615,7 @@ These can be found in the `/demos` folder:
     - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-permits`
 
 - **roms-vss**:
-    - Port of [Redis Vector Search Demo](https://github.com/RedisVentures/redis-product-search).
+    - Port of [Redis Vector Search Demo](https://github.com/redis-developer/redis-product-search).
     - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-vss`
 
 ### External Demos
