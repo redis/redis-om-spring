@@ -1,12 +1,12 @@
 package com.redis.om.spring.annotations.document;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.fixtures.document.model.SKU;
-import com.redis.om.spring.fixtures.document.model.Student;
-import com.redis.om.spring.fixtures.document.model.User2;
+import com.redis.om.spring.fixtures.document.model.*;
+import com.redis.om.spring.fixtures.document.repository.Doc5Repository;
 import com.redis.om.spring.fixtures.document.repository.SKUCacheRepository;
 import com.redis.om.spring.fixtures.document.repository.StudentRepository;
 import com.redis.om.spring.fixtures.document.repository.User2Repository;
+import com.redis.om.spring.search.stream.EntityStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -33,6 +34,12 @@ class RepositoryIssuesTest extends AbstractBaseDocumentTest {
 
   @Autowired
   StudentRepository studentRepository;
+
+  @Autowired
+  private Doc5Repository doc5Repository;
+
+  @Autowired
+  private EntityStream entityStream;
 
   @BeforeEach
   void cleanUp() {
@@ -54,6 +61,21 @@ class RepositoryIssuesTest extends AbstractBaseDocumentTest {
       students.add(student);
     }
     studentRepository.saveAll(students);
+
+    doc5Repository.deleteAll();
+
+    // Create test data
+    Doc5 model1 = new Doc5();
+    model1.setAge(30);
+    model1.setRegistrationDate(LocalDateTime.now().minusDays(5));
+    model1.setIsActive(true);
+
+    Doc5 model2 = new Doc5();
+    model2.setAge(40);
+    model2.setRegistrationDate(LocalDateTime.now().minusDays(10));
+    model2.setIsActive(false);
+
+    doc5Repository.saveAll(List.of(model1, model2));
   }
 
   // RediSearchQuery wrong preparedQuery #187
@@ -129,5 +151,48 @@ class RepositoryIssuesTest extends AbstractBaseDocumentTest {
 
     Student result = studentRepository.findFirstByPropertyOrderByEventTimestamp(student, matcher, sortFunction);
     assertThat(result.getUserName()).isEqualTo("Student2");
+  }
+
+  @Test
+  void testFindByAge() {
+    // This works fine
+    List<Doc5> resultsByAge = doc5Repository.findByAge(30);
+
+    assertThat(resultsByAge).isNotEmpty();
+    assertThat(resultsByAge).hasSize(1);
+    assertThat(resultsByAge.get(0).getAge()).isEqualTo(30);
+  }
+
+  @Test
+  void testFindByDateBetween() {
+    // LocalDateTime query test
+    LocalDateTime from = LocalDateTime.now().minusDays(20);
+    LocalDateTime to = LocalDateTime.now();
+
+    // First debug using EntityStream
+    List<Doc5> resultsWithEntityStream = entityStream.of(Doc5.class)
+        .filter(Doc5$.REGISTRATION_DATE.between(from, to))
+        .collect(Collectors.toList());
+
+    // Now try repository method
+    List<Doc5> resultsByDate = doc5Repository.findByRegistrationDateBetween(from, to);
+
+    assertThat(resultsByDate).isNotEmpty();
+    assertThat(resultsByDate).hasSize(2);
+  }
+
+  @Test
+  void testFindByIsActive() {
+    // First debug using EntityStream
+    List<Doc5> resultsWithEntityStream = entityStream.of(Doc5.class)
+        .filter(Doc5$.IS_ACTIVE.eq(true))
+        .collect(Collectors.toList());
+
+    // Now try repository method
+    List<Doc5> resultsByActive = doc5Repository.findByIsActive(true);
+
+    assertThat(resultsByActive).isNotEmpty();
+    assertThat(resultsByActive).hasSize(1);
+    assertThat(resultsByActive.get(0).getIsActive()).isTrue();
   }
 }
