@@ -246,7 +246,27 @@ public final class MetamodelGenerator extends AbstractProcessor {
     TypeName entityField = TypeName.get(field.asType());
 
     TypeMirror fieldType = field.asType();
-    String fullTypeClassName = fieldType.toString().replace("@lombok.NonNull ", "").trim();
+    
+    // Special handling for ID fields
+    if (field.getAnnotation(org.springframework.data.annotation.Id.class) != null) {
+        // For ID fields, log the field type before and after processing
+        messager.printMessage(Diagnostic.Kind.NOTE, 
+            "ID field type before processing: " + fieldType.toString());
+    }
+    
+    // Strip all validation and lombok annotations that might affect type resolution
+    String fullTypeClassName = fieldType.toString();
+    fullTypeClassName = fullTypeClassName
+        .replace("@lombok.NonNull ", "")
+        .replace("@jakarta.validation.constraints.NotNull ", "")
+        .replace("@javax.validation.constraints.NotNull ", "")
+        .trim();
+    
+    if (field.getAnnotation(org.springframework.data.annotation.Id.class) != null) {
+        messager.printMessage(Diagnostic.Kind.NOTE, 
+            "ID field type after processing: " + fullTypeClassName);
+    }
+    
     String cls = ObjectUtils.getTargetClassName(fullTypeClassName);
 
     if (field.asType().getKind().isPrimitive()) {
@@ -276,6 +296,11 @@ public final class MetamodelGenerator extends AbstractProcessor {
       //
       targetInterceptor = TextField.class;
       searchSchemaAlias = (searchable != null) ? searchable.alias() : textIndexed.alias();
+    } else if (id != null) {
+      // Special case for ID fields
+      messager.printMessage(Diagnostic.Kind.NOTE, "Processing ID field: " + field.getSimpleName());
+      targetInterceptor = TextTagField.class;
+      searchSchemaAlias = "";
     } else if (fieldIsIndexed) {
       //
       //
@@ -597,8 +622,29 @@ public final class MetamodelGenerator extends AbstractProcessor {
     element.getEnclosedElements().stream()
         .filter(ee -> ee.getKind().isField() && !ee.getModifiers().contains(Modifier.STATIC) // Ignore static fields
             && !ee.getModifiers().contains(Modifier.FINAL)) // Ignore final fields
-        .forEach(ee -> results.put(ee,
-            findGetter(ee, getters, isGetters, element.toString(), lombokGetterAvailable(element, ee))));
+        .forEach(ee -> {
+            // For fields with @Id, explicitly check for @NotNull and log it
+            if (ee.getAnnotation(org.springframework.data.annotation.Id.class) != null) {
+                boolean hasNotNull = false;
+                for (AnnotationMirror am : ee.getAnnotationMirrors()) {
+                    String annotationTypeName = am.getAnnotationType().toString();
+                    if (annotationTypeName.endsWith("NotNull")) {
+                        hasNotNull = true;
+                        messager.printMessage(Diagnostic.Kind.NOTE, 
+                            "Found @NotNull on @Id field: " + ee.getSimpleName() + 
+                            ", annotation type: " + annotationTypeName);
+                    }
+                }
+                
+                // Add the field regardless of annotations
+                results.put(ee, findGetter(ee, getters, isGetters, element.toString(), 
+                    lombokGetterAvailable(element, ee)));
+            } else {
+                // For non-ID fields, process as before
+                results.put(ee, findGetter(ee, getters, isGetters, element.toString(), 
+                    lombokGetterAvailable(element, ee)));
+            }
+        });
 
     Types types = processingEnvironment.getTypeUtils();
     List<? extends TypeMirror> superTypes = types.directSupertypes(element.asType());
