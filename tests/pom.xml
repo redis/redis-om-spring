@@ -7,7 +7,7 @@
 
   <groupId>com.redis.om</groupId>
   <artifactId>tests</artifactId>
-  <version>0.9.10</version>
+  <version>0.9.11-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>tests</name>
@@ -144,7 +144,7 @@
     <dependency>
       <groupId>com.redis.om</groupId>
       <artifactId>redis-om-spring</artifactId>
-      <version>0.9.10</version>
+      <version>0.9.11-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
     <dependency>
