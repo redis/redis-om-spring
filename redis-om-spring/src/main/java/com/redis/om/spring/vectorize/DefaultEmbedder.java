@@ -7,7 +7,6 @@ import ai.djl.modality.cv.translator.ImageFeatureExtractor;
 import ai.djl.repository.zoo.ZooModel;
 import ai.djl.translate.Pipeline;
 import ai.djl.translate.TranslateException;
-import com.azure.ai.openai.OpenAIClient;
 import com.redis.om.spring.RedisOMAiProperties;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.EmbeddingType;
@@ -17,40 +16,21 @@ import com.redis.om.spring.util.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.ai.azure.openai.AzureOpenAiEmbeddingModel;
-import org.springframework.ai.azure.openai.AzureOpenAiEmbeddingOptions;
 import org.springframework.ai.bedrock.cohere.BedrockCohereEmbeddingModel;
-import org.springframework.ai.bedrock.cohere.api.CohereEmbeddingBedrockApi;
-import org.springframework.ai.bedrock.cohere.api.CohereEmbeddingBedrockApi.CohereEmbeddingModel;
 import org.springframework.ai.bedrock.titan.BedrockTitanEmbeddingModel;
-import org.springframework.ai.bedrock.titan.api.TitanEmbeddingBedrockApi;
-import org.springframework.ai.bedrock.titan.api.TitanEmbeddingBedrockApi.TitanEmbeddingModel;
-import org.springframework.ai.document.MetadataMode;
 import org.springframework.ai.embedding.EmbeddingModel;
-import org.springframework.ai.model.ModelOptionsUtils;
 import org.springframework.ai.ollama.OllamaEmbeddingModel;
-import org.springframework.ai.ollama.api.OllamaApi;
-import org.springframework.ai.ollama.api.OllamaModel;
-import org.springframework.ai.ollama.api.OllamaOptions;
 import org.springframework.ai.openai.OpenAiEmbeddingModel;
-import org.springframework.ai.openai.OpenAiEmbeddingOptions;
-import org.springframework.ai.openai.api.OpenAiApi;
-import org.springframework.ai.retry.RetryUtils;
 import org.springframework.ai.transformers.TransformersEmbeddingModel;
-import org.springframework.ai.vertexai.embedding.VertexAiEmbeddingConnectionDetails;
 import org.springframework.ai.vertexai.embedding.text.VertexAiTextEmbeddingModel;
-import org.springframework.ai.vertexai.embedding.text.VertexAiTextEmbeddingOptions;
 import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.Resource;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.AwsCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.time.Duration;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -61,57 +41,35 @@ import static com.redis.om.spring.util.ObjectUtils.floatArrayToByteArray;
 
 public class DefaultEmbedder implements Embedder {
   private static final Log logger = LogFactory.getLog(DefaultEmbedder.class);
+  private final EmbeddingModelFactory embeddingModelFactory;
   public final Pipeline imagePipeline;
-  public final TransformersEmbeddingModel transformersEmbeddingModel;
   //public final HuggingFaceTokenizer sentenceTokenizer;
   private final ZooModel<Image, float[]> imageEmbeddingModel;
   private final ZooModel<Image, float[]> faceEmbeddingModel;
   private final ImageFactory imageFactory;
   private final ApplicationContext applicationContext;
   private final ImageFeatureExtractor imageFeatureExtractor;
-  private final OpenAiEmbeddingModel defaultOpenAITextVectorizer;
-  private final OllamaEmbeddingModel defaultOllamaEmbeddingModel;
   private final RedisOMAiProperties properties;
-  private final OllamaApi ollamaApi;
-  private final OpenAIClient azureOpenAIClient;
-  private final VertexAiTextEmbeddingModel vertexAiTextEmbeddingModel;
-  private final BedrockCohereEmbeddingModel bedrockCohereEmbeddingModel;
-  private final BedrockTitanEmbeddingModel bedrockTitanEmbeddingModel;
 
   public DefaultEmbedder( //
       ApplicationContext applicationContext, //
+      EmbeddingModelFactory embeddingModelFactory, //
       ZooModel<Image, float[]> imageEmbeddingModel, //
       ZooModel<Image, float[]> faceEmbeddingModel, //
       ImageFactory imageFactory, //
       Pipeline imagePipeline, //
-      TransformersEmbeddingModel transformersEmbeddingModel, //
-      OpenAiEmbeddingModel openAITextVectorizer, //
-      OpenAIClient azureOpenAIClient, //
-      VertexAiTextEmbeddingModel vertexAiTextEmbeddingModel, //
-      BedrockCohereEmbeddingModel bedrockCohereEmbeddingModel, //
-      BedrockTitanEmbeddingModel bedrockTitanEmbeddingModel, //
       RedisOMAiProperties properties //
   ) {
     this.applicationContext = applicationContext;
+    this.embeddingModelFactory = embeddingModelFactory;
     this.imageEmbeddingModel = imageEmbeddingModel;
     this.faceEmbeddingModel = faceEmbeddingModel;
     this.imageFactory = imageFactory;
     this.imagePipeline = imagePipeline;
-    this.transformersEmbeddingModel = transformersEmbeddingModel;
 
     // feature extractor
     this.imageFeatureExtractor = ImageFeatureExtractor.builder().setPipeline(imagePipeline).build();
-    this.defaultOpenAITextVectorizer = openAITextVectorizer;
-    this.azureOpenAIClient = azureOpenAIClient;
-    this.vertexAiTextEmbeddingModel = vertexAiTextEmbeddingModel;
-    this.bedrockCohereEmbeddingModel = bedrockCohereEmbeddingModel;
-    this.bedrockTitanEmbeddingModel = bedrockTitanEmbeddingModel;
     this.properties = properties;
-
-    this.ollamaApi = new OllamaApi(properties.getOllama().getBaseUrl());
-
-    this.defaultOllamaEmbeddingModel = OllamaEmbeddingModel.builder().ollamaApi(this.ollamaApi)
-        .defaultOptions(OllamaOptions.builder().model(OllamaModel.MISTRAL.id()).build()).build();
   }
 
   private List<byte[]> getImageEmbeddingsAsByteArrayFor(List<InputStream> isList) {
@@ -188,11 +146,6 @@ public class DefaultEmbedder implements Embedder {
       var img = imageFactory.fromInputStream(is);
       return predictor.predict(img);
     }
-  }
-
-  private List<byte[]> getSentenceEmbeddingsAsByteArrayFor(List<String> texts) {
-    List<float[]> encodings = transformersEmbeddingModel.embed(texts);
-    return encodings.stream().map(ObjectUtils::floatArrayToByteArray).toList();
   }
 
   private List<byte[]> getEmbeddingsAsByteArrayFor(List<String> texts, EmbeddingModel model) {
@@ -383,7 +336,7 @@ public class DefaultEmbedder implements Embedder {
                 case OPENAI -> processSentenceEmbedding(groupedFieldDataList, this::getOpenAiEmbeddingModel);
                 case OLLAMA -> processSentenceEmbedding(groupedFieldDataList, this::getOllamaEmbeddingModel);
                 case AZURE_OPENAI -> processSentenceEmbedding(groupedFieldDataList, this::getAzureOpenAiEmbeddingModel);
-                case VERTEX_AI -> processSentenceEmbedding(groupedFieldDataList, this::getVertexAiPaLm2EmbeddingModel);
+                case VERTEX_AI -> processSentenceEmbedding(groupedFieldDataList, this::getVertexAiEmbeddingModel);
                 case AMAZON_BEDROCK_COHERE -> processSentenceEmbedding(groupedFieldDataList, this::getBedrockCohereEmbeddingModel);
                 case AMAZON_BEDROCK_TITAN -> processSentenceEmbedding(groupedFieldDataList, this::getBedrockTitanEmbeddingModel);
               }
@@ -399,7 +352,7 @@ public class DefaultEmbedder implements Embedder {
       case OPENAI -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getOpenAiEmbeddingModel);
       case OLLAMA -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getOllamaEmbeddingModel);
       case AZURE_OPENAI -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getAzureOpenAiEmbeddingModel);
-      case VERTEX_AI -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getVertexAiPaLm2EmbeddingModel);
+      case VERTEX_AI -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getVertexAiEmbeddingModel);
       case AMAZON_BEDROCK_COHERE -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getBedrockCohereEmbeddingModel);
       case AMAZON_BEDROCK_TITAN -> processSentenceEmbedding(accessor, vectorize, fieldValue, isDocument, this::getBedrockTitanEmbeddingModel);
     }
@@ -445,70 +398,31 @@ public class DefaultEmbedder implements Embedder {
   }
 
   private TransformersEmbeddingModel getTransformersEmbeddingModel(Vectorize vectorize) {
-    return this.transformersEmbeddingModel;
+    return embeddingModelFactory.createTransformersEmbeddingModel(vectorize);
   }
 
   private OpenAiEmbeddingModel getOpenAiEmbeddingModel(Vectorize vectorize) {
-    if (vectorize.openAiEmbeddingModel() != OpenAiApi.EmbeddingModel.TEXT_EMBEDDING_ADA_002) {
-      var openAiApi = new OpenAiApi(properties.getOpenAi().getApiKey());
-      return new OpenAiEmbeddingModel(openAiApi, MetadataMode.EMBED,
-          OpenAiEmbeddingOptions.builder().model(vectorize.openAiEmbeddingModel().getValue()).build(),
-          RetryUtils.DEFAULT_RETRY_TEMPLATE);
-    }
-    return this.defaultOpenAITextVectorizer;
+    return embeddingModelFactory.createOpenAiEmbeddingModel(vectorize.openAiEmbeddingModel());
   }
 
   private OllamaEmbeddingModel getOllamaEmbeddingModel(Vectorize vectorize) {
-    if (!vectorize.ollamaEmbeddingModel().id().equals(OllamaModel.MISTRAL.id())) {
-
-      OllamaOptions options = OllamaOptions.builder().model(vectorize.ollamaEmbeddingModel()).truncate(false).build();
-
-      return OllamaEmbeddingModel.builder().ollamaApi(this.ollamaApi).defaultOptions(options).build();
-    }
-    return this.defaultOllamaEmbeddingModel;
+    return embeddingModelFactory.createOllamaEmbeddingModel(vectorize.ollamaEmbeddingModel().id());
   }
 
   private AzureOpenAiEmbeddingModel getAzureOpenAiEmbeddingModel(Vectorize vectorize) {
-    AzureOpenAiEmbeddingOptions options = AzureOpenAiEmbeddingOptions.builder()
-        .deploymentName(vectorize.azureOpenAiDeploymentName()).build();
-    return new AzureOpenAiEmbeddingModel(this.azureOpenAIClient, MetadataMode.EMBED, options);
+    return embeddingModelFactory.createAzureOpenAiEmbeddingModel(vectorize.azureOpenAiDeploymentName());
   }
 
-  private VertexAiTextEmbeddingModel getVertexAiPaLm2EmbeddingModel(Vectorize vectorize) {
-    if (!vectorize.vertexAiPaLm2ApiModel().equals(VertexAiTextEmbeddingOptions.DEFAULT_MODEL_NAME)) {
-      VertexAiEmbeddingConnectionDetails connectionDetails = VertexAiEmbeddingConnectionDetails.builder()
-          .projectId(properties.getVertexAi().getProjectId()).location(properties.getVertexAi().getLocation()).build();
-
-      VertexAiTextEmbeddingOptions options = VertexAiTextEmbeddingOptions.builder()
-          .model(VertexAiTextEmbeddingOptions.DEFAULT_MODEL_NAME).build();
-
-      return new VertexAiTextEmbeddingModel(connectionDetails, options);
-    }
-    return this.vertexAiTextEmbeddingModel;
+  private VertexAiTextEmbeddingModel getVertexAiEmbeddingModel(Vectorize vectorize) {
+    return embeddingModelFactory.createVertexAiTextEmbeddingModel(vectorize.vertexAiApiModel());
   }
 
   private BedrockCohereEmbeddingModel getBedrockCohereEmbeddingModel(Vectorize vectorize) {
-    if (!vectorize.cohereEmbeddingModel().equals(CohereEmbeddingModel.COHERE_EMBED_MULTILINGUAL_V3)) {
-      AwsCredentials credentials = AwsBasicCredentials.create(properties.getBedrockCohere().getAccessKey(),
-          properties.getBedrockCohere().getSecretKey());
-      var cohereEmbeddingApi = new CohereEmbeddingBedrockApi(vectorize.cohereEmbeddingModel().id(),
-          StaticCredentialsProvider.create(credentials), properties.getBedrockCohere().getRegion(),
-          ModelOptionsUtils.OBJECT_MAPPER);
-      return new BedrockCohereEmbeddingModel(cohereEmbeddingApi);
-    }
-    return this.bedrockCohereEmbeddingModel;
+    return embeddingModelFactory.createCohereEmbeddingModel(vectorize.cohereEmbeddingModel().id());
   }
 
   private BedrockTitanEmbeddingModel getBedrockTitanEmbeddingModel(Vectorize vectorize) {
-    if (!vectorize.titanEmbeddingModel().equals(TitanEmbeddingModel.TITAN_EMBED_IMAGE_V1)) {
-      AwsCredentials credentials = AwsBasicCredentials.create(properties.getBedrockCohere().getAccessKey(),
-          properties.getBedrockCohere().getSecretKey());
-      var titanEmbeddingApi = new TitanEmbeddingBedrockApi(vectorize.cohereEmbeddingModel().id(),
-          StaticCredentialsProvider.create(credentials), properties.getBedrockTitan().getRegion(),
-          ModelOptionsUtils.OBJECT_MAPPER, Duration.ofMinutes(5L));
-      return new BedrockTitanEmbeddingModel(titanEmbeddingApi);
-    }
-    return this.bedrockTitanEmbeddingModel;
+    return embeddingModelFactory.createTitanEmbeddingModel(vectorize.titanEmbeddingModel().id());
   }
 
   @Override
@@ -531,7 +445,10 @@ public class DefaultEmbedder implements Embedder {
 
   private List<byte[]> getSentenceEmbeddingAsBytes(List<String> texts, Vectorize vectorize) {
     return switch (vectorize.provider()) {
-      case TRANSFORMERS -> getSentenceEmbeddingsAsByteArrayFor(texts);
+      case TRANSFORMERS -> {
+        TransformersEmbeddingModel model = getTransformersEmbeddingModel(vectorize);
+        yield getEmbeddingsAsByteArrayFor(texts, model);
+      }
       case DJL -> Collections.emptyList();
       case OPENAI -> {
         OpenAiEmbeddingModel model = getOpenAiEmbeddingModel(vectorize);
@@ -546,7 +463,7 @@ public class DefaultEmbedder implements Embedder {
         yield getEmbeddingsAsByteArrayFor(texts, model);
       }
       case VERTEX_AI -> {
-        VertexAiTextEmbeddingModel model = getVertexAiPaLm2EmbeddingModel(vectorize);
+        VertexAiTextEmbeddingModel model = getVertexAiEmbeddingModel(vectorize);
         yield getEmbeddingsAsByteArrayFor(texts, model);
       }
       case AMAZON_BEDROCK_COHERE -> {
@@ -580,7 +497,7 @@ public class DefaultEmbedder implements Embedder {
         yield getEmbeddingAsFloatArrayFor(texts, model);
       }
       case VERTEX_AI -> {
-        VertexAiTextEmbeddingModel model = getVertexAiPaLm2EmbeddingModel(vectorize);
+        VertexAiTextEmbeddingModel model = getVertexAiEmbeddingModel(vectorize);
         yield getEmbeddingAsFloatArrayFor(texts, model);
       }
       case AMAZON_BEDROCK_COHERE -> {

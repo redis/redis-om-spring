@@ -17,13 +17,21 @@ public @interface Vectorize {
 
   EmbeddingProvider provider() default EmbeddingProvider.TRANSFORMERS;
 
+  String transformersModel() default "";
+
+  String transformersTokenizer() default "";
+
+  String transformersResourceCacheConfiguration() default "";
+
+  String[] transformersTokenizerOptions() default {};
+
   EmbeddingModel openAiEmbeddingModel() default EmbeddingModel.TEXT_EMBEDDING_ADA_002;
 
   OllamaModel ollamaEmbeddingModel() default OllamaModel.MISTRAL;
 
   String azureOpenAiDeploymentName() default "text-embedding-ada-002";
 
-  String vertexAiPaLm2ApiModel() default "text-embedding-004";
+  String vertexAiApiModel() default "text-embedding-004";
 
   CohereEmbeddingModel cohereEmbeddingModel() default CohereEmbeddingModel.COHERE_EMBED_MULTILINGUAL_V3;
 
