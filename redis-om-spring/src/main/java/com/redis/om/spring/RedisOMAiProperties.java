@@ -1,12 +1,8 @@
 package com.redis.om.spring;
 
 import jakarta.validation.constraints.NotNull;
-import org.springframework.ai.openai.api.OpenAiApi.EmbeddingModel;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @ConditionalOnProperty(name = "redis.om.spring.ai.enabled")
 @ConfigurationProperties(
@@ -16,12 +12,10 @@ public class RedisOMAiProperties {
   private boolean enabled = false;
   private int embeddingBatchSize = 1000;
   private final Djl djl = new Djl();
-  private final Transformers transformers = new Transformers();
   private final OpenAi openAi = new OpenAi();
   private final AzureOpenAi azureOpenAi = new AzureOpenAi();
   private final VertexAi vertexAi = new VertexAi();
-  private final BedrockCohere bedrockCohere = new BedrockCohere();
-  private final BedrockTitan bedrockTitan = new BedrockTitan();
+  private final Aws aws = new Aws();
   private final Ollama ollama = new Ollama();
 
   public boolean isEnabled() {
@@ -36,10 +30,6 @@ public class RedisOMAiProperties {
     return djl;
   }
 
-  public Transformers getTransformers() {
-    return transformers;
-  }
-
   public OpenAi getOpenAi() {
     return openAi;
   }
@@ -52,48 +42,20 @@ public class RedisOMAiProperties {
     return vertexAi;
   }
 
-  public BedrockCohere getBedrockCohere() {
-    return bedrockCohere;
-  }
-
-  public BedrockTitan getBedrockTitan() {
-    return bedrockTitan;
+  public Aws getAws() {
+      return aws;
   }
 
   public Ollama getOllama() {
     return ollama;
   }
 
-    public int getEmbeddingBatchSize() {
-        return embeddingBatchSize;
-    }
+  public int getEmbeddingBatchSize() {
+      return embeddingBatchSize;
+  }
 
-    public void setEmbeddingBatchSize(int embeddingBatchSize) {
-        this.embeddingBatchSize = embeddingBatchSize;
-    }
-
-    // Transformer properties
-  public static class Transformers {
-    private String tokenizerResource;
-    private String modelResource;
-    private String resourceCacheDirectory;
-    private Map<String, String> tokenizerOptions = new HashMap<>();
-
-    public String getTokenizerResource() {
-      return tokenizerResource;
-    }
-
-    public String getModelResource() {
-      return modelResource;
-    }
-
-    public String getResourceCacheDirectory() {
-      return resourceCacheDirectory;
-    }
-
-    public Map<String, String> getTokenizerOptions() {
-      return tokenizerOptions;
-    }
+  public void setEmbeddingBatchSize(int embeddingBatchSize) {
+      this.embeddingBatchSize = embeddingBatchSize;
   }
 
   public static class Djl {
@@ -254,7 +216,7 @@ public class RedisOMAiProperties {
 
   public static class OpenAi {
     private String apiKey;
-    private String model = EmbeddingModel.TEXT_EMBEDDING_ADA_002.getValue();
+    private long responseTimeOut = 60;
 
     public String getApiKey() {
       return apiKey;
@@ -264,12 +226,12 @@ public class RedisOMAiProperties {
       this.apiKey = apiKey;
     }
 
-    public String getModel() {
-      return model;
+    public long getResponseTimeOut() {
+        return responseTimeOut;
     }
 
-    public void setModel(String model) {
-      this.model = model;
+    public void setResponseTimeOut(long responseTimeOut) {
+        this.responseTimeOut = responseTimeOut;
     }
   }
 
@@ -287,8 +249,7 @@ public class RedisOMAiProperties {
 
   public static class AzureOpenAi {
     private String apiKey;
-    private String endPoint;
-    private String model;
+    private String endpoint;
 
     public String getApiKey() {
       return apiKey;
@@ -298,27 +259,18 @@ public class RedisOMAiProperties {
       this.apiKey = apiKey;
     }
 
-    public String getEndPoint() {
-      return endPoint;
+    public String getEndpoint() {
+      return endpoint;
     }
 
-    public void setEndPoint(String endPoint) {
-      this.endPoint = endPoint;
-    }
-
-    public String getModel() {
-      return model;
-    }
-
-    public void setModel(String model) {
-      this.model = model;
+    public void setEndpoint(String endpoint) {
+      this.endpoint = endpoint;
     }
   }
 
   public static class VertexAi {
     private String apiKey;
-    private String endPoint;
-    private String model;
+    private String endpoint;
     private String projectId;
     private String location;
 
@@ -346,28 +298,21 @@ public class RedisOMAiProperties {
       this.apiKey = apiKey;
     }
 
-    public String getEndPoint() {
-      return endPoint;
+    public String getEndpoint() {
+      return endpoint;
     }
 
-    public void setEndPoint(String endPoint) {
-      this.endPoint = endPoint;
-    }
-
-    public String getModel() {
-      return model;
-    }
-
-    public void setModel(String model) {
-      this.model = model;
+    public void setEndpoint(String endpoint) {
+      this.endpoint = endpoint;
     }
   }
 
-  public static class BedrockCohere {
+  public static class Aws {
     private String region;
     private String accessKey;
     private String secretKey;
-    private String model;
+    private BedrockCohere bedrockCohere = new BedrockCohere();
+    private BedrockTitan bedrockTitan = new BedrockTitan();
 
     public String getRegion() {
       return region;
@@ -393,52 +338,44 @@ public class RedisOMAiProperties {
       this.secretKey = secretKey;
     }
 
-    public String getModel() {
-      return model;
+    public BedrockCohere getBedrockCohere() {
+        return bedrockCohere;
     }
 
-    public void setModel(String model) {
-      this.model = model;
-    }
-  }
-
-  public static class BedrockTitan {
-    private String region;
-    private String accessKey;
-    private String secretKey;
-    private String model;
-
-    public String getRegion() {
-      return region;
+    public void setBedrockCohere(BedrockCohere bedrockCohere) {
+        this.bedrockCohere = bedrockCohere;
     }
 
-    public void setRegion(String region) {
-      this.region = region;
+    public BedrockTitan getBedrockTitan() {
+        return bedrockTitan;
     }
 
-    public String getAccessKey() {
-      return accessKey;
+    public void setBedrockTitan(BedrockTitan bedrockTitan) {
+        this.bedrockTitan = bedrockTitan;
     }
 
-    public void setAccessKey(String accessKey) {
-      this.accessKey = accessKey;
+    public static class BedrockCohere {
+      private int responseTimeOut = 60;
+
+      public int getResponseTimeOut() {
+        return responseTimeOut;
+      }
+
+      public void setResponseTimeOut(int responseTimeOut) {
+        this.responseTimeOut = responseTimeOut;
+      }
     }
 
-    public String getSecretKey() {
-      return secretKey;
-    }
+    public static class BedrockTitan {
+      private long responseTimeOut = 300;
 
-    public void setSecretKey(String secretKey) {
-      this.secretKey = secretKey;
-    }
+      public long getResponseTimeOut() {
+        return responseTimeOut;
+      }
 
-    public String getModel() {
-      return model;
-    }
-
-    public void setModel(String model) {
-      this.model = model;
+      public void setResponseTimeOut(long responseTimeOut) {
+        this.responseTimeOut = responseTimeOut;
+      }
     }
   }
-
 }

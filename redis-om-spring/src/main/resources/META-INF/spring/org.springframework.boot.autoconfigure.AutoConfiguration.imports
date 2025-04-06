@@ -1,3 +1,4 @@
 # Auto Configure
 com.redis.om.spring.RedisModulesConfiguration
 com.redis.om.spring.RedisAiConfiguration
+com.redis.om.spring.vectorize.SpringAiProperties
