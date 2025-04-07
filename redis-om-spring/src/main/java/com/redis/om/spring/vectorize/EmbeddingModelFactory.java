@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class EmbeddingModelFactory {
-
     private final RedisOMAiProperties properties;
     private final SpringAiProperties springAiProperties;
 
@@ -67,6 +66,12 @@ public class EmbeddingModelFactory {
                     .map(entry -> entry.split("=", 2))
                     .collect(Collectors.toMap(kv -> kv[0], kv -> kv[1]));
             embeddingModel.setTokenizerOptions(options);
+        }
+
+        try {
+            embeddingModel.afterPropertiesSet();
+        } catch (Exception e) {
+            throw new RuntimeException("Error initializing TransformersEmbeddingModel", e);
         }
 
         return embeddingModel;
