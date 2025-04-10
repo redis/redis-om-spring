@@ -29,5 +29,6 @@
     <module>demos/roms-hashes</module>
     <module>demos/roms-permits</module>
     <module>demos/roms-vss</module>
+    <module>demos/roms-vss-movies</module>
   </modules>
 </project>
