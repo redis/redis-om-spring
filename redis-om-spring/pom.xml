@@ -7,7 +7,7 @@
 
     <groupId>com.redis.om</groupId>
     <artifactId>redis-om-spring</artifactId>
-    <version>0.9.11-SNAPSHOT</version>
+    <version>0.9.12-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>redis-om-spring</name>
@@ -81,6 +81,7 @@
         <djl.version>0.30.0</djl.version>
         <junit-bom.version>5.10.2</junit-bom.version>
         <spring-ai.version>1.0.0-M6</spring-ai.version>
+        <azure-identity.version>1.15.4</azure-identity.version>
     </properties>
 
     <dependencyManagement>
@@ -235,6 +236,13 @@
             <optional>true</optional>
         </dependency>
         <!-- Spring AI end -->
+        <!-- Azure Identity begin -->
+        <dependency>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-identity</artifactId>
+            <version>${azure-identity.version}</version>
+        </dependency>
+        <!-- Azure Identity end -->
         <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
