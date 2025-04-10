@@ -2,6 +2,8 @@ package com.redis.om.spring.fixtures.document.repository;
 
 import com.redis.om.spring.fixtures.document.model.Company;
 import com.redis.om.spring.repository.RedisDocumentRepository;
+import com.redis.om.spring.search.stream.SearchStream;
+
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 
@@ -48,5 +50,13 @@ public interface CompanyRepository extends RedisDocumentRepository<Company, Stri
   List<Company> findByYearFoundedOrderByNameAsc(int year);
 
   List<Company> findByYearFoundedOrderByNameDesc(int year);
-
+  
+  // Methods for advanced sentinel test
+  SearchStream<Company> findByYearFoundedGreaterThan(int year);
+  
+  List<Company> findByYearFoundedGreaterThanOrderByNameAsc(int year);
+  
+  List<Company> findByYearFoundedGreaterThanOrderByNameDesc(int year);
+  
+  List<Company> findByYearFoundedBetweenOrderByNameAsc(int start, int end);
 }
