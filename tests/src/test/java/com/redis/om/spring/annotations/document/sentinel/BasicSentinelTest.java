@@ -27,7 +27,6 @@ class BasicSentinelTest extends AbstractBaseDocumentSentinelTest {
   CompanyRepository repository;
 
   @Test
-
   void testBasicCrudOperations() {
     Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
         "stack@redis.com");

@@ -1,16 +1,34 @@
-version: '3'
-
 services:
   redis-master:
-    image: redis/redis-stack-server
-  redis-sentinel:
-    image: redis/redis-stack-server
-    command: redis-sentinel /usr/local/etc/redis/sentinel.conf
-    volumes:
-      - ./sentinel.conf:/usr/local/etc/redis/sentinel.conf
-    environment:
-      - REDIS_MASTER_HOST=redis-master
+    image: redis/redis-stack-server:latest
+    networks:
+      default:
+        aliases:
+          - redis-master
+    ports:
+      - "6379:6379"
+
+  redis-replica:
+    image: redis/redis-stack-server:latest
+    command: redis-server --replicaof redis-master 6379
     depends_on:
       - redis-master
+    networks:
+      default:
+        aliases:
+          - redis-replica
+          
+  redis-sentinel:
+    image: redis:6.2-alpine
+    volumes:
+      - ./sentinel.conf:/sentinel.conf
+    command: redis-server /sentinel.conf --sentinel
+    depends_on:
+      - redis-master
+      - redis-replica
     ports:
       - "26379:26379"
+    networks:
+      default:
+        aliases:
+          - redis-sentinel

@@ -1,0 +1,6 @@
+GET http://localhost:8082/search?text=A movie about a young boy who goes to a wizardry school
+###
+GET http://localhost:8082/search?numberOfNearestNeighbors=1&yearMin=1970&yearMax=1990&text=A movie about a kid and a scientist who go back in time
+###
+GET http://localhost:8082/search?cast=Dee Wallace, Henry Thomas&text=A boy who beocmes friend with an alien
+###

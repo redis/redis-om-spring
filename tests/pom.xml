@@ -66,8 +66,8 @@
     <jedis.version>5.2.0</jedis.version>
     <cdi>2.0-PFD</cdi>
     <auto-service.version>1.1.1</auto-service.version>
-    <testcontainers.redis.version>2.2.2</testcontainers.redis.version>
-    <testcontainers.redis.junit.version>2.2.2</testcontainers.redis.junit.version>
+    <testcontainers.redis.version>2.2.4</testcontainers.redis.version>
+    <testcontainers.redis.junit.version>2.2.4</testcontainers.redis.junit.version>
     <testcontainers.junit.jupiter>1.19.7</testcontainers.junit.jupiter>
     <guava.version>33.1.0-jre</guava.version>
     <ulid.version>5.2.3</ulid.version>
@@ -266,6 +266,11 @@
           <artifactId>android-json</artifactId>
         </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.redis</groupId>

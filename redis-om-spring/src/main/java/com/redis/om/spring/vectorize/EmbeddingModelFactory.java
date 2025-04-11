@@ -2,9 +2,7 @@ package com.redis.om.spring.vectorize;
 
 import com.azure.ai.openai.OpenAIClient;
 import com.azure.ai.openai.OpenAIClientBuilder;
-import com.azure.core.credential.AccessToken;
 import com.azure.core.credential.AzureKeyCredential;
-import com.azure.core.credential.TokenRequestContext;
 import com.azure.identity.*;
 import com.redis.om.spring.RedisOMAiProperties;
 import com.redis.om.spring.annotations.Vectorize;
@@ -136,7 +134,7 @@ public class EmbeddingModelFactory {
 
         OpenAIClient openAIClient = getOpenAIClient();
 
-        AzureOpenAiEmbeddingOptions options = AzureOpenAiEmbeddingOptions.builder()
+      AzureOpenAiEmbeddingOptions options = AzureOpenAiEmbeddingOptions.builder()
                 .deploymentName(deploymentName)
                 .build();
 
