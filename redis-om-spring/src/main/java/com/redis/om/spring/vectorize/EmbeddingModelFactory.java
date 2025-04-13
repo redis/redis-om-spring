@@ -3,6 +3,7 @@ package com.redis.om.spring.vectorize;
 import com.azure.ai.openai.OpenAIClient;
 import com.azure.ai.openai.OpenAIClientBuilder;
 import com.azure.core.credential.AzureKeyCredential;
+import com.azure.identity.*;
 import com.redis.om.spring.RedisOMAiProperties;
 import com.redis.om.spring.annotations.Vectorize;
 import org.springframework.ai.azure.openai.AzureOpenAiEmbeddingModel;
@@ -106,6 +107,18 @@ public class EmbeddingModelFactory {
         );
     }
 
+    private OpenAIClient getOpenAIClient() {
+        OpenAIClientBuilder builder = new OpenAIClientBuilder();
+        if (properties.getAzureEntraId().isEnabled()) {
+            builder.credential(new DefaultAzureCredentialBuilder().tenantId(properties.getAzureEntraId().getTenantId()).build())
+                    .endpoint(properties.getAzureEntraId().getEndpoint());
+        } else {
+            builder.credential(new AzureKeyCredential(properties.getAzureOpenAi().getApiKey()))
+                    .endpoint(properties.getAzureOpenAi().getEndpoint());
+        }
+        return builder.buildClient();
+    }
+
     public AzureOpenAiEmbeddingModel createAzureOpenAiEmbeddingModel(String deploymentName) {
         String apiKey = properties.getAzureOpenAi().getApiKey();
         if (!StringUtils.hasText(apiKey)) {
@@ -119,16 +132,13 @@ public class EmbeddingModelFactory {
             properties.getAzureOpenAi().setEndpoint(endpoint);
         }
 
-        OpenAIClient openAIClientBuilder = new OpenAIClientBuilder()
-                .credential(new AzureKeyCredential(properties.getAzureOpenAi().getApiKey()))
-                .endpoint(properties.getAzureOpenAi().getEndpoint())
-                .buildClient();
+        OpenAIClient openAIClient = getOpenAIClient();
 
-        AzureOpenAiEmbeddingOptions options = AzureOpenAiEmbeddingOptions.builder()
+      AzureOpenAiEmbeddingOptions options = AzureOpenAiEmbeddingOptions.builder()
                 .deploymentName(deploymentName)
                 .build();
 
-        return new AzureOpenAiEmbeddingModel(openAIClientBuilder, MetadataMode.EMBED, options);
+        return new AzureOpenAiEmbeddingModel(openAIClient, MetadataMode.EMBED, options);
     }
 
     public VertexAiTextEmbeddingModel createVertexAiTextEmbeddingModel(String model) {
