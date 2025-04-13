@@ -2,6 +2,7 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
 com.redis.om.spring.RedisModulesConfiguration
 com.redis.om.spring.RedisAiConfiguration
+com.redis.om.spring.EntraIDConfiguration
 org.springframework.boot.autoconfigure.AutoConfigurationImportFilter=\
 com.redis.om.spring.RedisRepositoriesExcludeFilter
 org.springframework.data.repository.core.support.RepositoryFactorySupport=com.redis.om.spring.repository.support.RedisEnhancedRepositoryFactory

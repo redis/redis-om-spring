@@ -10,13 +10,20 @@ import java.util.List;
     prefix = "redis.om.spring", ignoreInvalidFields = true
 )
 public class RedisOMProperties {
-  public static final String ROMS_VERSION = "0.9.11-SNAPSHOT";
+  public static final String ROMS_VERSION = "0.9.13-SNAPSHOT";
   public static final int MAX_SEARCH_RESULTS = 10000;
   public static final double DEFAULT_DISTANCE = 0.0005;
   public static final Metrics DEFAULT_DISTANCE_METRIC = Metrics.MILES;
   // repository properties
   private final Repository repository = new Repository();
   private final References references = new References();
+  // Entra ID Authentication
+  private final Authentication authentication = new Authentication();
+
+  public Authentication getAuthentication() {
+    return authentication;
+  }
+
 
   public Repository getRepository() {
     return repository;
@@ -24,6 +31,39 @@ public class RedisOMProperties {
 
   public References getReferences() {
     return references;
+  }
+
+  public static class Authentication {
+    private EntraId entraId = new EntraId();
+
+    public EntraId getEntraId() {
+      return entraId;
+    }
+
+    public void setEntraId(EntraId entraId) {
+      this.entraId = entraId;
+    }
+  }
+
+  public static class EntraId {
+    private boolean enabled = false;
+    private String tenantId;
+
+    public boolean isEnabled() {
+      return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+      this.enabled = enabled;
+    }
+
+    public String getTenantId() {
+      return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+      this.tenantId = tenantId;
+    }
   }
 
   public static class Repository {
