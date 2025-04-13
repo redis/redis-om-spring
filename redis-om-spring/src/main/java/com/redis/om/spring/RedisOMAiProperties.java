@@ -13,8 +13,7 @@ public class RedisOMAiProperties {
   private int embeddingBatchSize = 1000;
   private final Djl djl = new Djl();
   private final OpenAi openAi = new OpenAi();
-  private final AzureOpenAi azureOpenAi = new AzureOpenAi();
-  private final AzureEntraId azureEntraId = new AzureEntraId();
+  private final AzureClients azure = new AzureClients();
   private final VertexAi vertexAi = new VertexAi();
   private final Aws aws = new Aws();
   private final Ollama ollama = new Ollama();
@@ -35,12 +34,8 @@ public class RedisOMAiProperties {
     return openAi;
   }
 
-  public AzureOpenAi getAzureOpenAi() {
-    return azureOpenAi;
-  }
-
-  public AzureEntraId getAzureEntraId() {
-    return azureEntraId;
+  public AzureClients getAzure() {
+    return azure;
   }
 
   public VertexAi getVertexAi() {
@@ -249,6 +244,27 @@ public class RedisOMAiProperties {
 
     public void setBaseUrl(String baseUrl) {
       this.baseUrl = baseUrl;
+    }
+  }
+
+  public static class AzureClients {
+    private AzureOpenAi openAi;
+    private AzureEntraId entraId;
+
+    public AzureOpenAi getOpenAi() {
+      return openAi;
+    }
+
+    public void setOpenAi(AzureOpenAi openAi) {
+      this.openAi = openAi;
+    }
+
+    public AzureEntraId getEntraId() {
+      return entraId;
+    }
+
+    public void setEntraId(AzureEntraId entraId) {
+      this.entraId = entraId;
     }
   }
 

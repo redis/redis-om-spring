@@ -27,35 +27,6 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
   SearchStream<E> filter(String freeText);
 
   SearchStream<E> filter(Example<E> example);
-  
-  /**
-   * Applies a filter predicate only if the value is not null.
-   *
-   * @param value the value to check
-   * @param predicateSupplier a supplier that creates a predicate
-   * @return this SearchStream instance
-   * @param <T> the type of the value
-   */
-  <T> SearchStream<E> filterIfNotNull(T value, Supplier<SearchFieldPredicate<? super E, ?>> predicateSupplier);
-
-  /**
-   * Applies a filter predicate only if the string value is not null and not blank.
-   *
-   * @param value the string value to check
-   * @param predicateSupplier a supplier that creates a predicate
-   * @return this SearchStream instance
-   */
-  SearchStream<E> filterIfNotBlank(String value, Supplier<SearchFieldPredicate<? super E, ?>> predicateSupplier);
-  
-  /**
-   * Applies a filter predicate only if the optional value is present.
-   *
-   * @param value the optional value to check
-   * @param predicateSupplier a supplier that creates a predicate
-   * @return this SearchStream instance
-   * @param <T> the type of the optional value
-   */
-  <T> SearchStream<E> filterIfPresent(Optional<T> value, Supplier<SearchFieldPredicate<? super E, ?>> predicateSupplier);
 
   <R> SearchStream<R> map(Function<? super E, ? extends R> field);
 

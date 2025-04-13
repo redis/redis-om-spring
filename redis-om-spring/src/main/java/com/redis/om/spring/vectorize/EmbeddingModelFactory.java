@@ -3,7 +3,7 @@ package com.redis.om.spring.vectorize;
 import com.azure.ai.openai.OpenAIClient;
 import com.azure.ai.openai.OpenAIClientBuilder;
 import com.azure.core.credential.AzureKeyCredential;
-import com.azure.identity.*;
+import com.azure.identity.DefaultAzureCredentialBuilder;
 import com.redis.om.spring.RedisOMAiProperties;
 import com.redis.om.spring.annotations.Vectorize;
 import org.springframework.ai.azure.openai.AzureOpenAiEmbeddingModel;
@@ -109,32 +109,32 @@ public class EmbeddingModelFactory {
 
     private OpenAIClient getOpenAIClient() {
         OpenAIClientBuilder builder = new OpenAIClientBuilder();
-        if (properties.getAzureEntraId().isEnabled()) {
-            builder.credential(new DefaultAzureCredentialBuilder().tenantId(properties.getAzureEntraId().getTenantId()).build())
-                    .endpoint(properties.getAzureEntraId().getEndpoint());
+        if (properties.getAzure().getEntraId().isEnabled()) {
+            builder.credential(new DefaultAzureCredentialBuilder().tenantId(properties.getAzure().getEntraId().getTenantId()).build())
+                    .endpoint(properties.getAzure().getEntraId().getEndpoint());
         } else {
-            builder.credential(new AzureKeyCredential(properties.getAzureOpenAi().getApiKey()))
-                    .endpoint(properties.getAzureOpenAi().getEndpoint());
+            builder.credential(new AzureKeyCredential(properties.getAzure().getOpenAi().getApiKey()))
+                    .endpoint(properties.getAzure().getOpenAi().getEndpoint());
         }
         return builder.buildClient();
     }
 
     public AzureOpenAiEmbeddingModel createAzureOpenAiEmbeddingModel(String deploymentName) {
-        String apiKey = properties.getAzureOpenAi().getApiKey();
+        String apiKey = properties.getAzure().getOpenAi().getApiKey();
         if (!StringUtils.hasText(apiKey)) {
             apiKey = springAiProperties.getAzure().getApiKey(); // Fallback to Spring AI property
-            properties.getAzureOpenAi().setApiKey(apiKey);
+            properties.getAzure().getOpenAi().setApiKey(apiKey);
         }
 
-        String endpoint = properties.getAzureOpenAi().getEndpoint();
+        String endpoint = properties.getAzure().getOpenAi().getEndpoint();
         if (!StringUtils.hasText(endpoint)) {
             endpoint = springAiProperties.getAzure().getEndpoint(); // Fallback to Spring AI property
-            properties.getAzureOpenAi().setEndpoint(endpoint);
+            properties.getAzure().getOpenAi().setEndpoint(endpoint);
         }
 
         OpenAIClient openAIClient = getOpenAIClient();
 
-      AzureOpenAiEmbeddingOptions options = AzureOpenAiEmbeddingOptions.builder()
+        AzureOpenAiEmbeddingOptions options = AzureOpenAiEmbeddingOptions.builder()
                 .deploymentName(deploymentName)
                 .build();
 
