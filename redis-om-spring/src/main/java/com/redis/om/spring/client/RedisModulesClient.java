@@ -17,7 +17,6 @@ import redis.clients.jedis.bloom.commands.CuckooFilterCommands;
 import redis.clients.jedis.bloom.commands.TopKFilterCommands;
 import redis.clients.jedis.json.commands.RedisJsonCommands;
 import redis.clients.jedis.search.RediSearchCommands;
-import redis.clients.jedis.bloom.commands.TDigestSketchCommands;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -60,10 +59,6 @@ public class RedisModulesClient {
   }
 
   public TopKFilterCommands clientForTopK() {
-    return unifiedJedis;
-  }
-
-  public TDigestSketchCommands clientForTDigest() {
     return unifiedJedis;
   }
 

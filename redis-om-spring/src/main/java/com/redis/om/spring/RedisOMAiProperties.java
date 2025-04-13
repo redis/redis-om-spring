@@ -14,6 +14,7 @@ public class RedisOMAiProperties {
   private final Djl djl = new Djl();
   private final OpenAi openAi = new OpenAi();
   private final AzureOpenAi azureOpenAi = new AzureOpenAi();
+  private final AzureEntraId azureEntraId = new AzureEntraId();
   private final VertexAi vertexAi = new VertexAi();
   private final Aws aws = new Aws();
   private final Ollama ollama = new Ollama();
@@ -36,6 +37,10 @@ public class RedisOMAiProperties {
 
   public AzureOpenAi getAzureOpenAi() {
     return azureOpenAi;
+  }
+
+  public AzureEntraId getAzureEntraId() {
+    return azureEntraId;
   }
 
   public VertexAi getVertexAi() {
@@ -265,6 +270,63 @@ public class RedisOMAiProperties {
 
     public void setEndpoint(String endpoint) {
       this.endpoint = endpoint;
+    }
+  }
+
+  public static class AzureEntraId {
+    private boolean enabled = false;
+    private String apiKey;
+    private String endpoint;
+    private String tenantId;
+    private String clientId;
+    private String clientSecret;
+
+    public String getApiKey() {
+      return apiKey;
+    }
+
+    public void setApiKey(String apiKey) {
+      this.apiKey = apiKey;
+    }
+
+    public String getEndpoint() {
+      return endpoint;
+    }
+
+    public void setEndpoint(String endpoint) {
+      this.endpoint = endpoint;
+    }
+
+    public boolean isEnabled() {
+      return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+      this.enabled = enabled;
+    }
+
+    public String getTenantId() {
+      return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+      this.tenantId = tenantId;
+    }
+
+    public String getClientId() {
+      return clientId;
+    }
+
+    public void setClientId(String clientId) {
+      this.clientId = clientId;
+    }
+
+    public String getClientSecret() {
+      return clientSecret;
+    }
+
+    public void setClientSecret(String clientSecret) {
+      this.clientSecret = clientSecret;
     }
   }
 

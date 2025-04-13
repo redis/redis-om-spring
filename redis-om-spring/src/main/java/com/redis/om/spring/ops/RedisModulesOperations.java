@@ -35,8 +35,4 @@ public record RedisModulesOperations<K>(RedisModulesClient client, StringRedisTe
   public TopKOperations<K> opsForTopK() {
     return new TopKOperationsImpl<>(client);
   }
-
-  public TDigestOperations<K> opsForTDigest() {
-    return new TDigestOperationsImpl<>(client);
-  }
 }
