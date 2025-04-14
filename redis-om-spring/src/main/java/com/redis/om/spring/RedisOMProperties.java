@@ -10,7 +10,7 @@ import java.util.List;
     prefix = "redis.om.spring", ignoreInvalidFields = true
 )
 public class RedisOMProperties {
-  public static final String ROMS_VERSION = "0.9.12-SNAPSHOT";
+  public static final String ROMS_VERSION = "0.9.11";
   public static final int MAX_SEARCH_RESULTS = 10000;
   public static final double DEFAULT_DISTANCE = 0.0005;
   public static final Metrics DEFAULT_DISTANCE_METRIC = Metrics.MILES;
