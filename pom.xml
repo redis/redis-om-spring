@@ -30,5 +30,6 @@
     <module>demos/roms-permits</module>
     <module>demos/roms-vss</module>
     <module>demos/roms-vss-movies</module>
+    <module>demos/roms-amr-entraid</module>
   </modules>
 </project>
