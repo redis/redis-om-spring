@@ -618,6 +618,11 @@ These can be found in the `/demos` folder:
     - Port of [Redis Vector Search Demo](https://github.com/redis-developer/redis-product-search).
     - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-vss`
 
+- **roms-amr-entraid**:
+    - Demo showcasing Microsoft Entra ID authentication integration for Azure Managed Redis.
+    - Demonstrates seamless connection to AMR instances using secure identity management.
+    - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-amr-entraid`
+
 ### External Demos
 
 - **redis-om-spring-skeleton-app**:

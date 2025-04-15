@@ -34,3 +34,5 @@ redis-om-spring/target/maven-status/maven-compiler-plugin/compile/default-compil
 docs/node_modules/
 docs/node/
 docs/build/
+
+**/.claude/settings.local.json
