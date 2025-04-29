@@ -31,3 +31,6 @@ redis-om-spring/target/maven-status/maven-compiler-plugin/compile/default-compil
 *.dic
 /demos/roms-vss/src/main/resources/static/product-images/
 /CLAUDE.md
+docs/node_modules/
+docs/node/
+docs/build/

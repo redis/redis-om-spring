@@ -128,6 +128,23 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     throw new UnsupportedOperationException("Filter on Example predicate is not supported on mapped stream");
   }
 
+  @Override
+  public <U> SearchStream<T> filterIfNotNull(U value, Supplier<SearchFieldPredicate<? super T, ?>> predicateSupplier) {
+    throw new UnsupportedOperationException("filterIfNotNull not supported on return fields search stream");
+  }
+
+  @Override
+  public SearchStream<T> filterIfNotBlank(String value,
+      Supplier<SearchFieldPredicate<? super T, ?>> predicateSupplier) {
+    throw new UnsupportedOperationException("filterIfNotBlank not supported on return fields search stream");
+  }
+
+  @Override
+  public <U> SearchStream<T> filterIfPresent(Optional<U> value,
+      Supplier<SearchFieldPredicate<? super T, ?>> predicateSupplier) {
+    throw new UnsupportedOperationException("filterIfPresent not supported on return fields search stream");
+  }
+
   @SuppressWarnings("resource")
   @Override
   public <R> SearchStream<R> map(Function<? super T, ? extends R> mapper) {

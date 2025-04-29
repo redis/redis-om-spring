@@ -96,6 +96,26 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
   }
 
   @Override
+  public <T> SearchStream<E> filterIfNotNull(T value, Supplier<SearchFieldPredicate<? super E, ?>> predicateSupplier) {
+    // NO-OP - filtering performed on backed stream
+    return this;
+  }
+
+  @Override
+  public SearchStream<E> filterIfNotBlank(String value,
+      Supplier<SearchFieldPredicate<? super E, ?>> predicateSupplier) {
+    // NO-OP - filtering performed on backed stream
+    return this;
+  }
+
+  @Override
+  public <T> SearchStream<E> filterIfPresent(Optional<T> value,
+      Supplier<SearchFieldPredicate<? super E, ?>> predicateSupplier) {
+    // NO-OP - filtering performed on backed stream
+    return this;
+  }
+
+  @Override
   public <R> SearchStream<R> map(Function<? super E, ? extends R> mapper) {
     return new WrapperSearchStream<>(backingStream.map(mapper));
   }

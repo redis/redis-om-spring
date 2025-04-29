@@ -171,6 +171,30 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     return this;
   }
 
+  @Override
+  public <T> SearchStream<E> filterIfNotNull(T value, Supplier<SearchFieldPredicate<? super E, ?>> predicateSupplier) {
+    if (value != null) {
+      return filter(predicateSupplier.get());
+    }
+    return this;
+  }
+
+  @Override
+  public SearchStream<E> filterIfNotBlank(String value, Supplier<SearchFieldPredicate<? super E, ?>> predicateSupplier) {
+    if (value != null && !value.isBlank()) {
+      return filter(predicateSupplier.get());
+    }
+    return this;
+  }
+
+  @Override
+  public <T> SearchStream<E> filterIfPresent(Optional<T> value, Supplier<SearchFieldPredicate<? super E, ?>> predicateSupplier) {
+    if (value.isPresent()) {
+      return filter(predicateSupplier.get());
+    }
+    return this;
+  }
+
   public Node processPredicate(SearchFieldPredicate<? super E, ?> predicate) {
     return predicate.apply(rootNode);
   }
