@@ -11,6 +11,7 @@ import com.redis.om.spring.mapping.RedisEnhancedMappingContext;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.pds.BloomOperations;
+import com.redis.om.spring.ops.pds.CountMinSketchOperations;
 import com.redis.om.spring.ops.pds.CuckooFilterOperations;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.EntityStreamImpl;
@@ -123,6 +124,11 @@ public class RedisModulesConfiguration {
   @Bean(name = "redisCuckooOperations")
   CuckooFilterOperations<?> redisCuckooFilterOperations(RedisModulesOperations<?> redisModulesOperations) {
     return redisModulesOperations.opsForCuckoFilter();
+  }
+
+  @Bean(name = "redisCountminOperations")
+  CountMinSketchOperations<?> redisCountMinOperations(RedisModulesOperations<?> redisModulesOperations) {
+    return redisModulesOperations.opsForCountMinSketch();
   }
 
   @Bean(name = "redisOmTemplate")
