@@ -1,6 +1,6 @@
 package com.redis.om.spring.fixtures.hash.model;
 
-import com.redis.om.spring.annotations.CountMin;
+// import com.redis.om.spring.annotations.CountMin;
 import com.redis.om.spring.tuple.Pair;
 import lombok.*;
 import org.springframework.data.annotation.Id;
@@ -19,18 +19,18 @@ public class SearchEvent {
   String id;
 
   @NonNull
-  @CountMin(name = "cms_user_id_count", initMode = CountMin.InitMode.DIMENSIONS, width = 1000, depth = 10)
+  // @CountMin(name = "cms_user_id_count", initMode = CountMin.InitMode.DIMENSIONS, width = 1000, depth = 10)
   String userId;
 
   @NonNull
-  @CountMin
+  // @CountMin
   String searchSentence;
 
   @NonNull
-  @CountMin(errorRate = 0.001, probability = 0.999)
+  // @CountMin(errorRate = 0.001, probability = 0.999)
   List<String> hotTerms;
 
   @NonNull
-  @CountMin(name = "cms_search_words")
+  // @CountMin(name = "cms_search_words")
   List<Pair<String, Long>> searchWord;
 }

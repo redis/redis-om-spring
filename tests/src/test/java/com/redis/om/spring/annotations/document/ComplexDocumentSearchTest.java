@@ -4,6 +4,7 @@ import com.github.f4b6a3.ulid.Ulid;
 import com.google.common.collect.Lists;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.fixtures.document.model.*;
+import com.redis.om.spring.fixtures.document.model.Scheduled_filters$;
 import com.redis.om.spring.fixtures.document.repository.ComplexRepository;
 import com.redis.om.spring.fixtures.document.repository.PermitRepository;
 import com.redis.om.spring.fixtures.document.repository.WithNestedListOfUUIDsRepository;
@@ -534,9 +535,9 @@ class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
     scheduledRepository.save(scheduled2);
 
     List<Scheduled> adminRolesValidAtTime = es.of(Scheduled.class) //
-        .filter(Scheduled$.FILTERS.VALID_FROM.lt(mid2023)) //
-        .filter(Scheduled$.FILTERS.TYPE.eq("role")) //
-        .filter(Scheduled$.FILTERS.VALUE.eq("admin")) //
+        .filter(Scheduled_filters$.VALID_FROM.lt(mid2023)) //
+        .filter(Scheduled_filters$.TYPE.eq("role")) //
+        .filter(Scheduled_filters$.VALUE.eq("admin")) //
         .collect(Collectors.toList());
 
     assertThat(adminRolesValidAtTime.size()).isEqualTo(1);
