@@ -10,6 +10,7 @@ import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.query.autocomplete.AutoCompleteQueryExecutor;
 import com.redis.om.spring.repository.query.bloom.BloomQueryExecutor;
 import com.redis.om.spring.repository.query.clause.QueryClause;
+import com.redis.om.spring.repository.query.countmin.CountMinQueryExecutor;
 import com.redis.om.spring.repository.query.cuckoo.CuckooQueryExecutor;
 import com.redis.om.spring.util.ObjectUtils;
 import org.apache.commons.logging.Log;
@@ -73,6 +74,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   private final RediSearchIndexer indexer;
   private final BloomQueryExecutor bloomQueryExecutor;
   private final CuckooQueryExecutor cuckooQueryExecutor;
+  private final CountMinQueryExecutor countMinQueryExecutor;
   private final AutoCompleteQueryExecutor autoCompleteQueryExecutor;
   private final boolean isANDQuery;
   private final KeyValueOperations keyValueOperations;
@@ -94,13 +96,14 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
   @SuppressWarnings("unchecked")
   public RedisEnhancedQuery(QueryMethod queryMethod, //
-      RepositoryMetadata metadata, //
-      RediSearchIndexer indexer, //
-      QueryMethodEvaluationContextProvider evaluationContextProvider, //
-      KeyValueOperations keyValueOperations, //
-      RedisOperations<?, ?> redisOperations, //
-      RedisModulesOperations<?> rmo, //
-      Class<? extends AbstractQueryCreator<?, ?>> queryCreator, RedisOMProperties redisOMProperties) {
+                            RepositoryMetadata metadata, //
+                            RediSearchIndexer indexer, //
+                            QueryMethodEvaluationContextProvider evaluationContextProvider, //
+                            KeyValueOperations keyValueOperations, //
+                            RedisOperations<?, ?> redisOperations, //
+                            RedisModulesOperations<?> rmo, //
+                            Class<? extends AbstractQueryCreator<?, ?>> queryCreator,
+                            RedisOMProperties redisOMProperties) {
     logger.info(String.format("Creating query %s", queryMethod.getName()));
 
     this.keyValueOperations = keyValueOperations;
@@ -114,6 +117,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
     bloomQueryExecutor = new BloomQueryExecutor(this, modulesOperations);
     cuckooQueryExecutor = new CuckooQueryExecutor(this, modulesOperations);
+    countMinQueryExecutor = new CountMinQueryExecutor(this, modulesOperations);
     autoCompleteQueryExecutor = new AutoCompleteQueryExecutor(this, modulesOperations);
 
     Class<?> repoClass = metadata.getRepositoryInterface();
@@ -379,11 +383,14 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   public Object execute(Object[] parameters) {
     Optional<String> maybeBloomFilter = bloomQueryExecutor.getBloomFilter();
     Optional<String> maybeCuckooFilter = cuckooQueryExecutor.getCuckooFilter();
+    Optional<String> maybeCountMinSketch = countMinQueryExecutor.getCountMinSketch();
 
     if (maybeBloomFilter.isPresent()) {
       return bloomQueryExecutor.executeBloomQuery(parameters, maybeBloomFilter.get());
     } else if (maybeCuckooFilter.isPresent()) {
       return cuckooQueryExecutor.executeCuckooQuery(parameters, maybeCuckooFilter.get());
+    } else if (maybeCountMinSketch.isPresent()) {
+      return countMinQueryExecutor.executeCountMinQuery(parameters, maybeCountMinSketch.get());
     } else if (type == RediSearchQueryType.QUERY) {
       return !isNullParamQuery ? executeQuery(parameters) : executeNullQuery(parameters);
     } else if (type == RediSearchQueryType.AGGREGATION) {
