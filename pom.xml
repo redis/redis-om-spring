@@ -6,7 +6,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.redis.om</groupId>
   <artifactId>redis-om-spring-parent</artifactId>
-  <version>0.9.11</version>
+  <version>1.0.0-RC1</version>
   <name>redis-om-spring-parent</name>
   <packaging>pom</packaging>
 
@@ -23,6 +23,7 @@
   <modules>
     <!-- Main Project -->
     <module>redis-om-spring</module>
+    <module>redis-om-spring-ai</module>
     <module>tests</module>
     <!-- Demos -->
     <module>demos/roms-documents</module>
@@ -31,5 +32,7 @@
     <module>demos/roms-vss</module>
     <module>demos/roms-vss-movies</module>
     <module>demos/roms-amr-entraid</module>
+    <module>demos/roms-modeling</module>
+    <module>demos/roms-vectorizers</module>
   </modules>
 </project>

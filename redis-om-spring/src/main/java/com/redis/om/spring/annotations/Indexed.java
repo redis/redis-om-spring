@@ -87,4 +87,9 @@ public @interface Indexed {
    * @return depth of metamodel creation for nested self-class.
    */
   int depth() default 1;
+
+  // Implement official null support - https://github.com/redis/redis-om-spring/issues/527
+  boolean indexMissing() default false;
+  boolean indexEmpty() default false;
+
 }
