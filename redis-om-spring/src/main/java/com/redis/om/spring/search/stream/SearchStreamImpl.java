@@ -380,9 +380,11 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @Override
   public long count() {
     if (!rootNode.toString().isBlank()) {
-      Query query = new Query(rootNode.toString());
+      // Trim any leading/trailing spaces from the query to avoid syntax errors with DIALECT
+      String queryString = rootNode.toString().trim();
+      Query query = new Query(queryString);
       query.limit(0, 0);
-      query.dialect(Dialect.TWO.getValue());
+      query.dialect(dialect); // Use the configured dialect value
       SearchResult searchResult = search.search(query);
       resolvedStream = Stream.empty();
 
