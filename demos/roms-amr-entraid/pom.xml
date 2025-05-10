@@ -28,7 +28,7 @@
         <maven.deploy.skip>true</maven.deploy.skip>
         <spring.version>3.4.1</spring.version>
         <lombok.version>1.18.36</lombok.version>
-        <redis-om.version>0.9.11</redis-om.version>
+        <redis-om-spring.version>1.0.0-RC1</redis-om-spring.version>
         <jedis.version>5.2.0</jedis.version>
         <jackson-databind.version>2.17.3</jackson-databind.version>
     </properties>
@@ -61,7 +61,7 @@
         <dependency>
             <groupId>com.redis.om</groupId>
             <artifactId>redis-om-spring</artifactId>
-            <version>${redis-om.version}</version>
+            <version>${redis-om-spring.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -140,7 +140,7 @@
                         <path>
                             <groupId>com.redis.om</groupId>
                             <artifactId>redis-om-spring</artifactId>
-                            <version>${redis-om.version}</version>
+                            <version>${redis-om-spring.version}</version>
                         </path>
                     </annotationProcessorPaths>
                     <generatedSourcesDirectory>${project.build.directory}/generated-sources/annotations

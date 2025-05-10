@@ -4,7 +4,7 @@ import com.azure.ai.openai.OpenAIClient;
 import com.azure.ai.openai.OpenAIClientBuilder;
 import com.azure.core.credential.AzureKeyCredential;
 import com.azure.identity.DefaultAzureCredentialBuilder;
-import com.redis.om.spring.RedisOMAiProperties;
+import com.redis.om.spring.AIRedisOMProperties;
 import com.redis.om.spring.annotations.Vectorize;
 import org.springframework.ai.azure.openai.AzureOpenAiEmbeddingModel;
 import org.springframework.ai.azure.openai.AzureOpenAiEmbeddingOptions;
@@ -36,76 +36,18 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class EmbeddingModelFactory {
-    private final RedisOMAiProperties properties;
+    private final AIRedisOMProperties properties;
     private final SpringAiProperties springAiProperties;
 
-    private final Map<String, Object> modelCache = new ConcurrentHashMap<>();
-
-    public EmbeddingModelFactory(RedisOMAiProperties properties, SpringAiProperties springAiProperties) {
+    public EmbeddingModelFactory(AIRedisOMProperties properties, SpringAiProperties springAiProperties) {
         this.properties = properties;
         this.springAiProperties = springAiProperties;
     }
 
-    /**
-     * Generates a cache key for a model based on its type and parameters
-     * @param modelType The type of the model
-     * @param params Parameters that uniquely identify the model configuration
-     * @return A string key for caching
-     */
-    private String generateCacheKey(String modelType, String... params) {
-        StringBuilder keyBuilder = new StringBuilder(modelType);
-        for (String param : params) {
-            keyBuilder.append(":").append(param);
-        }
-        return keyBuilder.toString();
-    }
-
-    /**
-     * Clears the model cache, forcing new models to be created on next request.
-     * This can be useful when configuration changes or to free up resources.
-     */
-    public void clearCache() {
-        modelCache.clear();
-    }
-
-    /**
-     * Removes a specific model from the cache.
-     * 
-     * @param modelType The type of the model (e.g., "openai", "transformers")
-     * @param params Parameters that were used to create the model
-     * @return true if a model was removed, false otherwise
-     */
-    public boolean removeFromCache(String modelType, String... params) {
-        String cacheKey = generateCacheKey(modelType, params);
-        return modelCache.remove(cacheKey) != null;
-    }
-
-    /**
-     * Returns the current number of models in the cache.
-     * 
-     * @return The number of cached models
-     */
-    public int getCacheSize() {
-        return modelCache.size();
-    }
-
     public TransformersEmbeddingModel createTransformersEmbeddingModel(Vectorize vectorize) {
-        String cacheKey = generateCacheKey("transformers",
-            vectorize.transformersModel(), 
-            vectorize.transformersTokenizer(), 
-            vectorize.transformersResourceCacheConfiguration(),
-            String.join(",", vectorize.transformersTokenizerOptions()));
-
-        TransformersEmbeddingModel cachedModel = (TransformersEmbeddingModel) modelCache.get(cacheKey);
-
-        if (cachedModel != null) {
-            return cachedModel;
-        }
-
         TransformersEmbeddingModel embeddingModel = new TransformersEmbeddingModel();
 
         if (!vectorize.transformersModel().isEmpty()) {
@@ -133,8 +75,6 @@ public class EmbeddingModelFactory {
             throw new RuntimeException("Error initializing TransformersEmbeddingModel", e);
         }
 
-        modelCache.put(cacheKey, embeddingModel);
-
         return embeddingModel;
     }
 
@@ -143,13 +83,6 @@ public class EmbeddingModelFactory {
     }
 
     public OpenAiEmbeddingModel createOpenAiEmbeddingModel(String model) {
-        String cacheKey = generateCacheKey("openai", model, properties.getOpenAi().getApiKey());
-        OpenAiEmbeddingModel cachedModel = (OpenAiEmbeddingModel) modelCache.get(cacheKey);
-
-        if (cachedModel != null) {
-            return cachedModel;
-        }
-
         String apiKey = properties.getOpenAi().getApiKey();
         if (!StringUtils.hasText(apiKey)) {
             apiKey = springAiProperties.getOpenai().getApiKey();
@@ -164,7 +97,7 @@ public class EmbeddingModelFactory {
                 .restClientBuilder(RestClient.builder().requestFactory(factory))
                 .build();
 
-        OpenAiEmbeddingModel embeddingModel = new OpenAiEmbeddingModel(
+        return new OpenAiEmbeddingModel(
                 openAiApi,
                 MetadataMode.EMBED,
                 OpenAiEmbeddingOptions.builder()
@@ -172,9 +105,6 @@ public class EmbeddingModelFactory {
                         .build(),
                 RetryUtils.DEFAULT_RETRY_TEMPLATE
         );
-
-        modelCache.put(cacheKey, embeddingModel);
-        return embeddingModel;
     }
 
     private OpenAIClient getOpenAIClient() {
@@ -190,18 +120,6 @@ public class EmbeddingModelFactory {
     }
 
     public AzureOpenAiEmbeddingModel createAzureOpenAiEmbeddingModel(String deploymentName) {
-        String cacheKey = generateCacheKey("azure-openai",
-            deploymentName, 
-            properties.getAzure().getOpenAi().getApiKey(),
-            properties.getAzure().getOpenAi().getEndpoint(),
-            String.valueOf(properties.getAzure().getEntraId().isEnabled()));
-
-        AzureOpenAiEmbeddingModel cachedModel = (AzureOpenAiEmbeddingModel) modelCache.get(cacheKey);
-
-        if (cachedModel != null) {
-            return cachedModel;
-        }
-
         String apiKey = properties.getAzure().getOpenAi().getApiKey();
         if (!StringUtils.hasText(apiKey)) {
             apiKey = springAiProperties.getAzure().getApiKey(); // Fallback to Spring AI property
@@ -220,27 +138,10 @@ public class EmbeddingModelFactory {
                 .deploymentName(deploymentName)
                 .build();
 
-        AzureOpenAiEmbeddingModel embeddingModel = new AzureOpenAiEmbeddingModel(openAIClient, MetadataMode.EMBED, options);
-
-        modelCache.put(cacheKey, embeddingModel);
-
-        return embeddingModel;
+        return new AzureOpenAiEmbeddingModel(openAIClient, MetadataMode.EMBED, options);
     }
 
     public VertexAiTextEmbeddingModel createVertexAiTextEmbeddingModel(String model) {
-        String cacheKey = generateCacheKey("vertex-ai",
-            model, 
-            properties.getVertexAi().getApiKey(),
-            properties.getVertexAi().getEndpoint(),
-            properties.getVertexAi().getProjectId(),
-            properties.getVertexAi().getLocation());
-
-        VertexAiTextEmbeddingModel cachedModel = (VertexAiTextEmbeddingModel) modelCache.get(cacheKey);
-
-        if (cachedModel != null) {
-            return cachedModel;
-        }
-
         String apiKey = properties.getVertexAi().getApiKey();
         if (!StringUtils.hasText(apiKey)) {
             apiKey = springAiProperties.getVertexAi().getApiKey(); // Fallback to Spring AI property
@@ -282,24 +183,10 @@ public class EmbeddingModelFactory {
                 .model(model)
                 .build();
 
-        VertexAiTextEmbeddingModel embeddingModel = new VertexAiTextEmbeddingModel(connectionDetails, options);
-
-        modelCache.put(cacheKey, embeddingModel);
-
-        return embeddingModel;
+        return new VertexAiTextEmbeddingModel(connectionDetails, options);
     }
 
     public OllamaEmbeddingModel createOllamaEmbeddingModel(String model) {
-        String cacheKey = generateCacheKey("ollama", 
-            model, 
-            properties.getOllama().getBaseUrl());
-
-        OllamaEmbeddingModel cachedModel = (OllamaEmbeddingModel) modelCache.get(cacheKey);
-
-        if (cachedModel != null) {
-            return cachedModel;
-        }
-
         OllamaApi api = new OllamaApi(properties.getOllama().getBaseUrl());
 
         OllamaOptions options = OllamaOptions.builder()
@@ -307,14 +194,10 @@ public class EmbeddingModelFactory {
                 .truncate(false)
                 .build();
 
-        OllamaEmbeddingModel embeddingModel = OllamaEmbeddingModel.builder()
+        return OllamaEmbeddingModel.builder()
                 .ollamaApi(api)
                 .defaultOptions(options)
                 .build();
-
-        modelCache.put(cacheKey, embeddingModel);
-
-        return embeddingModel;
     }
 
     private AwsCredentials getAwsCredentials() {
@@ -343,19 +226,6 @@ public class EmbeddingModelFactory {
     }
 
     public BedrockCohereEmbeddingModel createCohereEmbeddingModel(String model) {
-        String cacheKey = generateCacheKey("bedrock-cohere",
-            model, 
-            properties.getAws().getAccessKey(),
-            properties.getAws().getSecretKey(),
-            properties.getAws().getRegion(),
-            String.valueOf(properties.getAws().getBedrockCohere().getResponseTimeOut()));
-
-        BedrockCohereEmbeddingModel cachedModel = (BedrockCohereEmbeddingModel) modelCache.get(cacheKey);
-
-        if (cachedModel != null) {
-            return cachedModel;
-        }
-
         String region = properties.getAws().getRegion();
         if (!StringUtils.hasText(region)) {
             region = springAiProperties.getBedrock().getAws().getRegion(); // Fallback to Spring AI property
@@ -370,28 +240,10 @@ public class EmbeddingModelFactory {
                 Duration.ofMinutes(properties.getAws().getBedrockCohere().getResponseTimeOut())
         );
 
-        BedrockCohereEmbeddingModel embeddingModel = new BedrockCohereEmbeddingModel(cohereEmbeddingApi);
-
-        modelCache.put(cacheKey, embeddingModel);
-
-        return embeddingModel;
+        return new BedrockCohereEmbeddingModel(cohereEmbeddingApi);
     }
 
     public BedrockTitanEmbeddingModel createTitanEmbeddingModel(String model) {
-        // Generate a cache key based on the model parameters
-        String cacheKey = generateCacheKey("bedrock-titan", 
-            model, 
-            properties.getAws().getAccessKey(),
-            properties.getAws().getSecretKey(),
-            properties.getAws().getRegion(),
-            String.valueOf(properties.getAws().getBedrockTitan().getResponseTimeOut()));
-
-        BedrockTitanEmbeddingModel cachedModel = (BedrockTitanEmbeddingModel) modelCache.get(cacheKey);
-
-        if (cachedModel != null) {
-            return cachedModel;
-        }
-
         String region = properties.getAws().getRegion();
         if (!StringUtils.hasText(region)) {
             region = springAiProperties.getBedrock().getAws().getRegion(); // Fallback to Spring AI property
@@ -406,10 +258,6 @@ public class EmbeddingModelFactory {
                 Duration.ofMinutes(properties.getAws().getBedrockTitan().getResponseTimeOut())
         );
 
-        BedrockTitanEmbeddingModel embeddingModel = new BedrockTitanEmbeddingModel(titanEmbeddingApi);
-
-        modelCache.put(cacheKey, embeddingModel);
-
-        return embeddingModel;
+        return new BedrockTitanEmbeddingModel(titanEmbeddingApi);
     }
 }

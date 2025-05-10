@@ -6,7 +6,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.Map;
 
-@ConditionalOnProperty(name = "redis.om.spring.ai.enabled")
+@ConditionalOnProperty(name = "redis.om.spring.ai.enabled", havingValue = "true")
 @ConfigurationProperties(prefix = "spring.ai")
 public class SpringAiProperties {
 

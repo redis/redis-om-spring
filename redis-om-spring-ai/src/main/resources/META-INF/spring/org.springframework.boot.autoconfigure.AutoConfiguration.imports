@@ -1,0 +1,5 @@
+# Auto Configure
+com.redis.om.spring.RedisModulesConfiguration
+com.redis.om.spring.EntraIDConfiguration
+com.redis.om.spring.AIRedisConfiguration
+com.redis.om.spring.vectorize.SpringAiProperties

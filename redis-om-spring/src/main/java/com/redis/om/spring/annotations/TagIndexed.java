@@ -13,4 +13,9 @@ public @interface TagIndexed {
   boolean noindex() default false;
 
   String separator() default "|";
+
+  // Implement official null support - https://github.com/redis/redis-om-spring/issues/527
+  boolean indexMissing() default false;
+  boolean indexEmpty() default false;
+
 }

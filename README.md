@@ -32,23 +32,23 @@ Learn / Discuss / Collaborate
 - [💡 Why Redis OM?](#-why-redis-om)
 - [🍀 Redis OM Spring](#-redis-om-spring)
 - [🏁 Getting Started](#-getting-started)
-    - [🚀 Launch Redis](#-launch-redis)
-    - [The SpringBoot App](#the-springboot-app)
-    - [💁‍♂️ The Mapped Model](#-the-mapped-model)
-    - [🧰 The Repository](#-the-repository)
-    - [🚤 Querying with Entity Streams](#-querying-with-entity-streams)
-        - [👭 Entity Meta-model](#-entity-meta-model)
+  - [🚀 Launch Redis](#-launch-redis)
+  - [The SpringBoot App](#the-springboot-app)
+  - [💁‍♂️ The Mapped Model](#-the-mapped-model)
+  - [🧰 The Repository](#-the-repository)
+  - [🚤 Querying with Entity Streams](#-querying-with-entity-streams)
+    - [👭 Entity Meta-model](#-entity-meta-model)
 - [💻 Maven configuration](#-maven-configuration)
-    - [Official Releases](#official-releases)
-        - [Explicitly configuring OM as an annotation processor](#explicitly-configuring-om-as-an-annotation-processor)
-    - [Snapshots](#snapshots)
+  - [Official Releases](#official-releases)
+    - [Explicitly configuring OM as an annotation processor](#explicitly-configuring-om-as-an-annotation-processor)
+  - [Snapshots](#snapshots)
 - [🐘 Gradle configuration](#-gradle-configuration)
-    - [Add Repository - Snapshots Only](#add-repository---snapshots-only)
-    - [Dependency](#dependency)
+  - [Add Repository - Snapshots Only](#add-repository---snapshots-only)
+  - [Dependency](#dependency)
 - [📚 Documentation](#-documentation)
 - [Demos](#demos)
-    - [Embedded Demos](#embedded-demos)
-    - [External Demos](#external-demos)
+  - [Embedded Demos](#embedded-demos)
+  - [External Demos](#external-demos)
 - [⛏️ Troubleshooting](#-troubleshooting)
 - [✨ So How Do You Get RediSearch and RedisJSON?](#-so-how-do-you-get-redisearch-and-redisjson)
 - [💖 Contributing](#-contributing)
@@ -73,8 +73,8 @@ This **preview** release provides all Spring Data Redis, plus:
 
 * `@Document` annotation to map Spring Data models to Redis JSON documents
 * Enhancement to the Spring Data Redis `@RedisHash` via `@EnableRedisEnhancedRepositories`:
-    - uses Redis' native search engine (RediSearch) for secondary indexing
-    - uses [ULID](https://github.com/ulid/spec) for `@Id` annotated fields
+  - uses Redis' native search engine (RediSearch) for secondary indexing
+  - uses [ULID](https://github.com/ulid/spec) for `@Id` annotated fields
 * `RedisDocumentRepository` with automatic implementation of Repository interfaces for complex querying capabilities
   using `@EnableRedisDocumentRepositories`
 * Declarative search indexes via `@Indexed`
@@ -85,7 +85,7 @@ This **preview** release provides all Spring Data Redis, plus:
 * `@Vectorize` annotation to generate embeddings for text and images for use in Vector Similarity Searches
 * Vector Similarity Search API (See [Redis Stack Vectors](https://redis.io/docs/stack/search/reference/vectors/))
 
-**Note:** Redis OM Spring depends on Jedis.
+**Note:** Redis OM Spring requires Jedis version 5.2.0 or later, as well as Spring Data Redis version 3.4.1 or later, which is built on top of Spring Framework 6.2.+.
 
 ## 🏁 Getting Started
 
@@ -219,7 +219,12 @@ import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.Searchable;
 import lombok.*;
 
-@Data @NoArgsConstructor @RequiredArgsConstructor(staticName = "of") @AllArgsConstructor(access = AccessLevel.PROTECTED) @Document public class Company {
+@Data
+@NoArgsConstructor
+@RequiredArgsConstructor(staticName = "of")
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@Document
+public class Company {
   @Id private String id;
   @Searchable private String name;
   @Indexed private Point location;
@@ -408,105 +413,33 @@ Iterable<MyDoc> allMatches = repository.findAll(example);
   <version>${version}</version>
 </dependency>
 ```
-> Check below if using Redis OM Spring version greater than `0.9.11`
-> ⚠️ Redis OM Spring versions greater than `v0.9.1` require the addition
-of the [**Spring Milestone Repository**](https://repo.spring.io/milestone) to account
-for the recent integration with the [**Spring AI**](https://docs.spring.io/spring-ai/reference/) project. When Spring AI `v1.0.0` is
-released we will drop this requirement.
+
+> ⚠️ Starting from version `v1.0.0-RC1`, Redis OM Spring has been divided into two separate modules:
+>
+> * **Redis OM Spring** – providing modeling and vector indexing capabilities;
+> * **Redis OM Spring AI** – introducing AI capabilities, powered by Spring AI, to automatically generate vector embeddings using popular providers like OpenAI, Azure, Ollama, VertexAI, and more.
+
+To use **Redis OM** for modeling your domain objects, indexing them, and enabling both querying and Vector Similarity Search features, simply include the dependency for **Redis OM Spring** as shown below:
 
 ```xml
-<repository>
-  <id>spring-milestones</id>
-  <name>Spring Milestones</name>
-  <url>https://repo.spring.io/milestone</url>
-</repository>
+<dependency>
+  <groupId>com.redis.om</groupId>
+  <artifactId>redis-om-spring</artifactId>
+  <version>${version}</version>
+</dependency>
 ```
 
-of if using Gradle:
-
-```groovy
-repositories {
-  maven("https://repo.spring.io/milestone" )
-}
-```
-
-> ⚠️ Redis OM Spring versions greater than `v0.9.11` made OPTIONAL the addition
-of the [**Spring Milestone Repository**](https://repo.spring.io/milestone) to account
-for the recent integration with the [**Spring AI**](https://docs.spring.io/spring-ai/reference/) project. When Spring AI `v1.0.0` is
-released we will drop this requirement. If you want to opt-in for Vector Similarity Search features, you need to manually add the dependencies below. Check the VSS demo for
-for a full example.
+To enable AI capabilities like automatically converting (un)structured data into vector embeddings and interacting with embedding providers, simply add the dependency for **Redis OM Spring AI** as shown below:
 
 ```xml
-  <!-- Spring AI and DJL dependencies are optional and must be manually added in order to benefit from VSS features -->
-  <!-- Spring AI begin -->
-<dependencies>
-  <dependency>
-    <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-openai</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>jakarta.websocket</groupId>
-    <artifactId>jakarta.websocket-api</artifactId>
-    <version>2.1.1</version>
-  </dependency>
-  <dependency>
-    <groupId>jakarta.websocket</groupId>
-    <artifactId>jakarta.websocket-client-api</artifactId>
-    <version>2.1.1</version>
-  </dependency>
-  <dependency>
-    <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-ollama</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-azure-openai</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-vertex-ai-palm2</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-bedrock</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-transformers</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-mistral-ai</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-minimax</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-zhipuai</artifactId>
-  </dependency>
-  <!-- Spring AI end -->
-  <!-- DJL Dependencies -->
-  <dependency>
-    <groupId>ai.djl.spring</groupId>
-    <artifactId>djl-spring-boot-starter-autoconfigure</artifactId>
-    <version>${djl.starter.version}</version>
-  </dependency>
-  <dependency>
-    <groupId>ai.djl.spring</groupId>
-    <artifactId>djl-spring-boot-starter-pytorch-auto</artifactId>
-    <version>${djl.starter.version}</version>
-  </dependency>
-  <dependency>
-    <groupId>ai.djl.huggingface</groupId>
-    <artifactId>tokenizers</artifactId>
-    <version>${djl.version}</version>
-  </dependency>
-</dependencies>
+<dependency>
+  <groupId>com.redis.om</groupId>
+  <artifactId>redis-om-spring-ai</artifactId>
+  <version>${version}</version>
+</dependency>
 ```
 
-
+This will unlock powerful AI-driven features for your applications, making data processing and retrieval smarter and more efficient.
 
 #### Explicitly configuring OM as an annotation processor
 
@@ -535,7 +468,7 @@ inherited from the parent poms):
       <path>
         <groupId>com.redis.om</groupId>
         <artifactId>redis-om-spring</artifactId>
-        <version>0.9.11</version>
+        <version>1.0.0-RC1</version>
       </path>
     </annotationProcessorPaths>
   </configuration>
@@ -561,6 +494,11 @@ and
   <artifactId>redis-om-spring</artifactId>
   <version>${version}-SNAPSHOT</version>
 </dependency>
+<dependency>
+  <groupId>com.redis.om</groupId>
+  <artifactId>redis-om-spring-ai</artifactId>
+  <version>${version}-SNAPSHOT</version>
+</dependency>
 ```
 
 **Ready to learn more?** Check out the [getting started](docs/getting_started.md) guide.
@@ -582,11 +520,12 @@ repositories {
 
 ```groovy
 ext {
-  redisOmVersion = '0.9.11'
+  redisOmVersion = '1.0.0-RC1'
 }
 
 dependencies {
   implementation "com.redis.om:redis-om-spring:$redisOmVersion"
+  implementation "com.redis.om:redis-om-spring-ai:$redisOmVersion"
   annotationProcessor "com.redis.om:redis-om-spring:$redisOmVersion"
 }
 ```
@@ -602,41 +541,44 @@ The Redis OM documentation is available [here](docs/index.md).
 These can be found in the `/demos` folder:
 
 - **roms-documents**:
-    - Simple API example of `@Document` mapping, Spring Repositories and Querying.
-    - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-documents`
+  - Simple API example of `@Document` mapping, Spring Repositories and Querying.
+  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-documents`
 
 - **roms-hashes**:
-    - Simple API example of `@RedisHash`, enhanced secondary indices and querying.
-    - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-hashes`
+  - Simple API example of `@RedisHash`, enhanced secondary indices and querying.
+  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-hashes`
 
 - **roms-permits**:
-    - Port of [Elena Kolevska's](https://github.com/elena-kolevska) Quick Start: Using RediSearch with
-      JSON [Demo][redisearch-json] to Redis OM Spring.
-    - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-permits`
+  - Port of [Elena Kolevska's](https://github.com/elena-kolevska) Quick Start: Using RediSearch with
+    JSON [Demo][redisearch-json] to Redis OM Spring.
+  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-permits`
 
 - **roms-vss**:
-    - Port of [Redis Vector Search Demo](https://github.com/redis-developer/redis-product-search).
-    - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-vss`
+  - Port of [Redis Vector Search Demo](https://github.com/redis-developer/redis-product-search).
+  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-vss`
 
-- **roms-amr-entraid**:
-    - Demo showcasing Microsoft Entra ID authentication integration for Azure Managed Redis.
-    - Demonstrates seamless connection to AMR instances using secure identity management.
-    - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-amr-entraid`
+- **roms-modeling**:
+  - Simple API example of modeling, Spring Repositories and Querying.
+  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-modeling`
+
+- **roms-vectorizers**:
+  - Simple API example of vectorizing, Spring Repositories and Querying.
+  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-vectorizers`
 
 ### External Demos
 
 - **redis-om-spring-skeleton-app**:
-    - Redis OM Spring Skeleton App
-    - Repo: https://github.com/redis-developer/redis-om-spring-skeleton-app
+  - Redis OM Spring Skeleton App
+  - Repo: https://github.com/redis-developer/redis-om-spring-skeleton-app
 
 - **redis-om-spring-react-todomvc**:
-    - Redis OM Spring to build a RESTful API that satisfies the simple web API spec set by
-      the Todo-Backend project using JSON Documents stored in Redis.
-    - Repo: https://github.com/redis-developer/redis-om-spring-react-todomvc
+  - Redis OM Spring to build a RESTful API that satisfies the simple web API spec set by
+    the Todo-Backend project using JSON Documents stored in Redis.
+  - Repo: https://github.com/redis-developer/redis-om-spring-react-todomvc
 
 - **redis-om-autocomplete-demo**:
-    - A Spring Boot demo of autocomplete functionality using Redis OM Spring.
-    - Repo: https://github.com/redis-developer/redis-om-autocomplete-demo
+  - A Spring Boot demo of autocomplete functionality using Redis OM Spring.
+  - Repo: https://github.com/redis-developer/redis-om-autocomplete-demo
 
 ## ⛏️ Troubleshooting
 

@@ -533,14 +533,14 @@ public class RediSearchIndexer {
       TextIndexed ti) {
     var fieldName = buildFieldName(field, prefix, isDocument, Optional.ofNullable(ti.alias()), Optional.empty());
     String phonetic = ObjectUtils.isEmpty(ti.phonetic()) ? null : ti.phonetic();
-    return getTextField(fieldName, ti.weight(), ti.sortable(), ti.nostem(), ti.noindex(), phonetic);
+    return getTextField(fieldName, ti.weight(), ti.sortable(), ti.nostem(), ti.noindex(), phonetic, ti.indexMissing(), ti.indexEmpty());
   }
 
   private TextField indexAsTextFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix,
       Searchable ti) {
     var fieldName = buildFieldName(field, prefix, isDocument, Optional.ofNullable(ti.alias()), Optional.empty());
     String phonetic = ObjectUtils.isEmpty(ti.phonetic()) ? null : ti.phonetic();
-    return getTextField(fieldName, ti.weight(), ti.sortable(), ti.nostem(), ti.noindex(), phonetic);
+    return getTextField(fieldName, ti.weight(), ti.sortable(), ti.nostem(), ti.noindex(), phonetic,  ti.indexMissing(), ti.indexEmpty());
   }
 
   private GeoField indexAsGeoFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, GeoIndexed gi) {
@@ -659,7 +659,7 @@ public class RediSearchIndexer {
 
           fieldList.add(SearchField.of(field,
               getTextField(fieldName, searchable.weight(), searchable.sortable(), searchable.nostem(),
-                  searchable.noindex(), phonetic)));
+                  searchable.noindex(), phonetic, searchable.indexMissing(), searchable.indexEmpty())));
 
           continue;
         }
@@ -685,7 +685,7 @@ public class RediSearchIndexer {
   }
 
   private TextField getTextField(FieldName fieldName, double weight, boolean sortable, boolean noStem, boolean noIndex,
-      String phonetic) {
+      String phonetic, boolean indexMissing, boolean indexEmpty) {
     TextField text = TextField.of(fieldName);
     text.weight(weight);
     if (sortable)
@@ -696,6 +696,10 @@ public class RediSearchIndexer {
       text.noIndex();
     if (phonetic != null)
       text.phonetic(phonetic);
+    if (indexMissing)
+      text.indexMissing();
+    if (indexEmpty)
+      text.indexEmpty();
     return text;
   }
 

@@ -3,6 +3,7 @@ package com.redis.om.spring.metamodel;
 import com.redis.om.spring.search.stream.aggregations.filters.AggregationFilter;
 import com.redis.om.spring.search.stream.aggregations.filters.ExistsFilter;
 import com.redis.om.spring.search.stream.aggregations.filters.NotExistsFilter;
+import com.redis.om.spring.search.stream.predicates.fulltext.IsMissingPredicate;
 import com.redis.om.spring.util.ObjectUtils;
 import org.springframework.data.domain.Sort.Order;
 
@@ -94,5 +95,9 @@ public class MetamodelField<E, T> implements Comparator<E>, Function<E, T> {
 
   public AggregationFilter notExists() {
     return new NotExistsFilter(this.getSearchAlias());
+  }
+
+  public IsMissingPredicate<E, T> isMissing() {
+    return new IsMissingPredicate<>(searchFieldAccessor);
   }
 }

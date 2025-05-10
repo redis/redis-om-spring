@@ -6,6 +6,7 @@ import com.redis.om.spring.search.stream.actions.NumIncrByAction;
 import com.redis.om.spring.search.stream.predicates.numeric.*;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.Consumer;
 
 public class NumericField<E, T> extends MetamodelField<E, T> {
@@ -44,6 +45,10 @@ public class NumericField<E, T> extends MetamodelField<E, T> {
 
   public BetweenPredicate<E, T> between(T min, T max) {
     return new BetweenPredicate<>(searchFieldAccessor, min, max);
+  }
+
+  public InPredicate<E, ?> in(T value) {
+    return new InPredicate<>(searchFieldAccessor, List.of(value));
   }
 
   @SuppressWarnings("unchecked")

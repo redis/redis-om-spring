@@ -19,4 +19,8 @@ public @interface Searchable {
   boolean nostem() default false;
 
   String phonetic() default "";
+
+  // Implement official null support - https://github.com/redis/redis-om-spring/issues/527
+  boolean indexMissing() default false;
+  boolean indexEmpty() default false;
 }

@@ -28,6 +28,8 @@
     <spring-ai.version>1.0.0-M2</spring-ai.version>
     <djl.starter.version>0.26</djl.starter.version>
     <djl.version>0.27.0</djl.version>
+    <redis-om-spring.version>1.0.0-RC1</redis-om-spring.version>
+    <redis-om-spring-ai.version>1.0.0-RC1</redis-om-spring-ai.version>
   </properties>
 
   <dependencyManagement>
@@ -54,7 +56,12 @@
     <dependency>
       <groupId>com.redis.om</groupId>
       <artifactId>redis-om-spring</artifactId>
-      <version>0.9.11</version>
+      <version>${redis-om-spring.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.redis.om</groupId>
+      <artifactId>redis-om-spring-ai</artifactId>
+      <version>${redis-om-spring-ai.version}</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
