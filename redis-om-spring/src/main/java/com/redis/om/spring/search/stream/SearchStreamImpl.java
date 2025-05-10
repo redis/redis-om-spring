@@ -558,7 +558,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   private SearchResult executeQuery() {
     try {
-      return search.search(prepareQuery());
+      Query query = prepareQuery();
+      return search.search(query);
     } catch (JedisDataException jde) {
       if (isQBE && jde.getMessage().contains("not loaded nor in schema")) {
         throw new UnsupportedOperationException("The example object properties are not part of the search schema", jde);
