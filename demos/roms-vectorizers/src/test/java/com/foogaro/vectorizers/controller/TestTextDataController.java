@@ -6,6 +6,7 @@ import com.foogaro.vectorizers.service.TextDataService;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         properties = "spring.main.allow-bean-definition-overriding=true"
 )
 @ContextConfiguration(classes = TestRedisConfiguration.class)
+@DisabledIfEnvironmentVariable(named = "GITHUB_ACTIONS", matches = "true", disabledReason = "Skipping tests in the GitHub workflow because they interact with the embedding providers' API, which requires an API token.")
 public class TestTextDataController {
 
     private static final Logger logger = LoggerFactory.getLogger(TestTextDataController.class);
