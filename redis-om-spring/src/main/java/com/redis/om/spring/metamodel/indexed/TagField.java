@@ -10,7 +10,6 @@ import com.redis.om.spring.search.stream.predicates.tag.NotEqualPredicate;
 import com.redis.om.spring.util.ObjectUtils;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.ToLongFunction;

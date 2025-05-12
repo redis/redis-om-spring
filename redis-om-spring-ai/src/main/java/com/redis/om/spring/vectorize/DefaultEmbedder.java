@@ -7,7 +7,7 @@ import ai.djl.modality.cv.translator.ImageFeatureExtractor;
 import ai.djl.repository.zoo.ZooModel;
 import ai.djl.translate.Pipeline;
 import ai.djl.translate.TranslateException;
-import com.redis.om.spring.RedisOMAiProperties;
+import com.redis.om.spring.AIRedisOMProperties;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.EmbeddingType;
 import com.redis.om.spring.annotations.Vectorize;
@@ -31,7 +31,9 @@ import org.springframework.core.io.Resource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -49,16 +51,16 @@ public class DefaultEmbedder implements Embedder {
   private final ImageFactory imageFactory;
   private final ApplicationContext applicationContext;
   private final ImageFeatureExtractor imageFeatureExtractor;
-  private final RedisOMAiProperties properties;
+  private final AIRedisOMProperties properties;
 
   public DefaultEmbedder( //
-      ApplicationContext applicationContext, //
-      EmbeddingModelFactory embeddingModelFactory, //
-      ZooModel<Image, float[]> imageEmbeddingModel, //
-      ZooModel<Image, float[]> faceEmbeddingModel, //
-      ImageFactory imageFactory, //
-      Pipeline imagePipeline, //
-      RedisOMAiProperties properties //
+                          ApplicationContext applicationContext, //
+                          EmbeddingModelFactory embeddingModelFactory, //
+                          ZooModel<Image, float[]> imageEmbeddingModel, //
+                          ZooModel<Image, float[]> faceEmbeddingModel, //
+                          ImageFactory imageFactory, //
+                          Pipeline imagePipeline, //
+                          AIRedisOMProperties properties //
   ) {
     this.applicationContext = applicationContext;
     this.embeddingModelFactory = embeddingModelFactory;

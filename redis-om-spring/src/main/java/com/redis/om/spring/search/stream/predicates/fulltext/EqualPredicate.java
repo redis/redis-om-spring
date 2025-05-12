@@ -1,7 +1,6 @@
 package com.redis.om.spring.search.stream.predicates.fulltext;
 
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
-import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 import org.apache.commons.lang3.ObjectUtils;
 import redis.clients.jedis.search.querybuilder.Node;

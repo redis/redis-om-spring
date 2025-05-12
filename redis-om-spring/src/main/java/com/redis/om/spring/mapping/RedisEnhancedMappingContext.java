@@ -1,6 +1,5 @@
 package com.redis.om.spring.mapping;
 
-import jakarta.persistence.IdClass;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.data.redis.core.TimeToLiveAccessor;
