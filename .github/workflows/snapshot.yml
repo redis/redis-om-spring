@@ -52,9 +52,21 @@ jobs:
             echo "IS_SNAPSHOT=false" >> $GITHUB_ENV
           fi
 
-      - name: Deploy SNAPSHOT
+      - name: Deploy redis-om-spring SNAPSHOT
         if: env.IS_SNAPSHOT == 'true'
         working-directory: redis-om-spring
+        run: |
+          mvn --no-transfer-progress \
+            -DskipTests \
+            -Dgpg.passphrase='${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}' \
+            deploy
+        env:
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+
+      - name: Deploy redis-om-spring-ai SNAPSHOT
+        if: env.IS_SNAPSHOT == 'true'
+        working-directory: redis-om-spring-ai
         run: |
           mvn --no-transfer-progress \
             -DskipTests \
