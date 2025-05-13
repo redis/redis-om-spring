@@ -61,8 +61,8 @@
         <maven.test.source>21</maven.test.source>
         <maven.test.target>21</maven.test.target>
         <java.version>21</java.version>
-        <spring.version>3.4.4</spring.version>
-        <sdr.version>3.3.7</sdr.version>
+        <spring.version>3.4.5</spring.version>
+        <sdr.version>3.4.5</sdr.version>
         <jedis.version>5.2.0</jedis.version>
         <cdi>2.0-PFD</cdi>
         <auto-service.version>1.1.1</auto-service.version>
