@@ -554,8 +554,12 @@ These can be found in the `/demos` folder:
   - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-permits`
 
 - **roms-vss**:
-  - Port of [Redis Vector Search Demo](https://github.com/redis-developer/redis-product-search).
+  - Port of [Redis Vector Search Demo](https://github.com/redis-developer/redis-product-search) for fashion product recommendations using vector similarity search.
   - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-vss`
+
+- **roms-vss-movies**:
+  - Movie recommendation system showcasing Redis 8's vector similarity search capabilities.
+  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-vss-movies`
 
 - **roms-modeling**:
   - Simple API example of modeling, Spring Repositories and Querying.
@@ -564,6 +568,10 @@ These can be found in the `/demos` folder:
 - **roms-vectorizers**:
   - Simple API example of vectorizing, Spring Repositories and Querying.
   - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-vectorizers`
+
+- **roms-amr-entraid**:
+  - Demo showing how to connect to Azure Managed Redis (AMR) using Microsoft Entra ID authentication.
+  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-amr-entraid`
 
 ### External Demos
 

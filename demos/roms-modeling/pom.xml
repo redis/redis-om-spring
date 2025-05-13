@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.1</version>
+        <version>3.4.5</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
@@ -36,6 +36,7 @@
         <testcontainers-junit-jupiter.version>1.20.4</testcontainers-junit-jupiter.version>
         <testcontainers-redis.version>2.2.4</testcontainers-redis.version>
         <mockito-core.version>5.14.2</mockito-core.version>
+        <redis-om-spring.version>1.0.0-RC1</redis-om-spring.version>
     </properties>
 
     <dependencyManagement>

@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.1</version>
+        <version>3.4.5</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
@@ -26,8 +26,9 @@
         <maven.test.source>21</maven.test.source>
         <maven.test.target>21</maven.test.target>
         <maven.deploy.skip>true</maven.deploy.skip>
-        <spring.version>3.4.1</spring.version>
+        <spring.version>3.4.5</spring.version>
         <lombok.version>1.18.36</lombok.version>
+        <redis-om-spring.version>1.0.0-RC1</redis-om-spring.version>
         <redis-om-spring.version>1.0.0-RC1</redis-om-spring.version>
         <redis-om-spring-ai.version>1.0.0-RC1</redis-om-spring-ai.version>
         <jedis.version>5.2.0</jedis.version>
@@ -36,7 +37,6 @@
         <azure-ai-openai.version>1.0.0-beta.16</azure-ai-openai.version>
         <azure-identity.version>1.12.2</azure-identity.version>
         <spring-ai.version>1.0.0-M6</spring-ai.version>
-<!--        <netty.version>4.1.109.Final</netty.version>-->
         <djl.starter.version>0.26</djl.starter.version>
         <djl.version>0.30.0</djl.version>
         <testcontainers.version>1.20.4</testcontainers.version>

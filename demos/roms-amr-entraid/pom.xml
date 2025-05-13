@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.1</version>
+        <version>3.4.5</version>
         <relativePath/>
     </parent>
 
@@ -26,7 +26,7 @@
         <maven.test.source>21</maven.test.source>
         <maven.test.target>21</maven.test.target>
         <maven.deploy.skip>true</maven.deploy.skip>
-        <spring.version>3.4.1</spring.version>
+        <spring.version>3.4.5</spring.version>
         <lombok.version>1.18.36</lombok.version>
         <redis-om-spring.version>1.0.0-RC1</redis-om-spring.version>
         <jedis.version>5.2.0</jedis.version>
