@@ -1,15 +1,21 @@
 package com.redis.om.documents.domain;
 
+import org.springframework.data.annotation.Id;
+
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.TagIndexed;
 import com.redis.om.spring.annotations.TextIndexed;
+
 import lombok.*;
-import org.springframework.data.annotation.Id;
 
 @Data
 @NoArgsConstructor
-@RequiredArgsConstructor(staticName = "of")
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@RequiredArgsConstructor(
+    staticName = "of"
+)
+@AllArgsConstructor(
+    access = AccessLevel.PROTECTED
+)
 @Document
 public class Person {
   @Id

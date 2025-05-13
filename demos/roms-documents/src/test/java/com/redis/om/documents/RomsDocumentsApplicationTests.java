@@ -2,7 +2,7 @@ package com.redis.om.documents;
 
 import org.junit.jupiter.api.Test;
 
-//@SpringBootTest
+// @SpringBootTest
 class RomsDocumentsApplicationTests {
 
   @Test

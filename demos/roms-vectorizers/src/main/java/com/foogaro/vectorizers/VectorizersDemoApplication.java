@@ -6,8 +6,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class VectorizersDemoApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(VectorizersDemoApplication.class, args);
-	}
+  public static void main(String[] args) {
+    SpringApplication.run(VectorizersDemoApplication.class, args);
+  }
 
 }

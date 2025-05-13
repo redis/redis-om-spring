@@ -1,15 +1,17 @@
 package com.redis.om.documents.service.impl;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
 import com.redis.om.documents.domain.Event;
 import com.redis.om.documents.domain.Event$;
 import com.redis.om.documents.service.EventService;
 import com.redis.om.spring.search.stream.EntityStream;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor

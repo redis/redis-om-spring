@@ -1,0 +1,1 @@
+// This file is intentionally left empty as we've simplified our test configuration approach

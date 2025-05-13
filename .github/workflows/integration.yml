@@ -6,7 +6,31 @@ on:
   workflow_dispatch:
 
 jobs:
+  code-format-check:
+    name: Code Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v2
+        with:
+          java-version: 21
+          distribution: 'zulu'
+
+      - name: Cache Maven Repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: om-format-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            om-format-
+
+      - name: Check code formatting
+        run: mvn spotless:check -Dspotless.check.skip=false
+        
   build:
+    needs: code-format-check
     strategy:
       matrix:
         platform: [ubuntu-latest]
@@ -32,7 +56,7 @@ jobs:
       - run: mvn dependency:go-offline
 
       - name: Build
-        run: mvn clean process-test-classes verify
+        run: mvn clean process-test-classes verify -pl \!demos/roms-documents,\!demos/roms-hashes,\!demos/roms-permits,\!demos/roms-vss,\!demos/roms-vss-movies,\!demos/roms-amr-entraid,\!demos/roms-modeling,\!demos/roms-vectorizers
 
       - name: Save Maven Cache
         uses: actions/cache@v4
