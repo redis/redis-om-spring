@@ -1,16 +1,20 @@
 package com.redis.om.documents.domain;
 
+import java.time.LocalDateTime;
+
+import org.springframework.data.annotation.Id;
+
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.Searchable;
-import lombok.*;
-import org.springframework.data.annotation.Id;
 
-import java.time.LocalDateTime;
+import lombok.*;
 
 @Data
 @NoArgsConstructor
-@RequiredArgsConstructor(staticName = "of")
+@RequiredArgsConstructor(
+    staticName = "of"
+)
 @AllArgsConstructor
 @Document
 public class Event {

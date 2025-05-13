@@ -1,14 +1,15 @@
 package com.redis.om.documents.repositories;
 
-import com.redis.om.documents.domain.Company;
-import com.redis.om.spring.annotations.Query;
-import com.redis.om.spring.repository.RedisDocumentRepository;
+import java.util.Optional;
+import java.util.Set;
+
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.repository.query.Param;
 
-import java.util.Optional;
-import java.util.Set;
+import com.redis.om.documents.domain.Company;
+import com.redis.om.spring.annotations.Query;
+import com.redis.om.spring.repository.RedisDocumentRepository;
 
 public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
   // find one by property
@@ -18,8 +19,12 @@ public interface CompanyRepository extends RedisDocumentRepository<Company, Stri
   Iterable<Company> findByLocationNear(Point point, Distance distance);
 
   // find by tag field, using JRediSearch "native" annotation 
-  @Query("@tags:{$tags}")
-  Iterable<Company> findByTags(@Param("tags") Set<String> tags);
+  @Query(
+    "@tags:{$tags}"
+  )
+  Iterable<Company> findByTags(@Param(
+    "tags"
+  ) Set<String> tags);
 
   // find by numeric property
   Iterable<Company> findByNumberOfEmployees(int noe);

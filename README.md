@@ -614,6 +614,26 @@ project. [You can open a bug report on GitHub](https://github.com/redis-om/redis
 You can also **contribute documentation** -- or just let us know if something needs more
 detail. [Open an issue on GitHub](https://github.com/redis-om/redis-om-spring/issues/new) to get started.
 
+### Code Style
+
+This project uses the Spotless Maven plugin with Eclipse formatter to enforce a consistent code style. Before submitting a pull request, please make sure your code follows our formatting guidelines by running:
+
+```bash
+mvn spotless:apply
+```
+
+This will automatically reformat your code to match the project's style. You can also check if your code meets the formatting requirements without changing it:
+
+```bash
+mvn spotless:check
+```
+
+The main formatting rules include:
+- 2-space indentation (not 4)
+- KNR brace style (braces at end of line)
+- Maximum line length of 100 characters
+- Consistent import ordering (java, javax, org, com, other imports)
+
 ## 🧑‍🤝‍🧑 Sibling Projects
 
 - [Redis OM Node.js](https://github.com/redis/redis-om-node)

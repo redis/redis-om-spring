@@ -1,9 +1,7 @@
 package com.redis.om.documents;
 
-import com.redis.om.spring.CustomRedisKeyValueTemplate;
-import com.redis.om.spring.indexing.RediSearchIndexer;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.testcontainers.RedisStackContainer;
+import static com.redis.testcontainers.RedisStackContainer.DEFAULT_IMAGE_NAME;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -13,9 +11,14 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import static com.redis.testcontainers.RedisStackContainer.DEFAULT_IMAGE_NAME;
+import com.redis.om.spring.CustomRedisKeyValueTemplate;
+import com.redis.om.spring.indexing.RediSearchIndexer;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.testcontainers.RedisStackContainer;
 
-@Testcontainers(disabledWithoutDocker = true)
+@Testcontainers(
+    disabledWithoutDocker = true
+)
 @DirtiesContext
 public abstract class AbstractTest {
   @Container
@@ -33,7 +36,9 @@ public abstract class AbstractTest {
   protected RedisModulesOperations<String> modulesOperations;
 
   @Autowired
-  @Qualifier("redisCustomKeyValueTemplate")
+  @Qualifier(
+    "redisCustomKeyValueTemplate"
+  )
   protected CustomRedisKeyValueTemplate kvTemplate;
 
   @Autowired

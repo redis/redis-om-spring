@@ -81,6 +81,7 @@
         <spring-ai.version>1.0.0-M8</spring-ai.version>
         <azure-identity.version>1.15.4</azure-identity.version>
         <redis-om-spring.version>1.0.0-RC1</redis-om-spring.version>
+        <main.basedir>${project.basedir}/..</main.basedir>
     </properties>
 
     <dependencyManagement>
@@ -310,6 +311,10 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>

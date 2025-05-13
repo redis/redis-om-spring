@@ -2,18 +2,23 @@ package com.redis.om.permits.models;
 
 import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.Searchable;
+
 import lombok.Data;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @Data
-@RequiredArgsConstructor(staticName = "of")
+@RequiredArgsConstructor(
+    staticName = "of"
+)
 public class Address {
   @NonNull
   @Indexed
   private String city;
 
   @NonNull
-  @Searchable(nostem = true)
+  @Searchable(
+      nostem = true
+  )
   private String street;
 }

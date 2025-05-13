@@ -1,12 +1,16 @@
 package com.redis.om.vss.ui;
 
-import com.redis.om.vss.domain.Product;
-import lombok.Builder;
-import org.springframework.ui.Model;
-
 import java.util.List;
 
-@Builder(builderMethodName = "of")
+import org.springframework.ui.Model;
+
+import com.redis.om.vss.domain.Product;
+
+import lombok.Builder;
+
+@Builder(
+    builderMethodName = "of"
+)
 public class ProductsPageModel {
   private Model model;
   private List<Product> products;

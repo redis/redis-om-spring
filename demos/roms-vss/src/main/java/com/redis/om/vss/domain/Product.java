@@ -1,24 +1,28 @@
 package com.redis.om.vss.domain;
 
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.redis.core.RedisHash;
+
 import com.redis.om.spring.annotations.EmbeddingType;
 import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.SchemaFieldType;
 import com.redis.om.spring.annotations.Vectorize;
 import com.redis.om.spring.indexing.DistanceMetric;
 import com.redis.om.spring.indexing.VectorType;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.redis.core.RedisHash;
 import redis.clients.jedis.search.schemafields.VectorField.VectorAlgorithm;
 
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 @Data
-@RequiredArgsConstructor(staticName = "of")
+@RequiredArgsConstructor(
+    staticName = "of"
+)
 @NoArgsConstructor
 @RedisHash
 public class Product {
@@ -61,31 +65,37 @@ public class Product {
   @NonNull
   private String productDisplayName;
 
-  @Indexed(//
-           schemaFieldType = SchemaFieldType.VECTOR, //
-           algorithm = VectorAlgorithm.HNSW, //
-           type = VectorType.FLOAT32, //
-           dimension = 512, //
-           distanceMetric = DistanceMetric.COSINE, //
-           initialCapacity = 10
+  @Indexed(
+      //
+      schemaFieldType = SchemaFieldType.VECTOR, //
+      algorithm = VectorAlgorithm.HNSW, //
+      type = VectorType.FLOAT32, //
+      dimension = 512, //
+      distanceMetric = DistanceMetric.COSINE, //
+      initialCapacity = 10
   )
   private byte[] imageEmbedding;
 
-  @Vectorize(destination = "imageEmbedding", embeddingType = EmbeddingType.IMAGE)
+  @Vectorize(
+      destination = "imageEmbedding", embeddingType = EmbeddingType.IMAGE
+  )
   @NonNull
   private String imagePath;
 
-  @Indexed(//
-           schemaFieldType = SchemaFieldType.VECTOR, //
-           algorithm = VectorAlgorithm.HNSW, //
-           type = VectorType.FLOAT32, //
-           dimension = 384, //
-           distanceMetric = DistanceMetric.COSINE, //
-           initialCapacity = 10
+  @Indexed(
+      //
+      schemaFieldType = SchemaFieldType.VECTOR, //
+      algorithm = VectorAlgorithm.HNSW, //
+      type = VectorType.FLOAT32, //
+      dimension = 384, //
+      distanceMetric = DistanceMetric.COSINE, //
+      initialCapacity = 10
   )
   private byte[] sentenceEmbedding;
 
-  @Vectorize(destination = "sentenceEmbedding", embeddingType = EmbeddingType.SENTENCE)
+  @Vectorize(
+      destination = "sentenceEmbedding", embeddingType = EmbeddingType.SENTENCE
+  )
   @NonNull
   private String productText;
 
@@ -107,10 +117,10 @@ public class Product {
     String productDisplayName = values[9];
     String imagePath = useLocalImages ? "classpath:/static/product-images/" + id + ".jpg" : values[10];
     String productText = Stream.of(productDisplayName, "category", masterCategory, "subcategory", subCategory, "color",
-      baseColour, "gender", gender).map(String::toLowerCase).collect(Collectors.joining(" "));
+        baseColour, "gender", gender).map(String::toLowerCase).collect(Collectors.joining(" "));
 
     Product p = Product.of(gender, masterCategory, subCategory, articleType, baseColour, season, year, usage,
-      productDisplayName, imagePath, productText);
+        productDisplayName, imagePath, productText);
     p.setId(id);
     return p;
   }
