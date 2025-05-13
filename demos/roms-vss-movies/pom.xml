@@ -24,7 +24,7 @@
         <maven.test.source>21</maven.test.source>
         <maven.test.target>21</maven.test.target>
         <maven.deploy.skip>true</maven.deploy.skip>
-        <spring-ai.version>1.0.0-M6</spring-ai.version>
+        <spring-ai.version>1.0.0-M8</spring-ai.version>
         <djl.starter.version>0.26</djl.starter.version>
         <djl.version>0.30.0</djl.version>
         <redis-om-spring.version>1.0.0-RC1</redis-om-spring.version>
