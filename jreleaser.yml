@@ -1,0 +1,78 @@
+project:
+  name: redis-om-spring
+  description: Redis OM Spring
+  longDescription: Redis OM Spring provides powerful repository and custom object-mapping abstractions built on top of the powerful Spring Data Redis (SDR) framework.
+  links:
+    homepage: https://github.com/redis/redis-om-spring
+  authors:
+    - Brian Sam-Bodden
+  license: MIT
+  languages:
+    java:
+      groupId: com.redis.om
+      version: '21'
+      multiProject: true # This is important for multi-module projects
+  inceptionYear: '2021'
+  tags: ['redis', 'spring', 'spring-data', 'object-mapping', 'redisearch', 'json']
+
+release:
+  github:
+    overwrite: true
+    sign: true
+    changelog:
+      formatted: ALWAYS
+      preset: conventional-commits
+      contributors:
+        enabled: false
+      hide:
+        categories:
+          - merge
+      labelers:
+        - label: 'dependencies'
+          title: 'regex:^(?:build|chore|deps)(?:\(deps\))?!?:'
+      categories:
+        - title: '🚀 Features'
+          labels:
+            - 'feature'
+            - 'enhancement'
+        - title: '🐛 Bug Fixes'
+          labels:
+            - 'fix'
+            - 'bugfix'
+            - 'bug'
+        - title: '🧰 Maintenance'
+          labels:
+            - 'chore'
+            - 'dependencies'
+
+signing:
+  active: ALWAYS
+  armored: true
+
+deploy:
+  maven:
+    mavenCentral:
+      active: RELEASE
+      authorization: BASIC
+      url: https://central.sonatype.com/api/v1/publisher
+      applyMavenCentralRules: true
+      stagingRepositories:
+        - target/staging-deploy
+
+# No announcements needed
+announce:
+  slack:
+    active: NEVER
+
+# Define distributions for each module - explicitly list only the artifacts we want to publish
+distributions:
+  redis-om-spring:
+    artifacts:
+      - path: 'redis-om-spring/target/redis-om-spring-{{projectVersion}}.jar'
+      - path: 'redis-om-spring/target/redis-om-spring-{{projectVersion}}-sources.jar'
+      - path: 'redis-om-spring/target/redis-om-spring-{{projectVersion}}-javadoc.jar'
+  redis-om-spring-ai:
+    artifacts:
+      - path: 'redis-om-spring-ai/target/redis-om-spring-ai-{{projectVersion}}.jar'
+      - path: 'redis-om-spring-ai/target/redis-om-spring-ai-{{projectVersion}}-sources.jar'
+      - path: 'redis-om-spring-ai/target/redis-om-spring-ai-{{projectVersion}}-javadoc.jar'

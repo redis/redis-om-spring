@@ -4,11 +4,16 @@ name: Publish Snapshot
 
 on:
   workflow_dispatch:
-
+  schedule:
+    # Run every day at midnight
+    - cron: '0 0 * * *'
   push:
     branches:
       - main
-      - '[0-9].[0-9]'
+    paths-ignore:
+      # Don't run on documentation changes
+      - '**.md'
+      - 'docs/**'
 
 jobs:
 
@@ -42,18 +47,26 @@ jobs:
         run: |
           curl -s https://raw.githubusercontent.com/codecov/codecov-bash/master/codecov
 
-      - name: Check if version is a SNAPSHOT
-        id: check_snapshot
+      - name: Get version and set SNAPSHOT version
+        id: get_version
         run: |
-          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          if [[ "$VERSION" == *-SNAPSHOT ]]; then
-            echo "IS_SNAPSHOT=true" >> $GITHUB_ENV
-          else
-            echo "IS_SNAPSHOT=false" >> $GITHUB_ENV
-          fi
+          # Get the current version from pom.xml
+          BASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          
+          # Remove any existing -SNAPSHOT suffix if present
+          BASE_VERSION=${BASE_VERSION%-SNAPSHOT}
+          
+          # Append -SNAPSHOT to create the snapshot version
+          SNAPSHOT_VERSION="${BASE_VERSION}-SNAPSHOT"
+          
+          # Set the version for all modules
+          mvn versions:set -DnewVersion="$SNAPSHOT_VERSION" -DgenerateBackupPoms=false
+          
+          echo "BASE_VERSION=$BASE_VERSION" >> $GITHUB_OUTPUT
+          echo "SNAPSHOT_VERSION=$SNAPSHOT_VERSION" >> $GITHUB_OUTPUT
+          echo "Base version: $BASE_VERSION, Snapshot version: $SNAPSHOT_VERSION"
 
       - name: Deploy redis-om-spring SNAPSHOT
-        if: env.IS_SNAPSHOT == 'true'
         working-directory: redis-om-spring
         run: |
           mvn --no-transfer-progress \
@@ -65,7 +78,6 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
 
       - name: Deploy redis-om-spring-ai SNAPSHOT
-        if: env.IS_SNAPSHOT == 'true'
         working-directory: redis-om-spring-ai
         run: |
           mvn --no-transfer-progress \
@@ -75,3 +87,10 @@ jobs:
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          
+      - name: Create Git Tag for Snapshot
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git tag -f "snapshot-${{ steps.get_version.outputs.SNAPSHOT_VERSION }}"
+          git push origin "snapshot-${{ steps.get_version.outputs.SNAPSHOT_VERSION }}" --force

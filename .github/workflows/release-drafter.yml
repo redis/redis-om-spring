@@ -10,10 +10,25 @@ jobs:
   update_release_draft:
     runs-on: ubuntu-latest
     steps:
-      # Drafts your next Release notes as Pull Requests are merged into "master"
+      # Checkout the repository to read the POM
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Extract version from POM file
+      - name: Extract version from POM
+        id: get_version
+        run: |
+          # Extract version from parent POM
+          VERSION=$(grep -o '<version>[^<]*</version>' pom.xml | head -1 | sed 's/<version>\([^<]*\)<\/version>/\1/')
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"
+
+      # Drafts your next Release notes as Pull Requests are merged into main
       - uses: release-drafter/release-drafter@v5
         with:
-          # (Optional) specify config name to use, relative to .github/. Default: release-drafter.yml
-           config-name: release-drafter-config.yml
+          # Specify config name to use
+          config-name: release-drafter-config.yml
+          # Set version from POM
+          version: ${{ steps.get_version.outputs.VERSION }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
