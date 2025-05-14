@@ -55,8 +55,15 @@ jobs:
 
       - run: mvn dependency:go-offline
 
-      - name: Build
-        run: mvn clean process-test-classes verify -pl \!demos/roms-documents,\!demos/roms-hashes,\!demos/roms-permits,\!demos/roms-vss,\!demos/roms-vss-movies,\!demos/roms-amr-entraid,\!demos/roms-modeling,\!demos/roms-vectorizers
+      # Build without running tests first, then run tests only in tests module
+      - name: Build and Test
+        run: |
+          # Build without running tests first
+          mvn clean install -DskipTests
+          
+          # Only run tests in the tests module with coverage enabled
+          cd tests
+          mvn test -Pcoverage
 
       - name: Save Maven Cache
         uses: actions/cache@v4
@@ -64,7 +71,10 @@ jobs:
           path: ~/.m2/repository
           key: om-${{ hashFiles('**/pom.xml') }}
 
-      - name: Upload coverage reports to Codecov
+      # Generate and upload code coverage report
+      - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v4.0.1
         with:
+          fail_ci_if_error: false # Don't fail if codecov upload fails
           token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true # For debugging

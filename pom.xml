@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns="http://maven.apache.org/POM/4.0. i0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
@@ -8,7 +8,60 @@
   <artifactId>redis-om-spring-parent</artifactId>
   <version>1.0.0-RC1</version>
   <name>redis-om-spring-parent</name>
+  <description>Redis OM Spring provides powerful repository and custom object-mapping abstractions built on top of the powerful Spring Data Redis (SDR) framework.</description>
+  <url>https://github.com/redis/redis-om-spring</url>
   <packaging>pom</packaging>
+  
+  <licenses>
+    <license>
+      <name>MIT license</name>
+      <url>https://opensource.org/licenses/MIT</url>
+    </license>
+  </licenses>
+  
+  <scm>
+    <url>https://github.com/redis/redis-om-spring</url>
+    <connection>scm:git:git://github.com/redis/redis-om-spring.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/redis/redis-om-spring.git</developerConnection>
+  </scm>
+  
+  <developers>
+    <developer>
+      <id>bsbodden</id>
+      <name>Brian Sam-Bodden</name>
+      <email>bsb at redis.com</email>
+      <organization>Redis</organization>
+      <organizationUrl>https://www.redis.com</organizationUrl>
+      <roles>
+        <role>Developer</role>
+      </roles>
+      <timezone>America/Phoenix</timezone>
+    </developer>
+    <developer>
+      <id>foogaro</id>
+      <name>Luigi Fugaro</name>
+      <email>luigi at redis.com</email>
+      <organization>Redis</organization>
+      <organizationUrl>https://www.redis.com</organizationUrl>
+      <roles>
+        <role>Developer</role>
+      </roles>
+      <timezone>Europe/Rome</timezone>
+      <url>https://github.com/foogaro</url>
+    </developer>
+    <developer>
+      <id>raphaeldelio</id>
+      <name>Raphael Delio</name>
+      <email>raphael at redis.com</email>
+      <organization>Redis</organization>
+      <organizationUrl>https://www.redis.com</organizationUrl>
+      <roles>
+        <role>Developer</role>
+      </roles>
+      <timezone>Europe/Berlin</timezone>
+      <url>https://github.com/raphaeldelio</url>
+    </developer>
+  </developers>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -19,6 +72,7 @@
     <maven.test.target>21</maven.test.target>
     <java.version>21</java.version>
     <spotless.version>2.44.4</spotless.version>
+    <jreleaser.version>1.10.0</jreleaser.version>
     <main.basedir>${project.basedir}</main.basedir>
   </properties>
 
@@ -42,6 +96,42 @@
             </java>
             <lineEndings>UNIX</lineEndings>
             <encoding>UTF-8</encoding>
+          </configuration>
+        </plugin>
+        
+        <!-- Configure Maven Deploy Plugin -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <version>3.1.2</version>
+        </plugin>
+        
+        <!-- Add JReleaser plugin -->
+        <plugin>
+          <groupId>org.jreleaser</groupId>
+          <artifactId>jreleaser-maven-plugin</artifactId>
+          <version>${jreleaser.version}</version>
+          <configuration>
+            <jreleaser>
+              <signing>
+                <active>ALWAYS</active>
+                <armored>true</armored>
+              </signing>
+              <deploy>
+                <maven>
+                  <mavenCentral>
+                    <redis>
+                      <active>RELEASE</active>
+                      <url>https://central.sonatype.com/api/v1/publisher</url>
+                      <applyMavenCentralRules>true</applyMavenCentralRules>
+                      <stagingRepositories>
+                        <stagingRepository>target/staging-deploy</stagingRepository>
+                      </stagingRepositories>
+                    </redis>
+                  </mavenCentral>
+                </maven>
+              </deploy>
+            </jreleaser>
           </configuration>
         </plugin>
       </plugins>

@@ -4,11 +4,16 @@ name: Publish Snapshot
 
 on:
   workflow_dispatch:
-
+  schedule:
+    # Run every day at midnight
+    - cron: '0 0 * * *'
   push:
     branches:
       - main
-      - '[0-9].[0-9]'
+    paths-ignore:
+      # Don't run on documentation changes
+      - '**.md'
+      - 'docs/**'
 
 jobs:
 
@@ -36,42 +41,119 @@ jobs:
 
       - run: mvn dependency:go-offline
 
-      - run: mvn clean process-test-classes verify
-
-      - name: codecov
+      # Run only tests in the tests module, skip tests in demos
+      - name: Build and Test
         run: |
-          curl -s https://raw.githubusercontent.com/codecov/codecov-bash/master/codecov
+          # Build without running tests first
+          mvn clean install -DskipTests
+          
+          # Only run tests in the tests module
+          cd tests
+          mvn test -Pcoverage
 
-      - name: Check if version is a SNAPSHOT
-        id: check_snapshot
-        run: |
-          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          if [[ "$VERSION" == *-SNAPSHOT ]]; then
-            echo "IS_SNAPSHOT=true" >> $GITHUB_ENV
-          else
-            echo "IS_SNAPSHOT=false" >> $GITHUB_ENV
-          fi
+      # Generate and upload code coverage report
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: false # Don't fail if codecov upload fails
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true # For debugging
 
-      - name: Deploy redis-om-spring SNAPSHOT
-        if: env.IS_SNAPSHOT == 'true'
-        working-directory: redis-om-spring
+      - name: Get version and set SNAPSHOT version
+        id: get_version
         run: |
-          mvn --no-transfer-progress \
-            -DskipTests \
-            -Dgpg.passphrase='${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}' \
-            deploy
+          # Get the current version from pom.xml
+          BASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          
+          # Remove any existing -SNAPSHOT suffix if present
+          BASE_VERSION=${BASE_VERSION%-SNAPSHOT}
+          
+          # Append -SNAPSHOT to create the snapshot version
+          SNAPSHOT_VERSION="${BASE_VERSION}-SNAPSHOT"
+          
+          # Set the version for all modules
+          mvn versions:set -DnewVersion="$SNAPSHOT_VERSION" -DgenerateBackupPoms=false
+          
+          echo "BASE_VERSION=$BASE_VERSION" >> $GITHUB_OUTPUT
+          echo "SNAPSHOT_VERSION=$SNAPSHOT_VERSION" >> $GITHUB_OUTPUT
+          echo "Base version: $BASE_VERSION, Snapshot version: $SNAPSHOT_VERSION"
+
+      # Stage artifacts for deployment (similar to release workflow)
+      - name: Stage artifacts for JReleaser
+        run: |
+          # Create staging directory
+          mkdir -p target/staging-deploy
+          
+          # Copy the artifacts for both modules to the staging directory
+          # redis-om-spring module
+          mkdir -p target/staging-deploy/com/redis/om/redis-om-spring/${{ steps.get_version.outputs.SNAPSHOT_VERSION }}
+          cp redis-om-spring/target/redis-om-spring-${{ steps.get_version.outputs.SNAPSHOT_VERSION }}.jar \
+             target/staging-deploy/com/redis/om/redis-om-spring/${{ steps.get_version.outputs.SNAPSHOT_VERSION }}/
+          cp redis-om-spring/target/redis-om-spring-${{ steps.get_version.outputs.SNAPSHOT_VERSION }}-sources.jar \
+             target/staging-deploy/com/redis/om/redis-om-spring/${{ steps.get_version.outputs.SNAPSHOT_VERSION }}/
+          cp redis-om-spring/target/redis-om-spring-${{ steps.get_version.outputs.SNAPSHOT_VERSION }}-javadoc.jar \
+             target/staging-deploy/com/redis/om/redis-om-spring/${{ steps.get_version.outputs.SNAPSHOT_VERSION }}/
+          cp redis-om-spring/pom.xml \
+             target/staging-deploy/com/redis/om/redis-om-spring/${{ steps.get_version.outputs.SNAPSHOT_VERSION }}/redis-om-spring-${{ steps.get_version.outputs.SNAPSHOT_VERSION }}.pom
+          
+          # redis-om-spring-ai module
+          mkdir -p target/staging-deploy/com/redis/om/redis-om-spring-ai/${{ steps.get_version.outputs.SNAPSHOT_VERSION }}
+          cp redis-om-spring-ai/target/redis-om-spring-ai-${{ steps.get_version.outputs.SNAPSHOT_VERSION }}.jar \
+             target/staging-deploy/com/redis/om/redis-om-spring-ai/${{ steps.get_version.outputs.SNAPSHOT_VERSION }}/
+          cp redis-om-spring-ai/target/redis-om-spring-ai-${{ steps.get_version.outputs.SNAPSHOT_VERSION }}-sources.jar \
+             target/staging-deploy/com/redis/om/redis-om-spring-ai/${{ steps.get_version.outputs.SNAPSHOT_VERSION }}/
+          cp redis-om-spring-ai/target/redis-om-spring-ai-${{ steps.get_version.outputs.SNAPSHOT_VERSION }}-javadoc.jar \
+             target/staging-deploy/com/redis/om/redis-om-spring-ai/${{ steps.get_version.outputs.SNAPSHOT_VERSION }}/
+          cp redis-om-spring-ai/pom.xml \
+             target/staging-deploy/com/redis/om/redis-om-spring-ai/${{ steps.get_version.outputs.SNAPSHOT_VERSION }}/redis-om-spring-ai-${{ steps.get_version.outputs.SNAPSHOT_VERSION }}.pom
+          
+          # List staged artifacts for verification
+          echo "Staged artifacts:"
+          find target/staging-deploy -type f | sort
+
+      # Deploy SNAPSHOT to Maven Central using JReleaser
+      - name: Deploy SNAPSHOT with JReleaser
+        uses: jreleaser/release-action@v2
+        with:
+          arguments: deploy
+          version: latest
+          config-file: .github/jreleaser-snapshot.yml
         env:
-          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          # JReleaser project configuration
+          JRELEASER_PROJECT_VERSION: ${{ steps.get_version.outputs.SNAPSHOT_VERSION }}
+          
+          # GitHub authentication
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.GIT_ACCESS_TOKEN }}
+          JRELEASER_GITHUB_USERNAME: ${{ secrets.GIT_USER }}
+          
+          # GPG signing configuration
+          JRELEASER_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          JRELEASER_GPG_PUBLIC_KEY: ${{ secrets.GPG_PUBLIC_KEY }}
+          JRELEASER_GPG_SECRET_KEY: ${{ secrets.GPG_SECRET_KEY }}
+          JRELEASER_SIGNING_ENABLED: true
+          JRELEASER_SIGNING_ACTIVE: ALWAYS
+          
+          # Maven Central publishing configuration
+          JRELEASER_MAVENCENTRAL_URL: https://s01.oss.sonatype.org/content/repositories/snapshots
+          JRELEASER_MAVENCENTRAL_SNAPSHOT_URL: https://s01.oss.sonatype.org/content/repositories/snapshots
+          JRELEASER_MAVENCENTRAL_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          JRELEASER_MAVENCENTRAL_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          
+          # Debug mode for more verbose output
+          JRELEASER_DEBUG: true
 
-      - name: Deploy redis-om-spring-ai SNAPSHOT
-        if: env.IS_SNAPSHOT == 'true'
-        working-directory: redis-om-spring-ai
+      - name: JReleaser output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jreleaser-output
+          path: |
+            out/jreleaser/trace.log
+            out/jreleaser/output.properties
+          
+      - name: Create Git Tag for Snapshot
         run: |
-          mvn --no-transfer-progress \
-            -DskipTests \
-            -Dgpg.passphrase='${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}' \
-            deploy
-        env:
-          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git tag -f "snapshot-${{ steps.get_version.outputs.SNAPSHOT_VERSION }}"
+          git push origin "snapshot-${{ steps.get_version.outputs.SNAPSHOT_VERSION }}" --force

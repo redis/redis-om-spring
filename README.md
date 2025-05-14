@@ -414,6 +414,22 @@ Iterable<MyDoc> allMatches = repository.findAll(example);
 </dependency>
 ```
 
+#### Release Process
+
+To release a new version of Redis OM Spring:
+
+1. Ensure all changes are committed and pushed to the main branch
+2. Run the release preparation script: `./scripts/prepare-release.sh <version>`
+3. Create a new GitHub release with the tag `v<version>` 
+   (e.g., `v0.6.0`)
+4. The GitHub workflow will automatically:
+   - Build the project
+   - Generate artifacts
+   - Sign the artifacts with GPG
+   - Publish to Maven Central
+
+This process publishes both `redis-om-spring` and `redis-om-spring-ai` modules to Maven Central.
+
 > ⚠️ Starting from version `v1.0.0-RC1`, Redis OM Spring has been divided into two separate modules:
 >
 > * **Redis OM Spring** – providing modeling and vector indexing capabilities;
