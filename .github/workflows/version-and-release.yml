@@ -36,39 +36,6 @@ jobs:
       - name: Build project
         run: mvn -Ppublication clean package -DskipTests
 
-      # Stage only the artifacts we want to publish (not the parent POM)
-      - name: Stage artifacts
-        run: |
-          # Create staging directory
-          mkdir -p target/staging-deploy
-          
-          # Create a local Maven repository structure just for our modules
-          # redis-om-spring module
-          mkdir -p target/staging-deploy/com/redis/om/redis-om-spring/${{ steps.get_version.outputs.VERSION }}
-          cp redis-om-spring/target/redis-om-spring-${{ steps.get_version.outputs.VERSION }}.jar \
-             target/staging-deploy/com/redis/om/redis-om-spring/${{ steps.get_version.outputs.VERSION }}/
-          cp redis-om-spring/target/redis-om-spring-${{ steps.get_version.outputs.VERSION }}-sources.jar \
-             target/staging-deploy/com/redis/om/redis-om-spring/${{ steps.get_version.outputs.VERSION }}/
-          cp redis-om-spring/target/redis-om-spring-${{ steps.get_version.outputs.VERSION }}-javadoc.jar \
-             target/staging-deploy/com/redis/om/redis-om-spring/${{ steps.get_version.outputs.VERSION }}/
-          cp redis-om-spring/pom.xml \
-             target/staging-deploy/com/redis/om/redis-om-spring/${{ steps.get_version.outputs.VERSION }}/redis-om-spring-${{ steps.get_version.outputs.VERSION }}.pom
-          
-          # redis-om-spring-ai module
-          mkdir -p target/staging-deploy/com/redis/om/redis-om-spring-ai/${{ steps.get_version.outputs.VERSION }}
-          cp redis-om-spring-ai/target/redis-om-spring-ai-${{ steps.get_version.outputs.VERSION }}.jar \
-             target/staging-deploy/com/redis/om/redis-om-spring-ai/${{ steps.get_version.outputs.VERSION }}/
-          cp redis-om-spring-ai/target/redis-om-spring-ai-${{ steps.get_version.outputs.VERSION }}-sources.jar \
-             target/staging-deploy/com/redis/om/redis-om-spring-ai/${{ steps.get_version.outputs.VERSION }}/
-          cp redis-om-spring-ai/target/redis-om-spring-ai-${{ steps.get_version.outputs.VERSION }}-javadoc.jar \
-             target/staging-deploy/com/redis/om/redis-om-spring-ai/${{ steps.get_version.outputs.VERSION }}/
-          cp redis-om-spring-ai/pom.xml \
-             target/staging-deploy/com/redis/om/redis-om-spring-ai/${{ steps.get_version.outputs.VERSION }}/redis-om-spring-ai-${{ steps.get_version.outputs.VERSION }}.pom
-          
-          # List staged artifacts for verification
-          echo "Staged artifacts:"
-          find target/staging-deploy -type f | sort
-
       # Deploy with JReleaser which handles signing and publishing to Maven Central
       - name: Release with JReleaser
         uses: jreleaser/release-action@v2
