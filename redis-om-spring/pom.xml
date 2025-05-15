@@ -4,10 +4,13 @@
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
-    <groupId>com.redis.om</groupId>
+    <parent>
+        <groupId>com.redis.om</groupId>
+        <artifactId>redis-om-spring-parent</artifactId>
+        <version>1.0.0-RC1</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
     <artifactId>redis-om-spring</artifactId>
-    <version>1.0.0-RC1</version>
     <packaging>jar</packaging>
 
     <name>redis-om-spring</name>
@@ -168,11 +171,11 @@
             <groupId>org.hibernate.validator</groupId>
             <artifactId>hibernate-validator</artifactId>
         </dependency>
-      <dependency>
-        <groupId>jakarta.persistence</groupId>
-        <artifactId>jakarta.persistence-api</artifactId>
-        <version>3.1.0</version>
-      </dependency>
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+            <version>3.1.0</version>
+        </dependency>
         <!-- Azure Identity begin -->
         <dependency>
             <groupId>com.azure</groupId>
@@ -348,7 +351,7 @@
                 </plugins>
             </build>
         </profile>
-        
+
         <!-- Add publication profile for JReleaser -->
         <profile>
             <id>publication</id>
