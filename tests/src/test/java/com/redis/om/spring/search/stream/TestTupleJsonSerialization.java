@@ -1,20 +1,7 @@
 package com.redis.om.spring.search.stream;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Sets;
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.fixtures.document.model.Company;
-import com.redis.om.spring.fixtures.document.model.Company$;
-import com.redis.om.spring.fixtures.document.model.Employee;
-import com.redis.om.spring.fixtures.document.repository.CompanyRepository;
-import com.redis.om.spring.tuple.Fields;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.json.JacksonTester;
-import org.springframework.boot.test.json.JsonContent;
-import org.springframework.data.geo.Point;
-import redis.clients.jedis.search.aggr.SortedField.SortOrder;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -23,10 +10,27 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.json.JacksonTester;
+import org.springframework.boot.test.json.JsonContent;
+import org.springframework.data.geo.Point;
 
-@SuppressWarnings("SpellCheckingInspection")
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Sets;
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.fixtures.document.model.Company;
+import com.redis.om.spring.fixtures.document.model.Company$;
+import com.redis.om.spring.fixtures.document.model.Employee;
+import com.redis.om.spring.fixtures.document.repository.CompanyRepository;
+import com.redis.om.spring.tuple.Fields;
+
+import redis.clients.jedis.search.aggr.SortedField.SortOrder;
+
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class TestTupleJsonSerialization extends AbstractBaseDocumentTest {
   @Autowired
   CompanyRepository repository;
@@ -34,7 +38,9 @@ class TestTupleJsonSerialization extends AbstractBaseDocumentTest {
   @Autowired
   EntityStream entityStream;
 
-  @SuppressWarnings("unused")
+  @SuppressWarnings(
+    "unused"
+  )
   private JacksonTester<List<Map<String, Object>>> json;
 
   @BeforeEach
@@ -45,21 +51,20 @@ class TestTupleJsonSerialization extends AbstractBaseDocumentTest {
     // companies
     repository.deleteAll();
 
-    Company redis = repository.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company redis = repository.save(Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540,
+        37.377690), "stack@redis.com"));
     redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
 
-    Set<Employee> employees = Sets.newHashSet(Employee.of("Brian Sam-Bodden"), Employee.of("Guy Royse"),
-        Employee.of("Justin Castilla"));
+    Set<Employee> employees = Sets.newHashSet(Employee.of("Brian Sam-Bodden"), Employee.of("Guy Royse"), Employee.of(
+        "Justin Castilla"));
     redis.setEmployees(employees);
 
-    Company microsoft = repository.save(
-        Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
-            "research@microsoft.com"));
+    Company microsoft = repository.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500,
+        47.640160), "research@microsoft.com"));
     microsoft.setTags(Set.of("innovative", "reliable", "os", "ai"));
 
-    Company tesla = repository.save(
-        Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903, 30.2210767), "elon@tesla.com"));
+    Company tesla = repository.save(Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903,
+        30.2210767), "elon@tesla.com"));
     tesla.setTags(Set.of("innovative", "futuristic", "ai"));
 
     repository.saveAll(List.of(redis, microsoft, tesla));

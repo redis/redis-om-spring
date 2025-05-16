@@ -1,31 +1,41 @@
 package com.redis.om.spring.fixtures.document.model;
 
-import com.redis.om.spring.annotations.Bloom;
-import com.redis.om.spring.annotations.Document;
-import com.redis.om.spring.annotations.Indexed;
-import com.redis.om.spring.annotations.Searchable;
-import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.geo.Point;
-
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.geo.Point;
+
+import com.redis.om.spring.annotations.Bloom;
+import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.annotations.Indexed;
+import com.redis.om.spring.annotations.Searchable;
+
+import lombok.*;
+
 @Data
-@RequiredArgsConstructor(staticName = "of")
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
-@NoArgsConstructor(force = true)
+@RequiredArgsConstructor(
+    staticName = "of"
+)
+@AllArgsConstructor(
+    access = AccessLevel.PROTECTED
+)
+@NoArgsConstructor(
+    force = true
+)
 @Document
 public class CompanyWithLongId {
   @Id
   private Long id;
 
   @NonNull
-  @Searchable(sortable = true)
+  @Searchable(
+      sortable = true
+  )
   private String name;
 
   @NonNull
@@ -45,7 +55,9 @@ public class CompanyWithLongId {
 
   @NonNull
   @Indexed
-  @Bloom(name = "bf_company_email", capacity = 100000, errorRate = 0.001)
+  @Bloom(
+      name = "bf_company_email", capacity = 100000, errorRate = 0.001
+  )
   private String email;
 
   @Indexed

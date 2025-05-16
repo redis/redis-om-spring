@@ -1,8 +1,10 @@
 package com.redis.om.spring.fixtures.hash.autodiscovery;
 
-import com.redis.om.spring.AbstractBaseOMTest;
-import com.redis.om.spring.TestConfig;
-import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.Optional;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -10,16 +12,18 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.TestPropertySource;
 
-import java.util.Optional;
+import com.redis.om.spring.AbstractBaseOMTest;
+import com.redis.om.spring.TestConfig;
+import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-@SpringBootTest( //
-                 classes = HashRepositoriesAutoDiscoveryTest.Config.class, //
-                 properties = { "spring.main.allow-bean-definition-overriding=true" } //
-                 )
-@TestPropertySource(properties = { "spring.config.location=classpath:vss_on.yaml" })
+@SpringBootTest(
+    //
+    classes = HashRepositoriesAutoDiscoveryTest.Config.class, //
+    properties = { "spring.main.allow-bean-definition-overriding=true" } //
+)
+@TestPropertySource(
+    properties = { "spring.config.location=classpath:vss_on.yaml" }
+)
 class HashRepositoriesAutoDiscoveryTest extends AbstractBaseOMTest {
   @Autowired
   AHashRepository repository;

@@ -1,22 +1,25 @@
 package com.redis.om.spring.annotations.document;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.fixtures.document.model.DocWithHashTagId;
-import com.redis.om.spring.fixtures.document.model.DocWithHashTagId$;
-import com.redis.om.spring.fixtures.document.repository.DocWithHashTagIdRepository;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
-@SuppressWarnings("SpellCheckingInspection")
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.fixtures.document.model.DocWithHashTagId;
+import com.redis.om.spring.fixtures.document.model.DocWithHashTagId$;
+import com.redis.om.spring.fixtures.document.repository.DocWithHashTagIdRepository;
+
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class DocumentWithIdFilterTest extends AbstractBaseDocumentTest {
   @Autowired
   DocWithHashTagIdRepository repository;

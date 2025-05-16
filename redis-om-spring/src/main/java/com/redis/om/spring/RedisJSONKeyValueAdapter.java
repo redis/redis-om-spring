@@ -1,19 +1,15 @@
 package com.redis.om.spring;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
-import com.redis.om.spring.audit.EntityAuditor;
-import com.redis.om.spring.convert.RedisOMCustomConversions;
-import com.redis.om.spring.id.IdentifierFilter;
-import com.redis.om.spring.indexing.RediSearchIndexer;
-import com.redis.om.spring.mapping.RedisEnhancedPersistentEntity;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.ops.json.JSONOperations;
-import com.redis.om.spring.ops.search.SearchOperations;
-import com.redis.om.spring.util.ObjectUtils;
-import com.redis.om.spring.vectorize.Embedder;
-import jakarta.persistence.IdClass;
+import static com.redis.om.spring.util.ObjectUtils.isPrimitiveOfType;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.*;
@@ -35,21 +31,27 @@ import org.springframework.data.util.DirectFieldAccessFallbackBeanWrapper;
 import org.springframework.lang.Nullable;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import com.redis.om.spring.audit.EntityAuditor;
+import com.redis.om.spring.convert.RedisOMCustomConversions;
+import com.redis.om.spring.id.IdentifierFilter;
+import com.redis.om.spring.indexing.RediSearchIndexer;
+import com.redis.om.spring.mapping.RedisEnhancedPersistentEntity;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.json.JSONOperations;
+import com.redis.om.spring.ops.search.SearchOperations;
+import com.redis.om.spring.util.ObjectUtils;
+import com.redis.om.spring.vectorize.Embedder;
+
+import jakarta.persistence.IdClass;
 import redis.clients.jedis.json.Path2;
 import redis.clients.jedis.search.Document;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.util.SafeEncoder;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-
-import static com.redis.om.spring.util.ObjectUtils.isPrimitiveOfType;
 
 public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private static final Log logger = LogFactory.getLog(RedisJSONKeyValueAdapter.class);
@@ -72,11 +74,15 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    * @param mappingContext must not be {@literal null}.
    * @param indexer        must not be {@literal null}.
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   public RedisJSONKeyValueAdapter( //
       RedisOperations<?, ?> redisOps, //
       RedisModulesOperations<?> rmo, //
-      @Qualifier("redisEnhancedMappingContext") RedisMappingContext mappingContext, //
+      @Qualifier(
+        "redisEnhancedMappingContext"
+      ) RedisMappingContext mappingContext, //
       RediSearchIndexer indexer, //
       GsonBuilder gsonBuilder, //
       Embedder embedder, //
@@ -103,7 +109,9 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   @Override
   public Object put(Object id, Object item, String keyspace) {
     logger.debug(String.format("%s, %s, %s", id, item, keyspace));
-    @SuppressWarnings("unchecked") JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
+    @SuppressWarnings(
+      "unchecked"
+    ) JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
 
     String stringId = validateKeyForWriting(id, item);
 
@@ -145,7 +153,9 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
 
   @Nullable
   public <T> T get(String key, Class<T> type) {
-    @SuppressWarnings("unchecked") JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
+    @SuppressWarnings(
+      "unchecked"
+    ) JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
     return ops.get(key, type);
   }
 
@@ -171,8 +181,7 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     query.limit(Math.toIntExact(offset), limit);
     SearchResult searchResult = searchOps.search(query);
     Gson gson = gsonBuilder.create();
-    return searchResult.getDocuments().stream()
-        .map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get("$")), type)) //
+    return searchResult.getDocuments().stream().map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get("$")), type)) //
         .toList();
   }
 
@@ -200,7 +209,9 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public <T> T delete(Object id, String keyspace, Class<T> type) {
-    @SuppressWarnings("unchecked") JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
+    @SuppressWarnings(
+      "unchecked"
+    ) JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
     String stringId = asStringValue(id);
     T entity = get(stringId, keyspace, type);
     if (entity != null) {
@@ -272,13 +283,15 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public boolean contains(Object id, String keyspace) {
-    Boolean exists = redisOperations.execute((RedisCallback<Boolean>) connection -> connection.keyCommands()
-        .exists(toBytes(createKeyAsString(keyspace, id))));
+    Boolean exists = redisOperations.execute((RedisCallback<Boolean>) connection -> connection.keyCommands().exists(
+        toBytes(createKeyAsString(keyspace, id))));
 
     return exists != null && exists;
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   private void processReferences(String key, Object item) {
     List<Field> fields = ObjectUtils.getFieldsWithAnnotation(item.getClass(), Reference.class);
     if (!fields.isEmpty()) {
@@ -317,13 +330,13 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       String property = versionField.getName();
       if ((versionField.getType() == Integer.class || isPrimitiveOfType(versionField.getType(),
           Integer.class)) || (versionField.getType() == Long.class || isPrimitiveOfType(versionField.getType(),
-          Long.class))) {
+              Long.class))) {
         Number version = (Number) wrapper.getPropertyValue(property);
         Number dbVersion = getEntityVersion(key, property);
 
         if (dbVersion != null && version != null && dbVersion.longValue() != version.longValue()) {
-          throw new OptimisticLockingFailureException(
-              String.format("Cannot insert/update entity %s with version %s as it already exists", item, version));
+          throw new OptimisticLockingFailureException(String.format(
+              "Cannot insert/update entity %s with version %s as it already exists", item, version));
         } else {
           Number nextVersion = version == null ? 0 : version.longValue() + 1;
           try {
@@ -381,7 +394,9 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     return Optional.empty();
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   private Number getEntityVersion(String key, String versionProperty) {
     JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
     Class<?> type = new TypeToken<Long[]>() {
@@ -404,8 +419,8 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
 
   private String validateKeyForWriting(Object id, Object item) {
     // Get the mapping context's entity info
-    RedisEnhancedPersistentEntity<?> entity = (RedisEnhancedPersistentEntity<?>) mappingContext.getRequiredPersistentEntity(
-        item.getClass());
+    RedisEnhancedPersistentEntity<?> entity = (RedisEnhancedPersistentEntity<?>) mappingContext
+        .getRequiredPersistentEntity(item.getClass());
 
     // Handle composite IDs
     if (entity.isIdClassComposite()) {

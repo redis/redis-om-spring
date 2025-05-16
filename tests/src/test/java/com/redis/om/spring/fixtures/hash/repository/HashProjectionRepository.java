@@ -1,12 +1,13 @@
 package com.redis.om.spring.fixtures.hash.repository;
 
-import com.redis.om.spring.fixtures.hash.model.HashProjectionPojo;
-import com.redis.om.spring.repository.RedisEnhancedRepository;
+import java.util.Collection;
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.Collection;
-import java.util.Optional;
+import com.redis.om.spring.fixtures.hash.model.HashProjectionPojo;
+import com.redis.om.spring.repository.RedisEnhancedRepository;
 
 public interface HashProjectionRepository extends RedisEnhancedRepository<HashProjectionPojo, String> {
   Optional<HashProjection> findByName(String name);

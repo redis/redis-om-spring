@@ -1,14 +1,7 @@
 package com.redis.om.spring.search.stream;
 
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.fixtures.hash.model.Text;
-import com.redis.om.spring.fixtures.hash.model.Text$;
-import com.redis.om.spring.fixtures.hash.repository.TextRepository;
-import com.redis.om.spring.tuple.Tuples;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,8 +10,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.fixtures.hash.model.Text;
+import com.redis.om.spring.fixtures.hash.model.Text$;
+import com.redis.om.spring.fixtures.hash.repository.TextRepository;
+import com.redis.om.spring.tuple.Tuples;
 
 class EntityStreamHighlightHashTest extends AbstractBaseEnhancedRedisTest {
 
@@ -29,7 +30,9 @@ class EntityStreamHighlightHashTest extends AbstractBaseEnhancedRedisTest {
   TextRepository repository;
 
   @BeforeEach
-  void loadText(@Value("classpath:/data/genesis.txt") File dataFile) throws IOException {
+  void loadText(@Value(
+    "classpath:/data/genesis.txt"
+  ) File dataFile) throws IOException {
     String content = new String(Files.readAllBytes(dataFile.toPath()));
     repository.save(Text.of(content));
   }

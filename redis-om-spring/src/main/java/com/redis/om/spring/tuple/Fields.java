@@ -1,15 +1,17 @@
 package com.redis.om.spring.tuple;
 
-import com.redis.om.spring.tuple.impl.mapper.*;
-
 import java.util.function.Function;
+
+import com.redis.om.spring.tuple.impl.mapper.*;
 
 public final class Fields {
 
   private Fields() {
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   public static <T> Function<T, EmptyTuple> of() {
     return (Function<T, EmptyTuple>) EmptyTupleMapperImpl.EMPTY_MAPPER;
   }

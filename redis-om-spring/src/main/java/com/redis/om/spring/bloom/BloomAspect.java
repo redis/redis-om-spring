@@ -1,7 +1,11 @@
 package com.redis.om.spring.bloom;
 
-import com.redis.om.spring.annotations.Bloom;
-import com.redis.om.spring.ops.pds.BloomOperations;
+import java.beans.IntrospectionException;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.util.List;
+
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -12,11 +16,8 @@ import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.core.Ordered;
 import org.springframework.stereotype.Component;
 
-import java.beans.IntrospectionException;
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.util.List;
+import com.redis.om.spring.annotations.Bloom;
+import com.redis.om.spring.ops.pds.BloomOperations;
 
 @Aspect
 @Component
@@ -28,19 +29,27 @@ public class BloomAspect implements Ordered {
     this.ops = ops;
   }
 
-  @Pointcut("execution(public * org.springframework.data.repository.CrudRepository+.save(..))")
+  @Pointcut(
+    "execution(public * org.springframework.data.repository.CrudRepository+.save(..))"
+  )
   public void inCrudRepositorySave() {
   }
 
-  @Pointcut("execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.save(..))")
+  @Pointcut(
+    "execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.save(..))"
+  )
   public void inRedisDocumentRepositorySave() {
   }
 
-  @Pointcut("inCrudRepositorySave() || inRedisDocumentRepositorySave()")
+  @Pointcut(
+    "inCrudRepositorySave() || inRedisDocumentRepositorySave()"
+  )
   private void inSaveOperation() {
   }
 
-  @AfterReturning("inSaveOperation() && args(entity,..)")
+  @AfterReturning(
+    "inSaveOperation() && args(entity,..)"
+  )
   public void addToBloom(JoinPoint jp, Object entity) {
     for (Field field : com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(entity.getClass())) {
       if (field.isAnnotationPresent(Bloom.class)) {
@@ -59,19 +68,27 @@ public class BloomAspect implements Ordered {
     }
   }
 
-  @Pointcut("execution(public * org.springframework.data.repository.CrudRepository+.saveAll(..))")
+  @Pointcut(
+    "execution(public * org.springframework.data.repository.CrudRepository+.saveAll(..))"
+  )
   public void inCrudRepositorySaveAll() {
   }
 
-  @Pointcut("execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.saveAll(..))")
+  @Pointcut(
+    "execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.saveAll(..))"
+  )
   public void inRedisDocumentRepositorySaveAll() {
   }
 
-  @Pointcut("inCrudRepositorySaveAll() || inRedisDocumentRepositorySaveAll()")
+  @Pointcut(
+    "inCrudRepositorySaveAll() || inRedisDocumentRepositorySaveAll()"
+  )
   private void inSaveAllOperation() {
   }
 
-  @AfterReturning("inSaveAllOperation() && args(entities,..)")
+  @AfterReturning(
+    "inSaveAllOperation() && args(entities,..)"
+  )
   public void addAllToBloom(JoinPoint jp, List<Object> entities) {
     for (Object entity : entities) {
       for (Field field : com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(entity.getClass())) {

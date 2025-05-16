@@ -1,19 +1,20 @@
 package com.redis.om.spring.annotations.document;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.fixtures.document.model.Vehicle;
 import com.redis.om.spring.fixtures.document.model.VehicleType;
 import com.redis.om.spring.fixtures.document.repository.VehicleRepository;
 import com.redis.om.spring.search.stream.EntityStream;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
 
 public class IndexFilterTest extends AbstractBaseDocumentTest {
   @Autowired

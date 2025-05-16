@@ -1,15 +1,16 @@
 package com.redis.om.spring.metamodel;
 
+import java.lang.reflect.Field;
+import java.util.Comparator;
+import java.util.function.Function;
+
+import org.springframework.data.domain.Sort.Order;
+
 import com.redis.om.spring.search.stream.aggregations.filters.AggregationFilter;
 import com.redis.om.spring.search.stream.aggregations.filters.ExistsFilter;
 import com.redis.om.spring.search.stream.aggregations.filters.NotExistsFilter;
 import com.redis.om.spring.search.stream.predicates.fulltext.IsMissingPredicate;
 import com.redis.om.spring.util.ObjectUtils;
-import org.springframework.data.domain.Sort.Order;
-
-import java.lang.reflect.Field;
-import java.util.Comparator;
-import java.util.function.Function;
 
 public class MetamodelField<E, T> implements Comparator<E>, Function<E, T> {
 
@@ -45,7 +46,7 @@ public class MetamodelField<E, T> implements Comparator<E>, Function<E, T> {
     } catch (NoSuchFieldException e) {
       throw new RuntimeException(e);
     }
-    SearchFieldAccessor sfa = new SearchFieldAccessor(fieldName, "$."+fieldName, field);
+    SearchFieldAccessor sfa = new SearchFieldAccessor(fieldName, "$." + fieldName, field);
     this.searchFieldAccessor = sfa;
     this.indexed = true;
     this.alias = fieldName;

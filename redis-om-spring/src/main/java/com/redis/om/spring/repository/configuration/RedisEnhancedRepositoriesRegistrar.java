@@ -1,11 +1,12 @@
 package com.redis.om.spring.repository.configuration;
 
-import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
+import java.lang.annotation.Annotation;
+
 import org.springframework.data.redis.repository.configuration.RedisRepositoryConfigurationExtension;
 import org.springframework.data.repository.config.RepositoryBeanDefinitionRegistrarSupport;
 import org.springframework.data.repository.config.RepositoryConfigurationExtension;
 
-import java.lang.annotation.Annotation;
+import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
 
 public class RedisEnhancedRepositoriesRegistrar extends RepositoryBeanDefinitionRegistrarSupport {
   /*

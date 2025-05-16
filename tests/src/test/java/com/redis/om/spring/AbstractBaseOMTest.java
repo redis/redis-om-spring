@@ -1,10 +1,9 @@
 package com.redis.om.spring;
 
-import com.google.gson.GsonBuilder;
-import com.redis.om.spring.indexing.RediSearchIndexer;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.vectorize.Embedder;
-import com.redis.testcontainers.RedisStackContainer;
+import static com.redis.testcontainers.RedisStackContainer.DEFAULT_IMAGE_NAME;
+
+import java.util.Comparator;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisOperations;
@@ -15,12 +14,18 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.util.Comparator;
+import com.google.gson.GsonBuilder;
+import com.redis.om.spring.indexing.RediSearchIndexer;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.vectorize.Embedder;
+import com.redis.testcontainers.RedisStackContainer;
 
-import static com.redis.testcontainers.RedisStackContainer.DEFAULT_IMAGE_NAME;
-
-@SuppressWarnings({ "SpellCheckingInspection", "resource" })
-@Testcontainers(disabledWithoutDocker = true)
+@SuppressWarnings(
+  { "SpellCheckingInspection", "resource" }
+)
+@Testcontainers(
+    disabledWithoutDocker = true
+)
 @DirtiesContext
 public abstract class AbstractBaseOMTest {
   @Container
@@ -32,19 +37,25 @@ public abstract class AbstractBaseOMTest {
   }
 
   @Autowired
-  @Qualifier("featureExtractor")
+  @Qualifier(
+    "featureExtractor"
+  )
   public Embedder embedder;
   @Autowired
   protected StringRedisTemplate template;
   @Autowired
   protected RedisModulesOperations<String> modulesOperations;
   @Autowired
-  @Qualifier("redisCustomKeyValueTemplate")
+  @Qualifier(
+    "redisCustomKeyValueTemplate"
+  )
   protected CustomRedisKeyValueTemplate kvTemplate;
   @Autowired
   protected RediSearchIndexer indexer;
   @Autowired
-  @Qualifier("omGsonBuilder")
+  @Qualifier(
+    "omGsonBuilder"
+  )
   public GsonBuilder gsonBuilder;
   @Autowired
   public RedisOperations<?, ?> redisOperations;

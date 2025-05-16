@@ -1,20 +1,21 @@
 package com.redis.om.spring;
 
-import com.redis.om.spring.fixtures.document.model.Company;
-import com.redis.om.spring.fixtures.document.model.CompanyMeta;
-import com.redis.om.spring.fixtures.document.repository.CompanyRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.geo.Point;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.geo.Point;
+
+import com.redis.om.spring.fixtures.document.model.Company;
+import com.redis.om.spring.fixtures.document.model.CompanyMeta;
+import com.redis.om.spring.fixtures.document.repository.CompanyRepository;
 
 class RedisJSONKeyValueAdapterTest extends AbstractBaseDocumentTest {
   @Autowired

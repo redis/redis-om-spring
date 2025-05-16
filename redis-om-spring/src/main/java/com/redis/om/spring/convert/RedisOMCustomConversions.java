@@ -1,10 +1,10 @@
 package com.redis.om.spring.convert;
 
-import org.springframework.data.redis.core.convert.RedisCustomConversions;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import org.springframework.data.redis.core.convert.RedisCustomConversions;
 
 public class RedisOMCustomConversions extends RedisCustomConversions {
   private static final List<Object> omConverters = new ArrayList<>();

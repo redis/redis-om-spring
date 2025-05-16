@@ -1,10 +1,11 @@
 package com.redis.om.spring.serialization.gson;
 
-import com.google.gson.*;
-import org.springframework.data.geo.Point;
-
 import java.lang.reflect.Type;
 import java.util.StringTokenizer;
+
+import org.springframework.data.geo.Point;
+
+import com.google.gson.*;
 
 public class PointTypeAdapter implements JsonSerializer<Point>, JsonDeserializer<Point> {
 

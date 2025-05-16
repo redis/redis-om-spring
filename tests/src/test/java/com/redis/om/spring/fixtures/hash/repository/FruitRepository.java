@@ -1,10 +1,11 @@
 package com.redis.om.spring.fixtures.hash.repository;
 
-import com.redis.om.spring.fixtures.hash.model.Fruit;
-import com.redis.om.spring.repository.RedisEnhancedRepository;
+import java.util.List;
+
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import com.redis.om.spring.fixtures.hash.model.Fruit;
+import com.redis.om.spring.repository.RedisEnhancedRepository;
 
 @Repository
 public interface FruitRepository extends RedisEnhancedRepository<Fruit, Long> {

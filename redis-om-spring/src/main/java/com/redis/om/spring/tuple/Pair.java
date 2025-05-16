@@ -26,8 +26,8 @@ public interface Pair<E1, E2> extends Tuple {
     return switch (index) {
       case 0 -> getFirst();
       case 1 -> getSecond();
-      default -> throw new IndexOutOfBoundsException(
-          String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
+      default -> throw new IndexOutOfBoundsException(String.format("Index %d is outside bounds of tuple of degree %s",
+          index, size()));
     };
   }
 }

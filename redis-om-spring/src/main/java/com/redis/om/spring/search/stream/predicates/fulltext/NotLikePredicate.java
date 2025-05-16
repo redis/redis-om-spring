@@ -1,12 +1,12 @@
 package com.redis.om.spring.search.stream.predicates.fulltext;
 
+import org.apache.commons.lang3.ObjectUtils;
+
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
-import org.apache.commons.lang3.ObjectUtils;
+
 import redis.clients.jedis.search.querybuilder.Node;
-import redis.clients.jedis.search.querybuilder.QueryBuilders;
-import redis.clients.jedis.search.querybuilder.Values;
 
 public class NotLikePredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
@@ -95,9 +95,8 @@ public class NotLikePredicate<E, T> extends BaseAbstractPredicate<E, T> {
         };
       }
       // Case 3: Contains pattern - like "%Microsoft%"
-      else if (valueStr.startsWith("%") && valueStr.endsWith("%") &&
-              valueStr.indexOf('%') == 0 &&
-              valueStr.lastIndexOf('%') == valueStr.length() - 1) {
+      else if (valueStr.startsWith("%") && valueStr.endsWith("%") && valueStr.indexOf('%') == 0 && valueStr.lastIndexOf(
+          '%') == valueStr.length() - 1) {
         // Extract the content between the % characters
         String contains = valueStr.substring(1, valueStr.length() - 1);
 

@@ -1,19 +1,22 @@
 package com.redis.om.spring.annotations.autocompletable;
 
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.autocomplete.Suggestion;
-import com.redis.om.spring.fixtures.hash.model.Person;
-import com.redis.om.spring.fixtures.hash.repository.PersonRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
-@SuppressWarnings("SpellCheckingInspection")
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.autocomplete.Suggestion;
+import com.redis.om.spring.fixtures.hash.model.Person;
+import com.redis.om.spring.fixtures.hash.repository.PersonRepository;
+
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class RedisHashAutocompleteTest extends AbstractBaseEnhancedRedisTest {
   @Autowired
   PersonRepository repository;

@@ -1,16 +1,21 @@
 package com.redis.om.spring.fixtures.document.model;
 
+import java.util.Set;
+
 import com.redis.om.spring.annotations.Indexed;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-import java.util.Set;
-
 @Data
-@NoArgsConstructor(force = true)
-@RequiredArgsConstructor(staticName = "of")
+@NoArgsConstructor(
+    force = true
+)
+@RequiredArgsConstructor(
+    staticName = "of"
+)
 public class CompanyMeta {
 
   @Indexed

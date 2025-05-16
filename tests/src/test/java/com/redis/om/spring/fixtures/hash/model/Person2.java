@@ -1,16 +1,26 @@
 package com.redis.om.spring.fixtures.hash.model;
 
-import com.redis.om.spring.annotations.AutoComplete;
-import com.redis.om.spring.annotations.Cuckoo;
-import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
 
+import com.redis.om.spring.annotations.AutoComplete;
+import com.redis.om.spring.annotations.Cuckoo;
+
+import lombok.*;
+
 @Data
-@NoArgsConstructor(force = true)
-@RequiredArgsConstructor(staticName = "of")
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
-@RedisHash("people2")
+@NoArgsConstructor(
+    force = true
+)
+@RequiredArgsConstructor(
+    staticName = "of"
+)
+@AllArgsConstructor(
+    access = AccessLevel.PROTECTED
+)
+@RedisHash(
+  "people2"
+)
 public class Person2 {
 
   @Id
@@ -21,10 +31,14 @@ public class Person2 {
 
   @NonNull
   @AutoComplete
-  @Cuckoo(name = "cf_person_email", capacity = 100000)
+  @Cuckoo(
+      name = "cf_person_email", capacity = 100000
+  )
   String email;
 
   @NonNull
-  @Cuckoo(capacity = 100000)
+  @Cuckoo(
+      capacity = 100000
+  )
   String nickname;
 }

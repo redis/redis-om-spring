@@ -1,15 +1,17 @@
 package com.redis.om.spring.search.stream.predicates.geo;
 
+import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
+
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Point;
+
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 import com.redis.om.spring.util.ObjectUtils;
-import org.springframework.data.geo.Distance;
-import org.springframework.data.geo.Point;
+
 import redis.clients.jedis.search.querybuilder.GeoValue;
 import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
-
-import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
 
 public class OutsideOfPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
@@ -34,8 +36,8 @@ public class OutsideOfPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   public Node apply(Node root) {
     boolean paramsPresent = isNotEmpty(point) && isNotEmpty(distance);
     if (paramsPresent) {
-      GeoValue geoValue = new GeoValue(getPoint().getX(), getPoint().getY(), getDistance().getValue(),
-          ObjectUtils.getDistanceUnit(getDistance()));
+      GeoValue geoValue = new GeoValue(getPoint().getX(), getPoint().getY(), getDistance().getValue(), ObjectUtils
+          .getDistanceUnit(getDistance()));
 
       return QueryBuilders.intersect(root).add(QueryBuilders.disjunct(getSearchAlias(), geoValue));
     } else

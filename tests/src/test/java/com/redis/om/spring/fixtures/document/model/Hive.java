@@ -1,11 +1,12 @@
 package com.redis.om.spring.fixtures.document.model;
 
-import com.redis.om.spring.annotations.Document;
-import com.redis.om.spring.annotations.Indexed;
-import org.springframework.data.annotation.Id;
-
 import java.util.Set;
 import java.util.UUID;
+
+import org.springframework.data.annotation.Id;
+
+import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.annotations.Indexed;
 
 @Document
 public class Hive {
@@ -40,4 +41,3 @@ public class Hive {
     this.drones = drones;
   }
 }
-

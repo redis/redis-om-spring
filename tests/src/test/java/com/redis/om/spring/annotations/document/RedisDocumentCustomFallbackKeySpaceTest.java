@@ -1,14 +1,12 @@
 package com.redis.om.spring.annotations.document;
 
-import com.google.gson.JsonObject;
-import com.redis.om.spring.AbstractBaseOMTest;
-import com.redis.om.spring.TestConfig;
-import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
-import com.redis.om.spring.fixtures.document.model.MyDoc;
-import com.redis.om.spring.fixtures.document.repository.MyDocRepository;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.ops.json.JSONOperations;
-import com.redis.om.spring.ops.search.SearchOperations;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,21 +21,26 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.test.annotation.DirtiesContext;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
+import com.google.gson.JsonObject;
+import com.redis.om.spring.AbstractBaseOMTest;
+import com.redis.om.spring.TestConfig;
+import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
+import com.redis.om.spring.fixtures.document.model.MyDoc;
+import com.redis.om.spring.fixtures.document.repository.MyDocRepository;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.json.JSONOperations;
+import com.redis.om.spring.ops.search.SearchOperations;
+
 import redis.clients.jedis.json.Path2;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @Testcontainers
 @DirtiesContext
-@SpringBootTest( //
-                 classes = RedisDocumentCustomFallbackKeySpaceTest.Config.class, //
-                 properties = { "spring.main.allow-bean-definition-overriding=true" } //
-                 )
+@SpringBootTest(
+    //
+    classes = RedisDocumentCustomFallbackKeySpaceTest.Config.class, //
+    properties = { "spring.main.allow-bean-definition-overriding=true" } //
+)
 class RedisDocumentCustomFallbackKeySpaceTest extends AbstractBaseOMTest {
 
   @Autowired
@@ -132,7 +135,9 @@ class RedisDocumentCustomFallbackKeySpaceTest extends AbstractBaseOMTest {
   )
   static class Config extends TestConfig {
     @Autowired
-    @Qualifier("redisEnhancedMappingContext")
+    @Qualifier(
+      "redisEnhancedMappingContext"
+    )
     RedisMappingContext mappingContext;
 
     @Bean

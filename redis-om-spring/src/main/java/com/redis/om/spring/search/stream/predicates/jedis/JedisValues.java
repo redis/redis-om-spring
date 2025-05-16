@@ -1,11 +1,11 @@
 package com.redis.om.spring.search.stream.predicates.jedis;
 
-import redis.clients.jedis.search.querybuilder.RangeValue;
-
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
+
+import redis.clients.jedis.search.querybuilder.RangeValue;
 
 public class JedisValues {
   private JedisValues() {

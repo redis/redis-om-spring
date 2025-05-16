@@ -1,5 +1,20 @@
 package com.redis.om.spring.annotations.document.vectorize;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.junit.jupiter.DisabledIf;
+import org.springframework.test.context.junit.jupiter.EnabledIf;
+
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.fixtures.document.model.DocWithOllamaEmbedding;
 import com.redis.om.spring.fixtures.document.model.DocWithOllamaEmbedding$;
@@ -9,22 +24,10 @@ import com.redis.om.spring.search.stream.SearchStream;
 import com.redis.om.spring.tuple.Fields;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.vectorize.Embedder;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.junit.jupiter.DisabledIf;
-import org.springframework.test.context.junit.jupiter.EnabledIf;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-
-@DisabledIfEnvironmentVariable(named = "GITHUB_ACTIONS", matches = "true")
+@DisabledIfEnvironmentVariable(
+    named = "GITHUB_ACTIONS", matches = "true"
+)
 @DisabledIf(
     expression = "#{!T(com.redis.om.spring.util.Utils).isOllamaRunning()}",
     reason = "Disabled if Ollama is not running locally"
@@ -59,7 +62,7 @@ class VectorizeOllamaDocumentTest extends AbstractBaseDocumentTest {
   @EnabledIf(
       expression = "#{@featureExtractor.isReady()}", //
       loadContext = true //
-      )
+  )
   void testSentenceIsVectorized() {
     Optional<DocWithOllamaEmbedding> cat = repository.findFirstByName("cat");
     assertAll( //
@@ -73,7 +76,7 @@ class VectorizeOllamaDocumentTest extends AbstractBaseDocumentTest {
   @EnabledIf(
       expression = "#{@featureExtractor.isReady()}", //
       loadContext = true //
-      )
+  )
   void testKnnSentenceSimilaritySearch() {
     DocWithOllamaEmbedding cat = repository.findFirstByName("cat").get();
     int K = 5;
@@ -95,7 +98,7 @@ class VectorizeOllamaDocumentTest extends AbstractBaseDocumentTest {
   @EnabledIf(
       expression = "#{@featureExtractor.isReady()}", //
       loadContext = true //
-      )
+  )
   void testKnnHybridSentenceSimilaritySearch() {
     DocWithOllamaEmbedding cat = repository.findFirstByName("cat").get();
     int K = 5;
@@ -118,7 +121,7 @@ class VectorizeOllamaDocumentTest extends AbstractBaseDocumentTest {
   @EnabledIf(
       expression = "#{@featureExtractor.isReady()}", //
       loadContext = true //
-      )
+  )
   void testKnnSentenceSimilaritySearchWithScores() {
     DocWithOllamaEmbedding cat = repository.findFirstByName("cat").get();
     int K = 5;
@@ -133,8 +136,8 @@ class VectorizeOllamaDocumentTest extends AbstractBaseDocumentTest {
         .collect(Collectors.toList());
 
     assertAll( //
-        () -> assertThat(results).hasSize(5).map(Pair::getFirst).map(DocWithOllamaEmbedding::getName)
-            .containsExactly("cat", "dog", "lion", "elephant", "giraffe"), //
+        () -> assertThat(results).hasSize(5).map(Pair::getFirst).map(DocWithOllamaEmbedding::getName).containsExactly(
+            "cat", "dog", "lion", "elephant", "giraffe"), //
         () -> assertThat(results).hasSize(5).map(Pair::getSecond).usingElementComparator(closeToComparator)
             .containsExactly(1.78813934326E-7, 0.301205277443, 0.315115869045, 0.338551998138, 0.407371640205) //
     );
@@ -144,7 +147,7 @@ class VectorizeOllamaDocumentTest extends AbstractBaseDocumentTest {
   @EnabledIf(
       expression = "#{@featureExtractor.isReady()}", //
       loadContext = true //
-      )
+  )
   void testEmbedderCanVectorizeSentence() {
     Optional<DocWithOllamaEmbedding> maybeCat = repository.findFirstByName("cat");
     assertThat(maybeCat).isPresent();

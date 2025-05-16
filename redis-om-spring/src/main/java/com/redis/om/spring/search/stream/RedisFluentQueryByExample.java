@@ -1,9 +1,12 @@
 package com.redis.om.spring.search.stream;
 
-import com.redis.om.spring.annotations.Dialect;
-import com.redis.om.spring.metamodel.MetamodelField;
-import com.redis.om.spring.metamodel.MetamodelUtils;
-import com.redis.om.spring.ops.search.SearchOperations;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.data.convert.DtoInstantiatingConverter;
 import org.springframework.data.domain.*;
@@ -13,15 +16,14 @@ import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.repository.query.FluentQuery.FetchableFluentQuery;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+
+import com.redis.om.spring.annotations.Dialect;
+import com.redis.om.spring.metamodel.MetamodelField;
+import com.redis.om.spring.metamodel.MetamodelUtils;
+import com.redis.om.spring.ops.search.SearchOperations;
+
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
-
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class RedisFluentQueryByExample<T, S extends T, R> implements FetchableFluentQuery<R> {
 
@@ -45,8 +47,7 @@ public class RedisFluentQueryByExample<T, S extends T, R> implements FetchableFl
       Class<R> resultType, //
       EntityStream entityStream, //
       SearchOperations<String> searchOps, //
-      RedisMappingContext mappingContext
-  ) {
+      RedisMappingContext mappingContext) {
     this(example, Sort.unsorted(), resultType, resultType, entityStream, searchOps, mappingContext);
   }
 
@@ -58,8 +59,7 @@ public class RedisFluentQueryByExample<T, S extends T, R> implements FetchableFl
       EntityStream entityStream, //
       SearchOperations<String> searchOps, //
       SearchStream<?> searchStream, //
-      RedisMappingContext mappingContext
-  ) {
+      RedisMappingContext mappingContext) {
     this.example = example;
     this.sort = sort;
     this.domainType = domainType;
@@ -81,8 +81,7 @@ public class RedisFluentQueryByExample<T, S extends T, R> implements FetchableFl
       Class<R> resultType, //
       EntityStream entityStream, //
       SearchOperations<String> searchOps, //
-      RedisMappingContext mappingContext
-  ) {
+      RedisMappingContext mappingContext) {
     this.example = example;
     this.sort = sort;
     this.domainType = domainType;
@@ -93,7 +92,7 @@ public class RedisFluentQueryByExample<T, S extends T, R> implements FetchableFl
     this.projectionFactory = new SpelAwareProxyProjectionFactory();
     this.mappingContext = mappingContext;
     searchStream.dialect(Dialect.TWO.getValue());
-    searchStream.filter((Example<R>)example);
+    searchStream.filter((Example<R>) example);
   }
 
   @Override
@@ -104,7 +103,8 @@ public class RedisFluentQueryByExample<T, S extends T, R> implements FetchableFl
 
   @Override
   public <R1> FetchableFluentQuery<R1> as(Class<R1> resultType) {
-    return new RedisFluentQueryByExample<>(example, sort, domainType, resultType, this.entityStream, this.searchOps, searchStream, mappingContext);
+    return new RedisFluentQueryByExample<>(example, sort, domainType, resultType, this.entityStream, this.searchOps,
+        searchStream, mappingContext);
   }
 
   @Override
@@ -163,8 +163,8 @@ public class RedisFluentQueryByExample<T, S extends T, R> implements FetchableFl
       count = (long) info.get("num_docs");
     }
 
-    var pageContents = searchStream.limit(pageable.getPageSize()).skip(pageable.getOffset())
-        .collect(Collectors.toList());
+    var pageContents = searchStream.limit(pageable.getPageSize()).skip(pageable.getOffset()).collect(Collectors
+        .toList());
     return new PageImpl<>(pageContents, pageable, count);
   }
 
@@ -193,8 +193,8 @@ public class RedisFluentQueryByExample<T, S extends T, R> implements FetchableFl
       return o -> projectionFactory.createProjection(targetType, o);
     }
 
-    DtoInstantiatingConverter converter = new DtoInstantiatingConverter(targetType,
-        this.mappingContext, entityInstantiators);
+    DtoInstantiatingConverter converter = new DtoInstantiatingConverter(targetType, this.mappingContext,
+        entityInstantiators);
 
     return o -> (P) converter.convert(o);
   }

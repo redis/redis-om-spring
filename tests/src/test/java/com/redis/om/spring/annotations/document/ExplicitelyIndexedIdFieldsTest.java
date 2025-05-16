@@ -1,5 +1,15 @@
 package com.redis.om.spring.annotations.document;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.fixtures.document.model.DocWithIndexedId;
 import com.redis.om.spring.fixtures.document.model.DocWithSearchableId;
@@ -7,17 +17,10 @@ import com.redis.om.spring.fixtures.document.model.DocWithTagIndexedId;
 import com.redis.om.spring.fixtures.document.repository.DocWithIndexedIdRepository;
 import com.redis.om.spring.fixtures.document.repository.DocWithSearchableIdRepository;
 import com.redis.om.spring.fixtures.document.repository.DocWithTagIndexedIdRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-
-@SuppressWarnings("SpellCheckingInspection")
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class ExplicitelyIndexedIdFieldsTest extends AbstractBaseDocumentTest {
 
   @Autowired
@@ -31,12 +34,12 @@ class ExplicitelyIndexedIdFieldsTest extends AbstractBaseDocumentTest {
 
   @BeforeEach
   void cleanUp() {
-    docWithIndexedIdRepository.saveAll(
-        List.of(DocWithIndexedId.of("DWII01", "DWII01"), DocWithIndexedId.of("DWII02", "DWII02")));
-    docWithSearchableIdRepository.saveAll(
-        List.of(DocWithSearchableId.of("DWSI01", "DWSI01"), DocWithSearchableId.of("DWSI02", "DWSI02")));
-    docWithTagIndexedIdRepository.saveAll(
-        List.of(DocWithTagIndexedId.of("DWTII01", "DWTII01"), DocWithTagIndexedId.of("DWTII02", "DWTII02")));
+    docWithIndexedIdRepository.saveAll(List.of(DocWithIndexedId.of("DWII01", "DWII01"), DocWithIndexedId.of("DWII02",
+        "DWII02")));
+    docWithSearchableIdRepository.saveAll(List.of(DocWithSearchableId.of("DWSI01", "DWSI01"), DocWithSearchableId.of(
+        "DWSI02", "DWSI02")));
+    docWithTagIndexedIdRepository.saveAll(List.of(DocWithTagIndexedId.of("DWTII01", "DWTII01"), DocWithTagIndexedId.of(
+        "DWTII02", "DWTII02")));
   }
 
   @Test

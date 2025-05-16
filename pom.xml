@@ -110,7 +110,7 @@
             <java>
               <!-- Use Eclipse formatter with custom config -->
               <eclipse>
-                <file>${main.basedir}/.spotless/roms-style.xml</file>
+                <file>${project.basedir}/.spotless/roms-style.xml</file>
               </eclipse>
               <removeUnusedImports />
               <importOrder>

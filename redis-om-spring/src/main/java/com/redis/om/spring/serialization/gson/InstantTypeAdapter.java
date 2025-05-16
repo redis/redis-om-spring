@@ -1,9 +1,9 @@
 package com.redis.om.spring.serialization.gson;
 
-import com.google.gson.*;
-
 import java.lang.reflect.Type;
 import java.time.Instant;
+
+import com.google.gson.*;
 
 public class InstantTypeAdapter implements JsonSerializer<Instant>, JsonDeserializer<Instant> {
 

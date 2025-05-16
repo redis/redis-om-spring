@@ -1,19 +1,23 @@
 package com.redis.om.spring.fixtures.hash.repository;
 
-import com.redis.om.spring.annotations.Query;
-import com.redis.om.spring.fixtures.hash.model.MyHash;
-import com.redis.om.spring.repository.RedisEnhancedRepository;
+import java.util.List;
+import java.util.Set;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.repository.query.Param;
+
+import com.redis.om.spring.annotations.Query;
+import com.redis.om.spring.fixtures.hash.model.MyHash;
+import com.redis.om.spring.repository.RedisEnhancedRepository;
+
 import redis.clients.jedis.search.SearchResult;
 
-import java.util.List;
-import java.util.Set;
-
-@SuppressWarnings({ "unused", "SpellCheckingInspection", "SpringDataMethodInconsistencyInspection" })
+@SuppressWarnings(
+  { "unused", "SpellCheckingInspection", "SpringDataMethodInconsistencyInspection" }
+)
 public interface MyHashRepository extends RedisEnhancedRepository<MyHash, String>, MyHashQueries {
   /**
    * <pre>
@@ -21,11 +25,17 @@ public interface MyHashRepository extends RedisEnhancedRepository<MyHash, String
    * 1) (integer) 1
    * 2) "doc1"
    * 3) 1) "$"
-   *    2) "{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}"
+   * 2) "{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}"
    * </pre>
    */
-  @Query("@title:$title @tag:{$tags}")
-  Iterable<MyHash> findByTitleAndTags(@Param("title") String title, @Param("tags") Set<String> tags);
+  @Query(
+    "@title:$title @tag:{$tags}"
+  )
+  Iterable<MyHash> findByTitleAndTags(@Param(
+    "title"
+  ) String title, @Param(
+    "tags"
+  ) Set<String> tags);
 
   /**
    * <pre>
@@ -46,16 +56,24 @@ public interface MyHashRepository extends RedisEnhancedRepository<MyHash, String
    * > FT.SEARCH idx @title:hel* LIMIT 0 2
    * </pre>
    */
-  @Query("@title:$prefix*")
-  Page<MyHash> customFindAllByTitleStartingWith(@Param("prefix") String prefix, Pageable pageable);
+  @Query(
+    "@title:$prefix*"
+  )
+  Page<MyHash> customFindAllByTitleStartingWith(@Param(
+    "prefix"
+  ) String prefix, Pageable pageable);
 
   /**
    * <pre>
    * > FT.SEARCH idx @title:pre* SORTBY title ASC LIMIT 1 12 RETURN 2 title aNumber
    * </pre>
    */
-  @Query(value = "@title:$prefix*", returnFields = { "title", "aNumber" }, limit = 12, offset = 1, sortBy = "title")
-  SearchResult customFindAllByTitleStartingWithReturnFieldsAndLimit(@Param("prefix") String prefix);
+  @Query(
+      value = "@title:$prefix*", returnFields = { "title", "aNumber" }, limit = 12, offset = 1, sortBy = "title"
+  )
+  SearchResult customFindAllByTitleStartingWithReturnFieldsAndLimit(@Param(
+    "prefix"
+  ) String prefix);
 
   /**
    * <pre>

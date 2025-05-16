@@ -2,8 +2,8 @@ package com.redis.om.spring.tuple;
 
 import com.redis.om.spring.tuple.accessor.*;
 
-public interface Octodecuple<E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E15, E16, E17, E18>
-    extends Tuple {
+public interface Octodecuple<E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E15, E16, E17, E18> extends
+    Tuple {
 
   static <E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E15, E25, E26, E27> FirstAccessor<Octodecuple<E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E15, E25, E26, E27>, E1> getFirstGetter() {
     return Octodecuple::getFirst;
@@ -138,8 +138,8 @@ public interface Octodecuple<E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, 
       case 15 -> getSixteenth();
       case 16 -> getSeventeenth();
       case 17 -> getEighteenth();
-      default -> throw new IndexOutOfBoundsException(
-          String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
+      default -> throw new IndexOutOfBoundsException(String.format("Index %d is outside bounds of tuple of degree %s",
+          index, size()));
     };
   }
 }

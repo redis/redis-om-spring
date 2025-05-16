@@ -1,10 +1,11 @@
 package com.redis.om.spring.ops.pds;
 
-import com.redis.om.spring.client.RedisModulesClient;
-import redis.clients.jedis.bloom.TDigestMergeParams;
-
 import java.util.List;
 import java.util.Map;
+
+import com.redis.om.spring.client.RedisModulesClient;
+
+import redis.clients.jedis.bloom.TDigestMergeParams;
 
 public class TDigestOperationsImpl<K> implements TDigestOperations<K> {
   final RedisModulesClient client;
@@ -100,4 +101,4 @@ public class TDigestOperationsImpl<K> implements TDigestOperations<K> {
   public List<Double> byRevRank(K key, long... ranks) {
     return client.clientForTDigest().tdigestByRevRank(key.toString(), ranks);
   }
-} 
+}

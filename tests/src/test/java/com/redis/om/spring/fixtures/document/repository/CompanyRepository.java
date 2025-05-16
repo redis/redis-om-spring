@@ -1,17 +1,19 @@
 package com.redis.om.spring.fixtures.document.repository;
 
-import com.redis.om.spring.fixtures.document.model.Company;
-import com.redis.om.spring.repository.RedisDocumentRepository;
-import com.redis.om.spring.search.stream.SearchStream;
-
-import org.springframework.data.geo.Distance;
-import org.springframework.data.geo.Point;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-@SuppressWarnings("unused")
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Point;
+
+import com.redis.om.spring.fixtures.document.model.Company;
+import com.redis.om.spring.repository.RedisDocumentRepository;
+import com.redis.om.spring.search.stream.SearchStream;
+
+@SuppressWarnings(
+  "unused"
+)
 public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
   List<Company> findByName(String companyName);
 
@@ -50,13 +52,13 @@ public interface CompanyRepository extends RedisDocumentRepository<Company, Stri
   List<Company> findByYearFoundedOrderByNameAsc(int year);
 
   List<Company> findByYearFoundedOrderByNameDesc(int year);
-  
+
   // Methods for advanced sentinel test
   SearchStream<Company> findByYearFoundedGreaterThan(int year);
-  
+
   List<Company> findByYearFoundedGreaterThanOrderByNameAsc(int year);
-  
+
   List<Company> findByYearFoundedGreaterThanOrderByNameDesc(int year);
-  
+
   List<Company> findByYearFoundedBetweenOrderByNameAsc(int start, int end);
 }

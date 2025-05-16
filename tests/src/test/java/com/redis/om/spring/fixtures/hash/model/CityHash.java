@@ -1,8 +1,8 @@
 package com.redis.om.spring.fixtures.hash.model;
 
-import com.redis.om.spring.annotations.Indexed;
-
 import java.util.Objects;
+
+import com.redis.om.spring.annotations.Indexed;
 
 public class CityHash {
   private @Indexed String name;

@@ -1,5 +1,18 @@
 package com.redis.om.spring.annotations.hash.vectorize;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.junit.jupiter.EnabledIf;
+
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
 import com.redis.om.spring.fixtures.hash.model.Product;
 import com.redis.om.spring.fixtures.hash.model.Product$;
@@ -9,18 +22,6 @@ import com.redis.om.spring.search.stream.SearchStream;
 import com.redis.om.spring.tuple.Fields;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.vectorize.Embedder;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.junit.jupiter.EnabledIf;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
 
 class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
   @Autowired
@@ -38,12 +39,10 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
           "The cat (Felis catus) is a domestic species of small carnivorous mammal."));
       repository.save(Product.of("cat2", "classpath:/images/cat2.jpg",
           "It is the only domesticated species in the family Felidae and is commonly referred to as the domestic cat or house cat"));
-      repository.save(
-          Product.of("catdog", "classpath:/images/catdog.jpg",
-                  "This is a picture of a cat and a dog together. And this sentence is just making the whole text longer."));
-      repository.save(
-          Product.of("face", "classpath:/images/face.jpg",
-                  "Three years later, the coffin was still full of Jello. And this sentence is just making the whole text longer."));
+      repository.save(Product.of("catdog", "classpath:/images/catdog.jpg",
+          "This is a picture of a cat and a dog together. And this sentence is just making the whole text longer."));
+      repository.save(Product.of("face", "classpath:/images/face.jpg",
+          "Three years later, the coffin was still full of Jello. And this sentence is just making the whole text longer."));
       repository.save(Product.of("face2", "classpath:/images/face2.jpg",
           "The person box was packed with jelly many dozens of months later. And this sentence is just making the whole text longer."));
     }
@@ -53,7 +52,7 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
   @EnabledIf(
       expression = "#{@featureExtractor.isReady()}", //
       loadContext = true //
-      )
+  )
   void testImageIsVectorized() {
     Optional<Product> cat = repository.findFirstByName("cat");
     assertAll( //
@@ -66,7 +65,7 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
   @EnabledIf(
       expression = "#{@featureExtractor.isReady()}", //
       loadContext = true //
-      )
+  )
   void testSentenceIsVectorized() {
     Optional<Product> cat = repository.findFirstByName("cat");
     assertAll( //
@@ -79,7 +78,7 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
   @EnabledIf(
       expression = "#{@featureExtractor.isReady()}", //
       loadContext = true //
-      )
+  )
   void testKnnImageSimilaritySearch() {
     Product cat = repository.findFirstByName("cat").get();
     int K = 5;
@@ -101,7 +100,7 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
   @EnabledIf(
       expression = "#{@featureExtractor.isReady()}", //
       loadContext = true //
-      )
+  )
   void testKnnSentenceSimilaritySearch() {
     Product cat = repository.findFirstByName("cat").get();
     int K = 5;
@@ -123,7 +122,7 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
   @EnabledIf(
       expression = "#{@featureExtractor.isReady()}", //
       loadContext = true //
-      )
+  )
   void testKnnHybridSentenceSimilaritySearch() {
     Product cat = repository.findFirstByName("cat").get();
     int K = 5;
@@ -146,7 +145,7 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
   @EnabledIf(
       expression = "#{@featureExtractor.isReady()}", //
       loadContext = true //
-      )
+  )
   void testKnnSentenceSimilaritySearchWithScores() {
     Product cat = repository.findFirstByName("cat").get();
     int K = 5;
@@ -161,8 +160,8 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
         .collect(Collectors.toList());
 
     assertAll( //
-        () -> assertThat(results).hasSize(5).map(Pair::getFirst).map(Product::getName)
-            .containsExactly("cat", "cat2", "catdog", "face", "face2") //
+        () -> assertThat(results).hasSize(5).map(Pair::getFirst).map(Product::getName).containsExactly("cat", "cat2",
+            "catdog", "face", "face2") //
     );
   }
 
@@ -170,7 +169,7 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
   @EnabledIf(
       expression = "#{@featureExtractor.isReady()}", //
       loadContext = true //
-      )
+  )
   void testEmbedderCanVectorizeSentence() {
     Optional<Product> maybeCat = repository.findFirstByName("cat");
     assertThat(maybeCat).isPresent();
@@ -184,36 +183,35 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   @EnabledIf(
-          expression = "#{@featureExtractor.isReady()}", //
-          loadContext = true //
+      expression = "#{@featureExtractor.isReady()}", //
+      loadContext = true //
   )
   void testBulkEmbedMapEmbeddingsCorrectly() {
-    List<Product> saveAllEntities = repository.saveAll(List.of(
-                    Product.of("cat-saveAll", "classpath:/images/cat.jpg",
-                            "The cat (Felis catus) is a domestic species of small carnivorous mammal."),
-                    Product.of("cat2-saveAll", "classpath:/images/cat2.jpg",
-                            "It is the only domesticated species in the family Felidae and is commonly referred to as the domestic cat or house cat"),
-                    Product.of("catdog-saveAll", "classpath:/images/catdog.jpg", "This is a picture of a cat and a dog together. And this sentence is just making the whole text longer."),
-                    Product.of("face-saveAll", "classpath:/images/face.jpg", "Three years later, the coffin was still full of Jello. And this sentence is just making the whole text longer."),
-                    Product.of("face2-saveAll", "classpath:/images/face2.jpg", "The person box was packed with jelly many dozens of months later. And this sentence is just making the whole text longer.")
-            )
-    );
+    List<Product> saveAllEntities = repository.saveAll(List.of(Product.of("cat-saveAll", "classpath:/images/cat.jpg",
+        "The cat (Felis catus) is a domestic species of small carnivorous mammal."), Product.of("cat2-saveAll",
+            "classpath:/images/cat2.jpg",
+            "It is the only domesticated species in the family Felidae and is commonly referred to as the domestic cat or house cat"),
+        Product.of("catdog-saveAll", "classpath:/images/catdog.jpg",
+            "This is a picture of a cat and a dog together. And this sentence is just making the whole text longer."),
+        Product.of("face-saveAll", "classpath:/images/face.jpg",
+            "Three years later, the coffin was still full of Jello. And this sentence is just making the whole text longer."),
+        Product.of("face2-saveAll", "classpath:/images/face2.jpg",
+            "The person box was packed with jelly many dozens of months later. And this sentence is just making the whole text longer.")));
 
     saveAllEntities.forEach(saveAllEntity -> {
       Optional<Product> cat = repository.findFirstByName(saveAllEntity.getName().replace("-saveAll", ""));
       Optional<Product> catSaveAll = repository.findFirstByName(saveAllEntity.getName());
 
       assertAll( //
-              () -> assertThat(cat).isPresent(), //
-              () -> assertThat(cat.get().getSentenceEmbedding())
-                      .withFailMessage("Sentence embeddings aren't the same for: " + saveAllEntity.getName() + " and " + cat.get().getName() + "\n" +
-                              "Embedding 1: " + Arrays.toString(catSaveAll.get().getSentenceEmbedding()) + "\n" +
-                              "Embedding 2: " + Arrays.toString(cat.get().getSentenceEmbedding()))
-                      .isEqualTo(saveAllEntity.getSentenceEmbedding()),
-              () -> assertThat(cat.get().getImageEmbedding())
-                      .withFailMessage("Image embeddings aren't the same for: " + saveAllEntity.getName() + " and " + cat.get().getName())
-                      .isEqualTo(saveAllEntity.getImageEmbedding())
-      );
+          () -> assertThat(cat).isPresent(), //
+          () -> assertThat(cat.get().getSentenceEmbedding()).withFailMessage(
+              "Sentence embeddings aren't the same for: " + saveAllEntity.getName() + " and " + cat.get()
+                  .getName() + "\n" + "Embedding 1: " + Arrays.toString(catSaveAll.get()
+                      .getSentenceEmbedding()) + "\n" + "Embedding 2: " + Arrays.toString(cat.get()
+                          .getSentenceEmbedding())).isEqualTo(saveAllEntity.getSentenceEmbedding()), () -> assertThat(
+                              cat.get().getImageEmbedding()).withFailMessage(
+                                  "Image embeddings aren't the same for: " + saveAllEntity.getName() + " and " + cat
+                                      .get().getName()).isEqualTo(saveAllEntity.getImageEmbedding()));
     });
 
     repository.deleteAll();

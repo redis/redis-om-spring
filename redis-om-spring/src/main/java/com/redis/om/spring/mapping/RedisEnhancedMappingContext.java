@@ -24,18 +24,13 @@ public class RedisEnhancedMappingContext extends RedisMappingContext {
   public RedisEnhancedMappingContext(MappingConfiguration mappingConfiguration) {
     super(mappingConfiguration);
     this.mappingConfiguration = mappingConfiguration;
-    this.timeToLiveAccessor = new RedisEnhancedTimeToLiveAccessor(
-        mappingConfiguration.getKeyspaceConfiguration(),
-        this
-    );
+    this.timeToLiveAccessor = new RedisEnhancedTimeToLiveAccessor(mappingConfiguration.getKeyspaceConfiguration(),
+        this);
   }
 
   public RedisEnhancedMappingContext() {
     // Create mapping configuration with empty index and keyspace configs
-    this(new MappingConfiguration(
-        new IndexConfiguration(),
-        new KeyspaceConfiguration()
-    ));
+    this(new MappingConfiguration(new IndexConfiguration(), new KeyspaceConfiguration()));
   }
 
   @Override
