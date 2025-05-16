@@ -74,7 +74,6 @@
         <maven.test.target>21</maven.test.target>
         <java.version>21</java.version>
         <spotless.version>2.44.4</spotless.version>
-        <jreleaser.version>1.10.0</jreleaser.version>
         <main.basedir>${project.basedir}</main.basedir>
         <spring.version>3.4.5</spring.version>
         <sdr.version>3.4.5</sdr.version>
@@ -128,35 +127,6 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-deploy-plugin</artifactId>
           <version>3.1.2</version>
-        </plugin>
-
-        <!-- Add JReleaser plugin -->
-        <plugin>
-          <groupId>org.jreleaser</groupId>
-          <artifactId>jreleaser-maven-plugin</artifactId>
-          <version>${jreleaser.version}</version>
-          <configuration>
-            <jreleaser>
-              <signing>
-                <active>ALWAYS</active>
-                <armored>true</armored>
-              </signing>
-              <deploy>
-                <maven>
-                  <mavenCentral>
-                    <redis>
-                      <active>RELEASE</active>
-                      <url>https://central.sonatype.com/api/v1/publisher</url>
-                      <applyMavenCentralRules>true</applyMavenCentralRules>
-                      <stagingRepositories>
-                        <stagingRepository>target/staging-deploy</stagingRepository>
-                      </stagingRepositories>
-                    </redis>
-                  </mavenCentral>
-                </maven>
-              </deploy>
-            </jreleaser>
-          </configuration>
         </plugin>
       </plugins>
     </pluginManagement>
