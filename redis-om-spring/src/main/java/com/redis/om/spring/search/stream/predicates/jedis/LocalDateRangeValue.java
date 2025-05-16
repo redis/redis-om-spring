@@ -1,11 +1,12 @@
 package com.redis.om.spring.search.stream.predicates.jedis;
 
-import com.google.gson.JsonPrimitive;
-import redis.clients.jedis.search.querybuilder.RangeValue;
-
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+
+import com.google.gson.JsonPrimitive;
+
+import redis.clients.jedis.search.querybuilder.RangeValue;
 
 public class LocalDateRangeValue extends RangeValue {
   private final LocalDate from;

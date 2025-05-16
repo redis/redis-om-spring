@@ -1,13 +1,15 @@
 package com.redis.om.spring.util;
 
-import com.google.gson.Gson;
-import org.springframework.data.geo.Point;
-import redis.clients.jedis.util.SafeEncoder;
+import static com.redis.om.spring.util.ObjectUtils.isPrimitiveOfType;
 
 import java.util.Date;
 import java.util.StringTokenizer;
 
-import static com.redis.om.spring.util.ObjectUtils.isPrimitiveOfType;
+import org.springframework.data.geo.Point;
+
+import com.google.gson.Gson;
+
+import redis.clients.jedis.util.SafeEncoder;
 
 public class SearchResultRawResponseToObjectConverter {
   public static Object process(Object rawValue, Class<?> targetClass, Gson gson) {

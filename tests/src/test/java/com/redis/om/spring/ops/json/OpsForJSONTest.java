@@ -1,18 +1,22 @@
 package com.redis.om.spring.ops.json;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import redis.clients.jedis.json.JsonSetParams;
-import redis.clients.jedis.json.Path2;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 import java.util.Objects;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
-@SuppressWarnings({ "unused", "SpellCheckingInspection" })
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.ops.RedisModulesOperations;
+
+import redis.clients.jedis.json.JsonSetParams;
+import redis.clients.jedis.json.Path2;
+
+@SuppressWarnings(
+  { "unused", "SpellCheckingInspection" }
+)
 class OpsForJSONTest extends AbstractBaseDocumentTest {
 
   @Autowired
@@ -175,7 +179,9 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
   }
 
   /* A simple class that represents an object in real life */
-  @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
+  @SuppressWarnings(
+    "EqualsWhichDoesntCheckParameterClass"
+  )
   private static class IRLObject {
     public final String str;
     public final boolean bTrue;
@@ -192,7 +198,9 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
     }
   }
 
-  @SuppressWarnings("unused")
+  @SuppressWarnings(
+    "unused"
+  )
   private static class FooBarObject {
     public final String foo;
     public final boolean fooB;
@@ -209,7 +217,9 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
     }
   }
 
-  @SuppressWarnings({ "SpellCheckingInspection", "FieldMayBeFinal" })
+  @SuppressWarnings(
+    { "SpellCheckingInspection", "FieldMayBeFinal" }
+  )
   private static class Baz {
     private String quuz;
     private String grault;
@@ -237,7 +247,9 @@ class OpsForJSONTest extends AbstractBaseDocumentTest {
     }
   }
 
-  @SuppressWarnings({ "SpellCheckingInspection", "FieldMayBeFinal" })
+  @SuppressWarnings(
+    { "SpellCheckingInspection", "FieldMayBeFinal" }
+  )
   private static class Qux {
     private String quux;
     private String corge;

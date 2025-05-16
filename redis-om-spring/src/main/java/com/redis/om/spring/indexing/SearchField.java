@@ -1,8 +1,8 @@
 package com.redis.om.spring.indexing;
 
-import redis.clients.jedis.search.schemafields.SchemaField;
-
 import java.lang.reflect.Field;
+
+import redis.clients.jedis.search.schemafields.SchemaField;
 
 public class SearchField {
   private final Field field;

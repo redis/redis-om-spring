@@ -7,8 +7,8 @@ public interface TopKOperations<K> {
   /**
    * Create a new TopK filter.
    *
-   * @param key       The key of the filter
-   * @param topk      Number of top items to keep
+   * @param key  The key of the filter
+   * @param topk Number of top items to keep
    * @return Status string reply
    */
   String createFilter(K key, long topk);
@@ -16,11 +16,11 @@ public interface TopKOperations<K> {
   /**
    * Create a new TopK filter with additional parameters.
    *
-   * @param key           The key of the filter
-   * @param topk          Number of top items to keep
-   * @param width         Number of counters kept in each array
-   * @param depth         Number of arrays
-   * @param decay         The probability of reducing a counter in an occupied bucket
+   * @param key   The key of the filter
+   * @param topk  Number of top items to keep
+   * @param width Number of counters kept in each array
+   * @param depth Number of arrays
+   * @param decay The probability of reducing a counter in an occupied bucket
    * @return Status string reply
    */
   String createFilter(K key, long topk, long width, long depth, double decay);
@@ -47,8 +47,8 @@ public interface TopKOperations<K> {
   /**
    * Increase the score of multiple items by their increments.
    *
-   * @param key               The key of the filter
-   * @param itemIncrementMap  Map of item to increment
+   * @param key              The key of the filter
+   * @param itemIncrementMap Map of item to increment
    * @return List of items dropped from the filter
    */
   List<String> incrementBy(K key, Map<String, Long> itemIncrementMap);

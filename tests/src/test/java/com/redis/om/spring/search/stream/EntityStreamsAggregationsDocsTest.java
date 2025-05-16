@@ -1,15 +1,8 @@
 package com.redis.om.spring.search.stream;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.ReducerFunction;
-import com.redis.om.spring.fixtures.document.model.*;
-import com.redis.om.spring.fixtures.document.repository.*;
-import com.redis.om.spring.metamodel.Alias;
-import com.redis.om.spring.tuple.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort.Order;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -20,11 +13,21 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort.Order;
 
-@SuppressWarnings({ "unchecked", "SpellCheckingInspection" })
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.annotations.ReducerFunction;
+import com.redis.om.spring.fixtures.document.model.*;
+import com.redis.om.spring.fixtures.document.repository.*;
+import com.redis.om.spring.metamodel.Alias;
+import com.redis.om.spring.tuple.*;
+
+@SuppressWarnings(
+  { "unchecked", "SpellCheckingInspection" }
+)
 class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
   @Autowired
   EntityStream entityStream;
@@ -100,22 +103,22 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
     }
     // Create Sample Orders
     if (pizzaOrderRepository.count() == 0) {
-      var order0 = PizzaOrder.of(0, "Pepperoni", "small", 19, 10, Instant.parse("2021-03-13T08:14:30Z"),
-          LocalDateTime.parse("2021-03-13T00:00:00.000"));
-      var order1 = PizzaOrder.of(1, "Pepperoni", "medium", 20, 20, Instant.parse("2021-03-13T09:13:24Z"),
-          LocalDateTime.parse("2021-03-13T00:00:00.000"));
-      var order2 = PizzaOrder.of(2, "Pepperoni", "large", 21, 30, Instant.parse("2021-03-17T09:22:12Z"),
-          LocalDateTime.parse("2021-03-13T00:00:00.000"));
-      var order3 = PizzaOrder.of(3, "Cheese", "small", 12, 15, Instant.parse("2021-03-13T11:21:39.736Z"),
-          LocalDateTime.parse("2021-03-13T00:00:00.000"));
-      var order4 = PizzaOrder.of(4, "Cheese", "medium", 13, 50, Instant.parse("2022-01-12T21:23:13.331Z"),
-          LocalDateTime.parse("2021-03-13T00:00:00.000"));
-      var order5 = PizzaOrder.of(5, "Cheese", "large", 14, 10, Instant.parse("2022-01-12T05:08:13Z"),
-          LocalDateTime.parse("2021-03-13T00:00:00.000"));
-      var order6 = PizzaOrder.of(6, "Vegan", "small", 17, 10, Instant.parse("2021-01-13T05:08:13Z"),
-          LocalDateTime.parse("2021-03-13T00:00:00.000"));
-      var order7 = PizzaOrder.of(7, "Vegan", "medium", 18, 10, Instant.parse("2021-01-13T05:10:13Z"),
-          LocalDateTime.parse("2021-03-13T00:00:00.001"));
+      var order0 = PizzaOrder.of(0, "Pepperoni", "small", 19, 10, Instant.parse("2021-03-13T08:14:30Z"), LocalDateTime
+          .parse("2021-03-13T00:00:00.000"));
+      var order1 = PizzaOrder.of(1, "Pepperoni", "medium", 20, 20, Instant.parse("2021-03-13T09:13:24Z"), LocalDateTime
+          .parse("2021-03-13T00:00:00.000"));
+      var order2 = PizzaOrder.of(2, "Pepperoni", "large", 21, 30, Instant.parse("2021-03-17T09:22:12Z"), LocalDateTime
+          .parse("2021-03-13T00:00:00.000"));
+      var order3 = PizzaOrder.of(3, "Cheese", "small", 12, 15, Instant.parse("2021-03-13T11:21:39.736Z"), LocalDateTime
+          .parse("2021-03-13T00:00:00.000"));
+      var order4 = PizzaOrder.of(4, "Cheese", "medium", 13, 50, Instant.parse("2022-01-12T21:23:13.331Z"), LocalDateTime
+          .parse("2021-03-13T00:00:00.000"));
+      var order5 = PizzaOrder.of(5, "Cheese", "large", 14, 10, Instant.parse("2022-01-12T05:08:13Z"), LocalDateTime
+          .parse("2021-03-13T00:00:00.000"));
+      var order6 = PizzaOrder.of(6, "Vegan", "small", 17, 10, Instant.parse("2021-01-13T05:08:13Z"), LocalDateTime
+          .parse("2021-03-13T00:00:00.000"));
+      var order7 = PizzaOrder.of(7, "Vegan", "medium", 18, 10, Instant.parse("2021-01-13T05:10:13Z"), LocalDateTime
+          .parse("2021-03-13T00:00:00.001"));
 
       pizzaOrderRepository.saveAll(List.of(order0, order1, order2, order3, order4, order5, order6, order7));
     }
@@ -146,10 +149,10 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
   /**
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*"
-   *   "GROUPBY" "1" "@brand"
-   *   "REDUCE" "COUNT" "0" "AS" "count"
-   *   "SORTBY" "2" "@count" "DESC"
-   *   "LIMIT" "0" "5"
+   * "GROUPBY" "1" "@brand"
+   * "REDUCE" "COUNT" "0" "AS" "count"
+   * "SORTBY" "2" "@count" "DESC"
+   * "LIMIT" "0" "5"
    * </pre>
    */
   @Test
@@ -180,10 +183,10 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
   /**
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "sony"
-   *   "GROUPBY" "1" "@brand"
-   *   "REDUCE" "COUNT" "0"
-   *   "REDUCE" "MIN" "1" "@price" "AS" "minPrice"
-   *   "SORTBY" "2" "@minPrice" "DESC"
+   * "GROUPBY" "1" "@brand"
+   * "REDUCE" "COUNT" "0"
+   * "REDUCE" "MIN" "1" "@price" "AS" "minPrice"
+   * "SORTBY" "2" "@minPrice" "DESC"
    * </pre>
    */
   @Test
@@ -218,10 +221,10 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
   /**
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "sony"
-   *   "GROUPBY" "1" "@brand"
-   *   "REDUCE" "COUNT" "0" "AS" "count"
-   *   "REDUCE" "MAX" "1" "price" "AS" "maxPrice"
-   *   "SORTBY" "2" "@maxPrice" "DESC"
+   * "GROUPBY" "1" "@brand"
+   * "REDUCE" "COUNT" "0" "AS" "count"
+   * "REDUCE" "MAX" "1" "price" "AS" "maxPrice"
+   * "SORTBY" "2" "@maxPrice" "DESC"
    * </pre>
    */
   @Test
@@ -257,11 +260,11 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
   /**
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*"
-   *   "GROUPBY" "1" "@brand"
-   *   "REDUCE" "COUNT_DISTINCT" "1" "@title" "AS" "count_distinct(title)"
-   *   "REDUCE" "COUNT" "0"
-   *   "SORTBY" "2" "@count_distinct(title)" "DESC"
-   *   "LIMIT" "0" "5"
+   * "GROUPBY" "1" "@brand"
+   * "REDUCE" "COUNT_DISTINCT" "1" "@title" "AS" "count_distinct(title)"
+   * "REDUCE" "COUNT" "0"
+   * "SORTBY" "2" "@count_distinct(title)" "DESC"
+   * "LIMIT" "0" "5"
    * </pre>
    */
   @Test
@@ -292,13 +295,13 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
   /**
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*"
-   *   "GROUPBY" "1" "@brand"
-   *   "REDUCE" "QUANTILE" "2" "price" "0.5" "AS" "q50"
-   *   "REDUCE" "QUANTILE" "2" "price" "0.9" "AS" "q90"
-   *   "REDUCE" "QUANTILE" "2" "price" "0.95" "AS" "q95"
-   *   "REDUCE" "AVG" "1" "price" "AS" "avg"
-   *   "REDUCE" "COUNT" "0" "AS" "rowcount"
-   *   "SORTBY" "2" "@rowcount" "DESC" "MAX" "1"
+   * "GROUPBY" "1" "@brand"
+   * "REDUCE" "QUANTILE" "2" "price" "0.5" "AS" "q50"
+   * "REDUCE" "QUANTILE" "2" "price" "0.9" "AS" "q90"
+   * "REDUCE" "QUANTILE" "2" "price" "0.95" "AS" "q95"
+   * "REDUCE" "AVG" "1" "price" "AS" "avg"
+   * "REDUCE" "COUNT" "0" "AS" "rowcount"
+   * "SORTBY" "2" "@rowcount" "DESC" "MAX" "1"
    * </pre>
    */
   @Test
@@ -329,13 +332,13 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
   /**
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*"
-   *   "GROUPBY" "1" "@brand"
-   *   "REDUCE" "STDDEV" "1" "@price" "AS" "stddev(price)"
-   *   "REDUCE" "AVG" "1" "@price" "AS" "avgPrice"
-   *   "REDUCE" "QUANTILE" "2" "@price" "0.5" "AS" "q50Price"
-   *   "REDUCE" "COUNT" "0" "AS" "rowcount"
-   *   "SORTBY" "2" "@rowcount" "DESC"
-   *   "LIMIT" "0" "10"
+   * "GROUPBY" "1" "@brand"
+   * "REDUCE" "STDDEV" "1" "@price" "AS" "stddev(price)"
+   * "REDUCE" "AVG" "1" "@price" "AS" "avgPrice"
+   * "REDUCE" "QUANTILE" "2" "@price" "0.5" "AS" "q50Price"
+   * "REDUCE" "COUNT" "0" "AS" "rowcount"
+   * "SORTBY" "2" "@rowcount" "DESC"
+   * "LIMIT" "0" "10"
    * </pre>
    */
   @Test
@@ -378,11 +381,11 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
   /**
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*"
-   *   "GROUPBY" "1" "@brand"
-   *   "REDUCE" "COUNT" "0" "AS" "count"
-   *   "APPLY" "timefmt(1517417144)" "AS" "dt"
-   *   "APPLY" "parsetime(@dt, \"%FT%TZ\")" "AS" "parsed_dt"
-   *   "LIMIT" "0" "1"
+   * "GROUPBY" "1" "@brand"
+   * "REDUCE" "COUNT" "0" "AS" "count"
+   * "APPLY" "timefmt(1517417144)" "AS" "dt"
+   * "APPLY" "parsetime(@dt, \"%FT%TZ\")" "AS" "parsed_dt"
+   * "LIMIT" "0" "1"
    * </pre>
    */
   @Test
@@ -407,10 +410,10 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
   /**
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*"
-   *   "GROUPBY" "1" "@brand"
-   *   "REDUCE" "COUNT" "0" "AS" "num"
-   *   "REDUCE" "RANDOM_SAMPLE" "2" "price" "10" "AS" "sample"
-   *   "SORTBY" "2" "@num" "DESC" "MAX" "10"
+   * "GROUPBY" "1" "@brand"
+   * "REDUCE" "COUNT" "0" "AS" "num"
+   * "REDUCE" "RANDOM_SAMPLE" "2" "price" "10" "AS" "sample"
+   * "SORTBY" "2" "@num" "DESC" "MAX" "10"
    * </pre>
    */
   @Test
@@ -429,17 +432,17 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
   /**
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*"
-   *   "APPLY" "1517417144" "AS" "dt"
-   *   "APPLY" "timefmt(@dt)" "AS" "timefmt"
-   *   "APPLY" "day(@dt)" "AS" "day"
-   *   "APPLY" "hour(@dt)" "AS" "hour"
-   *   "APPLY" "minute(@dt)" "AS" "minute"
-   *   "APPLY" "month(@dt)" "AS" "month"
-   *   "APPLY" "dayofweek(@dt)" "AS" "dayofweek"
-   *   "APPLY" "dayofmonth(@dt)" "AS" "dayofmonth"
-   *   "APPLY" "dayofyear(@dt)" "AS" "dayofyear"
-   *   "APPLY" "year(@dt)" "AS" "year"
-   *   "LIMIT" "0" "1"
+   * "APPLY" "1517417144" "AS" "dt"
+   * "APPLY" "timefmt(@dt)" "AS" "timefmt"
+   * "APPLY" "day(@dt)" "AS" "day"
+   * "APPLY" "hour(@dt)" "AS" "hour"
+   * "APPLY" "minute(@dt)" "AS" "minute"
+   * "APPLY" "month(@dt)" "AS" "month"
+   * "APPLY" "dayofweek(@dt)" "AS" "dayofweek"
+   * "APPLY" "dayofmonth(@dt)" "AS" "dayofmonth"
+   * "APPLY" "dayofyear(@dt)" "AS" "dayofyear"
+   * "APPLY" "year(@dt)" "AS" "year"
+   * "LIMIT" "0" "1"
    * </pre>
    */
   @Test
@@ -447,8 +450,7 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
     Decuple<Long, String, Long, Long, Long, Long, Long, Long, Long, Long> expected = Tuples.of(1517417144L,
         "2018-01-31T16:45:44Z", 1517356800L, 1517414400L, 1517417100L, 1514764800L, 3L, 31L, 30L, 2018L);
 
-    List<Decuple<Long, String, Long, Long, Long, Long, Long, Long, Long, Long>> parseTime = entityStream.of(
-            Game.class) //
+    List<Decuple<Long, String, Long, Long, Long, Long, Long, Long, Long, Long>> parseTime = entityStream.of(Game.class) //
         .apply("1517417144", "dt") //
         .apply("timefmt(@dt)", "timefmt") //
         .apply("day(@dt)", "day") //
@@ -479,10 +481,10 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
   /**
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*"
-   *   "GROUPBY" "1" "@brand"
-   *   "REDUCE" "COUNT" "0" "AS" "num"
-   *   "REDUCE" "RANDOM_SAMPLE" "2" "@price" "10" "AS" "sample"
-   *   "SORTBY" "2" "@num" "DESC" "MAX" "10"
+   * "GROUPBY" "1" "@brand"
+   * "REDUCE" "COUNT" "0" "AS" "num"
+   * "REDUCE" "RANDOM_SAMPLE" "2" "@price" "10" "AS" "sample"
+   * "SORTBY" "2" "@num" "DESC" "MAX" "10"
    * </pre>
    */
   @Test
@@ -518,11 +520,11 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
   /**
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*"
-   *   "GROUPBY" "1" "@brand"
-   *   "REDUCE" "COUNT" "0" "AS" "count"
-   *   "REDUCE" "SUM" "1" "@price" "AS" "sum(price)"
-   *   "SORTBY" "2" "@sum(price)" "DESC"
-   *   "LIMIT" "0" "5"
+   * "GROUPBY" "1" "@brand"
+   * "REDUCE" "COUNT" "0" "AS" "count"
+   * "REDUCE" "SUM" "1" "@price" "AS" "sum(price)"
+   * "SORTBY" "2" "@sum(price)" "DESC"
+   * "LIMIT" "0" "5"
    * </pre>
    */
   @Test
@@ -556,10 +558,10 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
   /**
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*"
-   *   "GROUPBY" "1" "@brand"
-   *   "REDUCE" "COUNT" "0" "AS" "count"
-   *   "FILTER" "@count < 5"
-   *   "FILTER" "@count > 2 && @brand != \"\""
+   * "GROUPBY" "1" "@brand"
+   * "REDUCE" "COUNT" "0" "AS" "count"
+   * "FILTER" "@count < 5"
+   * "FILTER" "@count > 2 && @brand != \"\""
    * </pre>
    */
   @Test
@@ -579,10 +581,10 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
   /**
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*"
-   *   "GROUPBY" "1" "@brand"
-   *   "REDUCE" "COUNT" "0" "AS" "count"
-   *   "FILTER" "@count < 5"
-   *   "FILTER" "@count > 2 && @brand != \"\""
+   * "GROUPBY" "1" "@brand"
+   * "REDUCE" "COUNT" "0" "AS" "count"
+   * "FILTER" "@count < 5"
+   * "FILTER" "@count > 2 && @brand != \"\""
    * </pre>
    */
   @Test
@@ -609,11 +611,11 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
   /**
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*"
-   *   "GROUPBY" "1" "@brand"
-   *   "REDUCE" "COUNT_DISTINCT" "1" "@price" "AS" "count"
-   *   "REDUCE" "TOLIST" "1" "@price" "AS" "prices"
-   *   "SORTBY" "2" "@count" "DESC"
-   *   "LIMIT" "0" "5"
+   * "GROUPBY" "1" "@brand"
+   * "REDUCE" "COUNT_DISTINCT" "1" "@price" "AS" "count"
+   * "REDUCE" "TOLIST" "1" "@price" "AS" "prices"
+   * "SORTBY" "2" "@count" "DESC"
+   * "LIMIT" "0" "5"
    * </pre>
    */
   @Test
@@ -632,10 +634,10 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
   /**
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*"
-   *   "GROUPBY" "1" "@brand"
-   *   "REDUCE" "SUM" "1" "price" "AS" "price"
-   *   "APPLY" "(@price % 10)" "AS" "price"
-   *   "SORTBY" "4" "@price" "ASC" "@brand" "DESC" "MAX" "10"
+   * "GROUPBY" "1" "@brand"
+   * "REDUCE" "SUM" "1" "price" "AS" "price"
+   * "APPLY" "(@price % 10)" "AS" "price"
+   * "SORTBY" "4" "@price" "ASC" "@brand" "DESC" "MAX" "10"
    * </pre>
    */
   @Test
@@ -672,9 +674,9 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
   /**
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*"
-   *   "LOAD" "1" "@title"
-   *   "SORTBY" "2" "@price" "DESC"
-   *   "LIMIT" "0" "2"
+   * "LOAD" "1" "@title"
+   * "SORTBY" "2" "@price" "DESC"
+   * "LIMIT" "0" "2"
    * </pre>
    */
   @Test
@@ -702,9 +704,9 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
   /**
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*"
-   *   "LOAD" "3" "@brand" "@price" "@__key"
-   *   "SORTBY" "2" "@price" "DESC"
-   *   "MAX" "4"
+   * "LOAD" "3" "@brand" "@price" "@__key"
+   * "SORTBY" "2" "@price" "DESC"
+   * "MAX" "4"
    * </pre>
    */
   @Test
@@ -795,8 +797,8 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
         .sorted(Order.desc("@AdjustedSales_SUM")) //
         .toList(Integer.class, Double.class);
 
-    assertAll(() -> assertThat(departments).map(Pair::getFirst).containsExactly(1, 4, 3, 2),
-        () -> assertThat(departments).map(Pair::getSecond).containsExactly(1200000.0, 1120000.0, 600000.0, 245000.0));
+    assertAll(() -> assertThat(departments).map(Pair::getFirst).containsExactly(1, 4, 3, 2), () -> assertThat(
+        departments).map(Pair::getSecond).containsExactly(1200000.0, 1120000.0, 600000.0, 245000.0));
 
   }
 
@@ -889,8 +891,8 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
   void testCalculateTotalOrderQuantity() {
     var stream = entityStream.of(PizzaOrder.class);
     List<Pair<String, Integer>> totalOrderQuanties = stream //
-        .filter(PizzaOrder$.SIZE.eq("medium")).groupBy(PizzaOrder$.NAME)
-        .reduce(ReducerFunction.SUM, PizzaOrder$.QUANTITY).as("sum").toList(String.class, Integer.class);
+        .filter(PizzaOrder$.SIZE.eq("medium")).groupBy(PizzaOrder$.NAME).reduce(ReducerFunction.SUM,
+            PizzaOrder$.QUANTITY).as("sum").toList(String.class, Integer.class);
 
     assertAll(() -> assertThat(totalOrderQuanties).map(Pair::getFirst).containsExactly("Pepperoni", "Cheese", "Vegan"),
         () -> assertThat(totalOrderQuanties).map(Pair::getSecond).containsExactly(20, 50, 10));
@@ -937,10 +939,10 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
         .sorted(Order.desc("@totalOrderValue")) //
         .toList(String.class, Double.class, Integer.class);
 
-    assertAll(() -> assertThat(totalOrderQuanties).map(Triple::getFirst)
-            .containsExactly("2022-01-12", "2021-03-13", "2021-03-17", "2021-01-13"),
-        () -> assertThat(totalOrderQuanties).map(Triple::getSecond).containsExactly(790.0, 770.0, 630.0, 350.0),
-        () -> assertThat(totalOrderQuanties).map(Triple::getThird).containsExactly(30, 15, 30, 10));
+    assertAll(() -> assertThat(totalOrderQuanties).map(Triple::getFirst).containsExactly("2022-01-12", "2021-03-13",
+        "2021-03-17", "2021-01-13"), () -> assertThat(totalOrderQuanties).map(Triple::getSecond).containsExactly(790.0,
+            770.0, 630.0, 350.0), () -> assertThat(totalOrderQuanties).map(Triple::getThird).containsExactly(30, 15, 30,
+                10));
   }
 
   /**
@@ -948,19 +950,17 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
    */
   @Test
   void testSearchBetweenDates() {
-    List<Single<Integer>> byCreated = entityStream.of(PizzaOrder.class).filter(
-            PizzaOrder$.CREATED.between(LocalDateTime.parse("2021-03-13T00:00:00.000000"),
-                LocalDateTime.parse("2021-03-13T00:00:00.000000"))).load(PizzaOrder$.ID).sorted(PizzaOrder$.ID.asc())
-        .toList(Integer.class);
+    List<Single<Integer>> byCreated = entityStream.of(PizzaOrder.class).filter(PizzaOrder$.CREATED.between(LocalDateTime
+        .parse("2021-03-13T00:00:00.000000"), LocalDateTime.parse("2021-03-13T00:00:00.000000"))).load(PizzaOrder$.ID)
+        .sorted(PizzaOrder$.ID.asc()).toList(Integer.class);
 
-    List<Single<Integer>> byDate = entityStream.of(PizzaOrder.class).filter(
-            PizzaOrder$.DATE.between(Instant.parse("2021-01-12T05:08:13Z"), Instant.parse("2021-03-30T00:00:00.00Z")))
-        .load(PizzaOrder$.ID).sorted(PizzaOrder$.ID.asc()).toList(Integer.class);
+    List<Single<Integer>> byDate = entityStream.of(PizzaOrder.class).filter(PizzaOrder$.DATE.between(Instant.parse(
+        "2021-01-12T05:08:13Z"), Instant.parse("2021-03-30T00:00:00.00Z"))).load(PizzaOrder$.ID).sorted(PizzaOrder$.ID
+            .asc()).toList(Integer.class);
 
-    assertAll(() -> assertEquals(7, byCreated.size()),
-        () -> assertThat(byCreated).map(Single::getFirst).containsAll(List.of(0, 1, 2, 3, 4, 5, 6)),
-        () -> assertEquals(6, byDate.size()),
-        () -> assertThat(byDate).map(Single::getFirst).containsAll(List.of(0, 1, 2, 3, 6, 7)));
+    assertAll(() -> assertEquals(7, byCreated.size()), () -> assertThat(byCreated).map(Single::getFirst).containsAll(
+        List.of(0, 1, 2, 3, 4, 5, 6)), () -> assertEquals(6, byDate.size()), () -> assertThat(byDate).map(
+            Single::getFirst).containsAll(List.of(0, 1, 2, 3, 6, 7)));
   }
 
   @Test

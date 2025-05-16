@@ -1,6 +1,7 @@
 package com.redis.om.spring.repository.query.clause;
 
 import org.springframework.data.repository.query.parser.Part;
+
 import redis.clients.jedis.search.Schema;
 import redis.clients.jedis.search.Schema.FieldType;
 
@@ -43,4 +44,3 @@ public class QueryClauseTemplate {
     return this.numberOfArguments;
   }
 }
-

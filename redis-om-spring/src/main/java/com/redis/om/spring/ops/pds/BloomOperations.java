@@ -1,9 +1,9 @@
 package com.redis.om.spring.ops.pds;
 
-import redis.clients.jedis.bloom.BFInsertParams;
-
 import java.util.List;
 import java.util.Map;
+
+import redis.clients.jedis.bloom.BFInsertParams;
 
 public interface BloomOperations<K> {
   /**
@@ -42,9 +42,9 @@ public interface BloomOperations<K> {
    * @param name   Name of the filter
    * @param values values to add to the filter.
    * @return An array of booleans of the same length as the number of values.
-   * Each boolean values indicates whether the corresponding element was previously in the
-   * filter or not. A true value means the item did not previously exist, whereas a
-   * false value means it may have previously existed.
+   *         Each boolean values indicates whether the corresponding element was previously in the
+   *         filter or not. A true value means the item did not previously exist, whereas a
+   *         false value means it may have previously existed.
    */
   List<Boolean> addMulti(K name, String... values);
 

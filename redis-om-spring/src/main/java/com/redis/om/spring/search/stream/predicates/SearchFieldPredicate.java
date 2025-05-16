@@ -1,11 +1,11 @@
 package com.redis.om.spring.search.stream.predicates;
 
-import redis.clients.jedis.search.Schema.FieldType;
-import redis.clients.jedis.search.querybuilder.Node;
-
 import java.lang.reflect.Field;
 import java.util.Objects;
 import java.util.function.Predicate;
+
+import redis.clients.jedis.search.Schema.FieldType;
+import redis.clients.jedis.search.querybuilder.Node;
 
 public interface SearchFieldPredicate<E, T> extends Predicate<T> {
   FieldType getSearchFieldType();
@@ -14,7 +14,9 @@ public interface SearchFieldPredicate<E, T> extends Predicate<T> {
 
   String getSearchAlias();
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   @Override
   default Predicate<T> or(Predicate<? super T> other) {
     Objects.requireNonNull(other);
@@ -24,7 +26,9 @@ public interface SearchFieldPredicate<E, T> extends Predicate<T> {
     return orPredicate;
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   @Override
   default Predicate<T> and(Predicate<? super T> other) {
     Objects.requireNonNull(other);

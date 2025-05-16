@@ -1,5 +1,16 @@
 package com.redis.om.spring.annotations.document;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.fixtures.document.model.ExpiringPerson;
 import com.redis.om.spring.fixtures.document.model.ExpiringPersonDifferentTimeUnit;
@@ -7,18 +18,10 @@ import com.redis.om.spring.fixtures.document.model.ExpiringPersonWithDefault;
 import com.redis.om.spring.fixtures.document.repository.ExpiringPersonDifferentTimeUnitRepository;
 import com.redis.om.spring.fixtures.document.repository.ExpiringPersonRepository;
 import com.redis.om.spring.fixtures.document.repository.ExpiringPersonWithDefaultRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
-@SuppressWarnings("SpellCheckingInspection")
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class DocumentTTLTests extends AbstractBaseDocumentTest {
   private final CountDownLatch waiter = new CountDownLatch(1);
   @Autowired

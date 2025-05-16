@@ -1,15 +1,16 @@
 package com.redis.om.spring.search.stream;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.fixtures.document.model.Doc;
-import com.redis.om.spring.fixtures.document.repository.DocRepository;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.util.stream.Collectors;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.fixtures.document.model.Doc;
+import com.redis.om.spring.fixtures.document.repository.DocRepository;
 
 class DialectSwitchTest extends AbstractBaseDocumentTest {
   @Autowired
@@ -41,8 +42,8 @@ class DialectSwitchTest extends AbstractBaseDocumentTest {
         .collect(Collectors.toList());
 
     assertAll( //
-        () -> assertThat(dialectOne).containsExactly(goodbyeMoon),
-        () -> assertThat(dialectTwo).containsExactly(helloWorld, goodbyeMoon));
+        () -> assertThat(dialectOne).containsExactly(goodbyeMoon), () -> assertThat(dialectTwo).containsExactly(
+            helloWorld, goodbyeMoon));
   }
 
   /**
@@ -71,8 +72,8 @@ class DialectSwitchTest extends AbstractBaseDocumentTest {
         .collect(Collectors.toList());
 
     assertAll( //
-        () -> assertThat(dialectOne).containsExactly(hello, world),
-        () -> assertThat(dialectTwo).containsExactly(world));
+        () -> assertThat(dialectOne).containsExactly(hello, world), () -> assertThat(dialectTwo).containsExactly(
+            world));
   }
 
 }

@@ -1,13 +1,14 @@
 package com.redis.om.spring.tuple.impl;
 
-import com.redis.om.spring.tuple.GenericTuple;
-import org.apache.commons.lang3.StringUtils;
+import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 
 import java.util.*;
 import java.util.stream.Stream;
 
-import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.joining;
+import org.apache.commons.lang3.StringUtils;
+
+import com.redis.om.spring.tuple.GenericTuple;
 
 public abstract class BasicAbstractTuple<T extends GenericTuple<R>, R> implements GenericTuple<R> {
 

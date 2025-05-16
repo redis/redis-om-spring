@@ -1,12 +1,13 @@
 package com.redis.om.spring.search.stream.actions;
 
-import com.redis.om.spring.metamodel.SearchFieldAccessor;
-import com.redis.om.spring.util.ObjectUtils;
-import redis.clients.jedis.json.Path2;
-
 import java.lang.reflect.Field;
 import java.util.Optional;
 import java.util.function.Function;
+
+import com.redis.om.spring.metamodel.SearchFieldAccessor;
+import com.redis.om.spring.util.ObjectUtils;
+
+import redis.clients.jedis.json.Path2;
 
 public class ArrayPopAction<E, R> extends BaseAbstractAction implements Function<E, R> {
 
@@ -17,7 +18,9 @@ public class ArrayPopAction<E, R> extends BaseAbstractAction implements Function
     this.index = index;
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   @Override
   public R apply(E entity) {
     Field f = field.getField();

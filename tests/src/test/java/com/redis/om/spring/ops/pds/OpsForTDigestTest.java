@@ -1,17 +1,19 @@
 package com.redis.om.spring.ops.pds;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import redis.clients.jedis.exceptions.JedisDataException;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.ops.RedisModulesOperations;
+
+import redis.clients.jedis.exceptions.JedisDataException;
 
 class OpsForTDigestTest extends AbstractBaseDocumentTest {
   @Autowired
@@ -104,18 +106,18 @@ class OpsForTDigestTest extends AbstractBaseDocumentTest {
   void testInfo() {
     // Create a T-Digest sketch with custom compression
     tdigest.create("tdigestInfoTest", 100);
-    
+
     // Add some values
     tdigest.add("tdigestInfoTest", 1.0, 2.0, 3.0);
-    
+
     // Get info
     Map<String, Object> info = tdigest.info("tdigestInfoTest");
-    
+
     // Verify info contains expected keys
     assertNotNull(info);
     assertFalse(info.isEmpty());
     assertEquals(100L, info.get("Compression"));
-    
+
     // Clean up after the test
     template.delete("tdigestInfoTest");
   }
@@ -123,9 +125,8 @@ class OpsForTDigestTest extends AbstractBaseDocumentTest {
   @Test
   void testNonExistingKey() {
     // Attempt to get info for a non-existing key
-    JedisDataException exception = assertThrows(JedisDataException.class, 
-        () -> tdigest.info("nonExistingKey"));
-    
+    JedisDataException exception = assertThrows(JedisDataException.class, () -> tdigest.info("nonExistingKey"));
+
     // Verify error message
     assertEquals("ERR T-Digest: key does not exist", exception.getMessage());
   }
@@ -134,20 +135,20 @@ class OpsForTDigestTest extends AbstractBaseDocumentTest {
   void testReset() {
     // Create a T-Digest sketch
     tdigest.create("tdigestResetTest");
-    
+
     // Add some values
     tdigest.add("tdigestResetTest", 1.0, 2.0, 3.0);
-    
+
     // Reset the sketch
     String result = tdigest.reset("tdigestResetTest");
     assertEquals("OK", result);
-    
+
     // Verify sketch is empty
     Map<String, Object> info = tdigest.info("tdigestResetTest");
     assertEquals(0L, info.get("Merged nodes"));
     assertEquals(0L, info.get("Unmerged nodes"));
-    
+
     // Clean up after the test
     template.delete("tdigestResetTest");
   }
-} 
+}

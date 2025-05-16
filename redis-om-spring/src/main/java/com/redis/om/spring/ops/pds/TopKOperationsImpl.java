@@ -1,9 +1,9 @@
 package com.redis.om.spring.ops.pds;
 
-import com.redis.om.spring.client.RedisModulesClient;
-
 import java.util.List;
 import java.util.Map;
+
+import com.redis.om.spring.client.RedisModulesClient;
 
 public class TopKOperationsImpl<K> implements TopKOperations<K> {
   final RedisModulesClient client;

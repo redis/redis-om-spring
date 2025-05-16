@@ -1,7 +1,9 @@
 package com.redis.om.spring.client;
 
-import com.google.gson.GsonBuilder;
-import com.redis.om.spring.RedisOMProperties;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.data.redis.connection.RedisNode;
@@ -10,18 +12,18 @@ import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.lang.Nullable;
 import org.springframework.util.ObjectUtils;
+
+import com.google.gson.GsonBuilder;
+import com.redis.om.spring.RedisOMProperties;
+
 import redis.clients.jedis.*;
 import redis.clients.jedis.bloom.commands.BloomFilterCommands;
 import redis.clients.jedis.bloom.commands.CountMinSketchCommands;
 import redis.clients.jedis.bloom.commands.CuckooFilterCommands;
+import redis.clients.jedis.bloom.commands.TDigestSketchCommands;
 import redis.clients.jedis.bloom.commands.TopKFilterCommands;
 import redis.clients.jedis.json.commands.RedisJsonCommands;
 import redis.clients.jedis.search.RediSearchCommands;
-import redis.clients.jedis.bloom.commands.TDigestSketchCommands;
-
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class RedisModulesClient {
   private static final Log logger = LogFactory.getLog(RedisModulesClient.class);
@@ -62,7 +64,7 @@ public class RedisModulesClient {
   public TopKFilterCommands clientForTopK() {
     return unifiedJedis;
   }
-  
+
   public TDigestSketchCommands clientForTDigest() {
     return unifiedJedis;
   }
@@ -77,8 +79,8 @@ public class RedisModulesClient {
       //
       var masterNode = sentinelConfiguration.getMaster();
       var master = masterNode != null ? masterNode.getName() : "mymaster";
-      var sentinels = sentinelConfiguration.getSentinels().stream().map(RedisModulesClient::apply)
-          .collect(Collectors.toSet());
+      var sentinels = sentinelConfiguration.getSentinels().stream().map(RedisModulesClient::apply).collect(Collectors
+          .toSet());
       var password = sentinelConfiguration.getPassword();
       var sentinelPassword = sentinelConfiguration.getSentinelPassword();
       var username = sentinelConfiguration.getUsername();
@@ -140,8 +142,8 @@ public class RedisModulesClient {
     jedisConfigBuilder.socketTimeoutMillis(Math.toIntExact(clientConfiguration.getReadTimeout().toMillis()));
     jedisConfigBuilder.database(database);
 
-    jedisConfigBuilder.clientSetInfoConfig(
-        ClientSetInfoConfig.withLibNameSuffix("redis-om-spring_v" + RedisOMProperties.ROMS_VERSION));
+    jedisConfigBuilder.clientSetInfoConfig(ClientSetInfoConfig.withLibNameSuffix(
+        "redis-om-spring_v" + RedisOMProperties.ROMS_VERSION));
 
     if (!ObjectUtils.isEmpty(username)) {
       jedisConfigBuilder.user(username);

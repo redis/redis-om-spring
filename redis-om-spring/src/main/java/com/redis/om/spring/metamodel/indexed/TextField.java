@@ -1,14 +1,14 @@
 package com.redis.om.spring.metamodel.indexed;
 
+import java.util.Arrays;
+import java.util.function.Consumer;
+import java.util.function.ToLongFunction;
+
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.actions.StrLengthAction;
 import com.redis.om.spring.search.stream.actions.StringAppendAction;
 import com.redis.om.spring.search.stream.predicates.fulltext.*;
-
-import java.util.Arrays;
-import java.util.function.Consumer;
-import java.util.function.ToLongFunction;
 
 public class TextField<E, T> extends MetamodelField<E, T> {
 
@@ -52,7 +52,9 @@ public class TextField<E, T> extends MetamodelField<E, T> {
     return new NotContainingPredicate<>(searchFieldAccessor, value);
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   public InPredicate<E, ?> in(T... values) {
     return new InPredicate<>(searchFieldAccessor, Arrays.asList(values));
   }

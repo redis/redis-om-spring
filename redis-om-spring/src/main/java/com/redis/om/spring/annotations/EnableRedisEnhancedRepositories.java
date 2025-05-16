@@ -1,8 +1,7 @@
 package com.redis.om.spring.annotations;
 
-import com.redis.om.spring.repository.configuration.RedisEnhancedRepositoriesRegistrar;
-import com.redis.om.spring.repository.query.RedisEnhancedQuery;
-import com.redis.om.spring.repository.support.RedisEnhancedRepositoryFactoryBean;
+import java.lang.annotation.*;
+
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Import;
@@ -21,14 +20,24 @@ import org.springframework.data.repository.config.DefaultRepositoryBaseClass;
 import org.springframework.data.repository.query.QueryLookupStrategy;
 import org.springframework.data.repository.query.QueryLookupStrategy.Key;
 
-import java.lang.annotation.*;
+import com.redis.om.spring.repository.configuration.RedisEnhancedRepositoriesRegistrar;
+import com.redis.om.spring.repository.query.RedisEnhancedQuery;
+import com.redis.om.spring.repository.support.RedisEnhancedRepositoryFactoryBean;
 
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
+@Target(
+  ElementType.TYPE
+)
+@Retention(
+  RetentionPolicy.RUNTIME
+)
 @Documented
 @Inherited
-@Import(RedisEnhancedRepositoriesRegistrar.class)
-@QueryCreatorType(value = RedisQueryCreator.class, repositoryQueryType = RedisEnhancedQuery.class)
+@Import(
+  RedisEnhancedRepositoriesRegistrar.class
+)
+@QueryCreatorType(
+    value = RedisQueryCreator.class, repositoryQueryType = RedisEnhancedQuery.class
+)
 public @interface EnableRedisEnhancedRepositories {
 
   /**
@@ -38,7 +47,10 @@ public @interface EnableRedisEnhancedRepositories {
    *
    * @return basePackages
    */
-  @AliasFor("basePackages") String[] value() default {};
+  @AliasFor(
+    "basePackages"
+  )
+  String[] value() default {};
 
   /**
    * Base packages to scan for annotated components. {@link #value()} is an alias for (and mutually exclusive with) this
@@ -46,7 +58,10 @@ public @interface EnableRedisEnhancedRepositories {
    *
    * @return basePackages as a String
    */
-  @AliasFor("value") String[] basePackages() default {};
+  @AliasFor(
+    "value"
+  )
+  String[] basePackages() default {};
 
   /**
    * Type-safe alternative to {@link #basePackages()} for specifying the packages to scan for annotated components. The

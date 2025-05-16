@@ -1,5 +1,16 @@
 package com.redis.om.spring.annotations.document;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.google.gson.Gson;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.fixtures.document.model.MultiLingualDoc;
@@ -7,20 +18,13 @@ import com.redis.om.spring.fixtures.document.model.SpanishDoc;
 import com.redis.om.spring.fixtures.document.repository.MultiLingualDocRepository;
 import com.redis.om.spring.fixtures.document.repository.SpanishDocRepository;
 import com.redis.om.spring.repository.query.SearchLanguage;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.util.SafeEncoder;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-
-@SuppressWarnings("SpellCheckingInspection")
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class DocumentLanguageTest extends AbstractBaseDocumentTest {
   private static final String QUIJOTE = //
       "En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo " + //
@@ -55,8 +59,8 @@ class DocumentLanguageTest extends AbstractBaseDocumentTest {
     SpanishDoc soledad = SpanishDoc.of("Cien Años de Soledad", SOLEDAD);
     spanishDocRepository.saveAll(List.of(quijote, soledad));
 
-    MULTILINGUAL_SENTENCES.forEach(
-        (language, sentence) -> multiLingualDocRepository.save(MultiLingualDoc.of(language.getValue(), sentence)));
+    MULTILINGUAL_SENTENCES.forEach((language, sentence) -> multiLingualDocRepository.save(MultiLingualDoc.of(language
+        .getValue(), sentence)));
   }
 
   @Test

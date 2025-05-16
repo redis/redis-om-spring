@@ -1,14 +1,16 @@
 package com.redis.om.spring.serialization.gson;
 
-import com.google.gson.*;
-
 import java.lang.reflect.Type;
+
+import com.google.gson.*;
 
 public class EnumTypeAdapter<T extends Enum<?>> implements JsonSerializer<T>, JsonDeserializer<T> {
 
   private final T[] values;
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   public EnumTypeAdapter(Class<?> enumType) {
     this.values = (T[]) enumType.getEnumConstants();
   }

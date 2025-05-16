@@ -1,19 +1,25 @@
 package com.redis.om.spring.fixtures.document.model;
 
+import org.springframework.ai.openai.api.OpenAiApi.EmbeddingModel;
+import org.springframework.data.annotation.Id;
+
 import com.redis.om.spring.annotations.*;
 import com.redis.om.spring.indexing.DistanceMetric;
 import com.redis.om.spring.indexing.VectorType;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.springframework.ai.openai.api.OpenAiApi.EmbeddingModel;
-import org.springframework.data.annotation.Id;
 import redis.clients.jedis.search.schemafields.VectorField.VectorAlgorithm;
 
 @Data
-@RequiredArgsConstructor(staticName = "of")
-@NoArgsConstructor(force = true)
+@RequiredArgsConstructor(
+    staticName = "of"
+)
+@NoArgsConstructor(
+    force = true
+)
 @Document
 public class DocWithCustomModelOpenAIEmbedding {
   @Id
@@ -23,21 +29,23 @@ public class DocWithCustomModelOpenAIEmbedding {
   @NonNull
   private String name;
 
-  @Indexed( //
-            schemaFieldType = SchemaFieldType.VECTOR, //
-            algorithm = VectorAlgorithm.HNSW, //
-            type = VectorType.FLOAT32, //
-            dimension = 3072, //
-            distanceMetric = DistanceMetric.COSINE, //
-            initialCapacity = 10
+  @Indexed(
+      //
+      schemaFieldType = SchemaFieldType.VECTOR, //
+      algorithm = VectorAlgorithm.HNSW, //
+      type = VectorType.FLOAT32, //
+      dimension = 3072, //
+      distanceMetric = DistanceMetric.COSINE, //
+      initialCapacity = 10
   )
   private float[] textEmbedding;
 
-  @Vectorize( //
-              destination = "textEmbedding", //
-              embeddingType = EmbeddingType.SENTENCE, //
-              provider = EmbeddingProvider.OPENAI, //
-              openAiEmbeddingModel = EmbeddingModel.TEXT_EMBEDDING_3_LARGE
+  @Vectorize(
+      //
+      destination = "textEmbedding", //
+      embeddingType = EmbeddingType.SENTENCE, //
+      provider = EmbeddingProvider.OPENAI, //
+      openAiEmbeddingModel = EmbeddingModel.TEXT_EMBEDDING_3_LARGE
   )
   @NonNull
   private String text;

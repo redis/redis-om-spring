@@ -1,18 +1,16 @@
 package com.redis.om.spring.repository.query;
 
-import com.github.f4b6a3.ulid.Ulid;
-import com.redis.om.spring.RedisOMProperties;
-import com.redis.om.spring.annotations.*;
-import com.redis.om.spring.convert.MappingRedisOMConverter;
-import com.redis.om.spring.indexing.RediSearchIndexer;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.ops.search.SearchOperations;
-import com.redis.om.spring.repository.query.autocomplete.AutoCompleteQueryExecutor;
-import com.redis.om.spring.repository.query.bloom.BloomQueryExecutor;
-import com.redis.om.spring.repository.query.clause.QueryClause;
-import com.redis.om.spring.repository.query.countmin.CountMinQueryExecutor;
-import com.redis.om.spring.repository.query.cuckoo.CuckooQueryExecutor;
-import com.redis.om.spring.util.ObjectUtils;
+import java.lang.reflect.Field;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.Map.Entry;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -34,23 +32,27 @@ import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.data.util.Pair;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
+
+import com.github.f4b6a3.ulid.Ulid;
+import com.redis.om.spring.RedisOMProperties;
+import com.redis.om.spring.annotations.*;
+import com.redis.om.spring.convert.MappingRedisOMConverter;
+import com.redis.om.spring.indexing.RediSearchIndexer;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.search.SearchOperations;
+import com.redis.om.spring.repository.query.autocomplete.AutoCompleteQueryExecutor;
+import com.redis.om.spring.repository.query.bloom.BloomQueryExecutor;
+import com.redis.om.spring.repository.query.clause.QueryClause;
+import com.redis.om.spring.repository.query.countmin.CountMinQueryExecutor;
+import com.redis.om.spring.repository.query.cuckoo.CuckooQueryExecutor;
+import com.redis.om.spring.util.ObjectUtils;
+
 import redis.clients.jedis.search.FieldName;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.Schema.FieldType;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.*;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
-
-import java.lang.reflect.Field;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.AbstractMap.SimpleEntry;
-import java.util.Map.Entry;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 public class RedisEnhancedQuery implements RepositoryQuery {
 
@@ -94,16 +96,17 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   private boolean isNullParamQuery;
   private Dialect dialect = Dialect.ONE;
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   public RedisEnhancedQuery(QueryMethod queryMethod, //
-                            RepositoryMetadata metadata, //
-                            RediSearchIndexer indexer, //
-                            QueryMethodEvaluationContextProvider evaluationContextProvider, //
-                            KeyValueOperations keyValueOperations, //
-                            RedisOperations<?, ?> redisOperations, //
-                            RedisModulesOperations<?> rmo, //
-                            Class<? extends AbstractQueryCreator<?, ?>> queryCreator,
-                            RedisOMProperties redisOMProperties) {
+      RepositoryMetadata metadata, //
+      RediSearchIndexer indexer, //
+      QueryMethodEvaluationContextProvider evaluationContextProvider, //
+      KeyValueOperations keyValueOperations, //
+      RedisOperations<?, ?> redisOperations, //
+      RedisModulesOperations<?> rmo, //
+      Class<? extends AbstractQueryCreator<?, ?>> queryCreator, RedisOMProperties redisOMProperties) {
     logger.info(String.format("Creating query %s", queryMethod.getName()));
 
     this.keyValueOperations = keyValueOperations;
@@ -121,8 +124,9 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     autoCompleteQueryExecutor = new AutoCompleteQueryExecutor(this, modulesOperations);
 
     Class<?> repoClass = metadata.getRepositoryInterface();
-    @SuppressWarnings("rawtypes") Class[] params = queryMethod.getParameters().stream().map(Parameter::getType)
-        .toArray(Class[]::new);
+    @SuppressWarnings(
+      "rawtypes"
+    ) Class[] params = queryMethod.getParameters().stream().map(Parameter::getType).toArray(Class[]::new);
     hasLanguageParameter = Arrays.stream(params).anyMatch(c -> c.isAssignableFrom(SearchLanguage.class));
     isANDQuery = QueryClause.hasContainingAllClause(queryMethod.getName());
 
@@ -153,10 +157,10 @@ public class RedisEnhancedQuery implements RepositoryQuery {
         Aggregation aggregation = method.getAnnotation(Aggregation.class);
         this.type = RediSearchQueryType.AGGREGATION;
         this.value = aggregation.value();
-        Arrays.stream(aggregation.load())
-            .forEach(load -> aggregationLoad.add(new SimpleEntry<>(load.property(), load.alias())));
-        Arrays.stream(aggregation.apply())
-            .forEach(apply -> aggregationApply.add(new SimpleEntry<>(apply.alias(), apply.expression())));
+        Arrays.stream(aggregation.load()).forEach(load -> aggregationLoad.add(new SimpleEntry<>(load.property(), load
+            .alias())));
+        Arrays.stream(aggregation.apply()).forEach(apply -> aggregationApply.add(new SimpleEntry<>(apply.alias(), apply
+            .expression())));
         this.aggregationFilter = aggregation.filter();
         this.aggregationTimeout = aggregation.timeout() > Long.MIN_VALUE ? aggregation.timeout() : null;
         this.aggregationVerbatim = aggregation.verbatim() ? true : null;
@@ -246,9 +250,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
         processPartTree(pt, nullParamNames, notNullParamNames);
       }
     } catch (NoSuchMethodException | SecurityException e) {
-      logger.debug(
-          String.format("Could not resolved query method %s(%s): %s", queryMethod.getName(), Arrays.toString(params),
-              e.getMessage()));
+      logger.debug(String.format("Could not resolved query method %s(%s): %s", queryMethod.getName(), Arrays.toString(
+          params), e.getMessage()));
     }
   }
 
@@ -324,14 +327,15 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       // Any Character class, Enums or Boolean -> Tag Search Field
       //
       if (CharSequence.class.isAssignableFrom(
-          fieldType) || (fieldType == Boolean.class) || (fieldType == UUID.class) || (fieldType == Ulid.class) || (fieldType.isEnum())) {
+          fieldType) || (fieldType == Boolean.class) || (fieldType == UUID.class) || (fieldType == Ulid.class) || (fieldType
+              .isEnum())) {
         qf.add(Pair.of(actualKey, QueryClause.get(FieldType.TAG, part.getType())));
       }
       //
       // Any Numeric class -> Numeric Search Field
       //
-      else if (Number.class.isAssignableFrom(
-          fieldType) || (fieldType == LocalDateTime.class) || (field.getType() == LocalDate.class) || (field.getType() == Date.class)) {
+      else if (Number.class.isAssignableFrom(fieldType) || (fieldType == LocalDateTime.class) || (field
+          .getType() == LocalDate.class) || (field.getType() == Date.class)) {
         qf.add(Pair.of(actualKey, QueryClause.get(FieldType.NUMERIC, part.getType())));
       }
       //
@@ -426,13 +430,13 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     ReturnedType returnedType = processor.getReturnedType();
 
     boolean isProjecting = returnedType.isProjecting() && returnedType.getReturnedType() != SearchResult.class;
-    boolean isOpenProjecting = Arrays.stream(returnedType.getReturnedType().getMethods())
-        .anyMatch(m -> m.isAnnotationPresent(Value.class));
+    boolean isOpenProjecting = Arrays.stream(returnedType.getReturnedType().getMethods()).anyMatch(m -> m
+        .isAnnotationPresent(Value.class));
     boolean canPerformQueryOptimization = isProjecting && !isOpenProjecting;
 
     if (canPerformQueryOptimization) {
-      query.returnFields(returnedType.getInputProperties().stream()
-          .map(inputProperty -> new FieldName("$." + inputProperty, inputProperty)).toArray(FieldName[]::new));
+      query.returnFields(returnedType.getInputProperties().stream().map(inputProperty -> new FieldName(
+          "$." + inputProperty, inputProperty)).toArray(FieldName[]::new));
     } else {
       query.returnFields(returnFields);
     }
@@ -460,8 +464,9 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
     if (needsLimit) {
       if ((limit != null && limit != Integer.MIN_VALUE) || (offset != null && offset != Integer.MIN_VALUE)) {
-        query.limit(offset != null ? offset : 0,
-            limit != null ? limit : redisOMProperties.getRepository().getQuery().getLimit());
+        query.limit(offset != null ? offset : 0, limit != null ?
+            limit :
+            redisOMProperties.getRepository().getQuery().getLimit());
       } else {
         query.limit(0, redisOMProperties.getRepository().getQuery().getLimit());
       }
@@ -502,9 +507,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     if (queryMethod.getReturnedObjectType() == SearchResult.class) {
       result = searchResult;
     } else if (queryMethod.isPageQuery()) {
-      List<Object> content = searchResult.getDocuments().stream()
-          .map(d -> ObjectUtils.documentToObject(d, queryMethod.getReturnedObjectType(), mappingConverter))
-          .collect(Collectors.toList());
+      List<Object> content = searchResult.getDocuments().stream().map(d -> ObjectUtils.documentToObject(d, queryMethod
+          .getReturnedObjectType(), mappingConverter)).collect(Collectors.toList());
 
       if (maybePageable.isPresent()) {
         Pageable pageable = maybePageable.get();
@@ -520,9 +524,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
         result = null;
       }
     } else if (queryMethod.isCollectionQuery()) {
-      result = searchResult.getDocuments().stream()
-          .map(d -> ObjectUtils.documentToObject(d, queryMethod.getReturnedObjectType(), mappingConverter))
-          .collect(Collectors.toList());
+      result = searchResult.getDocuments().stream().map(d -> ObjectUtils.documentToObject(d, queryMethod
+          .getReturnedObjectType(), mappingConverter)).collect(Collectors.toList());
     } else {
       result = null;
     }
@@ -537,9 +540,9 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     AggregationBuilder aggregation = new AggregationBuilder(baseQuery);
 
     // Load fields with IS_NULL or IS_NOT_NULL query clauses
-    String[] fields = Stream.concat(Stream.of("@__key"), queryOrParts.stream().flatMap(List::stream)
-        .filter(pair -> pair.getSecond() == QueryClause.IS_NULL || pair.getSecond() == QueryClause.IS_NOT_NULL)
-        .map(pair -> String.format("@%s", pair.getFirst()))).toArray(String[]::new);
+    String[] fields = Stream.concat(Stream.of("@__key"), queryOrParts.stream().flatMap(List::stream).filter(pair -> pair
+        .getSecond() == QueryClause.IS_NULL || pair.getSecond() == QueryClause.IS_NOT_NULL).map(pair -> String.format(
+            "@%s", pair.getFirst()))).toArray(String[]::new);
     aggregation.load(fields);
 
     // Apply exists or !exists filter for null parameters
@@ -590,7 +593,9 @@ public class RedisEnhancedQuery implements RepositoryQuery {
           List<Object> results = connection.closePipeline();
 
           for (Object result : results) {
-            @SuppressWarnings("unchecked") Map<byte[], byte[]> hashMap = (Map<byte[], byte[]>) result;
+            @SuppressWarnings(
+              "unchecked"
+            ) Map<byte[], byte[]> hashMap = (Map<byte[], byte[]>) result;
             Object entity = mappingConverter.read(returnType, new RedisData(hashMap));
             entities.add(entity);
           }
@@ -740,7 +745,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       preparedQuery.append(queryOrParts.stream().map(qop -> {
         String orPart = multipleOrParts ? "(" : "";
         orPart = orPart + qop.stream().map(fieldClauses -> {
-          if (excludeNullParams && (fieldClauses.getSecond() == QueryClause.IS_NULL || fieldClauses.getSecond() == QueryClause.IS_NOT_NULL)) {
+          if (excludeNullParams && (fieldClauses.getSecond() == QueryClause.IS_NULL || fieldClauses
+              .getSecond() == QueryClause.IS_NOT_NULL)) {
             return "";
           }
           String fieldName = QueryUtils.escape(fieldClauses.getFirst());
@@ -757,8 +763,9 @@ public class RedisEnhancedQuery implements RepositoryQuery {
         return orPart;
       }).collect(Collectors.joining(" | ")));
     } else {
-      @SuppressWarnings("unchecked") Iterator<Parameter> iterator = (Iterator<Parameter>) queryMethod.getParameters()
-          .iterator();
+      @SuppressWarnings(
+        "unchecked"
+      ) Iterator<Parameter> iterator = (Iterator<Parameter>) queryMethod.getParameters().iterator();
       int index = 0;
 
       if (value != null && !value.isBlank()) {
@@ -808,9 +815,9 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     AggregationBuilder aggregation = new AggregationBuilder(baseQuery);
 
     // Load fields with IS_NULL or IS_NOT_NULL query clauses
-    String[] fields = Stream.concat(Stream.of("@__key"), queryOrParts.stream().flatMap(List::stream)
-        .filter(pair -> pair.getSecond() == QueryClause.IS_NULL || pair.getSecond() == QueryClause.IS_NOT_NULL)
-        .map(pair -> String.format("@%s", pair.getFirst()))).toArray(String[]::new);
+    String[] fields = Stream.concat(Stream.of("@__key"), queryOrParts.stream().flatMap(List::stream).filter(pair -> pair
+        .getSecond() == QueryClause.IS_NULL || pair.getSecond() == QueryClause.IS_NOT_NULL).map(pair -> String.format(
+            "@%s", pair.getFirst()))).toArray(String[]::new);
 
     aggregation.load(fields);
 
@@ -880,8 +887,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     AggregationResult aggregationResult = ops.aggregate(aggregation);
 
     // extract the keys from the aggregation result
-    var ids = aggregationResult.getResults().stream().map(d -> d.get("__key").toString().split(":"))
-        .map(parts -> parts[parts.length - 1]).toList();
+    var ids = aggregationResult.getResults().stream().map(d -> d.get("__key").toString().split(":")).map(
+        parts -> parts[parts.length - 1]).toList();
     var entities = new ArrayList<>();
     ids.forEach(id -> keyValueOperations.findById(id, domainType).ifPresent(entities::add));
 

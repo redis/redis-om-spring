@@ -1,19 +1,25 @@
 package com.redis.om.spring.fixtures.document.model;
 
+import java.util.UUID;
+
+import org.springframework.data.annotation.Id;
+
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.Searchable;
+
 import jakarta.persistence.IdClass;
 import lombok.Builder;
 import lombok.Data;
-import org.springframework.data.annotation.Id;
-
-import java.util.UUID;
 
 @Data
 @Builder
-@Document("dunnage")
-@IdClass(DunnageId.class)
+@Document(
+  "dunnage"
+)
+@IdClass(
+  DunnageId.class
+)
 public class DunnageEntity {
   @Id
   private String id;
@@ -45,12 +51,7 @@ public class DunnageEntity {
   @Searchable
   private String dunnagePiece;
 
-  public static UUID generateId(String plant,
-      String dunnageCode,
-      String dunnageSuppcode) {
-    return UUID.nameUUIDFromBytes(String.format("%s%s%s",
-        plant,
-        dunnageCode,
-        dunnageSuppcode).getBytes());
+  public static UUID generateId(String plant, String dunnageCode, String dunnageSuppcode) {
+    return UUID.nameUUIDFromBytes(String.format("%s%s%s", plant, dunnageCode, dunnageSuppcode).getBytes());
   }
 }

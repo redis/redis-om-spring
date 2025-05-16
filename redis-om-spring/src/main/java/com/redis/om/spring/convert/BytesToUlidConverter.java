@@ -1,10 +1,11 @@
 package com.redis.om.spring.convert;
 
-import com.github.f4b6a3.ulid.Ulid;
+import java.nio.charset.StandardCharsets;
+
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
 
-import java.nio.charset.StandardCharsets;
+import com.github.f4b6a3.ulid.Ulid;
 
 @ReadingConverter
 public class BytesToUlidConverter implements Converter<byte[], Ulid> {

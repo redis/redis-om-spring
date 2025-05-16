@@ -1,14 +1,19 @@
 package com.redis.om.spring.annotations;
 
-import com.redis.om.spring.indexing.DistanceMetric;
-import com.redis.om.spring.indexing.VectorType;
-import redis.clients.jedis.search.schemafields.VectorField.VectorAlgorithm;
-
 import java.lang.annotation.*;
 
+import com.redis.om.spring.indexing.DistanceMetric;
+import com.redis.om.spring.indexing.VectorType;
+
+import redis.clients.jedis.search.schemafields.VectorField.VectorAlgorithm;
+
 @Documented
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.FIELD, ElementType.ANNOTATION_TYPE })
+@Retention(
+  RetentionPolicy.RUNTIME
+)
+@Target(
+  { ElementType.FIELD, ElementType.ANNOTATION_TYPE }
+)
 public @interface VectorIndexed {
   String fieldName() default "";
 

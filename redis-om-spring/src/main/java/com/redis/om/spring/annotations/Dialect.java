@@ -6,6 +6,7 @@ public enum Dialect {
   THREE(3);
 
   private final int value;
+
   Dialect(int value) {
     this.value = value;
   }

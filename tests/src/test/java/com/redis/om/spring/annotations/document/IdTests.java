@@ -1,21 +1,24 @@
 package com.redis.om.spring.annotations.document;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.fixtures.document.model.Movie;
-import com.redis.om.spring.fixtures.document.repository.MovieRepository;
-import com.redis.om.spring.search.stream.EntityStream;
-import com.redis.om.spring.search.stream.SearchStream;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
-@SuppressWarnings("SpellCheckingInspection")
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.fixtures.document.model.Movie;
+import com.redis.om.spring.fixtures.document.repository.MovieRepository;
+import com.redis.om.spring.search.stream.EntityStream;
+import com.redis.om.spring.search.stream.SearchStream;
+
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class IdTests extends AbstractBaseDocumentTest {
 
   @Autowired

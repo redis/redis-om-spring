@@ -1,21 +1,23 @@
 package com.redis.om.spring.search.stream;
 
+import java.io.Serializable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.function.Function;
+
+import org.springframework.data.domain.*;
+import org.springframework.data.domain.Sort.Order;
+import org.springframework.util.Assert;
+
 import com.google.gson.Gson;
 import com.redis.om.spring.annotations.Dialect;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.util.ObjectUtils;
-import org.springframework.data.domain.*;
-import org.springframework.data.domain.Sort.Order;
-import org.springframework.util.Assert;
+
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.AggregationResult;
-
-import java.io.Serializable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.function.Function;
 
 public class AggregationPage<E> implements Page<E>, Serializable {
   private final transient Pageable pageable;
@@ -175,7 +177,9 @@ public class AggregationPage<E> implements Page<E>, Serializable {
     return cursorId;
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   protected <U> List<U> getConvertedContent(Function<? super E, ? extends U> converter) {
 
     Assert.notNull(converter, "Function must not be null");
@@ -183,14 +187,16 @@ public class AggregationPage<E> implements Page<E>, Serializable {
     return (List<U>) this.stream().map(converter).toList();
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   List<E> toEntityList(AggregationResult aggregationResult) {
     if (isDocument) {
       return aggregationResult.getResults().stream().map(d -> gson.fromJson(d.get("$").toString(), entityClass))
           .toList();
     } else {
-      return aggregationResult.getResults().stream()
-          .map(h -> (E) ObjectUtils.mapToObject(h, entityClass, mappingConverter)).toList();
+      return aggregationResult.getResults().stream().map(h -> (E) ObjectUtils.mapToObject(h, entityClass,
+          mappingConverter)).toList();
     }
   }
 }

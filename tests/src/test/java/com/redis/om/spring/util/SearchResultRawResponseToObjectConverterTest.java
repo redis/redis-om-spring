@@ -1,13 +1,15 @@
 package com.redis.om.spring.util;
 
-import com.google.gson.Gson;
-import lombok.Data;
-import org.junit.jupiter.api.Test;
-import org.springframework.data.geo.Point;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Date;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
+import org.springframework.data.geo.Point;
+
+import com.google.gson.Gson;
+
+import lombok.Data;
 
 public class SearchResultRawResponseToObjectConverterTest {
   private final Gson gson = new Gson();

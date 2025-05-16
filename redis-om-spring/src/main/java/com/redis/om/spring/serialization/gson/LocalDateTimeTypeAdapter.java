@@ -1,12 +1,12 @@
 package com.redis.om.spring.serialization.gson;
 
-import com.google.gson.*;
-
 import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+
+import com.google.gson.*;
 
 /**
  * NOTE: This Adapter will lose nanosecond precision on LocalDateTimes

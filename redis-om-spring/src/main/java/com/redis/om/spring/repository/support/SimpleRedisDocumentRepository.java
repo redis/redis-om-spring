@@ -1,32 +1,21 @@
 package com.redis.om.spring.repository.support;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
-import com.redis.om.spring.RedisOMProperties;
-import com.redis.om.spring.annotations.Dialect;
-import com.redis.om.spring.audit.EntityAuditor;
-import com.redis.om.spring.convert.MappingRedisOMConverter;
-import com.redis.om.spring.id.IdentifierFilter;
-import com.redis.om.spring.id.ULIDIdentifierGenerator;
-import com.redis.om.spring.indexing.RediSearchIndexer;
-import com.redis.om.spring.mapping.RedisEnhancedPersistentEntity;
-import com.redis.om.spring.metamodel.MetamodelField;
-import com.redis.om.spring.metamodel.MetamodelUtils;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.ops.json.JSONOperations;
-import com.redis.om.spring.ops.search.SearchOperations;
-import com.redis.om.spring.repository.RedisDocumentRepository;
-import com.redis.om.spring.search.stream.EntityStream;
-import com.redis.om.spring.search.stream.EntityStreamImpl;
-import com.redis.om.spring.search.stream.RedisFluentQueryByExample;
-import com.redis.om.spring.search.stream.SearchStream;
-import com.redis.om.spring.serialization.gson.GsonListOfType;
-import com.redis.om.spring.util.ObjectUtils;
-import com.redis.om.spring.vectorize.Embedder;
-import jakarta.persistence.IdClass;
+import static com.redis.om.spring.util.ObjectUtils.*;
+import static redis.clients.jedis.json.JsonProtocol.JsonCommand;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanWrapper;
@@ -57,6 +46,35 @@ import org.springframework.data.util.DirectFieldAccessFallbackBeanWrapper;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
+
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import com.redis.om.spring.RedisOMProperties;
+import com.redis.om.spring.annotations.Dialect;
+import com.redis.om.spring.audit.EntityAuditor;
+import com.redis.om.spring.convert.MappingRedisOMConverter;
+import com.redis.om.spring.id.IdentifierFilter;
+import com.redis.om.spring.id.ULIDIdentifierGenerator;
+import com.redis.om.spring.indexing.RediSearchIndexer;
+import com.redis.om.spring.mapping.RedisEnhancedPersistentEntity;
+import com.redis.om.spring.metamodel.MetamodelField;
+import com.redis.om.spring.metamodel.MetamodelUtils;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.json.JSONOperations;
+import com.redis.om.spring.ops.search.SearchOperations;
+import com.redis.om.spring.repository.RedisDocumentRepository;
+import com.redis.om.spring.search.stream.EntityStream;
+import com.redis.om.spring.search.stream.EntityStreamImpl;
+import com.redis.om.spring.search.stream.RedisFluentQueryByExample;
+import com.redis.om.spring.search.stream.SearchStream;
+import com.redis.om.spring.serialization.gson.GsonListOfType;
+import com.redis.om.spring.util.ObjectUtils;
+import com.redis.om.spring.vectorize.Embedder;
+
+import jakarta.persistence.IdClass;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.exceptions.JedisDataException;
@@ -65,24 +83,8 @@ import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.util.SafeEncoder;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.StreamSupport;
-
-import static com.redis.om.spring.util.ObjectUtils.*;
-import static redis.clients.jedis.json.JsonProtocol.JsonCommand;
-
-public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueRepository<T, ID>
-    implements RedisDocumentRepository<T, ID> {
+public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueRepository<T, ID> implements
+    RedisDocumentRepository<T, ID> {
 
   private final static Logger logger = LoggerFactory.getLogger(SimpleRedisDocumentRepository.class);
 
@@ -99,11 +101,15 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   private final RedisMappingContext mappingContext;
   private final EntityStream entityStream;
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   public SimpleRedisDocumentRepository( //
       EntityInformation<T, ID> metadata, //
       KeyValueOperations operations, //
-      @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo, //
+      @Qualifier(
+        "redisModulesOperations"
+      ) RedisModulesOperations<?> rmo, //
       RediSearchIndexer indexer, //
       RedisMappingContext mappingContext, //
       GsonBuilder gsonBuilder, //
@@ -135,8 +141,8 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     query.returnFields(idField);
     SearchResult searchResult = getSearchOps().search(query);
 
-    return searchResult.getDocuments().stream()
-        .map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get(idField)), metadata.getIdType())).toList();
+    return searchResult.getDocuments().stream().map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get(idField)),
+        metadata.getIdType())).toList();
   }
 
   @Override
@@ -156,11 +162,13 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
   @Override
   public void updateField(T entity, MetamodelField<T, ?> field, Object value) {
-    modulesOperations.opsForJSON()
-        .set(getKey(Objects.requireNonNull(metadata.getId(entity))), value, Path2.of(field.getJSONPath()));
+    modulesOperations.opsForJSON().set(getKey(Objects.requireNonNull(metadata.getId(entity))), value, Path2.of(field
+        .getJSONPath()));
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   @Override
   public <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field) {
     String[] keys = StreamSupport.stream(ids.spliterator(), false).map(this::getKey).toArray(String[]::new);
@@ -197,10 +205,10 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
         KeyValuePersistentEntity<?, ?> keyValueEntity = mappingConverter.getMappingContext()
             .getRequiredPersistentEntity(ClassUtils.getUserClass(entity));
         Object id = isNew ?
-            generator.generateIdentifierOfType(
-                Objects.requireNonNull(keyValueEntity.getIdProperty()).getTypeInformation()) :
-            keyValueEntity.getPropertyAccessor(entity)
-                .getProperty(Objects.requireNonNull(keyValueEntity.getIdProperty()));
+            generator.generateIdentifierOfType(Objects.requireNonNull(keyValueEntity.getIdProperty())
+                .getTypeInformation()) :
+            keyValueEntity.getPropertyAccessor(entity).getProperty(Objects.requireNonNull(keyValueEntity
+                .getIdProperty()));
         keyValueEntity.getPropertyAccessor(entity).setProperty(keyValueEntity.getIdProperty(), id);
 
         String idAsString = validateKeyForWriting(id, entity);
@@ -239,12 +247,10 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
       // Process responses using streams to avoid iterator issues
       if (responses != null && !responses.isEmpty()) {
-        long failedCount = IntStream.range(0, Math.min(responses.size(), entityIds.size()))
-            .filter(i -> responses.get(i) instanceof JedisDataException)
-            .peek(i -> logger.warn("Failed JSON.SET command for entity with id: {} Error: {}",
-                entityIds.get(i),
-                ((JedisDataException) responses.get(i)).getMessage()))
-            .count();
+        long failedCount = IntStream.range(0, Math.min(responses.size(), entityIds.size())).filter(i -> responses.get(
+            i) instanceof JedisDataException).peek(i -> logger.warn(
+                "Failed JSON.SET command for entity with id: {} Error: {}", entityIds.get(i),
+                ((JedisDataException) responses.get(i)).getMessage())).count();
 
         if (failedCount > 0) {
           logger.warn("Total failed JSON.SET commands: {}", failedCount);
@@ -359,8 +365,8 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
         try {
           Field fld = ReflectionUtils.findField(entity.getClass(), settings.getTimeToLivePropertyName());
           ttlGetter = ObjectUtils.getGetterForField(entity.getClass(), Objects.requireNonNull(fld));
-          long ttlPropertyValue = ((Number) Objects.requireNonNull(
-              ReflectionUtils.invokeMethod(ttlGetter, entity))).longValue();
+          long ttlPropertyValue = ((Number) Objects.requireNonNull(ReflectionUtils.invokeMethod(ttlGetter, entity)))
+              .longValue();
 
           ReflectionUtils.invokeMethod(ttlGetter, entity);
 
@@ -388,13 +394,13 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       String property = versionField.getName();
       if ((versionField.getType() == Integer.class || isPrimitiveOfType(versionField.getType(),
           Integer.class)) || (versionField.getType() == Long.class || isPrimitiveOfType(versionField.getType(),
-          Long.class))) {
+              Long.class))) {
         Number version = (Number) wrapper.getPropertyValue(property);
         Number dbVersion = getEntityVersion(getKey(this.metadata.getRequiredId(entity)), property);
 
         if (dbVersion != null && version != null && dbVersion.longValue() != version.longValue()) {
-          throw new OptimisticLockingFailureException(
-              String.format("Cannot delete entity %s with version %s as it is outdated", entity, version));
+          throw new OptimisticLockingFailureException(String.format(
+              "Cannot delete entity %s with version %s as it is outdated", entity, version));
         }
       }
     }
@@ -425,12 +431,14 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
   @Override
   public <S extends T> Iterable<S> findAll(Example<S> example) {
-    return entityStream.of(example.getProbeType()).dialect(Dialect.TWO.getValue()).filter(example).collect(Collectors.toList());
+    return entityStream.of(example.getProbeType()).dialect(Dialect.TWO.getValue()).filter(example).collect(Collectors
+        .toList());
   }
 
   @Override
   public <S extends T> Iterable<S> findAll(Example<S> example, Sort sort) {
-    return entityStream.of(example.getProbeType()).dialect(Dialect.TWO.getValue()).filter(example).sorted(sort).collect(Collectors.toList());
+    return entityStream.of(example.getProbeType()).dialect(Dialect.TWO.getValue()).filter(example).sorted(sort).collect(
+        Collectors.toList());
   }
 
   @Override
@@ -438,8 +446,8 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     SearchStream<S> stream = entityStream.of(example.getProbeType());
     var offset = pageable.getPageNumber() * pageable.getPageSize();
     var limit = pageable.getPageSize();
-    Page<S> page = stream.filter(example).dialect(Dialect.TWO.getValue()).loadAll().limit(limit, Math.toIntExact(offset))
-        .toList(pageable, stream.getEntityClass());
+    Page<S> page = stream.filter(example).dialect(Dialect.TWO.getValue()).loadAll().limit(limit, Math.toIntExact(
+        offset)).toList(pageable, stream.getEntityClass());
 
     return page;
   }
@@ -473,8 +481,8 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       Gson gson = gsonBuilder.create();
 
       if (searchResult.getTotalResults() > 0) {
-        List<T> content = searchResult.getDocuments().stream()
-            .map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get("$")), metadata.getJavaType())).toList();
+        List<T> content = searchResult.getDocuments().stream().map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get(
+            "$")), metadata.getJavaType())).toList();
 
         return new PageImpl<>(content, pageable, searchResult.getTotalResults());
       } else {
@@ -519,9 +527,8 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     Assert.notNull(example, "Example must not be null");
     Assert.notNull(queryFunction, "Query function must not be null");
 
-    return queryFunction.apply(
-        new RedisFluentQueryByExample<>(example, example.getProbeType(), entityStream, getSearchOps(),
-            mappingConverter.getMappingContext()));
+    return queryFunction.apply(new RedisFluentQueryByExample<>(example, example.getProbeType(), entityStream,
+        getSearchOps(), mappingConverter.getMappingContext()));
   }
 
   @Override
@@ -601,8 +608,8 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   @Override
   public String getKeyFor(T entity) {
     // Get the mapping context's entity info
-    RedisEnhancedPersistentEntity<?> persistentEntity = (RedisEnhancedPersistentEntity<?>) mappingContext.getRequiredPersistentEntity(
-        entity.getClass());
+    RedisEnhancedPersistentEntity<?> persistentEntity = (RedisEnhancedPersistentEntity<?>) mappingContext
+        .getRequiredPersistentEntity(entity.getClass());
 
     String stringId;
 
@@ -662,8 +669,8 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
   private String validateKeyForWriting(Object id, Object item) {
     // Get the mapping context's entity info
-    RedisEnhancedPersistentEntity<?> entity = (RedisEnhancedPersistentEntity<?>) mappingContext.getRequiredPersistentEntity(
-        item.getClass());
+    RedisEnhancedPersistentEntity<?> entity = (RedisEnhancedPersistentEntity<?>) mappingContext
+        .getRequiredPersistentEntity(item.getClass());
 
     // Handle composite IDs
     if (entity.isIdClassComposite()) {

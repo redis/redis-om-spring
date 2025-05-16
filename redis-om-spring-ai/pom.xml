@@ -14,6 +14,29 @@
     <packaging>jar</packaging>
 
     <name>redis-om-spring-ai</name>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <configuration>
+                    <java>
+                        <!-- Use Eclipse formatter with custom config -->
+                        <eclipse>
+                            <file>${project.parent.basedir}/.spotless/roms-style.xml</file>
+                        </eclipse>
+                        <removeUnusedImports />
+                        <importOrder>
+                            <order>java,javax,org,com,</order>
+                        </importOrder>
+                    </java>
+                    <lineEndings>UNIX</lineEndings>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
     <dependencies>
         <dependency>

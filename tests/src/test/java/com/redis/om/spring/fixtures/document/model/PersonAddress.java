@@ -1,15 +1,19 @@
 package com.redis.om.spring.fixtures.document.model;
 
-import com.github.f4b6a3.ulid.Ulid;
-import com.redis.om.spring.annotations.Indexed;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.geo.Point;
-
 import java.util.UUID;
 
+import org.springframework.data.geo.Point;
+
+import com.github.f4b6a3.ulid.Ulid;
+import com.redis.om.spring.annotations.Indexed;
+
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+
 @Data
-@RequiredArgsConstructor(staticName = "of")
+@RequiredArgsConstructor(
+    staticName = "of"
+)
 public class PersonAddress {
   private String streetName;
   private String zipCode;

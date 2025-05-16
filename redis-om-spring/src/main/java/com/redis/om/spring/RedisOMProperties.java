@@ -1,10 +1,10 @@
 package com.redis.om.spring;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.data.geo.Metrics;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.data.geo.Metrics;
 
 @ConfigurationProperties(
     prefix = "redis.om.spring", ignoreInvalidFields = true
@@ -23,7 +23,6 @@ public class RedisOMProperties {
   public Authentication getAuthentication() {
     return authentication;
   }
-
 
   public Repository getRepository() {
     return repository;

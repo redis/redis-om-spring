@@ -1,5 +1,15 @@
 package com.redis.om.spring.search.stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
+import java.io.IOException;
+import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.ReducerFunction;
 import com.redis.om.spring.fixtures.document.model.ZipCode;
@@ -9,17 +19,10 @@ import com.redis.om.spring.metamodel.Alias;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.Quintuple;
 import com.redis.om.spring.tuple.Tuples;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import java.io.IOException;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-
-@SuppressWarnings({ "unchecked", "SpellCheckingInspection" })
+@SuppressWarnings(
+  { "unchecked", "SpellCheckingInspection" }
+)
 class EntityStreamsZipCodeDataAggregationsTest extends AbstractBaseDocumentTest {
   @Autowired
   EntityStream entityStream;
@@ -39,8 +42,8 @@ class EntityStreamsZipCodeDataAggregationsTest extends AbstractBaseDocumentTest 
    * In Mongo:
    * <pre>
    * db.zipcodes.aggregate( [
-   *    { $group: { _id: "$state", totalPop: { $sum: "$pop" } } },
-   *    { $match: { totalPop: { $gte: 10*1000*1000 } } }
+   * { $group: { _id: "$state", totalPop: { $sum: "$pop" } } },
+   * { $match: { totalPop: { $gte: 10*1000*1000 } } }
    * ] )
    * </pre>
    */
@@ -53,18 +56,17 @@ class EntityStreamsZipCodeDataAggregationsTest extends AbstractBaseDocumentTest 
         .reduce(ReducerFunction.SUM, ZipCode$.POP).as("totalPop") //
         .filter("@totalPop >= 10*1000*1000").toList(String.class, Long.class);
 
-    assertAll(
-        () -> assertThat(statePopulation).map(Pair::getFirst).containsExactly("NY", "IL", "PA", "CA", "OH", "FL", "TX"),
-        () -> assertThat(statePopulation).map(Pair::getSecond)
-            .containsExactly(17990402L, 11427576L, 11881643L, 29754890L, 10846517L, 12686644L, 16984601L));
+    assertAll(() -> assertThat(statePopulation).map(Pair::getFirst).containsExactly("NY", "IL", "PA", "CA", "OH", "FL",
+        "TX"), () -> assertThat(statePopulation).map(Pair::getSecond).containsExactly(17990402L, 11427576L, 11881643L,
+            29754890L, 10846517L, 12686644L, 16984601L));
   }
 
   /**
    * In Mongo:
    * <pre>
    * db.zipcodes.aggregate( [
-   *    { $group: { _id: { state: "$state", city: "$city" }, pop: { $sum: "$pop" } } },
-   *    { $group: { _id: "$_id.state", avgCityPop: { $avg: "$pop" } } }
+   * { $group: { _id: { state: "$state", city: "$city" }, pop: { $sum: "$pop" } } },
+   * { $group: { _id: "$_id.state", avgCityPop: { $avg: "$pop" } } }
    * ] )
    * </pre>
    */
@@ -77,55 +79,54 @@ class EntityStreamsZipCodeDataAggregationsTest extends AbstractBaseDocumentTest 
         .reduce(ReducerFunction.SUM, ZipCode$.POP).as("totalPop") //
         .filter("@totalPop >= 10*1000*1000").toList(String.class, Long.class);
 
-    assertAll(
-        () -> assertThat(statePopulation).map(Pair::getFirst).containsExactly("NY", "IL", "PA", "CA", "OH", "FL", "TX"),
-        () -> assertThat(statePopulation).map(Pair::getSecond)
-            .containsExactly(17990402L, 11427576L, 11881643L, 29754890L, 10846517L, 12686644L, 16984601L));
+    assertAll(() -> assertThat(statePopulation).map(Pair::getFirst).containsExactly("NY", "IL", "PA", "CA", "OH", "FL",
+        "TX"), () -> assertThat(statePopulation).map(Pair::getSecond).containsExactly(17990402L, 11427576L, 11881643L,
+            29754890L, 10846517L, 12686644L, 16984601L));
   }
 
   /**
    * In Mongo:
    * <pre>
    * db.zipcodes.aggregate( [
-   *    { $group:
-   *       {
-   *         _id: { state: "$state", city: "$city" },
-   *         pop: { $sum: "$pop" }
-   *       }
-   *    },
-   *    { $sort: { pop: 1 } },
-   *    { $group:
-   *       {
-   *         _id : "$_id.state",
-   *         biggestCity:  { $last: "$_id.city" },
-   *         biggestPop:   { $last: "$pop" },
-   *         smallestCity: { $first: "$_id.city" },
-   *         smallestPop:  { $first: "$pop" }
-   *       }
-   *    },
-   *    // the following $project is optional, and
-   *    // modifies the output format.
-   *    { $project:
-   *      { _id: 0,
-   *        state: "$_id",
-   *        biggestCity:  { name: "$biggestCity",  pop: "$biggestPop" },
-   *        smallestCity: { name: "$smallestCity", pop: "$smallestPop" }
-   *      }
-   *    }
-   *  ])
+   * { $group:
+   * {
+   * _id: { state: "$state", city: "$city" },
+   * pop: { $sum: "$pop" }
+   * }
+   * },
+   * { $sort: { pop: 1 } },
+   * { $group:
+   * {
+   * _id : "$_id.state",
+   * biggestCity: { $last: "$_id.city" },
+   * biggestPop: { $last: "$pop" },
+   * smallestCity: { $first: "$_id.city" },
+   * smallestPop: { $first: "$pop" }
+   * }
+   * },
+   * // the following $project is optional, and
+   * // modifies the output format.
+   * { $project:
+   * { _id: 0,
+   * state: "$_id",
+   * biggestCity: { name: "$biggestCity", pop: "$biggestPop" },
+   * smallestCity: { name: "$smallestCity", pop: "$smallestPop" }
+   * }
+   * }
+   * ])
    * </pre>
    * <p>
    * The RediSearch way:
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.ZipCodeIdx" "( @pop:[(0 inf])"
-   *   "GROUPBY" "2" "@state" "@city"
-   *     "REDUCE" "SUM" "1" "pop" "AS" "total_pop"
-   *   "GROUPBY" "1" "@state"
-   *     "REDUCE" "FIRST_VALUE" "4" "city" "BY" "@total_pop" "DESC" "AS" "biggestCity"
-   *     "REDUCE" "FIRST_VALUE" "4" "total_pop" "BY" "@total_pop" "DESC" "AS" "biggestPop"
-   *     "REDUCE" "FIRST_VALUE" "4" "city" "BY" "@total_pop" "ASC" "AS" "smallestCity"
-   *     "REDUCE" "FIRST_VALUE" "4" "total_pop" "BY" "@total_pop" "ASC" "AS" "smallestPop"
-   *   "LIMIT" "0" "10000"
+   * "GROUPBY" "2" "@state" "@city"
+   * "REDUCE" "SUM" "1" "pop" "AS" "total_pop"
+   * "GROUPBY" "1" "@state"
+   * "REDUCE" "FIRST_VALUE" "4" "city" "BY" "@total_pop" "DESC" "AS" "biggestCity"
+   * "REDUCE" "FIRST_VALUE" "4" "total_pop" "BY" "@total_pop" "DESC" "AS" "biggestPop"
+   * "REDUCE" "FIRST_VALUE" "4" "city" "BY" "@total_pop" "ASC" "AS" "smallestCity"
+   * "REDUCE" "FIRST_VALUE" "4" "total_pop" "BY" "@total_pop" "ASC" "AS" "smallestPop"
+   * "LIMIT" "0" "10000"
    * </pre>
    */
   @Test

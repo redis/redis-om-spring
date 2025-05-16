@@ -1,5 +1,22 @@
 package com.redis.om.spring.annotations.hash.vectorize.face;
 
+import static com.redis.om.spring.util.ObjectUtils.floatArrayToByteArray;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationContext;
+import org.springframework.core.io.Resource;
+
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+
 import ai.djl.inference.Predictor;
 import ai.djl.modality.cv.Image;
 import ai.djl.modality.cv.ImageFactory;
@@ -7,27 +24,18 @@ import ai.djl.modality.cv.output.DetectedObjects;
 import ai.djl.modality.cv.output.DetectedObjects.DetectedObject;
 import ai.djl.repository.zoo.ZooModel;
 import ai.djl.translate.TranslateException;
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.ApplicationContext;
-import org.springframework.core.io.Resource;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static com.redis.om.spring.util.ObjectUtils.floatArrayToByteArray;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
 
 class FaceDetectionTest extends AbstractBaseEnhancedRedisTest {
-  @Autowired(required = false)
+  @Autowired(
+      required = false
+  )
   public ZooModel<Image, DetectedObjects> faceDetectionModel;
-  @Autowired(required = false)
-  @Qualifier("djlFaceEmbeddingModel")
+  @Autowired(
+      required = false
+  )
+  @Qualifier(
+    "djlFaceEmbeddingModel"
+  )
   public ZooModel<Image, float[]> faceEmbeddingModel;
   @Autowired
   private ApplicationContext applicationContext;
@@ -45,9 +53,8 @@ class FaceDetectionTest extends AbstractBaseEnhancedRedisTest {
             .collect(Collectors.toList());
 
         assertAll( //
-            () -> assertThat(detectedObjects).hasSize(338),
-            () -> assertThat(detectedObjects).map(DetectedObject::getClassName)
-                .allMatch(cn -> cn.equalsIgnoreCase("Face")));
+            () -> assertThat(detectedObjects).hasSize(338), () -> assertThat(detectedObjects).map(
+                DetectedObject::getClassName).allMatch(cn -> cn.equalsIgnoreCase("Face")));
       }
     }
   }

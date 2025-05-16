@@ -1,15 +1,16 @@
 package com.redis.om.spring.ops.search;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.redis.om.spring.autocomplete.Suggestion;
 import com.redis.om.spring.repository.query.autocomplete.AutoCompleteOptions;
+
 import redis.clients.jedis.search.*;
 import redis.clients.jedis.search.aggr.AggregationBuilder;
 import redis.clients.jedis.search.aggr.AggregationResult;
 import redis.clients.jedis.search.schemafields.SchemaField;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public interface SearchOperations<K> {
 

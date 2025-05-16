@@ -1,14 +1,17 @@
 package com.redis.om.spring.fixtures.document.model;
 
+import java.util.List;
+
 import com.redis.om.spring.annotations.Indexed;
+
 import lombok.Data;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-import java.util.List;
-
 @Data
-@RequiredArgsConstructor(staticName = "of")
+@RequiredArgsConstructor(
+    staticName = "of"
+)
 public class Attribute {
 
   @NonNull

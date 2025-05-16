@@ -1,10 +1,10 @@
 package com.redis.om.spring.fixtures.document.repository;
 
-import com.redis.om.spring.fixtures.document.model.Doc4;
-import com.redis.om.spring.repository.RedisDocumentRepository;
-
 import java.util.List;
 import java.util.Optional;
+
+import com.redis.om.spring.fixtures.document.model.Doc4;
+import com.redis.om.spring.repository.RedisDocumentRepository;
 
 public interface Doc4Repository extends RedisDocumentRepository<Doc4, String> {
   Optional<Doc4> findOneByFirstAndSecondNull(String first);

@@ -1,17 +1,18 @@
 package com.redis.om.spring.repository.query.bloom;
 
-import com.redis.om.spring.annotations.Bloom;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.ops.pds.BloomOperations;
-import com.redis.om.spring.util.ObjectUtils;
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Optional;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.util.ReflectionUtils;
 
-import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.Optional;
+import com.redis.om.spring.annotations.Bloom;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.pds.BloomOperations;
+import com.redis.om.spring.util.ObjectUtils;
 
 public class BloomQueryExecutor {
 

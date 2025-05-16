@@ -109,8 +109,8 @@ public interface Quattuordecuple<E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E
       case 11 -> getTwelfth();
       case 12 -> getThirteenth();
       case 13 -> getFourteenth();
-      default -> throw new IndexOutOfBoundsException(
-          String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
+      default -> throw new IndexOutOfBoundsException(String.format("Index %d is outside bounds of tuple of degree %s",
+          index, size()));
     };
   }
 }

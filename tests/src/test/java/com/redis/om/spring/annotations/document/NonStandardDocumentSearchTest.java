@@ -1,9 +1,12 @@
 package com.redis.om.spring.annotations.document;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.fixtures.document.model.*;
-import com.redis.om.spring.fixtures.document.repository.CompanyWithLongIdRepository;
-import com.redis.om.spring.fixtures.document.repository.CustomRepository;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,14 +14,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.fixtures.document.model.*;
+import com.redis.om.spring.fixtures.document.repository.CompanyWithLongIdRepository;
+import com.redis.om.spring.fixtures.document.repository.CustomRepository;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-
-@SuppressWarnings("SpellCheckingInspection")
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
   @Autowired
   CustomRepository repository;
@@ -35,8 +38,8 @@ class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
   @BeforeEach
   void loadTestData() {
     Custom c1 = Custom.of("foofoo");
-    var nl1 = NestLevel1.of("nl-1-1", "Louis, I think this is the beginning of a beautiful friendship.",
-        NestLevel2.of("nl-2-1", "Here's looking at you, kid."));
+    var nl1 = NestLevel1.of("nl-1-1", "Louis, I think this is the beginning of a beautiful friendship.", NestLevel2.of(
+        "nl-2-1", "Here's looking at you, kid."));
     c1.setNest_level1(nl1);
     Custom c2 = Custom.of("barbar");
     Custom c3 = Custom.of("bazbaz");
@@ -120,11 +123,11 @@ class NonStandardDocumentSearchTest extends AbstractBaseDocumentTest {
 
   @Test
   void testSaveAllWithNonStringKey() {
-    CompanyWithLongId redis = CompanyWithLongId.of("RedisInc", 2011, LocalDate.of(2021, 5, 1),
-        new Point(-122.066540, 37.377690), "stack@redis.com");
+    CompanyWithLongId redis = CompanyWithLongId.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540,
+        37.377690), "stack@redis.com");
 
-    CompanyWithLongId microsoft = CompanyWithLongId.of("Microsoft", 1975, LocalDate.of(2022, 8, 15),
-        new Point(-122.124500, 47.640160), "research@microsoft.com");
+    CompanyWithLongId microsoft = CompanyWithLongId.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(
+        -122.124500, 47.640160), "research@microsoft.com");
 
     companyRepo.saveAll(List.of(redis, microsoft));
 

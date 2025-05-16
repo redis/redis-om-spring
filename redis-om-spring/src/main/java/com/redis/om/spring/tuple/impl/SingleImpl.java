@@ -8,7 +8,9 @@ public final class SingleImpl<T0> extends AbstractTuple implements Single<T0> {
     super(SingleImpl.class, labels, e0);
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   @Override
   public T0 getFirst() {
     return ((T0) values[0]);

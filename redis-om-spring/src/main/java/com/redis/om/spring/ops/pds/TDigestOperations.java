@@ -1,9 +1,9 @@
 package com.redis.om.spring.ops.pds;
 
-import redis.clients.jedis.bloom.TDigestMergeParams;
-
 import java.util.List;
 import java.util.Map;
+
+import redis.clients.jedis.bloom.TDigestMergeParams;
 
 public interface TDigestOperations<K> {
   /**
@@ -34,7 +34,7 @@ public interface TDigestOperations<K> {
   /**
    * Merge multiple sketches into one.
    *
-   * @param key       The key of the destination sketch
+   * @param key        The key of the destination sketch
    * @param sourceKeys The keys of the source sketches
    * @return Status string reply
    */
@@ -146,4 +146,4 @@ public interface TDigestOperations<K> {
    * @return List of values
    */
   List<Double> byRevRank(K key, long... ranks);
-} 
+}

@@ -1,9 +1,9 @@
 package com.redis.om.spring.vectorize;
 
-import com.redis.om.spring.metamodel.MetamodelField;
-
 import java.lang.reflect.Field;
 import java.util.List;
+
+import com.redis.om.spring.metamodel.MetamodelField;
 
 public class NoopEmbedder implements Embedder {
 

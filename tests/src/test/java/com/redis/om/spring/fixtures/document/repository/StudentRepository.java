@@ -1,15 +1,16 @@
 package com.redis.om.spring.fixtures.document.repository;
 
-import com.redis.om.spring.fixtures.document.model.Student;
-import com.redis.om.spring.repository.RedisDocumentRepository;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.function.Function;
+
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.data.repository.query.FluentQuery.FetchableFluentQuery;
 import org.springframework.data.repository.query.QueryByExampleExecutor;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.function.Function;
+import com.redis.om.spring.fixtures.document.model.Student;
+import com.redis.om.spring.repository.RedisDocumentRepository;
 
 public interface StudentRepository extends RedisDocumentRepository<Student, Long>, QueryByExampleExecutor<Student> {
   List<Student> findByUserName(String userName);

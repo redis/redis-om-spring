@@ -1,15 +1,24 @@
 package com.redis.om.spring.ops.search;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.ops.json.JSONOperations;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.StreamSupport;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.json.JSONOperations;
+
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.search.*;
 import redis.clients.jedis.search.Schema.Field;
@@ -20,14 +29,9 @@ import redis.clients.jedis.search.aggr.AggregationResult;
 import redis.clients.jedis.search.aggr.Row;
 import redis.clients.jedis.util.SafeEncoder;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.StreamSupport;
-
-import static org.junit.jupiter.api.Assertions.*;
-
-@SuppressWarnings("SpellCheckingInspection")
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class JSONSearchTest extends AbstractBaseDocumentTest {
   public static final String searchIndex = "idx";
   private final ObjectMapper objectMapper = new ObjectMapper();
@@ -105,8 +109,8 @@ class JSONSearchTest extends AbstractBaseDocumentTest {
     assertEquals(1.0, doc.getScore(), 0);
     assertTrue(StreamSupport //
         .stream(doc.getProperties().spliterator(), false) //
-        .anyMatch(
-            p -> p.getKey().contentEquals("first_tag") && SafeEncoder.encode((byte[]) p.getValue()).equals("news")));
+        .anyMatch(p -> p.getKey().contentEquals("first_tag") && SafeEncoder.encode((byte[]) p.getValue()).equals(
+            "news")));
   }
 
   /**
@@ -134,7 +138,9 @@ class JSONSearchTest extends AbstractBaseDocumentTest {
   /* '{"title":"hello world", "tag": ["news", "article"]}' */
   private static class SomeJSON {
     public final Set<String> tag = new HashSet<>();
-    @SuppressWarnings("unused")
+    @SuppressWarnings(
+      "unused"
+    )
     public String title;
 
     public SomeJSON() {

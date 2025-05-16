@@ -1,12 +1,15 @@
 package com.redis.om.spring.fixtures.document.model;
 
-import com.redis.om.spring.annotations.Document;
-import com.redis.om.spring.annotations.Indexed;
-import org.springframework.data.annotation.Id;
-
 import java.util.Objects;
 
-@Document("dpersons")
+import org.springframework.data.annotation.Id;
+
+import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.annotations.Indexed;
+
+@Document(
+  "dpersons"
+)
 public class PersonDoc {
   private @Id String id;
   private @Indexed String firstname;
@@ -64,9 +67,9 @@ public class PersonDoc {
       return false;
     }
 
-    return Objects.equals(this.getId(), that.getId()) && Objects.equals(this.getFirstname(),
-        that.getFirstname()) && Objects.equals(this.getLastname(), that.getLastname()) && Objects.equals(
-        this.getHometown(), that.getHometown());
+    return Objects.equals(this.getId(), that.getId()) && Objects.equals(this.getFirstname(), that
+        .getFirstname()) && Objects.equals(this.getLastname(), that.getLastname()) && Objects.equals(this.getHometown(),
+            that.getHometown());
   }
 
   @Override
