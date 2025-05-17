@@ -13,7 +13,7 @@ project:
       version: '21'
       multiProject: true # This is important for multi-module projects
   inceptionYear: '2021'
-  tags: ['redis', 'spring', 'spring-data', 'object-mapping', 'redisearch', 'json']
+  tags: [ 'redis', 'spring', 'spring-data', 'object-mapping', 'redisearch', 'json' ]
 
 release:
   github:
@@ -24,26 +24,6 @@ release:
       preset: conventional-commits
       contributors:
         enabled: false
-      hide:
-        categories:
-          - merge
-      labelers:
-        - label: 'dependencies'
-          title: 'regex:^(?:build|chore|deps)(?:\(deps\))?!?:'
-      categories:
-        - title: '🚀 Features'
-          labels:
-            - 'feature'
-            - 'enhancement'
-        - title: '🐛 Bug Fixes'
-          labels:
-            - 'fix'
-            - 'bugfix'
-            - 'bug'
-        - title: '🧰 Maintenance'
-          labels:
-            - 'chore'
-            - 'dependencies'
 
 signing:
   active: ALWAYS
@@ -51,28 +31,18 @@ signing:
 
 deploy:
   maven:
-    mavenCentral:
-      active: RELEASE
-      authorization: BASIC
-      url: https://central.sonatype.com/api/v1/publisher
-      applyMavenCentralRules: true
-      stagingRepositories:
-        - target/staging-deploy
+    nexus2:
+      maven-central:
+        active: RELEASE
+        url: https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/
+        closeRepository: true
+        releaseRepository: true
+        applyMavenCentralRules: true
+        stagingRepositories:
+          - target/staging-deploy
 
 # No announcements needed
 announce:
   slack:
     active: NEVER
 
-# Define distributions for each module - explicitly list only the artifacts we want to publish
-distributions:
-  redis-om-spring:
-    artifacts:
-      - path: 'redis-om-spring/target/redis-om-spring-{{projectVersion}}.jar'
-      - path: 'redis-om-spring/target/redis-om-spring-{{projectVersion}}-sources.jar'
-      - path: 'redis-om-spring/target/redis-om-spring-{{projectVersion}}-javadoc.jar'
-  redis-om-spring-ai:
-    artifacts:
-      - path: 'redis-om-spring-ai/target/redis-om-spring-ai-{{projectVersion}}.jar'
-      - path: 'redis-om-spring-ai/target/redis-om-spring-ai-{{projectVersion}}-sources.jar'
-      - path: 'redis-om-spring-ai/target/redis-om-spring-ai-{{projectVersion}}-javadoc.jar'

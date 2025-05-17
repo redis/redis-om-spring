@@ -1,5 +1,19 @@
 package com.redis.om.spring.id;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.math.BigInteger;
+import java.util.Date;
+import java.util.Objects;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.data.util.TypeInformation;
+
 import com.github.f4b6a3.ulid.Ulid;
 import com.google.gson.JsonObject;
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
@@ -13,21 +27,10 @@ import com.redis.om.spring.fixtures.hash.model.Person;
 import com.redis.om.spring.fixtures.hash.repository.PersonRepository;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.InvalidDataAccessApiUsageException;
-import org.springframework.data.util.TypeInformation;
 
-import java.math.BigInteger;
-import java.util.Date;
-import java.util.Objects;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-@SuppressWarnings("SpellCheckingInspection")
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
 
   private final ULIDIdentifierGenerator generator = ULIDIdentifierGenerator.INSTANCE;
@@ -66,8 +69,8 @@ class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
         () -> badDocRepo.save(badDoc));
 
     String expectedErrorMessage = String.format(
-        "Identifier cannot be generated for %s. Supported types are: ULID, String, Integer, and Long.",
-        BigInteger.class.getName());
+        "Identifier cannot be generated for %s. Supported types are: ULID, String, Integer, and Long.", BigInteger.class
+            .getName());
     Assertions.assertEquals(expectedErrorMessage, exception.getMessage());
   }
 
@@ -88,8 +91,8 @@ class ULIDIdentifierTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void shouldThrowExceptionForUnsupportedType() {
-    assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(
-        () -> generator.generateIdentifierOfType(TypeInformation.of(Date.class)));
+    assertThatExceptionOfType(InvalidDataAccessApiUsageException.class).isThrownBy(() -> generator
+        .generateIdentifierOfType(TypeInformation.of(Date.class)));
   }
 
   @Test

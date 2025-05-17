@@ -1,6 +1,8 @@
 package com.redis.om.spring.mapping;
 
-import jakarta.persistence.IdClass;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.data.keyvalue.core.mapping.KeySpaceResolver;
 import org.springframework.data.mapping.MappingException;
 import org.springframework.data.redis.core.TimeToLiveAccessor;
@@ -10,11 +12,10 @@ import org.springframework.data.redis.core.mapping.RedisPersistentProperty;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.lang.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
+import jakarta.persistence.IdClass;
 
-public class RedisEnhancedPersistentEntity<T> extends BasicRedisPersistentEntity<T>
-    implements RedisPersistentEntity<T> {
+public class RedisEnhancedPersistentEntity<T> extends BasicRedisPersistentEntity<T> implements
+    RedisPersistentEntity<T> {
 
   private final List<RedisPersistentProperty> idProperties = new ArrayList<>();
   private final boolean hasIdClass;

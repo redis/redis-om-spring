@@ -1,13 +1,13 @@
 package com.redis.om.spring.repository.query;
 
+import java.util.Iterator;
+
 import org.springframework.data.domain.Sort;
 import org.springframework.data.keyvalue.core.query.KeyValueQuery;
 import org.springframework.data.repository.query.ParameterAccessor;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.PartTree;
-
-import java.util.Iterator;
 
 /**
  * Building operations for criteria based queries

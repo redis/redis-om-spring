@@ -1,10 +1,11 @@
 package com.redis.om.spring.autocomplete;
 
-import com.google.gson.Gson;
-import com.redis.om.spring.annotations.AutoComplete;
-import com.redis.om.spring.annotations.AutoCompletePayload;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.ops.search.SearchOperations;
+import java.beans.IntrospectionException;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
+
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -20,11 +21,11 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.Repository;
 import org.springframework.stereotype.Component;
 
-import java.beans.IntrospectionException;
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import com.google.gson.Gson;
+import com.redis.om.spring.annotations.AutoComplete;
+import com.redis.om.spring.annotations.AutoCompletePayload;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.search.SearchOperations;
 
 @Aspect
 @Component
@@ -40,56 +41,80 @@ public class AutoCompleteAspect implements Ordered {
     this.template = template;
   }
 
-  @Pointcut("execution(public * org.springframework.data.repository.CrudRepository+.save(..))")
+  @Pointcut(
+    "execution(public * org.springframework.data.repository.CrudRepository+.save(..))"
+  )
   public void inCrudRepositorySave() {
   }
 
-  @Pointcut("execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.save(..))")
+  @Pointcut(
+    "execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.save(..))"
+  )
   public void inRedisDocumentRepositorySave() {
   }
 
-  @Pointcut("inCrudRepositorySave() || inRedisDocumentRepositorySave()")
+  @Pointcut(
+    "inCrudRepositorySave() || inRedisDocumentRepositorySave()"
+  )
   private void inSaveOperation() {
   }
 
-  @AfterReturning("inSaveOperation() && args(entity,..)")
+  @AfterReturning(
+    "inSaveOperation() && args(entity,..)"
+  )
   public void addSuggestion(JoinPoint jp, Object entity) {
     processSuggestionsForEntity(entity);
   }
 
-  @Pointcut("execution(public * org.springframework.data.repository.CrudRepository+.saveAll(..))")
+  @Pointcut(
+    "execution(public * org.springframework.data.repository.CrudRepository+.saveAll(..))"
+  )
   public void inCrudRepositorySaveAll() {
   }
 
-  @Pointcut("execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.saveAll(..))")
+  @Pointcut(
+    "execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.saveAll(..))"
+  )
   public void inRedisDocumentRepositorySaveAll() {
   }
 
-  @Pointcut("inCrudRepositorySaveAll() || inRedisDocumentRepositorySaveAll()")
+  @Pointcut(
+    "inCrudRepositorySaveAll() || inRedisDocumentRepositorySaveAll()"
+  )
   private void inSaveAllOperation() {
   }
 
-  @AfterReturning("inSaveAllOperation() && args(entities,..)")
+  @AfterReturning(
+    "inSaveAllOperation() && args(entities,..)"
+  )
   public void addAllSuggestions(JoinPoint jp, List<Object> entities) {
     for (Object entity : entities) {
       processSuggestionsForEntity(entity);
     }
   }
 
-  @Pointcut("execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.delete(..))")
+  @Pointcut(
+    "execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.delete(..))"
+  )
   public void inRedisDocumentRepositoryDelete() {
   }
 
-  @AfterReturning("inRedisDocumentRepositoryDelete() && args(entity,..)")
+  @AfterReturning(
+    "inRedisDocumentRepositoryDelete() && args(entity,..)"
+  )
   public void deleteSuggestion(JoinPoint jp, Object entity) {
     deleteSuggestionsForEntity(entity);
   }
 
-  @Pointcut("execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.deleteAll())")
+  @Pointcut(
+    "execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.deleteAll())"
+  )
   public void inRedisDocumentRepositoryDeleteAll() {
   }
 
-  @AfterReturning("inRedisDocumentRepositoryDeleteAll()")
+  @AfterReturning(
+    "inRedisDocumentRepositoryDeleteAll()"
+  )
   public void deleteAllSuggestions(JoinPoint jp) {
     Repository<?, ?> repository = (Repository<?, ?>) jp.getTarget();
     var typeArguments = GenericTypeResolver.resolveTypeArguments(repository.getClass(), Repository.class);
@@ -104,11 +129,15 @@ public class AutoCompleteAspect implements Ordered {
     }
   }
 
-  @Pointcut("execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.deleteAll(..))")
+  @Pointcut(
+    "execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.deleteAll(..))"
+  )
   public void inRedisDocumentRepositoryDeleteAllEntities() {
   }
 
-  @AfterReturning("inRedisDocumentRepositoryDeleteAllEntities() && args(entities,..)")
+  @AfterReturning(
+    "inRedisDocumentRepositoryDeleteAllEntities() && args(entities,..)"
+  )
   public void deleteAllSuggestionsFromEntities(JoinPoint jp, List<Object> entities) {
     for (Object entity : entities) {
       for (Field field : com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(entity.getClass())) {
@@ -137,12 +166,18 @@ public class AutoCompleteAspect implements Ordered {
     }
   }
 
-  @Pointcut("execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.deleteById(..))")
+  @Pointcut(
+    "execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.deleteById(..))"
+  )
   public void inRedisDocumentRepositoryDeleteById() {
   }
 
-  @SuppressWarnings({ "rawtypes", "unchecked" })
-  @Before("inRedisDocumentRepositoryDeleteById() && args(id)")
+  @SuppressWarnings(
+    { "rawtypes", "unchecked" }
+  )
+  @Before(
+    "inRedisDocumentRepositoryDeleteById() && args(id)"
+  )
   public void deleteSuggestionById(JoinPoint jp, Object id) {
     CrudRepository repository = (CrudRepository) jp.getTarget();
     Optional<Object> maybeEntity = repository.findById(id.toString());
@@ -152,12 +187,18 @@ public class AutoCompleteAspect implements Ordered {
     }
   }
 
-  @Pointcut("execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.deleteAllById(..))")
+  @Pointcut(
+    "execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.deleteAllById(..))"
+  )
   public void inRedisDocumentRepositoryDeleteAllById() {
   }
 
-  @SuppressWarnings({ "rawtypes", "unchecked" })
-  @Before("inRedisDocumentRepositoryDeleteAllById() && args(ids,..)")
+  @SuppressWarnings(
+    { "rawtypes", "unchecked" }
+  )
+  @Before(
+    "inRedisDocumentRepositoryDeleteAllById() && args(ids,..)"
+  )
   public void deleteAllSuggestionByIds(JoinPoint jp, List<Object> ids) {
     CrudRepository repository = (CrudRepository) jp.getTarget();
 
@@ -176,8 +217,8 @@ public class AutoCompleteAspect implements Ordered {
   }
 
   private void processSuggestionsForEntity(Object entity) {
-    final List<Field> entityClassFields = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(
-        entity.getClass());
+    final List<Field> entityClassFields = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(entity
+        .getClass());
     for (Field field : entityClassFields) {
       if (field.isAnnotationPresent(AutoComplete.class)) {
         String suggestion = "";
@@ -199,9 +240,8 @@ public class AutoCompleteAspect implements Ordered {
         for (Field field2 : entityClassFields) {
           if (field2.isAnnotationPresent(AutoCompletePayload.class)) {
             AutoCompletePayload suggestiblePayload = field2.getAnnotation(AutoCompletePayload.class);
-            boolean inPayload = (!suggestiblePayload.value().isBlank() && suggestiblePayload.value()
-                .equalsIgnoreCase(field.getName())) || (Arrays.asList(suggestiblePayload.fields())
-                .contains(field.getName()));
+            boolean inPayload = (!suggestiblePayload.value().isBlank() && suggestiblePayload.value().equalsIgnoreCase(
+                field.getName())) || (Arrays.asList(suggestiblePayload.fields()).contains(field.getName()));
             if (inPayload) {
               try {
                 payload = payload == null ? new HashMap<>() : payload;

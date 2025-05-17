@@ -1,12 +1,12 @@
 package com.redis.om.spring.metamodel;
 
-import com.redis.om.spring.util.ObjectUtils;
-
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+
+import com.redis.om.spring.util.ObjectUtils;
 
 public class MetamodelUtils {
   public static MetamodelField<?, ?> getMetamodelForIdField(Class<?> entityClass) {

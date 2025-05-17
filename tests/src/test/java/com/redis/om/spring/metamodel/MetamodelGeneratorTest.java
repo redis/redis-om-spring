@@ -1,29 +1,41 @@
 package com.redis.om.spring.metamodel;
 
-import com.karuslabs.elementary.Results;
-import com.karuslabs.elementary.junit.JavacExtension;
-import com.karuslabs.elementary.junit.annotations.Classpath;
-import com.karuslabs.elementary.junit.annotations.Options;
-import com.karuslabs.elementary.junit.annotations.Processors;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
-import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
+import javax.tools.JavaFileObject;
 
-@SuppressWarnings("SpellCheckingInspection")
-@ExtendWith(JavacExtension.class)
-@Options("-Werror")
-@Processors({ MetamodelGenerator.class })
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
+import com.karuslabs.elementary.Results;
+import com.karuslabs.elementary.junit.JavacExtension;
+import com.karuslabs.elementary.junit.annotations.Classpath;
+import com.karuslabs.elementary.junit.annotations.Options;
+import com.karuslabs.elementary.junit.annotations.Processors;
+
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
+@ExtendWith(
+  JavacExtension.class
+)
+@Options(
+  "-Werror"
+)
+@Processors(
+  { MetamodelGenerator.class }
+)
 class MetamodelGeneratorTest {
   @Test
-  @Classpath("data.metamodel.ValidDocumentIndexed")
+  @Classpath(
+    "data.metamodel.ValidDocumentIndexed"
+  )
   void testValidDocumentIndexed(Results results) throws IOException {
     List<String> warnings = getWarningStrings(results);
     assertThat(warnings).isEmpty();
@@ -138,7 +150,9 @@ class MetamodelGeneratorTest {
   }
 
   @Test
-  @Classpath("data.metamodel.ValidDocumentUnindexed")
+  @Classpath(
+    "data.metamodel.ValidDocumentUnindexed"
+  )
   void testValidDocumentUnindexed(Results results) throws IOException {
     List<String> warnings = getWarningStrings(results);
     assertThat(warnings).isEmpty();
@@ -279,8 +293,12 @@ class MetamodelGeneratorTest {
   }
 
   @Test
-  @Classpath("data.metamodel.ValidDocumentIndexedNested")
-  @Classpath("data.metamodel.Address")
+  @Classpath(
+    "data.metamodel.ValidDocumentIndexedNested"
+  )
+  @Classpath(
+    "data.metamodel.Address"
+  )
   void testValidDocumentIndexedNested(Results results) throws IOException {
     List<String> warnings = getWarningStrings(results);
     assertThat(warnings).hasSize(1).containsOnly(
@@ -343,7 +361,9 @@ class MetamodelGeneratorTest {
   }
 
   @Test
-  @Classpath("data.metamodel.ValidDocumentUnindexedWoPackage")
+  @Classpath(
+    "data.metamodel.ValidDocumentUnindexedWoPackage"
+  )
   void testValidDocumentUnindexedWithoutPackage(Results results) {
     assertThat(results.generated).hasSize(1);
     List<String> warnings = getWarningStrings(results);
@@ -360,7 +380,9 @@ class MetamodelGeneratorTest {
   }
 
   @Test
-  @Classpath("data.metamodel.BadBean")
+  @Classpath(
+    "data.metamodel.BadBean"
+  )
   void testValidDocumentInBadJavaBean(Results results) {
     assertThat(results.generated).hasSize(1);
 
@@ -377,7 +399,9 @@ class MetamodelGeneratorTest {
   }
 
   @Test
-  @Classpath("data.metamodel.IdOnly")
+  @Classpath(
+    "data.metamodel.IdOnly"
+  )
   void testValidIdOnlyDocument(Results results) throws IOException {
     List<String> warnings = getWarningStrings(results);
     assertThat(warnings).isEmpty();
@@ -393,15 +417,15 @@ class MetamodelGeneratorTest {
 
     var expected = """
         package valid;
-         
+
          import com.redis.om.spring.metamodel.MetamodelField;
          import java.lang.String;
-         
+
          public final class IdOnly$ {
            public static MetamodelField<IdOnly, String> _KEY;
-         
+
            public static MetamodelField<IdOnly, IdOnly> _THIS;
-         
+
            static {
              _KEY = new MetamodelField<IdOnly, String>("__key", String.class, true);
              _THIS = new MetamodelField<IdOnly, IdOnly>("__this", IdOnly.class, true);

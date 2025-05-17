@@ -74,8 +74,8 @@ public interface Nonuple<E1, E2, E3, E4, E5, E6, E7, E8, E9> extends Tuple {
       case 6 -> getSeventh();
       case 7 -> getEighth();
       case 8 -> getNinth();
-      default -> throw new IndexOutOfBoundsException(
-          String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
+      default -> throw new IndexOutOfBoundsException(String.format("Index %d is outside bounds of tuple of degree %s",
+          index, size()));
     };
   }
 }

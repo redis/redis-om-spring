@@ -1,17 +1,19 @@
 package com.redis.om.spring.repository.query.clause;
 
-import com.redis.om.spring.convert.MappingRedisOMConverter;
-import com.redis.om.spring.repository.query.QueryUtils;
-import com.redis.om.spring.util.ObjectUtils;
+import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.repository.query.parser.Part.Type;
-import redis.clients.jedis.search.Schema.FieldType;
 
-import java.util.*;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import com.redis.om.spring.convert.MappingRedisOMConverter;
+import com.redis.om.spring.repository.query.QueryUtils;
+import com.redis.om.spring.util.ObjectUtils;
+
+import redis.clients.jedis.search.Schema.FieldType;
 
 public enum QueryClause {
   // FULL TEXT
@@ -51,7 +53,7 @@ public enum QueryClause {
   // NUMERIC
   NUMERIC_SIMPLE_PROPERTY( //
       QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.SIMPLE_PROPERTY, QueryClause.FIELD_NUMERIC_EQUAL_PARAM_0, 1)
-      //
+  //
   ),
   NUMERIC_NEGATING_SIMPLE_PROPERTY( //
       QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.SIMPLE_PROPERTY, QueryClause.FIELD_NUMERIC_NOT_EQUAL, 1) //
@@ -64,7 +66,7 @@ public enum QueryClause {
   ),
   NUMERIC_LESS_THAN_EQUAL( //
       QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.LESS_THAN_EQUAL, QueryClause.FIELD_NUMERIC_LESS_THAN_EQUAL, 1)
-      //
+  //
   ),
   NUMERIC_GREATER_THAN( //
       QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.GREATER_THAN, QueryClause.FIELD_NUMERIC_GREATER_THAN, 1) //
@@ -215,17 +217,16 @@ public enum QueryClause {
           if (param instanceof Collection<?> c) {
             String value;
             if (this == QueryClause.TAG_CONTAINING_ALL) {
-              value = c.stream()
-                  .map(n -> "@" + field + ":{" + QueryUtils.escape(ObjectUtils.asString(n, converter)) + "}")
-                  .collect(Collectors.joining(" "));
+              value = c.stream().map(n -> "@" + field + ":{" + QueryUtils.escape(ObjectUtils.asString(n,
+                  converter)) + "}").collect(Collectors.joining(" "));
             } else if (this == QueryClause.NUMERIC_CONTAINING) {
-              value = c.stream().map(n -> "@" + field + ":[" + QueryUtils.escape(
-                  ObjectUtils.asString(n, converter)) + " " + QueryUtils.escape(
-                  ObjectUtils.asString(n, converter)) + "]").collect(Collectors.joining("|"));
+              value = c.stream().map(n -> "@" + field + ":[" + QueryUtils.escape(ObjectUtils.asString(n,
+                  converter)) + " " + QueryUtils.escape(ObjectUtils.asString(n, converter)) + "]").collect(Collectors
+                      .joining("|"));
             } else if (this == QueryClause.NUMERIC_CONTAINING_ALL) {
-              value = c.stream().map(n -> "@" + field + ":[" + QueryUtils.escape(
-                  ObjectUtils.asString(n, converter)) + " " + QueryUtils.escape(
-                  ObjectUtils.asString(n, converter)) + "]").collect(Collectors.joining(" "));
+              value = c.stream().map(n -> "@" + field + ":[" + QueryUtils.escape(ObjectUtils.asString(n,
+                  converter)) + " " + QueryUtils.escape(ObjectUtils.asString(n, converter)) + "]").collect(Collectors
+                      .joining(" "));
             } else if (this == QueryClause.GEO_CONTAINING) {
               value = c.stream().map(n -> {
                 Point p = (Point) n;
@@ -238,19 +239,20 @@ public enum QueryClause {
               }).collect(Collectors.joining(" "));
             } else {
               value = c.stream()//
-                  .map(n -> QueryUtils.escape(ObjectUtils.asString(n, converter), false))
-                  .collect(Collectors.joining("|"));
+                  .map(n -> QueryUtils.escape(ObjectUtils.asString(n, converter), false)).collect(Collectors.joining(
+                      "|"));
             }
 
             prepared = prepared.replace(PARAM_PREFIX + i++, value);
           } else {
             if (clauseTemplate.getIndexType() == FieldType.TEXT) {
               prepared = prepared.replace(PARAM_PREFIX + i++, param.toString());
-            } else if (clauseTemplate.getIndexType() == FieldType.NUMERIC && !paramClass.equalsIgnoreCase("java.time.LocalDateTime") && !paramClass.equalsIgnoreCase("java.time.LocalDate")) {
+            } else if (clauseTemplate.getIndexType() == FieldType.NUMERIC && !paramClass.equalsIgnoreCase(
+                "java.time.LocalDateTime") && !paramClass.equalsIgnoreCase("java.time.LocalDate")) {
               prepared = prepared.replace(PARAM_PREFIX + i++, param.toString());
             } else {
-              prepared = prepared.replace(PARAM_PREFIX + i++,
-                  QueryUtils.escape(ObjectUtils.asString(param, converter)));
+              prepared = prepared.replace(PARAM_PREFIX + i++, QueryUtils.escape(ObjectUtils.asString(param,
+                  converter)));
             }
           }
           break;

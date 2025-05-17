@@ -1,10 +1,13 @@
 package com.redis.om.spring.fixtures.hash.repository;
 
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.ops.pds.CountMinSketchOperations;
 import org.springframework.beans.factory.annotation.Autowired;
 
-@SuppressWarnings("ALL")
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.pds.CountMinSketchOperations;
+
+@SuppressWarnings(
+  "ALL"
+)
 public class UserIdCountImpl implements UserIdCount {
 
   @Autowired

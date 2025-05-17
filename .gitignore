@@ -36,3 +36,4 @@ docs/node/
 docs/build/
 
 **/.claude/settings.local.json
+/out/

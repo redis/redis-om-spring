@@ -1,9 +1,8 @@
 package com.redis.om.spring.fixtures.document.model;
 
-import com.redis.om.spring.annotations.Indexed;
-
-
 import java.util.Objects;
+
+import com.redis.om.spring.annotations.Indexed;
 
 public class CityDoc {
   private @Indexed String name;

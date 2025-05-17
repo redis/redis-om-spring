@@ -1,12 +1,12 @@
 package com.redis.om.spring.convert;
 
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.convert.WritingConverter;
-import org.springframework.stereotype.Component;
-
 import java.nio.charset.StandardCharsets;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
+
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.convert.WritingConverter;
+import org.springframework.stereotype.Component;
 
 @Component
 @WritingConverter

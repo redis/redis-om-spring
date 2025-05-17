@@ -1,12 +1,13 @@
 package com.redis.om.spring.search.stream.predicates.tag;
 
+import static org.apache.commons.lang3.ObjectUtils.isEmpty;
+
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
+
 import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import redis.clients.jedis.search.querybuilder.QueryNode;
-
-import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 
 public class EqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   private final T value;

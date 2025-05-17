@@ -1,12 +1,12 @@
 package com.redis.om.spring.convert;
 
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.convert.ReadingConverter;
-
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.convert.ReadingConverter;
 
 @ReadingConverter
 public class BytesToOffsetDateTimeConverter implements Converter<byte[], OffsetDateTime> {

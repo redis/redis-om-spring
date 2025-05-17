@@ -1,11 +1,11 @@
 package com.redis.om.spring.ops.pds;
 
-import com.redis.om.spring.client.RedisModulesClient;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import com.redis.om.spring.client.RedisModulesClient;
 
 public class CountMinSketchOperationsImpl<K> implements CountMinSketchOperations<K> {
   final RedisModulesClient client;
@@ -39,7 +39,9 @@ public class CountMinSketchOperationsImpl<K> implements CountMinSketchOperations
     return client.clientForCMS().cmsQuery(key.toString(), items);
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   @Override
   public void cmsMerge(K destKey, K... keys) {
     client.clientForCMS().cmsMerge( //
@@ -62,4 +64,3 @@ public class CountMinSketchOperationsImpl<K> implements CountMinSketchOperations
     return client.clientForCMS().cmsInfo(key.toString());
   }
 }
-

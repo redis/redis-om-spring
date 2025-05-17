@@ -1,5 +1,25 @@
 package com.redis.om.spring.search.stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.time.LocalDate;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.*;
+import java.util.stream.*;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Metrics;
+import org.springframework.data.geo.Point;
+
 import com.google.common.collect.Iterators;
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
 import com.redis.om.spring.fixtures.hash.model.ASimpleHash;
@@ -12,28 +32,12 @@ import com.redis.om.spring.repository.query.Sort;
 import com.redis.om.spring.tuple.Fields;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.Triple;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.geo.Distance;
-import org.springframework.data.geo.Metrics;
-import org.springframework.data.geo.Point;
+
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
-import java.time.LocalDate;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.*;
-import java.util.stream.*;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-
-@SuppressWarnings("SpellCheckingInspection")
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class EntityStreamHashTest extends AbstractBaseEnhancedRedisTest {
   @Autowired
   CompanyRepository repository;
@@ -987,8 +991,8 @@ class EntityStreamHashTest extends AbstractBaseEnhancedRedisTest {
   void testReduceWithIdentityBifunctionAndBinaryOperator() {
     Integer firstEstablish = entityStream //
         .of(Company.class) //
-        .reduce(Integer.MAX_VALUE, (minimum, company) -> Integer.min(minimum, company.getYearFounded()),
-            (t, u) -> Integer.min(t, u));
+        .reduce(Integer.MAX_VALUE, (minimum, company) -> Integer.min(minimum, company.getYearFounded()), (t,
+            u) -> Integer.min(t, u));
     assertThat(firstEstablish).isEqualTo(1975);
   }
 
@@ -1089,8 +1093,8 @@ class EntityStreamHashTest extends AbstractBaseEnhancedRedisTest {
   @Test
   void testCollectWithIdAndCombiner() {
     Supplier<AtomicInteger> supplier = AtomicInteger::new;
-    BiConsumer<AtomicInteger, Company> accumulator = (AtomicInteger a, Company c) -> a.set(
-        a.get() + c.getYearFounded());
+    BiConsumer<AtomicInteger, Company> accumulator = (AtomicInteger a, Company c) -> a.set(a.get() + c
+        .getYearFounded());
 
     BiConsumer<AtomicInteger, AtomicInteger> combiner = (a1, a2) -> a1.set(a1.get() + a2.get());
 
@@ -1236,7 +1240,7 @@ class EntityStreamHashTest extends AbstractBaseEnhancedRedisTest {
   @Test
   void testIterator() {
     List<Company> allCompanies = new ArrayList<>();
-    for (Iterator<Company> iterator = entityStream.of(Company.class).iterator(); iterator.hasNext(); ) {
+    for (Iterator<Company> iterator = entityStream.of(Company.class).iterator(); iterator.hasNext();) {
       allCompanies.add(iterator.next());
     }
 
@@ -1297,8 +1301,8 @@ class EntityStreamHashTest extends AbstractBaseEnhancedRedisTest {
   @Test
   void testIteratorOnMappedField() {
     List<String> allCompanies = new ArrayList<>();
-    for (Iterator<String> iterator = entityStream.of(Company.class).map(Company$.NAME)
-        .iterator(); iterator.hasNext(); ) {
+    for (Iterator<String> iterator = entityStream.of(Company.class).map(Company$.NAME).iterator(); iterator
+        .hasNext();) {
       allCompanies.add(iterator.next());
     }
 
@@ -1367,8 +1371,8 @@ class EntityStreamHashTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testFlatMapOnMappedField() {
-    Function<Company, Stream<String>> mapper = (Company company) -> Stream.of(
-        String.join("-", new TreeSet<>(company.getTags())));
+    Function<Company, Stream<String>> mapper = (Company company) -> Stream.of(String.join("-", new TreeSet<>(company
+        .getTags())));
 
     List<String> joinedTags = entityStream //
         .of(Company.class) //
@@ -1689,8 +1693,8 @@ class EntityStreamHashTest extends AbstractBaseEnhancedRedisTest {
 
     aSimpleHashRepository.save(hash);
 
-    var hashes = entityStream.of(ASimpleHash.class).filter(ASimpleHash$.SECOND.containing("some text"))
-        .collect(Collectors.toList());
+    var hashes = entityStream.of(ASimpleHash.class).filter(ASimpleHash$.SECOND.containing("some text")).collect(
+        Collectors.toList());
 
     assertEquals(1, hashes.size());
     assertThat(hashes.get(0).getSecond()).isEqualTo("some text about nothing");
@@ -1706,8 +1710,8 @@ class EntityStreamHashTest extends AbstractBaseEnhancedRedisTest {
 
     aSimpleHashRepository.save(hash);
 
-    var hashes = entityStream.of(ASimpleHash.class).filter(ASimpleHash$.SECOND.containing("text about"))
-        .collect(Collectors.toList());
+    var hashes = entityStream.of(ASimpleHash.class).filter(ASimpleHash$.SECOND.containing("text about")).collect(
+        Collectors.toList());
 
     assertEquals(1, hashes.size());
     assertThat(hashes.get(0).getSecond()).isEqualTo("some text about nothing");
@@ -1723,8 +1727,8 @@ class EntityStreamHashTest extends AbstractBaseEnhancedRedisTest {
 
     aSimpleHashRepository.save(hash);
 
-    var hashes = entityStream.of(ASimpleHash.class).filter(ASimpleHash$.SECOND.containing("about nothing"))
-        .collect(Collectors.toList());
+    var hashes = entityStream.of(ASimpleHash.class).filter(ASimpleHash$.SECOND.containing("about nothing")).collect(
+        Collectors.toList());
 
     assertEquals(1, hashes.size());
     assertThat(hashes.get(0).getSecond()).isEqualTo("some text about nothing");
@@ -1740,8 +1744,8 @@ class EntityStreamHashTest extends AbstractBaseEnhancedRedisTest {
 
     aSimpleHashRepository.save(hash);
 
-    var hashes = entityStream.of(ASimpleHash.class).filter(ASimpleHash$.SECOND.containing("ext abou"))
-        .collect(Collectors.toList());
+    var hashes = entityStream.of(ASimpleHash.class).filter(ASimpleHash$.SECOND.containing("ext abou")).collect(
+        Collectors.toList());
 
     assertEquals(1, hashes.size());
     assertThat(hashes.get(0).getSecond()).isEqualTo("some text about nothing");
@@ -1790,7 +1794,6 @@ class EntityStreamHashTest extends AbstractBaseEnhancedRedisTest {
     // get first page
     Page<Company> page0 = entityStream.of(Company.class) //
         .getPage(page0Request);
-
 
     assertThat(page0).hasSize(PAGE_SIZE);
     assertThat(page0.hasNext()).isTrue();

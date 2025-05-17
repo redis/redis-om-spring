@@ -1,11 +1,12 @@
 package com.redis.om.spring;
 
-import com.redis.om.spring.id.ULIDIdentifierGenerator;
 import org.springframework.data.keyvalue.core.KeyValueTemplate;
 import org.springframework.data.redis.core.RedisKeyValueAdapter;
 import org.springframework.data.redis.core.RedisKeyValueTemplate;
 import org.springframework.data.redis.core.convert.RedisConverter;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
+
+import com.redis.om.spring.id.ULIDIdentifierGenerator;
 
 public class CustomRedisKeyValueTemplate extends KeyValueTemplate {
 

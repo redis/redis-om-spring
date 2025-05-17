@@ -1,29 +1,41 @@
 package com.redis.om.spring.fixtures.hash.model;
 
-import com.redis.om.spring.annotations.*;
-import lombok.*;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.core.RedisHash;
 
-import java.util.HashSet;
-import java.util.Set;
+import com.redis.om.spring.annotations.*;
+
+import lombok.*;
 
 @Data
-@NoArgsConstructor(force = true)
-@RequiredArgsConstructor(staticName = "of")
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor(
+    force = true
+)
+@RequiredArgsConstructor(
+    staticName = "of"
+)
+@AllArgsConstructor(
+    access = AccessLevel.PROTECTED
+)
 @RedisHash
 public class MyHash {
   @Id
   private String id;
 
   @NonNull
-  @TextIndexed(alias = "title", sortable = true)
+  @TextIndexed(
+      alias = "title", sortable = true
+  )
   private String title;
 
   @NonNull
-  @GeoIndexed(alias = "location")
+  @GeoIndexed(
+      alias = "location"
+  )
   private Point location;
 
   @NonNull
@@ -34,6 +46,8 @@ public class MyHash {
   @NumericIndexed
   private Integer aNumber;
 
-  @TagIndexed(alias = "tag")
+  @TagIndexed(
+      alias = "tag"
+  )
   private Set<String> tag = new HashSet<>();
 }

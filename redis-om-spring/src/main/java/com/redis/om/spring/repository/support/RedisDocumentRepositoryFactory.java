@@ -1,11 +1,9 @@
 package com.redis.om.spring.repository.support;
 
-import com.google.gson.GsonBuilder;
-import com.redis.om.spring.RedisOMProperties;
-import com.redis.om.spring.indexing.RediSearchIndexer;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.repository.query.RediSearchQuery;
-import com.redis.om.spring.vectorize.Embedder;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.util.Optional;
+
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.repository.query.KeyValuePartTreeQuery;
@@ -29,9 +27,12 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.util.Optional;
+import com.google.gson.GsonBuilder;
+import com.redis.om.spring.RedisOMProperties;
+import com.redis.om.spring.indexing.RediSearchIndexer;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.repository.query.RediSearchQuery;
+import com.redis.om.spring.vectorize.Embedder;
 
 public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
 
@@ -56,7 +57,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
    * @param indexer            must not be {@literal null}.
    * @param mappingContext     must not be {@literal null}.
    * @param gsonBuilder        must not be {@literal null}.
-   * @param embedder   must not be {@literal null}.
+   * @param embedder           must not be {@literal null}.
    * @param properties         must not be {@literal null}.
    */
   public RedisDocumentRepositoryFactory( //
@@ -125,7 +126,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
    * @param repositoryQueryType must not be {@literal null}.
    * @param mappingContext      must not be {@literal null}.
    * @param gsonBuilder         must not be {@literal null}.
-   * @param embedder    must not be {@literal null}.
+   * @param embedder            must not be {@literal null}.
    * @param properties          must not be {@literal null}.
    */
   public RedisDocumentRepositoryFactory( //
@@ -167,7 +168,9 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
    * org.springframework.data.repository.core.support.RepositoryFactorySupport#
    * getEntityInformation(java.lang.Class) */
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   public <T, ID> EntityInformation<T, ID> getEntityInformation(Class<T> domainClass) {
     PersistentEntity<T, ?> entity = (PersistentEntity<T, ?>) mappingContext.getRequiredPersistentEntity(domainClass);
     return new PersistentEntityInformation<>(entity);
@@ -199,26 +202,26 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
       QueryMethodEvaluationContextProvider evaluationContextProvider //
   ) {
     return Optional.of(new RediSearchQueryLookupStrategy(evaluationContextProvider, //
-            this.keyValueOperations, //
-            this.rmo, //
-            this.indexer, //
-            this.properties, //
-            this.queryCreator, //
-            this.repositoryQueryType, //
-            this.gsonBuilder //
-        ) //
+        this.keyValueOperations, //
+        this.rmo, //
+        this.indexer, //
+        this.properties, //
+        this.queryCreator, //
+        this.repositoryQueryType, //
+        this.gsonBuilder //
+    ) //
     );
   }
 
   private record RediSearchQueryLookupStrategy( //
-                                                QueryMethodEvaluationContextProvider evaluationContextProvider, //
-                                                KeyValueOperations keyValueOperations, //
-                                                RedisModulesOperations<?> rmo, //
-                                                RediSearchIndexer indexer, //
-                                                RedisOMProperties properties, //
-                                                Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
-                                                Class<? extends RepositoryQuery> repositoryQueryType, //
-                                                GsonBuilder gsonBuilder) implements QueryLookupStrategy {
+                                               QueryMethodEvaluationContextProvider evaluationContextProvider, //
+                                               KeyValueOperations keyValueOperations, //
+                                               RedisModulesOperations<?> rmo, //
+                                               RediSearchIndexer indexer, //
+                                               RedisOMProperties properties, //
+                                               Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
+                                               Class<? extends RepositoryQuery> repositoryQueryType, //
+                                               GsonBuilder gsonBuilder) implements QueryLookupStrategy {
 
     /**
      * @param evaluationContextProvider
@@ -246,7 +249,9 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
      * org.springframework.data.repository.core.NamedQueries)
      */
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings(
+      "unchecked"
+    )
     public RepositoryQuery resolveQuery( //
         Method method, //
         RepositoryMetadata metadata, //
@@ -255,17 +260,17 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
     ) {
       QueryMethod queryMethod = new QueryMethod(method, metadata, factory);
 
-      Constructor<? extends KeyValuePartTreeQuery> constructor = (Constructor<? extends KeyValuePartTreeQuery>) ClassUtils.getConstructorIfAvailable(
-          this.repositoryQueryType, //
-          QueryMethod.class, //
-          RepositoryMetadata.class, //
-          RediSearchIndexer.class, //
-          QueryMethodEvaluationContextProvider.class, //
-          KeyValueOperations.class, //
-          RedisModulesOperations.class, //
-          Class.class, //
-          GsonBuilder.class, //
-          RedisOMProperties.class);
+      Constructor<? extends KeyValuePartTreeQuery> constructor = (Constructor<? extends KeyValuePartTreeQuery>) ClassUtils
+          .getConstructorIfAvailable(this.repositoryQueryType, //
+              QueryMethod.class, //
+              RepositoryMetadata.class, //
+              RediSearchIndexer.class, //
+              QueryMethodEvaluationContextProvider.class, //
+              KeyValueOperations.class, //
+              RedisModulesOperations.class, //
+              Class.class, //
+              GsonBuilder.class, //
+              RedisOMProperties.class);
 
       Assert.state(constructor != null, String.format(
           "Constructor %s(QueryMethod, RepositoryMetadata, RediSearchIndexer, EvaluationContextProvider, KeyValueOperations, RedisModulesOperations, Class, GsonBuilder, RedisOMSpringProperties) not available!",

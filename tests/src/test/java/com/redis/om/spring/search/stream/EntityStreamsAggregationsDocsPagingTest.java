@@ -1,14 +1,8 @@
 package com.redis.om.spring.search.stream;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.fixtures.document.model.Game;
-import com.redis.om.spring.fixtures.document.repository.GameRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import redis.clients.jedis.search.aggr.AggregationResult;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -16,11 +10,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
-@SuppressWarnings({ "SpellCheckingInspection" })
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.fixtures.document.model.Game;
+import com.redis.om.spring.fixtures.document.repository.GameRepository;
+
+import redis.clients.jedis.search.aggr.AggregationResult;
+
+@SuppressWarnings(
+  { "SpellCheckingInspection" }
+)
 class EntityStreamsAggregationsDocsPagingTest extends AbstractBaseDocumentTest {
   @Autowired
   EntityStream entityStream;
@@ -39,8 +43,8 @@ class EntityStreamsAggregationsDocsPagingTest extends AbstractBaseDocumentTest {
   /**
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*"
-   *   "LOAD" "*"
-   *   "LIMIT" "0" "100"
+   * "LOAD" "*"
+   * "LIMIT" "0" "100"
    * </pre>
    */
   @Test
@@ -53,7 +57,8 @@ class EntityStreamsAggregationsDocsPagingTest extends AbstractBaseDocumentTest {
 
   /**
    * <pre>
-   * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*" "WITHCURSOR" "COUNT" "45" "MAXIDLE" "172800000" "LOAD" "*" "LIMIT" "0" "300"
+   * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*" "WITHCURSOR" "COUNT" "45" "MAXIDLE"
+   * "172800000" "LOAD" "*" "LIMIT" "0" "300"
    * "FT.CURSOR" "READ" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "17284697" "45"
    * "FT.CURSOR" "READ" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "17284697" "45"
    * "FT.CURSOR" "READ" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "17284697" "45"
@@ -86,14 +91,14 @@ class EntityStreamsAggregationsDocsPagingTest extends AbstractBaseDocumentTest {
 
     // assert the page counts
     assertAll("page counts", () -> assertEquals(6, pageCounts.size()), () -> assertEquals(45, pageCounts.get(0)),
-        () -> assertEquals(45, pageCounts.get(1)), () -> assertEquals(45, pageCounts.get(2)),
-        () -> assertEquals(45, pageCounts.get(3)), () -> assertEquals(45, pageCounts.get(4)),
-        () -> assertEquals(30, pageCounts.get(5)));
+        () -> assertEquals(45, pageCounts.get(1)), () -> assertEquals(45, pageCounts.get(2)), () -> assertEquals(45,
+            pageCounts.get(3)), () -> assertEquals(45, pageCounts.get(4)), () -> assertEquals(30, pageCounts.get(5)));
   }
 
   /**
    * <pre>
-   * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*" "WITHCURSOR" "COUNT" "45" "MAXIDLE" "172800000" "LOAD" "*" "LIMIT" "0" "300"
+   * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*" "WITHCURSOR" "COUNT" "45" "MAXIDLE"
+   * "172800000" "LOAD" "*" "LIMIT" "0" "300"
    * "FT.CURSOR" "READ" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "17284697" "45"
    * "FT.CURSOR" "READ" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "17284697" "45"
    * "FT.CURSOR" "READ" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "17284697" "45"
@@ -121,10 +126,10 @@ class EntityStreamsAggregationsDocsPagingTest extends AbstractBaseDocumentTest {
     }
 
     // assert the page counts
-    assertAll("page counts", () -> assertEquals(pageSize, pageCounts.get(0)),
-        () -> assertEquals(pageSize, pageCounts.get(1)), () -> assertEquals(pageSize, pageCounts.get(2)),
-        () -> assertEquals(pageSize, pageCounts.get(3)), () -> assertEquals(pageSize, pageCounts.get(4)),
-        () -> assertEquals(pageSize, pageCounts.get(5)), () -> assertEquals(30, pageCounts.get(6)));
+    assertAll("page counts", () -> assertEquals(pageSize, pageCounts.get(0)), () -> assertEquals(pageSize, pageCounts
+        .get(1)), () -> assertEquals(pageSize, pageCounts.get(2)), () -> assertEquals(pageSize, pageCounts.get(3)),
+        () -> assertEquals(pageSize, pageCounts.get(4)), () -> assertEquals(pageSize, pageCounts.get(5)),
+        () -> assertEquals(30, pageCounts.get(6)));
   }
 
 }

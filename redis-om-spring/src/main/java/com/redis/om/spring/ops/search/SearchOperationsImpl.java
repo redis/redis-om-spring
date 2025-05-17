@@ -1,21 +1,23 @@
 package com.redis.om.spring.ops.search;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.springframework.data.redis.core.StringRedisTemplate;
+
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.redis.om.spring.autocomplete.Suggestion;
 import com.redis.om.spring.client.RedisModulesClient;
 import com.redis.om.spring.repository.query.autocomplete.AutoCompleteOptions;
-import org.springframework.data.redis.core.StringRedisTemplate;
+
 import redis.clients.jedis.resps.Tuple;
 import redis.clients.jedis.search.*;
 import redis.clients.jedis.search.aggr.AggregationBuilder;
 import redis.clients.jedis.search.aggr.AggregationResult;
 import redis.clients.jedis.search.schemafields.SchemaField;
 import redis.clients.jedis.util.SafeEncoder;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public class SearchOperationsImpl<K> implements SearchOperations<K> {
 

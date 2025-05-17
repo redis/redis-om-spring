@@ -1,21 +1,25 @@
 package com.redis.om.spring.ops.pds;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import redis.clients.jedis.bloom.BFInsertParams;
-import redis.clients.jedis.exceptions.JedisDataException;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
-@SuppressWarnings("SpellCheckingInspection")
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.ops.RedisModulesOperations;
+
+import redis.clients.jedis.bloom.BFInsertParams;
+import redis.clients.jedis.exceptions.JedisDataException;
+
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class OpsForBloomTest extends AbstractBaseDocumentTest {
   @Autowired
   RedisModulesOperations<String> modulesOperations;
@@ -71,8 +75,8 @@ class OpsForBloomTest extends AbstractBaseDocumentTest {
 
   @Test
   void reserveExpansionNoCreate() {
-    JedisDataException exception = Assertions.assertThrows(JedisDataException.class,
-        () -> bloom.insert("bfexpansion", BFInsertParams.insertParams().noCreate(), "a", "b", "c"));
+    JedisDataException exception = Assertions.assertThrows(JedisDataException.class, () -> bloom.insert("bfexpansion",
+        BFInsertParams.insertParams().noCreate(), "a", "b", "c"));
 
     Assertions.assertEquals("ERR not found", exception.getMessage());
     template.delete("bfexpansion");
@@ -80,8 +84,8 @@ class OpsForBloomTest extends AbstractBaseDocumentTest {
 
   @Test
   void reserveExpansion() {
-    assertThat(bloom.insert("bfexpansion2", BFInsertParams.insertParams().capacity(1000), "a", "b", "c")).isEqualTo(
-        List.of(true, true, true));
+    assertThat(bloom.insert("bfexpansion2", BFInsertParams.insertParams().capacity(1000), "a", "b", "c")).isEqualTo(List
+        .of(true, true, true));
     template.delete("bfexpansion2");
   }
 

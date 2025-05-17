@@ -1,18 +1,20 @@
 package com.redis.om.spring.ops.pds;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import redis.clients.jedis.exceptions.JedisDataException;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.ops.RedisModulesOperations;
+
+import redis.clients.jedis.exceptions.JedisDataException;
 
 class OpsForTopKTest extends AbstractBaseDocumentTest {
   @Autowired
@@ -58,7 +60,7 @@ class OpsForTopKTest extends AbstractBaseDocumentTest {
     assertEquals(1L, counts.get("item2"), "item2 should have a count of 1");
     assertEquals(1L, counts.get("item3"), "item3 should have a count of 1");
     assertEquals(1L, counts.get("item4"), "item4 should have a count of 1");
-    
+
     // Clean up after the test
     template.delete("topkTest");
   }
@@ -76,7 +78,7 @@ class OpsForTopKTest extends AbstractBaseDocumentTest {
     Map<String, Long> itemIncrMap = new HashMap<>();
     itemIncrMap.put("item2", 3L);
     itemIncrMap.put("item3", 7L);
-    
+
     List<String> droppedList = topK.incrementBy("topkIncrTest", itemIncrMap);
     assertEquals(2, droppedList.size(), "Should return a list with the same size of the added items");
     assertNull(droppedList.get(0), "No item should be dropped");
@@ -84,12 +86,12 @@ class OpsForTopKTest extends AbstractBaseDocumentTest {
     // Check that the items exist with correct counts
     Map<String, Long> counts = topK.listWithCount("topkIncrTest");
     assertFalse(counts.isEmpty());
-    
+
     // Verify counts are as expected (may vary due to probabilistic nature)
     assertEquals(5L, counts.get("item1"), "item1 should have a count of 5");
     assertEquals(3L, counts.get("item2"), "item2 should have a count of 3");
     assertEquals(7L, counts.get("item3"), "item3 should have a count of 7");
-    
+
     // Clean up after the test
     template.delete("topkIncrTest");
   }
@@ -99,31 +101,30 @@ class OpsForTopKTest extends AbstractBaseDocumentTest {
     // Create a TopK filter with custom parameters
     String status = topK.createFilter("topkInfoTest", 5, 10, 7, 0.9);
     assertEquals("OK", status, "Filter should be created successfully");
-    
+
     // Get filter info
     Map<String, Object> info = topK.info("topkInfoTest");
-    
+
     // Verify expected keys in info map
     assertNotNull(info);
     assertFalse(info.isEmpty());
-    
+
     // Verify specific filter parameters
     assertEquals(5L, info.get("k"));
     assertEquals(10L, info.get("width"));
     assertEquals(7L, info.get("depth"));
     assertEquals(0.9, Double.parseDouble((String) info.get("decay")));
-    
+
     // Clean up after the test
     template.delete("topkInfoTest");
   }
-  
+
   @Test
   void testNonExistingKey() {
     // Attempt to get info for a non-existing key
-    JedisDataException exception = assertThrows(JedisDataException.class, 
-        () -> topK.info("nonExistingKey"));
-    
+    JedisDataException exception = assertThrows(JedisDataException.class, () -> topK.info("nonExistingKey"));
+
     // Verify error message
     assertEquals("TopK: key does not exist", exception.getMessage());
   }
-} 
+}

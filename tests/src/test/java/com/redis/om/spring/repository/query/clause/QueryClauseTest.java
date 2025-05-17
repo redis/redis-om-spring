@@ -1,20 +1,23 @@
 package com.redis.om.spring.repository.query.clause;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.data.geo.Distance;
-import org.springframework.data.geo.Metrics;
-import org.springframework.data.geo.Point;
-import org.springframework.data.repository.query.parser.Part;
-import redis.clients.jedis.search.Schema.FieldType;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Metrics;
+import org.springframework.data.geo.Point;
+import org.springframework.data.repository.query.parser.Part;
 
-@SuppressWarnings("SpellCheckingInspection")
+import redis.clients.jedis.search.Schema.FieldType;
+
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class QueryClauseTest {
 
   @Test
@@ -72,10 +75,10 @@ class QueryClauseTest {
     List<Object> tagContainingAll = new ArrayList<>(Arrays.asList("db1", "db2"));
     List<Object> numericContaining = new ArrayList<>(Arrays.asList(1, 2, 3));
     List<Object> numericContainingAll = new ArrayList<>(Arrays.asList(1, 2, 3));
-    List<Object> geoContaining = new ArrayList<>(
-        Arrays.asList(new Point(-122.066540, 37.377690), new Point(122.066540, -37.377690)));
-    List<Object> geoContainingAll = new ArrayList<>(
-        Arrays.asList(new Point(-122.066540, 37.377690), new Point(122.066540, -37.377690)));
+    List<Object> geoContaining = new ArrayList<>(Arrays.asList(new Point(-122.066540, 37.377690), new Point(122.066540,
+        -37.377690)));
+    List<Object> geoContainingAll = new ArrayList<>(Arrays.asList(new Point(-122.066540, 37.377690), new Point(
+        122.066540, -37.377690)));
     List<Object> numericGreaterThan = new ArrayList<>(Arrays.asList(5, 10));
 
     // Act

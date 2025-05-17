@@ -1,25 +1,37 @@
 package com.redis.om.spring.fixtures.hash.model;
 
-import com.redis.om.spring.annotations.CountMin;
-import com.redis.om.spring.tuple.Pair;
-import lombok.*;
+import java.util.List;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
 
-import java.util.List;
+import com.redis.om.spring.annotations.CountMin;
+import com.redis.om.spring.tuple.Pair;
+
+import lombok.*;
 
 @Data
-@NoArgsConstructor(force = true)
-@RequiredArgsConstructor(staticName = "of")
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
-@RedisHash("searchEvent")
+@NoArgsConstructor(
+    force = true
+)
+@RequiredArgsConstructor(
+    staticName = "of"
+)
+@AllArgsConstructor(
+    access = AccessLevel.PROTECTED
+)
+@RedisHash(
+  "searchEvent"
+)
 public class SearchEvent {
 
   @Id
   String id;
 
   @NonNull
-  @CountMin(name = "cms_user_id_count", initMode = CountMin.InitMode.DIMENSIONS, width = 1000, depth = 10)
+  @CountMin(
+      name = "cms_user_id_count", initMode = CountMin.InitMode.DIMENSIONS, width = 1000, depth = 10
+  )
   String userId;
 
   @NonNull
@@ -27,10 +39,14 @@ public class SearchEvent {
   String searchSentence;
 
   @NonNull
-  @CountMin(errorRate = 0.001, probability = 0.999)
+  @CountMin(
+      errorRate = 0.001, probability = 0.999
+  )
   List<String> hotTerms;
 
   @NonNull
-  @CountMin(name = "cms_search_words")
+  @CountMin(
+      name = "cms_search_words"
+  )
   List<Pair<String, Long>> searchWord;
 }

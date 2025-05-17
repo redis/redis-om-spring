@@ -1,20 +1,22 @@
 package com.redis.om.spring.search.stream;
 
+import java.time.Duration;
+import java.util.*;
+import java.util.function.*;
+import java.util.stream.*;
+
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.indexed.NumericField;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
 import com.redis.om.spring.tuple.Pair;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
-import java.time.Duration;
-import java.util.*;
-import java.util.function.*;
-import java.util.stream.*;
+import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
 public class WrapperSearchStream<E> implements SearchStream<E> {
 
@@ -76,7 +78,9 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
     return this;
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   @Override
   public SearchStream<E> filter(Predicate<?> predicate) {
     // TODO: need to test this cast!

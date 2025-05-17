@@ -1,11 +1,11 @@
 package com.redis.om.spring.convert;
 
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.WritingConverter;
 import org.springframework.stereotype.Component;
-
-import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
 
 @Component
 @WritingConverter

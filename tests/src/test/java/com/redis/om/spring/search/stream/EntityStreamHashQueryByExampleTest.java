@@ -1,18 +1,7 @@
 package com.redis.om.spring.search.stream;
 
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.fixtures.hash.model.Company;
-import com.redis.om.spring.fixtures.hash.model.MyHash;
-import com.redis.om.spring.fixtures.hash.repository.CompanyRepository;
-import com.redis.om.spring.fixtures.hash.repository.MyHashRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
-import org.springframework.data.domain.*;
-import org.springframework.data.domain.ExampleMatcher.StringMatcher;
-import org.springframework.data.geo.Point;
-import org.springframework.data.repository.query.FluentQuery.FetchableFluentQuery;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -21,9 +10,18 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.junit.jupiter.api.Assertions.assertAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.*;
+import org.springframework.data.domain.ExampleMatcher.StringMatcher;
+import org.springframework.data.geo.Point;
+
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.fixtures.hash.model.Company;
+import com.redis.om.spring.fixtures.hash.model.MyHash;
+import com.redis.om.spring.fixtures.hash.repository.CompanyRepository;
+import com.redis.om.spring.fixtures.hash.repository.MyHashRepository;
 
 public class EntityStreamHashQueryByExampleTest extends AbstractBaseEnhancedRedisTest {
   @Autowired
@@ -319,7 +317,8 @@ public class EntityStreamHashQueryByExampleTest extends AbstractBaseEnhancedRedi
     bothTemplate.setTags(Set.of("CommonTag"));
     Example<Company> bothExample = Example.of(bothTemplate);
 
-    Iterable<Company> shouldBeOnlyRedis = entityStream.of(Company.class).filter(redisExample).collect(Collectors.toList());
+    Iterable<Company> shouldBeOnlyRedis = entityStream.of(Company.class).filter(redisExample).collect(Collectors
+        .toList());
     Iterable<Company> shouldBeOnlyMS = entityStream.of(Company.class).filter(msExample).collect(Collectors.toList());
     Iterable<Company> shouldBeBoth = entityStream.of(Company.class).filter(bothExample).collect(Collectors.toList());
 
@@ -350,7 +349,8 @@ public class EntityStreamHashQueryByExampleTest extends AbstractBaseEnhancedRedi
     template.setTitle("llo");
     ExampleMatcher matcher = ExampleMatcher.matching().withStringMatcher(StringMatcher.CONTAINING);
 
-    List<MyHash> result = entityStream.of(MyHash.class).filter(Example.of(template, matcher)).collect(Collectors.toList());
+    List<MyHash> result = entityStream.of(MyHash.class).filter(Example.of(template, matcher)).collect(Collectors
+        .toList());
 
     assertThat(result).hasSize(2);
   }
@@ -360,13 +360,15 @@ public class EntityStreamHashQueryByExampleTest extends AbstractBaseEnhancedRedi
     MyHash template = new MyHash();
     template.setLocation(new Point(-122.066540, 37.377690));
 
-    Page<MyHash> firstPage = entityStream.of(MyHash.class).filter(Example.of(template)).getPage(PageRequest.of(0, 2, Sort.by("title")));
+    Page<MyHash> firstPage = entityStream.of(MyHash.class).filter(Example.of(template)).getPage(PageRequest.of(0, 2,
+        Sort.by("title")));
     assertThat(firstPage.getTotalElements()).isEqualTo(3);
     assertThat(firstPage.getContent().size()).isEqualTo(2);
-    assertThat(firstPage.getContent().stream().toList()).map(MyHash::getTitle)
-        .containsExactly("bonjour le monde", "hello mundo");
+    assertThat(firstPage.getContent().stream().toList()).map(MyHash::getTitle).containsExactly("bonjour le monde",
+        "hello mundo");
 
-    Page<MyHash> secondPage = entityStream.of(MyHash.class).filter(Example.of(template)).getPage(PageRequest.of(1, 2, Sort.by("title")));
+    Page<MyHash> secondPage = entityStream.of(MyHash.class).filter(Example.of(template)).getPage(PageRequest.of(1, 2,
+        Sort.by("title")));
 
     assertThat(secondPage.getTotalElements()).isEqualTo(3);
     assertThat(secondPage.getContent().size()).isEqualTo(1);

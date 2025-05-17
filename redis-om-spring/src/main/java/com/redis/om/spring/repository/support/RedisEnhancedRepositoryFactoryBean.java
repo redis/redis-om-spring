@@ -1,11 +1,5 @@
 package com.redis.om.spring.repository.support;
 
-import com.redis.om.spring.RedisOMProperties;
-import com.redis.om.spring.indexing.RediSearchIndexer;
-import com.redis.om.spring.mapping.RedisEnhancedMappingContext;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.repository.query.RedisEnhancedQuery;
-import com.redis.om.spring.vectorize.Embedder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.repository.config.QueryCreatorType;
@@ -23,8 +17,15 @@ import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
-public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, ID>
-    extends RepositoryFactoryBeanSupport<T, S, ID> {
+import com.redis.om.spring.RedisOMProperties;
+import com.redis.om.spring.indexing.RediSearchIndexer;
+import com.redis.om.spring.mapping.RedisEnhancedMappingContext;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.repository.query.RedisEnhancedQuery;
+import com.redis.om.spring.vectorize.Embedder;
+
+public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, ID> extends
+    RepositoryFactoryBeanSupport<T, S, ID> {
 
   @Autowired
   private @Nullable RedisModulesOperations<String> rmo;
@@ -76,7 +77,9 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
    *
    * @param rmo must not be {@literal null}.
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   public void setRedisModulesOperations(RedisModulesOperations<?> rmo) {
     Assert.notNull(rmo, "RedisModulesOperations must not be null!");
 

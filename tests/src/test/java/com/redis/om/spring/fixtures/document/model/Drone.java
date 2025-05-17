@@ -1,8 +1,8 @@
 package com.redis.om.spring.fixtures.document.model;
 
-import com.redis.om.spring.annotations.Indexed;
-
 import java.util.UUID;
+
+import com.redis.om.spring.annotations.Indexed;
 
 public class Drone {
 
@@ -24,4 +24,3 @@ public class Drone {
     this.content = content;
   }
 }
-

@@ -1,8 +1,13 @@
 package com.redis.om.spring.countmin;
 
-import com.redis.om.spring.annotations.CountMin;
-import com.redis.om.spring.ops.pds.CountMinSketchOperations;
-import com.redis.om.spring.tuple.Pair;
+import java.beans.IntrospectionException;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.List;
+
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -15,13 +20,9 @@ import org.springframework.data.keyvalue.repository.KeyValueRepository;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
-import java.beans.IntrospectionException;
-import java.beans.PropertyDescriptor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.List;
+import com.redis.om.spring.annotations.CountMin;
+import com.redis.om.spring.ops.pds.CountMinSketchOperations;
+import com.redis.om.spring.tuple.Pair;
 
 @Aspect
 @Component
@@ -35,19 +36,27 @@ public class CountMinAspect implements Ordered {
     this.stringRedisTemplate = stringRedisTemplate;
   }
 
-  @Pointcut("execution(public * org.springframework.data.repository.CrudRepository+.save(..))")
+  @Pointcut(
+    "execution(public * org.springframework.data.repository.CrudRepository+.save(..))"
+  )
   public void inCrudRepositorySave() {
   }
 
-  @Pointcut("execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.save(..))")
+  @Pointcut(
+    "execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.save(..))"
+  )
   public void inRedisDocumentRepositorySave() {
   }
 
-  @Pointcut("inCrudRepositorySave() || inRedisDocumentRepositorySave()")
+  @Pointcut(
+    "inCrudRepositorySave() || inRedisDocumentRepositorySave()"
+  )
   private void inSaveOperation() {
   }
 
-  @AfterReturning("inSaveOperation() && args(entity,..)")
+  @AfterReturning(
+    "inSaveOperation() && args(entity,..)"
+  )
   public void addToCountMin(JoinPoint jp, Object entity) {
     for (Field field : com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(entity.getClass())) {
       if (field.isAnnotationPresent(CountMin.class)) {
@@ -55,17 +64,18 @@ public class CountMinAspect implements Ordered {
         String sketchName = !ObjectUtils.isEmpty(countMin.name()) ?
             countMin.name() :
             String.format("cms:%s:%s", entity.getClass().getSimpleName(), field.getName());
-        
+
         try {
           PropertyDescriptor pd = new PropertyDescriptor(field.getName(), entity.getClass());
           Object fieldValue = pd.getReadMethod().invoke(entity);
-          
+
           if (fieldValue != null) {
             // Initialize the Count-min Sketch if it doesn't exist
             initializeCountMinSketch(sketchName, countMin);
-            
+
             // Increment the count for the field value
-            if (fieldValue instanceof Pair<?, ?> pair && pair.getFirst() instanceof String && pair.getSecond() instanceof Number) {
+            if (fieldValue instanceof Pair<?, ?> pair && pair.getFirst() instanceof String && pair
+                .getSecond() instanceof Number) {
               ops.cmsIncrBy(sketchName, (String) pair.getFirst(), ((Number) pair.getSecond()).longValue());
             } else if (fieldValue instanceof Iterable<?> iterable) {
               for (Object item : iterable) {
@@ -87,28 +97,45 @@ public class CountMinAspect implements Ordered {
     }
   }
 
-  @Pointcut("execution(public * org.springframework.data.repository.CrudRepository+.saveAll(..))")
+  @Pointcut(
+    "execution(public * org.springframework.data.repository.CrudRepository+.saveAll(..))"
+  )
   public void inCrudRepositorySaveAll() {
   }
 
-  @Pointcut("execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.saveAll(..))")
+  @Pointcut(
+    "execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.saveAll(..))"
+  )
   public void inRedisDocumentRepositorySaveAll() {
   }
 
-  @Pointcut("inCrudRepositorySaveAll() || inRedisDocumentRepositorySaveAll()")
+  @Pointcut(
+    "inCrudRepositorySaveAll() || inRedisDocumentRepositorySaveAll()"
+  )
   private void inSaveAllOperation() {
   }
 
-  @Pointcut("execution(public * org.springframework.data.repository.CrudRepository+.deleteAll())")
-  public void inCrudRepositoryDeleteAllNoArgs() {}
+  @Pointcut(
+    "execution(public * org.springframework.data.repository.CrudRepository+.deleteAll())"
+  )
+  public void inCrudRepositoryDeleteAllNoArgs() {
+  }
 
-  @Pointcut("execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.deleteAll())")
-  public void inRedisDocumentRepositoryDeleteAllNoArgs() {}
+  @Pointcut(
+    "execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.deleteAll())"
+  )
+  public void inRedisDocumentRepositoryDeleteAllNoArgs() {
+  }
 
-  @Pointcut("inCrudRepositoryDeleteAllNoArgs() || inRedisDocumentRepositoryDeleteAllNoArgs()")
-  private void inDeleteAllNoArgsOperation() {}
+  @Pointcut(
+    "inCrudRepositoryDeleteAllNoArgs() || inRedisDocumentRepositoryDeleteAllNoArgs()"
+  )
+  private void inDeleteAllNoArgsOperation() {
+  }
 
-  @AfterReturning("inSaveAllOperation() && args(entities,..)")
+  @AfterReturning(
+    "inSaveAllOperation() && args(entities,..)"
+  )
   public void addAllToCountMin(JoinPoint jp, List<Object> entities) {
     for (Object entity : entities) {
       for (Field field : com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(entity.getClass())) {
@@ -117,21 +144,23 @@ public class CountMinAspect implements Ordered {
           String sketchName = !ObjectUtils.isEmpty(countMin.name()) ?
               countMin.name() :
               String.format("cms:%s:%s", entity.getClass().getSimpleName(), field.getName());
-          
+
           try {
             PropertyDescriptor pd = new PropertyDescriptor(field.getName(), entity.getClass());
             Object fieldValue = pd.getReadMethod().invoke(entity);
-            
+
             if (fieldValue != null) {
               // Initialize the Count-min Sketch if it doesn't exist
               initializeCountMinSketch(sketchName, countMin);
-              
+
               // Increment the count for the field value
-              if (fieldValue instanceof Pair<?, ?> pair && pair.getFirst() instanceof String && pair.getSecond() instanceof Number) {
+              if (fieldValue instanceof Pair<?, ?> pair && pair.getFirst() instanceof String && pair
+                  .getSecond() instanceof Number) {
                 ops.cmsIncrBy(sketchName, (String) pair.getFirst(), ((Number) pair.getSecond()).longValue());
               } else if (fieldValue instanceof Iterable<?> iterable) {
                 for (Object item : iterable) {
-                  if (item instanceof Pair<?, ?> p && p.getFirst() instanceof String && p.getSecond() instanceof Number) {
+                  if (item instanceof Pair<?, ?> p && p.getFirst() instanceof String && p
+                      .getSecond() instanceof Number) {
                     ops.cmsIncrBy(sketchName, (String) p.getFirst(), ((Number) p.getSecond()).longValue());
                   } else {
                     ops.cmsIncrBy(sketchName, item.toString(), 1);
@@ -160,8 +189,8 @@ public class CountMinAspect implements Ordered {
         if (countMin.width() > 0 && countMin.depth() > 0) {
           ops.cmsInitByDim(sketchName, countMin.width(), countMin.depth());
         } else {
-          logger.error(String.format("Invalid dimensions for Count-min Sketch %s: width=%d, depth=%d", 
-              sketchName, countMin.width(), countMin.depth()));
+          logger.error(String.format("Invalid dimensions for Count-min Sketch %s: width=%d, depth=%d", sketchName,
+              countMin.width(), countMin.depth()));
         }
       } else {
         // Initialize by probability
@@ -170,7 +199,9 @@ public class CountMinAspect implements Ordered {
     }
   }
 
-  @AfterReturning("inDeleteAllNoArgsOperation()")
+  @AfterReturning(
+    "inDeleteAllNoArgsOperation()"
+  )
   public void deleteCMSOnDeleteAll(JoinPoint jp) {
     // Try to infer entity class from repository generics
     Object target = jp.getTarget();
@@ -185,8 +216,8 @@ public class CountMinAspect implements Ordered {
       if (field.isAnnotationPresent(CountMin.class)) {
         CountMin countMin = field.getAnnotation(CountMin.class);
         String sketchName = !ObjectUtils.isEmpty(countMin.name()) ?
-                countMin.name() :
-                String.format("cms:%s:%s", entityClass.getSimpleName(), field.getName());
+            countMin.name() :
+            String.format("cms:%s:%s", entityClass.getSimpleName(), field.getName());
 
         try {
           stringRedisTemplate.delete(sketchName);
@@ -198,10 +229,13 @@ public class CountMinAspect implements Ordered {
   }
 
   private boolean isKeyValueRepositoryInterface(Class<?> clazz) {
-    if (clazz == null) return false;
-    if (clazz == KeyValueRepository.class) return true;
+    if (clazz == null)
+      return false;
+    if (clazz == KeyValueRepository.class)
+      return true;
     for (Class<?> iface : clazz.getInterfaces()) {
-      if (isKeyValueRepositoryInterface(iface)) return true;
+      if (isKeyValueRepositoryInterface(iface))
+        return true;
     }
     return false;
   }
@@ -219,7 +253,8 @@ public class CountMinAspect implements Ordered {
       } else if (genericInterface instanceof Class<?> rawInterface) {
         // Look recursively
         Class<?> found = resolveEntityClassFromRepository(rawInterface);
-        if (found != null) return found;
+        if (found != null)
+          return found;
       }
     }
 

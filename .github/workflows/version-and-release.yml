@@ -32,9 +32,47 @@ jobs:
       - name: Update Maven version
         run: mvn versions:set -DnewVersion=${{ steps.get_version.outputs.VERSION }}
 
-      # Build all modules with the 'publication' profile
-      - name: Build project
-        run: mvn -Ppublication clean package -DskipTests
+      # Build and install all modules with the 'publication' profile
+      - name: Build and install project
+        run: mvn -Ppublication clean install -DskipTests
+
+      # Stage artifacts for deployment (similar to snapshot workflow)
+      - name: Stage artifacts for JReleaser
+        run: |
+          # Create staging directory
+          mkdir -p target/staging-deploy
+          
+          # Copy parent POM to staging directory
+          mkdir -p target/staging-deploy/com/redis/om/redis-om-spring-parent/${{ steps.get_version.outputs.VERSION }}
+          cp pom.xml \
+             target/staging-deploy/com/redis/om/redis-om-spring-parent/${{ steps.get_version.outputs.VERSION }}/redis-om-spring-parent-${{ steps.get_version.outputs.VERSION }}.pom
+          
+          # Copy the artifacts for both modules to the staging directory
+          # redis-om-spring module
+          mkdir -p target/staging-deploy/com/redis/om/redis-om-spring/${{ steps.get_version.outputs.VERSION }}
+          cp redis-om-spring/target/redis-om-spring-${{ steps.get_version.outputs.VERSION }}.jar \
+             target/staging-deploy/com/redis/om/redis-om-spring/${{ steps.get_version.outputs.VERSION }}/
+          cp redis-om-spring/target/redis-om-spring-${{ steps.get_version.outputs.VERSION }}-sources.jar \
+             target/staging-deploy/com/redis/om/redis-om-spring/${{ steps.get_version.outputs.VERSION }}/
+          cp redis-om-spring/target/redis-om-spring-${{ steps.get_version.outputs.VERSION }}-javadoc.jar \
+             target/staging-deploy/com/redis/om/redis-om-spring/${{ steps.get_version.outputs.VERSION }}/
+          cp redis-om-spring/pom.xml \
+             target/staging-deploy/com/redis/om/redis-om-spring/${{ steps.get_version.outputs.VERSION }}/redis-om-spring-${{ steps.get_version.outputs.VERSION }}.pom
+          
+          # redis-om-spring-ai module
+          mkdir -p target/staging-deploy/com/redis/om/redis-om-spring-ai/${{ steps.get_version.outputs.VERSION }}
+          cp redis-om-spring-ai/target/redis-om-spring-ai-${{ steps.get_version.outputs.VERSION }}.jar \
+             target/staging-deploy/com/redis/om/redis-om-spring-ai/${{ steps.get_version.outputs.VERSION }}/
+          cp redis-om-spring-ai/target/redis-om-spring-ai-${{ steps.get_version.outputs.VERSION }}-sources.jar \
+             target/staging-deploy/com/redis/om/redis-om-spring-ai/${{ steps.get_version.outputs.VERSION }}/
+          cp redis-om-spring-ai/target/redis-om-spring-ai-${{ steps.get_version.outputs.VERSION }}-javadoc.jar \
+             target/staging-deploy/com/redis/om/redis-om-spring-ai/${{ steps.get_version.outputs.VERSION }}/
+          cp redis-om-spring-ai/pom.xml \
+             target/staging-deploy/com/redis/om/redis-om-spring-ai/${{ steps.get_version.outputs.VERSION }}/redis-om-spring-ai-${{ steps.get_version.outputs.VERSION }}.pom
+          
+          # List staged artifacts for verification
+          echo "Staged artifacts:"
+          find target/staging-deploy -type f | sort
 
       # Deploy with JReleaser which handles signing and publishing to Maven Central
       - name: Release with JReleaser
@@ -57,9 +95,9 @@ jobs:
           JRELEASER_SIGNING_ENABLED: true
           JRELEASER_SIGNING_ACTIVE: ALWAYS
           
-          # Maven Central publishing configuration
-          JRELEASER_MAVENCENTRAL_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-          JRELEASER_MAVENCENTRAL_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          # Maven Central publishing configuration 
+          JRELEASER_DEPLOY_MAVEN_NEXUS2_MAVEN_CENTRAL_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          JRELEASER_DEPLOY_MAVEN_NEXUS2_MAVEN_CENTRAL_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           
           # Debug mode for more verbose output
           JRELEASER_DEBUG: true

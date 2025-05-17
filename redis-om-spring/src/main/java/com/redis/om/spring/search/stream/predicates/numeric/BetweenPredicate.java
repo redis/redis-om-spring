@@ -1,11 +1,6 @@
 package com.redis.om.spring.search.stream.predicates.numeric;
 
-import com.redis.om.spring.metamodel.SearchFieldAccessor;
-import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
-import com.redis.om.spring.search.stream.predicates.jedis.JedisValues;
-import redis.clients.jedis.search.querybuilder.Node;
-import redis.clients.jedis.search.querybuilder.QueryBuilders;
-import redis.clients.jedis.search.querybuilder.Values;
+import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -13,7 +8,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 
-import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
+import com.redis.om.spring.metamodel.SearchFieldAccessor;
+import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
+import com.redis.om.spring.search.stream.predicates.jedis.JedisValues;
+
+import redis.clients.jedis.search.querybuilder.Node;
+import redis.clients.jedis.search.querybuilder.QueryBuilders;
+import redis.clients.jedis.search.querybuilder.Values;
 
 public class BetweenPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
@@ -45,19 +46,19 @@ public class BetweenPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     } else if (cls == Date.class) {
       return QueryBuilders.intersect(root).add(getSearchAlias(), JedisValues.between((Date) min, (Date) max));
     } else if (cls == LocalDateTime.class) {
-      return QueryBuilders.intersect(root)
-          .add(getSearchAlias(), JedisValues.between((LocalDateTime) min, (LocalDateTime) max));
+      return QueryBuilders.intersect(root).add(getSearchAlias(), JedisValues.between((LocalDateTime) min,
+          (LocalDateTime) max));
     } else if (cls == Instant.class) {
       return QueryBuilders.intersect(root).add(getSearchAlias(), JedisValues.between((Instant) min, (Instant) max));
     } else if (cls == Integer.class) {
-      return QueryBuilders.intersect(root).add(getSearchAlias(),
-          Values.between(Integer.parseInt(getMin().toString()), Integer.parseInt(getMax().toString())));
+      return QueryBuilders.intersect(root).add(getSearchAlias(), Values.between(Integer.parseInt(getMin().toString()),
+          Integer.parseInt(getMax().toString())));
     } else if (cls == Long.class) {
-      return QueryBuilders.intersect(root).add(getSearchAlias(),
-          Values.between(Long.parseLong(getMin().toString()), Long.parseLong(getMax().toString())));
+      return QueryBuilders.intersect(root).add(getSearchAlias(), Values.between(Long.parseLong(getMin().toString()),
+          Long.parseLong(getMax().toString())));
     } else if (cls == Double.class) {
-      return QueryBuilders.intersect(root).add(getSearchAlias(),
-          Values.between(Double.parseDouble(getMin().toString()), Double.parseDouble(getMax().toString())));
+      return QueryBuilders.intersect(root).add(getSearchAlias(), Values.between(Double.parseDouble(getMin().toString()),
+          Double.parseDouble(getMax().toString())));
     } else if (cls == BigDecimal.class) {
       BigDecimal min = (BigDecimal) getMin();
       BigDecimal max = (BigDecimal) getMax();

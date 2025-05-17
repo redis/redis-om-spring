@@ -1,16 +1,16 @@
 package com.redis.om.spring;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.data.geo.Metrics;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.data.geo.Metrics;
 
 @ConfigurationProperties(
     prefix = "redis.om.spring", ignoreInvalidFields = true
 )
 public class RedisOMProperties {
-  public static final String ROMS_VERSION = "1.0.0-RC1";
+  public static final String ROMS_VERSION = "1.0.0-RC.1";
   public static final int MAX_SEARCH_RESULTS = 10000;
   public static final double DEFAULT_DISTANCE = 0.0005;
   public static final Metrics DEFAULT_DISTANCE_METRIC = Metrics.MILES;
@@ -23,7 +23,6 @@ public class RedisOMProperties {
   public Authentication getAuthentication() {
     return authentication;
   }
-
 
   public Repository getRepository() {
     return repository;

@@ -1,9 +1,7 @@
 package com.redis.om.spring.annotations;
 
-import com.redis.om.spring.repository.configuration.RedisJSONRepositoriesRegistrar;
-import com.redis.om.spring.repository.query.RediSearchQuery;
-import com.redis.om.spring.repository.query.RediSearchQueryCreator;
-import com.redis.om.spring.repository.support.RedisDocumentRepositoryFactoryBean;
+import java.lang.annotation.*;
+
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Import;
@@ -21,14 +19,25 @@ import org.springframework.data.repository.config.DefaultRepositoryBaseClass;
 import org.springframework.data.repository.query.QueryLookupStrategy;
 import org.springframework.data.repository.query.QueryLookupStrategy.Key;
 
-import java.lang.annotation.*;
+import com.redis.om.spring.repository.configuration.RedisJSONRepositoriesRegistrar;
+import com.redis.om.spring.repository.query.RediSearchQuery;
+import com.redis.om.spring.repository.query.RediSearchQueryCreator;
+import com.redis.om.spring.repository.support.RedisDocumentRepositoryFactoryBean;
 
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
+@Target(
+  ElementType.TYPE
+)
+@Retention(
+  RetentionPolicy.RUNTIME
+)
 @Documented
 @Inherited
-@Import(RedisJSONRepositoriesRegistrar.class)
-@QueryCreatorType(value = RediSearchQueryCreator.class, repositoryQueryType = RediSearchQuery.class)
+@Import(
+  RedisJSONRepositoriesRegistrar.class
+)
+@QueryCreatorType(
+    value = RediSearchQueryCreator.class, repositoryQueryType = RediSearchQuery.class
+)
 public @interface EnableRedisDocumentRepositories {
 
   /**
@@ -38,7 +47,10 @@ public @interface EnableRedisDocumentRepositories {
    *
    * @return basePackages
    */
-  @AliasFor("basePackages") String[] value() default {};
+  @AliasFor(
+    "basePackages"
+  )
+  String[] value() default {};
 
   /**
    * Base packages to scan for annotated components. {@link #value()} is an alias for (and mutually exclusive with) this
@@ -46,7 +58,10 @@ public @interface EnableRedisDocumentRepositories {
    *
    * @return basePackages as a String
    */
-  @AliasFor("value") String[] basePackages() default {};
+  @AliasFor(
+    "value"
+  )
+  String[] basePackages() default {};
 
   /**
    * Type-safe alternative to {@link #basePackages()} for specifying the packages to scan for annotated components. The

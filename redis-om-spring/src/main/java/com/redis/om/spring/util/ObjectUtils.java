@@ -1,9 +1,26 @@
 package com.redis.om.spring.util;
 
-import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
-import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
-import com.redis.om.spring.convert.MappingRedisOMConverter;
-import com.redis.om.spring.tuple.Tuples;
+import static java.util.Objects.requireNonNull;
+import static org.springframework.util.ClassUtils.resolvePrimitiveIfNecessary;
+
+import java.beans.PropertyDescriptor;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
@@ -22,29 +39,15 @@ import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.util.ReflectionUtils;
+
+import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
+import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
+import com.redis.om.spring.convert.MappingRedisOMConverter;
+import com.redis.om.spring.tuple.Tuples;
+
 import redis.clients.jedis.args.GeoUnit;
 import redis.clients.jedis.search.Document;
 import redis.clients.jedis.search.Schema;
-
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import java.beans.PropertyDescriptor;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Type;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static java.util.Objects.requireNonNull;
-import static org.springframework.util.ClassUtils.resolvePrimitiveIfNecessary;
 
 public class ObjectUtils {
   public static final Character REPLACEMENT_CHARACTER = '_';
@@ -64,13 +67,12 @@ public class ObjectUtils {
       BigInteger.class, boolean.class, byte.class, char.class, double.class, float.class, int.class, long.class,
       short.class);
   private static final ExpressionParser SPEL_EXPRESSION_PARSER = new SpelExpressionParser();
-  private static final Set<String> JAVA_BUILT_IN_CLASS_WORDS = Collections.unmodifiableSet(
-      JAVA_BUILT_IN_CLASSES.stream().map(Class::getSimpleName).collect(Collectors.toSet()));
-  private static final Set<String> JAVA_USED_WORDS = Collections.unmodifiableSet(
-      Stream.of(JAVA_LITERAL_WORDS, JAVA_RESERVED_WORDS, JAVA_BUILT_IN_CLASS_WORDS).flatMap(Collection::stream)
-          .collect(Collectors.toSet()));
-  private static final Set<String> JAVA_USED_WORDS_LOWER_CASE = Collections.unmodifiableSet(
-      JAVA_USED_WORDS.stream().map(String::toLowerCase).collect(Collectors.toSet()));
+  private static final Set<String> JAVA_BUILT_IN_CLASS_WORDS = Collections.unmodifiableSet(JAVA_BUILT_IN_CLASSES
+      .stream().map(Class::getSimpleName).collect(Collectors.toSet()));
+  private static final Set<String> JAVA_USED_WORDS = Collections.unmodifiableSet(Stream.of(JAVA_LITERAL_WORDS,
+      JAVA_RESERVED_WORDS, JAVA_BUILT_IN_CLASS_WORDS).flatMap(Collection::stream).collect(Collectors.toSet()));
+  private static final Set<String> JAVA_USED_WORDS_LOWER_CASE = Collections.unmodifiableSet(JAVA_USED_WORDS.stream()
+      .map(String::toLowerCase).collect(Collectors.toSet()));
 
   private ObjectUtils() {
   }
@@ -342,7 +344,9 @@ public class ObjectUtils {
     }
   }
 
-  @SuppressWarnings({ "unchecked", "rawtypes" })
+  @SuppressWarnings(
+    { "unchecked", "rawtypes" }
+  )
   public static Set<BeanDefinition> getBeanDefinitionsFor(ApplicationContext ac, Class... classes) {
     Set<BeanDefinition> beanDefs = new HashSet<>();
 
@@ -503,7 +507,9 @@ public class ObjectUtils {
     return value;
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   public static Collection<Object> flattenCollection(Collection<Object> inputCollection) {
     List<Object> flatList = new ArrayList<>();
 
@@ -573,8 +579,8 @@ public class ObjectUtils {
      * http://stackoverflow.com/questions/4050381/regular-expression-for-checking-if
      * -capital-letters-are-found-consecutively-in-a [A-Z] -> \p{Lu} [^A-Za-z0-9] ->
      * [^\pL0-90-9] */
-    result = Stream.of(result.replaceAll("(\\p{Lu}+)", "_$1").split("[^\\pL\\d]")).map(String::toLowerCase)
-        .map(ObjectUtils::ucfirst).collect(Collectors.joining());
+    result = Stream.of(result.replaceAll("(\\p{Lu}+)", "_$1").split("[^\\pL\\d]")).map(String::toLowerCase).map(
+        ObjectUtils::ucfirst).collect(Collectors.joining());
     return result;
   }
 

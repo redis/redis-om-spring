@@ -1,12 +1,20 @@
 package com.redis.om.spring.annotations.hash;
 
-import com.google.common.collect.Ordering;
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.fixtures.document.model.MyJavaEnum;
-import com.redis.om.spring.fixtures.hash.model.*;
-import com.redis.om.spring.fixtures.hash.repository.*;
-import com.redis.om.spring.repository.query.QueryUtils;
-import com.redis.om.spring.search.stream.EntityStream;
+import static com.redis.om.spring.util.ObjectUtils.getKey;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
+
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.StreamSupport;
+
 import org.assertj.core.util.Arrays;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,26 +26,22 @@ import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.repository.query.FluentQuery.FetchableFluentQuery;
+
+import com.google.common.collect.Ordering;
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.fixtures.document.model.MyJavaEnum;
+import com.redis.om.spring.fixtures.hash.model.*;
+import com.redis.om.spring.fixtures.hash.repository.*;
+import com.redis.om.spring.repository.query.QueryUtils;
+import com.redis.om.spring.search.stream.EntityStream;
+
 import redis.clients.jedis.JedisPooled;
 import redis.clients.jedis.UnifiedJedis;
 import redis.clients.jedis.search.aggr.AggregationResult;
 
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.StreamSupport;
-
-import static com.redis.om.spring.util.ObjectUtils.getKey;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.testcontainers.shaded.org.awaitility.Awaitility.with;
-
-@SuppressWarnings("SpellCheckingInspection")
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   static Person john;
   static Person gray;
@@ -74,8 +78,8 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
   @BeforeEach
   void createTestDataIfNeeded() {
-    jedis = new JedisPooled(Objects.requireNonNull(jedisConnectionFactory.getPoolConfig()),
-        jedisConnectionFactory.getHostName(), jedisConnectionFactory.getPort());
+    jedis = new JedisPooled(Objects.requireNonNull(jedisConnectionFactory.getPoolConfig()), jedisConnectionFactory
+        .getHostName(), jedisConnectionFactory.getPort());
 
     flushSearchIndexFor(Company.class);
     flushSearchIndexFor(Person.class);
@@ -92,8 +96,8 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
     terryg.setFavoriteFoods(Set.of("Shepherd’s Pie", "Cottage Pie", "Steak and Kidney Pie"));
 
     eric = Person.of("Eric Idle", "eric.idle@mp.com", "eric");
-    eric.setRoles(
-        Set.of("Sir Robin the-not-quite-so-brave-as-Sir-Lancelot", "Lancelot's squire Concorde", "Roger the Shrubber"));
+    eric.setRoles(Set.of("Sir Robin the-not-quite-so-brave-as-Sir-Lancelot", "Lancelot's squire Concorde",
+        "Roger the Shrubber"));
     eric.setFavoriteFoods(Set.of("Cottage Pie", "Steak and Kidney Pie"));
 
     terryj = Person.of("Terry Jones", "terry.jones@mp.com", "terry");
@@ -139,8 +143,8 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   void testThatIndexedSimpleCollectionsAreSerializedAsCSV() {
     String hashKey = "people:" + eric.getId();
     String ericRolesRaw = Objects.requireNonNull(template.opsForHash().get(hashKey, "roles")).toString();
-    Set<String> ericRoles = Arrays.asList(ericRolesRaw.split("\\|")).stream().map(Object::toString)
-        .map(QueryUtils::unescape).collect(Collectors.toSet());
+    Set<String> ericRoles = Arrays.asList(ericRolesRaw.split("\\|")).stream().map(Object::toString).map(
+        QueryUtils::unescape).collect(Collectors.toSet());
     assertThat(ericRoles).containsExactlyInAnyOrderElementsOf(eric.getRoles());
   }
 
@@ -192,11 +196,10 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testBasicCrudOperations() {
-    Company redis = companyRepo.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
-    Company microsoft = companyRepo.save(
-        Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
-            "research@microsoft.com"));
+    Company redis = companyRepo.save(Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540,
+        37.377690), "stack@redis.com"));
+    Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500,
+        47.640160), "research@microsoft.com"));
 
     assertEquals(2, companyRepo.count());
 
@@ -222,11 +225,10 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testFindAllById() {
-    Company redis = companyRepo.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
-    Company microsoft = companyRepo.save(
-        Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
-            "research@microsoft.com"));
+    Company redis = companyRepo.save(Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540,
+        37.377690), "stack@redis.com"));
+    Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500,
+        47.640160), "research@microsoft.com"));
 
     assertEquals(2, companyRepo.count());
 
@@ -240,11 +242,10 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testAuditAnnotations() {
-    Company redis = companyRepo.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
-    Company microsoft = companyRepo.save(
-        Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
-            "research@microsoft.com"));
+    Company redis = companyRepo.save(Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540,
+        37.377690), "stack@redis.com"));
+    Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500,
+        47.640160), "research@microsoft.com"));
 
     // created dates should not be null
     assertNotNull(redis.getCreatedDate());
@@ -263,11 +264,10 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testTagEscapeChars() {
-    Company redis = companyRepo.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
-    Company microsoft = companyRepo.save(
-        Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
-            "research@microsoft.com"));
+    Company redis = companyRepo.save(Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540,
+        37.377690), "stack@redis.com"));
+    Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500,
+        47.640160), "research@microsoft.com"));
 
     assertEquals(2, companyRepo.count());
 
@@ -319,17 +319,16 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testFindByTagsIn() {
-    Company redis = companyRepo.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company redis = companyRepo.save(Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540,
+        37.377690), "stack@redis.com"));
     redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
 
-    Company microsoft = companyRepo.save(
-        Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
-            "research@microsoft.com"));
+    Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500,
+        47.640160), "research@microsoft.com"));
     microsoft.setTags(Set.of("innovative", "reliable", "os", "ai"));
 
-    Company tesla = companyRepo.save(
-        Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903, 30.2210767), "elon@tesla.com"));
+    Company tesla = companyRepo.save(Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903,
+        30.2210767), "elon@tesla.com"));
     tesla.setTags(Set.of("innovative", "futuristic", "ai"));
 
     companyRepo.saveAll(List.of(redis, microsoft, tesla));
@@ -396,8 +395,8 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
     Iterable<Company> result = companyRepo.findAll(Sort.by("name").ascending());
 
-    List<String> companyNames = StreamSupport.stream(result.spliterator(), false).map(Company::getName)
-        .collect(Collectors.toList());
+    List<String> companyNames = StreamSupport.stream(result.spliterator(), false).map(Company::getName).collect(
+        Collectors.toList());
     assertThat(Ordering.<String>natural().isOrdered(companyNames)).isTrue();
   }
 
@@ -413,8 +412,8 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
     Iterable<Company> result = companyRepo.findAll(Sort.by("id").ascending());
 
-    List<String> ids = StreamSupport.stream(result.spliterator(), false).map(Company::getId)
-        .collect(Collectors.toList());
+    List<String> ids = StreamSupport.stream(result.spliterator(), false).map(Company::getId).collect(Collectors
+        .toList());
     assertThat(Ordering.<String>natural().isOrdered(ids)).isTrue();
   }
 
@@ -428,11 +427,11 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
     });
     companyRepo.saveAll(bunchOfCompanies);
 
-    Iterable<Company> result = companyRepo.findAll(
-        com.redis.om.spring.repository.query.Sort.by(Company$.ID).ascending());
+    Iterable<Company> result = companyRepo.findAll(com.redis.om.spring.repository.query.Sort.by(Company$.ID)
+        .ascending());
 
-    List<String> ids = StreamSupport.stream(result.spliterator(), false).map(Company::getId)
-        .collect(Collectors.toList());
+    List<String> ids = StreamSupport.stream(result.spliterator(), false).map(Company::getId).collect(Collectors
+        .toList());
     assertThat(Ordering.<String>natural().isOrdered(ids)).isTrue();
   }
 
@@ -456,17 +455,16 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testTagValsQuery() {
-    Company redis = companyRepo.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company redis = companyRepo.save(Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540,
+        37.377690), "stack@redis.com"));
     redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
 
-    Company microsoft = companyRepo.save(
-        Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
-            "research@microsoft.com"));
+    Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500,
+        47.640160), "research@microsoft.com"));
     microsoft.setTags(Set.of("innovative", "reliable", "os", "ai"));
 
-    Company tesla = companyRepo.save(
-        Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903, 30.2210767), "elon@tesla.com"));
+    Company tesla = companyRepo.save(Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903,
+        30.2210767), "elon@tesla.com"));
     tesla.setTags(Set.of("innovative", "futuristic", "ai"));
 
     companyRepo.saveAll(List.of(redis, microsoft, tesla));
@@ -480,17 +478,16 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testFullTextSearch() {
-    Company redis = companyRepo.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company redis = companyRepo.save(Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540,
+        37.377690), "stack@redis.com"));
     redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
 
-    Company microsoft = companyRepo.save(
-        Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
-            "research@microsoft.com"));
+    Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500,
+        47.640160), "research@microsoft.com"));
     microsoft.setTags(Set.of("innovative", "reliable", "os", "ai"));
 
-    Company tesla = companyRepo.save(
-        Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903, 30.2210767), "elon@tesla.com"));
+    Company tesla = companyRepo.save(Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903,
+        30.2210767), "elon@tesla.com"));
     tesla.setTags(Set.of("innovative", "futuristic", "ai"));
 
     companyRepo.saveAll(List.of(redis, microsoft, tesla));
@@ -502,17 +499,16 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testFindByFieldWithExplicitGeoIndexedAnnotation() {
-    Company redis = companyRepo.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company redis = companyRepo.save(Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540,
+        37.377690), "stack@redis.com"));
     redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
 
-    Company microsoft = companyRepo.save(
-        Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
-            "research@microsoft.com"));
+    Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500,
+        47.640160), "research@microsoft.com"));
     microsoft.setTags(Set.of("innovative", "reliable", "os", "ai"));
 
-    Company tesla = companyRepo.save(
-        Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903, 30.2210767), "elon@tesla.com"));
+    Company tesla = companyRepo.save(Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903,
+        30.2210767), "elon@tesla.com"));
     tesla.setTags(Set.of("innovative", "futuristic", "ai"));
 
     companyRepo.saveAll(List.of(redis, microsoft, tesla));
@@ -543,8 +539,8 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testUpdateSingleField() {
-    Company redisInc = companyRepo.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company redisInc = companyRepo.save(Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540,
+        37.377690), "stack@redis.com"));
     companyRepo.updateField(redisInc, Company$.NAME, "Redis");
 
     Optional<Company> maybeRedis = companyRepo.findById(redisInc.getId());
@@ -556,22 +552,23 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testGetFieldsByIds() {
-    Company redis = companyRepo.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
-    Company microsoft = companyRepo.save(
-        Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
-            "research@microsoft.com"));
+    Company redis = companyRepo.save(Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540,
+        37.377690), "stack@redis.com"));
+    Company microsoft = companyRepo.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500,
+        47.640160), "research@microsoft.com"));
 
     Iterable<String> ids = List.of(redis.getId(), microsoft.getId());
     Iterable<String> companyNames = companyRepo.getFieldsByIds(ids, Company$.NAME);
     assertThat(companyNames).containsExactly(redis.getName(), microsoft.getName());
   }
 
-  @SuppressWarnings("ConstantConditions")
+  @SuppressWarnings(
+    "ConstantConditions"
+  )
   @Test
   void testPersistingEntityMustNotBeNull() {
-    IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
-        () -> companyRepo.save(null));
+    IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> companyRepo.save(
+        null));
 
     Assertions.assertEquals("Entity must not be null", exception.getMessage());
   }
@@ -646,17 +643,17 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testOrderByInMethodName() {
-    companyRepo.saveAll(
-        List.of(Company.of("aaa", 2000, LocalDate.of(2020, 5, 1), new Point(-122.066540, 37.377690), "aaa@aaa.com"),
-            Company.of("bbb", 2000, LocalDate.of(2021, 6, 2), new Point(-122.066540, 37.377690), "bbb@bbb.com"),
-            Company.of("ccc", 2000, LocalDate.of(2022, 7, 3), new Point(-122.066540, 37.377690), "ccc@ccc.com")));
+    companyRepo.saveAll(List.of(Company.of("aaa", 2000, LocalDate.of(2020, 5, 1), new Point(-122.066540, 37.377690),
+        "aaa@aaa.com"), Company.of("bbb", 2000, LocalDate.of(2021, 6, 2), new Point(-122.066540, 37.377690),
+            "bbb@bbb.com"), Company.of("ccc", 2000, LocalDate.of(2022, 7, 3), new Point(-122.066540, 37.377690),
+                "ccc@ccc.com")));
 
     List<Company> byNameAsc = companyRepo.findByYearFoundedOrderByNameAsc(2000);
     List<Company> byNameDesc = companyRepo.findByYearFoundedOrderByNameDesc(2000);
 
     assertAll( //
-        () -> assertThat(byNameAsc).extracting("name").containsExactly("aaa", "bbb", "ccc"),
-        () -> assertThat(byNameDesc).extracting("name").containsExactly("ccc", "bbb", "aaa"));
+        () -> assertThat(byNameAsc).extracting("name").containsExactly("aaa", "bbb", "ccc"), () -> assertThat(
+            byNameDesc).extracting("name").containsExactly("ccc", "bbb", "aaa"));
   }
 
   @Test
@@ -703,8 +700,8 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testQBEWithAliasWithHyphensAndOrderBy() {
-    Function<FetchableFluentQuery<Student>, Student> sortFunction = query -> query.sortBy(
-        Sort.by("Event-Timestamp").descending()).firstValue();
+    Function<FetchableFluentQuery<Student>, Student> sortFunction = query -> query.sortBy(Sort.by("Event-Timestamp")
+        .descending()).firstValue();
 
     var matcher = ExampleMatcher.matching().withMatcher("userName", ExampleMatcher.GenericPropertyMatcher::exact);
 
@@ -740,8 +737,8 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
         .collect(Collectors.toList());
 
     assertAll( //
-        () -> assertThat(withFreeTextLast).containsExactly(microsoft2),
-        () -> assertThat(withFreeTextFirst).containsExactly(microsoft2));
+        () -> assertThat(withFreeTextLast).containsExactly(microsoft2), () -> assertThat(withFreeTextFirst)
+            .containsExactly(microsoft2));
   }
 
   @Test

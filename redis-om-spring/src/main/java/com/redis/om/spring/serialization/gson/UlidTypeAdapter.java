@@ -1,9 +1,9 @@
 package com.redis.om.spring.serialization.gson;
 
+import java.lang.reflect.Type;
+
 import com.github.f4b6a3.ulid.Ulid;
 import com.google.gson.*;
-
-import java.lang.reflect.Type;
 
 public class UlidTypeAdapter implements JsonSerializer<Ulid>, JsonDeserializer<Ulid> {
 

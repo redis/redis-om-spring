@@ -1,23 +1,31 @@
 package com.redis.om.spring.fixtures.document.model;
 
-import com.redis.om.spring.annotations.Document;
-import com.redis.om.spring.annotations.Indexed;
-import com.redis.om.spring.annotations.Searchable;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.Reference;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Date;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Reference;
+
+import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.annotations.Indexed;
+import com.redis.om.spring.annotations.Searchable;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+
 @Data
-@RequiredArgsConstructor(staticName = "of")
-@NoArgsConstructor(force = true)
-@Document("sakila.film")
+@RequiredArgsConstructor(
+    staticName = "of"
+)
+@NoArgsConstructor(
+    force = true
+)
+@Document(
+  "sakila.film"
+)
 public class Film {
 
   @Id

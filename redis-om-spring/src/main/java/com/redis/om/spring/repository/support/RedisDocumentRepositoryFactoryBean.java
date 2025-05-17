@@ -1,11 +1,5 @@
 package com.redis.om.spring.repository.support;
 
-import com.google.gson.GsonBuilder;
-import com.redis.om.spring.RedisOMProperties;
-import com.redis.om.spring.indexing.RediSearchIndexer;
-import com.redis.om.spring.mapping.RedisEnhancedMappingContext;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.vectorize.Embedder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.repository.support.KeyValueRepositoryFactoryBean;
@@ -20,8 +14,15 @@ import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
-public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, ID>
-    extends KeyValueRepositoryFactoryBean<T, S, ID> {
+import com.google.gson.GsonBuilder;
+import com.redis.om.spring.RedisOMProperties;
+import com.redis.om.spring.indexing.RediSearchIndexer;
+import com.redis.om.spring.mapping.RedisEnhancedMappingContext;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.vectorize.Embedder;
+
+public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, ID> extends
+    KeyValueRepositoryFactoryBean<T, S, ID> {
 
   @Autowired
   private @Nullable RedisModulesOperations<String> rmo;

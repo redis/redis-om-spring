@@ -1,8 +1,10 @@
 package com.redis.om.spring.annotations.document;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.fixtures.document.model.MyDoc;
-import com.redis.om.spring.fixtures.document.repository.MyDocRepository;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.*;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,18 +18,20 @@ import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
 import org.springframework.data.redis.core.StringRedisTemplate;
+
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.fixtures.document.model.MyDoc;
+import com.redis.om.spring.fixtures.document.repository.MyDocRepository;
+
 import redis.clients.jedis.json.Path2;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.AggregationResult;
 import redis.clients.jedis.search.aggr.Row;
 import redis.clients.jedis.util.SafeEncoder;
 
-import java.util.*;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-
-@SuppressWarnings("SpellCheckingInspection")
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
   private static String id1;
   private static String id2;
@@ -78,7 +82,7 @@ class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
    * 1) (integer) 1
    * 2) "doc1"
    * 3) 1) "first_tag"
-   *    2) "news"
+   * 2) "news"
    * </pre>
    * <pre>{@code
    * @Query(returnFields = {"$.tag[0]", "AS", "first_tag"})
@@ -90,9 +94,9 @@ class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
     SearchResult result = repository.getFirstTag();
 
     assertAll( //
-        () -> assertThat(result.getTotalResults()).isEqualTo(2),
-        () -> assertThat(result.getDocuments().get(0).getScore()).isEqualTo(1.0),
-        () -> assertThat(result.getDocuments().get(0).getString("first_tag")).isIn("news", "article"));
+        () -> assertThat(result.getTotalResults()).isEqualTo(2), () -> assertThat(result.getDocuments().get(0)
+            .getScore()).isEqualTo(1.0), () -> assertThat(result.getDocuments().get(0).getString("first_tag")).isIn(
+                "news", "article"));
   }
 
   /**
@@ -102,7 +106,7 @@ class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
    * > FT.SEARCH idx '@title:hello @tag:{news}'
    * 1) (integer) 1 2) "doc1"
    * 3) 1) "$"
-   *    2) "{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}"
+   * 2) "{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}"
    * </pre>
    */
   @Test
@@ -121,7 +125,7 @@ class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
    * <pre>
    * > FT.AGGREGATE idx * LOAD 3 $.tag[1] AS tag2 1) (integer) 1
    * 2) 1) "tag2"
-   *    2) "article"
+   * 2) "article"
    * </pre>
    */
   @Test
@@ -142,8 +146,8 @@ class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
 
     assertAll( //
         () -> assertEquals(2, result.getTotalPages()), () -> assertEquals(2, result.getTotalElements()),
-        () -> assertEquals(1, result.getContent().size()),
-        () -> assertEquals("hello world", result.getContent().get(0).getTitle()));
+        () -> assertEquals(1, result.getContent().size()), () -> assertEquals("hello world", result.getContent().get(0)
+            .getTitle()));
   }
 
   @Test
@@ -241,8 +245,9 @@ class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
     MyDoc doc = iter.next();
     assertEquals("hello mundo", doc.getTitle());
 
-    @SuppressWarnings("unused") NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class,
-        iter::next);
+    @SuppressWarnings(
+      "unused"
+    ) NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class, iter::next);
   }
 
   @Test
@@ -254,8 +259,9 @@ class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
     MyDoc doc = iter.next();
     assertEquals("hello mundo", doc.getTitle());
 
-    @SuppressWarnings("unused") NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class,
-        iter::next);
+    @SuppressWarnings(
+      "unused"
+    ) NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class, iter::next);
   }
 
   @Test
@@ -306,8 +312,8 @@ class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
     assertEquals(16, result.getTotalResults());
     assertThat(result.getTotalResults()).isEqualTo(16);
 
-    List<String> titles = result.getDocuments().stream().map(d -> SafeEncoder.encode((byte[]) d.get("title")))
-        .map(Object::toString).toList();
+    List<String> titles = result.getDocuments().stream().map(d -> SafeEncoder.encode((byte[]) d.get("title"))).map(
+        Object::toString).toList();
 
     assertThat(titles).containsExactly("precentorships", "preceptorships", "preciousnesses", "precipitancies",
         "precipitations", "precipitinogen", "precociousness", "precombustions", "preconceptions", "preconditioned",
@@ -339,10 +345,9 @@ class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
     List<MyDoc> endsWithTions = repository.findAllByTitleEndingWith("tions");
 
     assertAll( //
-        () -> assertThat(endsWithTion).extracting("title")
-            .containsExactlyInAnyOrder("predisposition", "predisposition", "prepublication"),
-        () -> assertThat(endsWithTions).extracting("title")
-            .containsExactlyInAnyOrder("precipitations", "precombustions", "preconceptions"));
+        () -> assertThat(endsWithTion).extracting("title").containsExactlyInAnyOrder("predisposition", "predisposition",
+            "prepublication"), () -> assertThat(endsWithTions).extracting("title").containsExactlyInAnyOrder(
+                "precipitations", "precombustions", "preconceptions"));
   }
 
   @Test

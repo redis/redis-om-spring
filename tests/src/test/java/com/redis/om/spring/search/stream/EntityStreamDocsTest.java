@@ -1,5 +1,25 @@
 package com.redis.om.spring.search.stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.time.LocalDate;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.*;
+import java.util.stream.*;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Metrics;
+import org.springframework.data.geo.Point;
+
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 import com.redis.om.spring.AbstractBaseDocumentTest;
@@ -13,28 +33,12 @@ import com.redis.om.spring.tuple.Fields;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.Quad;
 import com.redis.om.spring.tuple.Triple;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.geo.Distance;
-import org.springframework.data.geo.Metrics;
-import org.springframework.data.geo.Point;
+
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
-import java.time.LocalDate;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.*;
-import java.util.stream.*;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-
-@SuppressWarnings("SpellCheckingInspection")
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class EntityStreamDocsTest extends AbstractBaseDocumentTest {
   @Autowired
   CompanyRepository repository;
@@ -66,8 +70,8 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
       ));
       redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
 
-      Set<Employee> employees = Sets.newHashSet(Employee.of("Brian Sam-Bodden"), Employee.of("Guy Royse"),
-          Employee.of("Justin Castilla"));
+      Set<Employee> employees = Sets.newHashSet(Employee.of("Brian Sam-Bodden"), Employee.of("Guy Royse"), Employee.of(
+          "Justin Castilla"));
       redis.setEmployees(employees);
 
       Company microsoft = repository.save(Company.of(//
@@ -94,8 +98,8 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
 
     // users
     if (userRepository.count() == 0) {
-      List<User> users = List.of(User.of("Steve Lorello", .9999), User.of("Nava Levy", 1234.5678),
-          User.of("Savannah Norem", 999.99), User.of("Suze Shardlow", 899.0));
+      List<User> users = List.of(User.of("Steve Lorello", .9999), User.of("Nava Levy", 1234.5678), User.of(
+          "Savannah Norem", 999.99), User.of("Suze Shardlow", 899.0));
       for (User user : users) {
         user.setRoles(List.of("devrel", "educator", "guru"));
       }
@@ -1337,8 +1341,8 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
 
   @Test
   void testEntityWithoutIdThrowsException() {
-    IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class,
-        () -> entityStream.of(DocWithoutId.class));
+    IllegalArgumentException exception = Assertions.assertThrows(IllegalArgumentException.class, () -> entityStream.of(
+        DocWithoutId.class));
 
     String expectedErrorMessage = String.format("%s does not appear to have an ID field", DocWithoutId.class.getName());
     Assertions.assertEquals(expectedErrorMessage, exception.getMessage());
@@ -1521,8 +1525,8 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
   void testReduceWithIdentityBifunctionAndBinaryOperator() {
     Integer firstEstablish = entityStream //
         .of(Company.class) //
-        .reduce(Integer.MAX_VALUE, (minimum, company) -> Integer.min(minimum, company.getYearFounded()),
-            (t, u) -> Integer.min(t, u));
+        .reduce(Integer.MAX_VALUE, (minimum, company) -> Integer.min(minimum, company.getYearFounded()), (t,
+            u) -> Integer.min(t, u));
     assertThat(firstEstablish).isEqualTo(1975);
   }
 
@@ -1623,8 +1627,8 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
   @Test
   void testCollectWithIdAndCombiner() {
     Supplier<AtomicInteger> supplier = AtomicInteger::new;
-    BiConsumer<AtomicInteger, Company> accumulator = (AtomicInteger a, Company c) -> a.set(
-        a.get() + c.getYearFounded());
+    BiConsumer<AtomicInteger, Company> accumulator = (AtomicInteger a, Company c) -> a.set(a.get() + c
+        .getYearFounded());
 
     BiConsumer<AtomicInteger, AtomicInteger> combiner = (a1, a2) -> a1.set(a1.get() + a2.get());
 
@@ -1770,7 +1774,7 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
   @Test
   void testIterator() {
     List<Company> allCompanies = new ArrayList<>();
-    for (Iterator<Company> iterator = entityStream.of(Company.class).iterator(); iterator.hasNext(); ) {
+    for (Iterator<Company> iterator = entityStream.of(Company.class).iterator(); iterator.hasNext();) {
       allCompanies.add(iterator.next());
     }
 
@@ -1831,8 +1835,8 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
   @Test
   void testIteratorOnMappedField() {
     List<String> allCompanies = new ArrayList<>();
-    for (Iterator<String> iterator = entityStream.of(Company.class).map(Company$.NAME)
-        .iterator(); iterator.hasNext(); ) {
+    for (Iterator<String> iterator = entityStream.of(Company.class).map(Company$.NAME).iterator(); iterator
+        .hasNext();) {
       allCompanies.add(iterator.next());
     }
 
@@ -1995,8 +1999,8 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
 
   @Test
   void testFlatMap() {
-    Function<Set<String>, Stream<String>> mapper = (Set<String> tags) -> Stream.of(
-        String.join("-", new TreeSet<>(tags)));
+    Function<Set<String>, Stream<String>> mapper = (Set<String> tags) -> Stream.of(String.join("-", new TreeSet<>(
+        tags)));
 
     List<String> joinedTags = entityStream //
         .of(Company.class) //
@@ -2013,8 +2017,8 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
 
   @Test
   void testFlatMapOnMappedField() {
-    Function<Company, Stream<String>> mapper = (Company company) -> Stream.of(
-        String.join("-", new TreeSet<>(company.getTags())));
+    Function<Company, Stream<String>> mapper = (Company company) -> Stream.of(String.join("-", new TreeSet<>(company
+        .getTags())));
 
     List<String> joinedTags = entityStream //
         .of(Company.class) //
@@ -2695,8 +2699,8 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
 
     doc3Repository.save(doc);
 
-    var docs = entityStream.of(Doc3.class).filter(Doc3$.SECOND.containing("about nothing"))
-        .collect(Collectors.toList());
+    var docs = entityStream.of(Doc3.class).filter(Doc3$.SECOND.containing("about nothing")).collect(Collectors
+        .toList());
 
     assertEquals(1, docs.size());
     assertThat(docs.get(0).getSecond()).isEqualTo("some text about nothing");
@@ -2782,7 +2786,6 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
     // get first page
     Page<Company> page0 = entityStream.of(Company.class) //
         .getPage(page0Request);
-
 
     assertThat(page0).hasSize(PAGE_SIZE);
     assertThat(page0.hasNext()).isTrue();

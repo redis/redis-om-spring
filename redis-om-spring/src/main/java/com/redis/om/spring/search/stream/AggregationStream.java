@@ -1,15 +1,17 @@
 package com.redis.om.spring.search.stream;
 
-import com.redis.om.spring.annotations.ReducerFunction;
-import com.redis.om.spring.metamodel.MetamodelField;
-import com.redis.om.spring.search.stream.aggregations.filters.AggregationFilter;
+import java.time.Duration;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Order;
-import redis.clients.jedis.search.aggr.AggregationResult;
 
-import java.time.Duration;
-import java.util.List;
+import com.redis.om.spring.annotations.ReducerFunction;
+import com.redis.om.spring.metamodel.MetamodelField;
+import com.redis.om.spring.search.stream.aggregations.filters.AggregationFilter;
+
+import redis.clients.jedis.search.aggr.AggregationResult;
 
 public interface AggregationStream<T> {
   AggregationStream<T> load(MetamodelField<?, ?>... fields);

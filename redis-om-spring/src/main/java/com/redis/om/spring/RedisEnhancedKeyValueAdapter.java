@@ -1,16 +1,11 @@
 package com.redis.om.spring;
 
-import com.redis.om.spring.audit.EntityAuditor;
-import com.redis.om.spring.convert.MappingRedisOMConverter;
-import com.redis.om.spring.convert.RedisOMCustomConversions;
-import com.redis.om.spring.id.IdentifierFilter;
-import com.redis.om.spring.indexing.RediSearchIndexer;
-import com.redis.om.spring.mapping.RedisEnhancedMappingContext;
-import com.redis.om.spring.mapping.RedisEnhancedPersistentEntity;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.ops.search.SearchOperations;
-import com.redis.om.spring.vectorize.Embedder;
-import jakarta.persistence.IdClass;
+import static com.redis.om.spring.util.ObjectUtils.*;
+
+import java.lang.reflect.Field;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeanWrapper;
@@ -33,14 +28,21 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
+
+import com.redis.om.spring.audit.EntityAuditor;
+import com.redis.om.spring.convert.MappingRedisOMConverter;
+import com.redis.om.spring.convert.RedisOMCustomConversions;
+import com.redis.om.spring.id.IdentifierFilter;
+import com.redis.om.spring.indexing.RediSearchIndexer;
+import com.redis.om.spring.mapping.RedisEnhancedMappingContext;
+import com.redis.om.spring.mapping.RedisEnhancedPersistentEntity;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.search.SearchOperations;
+import com.redis.om.spring.vectorize.Embedder;
+
+import jakarta.persistence.IdClass;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
-
-import java.lang.reflect.Field;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-
-import static com.redis.om.spring.util.ObjectUtils.*;
 
 public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
@@ -98,7 +100,9 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * @param customConversions can be {@literal null}.
    * @param indexer           must not be {@literal null}.
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   public RedisEnhancedKeyValueAdapter( //
       RedisOperations<?, ?> redisOps, //
       RedisModulesOperations<?> rmo, //
@@ -112,10 +116,11 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     Assert.notNull(redisOps, "RedisOperations must not be null!");
     Assert.notNull(mappingContext, "RedisMappingContext must not be null!");
 
-    MappingRedisOMConverter mappingConverter = new MappingRedisOMConverter(mappingContext,
-        new ReferenceResolverImpl(redisOps));
-    mappingConverter.setCustomConversions(
-        customConversions == null ? new RedisOMCustomConversions() : customConversions);
+    MappingRedisOMConverter mappingConverter = new MappingRedisOMConverter(mappingContext, new ReferenceResolverImpl(
+        redisOps));
+    mappingConverter.setCustomConversions(customConversions == null ?
+        new RedisOMCustomConversions() :
+        customConversions);
     mappingConverter.afterPropertiesSet();
 
     this.converter = mappingConverter;
@@ -186,8 +191,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
     byte[] binId = createKey(stringKeyspace, stringId);
 
-    Map<byte[], byte[]> raw = redisOperations.execute(
-        (RedisCallback<Map<byte[], byte[]>>) connection -> connection.hashCommands().hGetAll(binId));
+    Map<byte[], byte[]> raw = redisOperations.execute((RedisCallback<Map<byte[], byte[]>>) connection -> connection
+        .hashCommands().hGetAll(binId));
 
     if (CollectionUtils.isEmpty(raw)) {
       return null;
@@ -249,8 +254,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     SearchResult searchResult = searchOps.search(query);
 
     return searchResult.getDocuments().stream().map(d -> documentToObject(d, type, (MappingRedisOMConverter) converter))
-        .map(e -> maybeIdField.map(field -> getIdFieldForEntity(field, e)).orElse(null)).filter(Objects::nonNull)
-        .map(Object::toString).toList();
+        .map(e -> maybeIdField.map(field -> getIdFieldForEntity(field, e)).orElse(null)).filter(Objects::nonNull).map(
+            Object::toString).toList();
   }
 
   /**
@@ -264,7 +269,9 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * @return never {@literal null}.
    * @since 2.5
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   @Override
   public <T> List<T> getAllOf(String keyspace, Class<T> type, long offset, int rows) {
     String searchIndex = indexer.getIndexName(keyspace);
@@ -333,8 +340,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public boolean contains(Object id, String keyspace) {
-    Boolean exists = redisOperations.execute((RedisCallback<Boolean>) connection -> connection.keyCommands()
-        .exists(toBytes(getKey(keyspace, asStringValue(id)))));
+    Boolean exists = redisOperations.execute((RedisCallback<Boolean>) connection -> connection.keyCommands().exists(
+        toBytes(getKey(keyspace, asStringValue(id)))));
 
     return exists != null && exists;
   }
@@ -342,8 +349,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   @Override
   public void update(PartialUpdate<?> update) {
 
-    RedisPersistentEntity<?> entity = this.converter.getMappingContext()
-        .getRequiredPersistentEntity(update.getTarget());
+    RedisPersistentEntity<?> entity = this.converter.getMappingContext().getRequiredPersistentEntity(update
+        .getTarget());
 
     String keyspace = sanitizeKeyspace(entity.getKeySpace());
     Object id = update.getId();
@@ -362,25 +369,25 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
         String propertyPath = pUpdate.getPropertyPath();
 
-        if (UpdateCommand.DEL.equals(
-            pUpdate.getCmd()) || pUpdate.getValue() instanceof Collection || pUpdate.getValue() instanceof Map || (pUpdate.getValue() != null && pUpdate.getValue()
-            .getClass().isArray()) || (pUpdate.getValue() != null && !converter.getConversionService()
-            .canConvert(pUpdate.getValue().getClass(), byte[].class))) {
+        if (UpdateCommand.DEL.equals(pUpdate.getCmd()) || pUpdate.getValue() instanceof Collection || pUpdate
+            .getValue() instanceof Map || (pUpdate.getValue() != null && pUpdate.getValue().getClass()
+                .isArray()) || (pUpdate.getValue() != null && !converter.getConversionService().canConvert(pUpdate
+                    .getValue().getClass(), byte[].class))) {
 
           redisUpdateObject = fetchDeletePathsFromHash(redisUpdateObject, propertyPath, connection);
         }
       }
 
       if (!redisUpdateObject.fieldsToRemove.isEmpty()) {
-        connection.hashCommands().hDel(redisKey,
-            redisUpdateObject.fieldsToRemove.toArray(new byte[redisUpdateObject.fieldsToRemove.size()][]));
+        connection.hashCommands().hDel(redisKey, redisUpdateObject.fieldsToRemove.toArray(
+            new byte[redisUpdateObject.fieldsToRemove.size()][]));
       }
 
       if (!rdo.getBucket().isEmpty() &&  //
           ( //
-              rdo.getBucket().size() > 1 || //
-                  (rdo.getBucket().size() == 1 && !rdo.getBucket().asMap().containsKey("_class")) //
-          )) {
+      rdo.getBucket().size() > 1 || //
+          (rdo.getBucket().size() == 1 && !rdo.getBucket().asMap().containsKey("_class")) //
+      )) {
         connection.hashCommands().hMSet(redisKey, rdo.getBucket().rawMap());
       }
 
@@ -476,7 +483,6 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     }
   }
 
-
   /**
    * Read back and set {@link TimeToLive} for the property.
    *
@@ -514,8 +520,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
         PersistentPropertyAccessor<T> propertyAccessor = entity.getPropertyAccessor(target);
 
-        propertyAccessor.setProperty(ttlProperty,
-            converter.getConversionService().convert(timeout, ttlProperty.getType()));
+        propertyAccessor.setProperty(ttlProperty, converter.getConversionService().convert(timeout, ttlProperty
+            .getType()));
 
         target = propertyAccessor.getBean();
       }
@@ -527,7 +533,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   /**
    * @param data must not be {@literal null}.
    * @return {@literal true} if {@link RedisData#getTimeToLive()} has a positive
-   * value.
+   *         value.
    * @since 2.3.7
    */
   private boolean willExpire(RedisData data) {

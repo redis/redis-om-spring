@@ -1,15 +1,7 @@
 package com.redis.om.spring.annotations.hash;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.fixtures.hash.model.Game;
-import com.redis.om.spring.fixtures.hash.repository.GameRepository;
-import org.assertj.core.api.InstanceOfAssertFactories;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -18,10 +10,21 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
+import org.assertj.core.api.InstanceOfAssertFactories;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 
-@SuppressWarnings("SpellCheckingInspection")
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.fixtures.hash.model.Game;
+import com.redis.om.spring.fixtures.hash.repository.GameRepository;
+
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
   @Autowired
   GameRepository repository;
@@ -65,9 +68,9 @@ class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
   @Test
   void testMinPrice() {
     String[][] expectedData = { //
-        { "Genius", "88.54" }, { "Logitech", "78.98" }, { "Monster", "69.95" }, { "Goliton", "15.69" },
-        { "Lenmar", "15.41" }, { "Oceantree(TM)", "12.29" }, { "Oceantree", "11.39" }, { "oooo", "10.11" },
-        { "Case Logic", "9.99" }, { "Neewer", "9.71" } //
+        { "Genius", "88.54" }, { "Logitech", "78.98" }, { "Monster", "69.95" }, { "Goliton", "15.69" }, { "Lenmar",
+            "15.41" }, { "Oceantree(TM)", "12.29" }, { "Oceantree", "11.39" }, { "oooo", "10.11" }, { "Case Logic",
+                "9.99" }, { "Neewer", "9.71" } //
     };
     var result = repository.minPricesContainingSony();
     assertThat(result.getTotalResults()).isEqualTo(27);
@@ -83,8 +86,8 @@ class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
   void testMaxPrice() {
     String[][] expectedData = { //
         { "Sony", "695.8" }, { null, "303.59" }, { "Genius", "88.54" }, { "Logitech", "78.98" }, { "Monster", "69.95" },
-        { "Playstation", "33.6" }, { "Neewer", "15.95" }, { "Goliton", "15.69" }, { "Lenmar", "15.41" },
-        { "Oceantree", "12.45" } //
+        { "Playstation", "33.6" }, { "Neewer", "15.95" }, { "Goliton", "15.69" }, { "Lenmar", "15.41" }, { "Oceantree",
+            "12.45" } //
     };
     var result = repository.maxPricesContainingSony();
     assertThat(result.getTotalResults()).isEqualTo(27);
@@ -118,41 +121,41 @@ class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
   @Test
   void testQuantiles() {
     String[][] expectedData = { //
-        { "q50", "19.22" }, { "q90", "95.91" }, { "q95", "144.96" }, { "__generated_aliasavgprice", "29.7105941255" },
-        { "rowcount", "1498" } //
+        { "q50", "19.22" }, { "q90", "95.91" }, { "q95", "144.96" }, { "__generated_aliasavgprice", "29.7105941255" }, {
+            "rowcount", "1498" } //
     };
 
     var result = repository.priceQuantiles();
     assertThat(result.getTotalResults()).isEqualTo(293);
 
     var row = result.getRow(0);
-    IntStream.range(0, expectedData.length - 1)
-        .forEach(i -> assertThat(row.getString(expectedData[i][0])).isEqualTo(expectedData[i][1]));
+    IntStream.range(0, expectedData.length - 1).forEach(i -> assertThat(row.getString(expectedData[i][0])).isEqualTo(
+        expectedData[i][1]));
   }
 
   @Test
   void testPriceStdDev() {
     String[][][] expectedData = { //
-        { { "brand", null }, { "stddev(price)", "58.0682859441" }, { "avgPrice", "29.7105941255" },
-            { "q50Price", "19.22" }, { "rowcount", "1498" } }, //
-        { { "brand", "Mad Catz" }, { "stddev(price)", "63.3626941047" }, { "avgPrice", "92.4065116279" },
-            { "q50Price", "84.99" }, { "rowcount", "43" } }, //
-        { { "brand", "Generic" }, { "stddev(price)", "13.0528444292" }, { "avgPrice", "12.439" },
-            { "q50Price", "6.69" }, { "rowcount", "40" } }, //
-        { { "brand", "SteelSeries" }, { "stddev(price)", "44.5684434629" }, { "avgPrice", "50.0302702703" },
-            { "q50Price", "39.69" }, { "rowcount", "37" } }, //
-        { { "brand", "Logitech" }, { "stddev(price)", "48.016387201" }, { "avgPrice", "66.5488571429" },
-            { "q50Price", "55" }, { "rowcount", "35" } }, //
-        { { "brand", "Razer" }, { "stddev(price)", "49.0284634692" }, { "avgPrice", "98.4069230769" },
-            { "q50Price", "80.49" }, { "rowcount", "26" } }, //
-        { { "brand", "" }, { "stddev(price)", "11.6611915524" }, { "avgPrice", "13.711" }, { "q50Price", "10" },
-            { "rowcount", "20" } }, //
-        { { "brand", "ROCCAT" }, { "stddev(price)", "71.1336876222" }, { "avgPrice", "86.231" },
-            { "q50Price", "58.72" }, { "rowcount", "20" } }, //
-        { { "brand", "Sony" }, { "stddev(price)", "195.848045202" }, { "avgPrice", "109.536428571" },
-            { "q50Price", "44.95" }, { "rowcount", "14" } }, //
-        { { "brand", "Nintendo" }, { "stddev(price)", "71.1987671314" }, { "avgPrice", "53.2792307692" },
-            { "q50Price", "17.99" }, { "rowcount", "13" } } //
+        { { "brand", null }, { "stddev(price)", "58.0682859441" }, { "avgPrice", "29.7105941255" }, { "q50Price",
+            "19.22" }, { "rowcount", "1498" } }, //
+        { { "brand", "Mad Catz" }, { "stddev(price)", "63.3626941047" }, { "avgPrice", "92.4065116279" }, { "q50Price",
+            "84.99" }, { "rowcount", "43" } }, //
+        { { "brand", "Generic" }, { "stddev(price)", "13.0528444292" }, { "avgPrice", "12.439" }, { "q50Price",
+            "6.69" }, { "rowcount", "40" } }, //
+        { { "brand", "SteelSeries" }, { "stddev(price)", "44.5684434629" }, { "avgPrice", "50.0302702703" }, {
+            "q50Price", "39.69" }, { "rowcount", "37" } }, //
+        { { "brand", "Logitech" }, { "stddev(price)", "48.016387201" }, { "avgPrice", "66.5488571429" }, { "q50Price",
+            "55" }, { "rowcount", "35" } }, //
+        { { "brand", "Razer" }, { "stddev(price)", "49.0284634692" }, { "avgPrice", "98.4069230769" }, { "q50Price",
+            "80.49" }, { "rowcount", "26" } }, //
+        { { "brand", "" }, { "stddev(price)", "11.6611915524" }, { "avgPrice", "13.711" }, { "q50Price", "10" }, {
+            "rowcount", "20" } }, //
+        { { "brand", "ROCCAT" }, { "stddev(price)", "71.1336876222" }, { "avgPrice", "86.231" }, { "q50Price",
+            "58.72" }, { "rowcount", "20" } }, //
+        { { "brand", "Sony" }, { "stddev(price)", "195.848045202" }, { "avgPrice", "109.536428571" }, { "q50Price",
+            "44.95" }, { "rowcount", "14" } }, //
+        { { "brand", "Nintendo" }, { "stddev(price)", "71.1987671314" }, { "avgPrice", "53.2792307692" }, { "q50Price",
+            "17.99" }, { "rowcount", "13" } } //
     };
 
     var result = repository.priceStdDev();
@@ -178,8 +181,8 @@ class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
     assertThat(result.getTotalResults()).isEqualTo(293);
 
     var row = result.getRow(0);
-    IntStream.range(0, expectedData.length - 1)
-        .forEach(i -> assertThat(row.getString(expectedData[i][0])).isEqualTo(expectedData[i][1]));
+    IntStream.range(0, expectedData.length - 1).forEach(i -> assertThat(row.getString(expectedData[i][0])).isEqualTo(
+        expectedData[i][1]));
   }
 
   @Test
@@ -200,9 +203,9 @@ class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
   @Test
   void testTimeFunctions() {
     String[][] expectedData = { //
-        { "dt", "1517417144" }, { "timefmt", "2018-01-31T16:45:44Z" }, { "day", "1517356800" },
-        { "hour", "1517414400" }, { "minute", "1517417100" }, { "month", "1514764800" }, { "dayofweek", "3" },
-        { "dayofmonth", "31" }, //
+        { "dt", "1517417144" }, { "timefmt", "2018-01-31T16:45:44Z" }, { "day", "1517356800" }, { "hour",
+            "1517414400" }, { "minute", "1517417100" }, { "month", "1514764800" }, { "dayofweek", "3" }, { "dayofmonth",
+                "31" }, //
         { "dayofyear", "30" }, { "year", "2018" } //
     };
 
@@ -210,36 +213,36 @@ class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
     assertThat(result.getTotalResults()).isEqualTo(1);
 
     var row = result.getRow(0);
-    IntStream.range(0, expectedData.length - 1)
-        .forEach(i -> assertThat(row.getString(expectedData[i][0])).isEqualTo(expectedData[i][1]));
+    IntStream.range(0, expectedData.length - 1).forEach(i -> assertThat(row.getString(expectedData[i][0])).isEqualTo(
+        expectedData[i][1]));
   }
 
   @Test
   void testStringFormat() {
     String[][][] expectedData = { //
-        { { "title", "mad catz mov088150/04/1 ps3 s-video cable" },
-            { "titleBrand", "mad catz mov088150/04/1 ps3 s-video cable|(null)|Mark|0" } }, //
+        { { "title", "mad catz mov088150/04/1 ps3 s-video cable" }, { "titleBrand",
+            "mad catz mov088150/04/1 ps3 s-video cable|(null)|Mark|0" } }, //
         { { "title", "franklin sdm-500224hsmp 2002 stedman's medical dictionary springboard module" }, { "titleBrand",
             "franklin sdm-500224hsmp 2002 stedman's medical dictionary springboard module|(null)|Mark|94.99" } }, //
-        { { "title", "razer deathstalker ultimate gaming keyboard" },
-            { "titleBrand", "razer deathstalker ultimate gaming keyboard|razer|Mark|255.35" } }, //
-        { { "title", "igadgitz blue eva hard case cover for nintendo 2ds" },
-            { "titleBrand", "igadgitz blue eva hard case cover for nintendo 2ds|(null)|Mark|6.99" } }, //
+        { { "title", "razer deathstalker ultimate gaming keyboard" }, { "titleBrand",
+            "razer deathstalker ultimate gaming keyboard|razer|Mark|255.35" } }, //
+        { { "title", "igadgitz blue eva hard case cover for nintendo 2ds" }, { "titleBrand",
+            "igadgitz blue eva hard case cover for nintendo 2ds|(null)|Mark|6.99" } }, //
         { { "title",
             "buddies model wl2021 2.4 ghz wireless gamepad controller for pc/ps1/ps2/ps3 with rechargable lithium battery with one year warranty" },
             { "titleBrand",
                 "buddies model wl2021 2.4 ghz wireless gamepad controller for pc/ps1/ps2/ps3 with rechargable lithium battery with one year warranty|(null)|Mark|19.95" } },
         //
-        { { "title", "saitek x52 pro flight system controller" },
-            { "titleBrand", "saitek x52 pro flight system controller|(null)|Mark|144.96" } }, //
+        { { "title", "saitek x52 pro flight system controller" }, { "titleBrand",
+            "saitek x52 pro flight system controller|(null)|Mark|144.96" } }, //
         { { "title", "ideazon reaper gaming mouse" }, { "titleBrand", "ideazon reaper gaming mouse|(null)|Mark|0" } },
         //
-        { { "title", "innovations 7-38012-48713-6 nes game pad" },
-            { "titleBrand", "innovations 7-38012-48713-6 nes game pad|micro innovations|Mark|5.23" } }, //
-        { { "title", "neuros mpeg-4 recorder 2 plus digital video recorder" },
-            { "titleBrand", "neuros mpeg-4 recorder 2 plus digital video recorder|(null)|Mark|79.64" } }, //
-        { { "title", "logitech cordless rumblepad 2 with vibration feedback (black)" },
-            { "titleBrand", "logitech cordless rumblepad 2 with vibration feedback (black)|(null)|Mark|31.79" } } };
+        { { "title", "innovations 7-38012-48713-6 nes game pad" }, { "titleBrand",
+            "innovations 7-38012-48713-6 nes game pad|micro innovations|Mark|5.23" } }, //
+        { { "title", "neuros mpeg-4 recorder 2 plus digital video recorder" }, { "titleBrand",
+            "neuros mpeg-4 recorder 2 plus digital video recorder|(null)|Mark|79.64" } }, //
+        { { "title", "logitech cordless rumblepad 2 with vibration feedback (black)" }, { "titleBrand",
+            "logitech cordless rumblepad 2 with vibration feedback (black)|(null)|Mark|31.79" } } };
 
     var result = repository.stringFormat();
     assertThat(result.getTotalResults()).isEqualTo(2218);
@@ -320,16 +323,16 @@ class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
 
     IntStream.range(0, expectedData.length - 1).forEach(i -> {
       var row = result.getRow(i);
-      IntStream.range(0, expectedData[i].length - 1).forEach(
-          j -> assertThat(row.getString(expectedData[i][j][0])).isEqualTo(expectedData[i][j][1].toLowerCase()));
+      IntStream.range(0, expectedData[i].length - 1).forEach(j -> assertThat(row.getString(expectedData[i][j][0]))
+          .isEqualTo(expectedData[i][j][1].toLowerCase()));
     });
   }
 
   @Test
   void testLoadWithSort() {
     String[][][] expectedData = { //
-        { { "title", "Logitech MOMO Racing - Wheel and pedals set - 6 button(s) - PC, MAC - black" },
-            { "price", "759.12" } }, //
+        { { "title", "Logitech MOMO Racing - Wheel and pedals set - 6 button(s) - PC, MAC - black" }, { "price",
+            "759.12" } }, //
         { { "title", "Sony PSP Slim &amp; Lite 2000 Console" }, { "price", "695.8" } }, //
     };
     var result = repository.loadWithSort();
@@ -337,8 +340,8 @@ class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
 
     IntStream.range(0, expectedData.length - 1).forEach(i -> {
       var row = result.getRow(i);
-      IntStream.range(0, expectedData[i].length - 1)
-          .forEach(j -> assertThat(row.getString(expectedData[i][j][0])).isEqualTo(expectedData[i][j][1]));
+      IntStream.range(0, expectedData[i].length - 1).forEach(j -> assertThat(row.getString(expectedData[i][j][0]))
+          .isEqualTo(expectedData[i][j][1]));
     });
   }
 
@@ -355,17 +358,17 @@ class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
 
     IntStream.range(0, expectedData.length - 1).forEach(i -> {
       var row = result.getRow(i);
-      IntStream.range(0, expectedData[i].length - 1)
-          .forEach(j -> assertThat(row.getString(expectedData[i][j][0])).isEqualTo(expectedData[i][j][1]));
+      IntStream.range(0, expectedData[i].length - 1).forEach(j -> assertThat(row.getString(expectedData[i][j][0]))
+          .isEqualTo(expectedData[i][j][1]));
     });
   }
 
   @Test
   void testAggregationParams() {
     String[][] expectedData = { //
-        { "Genius", "88.54" }, { "Logitech", "78.98" }, { "Monster", "69.95" }, { "Goliton", "15.69" },
-        { "Lenmar", "15.41" }, { "Oceantree(TM)", "12.29" }, { "Oceantree", "11.39" }, { "oooo", "10.11" },
-        { "Case Logic", "9.99" }, { "Neewer", "9.71" } //
+        { "Genius", "88.54" }, { "Logitech", "78.98" }, { "Monster", "69.95" }, { "Goliton", "15.69" }, { "Lenmar",
+            "15.41" }, { "Oceantree(TM)", "12.29" }, { "Oceantree", "11.39" }, { "oooo", "10.11" }, { "Case Logic",
+                "9.99" }, { "Neewer", "9.71" } //
     };
     var result = repository.minPricesByBrand("sony");
     assertThat(result.getTotalResults()).isEqualTo(27);

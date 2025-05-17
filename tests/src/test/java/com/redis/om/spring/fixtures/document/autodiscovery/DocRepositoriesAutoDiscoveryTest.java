@@ -1,23 +1,25 @@
 package com.redis.om.spring.fixtures.document.autodiscovery;
 
-import com.redis.om.spring.AbstractBaseOMTest;
-import com.redis.om.spring.TestConfig;
-import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.Optional;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Optional;
+import com.redis.om.spring.AbstractBaseOMTest;
+import com.redis.om.spring.TestConfig;
+import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-@SpringBootTest( //
-                 classes = DocRepositoriesAutoDiscoveryTest.Config.class, //
-                 properties = { "spring.main.allow-bean-definition-overriding=true" } //
-                 )
+@SpringBootTest(
+    //
+    classes = DocRepositoriesAutoDiscoveryTest.Config.class, //
+    properties = { "spring.main.allow-bean-definition-overriding=true" } //
+)
 class DocRepositoriesAutoDiscoveryTest extends AbstractBaseOMTest {
   @Autowired
   DocRepository repository;

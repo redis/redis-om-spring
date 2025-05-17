@@ -1,9 +1,10 @@
 package com.redis.om.spring.repository.support;
 
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.RedisOMProperties;
-import com.redis.om.spring.fixtures.hash.model.CityHash;
-import com.redis.om.spring.fixtures.hash.model.PersonHash;
+import static org.assertj.core.api.Assertions.*;
+
+import java.util.*;
+import java.util.stream.Stream;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
@@ -16,10 +17,10 @@ import org.springframework.data.redis.repository.core.MappingRedisEntityInformat
 import org.springframework.data.redis.repository.support.QueryByExampleRedisExecutor;
 import org.springframework.data.repository.query.FluentQuery;
 
-import java.util.*;
-import java.util.stream.Stream;
-
-import static org.assertj.core.api.Assertions.*;
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.RedisOMProperties;
+import com.redis.om.spring.fixtures.hash.model.CityHash;
+import com.redis.om.spring.fixtures.hash.model.PersonHash;
 
 /**
  * Port of org.springframework.data.redis.repository.support.QueryByExampleRedisExecutorIntegrationTests
@@ -42,9 +43,8 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   @BeforeEach
   void before() {
 
-    repository = new SimpleRedisEnhancedRepository<>(getEntityInformation(PersonHash.class),
-        new KeyValueTemplate(new RedisKeyValueAdapter(template)), modulesOperations, indexer, embedder,
-      new RedisOMProperties());
+    repository = new SimpleRedisEnhancedRepository<>(getEntityInformation(PersonHash.class), new KeyValueTemplate(
+        new RedisKeyValueAdapter(template)), modulesOperations, indexer, embedder, new RedisOMProperties());
     repository.deleteAll();
 
     walt = new PersonHash("Walter", "White");
@@ -60,7 +60,7 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   }
 
   @Test
-    // DATAREDIS-605
+  // DATAREDIS-605
   void shouldFindOneByExample() {
     Optional<PersonHash> result = repository.findOne(Example.of(walt));
 
@@ -68,24 +68,24 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   }
 
   @Test
-    // DATAREDIS-605
+  // DATAREDIS-605
   void shouldThrowExceptionWhenFindOneByExampleReturnsNonUniqueResult() {
     PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
 
     assertThatThrownBy(() -> repository.findOne(Example.of(person))).isInstanceOf(
-      IncorrectResultSizeDataAccessException.class);
+        IncorrectResultSizeDataAccessException.class);
   }
 
   @Test
-    // DATAREDIS-605
+  // DATAREDIS-605
   void shouldNotFindOneByExample() {
     Optional<PersonHash> result = repository.findOne(Example.of(new PersonHash("Skyler", "White")));
     assertThat(result).isEmpty();
   }
 
   @Test
-    // DATAREDIS-605, GH-2880
+  // DATAREDIS-605, GH-2880
   void shouldFindAllByExample() {
     PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
@@ -95,17 +95,17 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   }
 
   @Test
-    // DATAREDIS-605
+  // DATAREDIS-605
   void shouldNotSupportFindAllOrdered() {
     PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
 
     assertThatThrownBy(() -> repository.findAll(Example.of(person), Sort.by("foo"))).isInstanceOf(
-      UnsupportedOperationException.class);
+        UnsupportedOperationException.class);
   }
 
   @Test
-    // DATAREDIS-605
+  // DATAREDIS-605
   void shouldFindAllPagedByExample() {
     PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
@@ -126,7 +126,7 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   }
 
   @Test
-    // DATAREDIS-605
+  // DATAREDIS-605
   void shouldCountCorrectly() {
     PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
@@ -138,7 +138,7 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   }
 
   @Test
-    // DATAREDIS-605
+  // DATAREDIS-605
   void shouldReportExistenceCorrectly() {
     PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
@@ -150,43 +150,41 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   }
 
   @Test
-    // GH-2150
+  // GH-2150
   void findByShouldFindFirst() {
     PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
 
     assertThat((Object) repository.findBy(Example.of(person), FluentQuery.FetchableFluentQuery::first)).isNotNull();
-    assertThat(
-      repository.findBy(Example.of(walt), it -> it.as(PersonProjection.class).firstValue()).getFirstname()) //
-      .isEqualTo(walt.getFirstname() //
-    );
+    assertThat(repository.findBy(Example.of(walt), it -> it.as(PersonProjection.class).firstValue()).getFirstname()) //
+        .isEqualTo(walt.getFirstname() //
+        );
   }
 
   @Test
-    // GH-2150
+  // GH-2150
   void findByShouldFindFirstAsDto() {
     PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
 
     assertThat(repository.findBy(Example.of(walt), it -> it.as(PersonDto.class).firstValue()).getFirstname()).isEqualTo(
-      walt.getFirstname());
+        walt.getFirstname());
   }
 
   @Test
-    // GH-2150
+  // GH-2150
   void findByShouldFindOne() {
     PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
 
-    assertThatExceptionOfType(IncorrectResultSizeDataAccessException.class).isThrownBy(
-      () -> repository.findBy(Example.of(person), FluentQuery.FetchableFluentQuery::one));
-    assertThat(
-      repository.findBy(Example.of(walt), it -> it.as(PersonProjection.class).oneValue()).getFirstname()).isEqualTo(
-      walt.getFirstname());
+    assertThatExceptionOfType(IncorrectResultSizeDataAccessException.class).isThrownBy(() -> repository.findBy(Example
+        .of(person), FluentQuery.FetchableFluentQuery::one));
+    assertThat(repository.findBy(Example.of(walt), it -> it.as(PersonProjection.class).oneValue()).getFirstname())
+        .isEqualTo(walt.getFirstname());
   }
 
   @Test
-    // GH-2150
+  // GH-2150
   void findByShouldFindAll() {
     PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
@@ -199,7 +197,7 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   }
 
   @Test
-    // GH-2150
+  // GH-2150
   void findByShouldFindPage() {
     PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
@@ -210,7 +208,7 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   }
 
   @Test
-    // GH-2150
+  // GH-2150
   void findByShouldFindStream() {
     PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
@@ -220,7 +218,7 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   }
 
   @Test
-    // GH-2150
+  // GH-2150
   void findByShouldCount() {
     PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
@@ -229,7 +227,7 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
   }
 
   @Test
-    // GH-2150
+  // GH-2150
   void findByShouldExists() {
     PersonHash person = new PersonHash();
     person.setHometown(walt.getHometown());
@@ -390,8 +388,8 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
     butchUpdate.setFirstname("BUTCH");
     butchUpdate.setLastname("COOLIDGE");
 
-    ExampleMatcher matcher = ExampleMatcher.matching().withIgnorePaths("lastname")
-        .withMatcher("firstname", ExampleMatcher.GenericPropertyMatchers.ignoreCase());
+    ExampleMatcher matcher = ExampleMatcher.matching().withIgnorePaths("lastname").withMatcher("firstname",
+        ExampleMatcher.GenericPropertyMatchers.ignoreCase());
 
     repository.updateAll(Collections.singletonList(Example.of(butchUpdate, matcher)));
 
@@ -421,10 +419,12 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
         .hasMessageContaining("Example object must have an ID");
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   private <T> MappingRedisEntityInformation<T, String> getEntityInformation(Class<T> entityClass) {
-    return new MappingRedisEntityInformation<>(
-      (RedisPersistentEntity) mappingContext.getRequiredPersistentEntity(entityClass));
+    return new MappingRedisEntityInformation<>((RedisPersistentEntity) mappingContext.getRequiredPersistentEntity(
+        entityClass));
   }
 
   static class PersonDto {

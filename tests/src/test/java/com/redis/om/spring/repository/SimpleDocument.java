@@ -1,9 +1,10 @@
 package com.redis.om.spring.repository;
 
-import com.redis.om.spring.annotations.Document;
+import java.util.UUID;
+
 import org.springframework.data.annotation.Id;
 
-import java.util.UUID;
+import com.redis.om.spring.annotations.Document;
 
 @Document
 public class SimpleDocument {

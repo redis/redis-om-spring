@@ -1,18 +1,6 @@
 package com.redis.om.spring.annotations.hash.serialization;
 
-import com.github.f4b6a3.ulid.Ulid;
-import com.github.f4b6a3.ulid.UlidCreator;
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.fixtures.hash.model.KitchenSink;
-import com.redis.om.spring.fixtures.hash.repository.KitchenSinkRepository;
-import com.redis.om.spring.vectorize.DefaultEmbedder;
-import com.redis.om.spring.vectorize.Embedder;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.data.geo.Point;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,9 +8,24 @@ import java.lang.reflect.InvocationTargetException;
 import java.time.*;
 import java.util.*;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.data.geo.Point;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
-@SuppressWarnings("SpellCheckingInspection")
+import com.github.f4b6a3.ulid.Ulid;
+import com.github.f4b6a3.ulid.UlidCreator;
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.fixtures.hash.model.KitchenSink;
+import com.redis.om.spring.fixtures.hash.repository.KitchenSinkRepository;
+import com.redis.om.spring.vectorize.DefaultEmbedder;
+import com.redis.om.spring.vectorize.Embedder;
+
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class SerializationTest extends AbstractBaseEnhancedRedisTest {
 
   @Autowired
@@ -69,12 +72,12 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
     ulid = UlidCreator.getMonotonicUlid();
     byteArray = "Hello World!".getBytes();
 
-    java.lang.reflect.Method method = DefaultEmbedder.class.getDeclaredMethod(
-        "getImageEmbeddingsAsByteArrayFor", InputStream.class);
+    java.lang.reflect.Method method = DefaultEmbedder.class.getDeclaredMethod("getImageEmbeddingsAsByteArrayFor",
+        InputStream.class);
     method.setAccessible(true);
 
-    byteArray2 = (byte[]) method.invoke(embedder,
-        applicationContext.getResource("classpath:/images/cat.jpg").getInputStream());
+    byteArray2 = (byte[]) method.invoke(embedder, applicationContext.getResource("classpath:/images/cat.jpg")
+        .getInputStream());
     yearMonth = YearMonth.of(1972, 6);
 
     List<String[]> listOfStringArrays = new ArrayList<>();
@@ -170,14 +173,14 @@ class SerializationTest extends AbstractBaseEnhancedRedisTest {
     // LocalDateTime
     Instant localDateTimeInstant = localDateTime.atZone(ZoneId.systemDefault()).toInstant();
     long localDateTimeInMillis = localDateTimeInstant.toEpochMilli();
-    long rawLocalDateTime = Long.parseLong(
-        Objects.requireNonNull(template.opsForHash().get(key, "localDateTime")).toString());
+    long rawLocalDateTime = Long.parseLong(Objects.requireNonNull(template.opsForHash().get(key, "localDateTime"))
+        .toString());
 
     // OffsetDateTime
     Instant localOffsetDateTimeInstant = localOffsetDateTime.atZoneSameInstant(ZoneId.systemDefault()).toInstant();
     long localOffsetDateTimeInMillis = localOffsetDateTimeInstant.toEpochMilli();
-    long rawlocalOffsetDateTime = Long.parseLong(
-        Objects.requireNonNull(template.opsForHash().get(key, "localOffsetDateTime")).toString());
+    long rawlocalOffsetDateTime = Long.parseLong(Objects.requireNonNull(template.opsForHash().get(key,
+        "localOffsetDateTime")).toString());
 
     // Date
     long dateInMillis = date.getTime();

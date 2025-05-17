@@ -42,7 +42,9 @@ public class QueryUtils {
     return text.replace("\\", "");
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   public static <T> T escape(T maybeText) {
     return CharSequence.class.isAssignableFrom(maybeText.getClass()) ? (T) escape(maybeText.toString()) : maybeText;
   }

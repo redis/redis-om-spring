@@ -1,5 +1,11 @@
 package com.redis.om.spring.mapping;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.data.mapping.PersistentProperty;
 import org.springframework.data.redis.core.PartialUpdate;
@@ -12,12 +18,6 @@ import org.springframework.data.redis.core.mapping.RedisPersistentEntity;
 import org.springframework.lang.Nullable;
 import org.springframework.util.*;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
 /**
  * TimeToLiveAccessor implementation for Redis OM Spring considering KeyspaceConfiguration
  */
@@ -29,7 +29,8 @@ public class RedisEnhancedTimeToLiveAccessor implements TimeToLiveAccessor {
   private final KeyspaceConfiguration keyspaceConfig;
   private final RedisEnhancedMappingContext mappingContext;
 
-  public RedisEnhancedTimeToLiveAccessor(KeyspaceConfiguration keyspaceConfig, RedisEnhancedMappingContext mappingContext) {
+  public RedisEnhancedTimeToLiveAccessor(KeyspaceConfiguration keyspaceConfig,
+      RedisEnhancedMappingContext mappingContext) {
     Assert.notNull(keyspaceConfig, "KeyspaceConfiguration must not be null");
     Assert.notNull(mappingContext, "MappingContext must not be null");
 
@@ -38,11 +39,14 @@ public class RedisEnhancedTimeToLiveAccessor implements TimeToLiveAccessor {
   }
 
   @Override
-  @SuppressWarnings({ "rawtypes" })
+  @SuppressWarnings(
+    { "rawtypes" }
+  )
   public Long getTimeToLive(Object source) {
     Assert.notNull(source, "Source must not be null");
-    Class<?> type = source instanceof Class<?> ? (Class<?>) source
-        : (source instanceof PartialUpdate ? ((PartialUpdate) source).getTarget() : source.getClass());
+    Class<?> type = source instanceof Class<?> ?
+        (Class<?>) source :
+        (source instanceof PartialUpdate ? ((PartialUpdate) source).getTarget() : source.getClass());
 
     Long defaultTimeout = resolveDefaultTimeOut(type);
     TimeUnit unit = TimeUnit.SECONDS;
@@ -56,9 +60,10 @@ public class RedisEnhancedTimeToLiveAccessor implements TimeToLiveAccessor {
     if (source instanceof PartialUpdate<?> update) {
       if (ttlProperty != null && !update.getPropertyUpdates().isEmpty()) {
         for (PartialUpdate.PropertyUpdate pUpdate : update.getPropertyUpdates()) {
-          if (PartialUpdate.UpdateCommand.SET.equals(pUpdate.getCmd()) && ttlProperty.getName().equals(pUpdate.getPropertyPath())) {
-            return TimeUnit.SECONDS
-                .convert(NumberUtils.convertNumberToTargetClass((Number) pUpdate.getValue(), Long.class), unit);
+          if (PartialUpdate.UpdateCommand.SET.equals(pUpdate.getCmd()) && ttlProperty.getName().equals(pUpdate
+              .getPropertyPath())) {
+            return TimeUnit.SECONDS.convert(NumberUtils.convertNumberToTargetClass((Number) pUpdate.getValue(),
+                Long.class), unit);
           }
         }
       }
@@ -79,8 +84,8 @@ public class RedisEnhancedTimeToLiveAccessor implements TimeToLiveAccessor {
             return TimeUnit.SECONDS.convert(timeout.longValue(), ttl.unit());
           }
         } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-          throw new IllegalStateException(
-              String.format("Cannot access method '%s': %s", timeoutMethod.getName(), ex.getMessage()), ex);
+          throw new IllegalStateException(String.format("Cannot access method '%s': %s", timeoutMethod.getName(), ex
+              .getMessage()), ex);
         }
       }
     }
@@ -160,9 +165,8 @@ public class RedisEnhancedTimeToLiveAccessor implements TimeToLiveAccessor {
     }
 
     timeoutMethods.put(type, null);
-    ReflectionUtils.doWithMethods(type, method -> timeoutMethods.put(type, method),
-        method -> ClassUtils.isAssignable(Number.class, method.getReturnType())
-            && AnnotationUtils.findAnnotation(method, TimeToLive.class) != null);
+    ReflectionUtils.doWithMethods(type, method -> timeoutMethods.put(type, method), method -> ClassUtils.isAssignable(
+        Number.class, method.getReturnType()) && AnnotationUtils.findAnnotation(method, TimeToLive.class) != null);
 
     return timeoutMethods.get(type);
   }

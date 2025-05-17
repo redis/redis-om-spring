@@ -1,13 +1,13 @@
 package com.redis.om.spring.tuple.impl.mapper;
 
+import java.util.function.Function;
+
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.Hextuple;
 import com.redis.om.spring.tuple.Tuples;
 
-import java.util.function.Function;
-
-public final class HextupleMapperImpl<T, T0, T1, T2, T3, T4, T5>
-    extends AbstractTupleMapper<T, Hextuple<T0, T1, T2, T3, T4, T5>> {
+public final class HextupleMapperImpl<T, T0, T1, T2, T3, T4, T5> extends
+    AbstractTupleMapper<T, Hextuple<T0, T1, T2, T3, T4, T5>> {
 
   public HextupleMapperImpl(Function<T, T0> m0, Function<T, T1> m1, Function<T, T2> m2, Function<T, T3> m3,
       Function<T, T4> m4, Function<T, T5> m5) {
@@ -22,8 +22,8 @@ public final class HextupleMapperImpl<T, T0, T1, T2, T3, T4, T5>
 
   @Override
   public Hextuple<T0, T1, T2, T3, T4, T5> apply(T t) {
-    return Tuples.of(getFirst().apply(t), getSecond().apply(t), getThird().apply(t), getFourth().apply(t),
-        getFifth().apply(t), getSixth().apply(t));
+    return Tuples.of(getFirst().apply(t), getSecond().apply(t), getThird().apply(t), getFourth().apply(t), getFifth()
+        .apply(t), getSixth().apply(t));
   }
 
   public Function<T, T0> getFirst() {

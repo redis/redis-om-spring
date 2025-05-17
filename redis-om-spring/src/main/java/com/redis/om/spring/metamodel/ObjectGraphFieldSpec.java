@@ -1,9 +1,10 @@
 package com.redis.om.spring.metamodel;
 
-import com.squareup.javapoet.FieldSpec;
+import java.util.List;
 
 import javax.lang.model.element.Element;
-import java.util.List;
+
+import com.squareup.javapoet.FieldSpec;
 
 public record ObjectGraphFieldSpec(FieldSpec fieldSpec, List<Element> chain) {
 }

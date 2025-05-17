@@ -1,31 +1,41 @@
 package com.redis.om.spring.fixtures.hash.model;
 
-import com.redis.om.spring.annotations.Bloom;
-import com.redis.om.spring.annotations.Indexed;
-import com.redis.om.spring.annotations.Searchable;
-import lombok.*;
+import java.time.LocalDate;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.core.RedisHash;
 
-import java.time.LocalDate;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import com.redis.om.spring.annotations.Bloom;
+import com.redis.om.spring.annotations.Indexed;
+import com.redis.om.spring.annotations.Searchable;
+
+import lombok.*;
 
 @Data
-@RequiredArgsConstructor(staticName = "of")
-@NoArgsConstructor(force = true)
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@RequiredArgsConstructor(
+    staticName = "of"
+)
+@NoArgsConstructor(
+    force = true
+)
+@EqualsAndHashCode(
+    onlyExplicitlyIncluded = true
+)
 @RedisHash
 public class Company {
   @Id
   private String id;
 
   @NonNull
-  @Searchable(sortable = true)
+  @Searchable(
+      sortable = true
+  )
   private String name;
 
   @NonNull
@@ -46,7 +56,9 @@ public class Company {
   @NonNull
   @Indexed
   @EqualsAndHashCode.Include
-  @Bloom(name = "bf_company_email_2", capacity = 100000, errorRate = 0.001)
+  @Bloom(
+      name = "bf_company_email_2", capacity = 100000, errorRate = 0.001
+  )
   private String email;
 
   @Indexed

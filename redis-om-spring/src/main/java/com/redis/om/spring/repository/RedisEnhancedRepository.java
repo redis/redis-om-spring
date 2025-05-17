@@ -1,6 +1,7 @@
 package com.redis.om.spring.repository;
 
-import com.redis.om.spring.metamodel.MetamodelField;
+import java.util.concurrent.TimeUnit;
+
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -8,7 +9,7 @@ import org.springframework.data.keyvalue.repository.KeyValueRepository;
 import org.springframework.data.repository.NoRepositoryBean;
 import org.springframework.data.repository.query.QueryByExampleExecutor;
 
-import java.util.concurrent.TimeUnit;
+import com.redis.om.spring.metamodel.MetamodelField;
 
 @NoRepositoryBean
 public interface RedisEnhancedRepository<T, ID> extends KeyValueRepository<T, ID>, QueryByExampleExecutor<T> {

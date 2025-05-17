@@ -12,6 +12,11 @@
  */
 package com.redis.om.spring.vectorize.face;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import ai.djl.modality.cv.Image;
 import ai.djl.modality.cv.output.*;
 import ai.djl.ndarray.NDArray;
@@ -22,11 +27,6 @@ import ai.djl.ndarray.types.DataType;
 import ai.djl.ndarray.types.Shape;
 import ai.djl.translate.Translator;
 import ai.djl.translate.TranslatorContext;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class FaceDetectionTranslator implements Translator<Image, DetectedObjects> {
 

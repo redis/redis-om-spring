@@ -1,17 +1,20 @@
 package com.redis.om.spring.id;
 
-import com.github.f4b6a3.ulid.Ulid;
-import com.github.f4b6a3.ulid.UlidCreator;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.keyvalue.core.IdentifierGenerator;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.util.ClassUtils;
 
+import com.github.f4b6a3.ulid.Ulid;
+import com.github.f4b6a3.ulid.UlidCreator;
+
 public enum ULIDIdentifierGenerator implements IdentifierGenerator {
 
   INSTANCE;
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   @Override
   public <T> T generateIdentifierOfType(TypeInformation<T> identifierType) {
     Class<?> type = identifierType.getType();
@@ -26,12 +29,8 @@ public enum ULIDIdentifierGenerator implements IdentifierGenerator {
       return (T) Long.valueOf(SecureRandom.getSecureRandom().nextLong());
     }
 
-    throw new InvalidDataAccessApiUsageException(
-        String.format("Identifier cannot be generated for %s. Supported types are: ULID, String, Integer, and Long.",
-            identifierType.getType().getName()));
+    throw new InvalidDataAccessApiUsageException(String.format(
+        "Identifier cannot be generated for %s. Supported types are: ULID, String, Integer, and Long.", identifierType
+            .getType().getName()));
   }
 }
-
-
-
-

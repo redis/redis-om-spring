@@ -1,7 +1,13 @@
 package com.redis.om.spring;
 
-import com.redis.om.spring.fixtures.hash.model.Company;
-import com.redis.om.spring.fixtures.hash.repository.CompanyRepository;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,19 +17,18 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.convert.Bucket;
 import org.springframework.data.redis.core.convert.RedisData;
 
-import java.time.LocalDate;
-import java.util.Collections;
-import java.util.List;
+import com.redis.om.spring.fixtures.hash.model.Company;
+import com.redis.om.spring.fixtures.hash.repository.CompanyRepository;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-@SuppressWarnings("SpellCheckingInspection")
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class RedisEnhancedKeyValueAdapterTest extends AbstractBaseEnhancedRedisTest {
 
   @Autowired
-  @Qualifier("redisCustomKeyValueTemplate")
+  @Qualifier(
+    "redisCustomKeyValueTemplate"
+  )
   CustomRedisKeyValueTemplate kvTemplate;
 
   @Autowired
@@ -51,11 +56,10 @@ class RedisEnhancedKeyValueAdapterTest extends AbstractBaseEnhancedRedisTest {
   void createData() {
     adapter = (RedisEnhancedKeyValueAdapter) kvTemplate.getAdapter();
     repository.deleteAll();
-    redis = repository.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
-    microsoft = repository.save(
-        Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
-            "research@microsoft.com"));
+    redis = repository.save(Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690),
+        "stack@redis.com"));
+    microsoft = repository.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500,
+        47.640160), "research@microsoft.com"));
   }
 
   @Test

@@ -1,12 +1,15 @@
 package com.redis.om.spring.fixtures.hash.model;
 
-import com.redis.om.spring.annotations.Indexed;
+import java.util.Objects;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
 
-import java.util.Objects;
+import com.redis.om.spring.annotations.Indexed;
 
-@RedisHash("persons")
+@RedisHash(
+  "persons"
+)
 public class PersonHash {
   private @Id String id;
   private @Indexed String firstname;
@@ -64,9 +67,9 @@ public class PersonHash {
       return false;
     }
 
-    return Objects.equals(this.getId(), that.getId()) && Objects.equals(this.getFirstname(),
-        that.getFirstname()) && Objects.equals(this.getLastname(), that.getLastname()) && Objects.equals(
-        this.getHometown(), that.getHometown());
+    return Objects.equals(this.getId(), that.getId()) && Objects.equals(this.getFirstname(), that
+        .getFirstname()) && Objects.equals(this.getLastname(), that.getLastname()) && Objects.equals(this.getHometown(),
+            that.getHometown());
   }
 
   @Override

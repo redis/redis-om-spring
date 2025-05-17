@@ -1,18 +1,19 @@
 package com.redis.om.spring.repository;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.ops.search.SearchOperations;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
+
+import java.util.List;
+import java.util.Map;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
-import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assumptions.assumeThat;
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.search.SearchOperations;
 
 class InheritingDocumentTest extends AbstractBaseDocumentTest {
   private static final int SIZE = 20;
@@ -35,16 +36,18 @@ class InheritingDocumentTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   void testIndexCreatedCorrectly() {
     Map<String, Object> info = searchOperations.getInfo();
     Object rawAttributes = info.get("attributes");
     assertThat(rawAttributes).isNotNull().isInstanceOf(List.class);
     List<?> attributes = (List<?>) rawAttributes;
     assertThat(attributes).hasSize(3).allSatisfy(element -> {
-          assertThat(element).isInstanceOf(List.class);
-          assertThat((List<?>) element).allSatisfy(item -> assertThat(item).isInstanceOf(String.class));
-        }).map(element -> (List<String>) element) // cast is checked through assertion
+      assertThat(element).isInstanceOf(List.class);
+      assertThat((List<?>) element).allSatisfy(item -> assertThat(item).isInstanceOf(String.class));
+    }).map(element -> (List<String>) element) // cast is checked through assertion
         .extracting((List<String> attribute) -> {
           for (int i = 0; i < attribute.size(); i++) {
             String value = attribute.get(i);
@@ -53,8 +56,8 @@ class InheritingDocumentTest extends AbstractBaseDocumentTest {
             }
           }
           return null;
-        }).doesNotContain((String) null)
-        .containsExactlyInAnyOrderElementsOf(List.of("id", "inherited", "notInherited"));
+        }).doesNotContain((String) null).containsExactlyInAnyOrderElementsOf(List.of("id", "inherited",
+            "notInherited"));
   }
 
   @Test

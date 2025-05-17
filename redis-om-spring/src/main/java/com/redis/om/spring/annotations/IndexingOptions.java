@@ -3,8 +3,12 @@ package com.redis.om.spring.annotations;
 import java.lang.annotation.*;
 
 @Inherited
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.TYPE })
+@Retention(
+  RetentionPolicy.RUNTIME
+)
+@Target(
+  { ElementType.TYPE }
+)
 public @interface IndexingOptions {
   String indexName() default "";
 

@@ -1,5 +1,21 @@
 package com.redis.om.spring.annotations.document;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.geo.Point;
+
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.fixtures.document.model.Direccion;
 import com.redis.om.spring.fixtures.document.model.WithAlias;
@@ -8,23 +24,10 @@ import com.redis.om.spring.fixtures.document.repository.WithAliasRepository;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.SearchStream;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.geo.Point;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-@SuppressWarnings("SpellCheckingInspection")
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class RedisDocumentWithAliasTest extends AbstractBaseDocumentTest {
   @Autowired
   WithAliasRepository repository;
@@ -93,8 +96,8 @@ class RedisDocumentWithAliasTest extends AbstractBaseDocumentTest {
         .collect(Collectors.toList());
 
     assertAll( //
-        () -> assertThat(docs).hasSize(2),
-        () -> assertThat(docs).extracting("text").containsOnly("Epa chamo", "Oye man"));
+        () -> assertThat(docs).hasSize(2), () -> assertThat(docs).extracting("text").containsOnly("Epa chamo",
+            "Oye man"));
   }
 
 }

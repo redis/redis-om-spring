@@ -1,19 +1,27 @@
 package com.redis.om.spring.fixtures.hash.model;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.redis.core.RedisHash;
+
 import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.SchemaFieldType;
 import com.redis.om.spring.annotations.VectorIndexed;
 import com.redis.om.spring.indexing.DistanceMetric;
 import com.redis.om.spring.indexing.VectorType;
+
 import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.redis.core.RedisHash;
 import redis.clients.jedis.search.schemafields.VectorField.VectorAlgorithm;
 
 @Data
-@RequiredArgsConstructor(staticName = "of")
-@NoArgsConstructor(force = true)
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@RequiredArgsConstructor(
+    staticName = "of"
+)
+@NoArgsConstructor(
+    force = true
+)
+@EqualsAndHashCode(
+    onlyExplicitlyIncluded = true
+)
 @RedisHash
 public class HashWithVectors {
   @Id

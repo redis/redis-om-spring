@@ -1,19 +1,27 @@
 package com.redis.om.spring.fixtures.document.model;
 
+import java.util.concurrent.TimeUnit;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.redis.core.TimeToLive;
+
 import com.redis.om.spring.annotations.Document;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.redis.core.TimeToLive;
-
-import java.util.concurrent.TimeUnit;
 
 @Data
-@NoArgsConstructor(force = true)
-@RequiredArgsConstructor(staticName = "of")
-@Document(timeToLive = 5)
+@NoArgsConstructor(
+    force = true
+)
+@RequiredArgsConstructor(
+    staticName = "of"
+)
+@Document(
+    timeToLive = 5
+)
 public class ExpiringPersonDifferentTimeUnit {
   @Id
   String id;
@@ -21,6 +29,8 @@ public class ExpiringPersonDifferentTimeUnit {
   String name;
 
   @NonNull
-  @TimeToLive(unit = TimeUnit.DAYS)
+  @TimeToLive(
+      unit = TimeUnit.DAYS
+  )
   Long ttl;
 }

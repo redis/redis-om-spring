@@ -1,10 +1,10 @@
 package com.redis.om.spring.tuple.impl.mapper;
 
+import java.util.function.Function;
+
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.Single;
 import com.redis.om.spring.tuple.Tuples;
-
-import java.util.function.Function;
 
 public final class SingleMapperImpl<T, T0> extends AbstractTupleMapper<T, Single<T0>> {
 

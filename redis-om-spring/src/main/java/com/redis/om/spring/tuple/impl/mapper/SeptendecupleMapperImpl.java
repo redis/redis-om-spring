@@ -1,10 +1,10 @@
 package com.redis.om.spring.tuple.impl.mapper;
 
+import java.util.function.Function;
+
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.Septendecuple;
 import com.redis.om.spring.tuple.Tuples;
-
-import java.util.function.Function;
 
 public final class SeptendecupleMapperImpl<T, T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>
     extends
@@ -36,10 +36,10 @@ public final class SeptendecupleMapperImpl<T, T0, T1, T2, T3, T4, T5, T6, T7, T8
 
   @Override
   public Septendecuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> apply(T t) {
-    return Tuples.of(getFirst().apply(t), getSecond().apply(t), getThird().apply(t), getFourth().apply(t),
-        getFifth().apply(t), getSixth().apply(t), getSeventh().apply(t), getEighth().apply(t), getNinth().apply(t),
-        getTenth().apply(t), getEleventh().apply(t), getTwelfth().apply(t), getThirteenth().apply(t),
-        getFourteenth().apply(t), getFifteenth().apply(t), getSixteenth().apply(t), getSeventeenth().apply(t));
+    return Tuples.of(getFirst().apply(t), getSecond().apply(t), getThird().apply(t), getFourth().apply(t), getFifth()
+        .apply(t), getSixth().apply(t), getSeventh().apply(t), getEighth().apply(t), getNinth().apply(t), getTenth()
+            .apply(t), getEleventh().apply(t), getTwelfth().apply(t), getThirteenth().apply(t), getFourteenth().apply(
+                t), getFifteenth().apply(t), getSixteenth().apply(t), getSeventeenth().apply(t));
   }
 
   public Function<T, T0> getFirst() {

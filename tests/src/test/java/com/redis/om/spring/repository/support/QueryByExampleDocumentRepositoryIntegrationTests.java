@@ -1,9 +1,10 @@
 package com.redis.om.spring.repository.support;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.fixtures.document.model.CityDoc;
-import com.redis.om.spring.fixtures.document.model.PersonDoc;
-import com.redis.om.spring.fixtures.document.repository.PersonDocRepository;
+import static org.assertj.core.api.Assertions.*;
+
+import java.util.*;
+import java.util.stream.Stream;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,10 +16,10 @@ import org.springframework.data.redis.repository.core.MappingRedisEntityInformat
 import org.springframework.data.redis.repository.support.QueryByExampleRedisExecutor;
 import org.springframework.data.repository.query.FluentQuery;
 
-import java.util.*;
-import java.util.stream.Stream;
-
-import static org.assertj.core.api.Assertions.*;
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.fixtures.document.model.CityDoc;
+import com.redis.om.spring.fixtures.document.model.PersonDoc;
+import com.redis.om.spring.fixtures.document.repository.PersonDocRepository;
 
 /**
  * Port of org.springframework.data.redis.repository.support.QueryByExampleRedisExecutorIntegrationTests
@@ -56,7 +57,7 @@ class QueryByExampleDocumentRepositoryIntegrationTests extends AbstractBaseDocum
   }
 
   @Test
-    // DATAREDIS-605
+  // DATAREDIS-605
   void shouldFindOneByExample() {
     Optional<PersonDoc> result = repository.findOne(Example.of(walt));
 
@@ -64,24 +65,24 @@ class QueryByExampleDocumentRepositoryIntegrationTests extends AbstractBaseDocum
   }
 
   @Test
-    // DATAREDIS-605
+  // DATAREDIS-605
   void shouldThrowExceptionWhenFindOneByExampleReturnsNonUniqueResult() {
     PersonDoc person = new PersonDoc();
     person.setHometown(walt.getHometown());
 
     assertThatThrownBy(() -> repository.findOne(Example.of(person))).isInstanceOf(
-      IncorrectResultSizeDataAccessException.class);
+        IncorrectResultSizeDataAccessException.class);
   }
 
   @Test
-    // DATAREDIS-605
+  // DATAREDIS-605
   void shouldNotFindOneByExample() {
     Optional<PersonDoc> result = repository.findOne(Example.of(new PersonDoc("Skyler", "White")));
     assertThat(result).isEmpty();
   }
 
   @Test
-    // DATAREDIS-605, GH-2880
+  // DATAREDIS-605, GH-2880
   void shouldFindAllByExample() {
     PersonDoc person = new PersonDoc();
     person.setHometown(walt.getHometown());
@@ -91,17 +92,17 @@ class QueryByExampleDocumentRepositoryIntegrationTests extends AbstractBaseDocum
   }
 
   @Test
-    // DATAREDIS-605
+  // DATAREDIS-605
   void shouldNotSupportFindAllOrdered() {
     PersonDoc person = new PersonDoc();
     person.setHometown(walt.getHometown());
 
     assertThatThrownBy(() -> repository.findAll(Example.of(person), Sort.by("foo"))).isInstanceOf(
-      UnsupportedOperationException.class);
+        UnsupportedOperationException.class);
   }
 
   @Test
-    // DATAREDIS-605
+  // DATAREDIS-605
   void shouldFindAllPagedByExample() {
     PersonDoc person = new PersonDoc();
     person.setHometown(walt.getHometown());
@@ -122,7 +123,7 @@ class QueryByExampleDocumentRepositoryIntegrationTests extends AbstractBaseDocum
   }
 
   @Test
-    // DATAREDIS-605
+  // DATAREDIS-605
   void shouldCountCorrectly() {
     PersonDoc person = new PersonDoc();
     person.setHometown(walt.getHometown());
@@ -134,7 +135,7 @@ class QueryByExampleDocumentRepositoryIntegrationTests extends AbstractBaseDocum
   }
 
   @Test
-    // DATAREDIS-605
+  // DATAREDIS-605
   void shouldReportExistenceCorrectly() {
     PersonDoc person = new PersonDoc();
     person.setHometown(walt.getHometown());
@@ -146,55 +147,54 @@ class QueryByExampleDocumentRepositoryIntegrationTests extends AbstractBaseDocum
   }
 
   @Test
-    // GH-2150
+  // GH-2150
   void findByShouldFindFirst() {
     PersonDoc person = new PersonDoc();
     person.setHometown(walt.getHometown());
 
     assertThat((Object) repository.findBy(Example.of(person), FluentQuery.FetchableFluentQuery::first)).isNotNull();
-    assertThat(
-      repository.findBy(Example.of(walt), it -> it.as(PersonProjection.class).firstValue()).getFirstname()) //
-      .isEqualTo(walt.getFirstname() //
-    );
+    assertThat(repository.findBy(Example.of(walt), it -> it.as(PersonProjection.class).firstValue()).getFirstname()) //
+        .isEqualTo(walt.getFirstname() //
+        );
   }
 
   @Test
-    // GH-2150
+  // GH-2150
   void findByShouldFindFirstAsDto() {
     PersonDoc person = new PersonDoc();
     person.setHometown(walt.getHometown());
 
     assertThat(repository.findBy(Example.of(walt), it -> it.as(PersonDto.class).firstValue()).getFirstname()).isEqualTo(
-      walt.getFirstname());
+        walt.getFirstname());
   }
 
   @Test
-    // GH-2150
+  // GH-2150
   void findByShouldFindOne() {
     PersonDoc person = new PersonDoc();
     person.setHometown(walt.getHometown());
 
-    assertThatExceptionOfType(IncorrectResultSizeDataAccessException.class).isThrownBy(
-      () -> repository.findBy(Example.of(person), FluentQuery.FetchableFluentQuery::one));
-    assertThat(
-      repository.findBy(Example.of(walt), it -> it.as(PersonProjection.class).oneValue()).getFirstname()).isEqualTo(
-      walt.getFirstname());
+    assertThatExceptionOfType(IncorrectResultSizeDataAccessException.class).isThrownBy(() -> repository.findBy(Example
+        .of(person), FluentQuery.FetchableFluentQuery::one));
+    assertThat(repository.findBy(Example.of(walt), it -> it.as(PersonProjection.class).oneValue()).getFirstname())
+        .isEqualTo(walt.getFirstname());
   }
 
   @Test
-    // GH-2150
+  // GH-2150
   void findByShouldFindAll() {
     PersonDoc person = new PersonDoc();
     person.setHometown(walt.getHometown());
 
-    assertThat((List<PersonDoc>) repository.findBy(Example.of(person), FluentQuery.FetchableFluentQuery::all)).hasSize(3);
+    assertThat((List<PersonDoc>) repository.findBy(Example.of(person), FluentQuery.FetchableFluentQuery::all)).hasSize(
+        3);
     List<PersonProjection> people = repository.findBy(Example.of(walt), it -> it.as(PersonProjection.class).all());
     assertThat(people).hasSize(1);
     assertThat(people).hasOnlyElementsOfType(PersonProjection.class);
   }
 
   @Test
-    // GH-2150
+  // GH-2150
   void findByShouldFindPage() {
     PersonDoc person = new PersonDoc();
     person.setHometown(walt.getHometown());
@@ -205,7 +205,7 @@ class QueryByExampleDocumentRepositoryIntegrationTests extends AbstractBaseDocum
   }
 
   @Test
-    // GH-2150
+  // GH-2150
   void findByShouldFindStream() {
     PersonDoc person = new PersonDoc();
     person.setHometown(walt.getHometown());
@@ -215,7 +215,7 @@ class QueryByExampleDocumentRepositoryIntegrationTests extends AbstractBaseDocum
   }
 
   @Test
-    // GH-2150
+  // GH-2150
   void findByShouldCount() {
     PersonDoc person = new PersonDoc();
     person.setHometown(walt.getHometown());
@@ -224,7 +224,7 @@ class QueryByExampleDocumentRepositoryIntegrationTests extends AbstractBaseDocum
   }
 
   @Test
-    // GH-2150
+  // GH-2150
   void findByShouldExists() {
     PersonDoc person = new PersonDoc();
     person.setHometown(walt.getHometown());
@@ -385,8 +385,8 @@ class QueryByExampleDocumentRepositoryIntegrationTests extends AbstractBaseDocum
     butchUpdate.setFirstname("BUTCH");
     butchUpdate.setLastname("COOLIDGE");
 
-    ExampleMatcher matcher = ExampleMatcher.matching().withIgnorePaths("lastname")
-        .withMatcher("firstname", ExampleMatcher.GenericPropertyMatchers.ignoreCase());
+    ExampleMatcher matcher = ExampleMatcher.matching().withIgnorePaths("lastname").withMatcher("firstname",
+        ExampleMatcher.GenericPropertyMatchers.ignoreCase());
 
     repository.updateAll(Collections.singletonList(Example.of(butchUpdate, matcher)));
 
@@ -416,10 +416,12 @@ class QueryByExampleDocumentRepositoryIntegrationTests extends AbstractBaseDocum
         .hasMessageContaining("Example object must have an ID");
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   private <T> MappingRedisEntityInformation<T, String> getEntityInformation(Class<T> entityClass) {
-    return new MappingRedisEntityInformation<>(
-      (RedisPersistentEntity) mappingContext.getRequiredPersistentEntity(entityClass));
+    return new MappingRedisEntityInformation<>((RedisPersistentEntity) mappingContext.getRequiredPersistentEntity(
+        entityClass));
   }
 
   static class PersonDto {

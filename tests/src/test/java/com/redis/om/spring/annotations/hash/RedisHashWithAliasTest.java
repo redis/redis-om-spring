@@ -1,17 +1,8 @@
 package com.redis.om.spring.annotations.hash;
 
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.fixtures.hash.model.Direccion;
-import com.redis.om.spring.fixtures.hash.model.WithAlias;
-import com.redis.om.spring.fixtures.hash.model.WithAlias$;
-import com.redis.om.spring.fixtures.hash.repository.WithAliasRepository;
-import com.redis.om.spring.search.stream.EntityStream;
-import com.redis.om.spring.search.stream.SearchStream;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.geo.Point;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashSet;
 import java.util.List;
@@ -19,17 +10,31 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.geo.Point;
 
-@SuppressWarnings("SpellCheckingInspection")
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.fixtures.hash.model.Direccion;
+import com.redis.om.spring.fixtures.hash.model.WithAlias;
+import com.redis.om.spring.fixtures.hash.model.WithAlias$;
+import com.redis.om.spring.fixtures.hash.repository.WithAliasRepository;
+import com.redis.om.spring.search.stream.EntityStream;
+import com.redis.om.spring.search.stream.SearchStream;
+
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class RedisHashWithAliasTest extends AbstractBaseEnhancedRedisTest {
   @Autowired
   WithAliasRepository repository;
 
   String id1;
-  @SuppressWarnings("unused")
+  @SuppressWarnings(
+    "unused"
+  )
   String id2;
 
   @Autowired
@@ -95,8 +100,8 @@ class RedisHashWithAliasTest extends AbstractBaseEnhancedRedisTest {
         .collect(Collectors.toList());
 
     assertAll( //
-        () -> assertThat(docs).hasSize(2),
-        () -> assertThat(docs).extracting("text").containsOnly("Epa chamo", "Oye man"));
+        () -> assertThat(docs).hasSize(2), () -> assertThat(docs).extracting("text").containsOnly("Epa chamo",
+            "Oye man"));
   }
 
 }

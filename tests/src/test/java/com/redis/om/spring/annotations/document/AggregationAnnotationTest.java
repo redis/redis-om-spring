@@ -1,20 +1,23 @@
 package com.redis.om.spring.annotations.document;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.fixtures.document.repository.GameRepository;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
+
+import java.io.IOException;
+import java.util.stream.IntStream;
+
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 
-import java.io.IOException;
-import java.util.stream.IntStream;
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.fixtures.document.repository.GameRepository;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
-
-@SuppressWarnings("SpellCheckingInspection")
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class AggregationAnnotationTest extends AbstractBaseDocumentTest {
   @Autowired
   GameRepository repository;
@@ -51,9 +54,9 @@ class AggregationAnnotationTest extends AbstractBaseDocumentTest {
   @Test
   void testMinPrice() {
     String[][] expectedData = { //
-        { "Genius", "88.54" }, { "Logitech", "78.98" }, { "Monster", "69.95" }, { "Goliton", "15.69" },
-        { "Lenmar", "15.41" }, { "Oceantree(TM)", "12.29" }, { "Oceantree", "11.39" }, { "oooo", "10.11" },
-        { "Case Logic", "9.99" }, { "Neewer", "9.71" } //
+        { "Genius", "88.54" }, { "Logitech", "78.98" }, { "Monster", "69.95" }, { "Goliton", "15.69" }, { "Lenmar",
+            "15.41" }, { "Oceantree(TM)", "12.29" }, { "Oceantree", "11.39" }, { "oooo", "10.11" }, { "Case Logic",
+                "9.99" }, { "Neewer", "9.71" } //
     };
     var result = repository.minPricesContainingSony();
     assertThat(result.getTotalResults()).isEqualTo(27);
@@ -69,8 +72,8 @@ class AggregationAnnotationTest extends AbstractBaseDocumentTest {
   void testMaxPrice() {
     String[][] expectedData = { //
         { "Sony", "695.8" }, { null, "303.59" }, { "Genius", "88.54" }, { "Logitech", "78.98" }, { "Monster", "69.95" },
-        { "Playstation", "33.6" }, { "Neewer", "15.95" }, { "Goliton", "15.69" }, { "Lenmar", "15.41" },
-        { "Oceantree", "12.45" } //
+        { "Playstation", "33.6" }, { "Neewer", "15.95" }, { "Goliton", "15.69" }, { "Lenmar", "15.41" }, { "Oceantree",
+            "12.45" } //
     };
     var result = repository.maxPricesContainingSony();
     assertThat(result.getTotalResults()).isEqualTo(27);
@@ -103,41 +106,41 @@ class AggregationAnnotationTest extends AbstractBaseDocumentTest {
   @Test
   void testQuantiles() {
     String[][] expectedData = { //
-        { "q50", "19.22" }, { "q90", "95.91" }, { "q95", "144.96" }, { "__generated_aliasavgprice", "29.7105941255" },
-        { "rowcount", "1498" } //
+        { "q50", "19.22" }, { "q90", "95.91" }, { "q95", "144.96" }, { "__generated_aliasavgprice", "29.7105941255" }, {
+            "rowcount", "1498" } //
     };
 
     var result = repository.priceQuantiles();
     assertThat(result.getTotalResults()).isEqualTo(293);
 
     var row = result.getRow(0);
-    IntStream.range(0, expectedData.length - 1)
-        .forEach(i -> assertThat(row.getString(expectedData[i][0])).isEqualTo(expectedData[i][1]));
+    IntStream.range(0, expectedData.length - 1).forEach(i -> assertThat(row.getString(expectedData[i][0])).isEqualTo(
+        expectedData[i][1]));
   }
 
   @Test
   void testPriceStdDev() {
     String[][][] expectedData = { //
-        { { "brand", null }, { "stddev(price)", "58.0682859441" }, { "avgPrice", "29.7105941255" },
-            { "q50Price", "19.22" }, { "rowcount", "1498" } }, //
-        { { "brand", "Mad Catz" }, { "stddev(price)", "63.3626941047" }, { "avgPrice", "92.4065116279" },
-            { "q50Price", "84.99" }, { "rowcount", "43" } }, //
-        { { "brand", "Generic" }, { "stddev(price)", "13.0528444292" }, { "avgPrice", "12.439" },
-            { "q50Price", "6.69" }, { "rowcount", "40" } }, //
-        { { "brand", "SteelSeries" }, { "stddev(price)", "44.5684434629" }, { "avgPrice", "50.0302702703" },
-            { "q50Price", "39.69" }, { "rowcount", "37" } }, //
-        { { "brand", "Logitech" }, { "stddev(price)", "48.016387201" }, { "avgPrice", "66.5488571429" },
-            { "q50Price", "55" }, { "rowcount", "35" } }, //
-        { { "brand", "Razer" }, { "stddev(price)", "49.0284634692" }, { "avgPrice", "98.4069230769" },
-            { "q50Price", "80.49" }, { "rowcount", "26" } }, //
-        { { "brand", "" }, { "stddev(price)", "11.6611915524" }, { "avgPrice", "13.711" }, { "q50Price", "10" },
-            { "rowcount", "20" } }, //
-        { { "brand", "ROCCAT" }, { "stddev(price)", "71.1336876222" }, { "avgPrice", "86.231" },
-            { "q50Price", "58.72" }, { "rowcount", "20" } }, //
-        { { "brand", "Sony" }, { "stddev(price)", "195.848045202" }, { "avgPrice", "109.536428571" },
-            { "q50Price", "44.95" }, { "rowcount", "14" } }, //
-        { { "brand", "Nintendo" }, { "stddev(price)", "71.1987671314" }, { "avgPrice", "53.2792307692" },
-            { "q50Price", "17.99" }, { "rowcount", "13" } } //
+        { { "brand", null }, { "stddev(price)", "58.0682859441" }, { "avgPrice", "29.7105941255" }, { "q50Price",
+            "19.22" }, { "rowcount", "1498" } }, //
+        { { "brand", "Mad Catz" }, { "stddev(price)", "63.3626941047" }, { "avgPrice", "92.4065116279" }, { "q50Price",
+            "84.99" }, { "rowcount", "43" } }, //
+        { { "brand", "Generic" }, { "stddev(price)", "13.0528444292" }, { "avgPrice", "12.439" }, { "q50Price",
+            "6.69" }, { "rowcount", "40" } }, //
+        { { "brand", "SteelSeries" }, { "stddev(price)", "44.5684434629" }, { "avgPrice", "50.0302702703" }, {
+            "q50Price", "39.69" }, { "rowcount", "37" } }, //
+        { { "brand", "Logitech" }, { "stddev(price)", "48.016387201" }, { "avgPrice", "66.5488571429" }, { "q50Price",
+            "55" }, { "rowcount", "35" } }, //
+        { { "brand", "Razer" }, { "stddev(price)", "49.0284634692" }, { "avgPrice", "98.4069230769" }, { "q50Price",
+            "80.49" }, { "rowcount", "26" } }, //
+        { { "brand", "" }, { "stddev(price)", "11.6611915524" }, { "avgPrice", "13.711" }, { "q50Price", "10" }, {
+            "rowcount", "20" } }, //
+        { { "brand", "ROCCAT" }, { "stddev(price)", "71.1336876222" }, { "avgPrice", "86.231" }, { "q50Price",
+            "58.72" }, { "rowcount", "20" } }, //
+        { { "brand", "Sony" }, { "stddev(price)", "195.848045202" }, { "avgPrice", "109.536428571" }, { "q50Price",
+            "44.95" }, { "rowcount", "14" } }, //
+        { { "brand", "Nintendo" }, { "stddev(price)", "71.1987671314" }, { "avgPrice", "53.2792307692" }, { "q50Price",
+            "17.99" }, { "rowcount", "13" } } //
     };
 
     var result = repository.priceStdDev();
@@ -163,8 +166,8 @@ class AggregationAnnotationTest extends AbstractBaseDocumentTest {
     assertThat(result.getTotalResults()).isEqualTo(293);
 
     var row = result.getRow(0);
-    IntStream.range(0, expectedData.length - 1)
-        .forEach(i -> assertThat(row.getString(expectedData[i][0])).isEqualTo(expectedData[i][1]));
+    IntStream.range(0, expectedData.length - 1).forEach(i -> assertThat(row.getString(expectedData[i][0])).isEqualTo(
+        expectedData[i][1]));
   }
 
   @Test
@@ -185,9 +188,9 @@ class AggregationAnnotationTest extends AbstractBaseDocumentTest {
   @Test
   void testTimeFunctions() {
     String[][] expectedData = { //
-        { "dt", "1517417144" }, { "timefmt", "2018-01-31T16:45:44Z" }, { "day", "1517356800" },
-        { "hour", "1517414400" }, { "minute", "1517417100" }, { "month", "1514764800" }, { "dayofweek", "3" },
-        { "dayofmonth", "31" }, //
+        { "dt", "1517417144" }, { "timefmt", "2018-01-31T16:45:44Z" }, { "day", "1517356800" }, { "hour",
+            "1517414400" }, { "minute", "1517417100" }, { "month", "1514764800" }, { "dayofweek", "3" }, { "dayofmonth",
+                "31" }, //
         { "dayofyear", "30" }, { "year", "2018" } //
     };
 
@@ -195,8 +198,8 @@ class AggregationAnnotationTest extends AbstractBaseDocumentTest {
     assertThat(result.getTotalResults()).isEqualTo(1);
 
     var row = result.getRow(0);
-    IntStream.range(0, expectedData.length - 1)
-        .forEach(i -> assertThat(row.getString(expectedData[i][0])).isEqualTo(expectedData[i][1]));
+    IntStream.range(0, expectedData.length - 1).forEach(i -> assertThat(row.getString(expectedData[i][0])).isEqualTo(
+        expectedData[i][1]));
   }
 
   @Test
@@ -206,8 +209,8 @@ class AggregationAnnotationTest extends AbstractBaseDocumentTest {
             "Standard Single Gang 4 Port Faceplate, ABS 94V-0, Black, 1/pkg|Hellermann Tyton|Mark|4.95" } },
         //
         { { "title",
-            "250G HDD Hard Disk Drive For Microsoft Xbox 360 E Slim with USB 2.0 AGPtek All-in-One Card Reader" },
-            { "titleBrand",
+            "250G HDD Hard Disk Drive For Microsoft Xbox 360 E Slim with USB 2.0 AGPtek All-in-One Card Reader" }, {
+                "titleBrand",
                 "250G HDD Hard Disk Drive For Microsoft Xbox 360 E Slim with USB 2.0 AGPtek All-in-One Card Reader|(null)|Mark|51.79" } },
         //
         { { "title",
@@ -215,12 +218,12 @@ class AggregationAnnotationTest extends AbstractBaseDocumentTest {
             { "titleBrand",
                 "Portable Emergency AA Battery Charger Extender suitable for the Sony PSP - with Gomadic Brand TipExchange Technology|(null)|Mark|19.66" } },
         //
-        { { "title", "Mad Catz S.T.R.I.K.E.5 Gaming Keyboard for PC" },
-            { "titleBrand", "Mad Catz S.T.R.I.K.E.5 Gaming Keyboard for PC|Mad Catz|Mark|193.26" } }, //
-        { { "title", "iConcepts THE SHOCK MASTER For Use With PC" },
-            { "titleBrand", "iConcepts THE SHOCK MASTER For Use With PC|(null)|Mark|9.99" } }, //
-        { { "title", "Saitek CES432110002/06/1 Pro Flight Cessna Trim Wheel" },
-            { "titleBrand", "Saitek CES432110002/06/1 Pro Flight Cessna Trim Wheel|Mad Catz|Mark|47.02" } }, //
+        { { "title", "Mad Catz S.T.R.I.K.E.5 Gaming Keyboard for PC" }, { "titleBrand",
+            "Mad Catz S.T.R.I.K.E.5 Gaming Keyboard for PC|Mad Catz|Mark|193.26" } }, //
+        { { "title", "iConcepts THE SHOCK MASTER For Use With PC" }, { "titleBrand",
+            "iConcepts THE SHOCK MASTER For Use With PC|(null)|Mark|9.99" } }, //
+        { { "title", "Saitek CES432110002/06/1 Pro Flight Cessna Trim Wheel" }, { "titleBrand",
+            "Saitek CES432110002/06/1 Pro Flight Cessna Trim Wheel|Mad Catz|Mark|47.02" } }, //
         { { "title",
             "Noppoo Choc Mini 84 USB NKRO Mechanical Gaming Keyboard Cherry MX Switches (BLUE switch + Black body + POM key cap)" },
             { "titleBrand",
@@ -319,16 +322,16 @@ class AggregationAnnotationTest extends AbstractBaseDocumentTest {
 
     IntStream.range(0, expectedData.length - 1).forEach(i -> {
       var row = result.getRow(i);
-      IntStream.range(0, expectedData[i].length - 1)
-          .forEach(j -> assertThat(row.getString(expectedData[i][j][0])).isEqualTo(expectedData[i][j][1]));
+      IntStream.range(0, expectedData[i].length - 1).forEach(j -> assertThat(row.getString(expectedData[i][j][0]))
+          .isEqualTo(expectedData[i][j][1]));
     });
   }
 
   @Test
   void testLoadWithSort() {
     String[][][] expectedData = { //
-        { { "title", "Logitech MOMO Racing - Wheel and pedals set - 6 button(s) - PC, MAC - black" },
-            { "price", "759.12" } }, //
+        { { "title", "Logitech MOMO Racing - Wheel and pedals set - 6 button(s) - PC, MAC - black" }, { "price",
+            "759.12" } }, //
         { { "title", "Sony PSP Slim &amp; Lite 2000 Console" }, { "price", "695.8" } }, //
     };
     var result = repository.loadWithSort();
@@ -336,8 +339,8 @@ class AggregationAnnotationTest extends AbstractBaseDocumentTest {
 
     IntStream.range(0, expectedData.length - 1).forEach(i -> {
       var row = result.getRow(i);
-      IntStream.range(0, expectedData[i].length - 1)
-          .forEach(j -> assertThat(row.getString(expectedData[i][j][0])).isEqualTo(expectedData[i][j][1]));
+      IntStream.range(0, expectedData[i].length - 1).forEach(j -> assertThat(row.getString(expectedData[i][j][0]))
+          .isEqualTo(expectedData[i][j][1]));
     });
   }
 
@@ -354,22 +357,22 @@ class AggregationAnnotationTest extends AbstractBaseDocumentTest {
 
     IntStream.range(0, expectedData.length - 1).forEach(i -> {
       var row = result.getRow(i);
-      IntStream.range(0, expectedData[i].length - 1)
-          .forEach(j -> assertThat(row.getString(expectedData[i][j][0])).isEqualTo(expectedData[i][j][1]));
+      IntStream.range(0, expectedData[i].length - 1).forEach(j -> assertThat(row.getString(expectedData[i][j][0]))
+          .isEqualTo(expectedData[i][j][1]));
     });
   }
 
   @Test
   void testFirstValue() {
     String[][][] expectedData = { //
-        { { "brand", "sony" }, { "top_item", "sony psp slim &amp; lite 2000 console" }, { "top_price", "695.8" },
-            { "bottom_item", "sony dlchd20p high speed hdmi cable for playstation 3" }, { "bottom_price", "5.88" } }, //
-        { { "brand", "matias" }, { "top_item", "matias halfkeyboard usb" }, { "top_price", "559.99" },
-            { "bottom_item", "matias halfkeyboard usb" }, { "bottom_price", "559.99" } }, //
-        { { "brand", "beyerdynamic" },
-            { "top_item", "beyerdynamic mmx300 pc gaming premium digital headset with microphone" },
-            { "top_price", "359.74" }, { "bottom_item",
-            "beyerdynamic headzone pc gaming digital surround sound system with mmx300 digital headset with microphone" },
+        { { "brand", "sony" }, { "top_item", "sony psp slim &amp; lite 2000 console" }, { "top_price", "695.8" }, {
+            "bottom_item", "sony dlchd20p high speed hdmi cable for playstation 3" }, { "bottom_price", "5.88" } }, //
+        { { "brand", "matias" }, { "top_item", "matias halfkeyboard usb" }, { "top_price", "559.99" }, { "bottom_item",
+            "matias halfkeyboard usb" }, { "bottom_price", "559.99" } }, //
+        { { "brand", "beyerdynamic" }, { "top_item",
+            "beyerdynamic mmx300 pc gaming premium digital headset with microphone" }, { "top_price", "359.74" }, {
+                "bottom_item",
+                "beyerdynamic headzone pc gaming digital surround sound system with mmx300 digital headset with microphone" },
             { "bottom_price", "0" } }, //
         { { "brand", "mad catz" }, { "top_item", "mad catz s.t.r.i.k.e.7 gaming keyboard" }, { "top_price", "295.95" },
             { "bottom_item", "madcatz mov4545 xbox replacement breakaway cable" }, { "bottom_price", "3.49" } }, //
@@ -379,17 +382,17 @@ class AggregationAnnotationTest extends AbstractBaseDocumentTest {
 
     IntStream.range(0, expectedData.length - 1).forEach(i -> {
       var row = result.getRow(i);
-      IntStream.range(0, expectedData[i].length - 1)
-          .forEach(j -> assertThat(row.getString(expectedData[i][j][0])).isEqualToIgnoringCase(expectedData[i][j][1]));
+      IntStream.range(0, expectedData[i].length - 1).forEach(j -> assertThat(row.getString(expectedData[i][j][0]))
+          .isEqualToIgnoringCase(expectedData[i][j][1]));
     });
   }
 
   @Test
   void testAggregationParams() {
     String[][] expectedData = { //
-        { "Genius", "88.54" }, { "Logitech", "78.98" }, { "Monster", "69.95" }, { "Goliton", "15.69" },
-        { "Lenmar", "15.41" }, { "Oceantree(TM)", "12.29" }, { "Oceantree", "11.39" }, { "oooo", "10.11" },
-        { "Case Logic", "9.99" }, { "Neewer", "9.71" } //
+        { "Genius", "88.54" }, { "Logitech", "78.98" }, { "Monster", "69.95" }, { "Goliton", "15.69" }, { "Lenmar",
+            "15.41" }, { "Oceantree(TM)", "12.29" }, { "Oceantree", "11.39" }, { "oooo", "10.11" }, { "Case Logic",
+                "9.99" }, { "Neewer", "9.71" } //
     };
     var result = repository.minPricesByBrand("sony");
     assertThat(result.getTotalResults()).isEqualTo(27);

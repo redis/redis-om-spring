@@ -1,20 +1,16 @@
 package com.redis.om.spring.repository.query;
 
-import com.github.f4b6a3.ulid.Ulid;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.redis.om.spring.RedisOMProperties;
-import com.redis.om.spring.annotations.*;
-import com.redis.om.spring.indexing.RediSearchIndexer;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.ops.search.SearchOperations;
-import com.redis.om.spring.repository.query.autocomplete.AutoCompleteQueryExecutor;
-import com.redis.om.spring.repository.query.bloom.BloomQueryExecutor;
-import com.redis.om.spring.repository.query.clause.QueryClause;
-import com.redis.om.spring.repository.query.countmin.CountMinQueryExecutor;
-import com.redis.om.spring.repository.query.cuckoo.CuckooQueryExecutor;
-import com.redis.om.spring.util.ObjectUtils;
+import java.lang.reflect.Field;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.Map.Entry;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -32,6 +28,23 @@ import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.data.util.Pair;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
+
+import com.github.f4b6a3.ulid.Ulid;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.redis.om.spring.RedisOMProperties;
+import com.redis.om.spring.annotations.*;
+import com.redis.om.spring.indexing.RediSearchIndexer;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.search.SearchOperations;
+import com.redis.om.spring.repository.query.autocomplete.AutoCompleteQueryExecutor;
+import com.redis.om.spring.repository.query.bloom.BloomQueryExecutor;
+import com.redis.om.spring.repository.query.clause.QueryClause;
+import com.redis.om.spring.repository.query.countmin.CountMinQueryExecutor;
+import com.redis.om.spring.repository.query.cuckoo.CuckooQueryExecutor;
+import com.redis.om.spring.util.ObjectUtils;
+
 import redis.clients.jedis.search.FieldName;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.Schema.FieldType;
@@ -39,17 +52,6 @@ import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.*;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 import redis.clients.jedis.util.SafeEncoder;
-
-import java.lang.reflect.Field;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.AbstractMap.SimpleEntry;
-import java.util.Map.Entry;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 public class RediSearchQuery implements RepositoryQuery {
 
@@ -91,7 +93,9 @@ public class RediSearchQuery implements RepositoryQuery {
   private boolean isNullParamQuery;
   private Dialect dialect = Dialect.TWO;
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   public RediSearchQuery(//
       QueryMethod queryMethod, //
       RepositoryMetadata metadata, //
@@ -118,8 +122,9 @@ public class RediSearchQuery implements RepositoryQuery {
     autoCompleteQueryExecutor = new AutoCompleteQueryExecutor(this, modulesOperations);
 
     Class<?> repoClass = metadata.getRepositoryInterface();
-    @SuppressWarnings("rawtypes") Class[] params = queryMethod.getParameters().stream().map(Parameter::getType)
-        .toArray(Class[]::new);
+    @SuppressWarnings(
+      "rawtypes"
+    ) Class[] params = queryMethod.getParameters().stream().map(Parameter::getType).toArray(Class[]::new);
     hasLanguageParameter = Arrays.stream(params).anyMatch(c -> c.isAssignableFrom(SearchLanguage.class));
     isANDQuery = QueryClause.hasContainingAllClause(queryMethod.getName());
 
@@ -150,10 +155,10 @@ public class RediSearchQuery implements RepositoryQuery {
         Aggregation aggregation = method.getAnnotation(Aggregation.class);
         this.type = RediSearchQueryType.AGGREGATION;
         this.value = aggregation.value();
-        Arrays.stream(aggregation.load())
-            .forEach(load -> aggregationLoad.add(new SimpleEntry<>(load.property(), load.alias())));
-        Arrays.stream(aggregation.apply())
-            .forEach(apply -> aggregationApply.add(new SimpleEntry<>(apply.alias(), apply.expression())));
+        Arrays.stream(aggregation.load()).forEach(load -> aggregationLoad.add(new SimpleEntry<>(load.property(), load
+            .alias())));
+        Arrays.stream(aggregation.apply()).forEach(apply -> aggregationApply.add(new SimpleEntry<>(apply.alias(), apply
+            .expression())));
         this.aggregationFilter = aggregation.filter();
         this.aggregationTimeout = aggregation.timeout() > Long.MIN_VALUE ? aggregation.timeout() : null;
         this.aggregationVerbatim = aggregation.verbatim() ? true : null;
@@ -245,9 +250,8 @@ public class RediSearchQuery implements RepositoryQuery {
         processPartTree(pt, nullParamNames, notNullParamNames);
       }
     } catch (NoSuchMethodException | SecurityException e) {
-      logger.debug(
-          String.format("Could not resolved query method %s(%s): %s", queryMethod.getName(), Arrays.toString(params),
-              e.getMessage()));
+      logger.debug(String.format("Could not resolved query method %s(%s): %s", queryMethod.getName(), Arrays.toString(
+          params), e.getMessage()));
     }
   }
 
@@ -322,14 +326,15 @@ public class RediSearchQuery implements RepositoryQuery {
       // Any Character class, Enums or Boolean -> Tag Search Field
       //
       if (CharSequence.class.isAssignableFrom(
-          fieldType) || (fieldType == Boolean.class) || (fieldType == UUID.class) || (fieldType == Ulid.class) || (fieldType.isEnum())) {
+          fieldType) || (fieldType == Boolean.class) || (fieldType == UUID.class) || (fieldType == Ulid.class) || (fieldType
+              .isEnum())) {
         qf.add(Pair.of(actualKey, QueryClause.get(FieldType.TAG, part.getType())));
       }
       //
       // Any Numeric class -> Numeric Search Field
       //
-      else if (Number.class.isAssignableFrom(
-          fieldType) || (fieldType == LocalDateTime.class) || (field.getType() == LocalDate.class) || (field.getType() == Date.class)) {
+      else if (Number.class.isAssignableFrom(fieldType) || (fieldType == LocalDateTime.class) || (field
+          .getType() == LocalDate.class) || (field.getType() == Date.class)) {
         qf.add(Pair.of(actualKey, QueryClause.get(FieldType.NUMERIC, part.getType())));
       }
       //
@@ -427,13 +432,13 @@ public class RediSearchQuery implements RepositoryQuery {
     ReturnedType returnedType = processor.getReturnedType();
 
     boolean isProjecting = returnedType.isProjecting() && returnedType.getReturnedType() != SearchResult.class;
-    boolean isOpenProjecting = Arrays.stream(returnedType.getReturnedType().getMethods())
-        .anyMatch(m -> m.isAnnotationPresent(Value.class));
+    boolean isOpenProjecting = Arrays.stream(returnedType.getReturnedType().getMethods()).anyMatch(m -> m
+        .isAnnotationPresent(Value.class));
     boolean canPerformQueryOptimization = isProjecting && !isOpenProjecting;
 
     if (canPerformQueryOptimization) {
-      query.returnFields(returnedType.getInputProperties().stream()
-          .map(inputProperty -> new FieldName("$." + inputProperty, inputProperty)).toArray(FieldName[]::new));
+      query.returnFields(returnedType.getInputProperties().stream().map(inputProperty -> new FieldName(
+          "$." + inputProperty, inputProperty)).toArray(FieldName[]::new));
     } else {
       query.returnFields(returnFields);
     }
@@ -461,8 +466,9 @@ public class RediSearchQuery implements RepositoryQuery {
 
     if (needsLimit) {
       if ((limit != null && limit != Integer.MIN_VALUE) || (offset != null && offset != Integer.MIN_VALUE)) {
-        query.limit(offset != null ? offset : 0,
-            limit != null ? limit : redisOMProperties.getRepository().getQuery().getLimit());
+        query.limit(offset != null ? offset : 0, limit != null ?
+            limit :
+            redisOMProperties.getRepository().getQuery().getLimit());
       } else {
         query.limit(0, redisOMProperties.getRepository().getQuery().getLimit());
       }
@@ -532,8 +538,8 @@ public class RediSearchQuery implements RepositoryQuery {
 
     return switch (dialect) {
       case ONE, TWO -> gsonInstance.fromJson(SafeEncoder.encode((byte[]) doc.get("$")), domainType);
-      case THREE -> gsonInstance.fromJson(
-          gsonInstance.fromJson(SafeEncoder.encode((byte[]) doc.get("$")), JsonArray.class).get(0), domainType);
+      case THREE -> gsonInstance.fromJson(gsonInstance.fromJson(SafeEncoder.encode((byte[]) doc.get("$")),
+          JsonArray.class).get(0), domainType);
     };
   }
 
@@ -544,9 +550,9 @@ public class RediSearchQuery implements RepositoryQuery {
     AggregationBuilder aggregation = new AggregationBuilder(baseQuery);
 
     // Load fields with IS_NULL or IS_NOT_NULL query clauses
-    String[] fields = Stream.concat(Stream.of("@__key"), queryOrParts.stream().flatMap(List::stream)
-        .filter(pair -> pair.getSecond() == QueryClause.IS_NULL || pair.getSecond() == QueryClause.IS_NOT_NULL)
-        .map(pair -> String.format("@%s", pair.getFirst()))).toArray(String[]::new);
+    String[] fields = Stream.concat(Stream.of("@__key"), queryOrParts.stream().flatMap(List::stream).filter(pair -> pair
+        .getSecond() == QueryClause.IS_NULL || pair.getSecond() == QueryClause.IS_NOT_NULL).map(pair -> String.format(
+            "@%s", pair.getFirst()))).toArray(String[]::new);
     aggregation.load(fields);
 
     // Apply exists or !exists filter for null parameters
@@ -730,7 +736,8 @@ public class RediSearchQuery implements RepositoryQuery {
       preparedQuery.append(queryOrParts.stream().map(qop -> {
         String orPart = multipleOrParts ? "(" : "";
         orPart = orPart + qop.stream().map(fieldClauses -> {
-          if (excludeNullParams && (fieldClauses.getSecond() == QueryClause.IS_NULL || fieldClauses.getSecond() == QueryClause.IS_NOT_NULL)) {
+          if (excludeNullParams && (fieldClauses.getSecond() == QueryClause.IS_NULL || fieldClauses
+              .getSecond() == QueryClause.IS_NOT_NULL)) {
             return "";
           }
           String fieldName = QueryUtils.escape(fieldClauses.getFirst());
@@ -747,8 +754,9 @@ public class RediSearchQuery implements RepositoryQuery {
         return orPart;
       }).collect(Collectors.joining(" | ")));
     } else {
-      @SuppressWarnings("unchecked") Iterator<Parameter> iterator = (Iterator<Parameter>) queryMethod.getParameters()
-          .iterator();
+      @SuppressWarnings(
+        "unchecked"
+      ) Iterator<Parameter> iterator = (Iterator<Parameter>) queryMethod.getParameters().iterator();
       int index = 0;
 
       if (value != null && !value.isBlank()) {
@@ -805,9 +813,9 @@ public class RediSearchQuery implements RepositoryQuery {
     AggregationBuilder aggregation = new AggregationBuilder(baseQuery);
 
     // Load fields with IS_NULL or IS_NOT_NULL query clauses
-    String[] fields = Stream.concat(Stream.of("@__key"), queryOrParts.stream().flatMap(List::stream)
-        .filter(pair -> pair.getSecond() == QueryClause.IS_NULL || pair.getSecond() == QueryClause.IS_NOT_NULL)
-        .map(pair -> String.format("@%s", pair.getFirst()))).toArray(String[]::new);
+    String[] fields = Stream.concat(Stream.of("@__key"), queryOrParts.stream().flatMap(List::stream).filter(pair -> pair
+        .getSecond() == QueryClause.IS_NULL || pair.getSecond() == QueryClause.IS_NOT_NULL).map(pair -> String.format(
+            "@%s", pair.getFirst()))).toArray(String[]::new);
 
     aggregation.load(fields);
 

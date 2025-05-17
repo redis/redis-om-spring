@@ -1,10 +1,10 @@
 package com.redis.om.spring.repository.query;
 
-import com.redis.om.spring.metamodel.MetamodelField;
-
 import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
+
+import com.redis.om.spring.metamodel.MetamodelField;
 
 public class Sort extends org.springframework.data.domain.Sort {
 

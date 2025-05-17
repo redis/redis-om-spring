@@ -1,9 +1,10 @@
 package com.redis.om.spring.repository;
 
-import com.redis.om.spring.annotations.Indexed;
+import java.util.UUID;
+
 import org.springframework.data.annotation.Id;
 
-import java.util.UUID;
+import com.redis.om.spring.annotations.Indexed;
 
 public abstract class AbstractDocument {
   @Id

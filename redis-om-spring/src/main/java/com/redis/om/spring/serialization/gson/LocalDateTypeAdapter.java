@@ -1,11 +1,11 @@
 package com.redis.om.spring.serialization.gson;
 
-import com.google.gson.*;
-
 import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+
+import com.google.gson.*;
 
 /**
  * GSON Serializer/Deserializer for LocalDate to Unix Timestamp

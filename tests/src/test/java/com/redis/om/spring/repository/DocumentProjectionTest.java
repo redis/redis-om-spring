@@ -1,9 +1,10 @@
 package com.redis.om.spring.repository;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.fixtures.document.model.DocumentProjectionPojo;
-import com.redis.om.spring.fixtures.document.repository.DocumentProjection;
-import com.redis.om.spring.fixtures.document.repository.DocumentProjectionRepository;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.Collection;
+import java.util.Optional;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,10 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.Collection;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.fixtures.document.model.DocumentProjectionPojo;
+import com.redis.om.spring.fixtures.document.repository.DocumentProjection;
+import com.redis.om.spring.fixtures.document.repository.DocumentProjectionRepository;
 
 class DocumentProjectionTest extends AbstractBaseDocumentTest {
 
@@ -59,8 +60,8 @@ class DocumentProjectionTest extends AbstractBaseDocumentTest {
 
   @Test
   void testProjectionPageReturnType() {
-    Page<DocumentProjection> byNameProjection = documentProjectionRepository.findAllByName(TEST_NAME,
-        Pageable.ofSize(1));
+    Page<DocumentProjection> byNameProjection = documentProjectionRepository.findAllByName(TEST_NAME, Pageable.ofSize(
+        1));
     assertNotNull(byNameProjection);
     assertEquals(1, byNameProjection.getNumberOfElements());
     assertEquals(2, byNameProjection.getTotalPages());

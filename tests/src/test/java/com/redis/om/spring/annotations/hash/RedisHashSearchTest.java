@@ -1,8 +1,10 @@
 package com.redis.om.spring.annotations.hash;
 
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.fixtures.hash.model.MyHash;
-import com.redis.om.spring.fixtures.hash.repository.MyHashRepository;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.*;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,15 +18,17 @@ import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
 import org.springframework.data.redis.core.StringRedisTemplate;
+
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.fixtures.hash.model.MyHash;
+import com.redis.om.spring.fixtures.hash.repository.MyHashRepository;
+
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.util.SafeEncoder;
 
-import java.util.*;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-
-@SuppressWarnings("SpellCheckingInspection")
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
   @Autowired
   MyHashRepository repository;
@@ -91,7 +95,7 @@ class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
    * > FT.SEARCH idx '@title:hello @tag:{news}'
    * 1) (integer) 1 2) "doc1"
    * 3) 1) "$"
-   *    2) "{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}"
+   * 2) "{\"title\":\"hello world\",\"tag\":[\"news\",\"article\"]}"
    * </pre>
    */
   @Test
@@ -212,8 +216,9 @@ class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
     MyHash doc = iter.next();
     assertEquals("hello mundo", doc.getTitle());
 
-    @SuppressWarnings("unused") NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class,
-        iter::next);
+    @SuppressWarnings(
+      "unused"
+    ) NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class, iter::next);
   }
 
   @Test
@@ -225,8 +230,9 @@ class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
     MyHash doc = iter.next();
     assertEquals("hello mundo", doc.getTitle());
 
-    @SuppressWarnings("unused") NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class,
-        iter::next);
+    @SuppressWarnings(
+      "unused"
+    ) NoSuchElementException exception = Assertions.assertThrows(NoSuchElementException.class, iter::next);
   }
 
   @Test
@@ -304,10 +310,9 @@ class RedisHashSearchTest extends AbstractBaseEnhancedRedisTest {
     List<MyHash> endsWithTions = repository.findAllByTitleEndingWith("tions");
 
     assertAll( //
-        () -> assertThat(endsWithTion).extracting("title")
-            .containsExactlyInAnyOrder("predisposition", "predestination", "prepublication"),
-        () -> assertThat(endsWithTions).extracting("title")
-            .containsExactlyInAnyOrder("precipitations", "precombustions", "preconceptions"));
+        () -> assertThat(endsWithTion).extracting("title").containsExactlyInAnyOrder("predisposition", "predestination",
+            "prepublication"), () -> assertThat(endsWithTions).extracting("title").containsExactlyInAnyOrder(
+                "precipitations", "precombustions", "preconceptions"));
   }
 
 }

@@ -1,5 +1,10 @@
 package com.redis.om.spring.metamodel.indexed;
 
+import java.util.Arrays;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.ToLongFunction;
+
 import com.redis.om.spring.metamodel.MetamodelField;
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.actions.*;
@@ -8,11 +13,6 @@ import com.redis.om.spring.search.stream.predicates.tag.EqualPredicate;
 import com.redis.om.spring.search.stream.predicates.tag.InPredicate;
 import com.redis.om.spring.search.stream.predicates.tag.NotEqualPredicate;
 import com.redis.om.spring.util.ObjectUtils;
-
-import java.util.Arrays;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.ToLongFunction;
 
 public class TagField<E, T> extends MetamodelField<E, T> {
 

@@ -1,5 +1,23 @@
 package com.redis.om.spring.annotations.document;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.geo.Point;
+
 import com.github.f4b6a3.ulid.Ulid;
 import com.google.common.collect.Lists;
 import com.redis.om.spring.AbstractBaseDocumentTest;
@@ -11,25 +29,10 @@ import com.redis.om.spring.fixtures.document.repository.WithNestedListOfUlidsRep
 import com.redis.om.spring.repository.query.Sort;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.SearchStream;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort.Direction;
-import org.springframework.data.geo.Point;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-
-@SuppressWarnings("SpellCheckingInspection")
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
   Permit permit1;
   Permit permit2;
@@ -128,9 +131,8 @@ class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
     repository.saveAll(List.of(permit1, permit2, permit3));
 
     // complex deep nested
-    Complex complex1 = Complex.of("complex1",
-        List.of(HasAList.of(List.of("Nudiustertian", "Comeuppance", "Yarborough")),
-            HasAList.of(List.of("Sialoquent", "Pauciloquent", "Bloviate"))));
+    Complex complex1 = Complex.of("complex1", List.of(HasAList.of(List.of("Nudiustertian", "Comeuppance",
+        "Yarborough")), HasAList.of(List.of("Sialoquent", "Pauciloquent", "Bloviate"))));
     Complex complex2 = Complex.of("complex2", List.of(HasAList.of(List.of("Quire", "Zoanthropy", "Flibbertigibbet")),
         HasAList.of(List.of("Taradiddle", "Malarkey", "Comeuppance"))));
     Complex complex3 = Complex.of("complex3", List.of(HasAList.of(List.of("Pandiculation", "Taradiddle", "Ratoon")),
@@ -139,18 +141,18 @@ class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
     complexRepository.saveAll(List.of(complex1, complex2, complex3));
 
     // complex deep nested with uuids
-    WithNestedListOfUUIDs withNestedListOfUUIDs1 = WithNestedListOfUUIDs.of("withNestedListOfUUIDs1",
-        List.of(uuid1, uuid2, uuid3));
-    WithNestedListOfUUIDs withNestedListOfUUIDs2 = WithNestedListOfUUIDs.of("withNestedListOfUUIDs2",
-        List.of(uuid4, uuid5, uuid6));
+    WithNestedListOfUUIDs withNestedListOfUUIDs1 = WithNestedListOfUUIDs.of("withNestedListOfUUIDs1", List.of(uuid1,
+        uuid2, uuid3));
+    WithNestedListOfUUIDs withNestedListOfUUIDs2 = WithNestedListOfUUIDs.of("withNestedListOfUUIDs2", List.of(uuid4,
+        uuid5, uuid6));
 
     withNestedListOfUUIDsRepository.saveAll(List.of(withNestedListOfUUIDs1, withNestedListOfUUIDs2));
 
     // complex deep nested with ulids
-    WithNestedListOfUlids withNestedListOfUlids1 = WithNestedListOfUlids.of("withNestedListOfUlids1",
-        List.of(ulid1, ulid2, ulid3));
-    WithNestedListOfUlids withNestedListOfUlids2 = WithNestedListOfUlids.of("withNestedListOfUlids2",
-        List.of(ulid4, ulid5, ulid6));
+    WithNestedListOfUlids withNestedListOfUlids1 = WithNestedListOfUlids.of("withNestedListOfUlids1", List.of(ulid1,
+        ulid2, ulid3));
+    WithNestedListOfUlids withNestedListOfUlids2 = WithNestedListOfUlids.of("withNestedListOfUlids2", List.of(ulid4,
+        ulid5, ulid6));
 
     withNestedListOfUlidsRepository.saveAll(List.of(withNestedListOfUlids1, withNestedListOfUlids2));
 
@@ -266,7 +268,8 @@ class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   /**
-   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "To construct*" "SORTBY" "constructionValue" "DESC"
+   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "To construct*" "SORTBY"
+   * "constructionValue" "DESC"
    */
   @Test
   void testFullTextSearchWithSortByNumericFieldDesc() {
@@ -280,7 +283,8 @@ class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   /**
-   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "To construct*" "SORTBY" "constructionValue" "ASC"
+   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "To construct*" "SORTBY"
+   * "constructionValue" "ASC"
    */
   @Test
   void testFullTextSearchWithSortByNumericFieldAsc() {
@@ -294,7 +298,8 @@ class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   /**
-   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "To construct*" "SORTBY" "buildingType" "DESC"
+   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "To construct*" "SORTBY" "buildingType"
+   * "DESC"
    */
   @Test
   void testFullTextSearchWithSortByTextFieldDesc() {
@@ -308,7 +313,8 @@ class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   /**
-   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "To construct*" "SORTBY" "buildingType" "ASC"
+   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "To construct*" "SORTBY" "buildingType"
+   * "ASC"
    */
   @Test
   void testFullTextSearchWithSortByTextFieldAsc() {
@@ -322,7 +328,8 @@ class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   /**
-   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "house|loft" "SORTBY" "permitTimestamp" "DESC"
+   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "house|loft" "SORTBY" "permitTimestamp"
+   * "DESC"
    */
   @Test
   void testFullTextSearchWithSortByDateFieldDesc() {
@@ -336,7 +343,8 @@ class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   /**
-   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "house|loft" "SORTBY" "permitTimestamp" "ASC"
+   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "house|loft" "SORTBY" "permitTimestamp"
+   * "ASC"
    */
   @Test
   void testFullTextSearchWithSortByDateFieldAsc() {
@@ -350,7 +358,8 @@ class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   /**
-   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "house|loft" "SORTBY" "address_city" "DESC"
+   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "house|loft" "SORTBY" "address_city"
+   * "DESC"
    */
   @Test
   void testFullTextSearchWithSortByNestedTextTagFieldDesc() {
@@ -364,7 +373,8 @@ class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
   }
 
   /**
-   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "house|loft" "SORTBY" "address_city" "ASC"
+   * "FT.SEARCH" "com.redis.om.spring.annotations.document.fixtures.PermitIdx" "house|loft" "SORTBY" "address_city"
+   * "ASC"
    */
   @Test
   void testFullTextSearchWithSortByNestedTextTagAsc() {
@@ -379,24 +389,24 @@ class ComplexDocumentSearchTest extends AbstractBaseDocumentTest {
 
   @Test
   void testListInsideAListTagSearch() {
-    List<Complex> withYarborough = es.of(Complex.class).filter(Complex_myList$.INNER_LIST.in("Yarborough"))
-        .collect(Collectors.toList());
+    List<Complex> withYarborough = es.of(Complex.class).filter(Complex_myList$.INNER_LIST.in("Yarborough")).collect(
+        Collectors.toList());
 
     assertAll( //
         () -> assertThat(withYarborough.size()).isEqualTo(2), //
         () -> assertThat(withYarborough).extracting("id").containsExactlyInAnyOrder("complex1", "complex3") //
     );
 
-    List<Complex> withComeuppance = es.of(Complex.class).filter(Complex_myList$.INNER_LIST.in("Comeuppance"))
-        .collect(Collectors.toList());
+    List<Complex> withComeuppance = es.of(Complex.class).filter(Complex_myList$.INNER_LIST.in("Comeuppance")).collect(
+        Collectors.toList());
 
     assertAll( //
         () -> assertThat(withComeuppance.size()).isEqualTo(2), //
         () -> assertThat(withComeuppance).extracting("id").containsExactlyInAnyOrder("complex1", "complex2") //
     );
 
-    List<Complex> withTaradiddle = es.of(Complex.class).filter(Complex_myList$.INNER_LIST.in("Taradiddle"))
-        .collect(Collectors.toList());
+    List<Complex> withTaradiddle = es.of(Complex.class).filter(Complex_myList$.INNER_LIST.in("Taradiddle")).collect(
+        Collectors.toList());
 
     assertAll( //
         () -> assertThat(withTaradiddle.size()).isEqualTo(2), //

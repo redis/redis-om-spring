@@ -1,10 +1,10 @@
 package com.redis.om.spring.convert;
 
-import org.springframework.core.convert.converter.Converter;
-import org.springframework.data.convert.ReadingConverter;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.data.convert.ReadingConverter;
 
 @ReadingConverter
 public class BytesToDateConverter implements Converter<byte[], Date> {

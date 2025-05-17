@@ -1,5 +1,15 @@
 package com.redis.om.spring.annotations.document;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import com.redis.om.spring.AbstractBaseDocumentTest;
@@ -8,16 +18,8 @@ import com.redis.om.spring.fixtures.document.model.Developer;
 import com.redis.om.spring.fixtures.document.model.DeveloperState;
 import com.redis.om.spring.fixtures.document.model.DeveloperType;
 import com.redis.om.spring.fixtures.document.repository.DeveloperRepository;
+
 import lombok.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class EnumeratedTest extends AbstractBaseDocumentTest {
 
@@ -42,9 +44,9 @@ class EnumeratedTest extends AbstractBaseDocumentTest {
     var search = redisModulesClient.clientForSearch();
     Gson gson = new Gson();
 
-    var data = search.ftSearch(Developer.class.getName() + "Idx").getDocuments().stream()
-        .map(el -> gson.fromJson((String) el.get("$"), DeveloperNative.class))
-        .collect(Collectors.toMap(DeveloperNative::getId, Function.identity()));
+    var data = search.ftSearch(Developer.class.getName() + "Idx").getDocuments().stream().map(el -> gson.fromJson(
+        (String) el.get("$"), DeveloperNative.class)).collect(Collectors.toMap(DeveloperNative::getId, Function
+            .identity()));
 
     assertThat(data.get("1").getOrdinal()).isEqualTo(DeveloperType.JAVA.ordinal());
     assertThat(data.get("2").getOrdinal()).isEqualTo(DeveloperType.CPP.ordinal());
@@ -59,11 +61,15 @@ class EnumeratedTest extends AbstractBaseDocumentTest {
   @Getter
   @Setter
   @Builder
-  @AllArgsConstructor(access = AccessLevel.PROTECTED)
+  @AllArgsConstructor(
+      access = AccessLevel.PROTECTED
+  )
   private static class DeveloperNative {
 
     private String id;
-    @SerializedName("typeOrdinal")
+    @SerializedName(
+      "typeOrdinal"
+    )
     private int ordinal;
 
     private String state;

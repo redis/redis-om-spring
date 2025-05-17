@@ -46,8 +46,8 @@ public interface Quintuple<E1, E2, E3, E4, E5> extends Tuple {
       case 2 -> getThird();
       case 3 -> getFourth();
       case 4 -> getFifth();
-      default -> throw new IndexOutOfBoundsException(
-          String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
+      default -> throw new IndexOutOfBoundsException(String.format("Index %d is outside bounds of tuple of degree %s",
+          index, size()));
     };
   }
 }

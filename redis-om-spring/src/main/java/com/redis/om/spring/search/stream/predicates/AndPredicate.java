@@ -1,12 +1,12 @@
 package com.redis.om.spring.search.stream.predicates;
 
-import redis.clients.jedis.search.querybuilder.Node;
-import redis.clients.jedis.search.querybuilder.QueryBuilders;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+
+import redis.clients.jedis.search.querybuilder.Node;
+import redis.clients.jedis.search.querybuilder.QueryBuilders;
 
 public class AndPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
@@ -24,7 +24,9 @@ public class AndPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     return predicates.stream();
   }
 
-  @SuppressWarnings("rawtypes")
+  @SuppressWarnings(
+    "rawtypes"
+  )
   @Override
   public Node apply(Node root) {
     Node[] nodes = stream().map(p -> ((SearchFieldPredicate) p).apply(root)).toArray(Node[]::new);

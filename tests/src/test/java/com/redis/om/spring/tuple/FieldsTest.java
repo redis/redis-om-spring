@@ -1,12 +1,14 @@
 package com.redis.om.spring.tuple;
 
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.function.Function;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 
-@SuppressWarnings("SpellCheckingInspection")
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class FieldsTest {
   @Test
   void testFieldsOf() {
@@ -20,66 +22,66 @@ class FieldsTest {
     Function<Integer, Quintuple<Integer, Integer, Integer, Integer, Integer>> fQuintuple = Fields.of(f, f, f, f, f);
     Function<Integer, Hextuple< //
         Integer, Integer, Integer, Integer, Integer, Integer> //
-        > fHextuple = Fields.of(f, f, f, f, f, f);
+    > fHextuple = Fields.of(f, f, f, f, f, f);
     Function<Integer, Septuple< //
         Integer, Integer, Integer, Integer, Integer, Integer, Integer> //
-        > fSeptuple = Fields.of(f, f, f, f, f, f, f);
+    > fSeptuple = Fields.of(f, f, f, f, f, f, f);
     Function<Integer, Octuple< //
         Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> //
-        > fOctuple = Fields.of(f, f, f, f, f, f, f, f);
+    > fOctuple = Fields.of(f, f, f, f, f, f, f, f);
     Function<Integer, Nonuple< //
         Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> //
-        > fNonuple = Fields.of(f, f, f, f, f, f, f, f, f);
+    > fNonuple = Fields.of(f, f, f, f, f, f, f, f, f);
     Function<Integer, Decuple< //
         Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> //
-        > fDecuple = Fields.of(f, f, f, f, f, f, f, f, f, f);
+    > fDecuple = Fields.of(f, f, f, f, f, f, f, f, f, f);
     Function<Integer, Undecuple< //
         Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> //
-        > fUndecuple = Fields.of(f, f, f, f, f, f, f, f, f, f, f);
+    > fUndecuple = Fields.of(f, f, f, f, f, f, f, f, f, f, f);
     Function<Integer, Duodecuple< //
         Integer, Integer, Integer, Integer, Integer, Integer, //
         Integer, Integer, Integer, Integer, Integer, Integer> //
-        > fDuodecuple = Fields.of(f, f, f, f, f, f, f, f, f, f, f, f);
+    > fDuodecuple = Fields.of(f, f, f, f, f, f, f, f, f, f, f, f);
     Function<Integer, Tredecuple< //
         Integer, Integer, Integer, Integer, Integer, Integer, //
         Integer, Integer, Integer, Integer, Integer, Integer, //
         Integer> //
-        > fTredecuple = Fields.of(f, f, f, f, f, f, f, f, f, f, f, f, f);
+    > fTredecuple = Fields.of(f, f, f, f, f, f, f, f, f, f, f, f, f);
     Function<Integer, Quattuordecuple< //
         Integer, Integer, Integer, Integer, Integer, Integer, //
         Integer, Integer, Integer, Integer, Integer, Integer, //
         Integer, Integer> //
-        > fQuattuordecuple = Fields.of(f, f, f, f, f, f, f, f, f, f, f, f, f, f);
+    > fQuattuordecuple = Fields.of(f, f, f, f, f, f, f, f, f, f, f, f, f, f);
     Function<Integer, Quindecuple< //
         Integer, Integer, Integer, Integer, Integer, Integer, //
         Integer, Integer, Integer, Integer, Integer, Integer, //
         Integer, Integer, Integer> //
-        > fQuindecuple = Fields.of(f, f, f, f, f, f, f, f, f, f, f, f, f, f, f);
+    > fQuindecuple = Fields.of(f, f, f, f, f, f, f, f, f, f, f, f, f, f, f);
     Function<Integer, Sexdecuple< //
         Integer, Integer, Integer, Integer, Integer, Integer, //
         Integer, Integer, Integer, Integer, Integer, Integer, //
         Integer, Integer, Integer, Integer> //
-        > fSexdecuple = Fields.of(f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f);
+    > fSexdecuple = Fields.of(f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f);
     Function<Integer, Septendecuple< //
         Integer, Integer, Integer, Integer, Integer, Integer, //
         Integer, Integer, Integer, Integer, Integer, Integer, //
         Integer, Integer, Integer, Integer, Integer> //
-        > fSeptendecuple = Fields.of(f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f);
+    > fSeptendecuple = Fields.of(f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f);
     Function<Integer, Octodecuple< //
         Integer, Integer, Integer, Integer, Integer, Integer, //
         Integer, Integer, Integer, Integer, Integer, Integer, //
         Integer, Integer, Integer, Integer, Integer, Integer> //
-        > fOctodecuple = Fields.of(f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f);
+    > fOctodecuple = Fields.of(f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f);
     Function<Integer, Novemdecuple< //
         Integer, Integer, Integer, Integer, Integer, Integer, //
         Integer, Integer, Integer, Integer, Integer, Integer, //
         Integer, Integer, Integer, Integer, Integer, Integer, Integer> //
-        > fNovemdecuple = Fields.of(f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f);
+    > fNovemdecuple = Fields.of(f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f);
     Function<Integer, Vigintuple< //
         Integer, Integer, Integer, Integer, Integer, Integer, //
         Integer, Integer, Integer, Integer, Integer, Integer, //
         Integer, Integer, Integer, Integer, Integer, Integer, Integer, Integer> //
-        > fVigintuple = Fields.of(f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f);
+    > fVigintuple = Fields.of(f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f, f);
 
     assertThat(fEmpty.apply(0).streamOf(Integer.class)).isEmpty();
     assertThat(fSingle.apply(2).streamOf(Integer.class)).containsExactly(4);

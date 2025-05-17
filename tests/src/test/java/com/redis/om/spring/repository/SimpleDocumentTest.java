@@ -1,15 +1,16 @@
 package com.redis.om.spring.repository;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
+
+import java.util.List;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assumptions.assumeThat;
+import com.redis.om.spring.AbstractBaseDocumentTest;
 
 class SimpleDocumentTest extends AbstractBaseDocumentTest {
 

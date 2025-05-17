@@ -1,10 +1,11 @@
 package com.redis.om.spring.ops.json;
 
+import java.util.List;
+
 import org.springframework.lang.Nullable;
+
 import redis.clients.jedis.json.JsonSetParams;
 import redis.clients.jedis.json.Path2;
-
-import java.util.List;
 
 public interface JSONOperations<K> {
   Long del(K key, Path2 path);
@@ -18,13 +19,19 @@ public interface JSONOperations<K> {
   @Nullable
   <T> T get(K key, Class<T> clazz, Path2 path);
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   List<String> mget(K... keys);
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   <T> List<T> mget(Class<T> clazz, K... keys);
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   <T> List<T> mget(Path2 path, Class<T> clazz, K... keys);
 
   void set(K key, Object object);

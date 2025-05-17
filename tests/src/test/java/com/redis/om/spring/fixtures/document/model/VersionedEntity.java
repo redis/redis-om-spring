@@ -1,8 +1,9 @@
 package com.redis.om.spring.fixtures.document.model;
 
-import com.redis.om.spring.annotations.Document;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Version;
+
+import com.redis.om.spring.annotations.Document;
 
 @Document
 public class VersionedEntity {

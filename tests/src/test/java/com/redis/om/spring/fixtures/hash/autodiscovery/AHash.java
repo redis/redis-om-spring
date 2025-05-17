@@ -1,14 +1,21 @@
 package com.redis.om.spring.fixtures.hash.autodiscovery;
 
-import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
 
+import lombok.*;
+
 @Data
-@EqualsAndHashCode(of = "id")
+@EqualsAndHashCode(
+    of = "id"
+)
 @NoArgsConstructor
-@RequiredArgsConstructor(staticName = "of")
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@RequiredArgsConstructor(
+    staticName = "of"
+)
+@AllArgsConstructor(
+    access = AccessLevel.PROTECTED
+)
 @RedisHash
 public class AHash {
   @Id

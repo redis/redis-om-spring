@@ -1,11 +1,6 @@
 package com.redis.om.spring.search.stream.predicates.numeric;
 
-import com.redis.om.spring.metamodel.SearchFieldAccessor;
-import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
-import com.redis.om.spring.search.stream.predicates.jedis.JedisValues;
-import redis.clients.jedis.search.querybuilder.Node;
-import redis.clients.jedis.search.querybuilder.QueryBuilders;
-import redis.clients.jedis.search.querybuilder.Values;
+import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -13,7 +8,13 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 
-import static org.apache.commons.lang3.ObjectUtils.isEmpty;
+import com.redis.om.spring.metamodel.SearchFieldAccessor;
+import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
+import com.redis.om.spring.search.stream.predicates.jedis.JedisValues;
+
+import redis.clients.jedis.search.querybuilder.Node;
+import redis.clients.jedis.search.querybuilder.QueryBuilders;
+import redis.clients.jedis.search.querybuilder.Values;
 
 public class EqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
   private final T value;

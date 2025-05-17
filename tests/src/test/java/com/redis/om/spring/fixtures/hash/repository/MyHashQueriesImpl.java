@@ -1,18 +1,22 @@
 package com.redis.om.spring.fixtures.hash.repository;
 
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.fixtures.hash.model.MyHash;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.util.ObjectUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+
 import redis.clients.jedis.search.Document;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 
-import java.util.Optional;
-
-@SuppressWarnings({ "unused", "SpringJavaAutowiredMembersInspection" })
+@SuppressWarnings(
+  { "unused", "SpringJavaAutowiredMembersInspection" }
+)
 public class MyHashQueriesImpl implements MyHashQueries {
 
   private final MappingRedisOMConverter converter = new MappingRedisOMConverter();

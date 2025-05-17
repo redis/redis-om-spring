@@ -1,5 +1,14 @@
 package com.redis.om.spring.search.stream;
 
+import java.time.Duration;
+import java.util.*;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort.Direction;
+import org.springframework.data.domain.Sort.Order;
+import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
+
 import com.google.gson.Gson;
 import com.redis.om.spring.annotations.Dialect;
 import com.redis.om.spring.annotations.Document;
@@ -11,16 +20,9 @@ import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.search.stream.aggregations.filters.AggregationFilter;
 import com.redis.om.spring.tuple.Tuples;
 import com.redis.om.spring.util.ObjectUtils;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort.Direction;
-import org.springframework.data.domain.Sort.Order;
-import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
+
 import redis.clients.jedis.search.aggr.*;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
-
-import java.time.Duration;
-import java.util.*;
 
 public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
   private static final Integer MAX_LIMIT = 10000;
@@ -113,8 +115,9 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
       case FIRST_VALUE -> {
         if (params.length > 0 && params[0].getClass().isAssignableFrom(Order.class)) {
           Order o = (Order) params[0];
-          SortedField sf = new SortedField(o.getProperty(),
-              o.getDirection() == Direction.ASC ? SortOrder.ASC : SortOrder.DESC);
+          SortedField sf = new SortedField(o.getProperty(), o.getDirection() == Direction.ASC ?
+              SortOrder.ASC :
+              SortOrder.DESC);
           r = Reducers.first_value(alias, sf);
         } else {
           r = Reducers.first_value(alias);
@@ -269,7 +272,9 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
     return search.aggregate(aggregation);
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   @Override
   public <R extends T> List<R> toList(Class<?>... contentTypes) {
     applyCurrentGroupBy();
@@ -332,48 +337,36 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
         case 5 -> Tuples.of(labels, values[0], values[1], values[2], values[3], values[4]);
         case 6 -> Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5]);
         case 7 -> Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6]);
-        case 8 ->
-            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7]);
-        case 9 ->
-            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-                values[8]);
-        case 10 ->
-            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-                values[8], values[9]);
-        case 11 ->
-            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-                values[8], values[9], values[10]);
-        case 12 ->
-            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-                values[8], values[9], values[10], values[11]);
-        case 13 ->
-            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-                values[8], values[9], values[10], values[11], values[12]);
-        case 14 ->
-            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-                values[8], values[9], values[10], values[11], values[12], values[13]);
-        case 15 ->
-            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-                values[8], values[9], values[10], values[11], values[12], values[13], values[14]);
-        case 16 ->
-            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-                values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15]);
-        case 17 ->
-            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-                values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15],
-                values[16]);
-        case 18 ->
-            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-                values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15],
-                values[16], values[17]);
-        case 19 ->
-            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-                values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15],
-                values[16], values[17], values[18]);
-        case 20 ->
-            Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
-                values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15],
-                values[16], values[17], values[18], values[19]);
+        case 8 -> Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6],
+            values[7]);
+        case 9 -> Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6],
+            values[7], values[8]);
+        case 10 -> Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6],
+            values[7], values[8], values[9]);
+        case 11 -> Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6],
+            values[7], values[8], values[9], values[10]);
+        case 12 -> Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6],
+            values[7], values[8], values[9], values[10], values[11]);
+        case 13 -> Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6],
+            values[7], values[8], values[9], values[10], values[11], values[12]);
+        case 14 -> Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6],
+            values[7], values[8], values[9], values[10], values[11], values[12], values[13]);
+        case 15 -> Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6],
+            values[7], values[8], values[9], values[10], values[11], values[12], values[13], values[14]);
+        case 16 -> Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6],
+            values[7], values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15]);
+        case 17 -> Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6],
+            values[7], values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15],
+            values[16]);
+        case 18 -> Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6],
+            values[7], values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15],
+            values[16], values[17]);
+        case 19 -> Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6],
+            values[7], values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15],
+            values[16], values[17], values[18]);
+        case 20 -> Tuples.of(labels, values[0], values[1], values[2], values[3], values[4], values[5], values[6],
+            values[7], values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15],
+            values[16], values[17], values[18], values[19]);
         default -> Tuples.of();
       };
     }).toList();
@@ -395,7 +388,9 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
   // Cursor API
 
   @Override
-  @SuppressWarnings({ "unchecked", "rawtypes" })
+  @SuppressWarnings(
+    { "unchecked", "rawtypes" }
+  )
   public <R extends T> Page<R> toList(Pageable pageRequest, Class<?>... contentTypes) {
     applyCurrentGroupBy();
     aggregation.cursor(pageRequest.getPageSize(), 300000);
@@ -403,7 +398,9 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
   }
 
   @Override
-  @SuppressWarnings({ "unchecked", "rawtypes" })
+  @SuppressWarnings(
+    { "unchecked", "rawtypes" }
+  )
   public <R extends T> Page<R> toList(Pageable pageRequest, Duration timeout, Class<?>... contentTypes) {
     applyCurrentGroupBy();
     aggregation.cursor(pageRequest.getPageSize(), timeout.toMillis());
@@ -441,20 +438,23 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
     Class<?> fieldTargetClass = field != null ? field.getTargetClass() : null;
     return switch (reducerFieldPair.getReducerFunction()) {
       case COUNT, COUNT_DISTINCT, COUNT_DISTINCTISH -> Long.class;
-      case SUM, MIN, MAX, QUANTILE, FIRST_VALUE, TOLIST, RANDOM_SAMPLE ->
-          fieldTargetClass != null ? fieldTargetClass : String.class;
+      case SUM, MIN, MAX, QUANTILE, FIRST_VALUE, TOLIST, RANDOM_SAMPLE -> fieldTargetClass != null ?
+          fieldTargetClass :
+          String.class;
       case AVG, STDDEV -> Double.class;
     };
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   List<E> toEntityList(AggregationResult aggregationResult) {
     if (isDocument) {
       return aggregationResult.getResults().stream().map(d -> gson.fromJson(d.get("$").toString(), entityClass))
           .toList();
     } else {
-      return aggregationResult.getResults().stream()
-          .map(h -> (E) ObjectUtils.mapToObject(h, entityClass, mappingConverter)).toList();
+      return aggregationResult.getResults().stream().map(h -> (E) ObjectUtils.mapToObject(h, entityClass,
+          mappingConverter)).toList();
     }
   }
 

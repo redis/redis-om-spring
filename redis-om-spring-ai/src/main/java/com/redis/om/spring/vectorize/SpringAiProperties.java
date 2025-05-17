@@ -1,13 +1,17 @@
 package com.redis.om.spring.vectorize;
 
+import java.util.Map;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.StringUtils;
 
-import java.util.Map;
-
-@ConditionalOnProperty(name = "redis.om.spring.ai.enabled", havingValue = "true")
-@ConfigurationProperties(prefix = "spring.ai")
+@ConditionalOnProperty(
+    name = "redis.om.spring.ai.enabled", havingValue = "true"
+)
+@ConfigurationProperties(
+    prefix = "spring.ai"
+)
 public class SpringAiProperties {
 
   private OpenAi openai = new OpenAi();
@@ -17,119 +21,119 @@ public class SpringAiProperties {
   private Transformers transformers = new Transformers();
 
   public OpenAi getOpenai() {
-      return openai;
+    return openai;
   }
 
   public void setOpenai(OpenAi openai) {
-      this.openai = openai;
+    this.openai = openai;
   }
 
   public AzureOpenAi getAzure() {
-      return azure;
+    return azure;
   }
 
   public void setAzure(AzureOpenAi azure) {
-      this.azure = azure;
+    this.azure = azure;
   }
 
   public Vertex.Ai.Gemini getVertexAi() {
-      return vertex.getAi().getGemini();
+    return vertex.getAi().getGemini();
   }
 
   public void setVertex(Vertex vertex) {
-      this.vertex = vertex;
+    this.vertex = vertex;
   }
 
   public Transformers getTransformers() {
-      return transformers;
+    return transformers;
   }
 
   public void setTransformers(Transformers transformers) {
-      this.transformers = transformers;
+    this.transformers = transformers;
   }
 
   public Bedrock getBedrock() {
-      return bedrock;
+    return bedrock;
   }
 
   public void setBedrock(Bedrock bedrock) {
-      this.bedrock = bedrock;
+    this.bedrock = bedrock;
   }
 
   public static class OpenAi {
-  private String apiKey;
+    private String apiKey;
 
-  public String getApiKey() {
-    if (!StringUtils.hasText(apiKey)) {
-      apiKey = System.getenv("OPENAI_API_KEY"); // Fallback to environment variable
-
+    public String getApiKey() {
       if (!StringUtils.hasText(apiKey)) {
-        apiKey = System.getProperty("SPRING_AI_OPENAI_API_KEY");  // Fallback to system property
-      }
-    }
-    return apiKey;
-  }
+        apiKey = System.getenv("OPENAI_API_KEY"); // Fallback to environment variable
 
-  public void setApiKey(String apiKey) {
+        if (!StringUtils.hasText(apiKey)) {
+          apiKey = System.getProperty("SPRING_AI_OPENAI_API_KEY");  // Fallback to system property
+        }
+      }
+      return apiKey;
+    }
+
+    public void setApiKey(String apiKey) {
       this.apiKey = apiKey;
+    }
   }
-}
 
   public static class AzureOpenAi {
     private String apiKey;
     private String endpoint;
 
-      public String getApiKey() {
+    public String getApiKey() {
+      if (!StringUtils.hasText(apiKey)) {
+        apiKey = System.getenv("AZURE_OPENAI_API_KEY"); // Fallback to environment variable
+
         if (!StringUtils.hasText(apiKey)) {
-          apiKey = System.getenv("AZURE_OPENAI_API_KEY"); // Fallback to environment variable
-
-          if (!StringUtils.hasText(apiKey)) {
-            apiKey = System.getProperty("SPRING_AI_AZURE_OPENAI_API_KEY");  // Fallback to system property
-          }
+          apiKey = System.getProperty("SPRING_AI_AZURE_OPENAI_API_KEY");  // Fallback to system property
         }
-        return apiKey;
       }
+      return apiKey;
+    }
 
-      public void setApiKey(String apiKey) {
-          this.apiKey = apiKey;
-      }
+    public void setApiKey(String apiKey) {
+      this.apiKey = apiKey;
+    }
 
-      public String getEndpoint() {
-        if (!StringUtils.hasText(apiKey)) {
-          endpoint = System.getenv("AZURE_OPENAI_ENDPOINT"); // Fallback to environment variable
+    public String getEndpoint() {
+      if (!StringUtils.hasText(apiKey)) {
+        endpoint = System.getenv("AZURE_OPENAI_ENDPOINT"); // Fallback to environment variable
 
-          if (!StringUtils.hasText(endpoint)) {
-            endpoint = System.getProperty("SPRING_AI_AZURE_OPENAI_ENDPOINT");  // Fallback to system property
-          }
+        if (!StringUtils.hasText(endpoint)) {
+          endpoint = System.getProperty("SPRING_AI_AZURE_OPENAI_ENDPOINT");  // Fallback to system property
         }
-        return endpoint;
       }
+      return endpoint;
+    }
 
-      public void setEndpoint(String endpoint) {
-          this.endpoint = endpoint;
-      }
+    public void setEndpoint(String endpoint) {
+      this.endpoint = endpoint;
+    }
   }
 
   public static class Vertex {
     private Ai ai = new Ai();
 
     public Ai getAi() {
-        return ai;
+      return ai;
     }
 
     public void setAi(Ai ai) {
-        this.ai = ai;
+      this.ai = ai;
     }
 
     public static class Ai {
       private Gemini gemini = new Gemini();
 
       public Gemini getGemini() {
-          return gemini;
+        return gemini;
       }
 
       public void setGemini(Gemini gemini) {
-          this.gemini = gemini;
+        this.gemini = gemini;
       }
 
       public static class Gemini {
@@ -186,11 +190,11 @@ public class SpringAiProperties {
     private Aws aws = new Aws();
 
     public Aws getAws() {
-        return aws;
+      return aws;
     }
 
     public void setAws(Aws aws) {
-        this.aws = aws;
+      this.aws = aws;
     }
 
     public static class Aws {
@@ -249,35 +253,35 @@ public class SpringAiProperties {
     private Map<String, Object> tokenizerOptions;
 
     public String getModelResource() {
-        return modelResource;
+      return modelResource;
     }
 
     public void setModelResource(String modelResource) {
-        this.modelResource = modelResource;
+      this.modelResource = modelResource;
     }
 
     public String getTokenizerResource() {
-        return tokenizerResource;
+      return tokenizerResource;
     }
 
     public void setTokenizerResource(String tokenizerResource) {
-        this.tokenizerResource = tokenizerResource;
+      this.tokenizerResource = tokenizerResource;
     }
 
     public String getResourceCacheDirectory() {
-        return resourceCacheDirectory;
+      return resourceCacheDirectory;
     }
 
     public void setResourceCacheDirectory(String resourceCacheDirectory) {
-        this.resourceCacheDirectory = resourceCacheDirectory;
+      this.resourceCacheDirectory = resourceCacheDirectory;
     }
 
     public Map<String, Object> getTokenizerOptions() {
-        return tokenizerOptions;
+      return tokenizerOptions;
     }
 
     public void setTokenizerOptions(Map<String, Object> tokenizerOptions) {
-        this.tokenizerOptions = tokenizerOptions;
+      this.tokenizerOptions = tokenizerOptions;
     }
   }
 }

@@ -1,9 +1,9 @@
 package com.redis.om.spring.convert;
 
+import java.nio.charset.StandardCharsets;
+
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.ReadingConverter;
-
-import java.nio.charset.StandardCharsets;
 
 @ReadingConverter
 public class BytesToBooleanConverter implements Converter<byte[], Boolean> {

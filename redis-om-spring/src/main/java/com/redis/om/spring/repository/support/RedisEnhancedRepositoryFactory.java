@@ -1,11 +1,9 @@
 package com.redis.om.spring.repository.support;
 
-import com.redis.om.spring.RedisOMProperties;
-import com.redis.om.spring.indexing.RediSearchIndexer;
-import com.redis.om.spring.mapping.RedisEnhancedMappingContext;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.repository.query.RedisEnhancedQuery;
-import com.redis.om.spring.vectorize.Embedder;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.util.Optional;
+
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.repository.query.KeyValuePartTreeQuery;
@@ -33,9 +31,12 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.util.Optional;
+import com.redis.om.spring.RedisOMProperties;
+import com.redis.om.spring.indexing.RediSearchIndexer;
+import com.redis.om.spring.mapping.RedisEnhancedMappingContext;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.repository.query.RedisEnhancedQuery;
+import com.redis.om.spring.vectorize.Embedder;
 
 public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
 
@@ -59,7 +60,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
    * @param redisOperations    must not be {@literal null}.
    * @param rmo                must not be {@literal null}.
    * @param indexer            must not be {@literal null}.
-   * @param embedder   must not be {@literal null}.
+   * @param embedder           must not be {@literal null}.
    * @param properties         must not be {@literal null}.
    */
   public RedisEnhancedRepositoryFactory( //
@@ -80,7 +81,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
    * @param redisOperations    must not be {@literal null}.
    * @param rmo                must not be {@literal null}.
    * @param indexer            must not be {@literal null}.
-   * @param embedder   must not be {@literal null}.
+   * @param embedder           must not be {@literal null}.
    * @param queryCreator       must not be {@literal null}.
    * @param properties         must not be {@literal null}.
    */
@@ -153,7 +154,9 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
    * org.springframework.data.repository.core.support.RepositoryFactorySupport#
    * getEntityInformation(java.lang.Class) */
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   public <T, ID> EntityInformation<T, ID> getEntityInformation(Class<T> domainClass) {
     PersistentEntity<T, ?> entity = (PersistentEntity<T, ?>) enhancedContext.getRequiredPersistentEntity(domainClass);
     return new PersistentEntityInformation<>(entity);
@@ -264,7 +267,9 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
      * org.springframework.data.projection.ProjectionFactory,
      * org.springframework.data.repository.core.NamedQueries) */
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings(
+      "unchecked"
+    )
     public RepositoryQuery resolveQuery( //
         Method method, //
         RepositoryMetadata metadata, //
@@ -273,18 +278,19 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
     ) {
       QueryMethod queryMethod = new QueryMethod(method, metadata, factory);
 
-      Constructor<? extends KeyValuePartTreeQuery> constructor = (Constructor<? extends KeyValuePartTreeQuery>) ClassUtils.getConstructorIfAvailable(
-          //
-          this.repositoryQueryType, //
-          QueryMethod.class, //
-          RepositoryMetadata.class, //
-          RediSearchIndexer.class, //
-          QueryMethodEvaluationContextProvider.class, //
-          KeyValueOperations.class, //
-          RedisOperations.class, //
-          RedisModulesOperations.class, //
-          Class.class, //
-          RedisOMProperties.class);
+      Constructor<? extends KeyValuePartTreeQuery> constructor = (Constructor<? extends KeyValuePartTreeQuery>) ClassUtils
+          .getConstructorIfAvailable(
+              //
+              this.repositoryQueryType, //
+              QueryMethod.class, //
+              RepositoryMetadata.class, //
+              RediSearchIndexer.class, //
+              QueryMethodEvaluationContextProvider.class, //
+              KeyValueOperations.class, //
+              RedisOperations.class, //
+              RedisModulesOperations.class, //
+              Class.class, //
+              RedisOMProperties.class);
 
       Assert.state(constructor != null, String.format(
           "Constructor %s(QueryMethod, RepositoryMetadata, RediSearchIndexer, EvaluationContextProvider, KeyValueOperations, RedisOperations, RedisModulesOperations, Class, RedisOMSpringProperties) not available!",

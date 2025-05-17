@@ -1,10 +1,11 @@
 package com.redis.om.spring.fixtures.document.repository;
 
-import com.redis.om.spring.fixtures.document.model.Fruit;
-import com.redis.om.spring.repository.RedisDocumentRepository;
+import java.util.List;
+
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import com.redis.om.spring.fixtures.document.model.Fruit;
+import com.redis.om.spring.repository.RedisDocumentRepository;
 
 @Repository
 public interface FruitRepository extends RedisDocumentRepository<Fruit, Long> {

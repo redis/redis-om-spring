@@ -1,23 +1,29 @@
 package com.redis.om.spring.fixtures.document.model;
 
-import com.github.f4b6a3.ulid.Ulid;
-import com.google.gson.annotations.JsonAdapter;
-import com.redis.om.spring.annotations.Document;
-import com.redis.om.spring.serialization.gson.ListToStringAdapter;
-import com.redis.om.spring.serialization.gson.SetToStringAdapter;
-import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.geo.Point;
-
 import java.time.*;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.geo.Point;
+
+import com.github.f4b6a3.ulid.Ulid;
+import com.google.gson.annotations.JsonAdapter;
+import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.serialization.gson.ListToStringAdapter;
+import com.redis.om.spring.serialization.gson.SetToStringAdapter;
+
+import lombok.*;
+
 @Data
 @Builder
-@RequiredArgsConstructor(staticName = "of")
-@NoArgsConstructor(force = true)
+@RequiredArgsConstructor(
+    staticName = "of"
+)
+@NoArgsConstructor(
+    force = true
+)
 @AllArgsConstructor
 @Document
 public class KitchenSink {
@@ -42,11 +48,15 @@ public class KitchenSink {
   private YearMonth yearMonth;
 
   @Singular
-  @JsonAdapter(SetToStringAdapter.class)
+  @JsonAdapter(
+    SetToStringAdapter.class
+  )
   private Set<String> setThings;
 
   @Singular
-  @JsonAdapter(ListToStringAdapter.class)
+  @JsonAdapter(
+    ListToStringAdapter.class
+  )
   private List<String> listThings;
 
 }

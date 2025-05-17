@@ -1,5 +1,22 @@
 package com.redis.om.spring.util;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Point;
+import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
+import org.springframework.util.ReflectionUtils;
+
 import com.google.common.collect.Sets;
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.AutoComplete;
@@ -9,25 +26,12 @@ import com.redis.om.spring.annotations.Searchable;
 import com.redis.om.spring.fixtures.document.model.*;
 import com.redis.om.spring.fixtures.document.repository.CompanyRepository;
 import com.redis.om.spring.fixtures.document.repository.DocWithCustomNameIdRepository;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.geo.Distance;
-import org.springframework.data.geo.Point;
-import org.springframework.data.redis.connection.RedisGeoCommands.DistanceUnit;
-import org.springframework.util.ReflectionUtils;
+
 import redis.clients.jedis.args.GeoUnit;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.time.LocalDate;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-
-@SuppressWarnings({ "ConstantConditions", "SpellCheckingInspection" })
+@SuppressWarnings(
+  { "ConstantConditions", "SpellCheckingInspection" }
+)
 class ObjectUtilsTest extends AbstractBaseDocumentTest {
 
   @Autowired
@@ -98,7 +102,9 @@ class ObjectUtilsTest extends AbstractBaseDocumentTest {
 
   @Test
   void testGetTargetClassName() throws SecurityException {
-    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection") List<String> lofs = new ArrayList<>();
+    @SuppressWarnings(
+      "MismatchedQueryAndUpdateOfCollection"
+    ) List<String> lofs = new ArrayList<>();
     int[] inta = new int[] {};
     Field field = ReflectionUtils.findField(Company.class, "publiclyListed");
     assertThat(field).isNotNull();
@@ -109,8 +115,8 @@ class ObjectUtilsTest extends AbstractBaseDocumentTest {
     assertThat(ObjectUtils.getTargetClassName(inta.getClass().getTypeName())).isEqualTo(int[].class.getTypeName());
     assertThat(ObjectUtils.getTargetClassName(typeName)).isEqualTo(boolean.class.getTypeName());
     assertThat(ObjectUtils.getTargetClassName(
-        "java.util.List<com.redis.om.spring.annotations.document.fixtures.Attribute>")).isEqualTo(
-        List.class.getTypeName());
+        "java.util.List<com.redis.om.spring.annotations.document.fixtures.Attribute>")).isEqualTo(List.class
+            .getTypeName());
   }
 
   @Test
@@ -162,8 +168,8 @@ class ObjectUtilsTest extends AbstractBaseDocumentTest {
 
   @Test
   void testGetIdFieldForEntity() {
-    Company redis = companyRepository.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company redis = companyRepository.save(Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540,
+        37.377690), "stack@redis.com"));
     String actualCompanyId = redis.getId();
 
     Object id = ObjectUtils.getIdFieldForEntity(redis);
@@ -295,8 +301,8 @@ class ObjectUtilsTest extends AbstractBaseDocumentTest {
     redis.setMetaList(Set.of(CompanyMeta.of("RD", 100, Set.of("RedisTag", "CommonTag"))));
     redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
 
-    Set<Employee> employees = Sets.newHashSet(Employee.of("Brian Sam-Bodden"), Employee.of("Guy Royse"),
-        Employee.of("Justin Castilla"));
+    Set<Employee> employees = Sets.newHashSet(Employee.of("Brian Sam-Bodden"), Employee.of("Guy Royse"), Employee.of(
+        "Justin Castilla"));
     redis.setEmployees(employees);
 
     String id = (String) ObjectUtils.getValueByPath(redis, "$.id");
@@ -304,33 +310,35 @@ class ObjectUtilsTest extends AbstractBaseDocumentTest {
     Integer yearFounded = (Integer) ObjectUtils.getValueByPath(redis, "$.yearFounded");
     LocalDate lastValuation = (LocalDate) ObjectUtils.getValueByPath(redis, "$.lastValuation");
     Point location = (Point) ObjectUtils.getValueByPath(redis, "$.location");
-    @SuppressWarnings("unchecked") Set<String> tags = (Set<String>) ObjectUtils.getValueByPath(redis, "$.tags[*]");
+    @SuppressWarnings(
+      "unchecked"
+    ) Set<String> tags = (Set<String>) ObjectUtils.getValueByPath(redis, "$.tags[*]");
     String email = (String) ObjectUtils.getValueByPath(redis, "$.email");
     boolean publiclyListed = (boolean) ObjectUtils.getValueByPath(redis, "$.publiclyListed");
     @SuppressWarnings(
-        "unchecked"
+      "unchecked"
     ) Collection<Integer> metaList_numberValue = (Collection<Integer>) ObjectUtils.getValueByPath(redis,
         "$.metaList[0:].numberValue");
     @SuppressWarnings(
-        "unchecked"
+      "unchecked"
     ) Collection<String> metaList_stringValue = (Collection<String>) ObjectUtils.getValueByPath(redis,
         "$.metaList[0:].stringValue");
-    @SuppressWarnings("unchecked") Collection<String> employees_name = (Collection<String>) ObjectUtils.getValueByPath(
-        redis, "$.employees[0:].name");
+    @SuppressWarnings(
+      "unchecked"
+    ) Collection<String> employees_name = (Collection<String>) ObjectUtils.getValueByPath(redis,
+        "$.employees[0:].name");
 
     assertAll( //
         () -> assertThat(id).isEqualTo(redis.getId()), () -> assertThat(name).isEqualTo(redis.getName()),
-        () -> assertThat(yearFounded).isEqualTo(redis.getYearFounded()),
-        () -> assertThat(lastValuation).isEqualTo(redis.getLastValuation()),
-        () -> assertThat(location).isEqualTo(redis.getLocation()), () -> assertThat(tags).isEqualTo(redis.getTags()),
-        () -> assertThat(email).isEqualTo(redis.getEmail()),
-        () -> assertThat(publiclyListed).isEqualTo(redis.isPubliclyListed()),
-        () -> assertThat(metaList_numberValue).containsExactlyElementsOf(
-            redis.getMetaList().stream().map(CompanyMeta::getNumberValue).toList()),
-        () -> assertThat(metaList_stringValue).containsExactlyElementsOf(
-            redis.getMetaList().stream().map(CompanyMeta::getStringValue).toList()),
-        () -> assertThat(employees_name).containsExactlyElementsOf(
-            redis.getEmployees().stream().map(Employee::getName).toList()));
+        () -> assertThat(yearFounded).isEqualTo(redis.getYearFounded()), () -> assertThat(lastValuation).isEqualTo(redis
+            .getLastValuation()), () -> assertThat(location).isEqualTo(redis.getLocation()), () -> assertThat(tags)
+                .isEqualTo(redis.getTags()), () -> assertThat(email).isEqualTo(redis.getEmail()), () -> assertThat(
+                    publiclyListed).isEqualTo(redis.isPubliclyListed()), () -> assertThat(metaList_numberValue)
+                        .containsExactlyElementsOf(redis.getMetaList().stream().map(CompanyMeta::getNumberValue)
+                            .toList()), () -> assertThat(metaList_stringValue).containsExactlyElementsOf(redis
+                                .getMetaList().stream().map(CompanyMeta::getStringValue).toList()), () -> assertThat(
+                                    employees_name).containsExactlyElementsOf(redis.getEmployees().stream().map(
+                                        Employee::getName).toList()));
   }
 
   @Test
@@ -339,7 +347,6 @@ class ObjectUtilsTest extends AbstractBaseDocumentTest {
     var flatten = ObjectUtils.flattenCollection(nested);
     assertThat(flatten).containsExactly("a", "b", "c", "d", "e", "f");
   }
-
 
   @Test
   public void testEmptyString() {

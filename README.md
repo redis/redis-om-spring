@@ -420,7 +420,7 @@ To release a new version of Redis OM Spring:
 
 1. Ensure all changes are committed and pushed to the main branch
 2. Run the release preparation script: `./scripts/prepare-release.sh <version>`
-3. Create a new GitHub release with the tag `v<version>` 
+3. Create a new GitHub release with the tag `v<version>`
    (e.g., `v0.6.0`)
 4. The GitHub workflow will automatically:
    - Build the project
@@ -430,7 +430,7 @@ To release a new version of Redis OM Spring:
 
 This process publishes both `redis-om-spring` and `redis-om-spring-ai` modules to Maven Central.
 
-> ⚠️ Starting from version `v1.0.0-RC1`, Redis OM Spring has been divided into two separate modules:
+> ⚠️ Starting from version `v1.0.0-RC.1`, Redis OM Spring has been divided into two separate modules:
 >
 > * **Redis OM Spring** – providing modeling and vector indexing capabilities;
 > * **Redis OM Spring AI** – introducing AI capabilities, powered by Spring AI, to automatically generate vector embeddings using popular providers like OpenAI, Azure, Ollama, VertexAI, and more.
@@ -484,7 +484,7 @@ inherited from the parent poms):
       <path>
         <groupId>com.redis.om</groupId>
         <artifactId>redis-om-spring</artifactId>
-        <version>1.0.0-RC1</version>
+        <version>1.0.0-RC.1</version>
       </path>
     </annotationProcessorPaths>
   </configuration>
@@ -536,7 +536,7 @@ repositories {
 
 ```groovy
 ext {
-  redisOmVersion = '1.0.0-RC1'
+  redisOmVersion = '1.0.0-RC.1'
 }
 
 dependencies {

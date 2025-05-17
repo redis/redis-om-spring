@@ -1,27 +1,30 @@
 package com.redis.om.spring.annotations.document.sentinel;
 
-import com.redis.om.spring.AbstractBaseDocumentSentinelTest;
-import com.redis.om.spring.fixtures.document.model.Company;
-import com.redis.om.spring.fixtures.document.model.CompanyMeta;
-import com.redis.om.spring.fixtures.document.repository.CompanyRepository;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.geo.Point;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.geo.Point;
+
+import com.redis.om.spring.AbstractBaseDocumentSentinelTest;
+import com.redis.om.spring.fixtures.document.model.Company;
+import com.redis.om.spring.fixtures.document.model.CompanyMeta;
+import com.redis.om.spring.fixtures.document.repository.CompanyRepository;
 
 /**
  * This test won't succeed unless a Redis Container is running with a replica configured:
  * Check docker-compose.yml
  */
-@DisabledIfEnvironmentVariable(named = "GITHUB_ACTIONS", matches = "true")
+@DisabledIfEnvironmentVariable(
+    named = "GITHUB_ACTIONS", matches = "true"
+)
 class BasicSentinelTest extends AbstractBaseDocumentSentinelTest {
   @Autowired
   CompanyRepository repository;

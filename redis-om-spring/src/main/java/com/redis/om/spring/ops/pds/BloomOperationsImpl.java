@@ -1,10 +1,11 @@
 package com.redis.om.spring.ops.pds;
 
-import com.redis.om.spring.client.RedisModulesClient;
-import redis.clients.jedis.bloom.BFInsertParams;
-
 import java.util.List;
 import java.util.Map;
+
+import com.redis.om.spring.client.RedisModulesClient;
+
+import redis.clients.jedis.bloom.BFInsertParams;
 
 public class BloomOperationsImpl<K> implements BloomOperations<K> {
   final RedisModulesClient client;

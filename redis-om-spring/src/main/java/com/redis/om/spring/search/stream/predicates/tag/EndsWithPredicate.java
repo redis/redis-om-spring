@@ -1,13 +1,14 @@
 package com.redis.om.spring.search.stream.predicates.tag;
 
+import static org.apache.commons.lang3.ObjectUtils.isEmpty;
+
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
+
 import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import redis.clients.jedis.search.querybuilder.QueryNode;
-
-import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 
 public class EndsWithPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
@@ -34,8 +35,8 @@ public class EndsWithPredicate<E, T> extends BaseAbstractPredicate<E, T> {
       }
       return QueryBuilders.intersect(root, and);
     } else {
-      return QueryBuilders.intersect(root)
-          .add(getSearchAlias(), "{*" + QueryUtils.escape(value.toString(), true) + "}");
+      return QueryBuilders.intersect(root).add(getSearchAlias(), "{*" + QueryUtils.escape(value.toString(),
+          true) + "}");
     }
   }
 

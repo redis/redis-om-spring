@@ -1,22 +1,24 @@
 package com.redis.om.spring.search.stream;
 
-import com.redis.om.spring.metamodel.MetamodelField;
-import com.redis.om.spring.metamodel.indexed.NumericField;
-import com.redis.om.spring.ops.search.SearchOperations;
-import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
-import com.redis.om.spring.tuple.Pair;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import redis.clients.jedis.search.aggr.SortedField.SortOrder;
-
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.*;
 import java.util.stream.*;
+
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
+import com.redis.om.spring.metamodel.MetamodelField;
+import com.redis.om.spring.metamodel.indexed.NumericField;
+import com.redis.om.spring.ops.search.SearchOperations;
+import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
+import com.redis.om.spring.tuple.Pair;
+
+import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
 public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
 
@@ -128,12 +130,16 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
 
   Stream<Map<String, Object>> mapToLabelledMaps();
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   <R> AggregationStream<R> groupBy(MetamodelField<E, ?>... fields);
 
   <R> AggregationStream<R> apply(String expression, String alias);
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   <R> AggregationStream<R> load(MetamodelField<E, ?>... fields);
 
   <R> AggregationStream<R> loadAll();
@@ -152,7 +158,9 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
 
   <R> SearchStream<E> project(Function<? super E, ? extends R> field);
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   <R> SearchStream<E> project(MetamodelField<? super E, ? extends R>... field);
 
   String backingQuery();

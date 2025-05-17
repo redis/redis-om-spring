@@ -1,15 +1,17 @@
 package com.redis.om.spring.client;
 
-import com.google.gson.Gson;
-import com.redis.om.spring.AbstractBaseDocumentTest;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import com.google.gson.Gson;
+import com.redis.om.spring.AbstractBaseDocumentTest;
+
 import redis.clients.jedis.bloom.commands.BloomFilterCommands;
 import redis.clients.jedis.json.commands.RedisJsonCommands;
 import redis.clients.jedis.search.RediSearchCommands;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class RedisModulesClientTest extends AbstractBaseDocumentTest {
 
@@ -41,7 +43,9 @@ class RedisModulesClientTest extends AbstractBaseDocumentTest {
   }
 
   /* A simple class that represents an object in real life */
-  @SuppressWarnings("unused")
+  @SuppressWarnings(
+    "unused"
+  )
   private static class IRLObject {
     public final String str;
     public final boolean bTrue;

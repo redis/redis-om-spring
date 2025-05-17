@@ -1,9 +1,10 @@
 package com.redis.om.spring.search.stream.predicates.jedis;
 
-import com.google.gson.JsonPrimitive;
-import redis.clients.jedis.search.querybuilder.RangeValue;
-
 import java.util.Date;
+
+import com.google.gson.JsonPrimitive;
+
+import redis.clients.jedis.search.querybuilder.RangeValue;
 
 public class DateRangeValue extends RangeValue {
   public static final Date MIN = new Date(Long.MIN_VALUE);

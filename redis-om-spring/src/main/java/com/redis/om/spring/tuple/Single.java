@@ -19,8 +19,8 @@ public interface Single<T0> extends Tuple {
     if (index == 0) {
       return getFirst();
     } else {
-      throw new IndexOutOfBoundsException(
-          String.format("Index %d is outside bounds of tuple of degree %s", index, size()));
+      throw new IndexOutOfBoundsException(String.format("Index %d is outside bounds of tuple of degree %s", index,
+          size()));
     }
   }
 }

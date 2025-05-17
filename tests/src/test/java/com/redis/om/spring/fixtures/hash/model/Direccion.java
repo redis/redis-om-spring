@@ -2,19 +2,28 @@ package com.redis.om.spring.fixtures.hash.model;
 
 import com.redis.om.spring.annotations.TagIndexed;
 import com.redis.om.spring.annotations.TextIndexed;
+
 import lombok.Data;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-@SuppressWarnings("SpellCheckingInspection")
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 @Data
-@RequiredArgsConstructor(staticName = "of")
+@RequiredArgsConstructor(
+    staticName = "of"
+)
 public class Direccion {
   @NonNull
-  @TagIndexed(alias = "ciudad")
+  @TagIndexed(
+      alias = "ciudad"
+  )
   private String city;
 
   @NonNull
-  @TextIndexed(alias = "calle", nostem = true)
+  @TextIndexed(
+      alias = "calle", nostem = true
+  )
   private String street;
 }

@@ -1,5 +1,34 @@
 package com.redis.om.spring.repository.support;
 
+import static com.redis.om.spring.util.ObjectUtils.*;
+
+import java.lang.reflect.Field;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
+import org.springframework.data.domain.*;
+import org.springframework.data.domain.Sort.Order;
+import org.springframework.data.keyvalue.core.IterableConverter;
+import org.springframework.data.keyvalue.core.KeyValueOperations;
+import org.springframework.data.keyvalue.core.mapping.KeyValuePersistentEntity;
+import org.springframework.data.keyvalue.repository.support.SimpleKeyValueRepository;
+import org.springframework.data.redis.core.PartialUpdate;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.convert.RedisData;
+import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
+import org.springframework.data.redis.core.mapping.RedisPersistentProperty;
+import org.springframework.data.repository.core.EntityInformation;
+import org.springframework.data.repository.query.FluentQuery.FetchableFluentQuery;
+import org.springframework.data.util.DirectFieldAccessFallbackBeanWrapper;
+import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
+
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.redis.om.spring.RedisEnhancedKeyValueAdapter;
@@ -21,42 +50,15 @@ import com.redis.om.spring.search.stream.RedisFluentQueryByExample;
 import com.redis.om.spring.search.stream.SearchStream;
 import com.redis.om.spring.util.ObjectUtils;
 import com.redis.om.spring.vectorize.Embedder;
-import org.springframework.beans.BeanWrapper;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
-import org.springframework.data.domain.*;
-import org.springframework.data.domain.Sort.Order;
-import org.springframework.data.keyvalue.core.IterableConverter;
-import org.springframework.data.keyvalue.core.KeyValueOperations;
-import org.springframework.data.keyvalue.core.mapping.KeyValuePersistentEntity;
-import org.springframework.data.keyvalue.repository.support.SimpleKeyValueRepository;
-import org.springframework.data.redis.core.PartialUpdate;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.convert.RedisData;
-import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
-import org.springframework.data.redis.core.mapping.RedisPersistentProperty;
-import org.springframework.data.repository.core.EntityInformation;
-import org.springframework.data.repository.query.FluentQuery.FetchableFluentQuery;
-import org.springframework.data.util.DirectFieldAccessFallbackBeanWrapper;
-import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
+
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.util.SafeEncoder;
 
-import java.lang.reflect.Field;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
-import static com.redis.om.spring.util.ObjectUtils.*;
-
-public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueRepository<T, ID>
-    implements RedisEnhancedRepository<T, ID> {
+public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueRepository<T, ID> implements
+    RedisEnhancedRepository<T, ID> {
 
   protected final RedisModulesOperations<String> modulesOperations;
   protected final EntityInformation<T, ID> metadata;
@@ -72,11 +74,15 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
 
   private final EntityStream entityStream;
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   public SimpleRedisEnhancedRepository( //
       EntityInformation<T, ID> metadata, //
       KeyValueOperations operations, //
-      @Qualifier("redisModulesOperations") RedisModulesOperations<?> rmo, //
+      @Qualifier(
+        "redisModulesOperations"
+      ) RedisModulesOperations<?> rmo, //
       RediSearchIndexer indexer, //
       Embedder embedder, //
       RedisOMProperties properties //
@@ -87,8 +93,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     this.operations = operations;
     this.indexer = indexer;
     this.mappingConverter = new MappingRedisOMConverter(null, new ReferenceResolverImpl(modulesOperations.template()));
-    this.enhancedKeyValueAdapter = new RedisEnhancedKeyValueAdapter(rmo.template(), rmo, indexer, embedder,
-        properties);
+    this.enhancedKeyValueAdapter = new RedisEnhancedKeyValueAdapter(rmo.template(), rmo, indexer, embedder, properties);
     this.generator = ULIDIdentifierGenerator.INSTANCE;
     this.auditor = new EntityAuditor(modulesOperations.template());
     this.embedder = embedder;
@@ -96,7 +101,9 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     this.entityStream = new EntityStreamImpl(modulesOperations, modulesOperations.gsonBuilder(), indexer);
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   @Override
   public Iterable<ID> getIds() {
     String keyspace = indexer.getKeyspaceForEntityClass(metadata.getJavaType());
@@ -128,13 +135,15 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
 
   @Override
   public void updateField(T entity, MetamodelField<T, ?> field, Object value) {
-    PartialUpdate<?> update = new PartialUpdate<>(metadata.getId(entity).toString(), metadata.getJavaType()).set(
-        field.getSearchAlias(), value);
+    PartialUpdate<?> update = new PartialUpdate<>(metadata.getId(entity).toString(), metadata.getJavaType()).set(field
+        .getSearchAlias(), value);
 
     enhancedKeyValueAdapter.update(update);
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   @Override
   public <F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field) {
     RedisTemplate<String, String> template = modulesOperations.template();
@@ -213,7 +222,9 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
       SearchResult searchResult = searchOps.search(query);
 
       if (searchResult.getTotalResults() > 0) {
-        @SuppressWarnings("unchecked") List<T> content = (List<T>) searchResult.getDocuments().stream() //
+        @SuppressWarnings(
+          "unchecked"
+        ) List<T> content = (List<T>) searchResult.getDocuments().stream() //
             .map(d -> ObjectUtils.documentToObject(d, metadata.getJavaType(), mappingConverter)) //
             .toList();
         return new PageImpl<>(content, pageable, searchResult.getTotalResults());
@@ -315,8 +326,8 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   @Override
   public String getKeyFor(T entity) {
     // Get the mapping context's entity info
-    RedisEnhancedPersistentEntity<?> persistentEntity = (RedisEnhancedPersistentEntity<?>) mappingConverter.getMappingContext()
-        .getRequiredPersistentEntity(entity.getClass());
+    RedisEnhancedPersistentEntity<?> persistentEntity = (RedisEnhancedPersistentEntity<?>) mappingConverter
+        .getMappingContext().getRequiredPersistentEntity(entity.getClass());
 
     String stringId;
 
@@ -445,8 +456,8 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     SearchStream<S> stream = entityStream.of(example.getProbeType());
     var offset = pageable.getPageNumber() * pageable.getPageSize();
     var limit = pageable.getPageSize();
-    Page<S> page = stream.filter(example).loadAll().limit(limit, Math.toIntExact(offset))
-        .toList(pageable, stream.getEntityClass());
+    Page<S> page = stream.filter(example).loadAll().limit(limit, Math.toIntExact(offset)).toList(pageable, stream
+        .getEntityClass());
 
     return page;
   }
@@ -470,9 +481,8 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     Assert.notNull(example, "Example must not be null");
     Assert.notNull(queryFunction, "Query function must not be null");
 
-    return queryFunction.apply(
-        new RedisFluentQueryByExample<>(example, example.getProbeType(), entityStream, getSearchOps(),
-            mappingConverter.getMappingContext()));
+    return queryFunction.apply(new RedisFluentQueryByExample<>(example, example.getProbeType(), entityStream,
+        getSearchOps(), mappingConverter.getMappingContext()));
   }
 
   private void executePipelinedUpdates(List<UpdateOperation> updateOperations) {
@@ -484,8 +494,8 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
       for (UpdateOperation op : updateOperations) {
         byte[] value = convertToBinary(op.field, op.value);
         if (value != null && value.length > 0) {
-          updates.computeIfAbsent(op.key, k -> new HashMap<>())
-              .put(SafeEncoder.encode(op.field.getSearchAlias()), value);
+          updates.computeIfAbsent(op.key, k -> new HashMap<>()).put(SafeEncoder.encode(op.field.getSearchAlias()),
+              value);
         }
       }
 

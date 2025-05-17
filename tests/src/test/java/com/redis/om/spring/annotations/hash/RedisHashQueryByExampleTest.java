@@ -1,11 +1,16 @@
 package com.redis.om.spring.annotations.hash;
 
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.fixtures.hash.model.Company;
-import com.redis.om.spring.fixtures.hash.model.MyHash;
-import com.redis.om.spring.fixtures.hash.repository.CompanyRepository;
-import com.redis.om.spring.fixtures.hash.repository.MyHashRepository;
-import com.redis.om.spring.search.stream.EntityStream;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
+import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,16 +21,12 @@ import org.springframework.data.geo.Point;
 import org.springframework.data.repository.query.FluentQuery;
 import org.springframework.data.repository.query.FluentQuery.FetchableFluentQuery;
 
-import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.junit.jupiter.api.Assertions.assertAll;
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.fixtures.hash.model.Company;
+import com.redis.om.spring.fixtures.hash.model.MyHash;
+import com.redis.om.spring.fixtures.hash.repository.CompanyRepository;
+import com.redis.om.spring.fixtures.hash.repository.MyHashRepository;
+import com.redis.om.spring.search.stream.EntityStream;
 
 public class RedisHashQueryByExampleTest extends AbstractBaseEnhancedRedisTest {
   @Autowired
@@ -359,8 +360,8 @@ public class RedisHashQueryByExampleTest extends AbstractBaseEnhancedRedisTest {
     moreThanOneMatchTemplate.setTitle("llo");
     ExampleMatcher matcher = ExampleMatcher.matching().withStringMatcher(StringMatcher.CONTAINING);
 
-    assertThatExceptionOfType(IncorrectResultSizeDataAccessException.class).isThrownBy(
-        () -> repository.findBy(Example.of(moreThanOneMatchTemplate, matcher), FluentQuery.FetchableFluentQuery::one));
+    assertThatExceptionOfType(IncorrectResultSizeDataAccessException.class).isThrownBy(() -> repository.findBy(Example
+        .of(moreThanOneMatchTemplate, matcher), FluentQuery.FetchableFluentQuery::one));
   }
 
   @Test
@@ -397,15 +398,15 @@ public class RedisHashQueryByExampleTest extends AbstractBaseEnhancedRedisTest {
     MyHash template = new MyHash();
     template.setLocation(new Point(-122.066540, 37.377690));
 
-    Page<MyHash> firstPage = repository.findBy(Example.of(template),
-        it -> it.page(PageRequest.of(0, 2, Sort.by("name"))));
+    Page<MyHash> firstPage = repository.findBy(Example.of(template), it -> it.page(PageRequest.of(0, 2, Sort.by(
+        "name"))));
     assertThat(firstPage.getTotalElements()).isEqualTo(3);
     assertThat(firstPage.getContent().size()).isEqualTo(2);
-    assertThat(firstPage.getContent().stream().toList()).map(MyHash::getTitle)
-        .containsExactly("hello mundo", "ola mundo");
+    assertThat(firstPage.getContent().stream().toList()).map(MyHash::getTitle).containsExactly("hello mundo",
+        "ola mundo");
 
-    Page<MyHash> secondPage = repository.findBy(Example.of(template),
-        it -> it.page(PageRequest.of(1, 2, Sort.by("name"))));
+    Page<MyHash> secondPage = repository.findBy(Example.of(template), it -> it.page(PageRequest.of(1, 2, Sort.by(
+        "name"))));
 
     assertThat(secondPage.getTotalElements()).isEqualTo(3);
     assertThat(secondPage.getContent().size()).isEqualTo(1);
@@ -486,9 +487,8 @@ public class RedisHashQueryByExampleTest extends AbstractBaseEnhancedRedisTest {
     template1.setTag(Set.of("artigo")); // OR condition
 
     ExampleMatcher matcher1 = ExampleMatcher.matchingAny() // OR between these fields
-        .withMatcher("title", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase())
-        .withMatcher("tag", ExampleMatcher.GenericPropertyMatchers.exact())
-        .withIgnorePaths("id");
+        .withMatcher("title", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase()).withMatcher("tag",
+            ExampleMatcher.GenericPropertyMatchers.exact()).withIgnorePaths("id");
 
     Example<MyHash> example1 = Example.of(template1, matcher1);
 
@@ -502,10 +502,7 @@ public class RedisHashQueryByExampleTest extends AbstractBaseEnhancedRedisTest {
     Example<MyHash> example2 = Example.of(template2, matcher2);
 
     // Apply both examples (AND between the two, OR within each)
-    List<MyHash> results = entityStream.of(MyHash.class)
-        .filter(example1)
-        .filter(example2)
-        .collect(Collectors.toList());
+    List<MyHash> results = entityStream.of(MyHash.class).filter(example1).filter(example2).collect(Collectors.toList());
 
     // Verify results
     assertThat(results).hasSize(1);

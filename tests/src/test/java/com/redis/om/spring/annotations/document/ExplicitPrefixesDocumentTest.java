@@ -1,5 +1,15 @@
 package com.redis.om.spring.annotations.document;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.fixtures.document.model.*;
 import com.redis.om.spring.fixtures.document.repository.ColonInPrefixRepository;
@@ -7,15 +17,6 @@ import com.redis.om.spring.fixtures.document.repository.CountryRepository;
 import com.redis.om.spring.fixtures.document.repository.DocWithColonInPrefixRepository;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.SearchStream;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class ExplicitPrefixesDocumentTest extends AbstractBaseDocumentTest {
   @Autowired
@@ -51,9 +52,7 @@ public class ExplicitPrefixesDocumentTest extends AbstractBaseDocumentTest {
 
     colonInPrefixRepository.deleteAll();
     var colonInPrefixes = Set.of(//
-        ColonInPrefix.of("Numero1"),
-        ColonInPrefix.of("Numero2")
-    );
+        ColonInPrefix.of("Numero1"), ColonInPrefix.of("Numero2"));
     colonInPrefixRepository.saveAll(colonInPrefixes);
   }
 

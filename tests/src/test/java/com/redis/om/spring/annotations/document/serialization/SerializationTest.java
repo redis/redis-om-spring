@@ -1,5 +1,20 @@
 package com.redis.om.spring.annotations.document.serialization;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.*;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+import org.assertj.core.util.Arrays;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.geo.Point;
+import org.springframework.data.redis.serializer.JdkSerializationRedisSerializer;
+
 import com.github.f4b6a3.ulid.Ulid;
 import com.github.f4b6a3.ulid.UlidCreator;
 import com.google.gson.JsonObject;
@@ -8,22 +23,10 @@ import com.redis.om.spring.fixtures.document.model.KitchenSink;
 import com.redis.om.spring.fixtures.document.repository.KitchenSinkRepository;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
-import org.assertj.core.util.Arrays;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.geo.Point;
-import org.springframework.data.redis.serializer.JdkSerializationRedisSerializer;
 
-import java.time.*;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
-@SuppressWarnings("SpellCheckingInspection")
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class SerializationTest extends AbstractBaseDocumentTest {
   @Autowired
   KitchenSinkRepository repository;

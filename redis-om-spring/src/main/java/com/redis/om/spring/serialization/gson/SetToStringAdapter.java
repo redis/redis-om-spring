@@ -1,16 +1,18 @@
 package com.redis.om.spring.serialization.gson;
 
-import com.google.gson.TypeAdapter;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonToken;
-import com.google.gson.stream.JsonWriter;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@SuppressWarnings("rawtypes")
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
+import com.google.gson.stream.JsonWriter;
+
+@SuppressWarnings(
+  "rawtypes"
+)
 public class SetToStringAdapter extends TypeAdapter<Set<?>> {
 
   @Override

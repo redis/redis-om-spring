@@ -1,17 +1,18 @@
 package com.redis.om.spring.annotations.countmin;
 
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.fixtures.hash.model.SearchEvent;
-import com.redis.om.spring.fixtures.hash.repository.SearchEventRepository;
-import com.redis.om.spring.tuple.Tuples;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.List;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.fixtures.hash.model.SearchEvent;
+import com.redis.om.spring.fixtures.hash.repository.SearchEventRepository;
+import com.redis.om.spring.tuple.Tuples;
 
 class CountMinTest extends AbstractBaseEnhancedRedisTest {
 
@@ -20,11 +21,19 @@ class CountMinTest extends AbstractBaseEnhancedRedisTest {
 
   @BeforeEach
   void loadSearchEvents() {
-    SearchEvent event1 = SearchEvent.of("guy.royse@redis.com", "What's cache?", List.of("cache"), List.of(Tuples.of("What's", 1L), Tuples.of("cache", 1L)));
-    SearchEvent event2 = SearchEvent.of("guy.royse@redis.com", "What's new in Redis 8?", List.of("Redis"), List.of(Tuples.of("What's", 1L), Tuples.of("new", 1L), Tuples.of("in", 1L), Tuples.of("Redis", 1L), Tuples.of("8", 1L)));
-    SearchEvent event3 = SearchEvent.of("raphael.delio@redis.com", "Is Redis Search part of Redis 8?", List.of("Redis"), List.of(Tuples.of("Is", 1L), Tuples.of("Redis", 2L), Tuples.of("Search", 1L), Tuples.of("part", 1L), Tuples.of("of", 1L), Tuples.of("8", 1L)));
-    SearchEvent event4 = SearchEvent.of("kyle.banker@redis.com", "Is Redis the fastest vector database?", List.of("database"), List.of(Tuples.of("Is", 1L), Tuples.of("Redis", 1L), Tuples.of("the", 1L), Tuples.of("fastest", 1L), Tuples.of("vector", 1L), Tuples.of("database", 1L)));
-    SearchEvent event5 = SearchEvent.of("brian.sambodden@redis.com", "What's cache?", List.of("cache"), List.of(Tuples.of("What's", 1L), Tuples.of("cache", 1L)));
+    SearchEvent event1 = SearchEvent.of("guy.royse@redis.com", "What's cache?", List.of("cache"), List.of(Tuples.of(
+        "What's", 1L), Tuples.of("cache", 1L)));
+    SearchEvent event2 = SearchEvent.of("guy.royse@redis.com", "What's new in Redis 8?", List.of("Redis"), List.of(
+        Tuples.of("What's", 1L), Tuples.of("new", 1L), Tuples.of("in", 1L), Tuples.of("Redis", 1L), Tuples.of("8",
+            1L)));
+    SearchEvent event3 = SearchEvent.of("raphael.delio@redis.com", "Is Redis Search part of Redis 8?", List.of("Redis"),
+        List.of(Tuples.of("Is", 1L), Tuples.of("Redis", 2L), Tuples.of("Search", 1L), Tuples.of("part", 1L), Tuples.of(
+            "of", 1L), Tuples.of("8", 1L)));
+    SearchEvent event4 = SearchEvent.of("kyle.banker@redis.com", "Is Redis the fastest vector database?", List.of(
+        "database"), List.of(Tuples.of("Is", 1L), Tuples.of("Redis", 1L), Tuples.of("the", 1L), Tuples.of("fastest",
+            1L), Tuples.of("vector", 1L), Tuples.of("database", 1L)));
+    SearchEvent event5 = SearchEvent.of("brian.sambodden@redis.com", "What's cache?", List.of("cache"), List.of(Tuples
+        .of("What's", 1L), Tuples.of("cache", 1L)));
 
     List<SearchEvent> persons = List.of(event1, event2, event3, event4, event5);
 
@@ -33,7 +42,7 @@ class CountMinTest extends AbstractBaseEnhancedRedisTest {
 
   @AfterEach
   void clear() {
-      repository.deleteAll();
+    repository.deleteAll();
   }
 
   @Test

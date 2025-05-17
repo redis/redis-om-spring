@@ -1,5 +1,19 @@
 package com.redis.om.spring.search.stream;
 
+import java.time.Duration;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.function.*;
+import java.util.stream.*;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 import com.google.gson.Gson;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.metamodel.MetamodelField;
@@ -11,28 +25,18 @@ import com.redis.om.spring.tuple.Tuple;
 import com.redis.om.spring.tuple.Tuples;
 import com.redis.om.spring.util.ObjectUtils;
 import com.redis.om.spring.util.SearchResultRawResponseToObjectConverter;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+
 import redis.clients.jedis.search.Document;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 import redis.clients.jedis.util.SafeEncoder;
 
-import java.time.Duration;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.function.*;
-import java.util.stream.*;
-
 public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
 
-  @SuppressWarnings("unused")
+  @SuppressWarnings(
+    "unused"
+  )
   private static final Log logger = LogFactory.getLog(ReturnFieldsSearchStreamImpl.class);
 
   private final Gson gson;
@@ -112,7 +116,9 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     throw new UnsupportedOperationException("Filter on a field predicate is not supported on mapped stream");
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   @Override
   public SearchStream<T> filter(Predicate<?> predicate) {
     return new WrapperSearchStream<>(resolveStream().filter((Predicate<? super T>) predicate));
@@ -145,7 +151,9 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     throw new UnsupportedOperationException("filterIfPresent not supported on return fields search stream");
   }
 
-  @SuppressWarnings("resource")
+  @SuppressWarnings(
+    "resource"
+  )
   @Override
   public <R> SearchStream<R> map(Function<? super T, ? extends R> mapper) {
     return new WrapperSearchStream<>(resolveStream()).map(mapper);
@@ -171,25 +179,33 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     return resolveStream().mapToDouble(mapper);
   }
 
-  @SuppressWarnings("resource")
+  @SuppressWarnings(
+    "resource"
+  )
   @Override
   public <R> SearchStream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMap(mapper);
   }
 
-  @SuppressWarnings("resource")
+  @SuppressWarnings(
+    "resource"
+  )
   @Override
   public IntStream flatMapToInt(Function<? super T, ? extends IntStream> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMapToInt(mapper);
   }
 
-  @SuppressWarnings("resource")
+  @SuppressWarnings(
+    "resource"
+  )
   @Override
   public LongStream flatMapToLong(Function<? super T, ? extends LongStream> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMapToLong(mapper);
   }
 
-  @SuppressWarnings("resource")
+  @SuppressWarnings(
+    "resource"
+  )
   @Override
   public DoubleStream flatMapToDouble(Function<? super T, ? extends DoubleStream> mapper) {
     return new WrapperSearchStream<>(resolveStream()).flatMapToDouble(mapper);
@@ -310,7 +326,9 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     return resolveStream().findAny();
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   private Stream<T> resolveStream() {
     if (resolvedStream == null) {
       List<T> results;
@@ -321,19 +339,21 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
         if (!searchResult.getDocuments().isEmpty()) {
           String keySample = searchResult.getDocuments().get(0).getId();
           int idBegin = keySample.indexOf(":") + 1;
-          resolvedStream = (Stream<T>) searchResult.getDocuments().stream().map(Document::getId)
-              .map(key -> key.substring(idBegin));
+          resolvedStream = (Stream<T>) searchResult.getDocuments().stream().map(Document::getId).map(key -> key
+              .substring(idBegin));
         } else {
           resolvedStream = Stream.empty();
         }
       } else {
-        boolean returningFullEntity = (returning.stream()
-            .anyMatch(foi -> foi.getSearchAlias().equalsIgnoreCase("__this")));
+        boolean returningFullEntity = (returning.stream().anyMatch(foi -> foi.getSearchAlias().equalsIgnoreCase(
+            "__this")));
 
-        String[] returnFields = !returningFullEntity ? returning.stream() //
-            .map(foi -> ObjectUtils.isCollection(foi.getTargetClass()) ?
-                "$." + foi.getSearchAlias() :
-                foi.getSearchAlias()).toArray(String[]::new) : new String[] {};
+        String[] returnFields = !returningFullEntity ?
+            returning.stream() //
+                .map(foi -> ObjectUtils.isCollection(foi.getTargetClass()) ?
+                    "$." + foi.getSearchAlias() :
+                    foi.getSearchAlias()).toArray(String[]::new) :
+            new String[] {};
 
         boolean resultSetHasNonIndexedFields = returning.stream().anyMatch(foi -> !foi.isIndexed());
 
@@ -362,12 +382,14 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     return resolvedStream;
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   private List<T> toResultTuple(SearchResult searchResult, String[] returnFields) {
     List<T> results = new ArrayList<>();
     searchResult.getDocuments().forEach(doc -> {
-      Map<String, Object> props = StreamSupport.stream(doc.getProperties().spliterator(), false)
-          .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+      Map<String, Object> props = StreamSupport.stream(doc.getProperties().spliterator(), false).collect(Collectors
+          .toMap(Entry::getKey, Entry::getValue));
 
       List<Object> mappedResults = new ArrayList<>();
       returning.forEach(foi -> {
@@ -395,7 +417,9 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     return results;
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   private List<T> toResultTuple(List<E> entities, String[] returnFields) {
     List<T> results = new ArrayList<>();
 

@@ -1,12 +1,15 @@
 package com.redis.om.spring.annotations.document;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.fixtures.document.model.Company;
-import com.redis.om.spring.fixtures.document.model.CompanyMeta;
-import com.redis.om.spring.fixtures.document.model.MyDoc;
-import com.redis.om.spring.fixtures.document.repository.CompanyRepository;
-import com.redis.om.spring.fixtures.document.repository.MyDocRepository;
-import com.redis.om.spring.search.stream.EntityStream;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,15 +20,13 @@ import org.springframework.data.geo.Point;
 import org.springframework.data.repository.query.FluentQuery;
 import org.springframework.data.repository.query.FluentQuery.FetchableFluentQuery;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.junit.jupiter.api.Assertions.assertAll;
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.fixtures.document.model.Company;
+import com.redis.om.spring.fixtures.document.model.CompanyMeta;
+import com.redis.om.spring.fixtures.document.model.MyDoc;
+import com.redis.om.spring.fixtures.document.repository.CompanyRepository;
+import com.redis.om.spring.fixtures.document.repository.MyDocRepository;
+import com.redis.om.spring.search.stream.EntityStream;
 
 public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
   @Autowired
@@ -448,8 +449,8 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
     moreThanOneMatchTemplate.setTitle("llo");
     ExampleMatcher matcher = ExampleMatcher.matching().withStringMatcher(StringMatcher.CONTAINING);
 
-    assertThatExceptionOfType(IncorrectResultSizeDataAccessException.class).isThrownBy(
-        () -> repository.findBy(Example.of(moreThanOneMatchTemplate, matcher), FluentQuery.FetchableFluentQuery::one));
+    assertThatExceptionOfType(IncorrectResultSizeDataAccessException.class).isThrownBy(() -> repository.findBy(Example
+        .of(moreThanOneMatchTemplate, matcher), FluentQuery.FetchableFluentQuery::one));
   }
 
   @Test
@@ -486,15 +487,15 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
     MyDoc template = new MyDoc();
     template.setLocation(new Point(-122.066540, 37.377690));
 
-    Page<MyDoc> firstPage = repository.findBy(Example.of(template),
-        it -> it.page(PageRequest.of(0, 2, Sort.by("name"))));
+    Page<MyDoc> firstPage = repository.findBy(Example.of(template), it -> it.page(PageRequest.of(0, 2, Sort.by(
+        "name"))));
     assertThat(firstPage.getTotalElements()).isEqualTo(3);
     assertThat(firstPage.getContent().size()).isEqualTo(2);
-    assertThat(firstPage.getContent().stream().toList()).map(MyDoc::getTitle)
-        .containsExactly("hello mundo", "ola mundo");
+    assertThat(firstPage.getContent().stream().toList()).map(MyDoc::getTitle).containsExactly("hello mundo",
+        "ola mundo");
 
-    Page<MyDoc> secondPage = repository.findBy(Example.of(template),
-        it -> it.page(PageRequest.of(1, 2, Sort.by("name"))));
+    Page<MyDoc> secondPage = repository.findBy(Example.of(template), it -> it.page(PageRequest.of(1, 2, Sort.by(
+        "name"))));
 
     assertThat(secondPage.getTotalElements()).isEqualTo(3);
     assertThat(secondPage.getContent().size()).isEqualTo(1);
@@ -576,9 +577,8 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
     template1.setTag(Set.of("artigo")); // OR condition
 
     ExampleMatcher matcher1 = ExampleMatcher.matchingAny() // OR between these fields
-        .withMatcher("title", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase())
-        .withMatcher("tag", ExampleMatcher.GenericPropertyMatchers.exact())
-        .withIgnorePaths("id");
+        .withMatcher("title", ExampleMatcher.GenericPropertyMatchers.contains().ignoreCase()).withMatcher("tag",
+            ExampleMatcher.GenericPropertyMatchers.exact()).withIgnorePaths("id");
 
     Example<MyDoc> example1 = Example.of(template1, matcher1);
 
@@ -592,10 +592,7 @@ public class RedisDocumentQueryByExampleTest extends AbstractBaseDocumentTest {
     Example<MyDoc> example2 = Example.of(template2, matcher2);
 
     // Apply both examples (AND between the two, OR within each)
-    List<MyDoc> results = entityStream.of(MyDoc.class)
-        .filter(example1)
-        .filter(example2)
-        .collect(Collectors.toList());
+    List<MyDoc> results = entityStream.of(MyDoc.class).filter(example1).filter(example2).collect(Collectors.toList());
 
     // Verify results
     assertThat(results).hasSize(1);

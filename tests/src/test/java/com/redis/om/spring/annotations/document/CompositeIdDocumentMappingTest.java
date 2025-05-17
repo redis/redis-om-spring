@@ -1,20 +1,21 @@
 package com.redis.om.spring.annotations.document;
 
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.RedisJSONKeyValueAdapter;
-import com.redis.om.spring.fixtures.document.model.Account;
-import com.redis.om.spring.fixtures.document.repository.AccountRepository;
-import com.redis.om.spring.fixtures.hash.model.AccountId;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.List;
+import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Example;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.RedisJSONKeyValueAdapter;
+import com.redis.om.spring.fixtures.document.model.Account;
+import com.redis.om.spring.fixtures.document.repository.AccountRepository;
+import com.redis.om.spring.fixtures.hash.model.AccountId;
 
 class CompositeIdDocumentMappingTest extends AbstractBaseDocumentTest {
 
