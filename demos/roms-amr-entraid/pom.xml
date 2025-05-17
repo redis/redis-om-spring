@@ -28,7 +28,7 @@
         <maven.deploy.skip>true</maven.deploy.skip>
         <spring.version>3.4.5</spring.version>
         <lombok.version>1.18.36</lombok.version>
-        <redis-om-spring.version>1.0.0-RC1</redis-om-spring.version>
+        <redis-om-spring.version>1.0.0-RC.1</redis-om-spring.version>
         <jedis.version>5.2.0</jedis.version>
         <jackson-databind.version>2.17.3</jackson-databind.version>
     </properties>

@@ -25,7 +25,7 @@
     <maven.test.target>21</maven.test.target>
     <maven.deploy.skip>true</maven.deploy.skip>
     <testcontainers.redis.version>2.2.2</testcontainers.redis.version>
-    <redis-om-spring.version>1.0.0-RC1</redis-om-spring.version>
+    <redis-om-spring.version>1.0.0-RC.1</redis-om-spring.version>
   </properties>
 
   <dependencies>

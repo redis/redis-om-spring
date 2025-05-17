@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.redis.om</groupId>
     <artifactId>redis-om-spring-parent</artifactId>
-    <version>1.0.0-RC1</version>
+    <version>1.0.0-RC.1</version>
     <name>redis-om-spring-parent</name>
     <description>Redis OM Spring provides powerful repository and custom object-mapping abstractions built on top of the
         powerful Spring Data Redis (SDR) framework.
@@ -96,7 +96,7 @@
         <junit-bom.version>5.10.2</junit-bom.version>
         <spring-ai.version>1.0.0-M8</spring-ai.version>
         <azure-identity.version>1.15.4</azure-identity.version>
-        <redis-om-spring.version>1.0.0-RC1</redis-om-spring.version>
+        <redis-om-spring.version>1.0.0-RC.1</redis-om-spring.version>
     </properties>
 
     <build>

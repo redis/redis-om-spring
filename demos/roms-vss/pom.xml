@@ -28,8 +28,8 @@
     <spring-ai.version>1.0.0-M2</spring-ai.version>
     <djl.starter.version>0.26</djl.starter.version>
     <djl.version>0.27.0</djl.version>
-    <redis-om-spring.version>1.0.0-RC1</redis-om-spring.version>
-    <redis-om-spring-ai.version>1.0.0-RC1</redis-om-spring-ai.version>
+    <redis-om-spring.version>1.0.0-RC.1</redis-om-spring.version>
+    <redis-om-spring-ai.version>1.0.0-RC.1</redis-om-spring-ai.version>
   </properties>
 
   <dependencyManagement>
