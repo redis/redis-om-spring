@@ -1,16 +1,17 @@
 package com.redis.om.spring.annotations.cuckoo;
 
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.fixtures.hash.model.Person2;
-import com.redis.om.spring.fixtures.hash.repository.Person2Repository;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.fixtures.hash.model.Person2;
+import com.redis.om.spring.fixtures.hash.repository.Person2Repository;
 
 class CuckooTest extends AbstractBaseEnhancedRedisTest {
 

@@ -1,13 +1,20 @@
 package com.redis.om.spring.fixtures.hash.model;
 
-import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
 
+import lombok.*;
+
 @Data
-@RequiredArgsConstructor(staticName = "of")
-@NoArgsConstructor(force = true)
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@RequiredArgsConstructor(
+    staticName = "of"
+)
+@NoArgsConstructor(
+    force = true
+)
+@EqualsAndHashCode(
+    onlyExplicitlyIncluded = true
+)
 @RedisHash
 public class NonIndexedHash {
   @Id

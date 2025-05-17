@@ -1,14 +1,16 @@
 package com.redis.om.spring.search.stream.predicates.fulltext;
 
+import java.util.List;
+import java.util.StringJoiner;
+
+import org.apache.commons.lang3.ObjectUtils;
+
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.repository.query.QueryUtils;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
-import org.apache.commons.lang3.ObjectUtils;
+
 import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
-
-import java.util.List;
-import java.util.StringJoiner;
 
 public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 

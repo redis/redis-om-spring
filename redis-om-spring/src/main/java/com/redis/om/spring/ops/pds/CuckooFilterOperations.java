@@ -1,10 +1,10 @@
 package com.redis.om.spring.ops.pds;
 
-import redis.clients.jedis.bloom.CFInsertParams;
-import redis.clients.jedis.bloom.CFReserveParams;
-
 import java.util.List;
 import java.util.Map;
+
+import redis.clients.jedis.bloom.CFInsertParams;
+import redis.clients.jedis.bloom.CFReserveParams;
 
 public interface CuckooFilterOperations<K> {
   void createFilter(String key, long capacity);

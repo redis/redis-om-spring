@@ -1,9 +1,10 @@
 package com.redis.om.spring.repository;
 
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.fixtures.hash.model.HashProjectionPojo;
-import com.redis.om.spring.fixtures.hash.repository.HashProjection;
-import com.redis.om.spring.fixtures.hash.repository.HashProjectionRepository;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.Collection;
+import java.util.Optional;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,10 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.Collection;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.fixtures.hash.model.HashProjectionPojo;
+import com.redis.om.spring.fixtures.hash.repository.HashProjection;
+import com.redis.om.spring.fixtures.hash.repository.HashProjectionRepository;
 
 class HashProjectionTest extends AbstractBaseEnhancedRedisTest {
 

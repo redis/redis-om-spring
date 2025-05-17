@@ -1,13 +1,16 @@
 package com.redis.om.spring.fixtures.document.repository;
 
-import com.redis.om.spring.fixtures.document.model.Permit;
-import com.redis.om.spring.repository.RedisDocumentRepository;
+import java.util.Set;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.Set;
+import com.redis.om.spring.fixtures.document.model.Permit;
+import com.redis.om.spring.repository.RedisDocumentRepository;
 
-@SuppressWarnings({ "unused", "SpellCheckingInspection", "SpringDataMethodInconsistencyInspection" })
+@SuppressWarnings(
+  { "unused", "SpellCheckingInspection", "SpringDataMethodInconsistencyInspection" }
+)
 public interface PermitRepository extends RedisDocumentRepository<Permit, String> {
 
   // Numeric range queries:

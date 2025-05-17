@@ -1,13 +1,16 @@
 package com.redis.om.spring.fixtures.document.repository;
 
-import com.redis.om.spring.fixtures.document.model.DocWithSets;
-import com.redis.om.spring.repository.RedisDocumentRepository;
+import java.util.Set;
+
 import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 
-import java.util.Set;
+import com.redis.om.spring.fixtures.document.model.DocWithSets;
+import com.redis.om.spring.repository.RedisDocumentRepository;
 
-@SuppressWarnings("ALL")
+@SuppressWarnings(
+  "ALL"
+)
 public interface DocWithSetsRepository extends RedisDocumentRepository<DocWithSets, String> {
   Iterable<DocWithSets> findByTheNumbersContaining(Set<Integer> ints);
 

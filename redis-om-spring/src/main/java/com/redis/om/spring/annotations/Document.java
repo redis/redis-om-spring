@@ -1,20 +1,28 @@
 package com.redis.om.spring.annotations;
 
-import com.redis.om.spring.repository.query.SearchLanguage;
+import java.lang.annotation.*;
+
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.data.annotation.Persistent;
 import org.springframework.data.keyvalue.annotation.KeySpace;
 
-import java.lang.annotation.*;
+import com.redis.om.spring.repository.query.SearchLanguage;
 
 @Persistent
 @Inherited
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.TYPE })
+@Retention(
+  RetentionPolicy.RUNTIME
+)
+@Target(
+  { ElementType.TYPE }
+)
 @KeySpace
 public @interface Document {
 
-  @AliasFor(annotation = KeySpace.class, attribute = "value") String value() default "";
+  @AliasFor(
+      annotation = KeySpace.class, attribute = "value"
+  )
+  String value() default "";
 
   String indexName() default "";
 

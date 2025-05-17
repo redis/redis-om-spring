@@ -1,16 +1,7 @@
 package com.redis.om.spring.search.stream;
 
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Sets;
-import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.fixtures.document.model.*;
-import com.redis.om.spring.fixtures.document.repository.CompanyRepository;
-import com.redis.om.spring.fixtures.document.repository.UserRepository;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.geo.Point;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -19,10 +10,22 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.*;
 import java.util.stream.*;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.geo.Point;
 
-@SuppressWarnings("SpellCheckingInspection")
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Sets;
+import com.redis.om.spring.AbstractBaseDocumentTest;
+import com.redis.om.spring.fixtures.document.model.*;
+import com.redis.om.spring.fixtures.document.repository.CompanyRepository;
+import com.redis.om.spring.fixtures.document.repository.UserRepository;
+
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
   @Autowired
   CompanyRepository repository;
@@ -38,29 +41,28 @@ class WrapperSearchStreamTest extends AbstractBaseDocumentTest {
     // companies
     repository.deleteAll();
 
-    Company redis = repository.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company redis = repository.save(Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540,
+        37.377690), "stack@redis.com"));
     redis.setTags(Set.of("fast", "scalable", "reliable", "database", "nosql"));
 
-    Set<Employee> employees = Sets.newHashSet(Employee.of("Brian Sam-Bodden"), Employee.of("Guy Royse"),
-        Employee.of("Justin Castilla"));
+    Set<Employee> employees = Sets.newHashSet(Employee.of("Brian Sam-Bodden"), Employee.of("Guy Royse"), Employee.of(
+        "Justin Castilla"));
     redis.setEmployees(employees);
 
-    Company microsoft = repository.save(
-        Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500, 47.640160),
-            "research@microsoft.com"));
+    Company microsoft = repository.save(Company.of("Microsoft", 1975, LocalDate.of(2022, 8, 15), new Point(-122.124500,
+        47.640160), "research@microsoft.com"));
     microsoft.setTags(Set.of("innovative", "reliable", "os", "ai"));
 
-    Company tesla = repository.save(
-        Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903, 30.2210767), "elon@tesla.com"));
+    Company tesla = repository.save(Company.of("Tesla", 2003, LocalDate.of(2022, 1, 1), new Point(-97.6208903,
+        30.2210767), "elon@tesla.com"));
     tesla.setTags(Set.of("innovative", "futuristic", "ai"));
 
     repository.saveAll(List.of(redis, microsoft, tesla));
 
     // users
     userRepository.deleteAll();
-    List<User> users = List.of(User.of("Steve Lorello", .9999), User.of("Nava Levy", 1234.5678),
-        User.of("Savannah Norem", 999.99), User.of("Suze Shardlow", 899.0));
+    List<User> users = List.of(User.of("Steve Lorello", .9999), User.of("Nava Levy", 1234.5678), User.of(
+        "Savannah Norem", 999.99), User.of("Suze Shardlow", 899.0));
     for (User user : users) {
       user.setRoles(List.of("devrel", "educator", "guru"));
     }

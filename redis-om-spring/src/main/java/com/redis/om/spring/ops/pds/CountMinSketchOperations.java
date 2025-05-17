@@ -67,7 +67,9 @@ public interface CountMinSketchOperations<K> {
    * @param destKey The name of destination sketch. Must be initialized.
    * @param keys    The sketches to be merged
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   void cmsMerge(K destKey, K... keys);
 
   /**

@@ -1,5 +1,18 @@
 package com.redis.om.spring.search.stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.withPrecision;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
 import com.redis.om.spring.fixtures.hash.model.HashWithByteArrayFlatVector;
 import com.redis.om.spring.fixtures.hash.model.HashWithByteArrayFlatVector$;
@@ -10,20 +23,10 @@ import com.redis.om.spring.fixtures.hash.repository.HashWithByteArrayHNSWVectorR
 import com.redis.om.spring.tuple.Fields;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.util.ObjectUtils;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.withPrecision;
-import static org.junit.jupiter.api.Assertions.assertAll;
-
-@SuppressWarnings("SpellCheckingInspection")
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class EntityStreamsHashVSSTests extends AbstractBaseEnhancedRedisTest {
   @Autowired
   HashWithByteArrayHNSWVectorRepository hnswRepository;
@@ -47,10 +50,10 @@ class EntityStreamsHashVSSTests extends AbstractBaseEnhancedRedisTest {
         float[] vec = new float[dimension];
         float val = (float) i / (dimension + i);
         Arrays.fill(vec, val);
-        hashWithByteArrayHNSWVectors.add(
-            HashWithByteArrayHNSWVector.of("doc:" + i, ObjectUtils.floatArrayToByteArray(vec), i));
-        hashWithByteArrayFlatVectors.add(
-            HashWithByteArrayFlatVector.of("doc:" + i, ObjectUtils.floatArrayToByteArray(vec), i));
+        hashWithByteArrayHNSWVectors.add(HashWithByteArrayHNSWVector.of("doc:" + i, ObjectUtils.floatArrayToByteArray(
+            vec), i));
+        hashWithByteArrayFlatVectors.add(HashWithByteArrayFlatVector.of("doc:" + i, ObjectUtils.floatArrayToByteArray(
+            vec), i));
       }
       hnswRepository.saveAll(hashWithByteArrayHNSWVectors);
       flatRepository.saveAll(hashWithByteArrayFlatVectors);
@@ -76,8 +79,8 @@ class EntityStreamsHashVSSTests extends AbstractBaseEnhancedRedisTest {
         .filter(HashWithByteArrayHNSWVector$.VECTOR.knn(K, ObjectUtils.floatArrayToByteArray(e))) //
         .sorted(HashWithByteArrayHNSWVector$._VECTOR_SCORE).limit(K).collect(Collectors.toList());
 
-    assertThat(results).hasSize(4).map(HashWithByteArrayHNSWVector::getId)
-        .containsExactly("doc:0", "doc:1", "doc:2", "doc:3");
+    assertThat(results).hasSize(4).map(HashWithByteArrayHNSWVector::getId).containsExactly("doc:0", "doc:1", "doc:2",
+        "doc:3");
   }
 
   /**
@@ -164,8 +167,8 @@ class EntityStreamsHashVSSTests extends AbstractBaseEnhancedRedisTest {
         .filter(HashWithByteArrayFlatVector$.VECTOR.knn(K, ObjectUtils.floatArrayToByteArray(e))) //
         .sorted(HashWithByteArrayFlatVector$._VECTOR_SCORE).limit(K).collect(Collectors.toList());
 
-    assertThat(results).hasSize(5).map(HashWithByteArrayFlatVector::getId)
-        .containsExactly("doc:0", "doc:1", "doc:2", "doc:3", "doc:4");
+    assertThat(results).hasSize(5).map(HashWithByteArrayFlatVector::getId).containsExactly("doc:0", "doc:1", "doc:2",
+        "doc:3", "doc:4");
   }
 
 }

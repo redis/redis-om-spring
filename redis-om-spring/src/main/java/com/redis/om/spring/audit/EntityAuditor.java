@@ -1,17 +1,17 @@
 package com.redis.om.spring.audit;
 
+import java.lang.reflect.Field;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.List;
+
 import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisOperations;
-
-import java.lang.reflect.Field;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.List;
 
 public class EntityAuditor {
   private final RedisOperations<?, ?> redisOperations;
@@ -21,8 +21,8 @@ public class EntityAuditor {
   }
 
   public void processEntity(byte[] redisKey, Object item) {
-    boolean isNew = (boolean) redisOperations.execute(
-        (RedisCallback<Object>) connection -> !connection.keyCommands().exists(redisKey));
+    boolean isNew = (boolean) redisOperations.execute((RedisCallback<Object>) connection -> !connection.keyCommands()
+        .exists(redisKey));
     processEntity(item, isNew);
   }
 

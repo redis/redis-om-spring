@@ -1,9 +1,10 @@
 package com.redis.om.spring.search.stream.actions;
 
-import com.redis.om.spring.metamodel.SearchFieldAccessor;
-import redis.clients.jedis.json.Path2;
-
 import java.util.function.ToLongFunction;
+
+import com.redis.om.spring.metamodel.SearchFieldAccessor;
+
+import redis.clients.jedis.json.Path2;
 
 public class ArrayIndexOfAction<E> extends BaseAbstractAction implements ToLongFunction<E> {
 

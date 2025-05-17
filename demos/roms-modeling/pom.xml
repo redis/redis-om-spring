@@ -28,7 +28,7 @@
         <maven.deploy.skip>true</maven.deploy.skip>
         <spring.version>3.4.1</spring.version>
         <lombok.version>1.18.36</lombok.version>
-        <redis-om-spring.version>1.0.0-RC1</redis-om-spring.version>
+        <redis-om-spring.version>1.0.0-RC.1</redis-om-spring.version>
         <jedis.version>5.2.0</jedis.version>
         <jackson-databind.version>2.17.3</jackson-databind.version>
         <javafaker.version>1.0.2</javafaker.version>
@@ -36,7 +36,7 @@
         <testcontainers-junit-jupiter.version>1.20.4</testcontainers-junit-jupiter.version>
         <testcontainers-redis.version>2.2.4</testcontainers-redis.version>
         <mockito-core.version>5.14.2</mockito-core.version>
-        <redis-om-spring.version>1.0.0-RC1</redis-om-spring.version>
+        <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -199,6 +199,7 @@
                         <path>
                             <groupId>org.springframework.boot</groupId>
                             <artifactId>spring-boot-configuration-processor</artifactId>
+                            <version>3.4.5</version>
                         </path>
                         <path>
                             <groupId>org.projectlombok</groupId>

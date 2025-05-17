@@ -1,14 +1,20 @@
 package com.redis.om.spring.fixtures.hash.model;
 
-import com.redis.om.spring.annotations.Indexed;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
 
+import com.redis.om.spring.annotations.Indexed;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
 @Data
-@RedisHash("hfroots")
-@AllArgsConstructor(staticName = "of")
+@RedisHash(
+  "hfroots"
+)
+@AllArgsConstructor(
+    staticName = "of"
+)
 public class Fruit {
 
   @Id

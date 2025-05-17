@@ -1,18 +1,19 @@
 package com.redis.om.spring.repository.query.countmin;
 
-import com.redis.om.spring.annotations.CountMin;
-import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.om.spring.ops.pds.CountMinSketchOperations;
-import com.redis.om.spring.util.ObjectUtils;
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.stream.StreamSupport;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.data.repository.query.RepositoryQuery;
 import org.springframework.util.ReflectionUtils;
 
-import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.stream.StreamSupport;
+import com.redis.om.spring.annotations.CountMin;
+import com.redis.om.spring.ops.RedisModulesOperations;
+import com.redis.om.spring.ops.pds.CountMinSketchOperations;
+import com.redis.om.spring.util.ObjectUtils;
 
 public class CountMinQueryExecutor {
 
@@ -46,7 +47,7 @@ public class CountMinQueryExecutor {
         if (field.isAnnotationPresent(CountMin.class)) {
           CountMin countMin = field.getAnnotation(CountMin.class);
           return Optional.of(!org.apache.commons.lang3.ObjectUtils.isEmpty(countMin.name()) ?
-                  countMin.name() :
+              countMin.name() :
               String.format("cms:%s:%s", entityClass.getSimpleName(), field.getName()));
         }
       } catch (SecurityException e) {
@@ -60,10 +61,7 @@ public class CountMinQueryExecutor {
     logger.debug(String.format("filter:%s, params:%s", countMinSketch, Arrays.toString(parameters)));
     CountMinSketchOperations<String> ops = modulesOperations.opsForCountMinSketch();
     if (parameters[0] instanceof Iterable<?> iterable) {
-      String[] array = StreamSupport
-              .stream(iterable.spliterator(), false)
-              .map(Object::toString)
-              .toArray(String[]::new);
+      String[] array = StreamSupport.stream(iterable.spliterator(), false).map(Object::toString).toArray(String[]::new);
       return ops.cmsQuery(countMinSketch, array);
     }
     return ops.cmsQuery(countMinSketch, parameters[0].toString()).get(0);

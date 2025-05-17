@@ -1,16 +1,17 @@
 package com.redis.om.spring.annotations.hash;
 
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.fixtures.hash.model.Fruit;
-import com.redis.om.spring.fixtures.hash.repository.FruitRepository;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.fixtures.hash.model.Fruit;
+import com.redis.om.spring.fixtures.hash.repository.FruitRepository;
 
 class RepositoryDeleteTest extends AbstractBaseEnhancedRedisTest {
 

@@ -1,9 +1,9 @@
 package com.redis.om.spring.tuple;
 
+import java.util.function.Function;
+
 import com.redis.om.spring.tuple.impl.*;
 import com.redis.om.spring.tuple.impl.mapper.*;
-
-import java.util.function.Function;
 
 public final class Tuples {
 
@@ -243,32 +243,27 @@ public final class Tuples {
       case 12 -> of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11]);
       case 13 -> of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11],
           el[12]);
-      case 14 ->
-          of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12],
-              el[13]);
-      case 15 ->
-          of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12],
-              el[13], el[14]);
-      case 16 ->
-          of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12],
-              el[13], el[14], el[15]);
-      case 17 ->
-          of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12],
-              el[13], el[14], el[15], el[16]);
-      case 18 ->
-          of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12],
-              el[13], el[14], el[15], el[16], el[17]);
-      case 19 ->
-          of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12],
-              el[13], el[14], el[15], el[16], el[17], el[18]);
-      case 20 ->
-          of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11], el[12],
-              el[13], el[14], el[15], el[16], el[17], el[18], el[19]);
+      case 14 -> of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11],
+          el[12], el[13]);
+      case 15 -> of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11],
+          el[12], el[13], el[14]);
+      case 16 -> of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11],
+          el[12], el[13], el[14], el[15]);
+      case 17 -> of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11],
+          el[12], el[13], el[14], el[15], el[16]);
+      case 18 -> of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11],
+          el[12], el[13], el[14], el[15], el[16], el[17]);
+      case 19 -> of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11],
+          el[12], el[13], el[14], el[15], el[16], el[17], el[18]);
+      case 20 -> of(returnFields, el[0], el[1], el[2], el[3], el[4], el[5], el[6], el[7], el[8], el[9], el[10], el[11],
+          el[12], el[13], el[14], el[15], el[16], el[17], el[18], el[19]);
       default -> new TupleInfiniteDegreeImpl(el);
     };
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   public static <T> Function<T, EmptyTuple> toTuple() {
     return (Function<T, EmptyTuple>) EmptyTupleMapperImpl.EMPTY_MAPPER;
   }

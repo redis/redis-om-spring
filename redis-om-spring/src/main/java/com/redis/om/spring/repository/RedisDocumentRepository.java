@@ -1,16 +1,18 @@
 package com.redis.om.spring.repository;
 
-import com.redis.om.spring.metamodel.MetamodelField;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.keyvalue.repository.KeyValueRepository;
 import org.springframework.data.repository.NoRepositoryBean;
 import org.springframework.data.repository.query.QueryByExampleExecutor;
-import redis.clients.jedis.json.Path2;
 
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
+import com.redis.om.spring.metamodel.MetamodelField;
+
+import redis.clients.jedis.json.Path2;
 
 @NoRepositoryBean
 public interface RedisDocumentRepository<T, ID> extends KeyValueRepository<T, ID>, QueryByExampleExecutor<T> {

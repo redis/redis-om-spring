@@ -1,15 +1,16 @@
 package com.redis.om.spring.search.stream.predicates.tag;
 
-import com.redis.om.spring.metamodel.SearchFieldAccessor;
-import com.redis.om.spring.repository.query.QueryUtils;
-import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
-import redis.clients.jedis.search.querybuilder.Node;
-import redis.clients.jedis.search.querybuilder.QueryBuilders;
-import redis.clients.jedis.search.querybuilder.QueryNode;
+import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 
 import java.util.List;
 
-import static org.apache.commons.lang3.ObjectUtils.isEmpty;
+import com.redis.om.spring.metamodel.SearchFieldAccessor;
+import com.redis.om.spring.repository.query.QueryUtils;
+import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
+
+import redis.clients.jedis.search.querybuilder.Node;
+import redis.clients.jedis.search.querybuilder.QueryBuilders;
+import redis.clients.jedis.search.querybuilder.QueryNode;
 
 public class ContainsAllPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 

@@ -1,12 +1,5 @@
 package com.redis.om.spring.fixtures.hash.model;
 
-import com.github.f4b6a3.ulid.Ulid;
-import com.redis.om.spring.annotations.Indexed;
-import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.geo.Point;
-import org.springframework.data.redis.core.RedisHash;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -15,12 +8,27 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.geo.Point;
+import org.springframework.data.redis.core.RedisHash;
+
+import com.github.f4b6a3.ulid.Ulid;
+import com.redis.om.spring.annotations.Indexed;
+
+import lombok.*;
+
 @Data
 @Builder
-@RequiredArgsConstructor(staticName = "of")
-@NoArgsConstructor(force = true)
+@RequiredArgsConstructor(
+    staticName = "of"
+)
+@NoArgsConstructor(
+    force = true
+)
 @AllArgsConstructor
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(
+    onlyExplicitlyIncluded = true
+)
 @RedisHash
 public class KitchenSink {
   @Id

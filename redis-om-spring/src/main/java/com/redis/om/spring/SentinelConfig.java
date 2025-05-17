@@ -1,5 +1,11 @@
 package com.redis.om.spring;
 
+import static org.springframework.util.StringUtils.commaDelimitedListToSet;
+
+import java.time.Duration;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -8,13 +14,8 @@ import org.springframework.data.redis.connection.RedisSentinelConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
+
 import redis.clients.jedis.JedisPoolConfig;
-
-import java.time.Duration;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.springframework.util.StringUtils.commaDelimitedListToSet;
 
 public class SentinelConfig {
   @Bean
@@ -36,9 +37,8 @@ public class SentinelConfig {
 
     final int timeout = 10000;
 
-    final JedisClientConfiguration jedisClientConfiguration = JedisClientConfiguration.builder()
-        .connectTimeout(Duration.ofMillis(timeout)).readTimeout(Duration.ofMillis(timeout)).usePooling()
-        .poolConfig(poolConfig).build();
+    final JedisClientConfiguration jedisClientConfiguration = JedisClientConfiguration.builder().connectTimeout(Duration
+        .ofMillis(timeout)).readTimeout(Duration.ofMillis(timeout)).usePooling().poolConfig(poolConfig).build();
 
     return new JedisConnectionFactory(sentinelConfig, jedisClientConfiguration);
   }

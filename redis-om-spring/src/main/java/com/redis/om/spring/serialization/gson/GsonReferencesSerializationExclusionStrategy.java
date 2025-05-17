@@ -1,8 +1,9 @@
 package com.redis.om.spring.serialization.gson;
 
+import org.springframework.data.annotation.Reference;
+
 import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
-import org.springframework.data.annotation.Reference;
 
 public final class GsonReferencesSerializationExclusionStrategy implements ExclusionStrategy {
 

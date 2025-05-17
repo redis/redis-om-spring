@@ -1,15 +1,16 @@
 package com.redis.om.spring.annotations.hash;
 
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.fixtures.hash.model.Hash4;
-import com.redis.om.spring.fixtures.hash.repository.Hash4Repository;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.fixtures.hash.model.Hash4;
+import com.redis.om.spring.fixtures.hash.repository.Hash4Repository;
 
 public class RedisHashRepositoryAdvancedTest extends AbstractBaseEnhancedRedisTest {
   @Autowired

@@ -1,17 +1,21 @@
 package com.redis.om.spring.fixtures.document.model;
 
+import java.time.LocalDateTime;
+
+import org.springframework.data.annotation.Id;
+
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.Searchable;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import org.springframework.data.annotation.Id;
-
-import java.time.LocalDateTime;
 
 @Data
-@NoArgsConstructor(force = true)
+@NoArgsConstructor(
+    force = true
+)
 @Document
 public class SomeDocument {
   @NonNull
@@ -22,7 +26,9 @@ public class SomeDocument {
   @Indexed
   private String name;
 
-  @Indexed(sortable = true)
+  @Indexed(
+      sortable = true
+  )
   private LocalDateTime documentCreationDate;
   @Searchable
   private String description;
@@ -58,7 +64,9 @@ public class SomeDocument {
     return result;
   }
 
-  @SuppressWarnings("unused")
+  @SuppressWarnings(
+    "unused"
+  )
   public enum Format {
     pdf,
     word,
@@ -67,7 +75,9 @@ public class SomeDocument {
     jpeg
   }
 
-  @SuppressWarnings("unused")
+  @SuppressWarnings(
+    "unused"
+  )
   public enum Source {
     sourceA,
     sourceB

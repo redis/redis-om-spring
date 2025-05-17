@@ -1,10 +1,11 @@
 package com.redis.om.spring.fixtures.hash.autodiscovery;
 
-import com.redis.om.spring.AbstractBaseOMTest;
-import com.redis.om.spring.TestConfig;
-import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
-import com.redis.om.spring.fixtures.hash.model.Company;
-import com.redis.om.spring.fixtures.hash.repository.CompanyRepository;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.time.LocalDate;
+import java.util.Optional;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -13,25 +14,28 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.geo.Point;
 import org.springframework.test.context.TestPropertySource;
 
-import java.time.LocalDate;
-import java.util.Optional;
+import com.redis.om.spring.AbstractBaseOMTest;
+import com.redis.om.spring.TestConfig;
+import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
+import com.redis.om.spring.fixtures.hash.model.Company;
+import com.redis.om.spring.fixtures.hash.repository.CompanyRepository;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-@SpringBootTest( //
-                 classes = HashRepositoryBasePackageClassesTest.Config.class, //
-                 properties = { "spring.main.allow-bean-definition-overriding=true" } //
-                 )
-@TestPropertySource(properties = { "spring.config.location=classpath:vss_on.yaml" })
+@SpringBootTest(
+    //
+    classes = HashRepositoryBasePackageClassesTest.Config.class, //
+    properties = { "spring.main.allow-bean-definition-overriding=true" } //
+)
+@TestPropertySource(
+    properties = { "spring.config.location=classpath:vss_on.yaml" }
+)
 class HashRepositoryBasePackageClassesTest extends AbstractBaseOMTest {
   @Autowired
   CompanyRepository repository;
 
   @Test
   void testBasePackageClassesAreFound() {
-    Company redis = repository.save(
-        Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540, 37.377690), "stack@redis.com"));
+    Company redis = repository.save(Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), new Point(-122.066540,
+        37.377690), "stack@redis.com"));
 
     assertEquals(1, repository.count());
 
@@ -47,7 +51,9 @@ class HashRepositoryBasePackageClassesTest extends AbstractBaseOMTest {
 
   @SpringBootApplication
   @Configuration
-  @EnableRedisEnhancedRepositories(basePackageClasses = { Company.class, CompanyRepository.class })
+  @EnableRedisEnhancedRepositories(
+      basePackageClasses = { Company.class, CompanyRepository.class }
+  )
   static class Config extends TestConfig {
   }
 

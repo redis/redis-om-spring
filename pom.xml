@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.redis.om</groupId>
     <artifactId>redis-om-spring-parent</artifactId>
-    <version>1.0.0-RC1</version>
+    <version>1.0.0-RC.1</version>
     <name>redis-om-spring-parent</name>
     <description>Redis OM Spring provides powerful repository and custom object-mapping abstractions built on top of the
         powerful Spring Data Redis (SDR) framework.
@@ -74,7 +74,6 @@
         <maven.test.target>21</maven.test.target>
         <java.version>21</java.version>
         <spotless.version>2.44.4</spotless.version>
-        <jreleaser.version>1.10.0</jreleaser.version>
         <main.basedir>${project.basedir}</main.basedir>
         <spring.version>3.4.5</spring.version>
         <sdr.version>3.4.5</sdr.version>
@@ -97,77 +96,68 @@
         <junit-bom.version>5.10.2</junit-bom.version>
         <spring-ai.version>1.0.0-M8</spring-ai.version>
         <azure-identity.version>1.15.4</azure-identity.version>
-        <redis-om-spring.version>1.0.0-RC1</redis-om-spring.version>
+        <redis-om-spring.version>1.0.0-RC.1</redis-om-spring.version>
     </properties>
 
-  <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>com.diffplug.spotless</groupId>
-          <artifactId>spotless-maven-plugin</artifactId>
-          <version>${spotless.version}</version>
-          <configuration>
-            <java>
-              <!-- Use Eclipse formatter with custom config -->
-              <eclipse>
-                <file>${main.basedir}/.spotless/roms-style.xml</file>
-              </eclipse>
-              <removeUnusedImports />
-              <importOrder>
-                <order>java,javax,org,com,</order>
-              </importOrder>
-            </java>
-            <lineEndings>UNIX</lineEndings>
-            <encoding>UTF-8</encoding>
-          </configuration>
-        </plugin>
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>com.diffplug.spotless</groupId>
+                    <artifactId>spotless-maven-plugin</artifactId>
+                    <version>${spotless.version}</version>
+                    <configuration>
+                        <java>
+                            <!-- Use Eclipse formatter with custom config -->
+                            <eclipse>
+                                <file>${project.basedir}/.spotless/roms-style.xml</file>
+                            </eclipse>
+                            <removeUnusedImports/>
+                            <importOrder>
+                                <order>java,javax,org,com,</order>
+                            </importOrder>
+                        </java>
+                        <lineEndings>UNIX</lineEndings>
+                        <encoding>UTF-8</encoding>
+                    </configuration>
+                </plugin>
 
-        <!-- Configure Maven Deploy Plugin -->
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-deploy-plugin</artifactId>
-          <version>3.1.2</version>
-        </plugin>
+                <!-- Configure Maven Deploy Plugin -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>3.1.2</version>
+                </plugin>
+                
+                <!-- Configure JReleaser Plugin -->
+                <plugin>
+                    <groupId>org.jreleaser</groupId>
+                    <artifactId>jreleaser-maven-plugin</artifactId>
+                    <version>1.18.0</version>
+                    <configuration>
+                        <configFile>${main.basedir}/jreleaser.yml</configFile>
+                        <outputDirectory>${project.build.directory}/jreleaser</outputDirectory>
+                        <gitRootSearch>false</gitRootSearch>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
 
-        <!-- Add JReleaser plugin -->
-        <plugin>
-          <groupId>org.jreleaser</groupId>
-          <artifactId>jreleaser-maven-plugin</artifactId>
-          <version>${jreleaser.version}</version>
-          <configuration>
-            <jreleaser>
-              <signing>
-                <active>ALWAYS</active>
-                <armored>true</armored>
-              </signing>
-              <deploy>
-                <maven>
-                  <mavenCentral>
-                    <redis>
-                      <active>RELEASE</active>
-                      <url>https://central.sonatype.com/api/v1/publisher</url>
-                      <applyMavenCentralRules>true</applyMavenCentralRules>
-                      <stagingRepositories>
-                        <stagingRepository>target/staging-deploy</stagingRepository>
-                      </stagingRepositories>
-                    </redis>
-                  </mavenCentral>
-                </maven>
-              </deploy>
-            </jreleaser>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
-
-    <plugins>
-      <plugin>
-        <groupId>com.diffplug.spotless</groupId>
-        <artifactId>spotless-maven-plugin</artifactId>
-      </plugin>
-    </plugins>
-  </build>
+        <plugins>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.jreleaser</groupId>
+                <artifactId>jreleaser-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 
     <modules>
         <!-- Main Project -->
@@ -187,6 +177,10 @@
 
     <repositories>
         <repository>
+            <id>maven-central</id>
+            <url>https://repo.maven.apache.org/maven2/</url>
+        </repository>
+        <repository>
             <id>spring-milestones</id>
             <name>Spring Milestones</name>
             <url>https://repo.spring.io/milestone</url>
@@ -202,11 +196,14 @@
                 <enabled>false</enabled>
             </releases>
         </repository>
-        <repository>
+    </repositories>
+    
+    <pluginRepositories>
+        <pluginRepository>
             <id>maven-central</id>
             <url>https://repo.maven.apache.org/maven2/</url>
-        </repository>
-    </repositories>
+        </pluginRepository>
+    </pluginRepositories>
 
     <dependencyManagement>
         <dependencies>
@@ -236,9 +233,39 @@
             <build>
                 <defaultGoal>deploy</defaultGoal>
                 <plugins>
+                    <!-- Flatten plugin to remove repositories sections from POMs -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>flatten-maven-plugin</artifactId>
+                        <version>1.6.0</version>
+                        <configuration>
+                            <updatePomFile>true</updatePomFile>
+                            <flattenMode>oss</flattenMode>
+                            <pomElements>
+                                <repositories>remove</repositories>
+                            </pomElements>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>flatten</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>flatten</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>flatten.clean</id>
+                                <phase>clean</phase>
+                                <goals>
+                                    <goal>clean</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.6.3</version>
                         <configuration>
                             <failOnError>false</failOnError>
                         </configuration>
@@ -257,6 +284,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
+                        <version>3.3.1</version>
                         <executions>
                             <execution>
                                 <id>attach-sources</id>
@@ -272,5 +300,28 @@
                 </plugins>
             </build>
         </profile>
+        
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jreleaser</groupId>
+                        <artifactId>jreleaser-maven-plugin</artifactId>
+                        <version>1.18.0</version>
+                        <inherited>false</inherited>
+                        <configuration>
+                            <configFile>${main.basedir}/jreleaser.yml</configFile>
+                            <outputDirectory>${project.build.directory}/jreleaser</outputDirectory>
+                            <gitRootSearch>false</gitRootSearch>
+                            <github>
+                                <token>${env.JRELEASER_GITHUB_TOKEN}</token>
+                            </github>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
+
 </project>

@@ -1,22 +1,25 @@
 package com.redis.om.spring.annotations.hash;
 
-import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
-import com.redis.om.spring.fixtures.hash.model.HashWithHashTagId;
-import com.redis.om.spring.fixtures.hash.model.HashWithHashTagId$;
-import com.redis.om.spring.fixtures.hash.repository.HashWithHashTagIdRepository;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 
-@SuppressWarnings("SpellCheckingInspection")
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.fixtures.hash.model.HashWithHashTagId;
+import com.redis.om.spring.fixtures.hash.model.HashWithHashTagId$;
+import com.redis.om.spring.fixtures.hash.repository.HashWithHashTagIdRepository;
+
+@SuppressWarnings(
+  "SpellCheckingInspection"
+)
 class RedisHashWithIdFilterTest extends AbstractBaseEnhancedRedisTest {
   @Autowired
   HashWithHashTagIdRepository repository;

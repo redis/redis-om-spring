@@ -1,5 +1,15 @@
 package com.redis.om.spring.annotations.hash;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
 import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
 import com.redis.om.spring.fixtures.hash.model.Country;
 import com.redis.om.spring.fixtures.hash.model.Country$;
@@ -9,15 +19,6 @@ import com.redis.om.spring.fixtures.hash.repository.CountryRepository;
 import com.redis.om.spring.fixtures.hash.repository.HashWithColonInPrefixRepository;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.SearchStream;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class ExplicitPrefixesHashTest extends AbstractBaseEnhancedRedisTest {
   @Autowired
