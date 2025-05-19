@@ -1,5 +1,0 @@
-redis:
-  om:
-    spring:
-      ai:
-        \enabled: true

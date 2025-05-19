@@ -21,7 +21,6 @@ release:
     name: redis-om-spring
     overwrite: true
     sign: true
-    skipTag: true
     changelog:
       formatted: ALWAYS
       preset: conventional-commits
@@ -34,23 +33,14 @@ signing:
 
 deploy:
   maven:
-    nexus2:
-      maven-central:
+    mavenCentral:
+      redis:
         active: RELEASE
-        # Update to Sonatype Nexus Server URL - not the deploy URL
-        url: https://s01.oss.sonatype.org/service/local
-        closeRepository: true
-        releaseRepository: true
+        authorization: BASIC
+        url: https://central.sonatype.com/api/v1/publisher
         applyMavenCentralRules: true
         stagingRepositories:
-          - target/staging-deploy
-        artifactOverrides:
-          - groupId: com.redis.om
-            artifactId: redis-om-spring-parent
-          - groupId: com.redis.om
-            artifactId: redis-om-spring
-          - groupId: com.redis.om
-            artifactId: redis-om-spring-ai
+          - build/staging-deploy
 
 # No announcements needed
 announce:
