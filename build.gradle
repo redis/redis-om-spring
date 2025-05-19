@@ -1,0 +1,26 @@
+plugins {
+    id 'org.springframework.boot' version "${springBootVersion}" apply false
+}
+
+ext['jedis.version'] = "${jedisVersion}"
+
+allprojects {
+    version = project.version
+    group = project.group
+    description = project.description
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply from: "$rootDir/gradle/build-conventions.gradle"
+}
+
+tasks.register('aggregateTestReport', TestReport) {
+    destinationDirectory = layout.buildDirectory.dir("reports/tests/aggregate")
+    testResults.setFrom(
+            subprojects.collect { it.tasks.withType(Test) }
+    )
+}

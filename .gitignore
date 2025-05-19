@@ -37,3 +37,5 @@ docs/build/
 
 **/.claude/settings.local.json
 /out/
+build/
+.gradle/

@@ -1,0 +1,91 @@
+apply plugin: 'java-library'
+apply plugin: 'io.spring.dependency-management'
+apply plugin: 'maven-publish'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    withJavadocJar()
+    withSourcesJar()
+}
+
+test {
+    useJUnitPlatform()
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+    }
+}
+
+dependencies {
+    compileOnly "org.projectlombok:lombok"
+    annotationProcessor "org.projectlombok:lombok"
+    testImplementation "org.projectlombok:lombok"
+    testAnnotationProcessor "org.projectlombok:lombok"
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params'
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine'
+    testImplementation 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation "com.redis:testcontainers-redis:${testcontainersRedisVersion}"
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            groupId = project.group
+            artifactId = project.name
+            version = project.version
+            description = project.description
+
+            versionMapping {
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
+                }
+            }
+
+            pom {
+                packaging = 'jar'
+                name = project.name
+                description = project.description
+                url = "https://github.com/redis/redis-om-spring"
+                inceptionYear = '2021'
+
+                licenses {
+                    license {
+                        name = "MIT License"
+                        url = "https://opensource.org/licenses/MIT"
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = "bsbodden"
+                        name = "Brian Sam-Bodden"
+                        email = "bsb at redis.com"
+                    }
+                }
+
+                scm {
+                    connection = "scm:git:git://github.com/redis/redis-om-spring.git"
+                    developerConnection = "scm:git:ssh://github.com/redis/redis-om-spring.git"
+                    url = "https://github.com/redis/redis-om-spring"
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            url = rootProject.layout.buildDirectory.dir('staging-deploy')
+        }
+    }
+}
