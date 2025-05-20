@@ -1,0 +1,105 @@
+plugins {
+    id 'java'
+}
+
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+// Don't publish this module
+bootJar { enabled = false }
+jar { enabled = false }
+tasks.matching { it.name.startsWith('publish') }.configureEach {
+    enabled = false
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+// Tell gradle to add the generated sources directory
+sourceSets {
+    test {
+        java {
+            srcDir file("${buildDir}/generated/sources/annotationProcessor/java/test")
+        }
+    }
+}
+
+dependencies {
+    implementation project(':redis-om-spring')
+    implementation project(':redis-om-spring-ai')
+
+    // Important for RedisOM annotation processing!
+    annotationProcessor project(':redis-om-spring')
+    testAnnotationProcessor project(':redis-om-spring')
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+
+    // Spring
+    implementation 'org.springframework:spring-context-support'
+    implementation 'org.springframework.boot:spring-boot-starter-test'
+
+    // Spring AI
+    implementation "org.springframework.ai:spring-ai-openai:${springAiVersion}"
+    implementation "org.springframework.ai:spring-ai-ollama:${springAiVersion}"
+    implementation "org.springframework.ai:spring-ai-azure-openai:${springAiVersion}"
+    implementation "org.springframework.ai:spring-ai-vertex-ai-embedding:${springAiVersion}"
+    implementation "org.springframework.ai:spring-ai-bedrock:${springAiVersion}"
+    implementation "org.springframework.ai:spring-ai-transformers:${springAiVersion}"
+    implementation "org.springframework.ai:spring-ai-mistral-ai:${springAiVersion}"
+    implementation "org.springframework.ai:spring-ai-minimax:${springAiVersion}"
+    implementation "org.springframework.ai:spring-ai-zhipuai:${springAiVersion}"
+
+    // WebSocket
+    implementation 'jakarta.websocket:jakarta.websocket-api:2.1.1'
+    implementation 'jakarta.websocket:jakarta.websocket-client-api:2.1.1'
+
+    // DJL
+    implementation "ai.djl.spring:djl-spring-boot-starter-autoconfigure:${djlStarterVersion}"
+    implementation "ai.djl.spring:djl-spring-boot-starter-pytorch-auto:${djlStarterVersion}"
+    implementation "ai.djl.huggingface:tokenizers:${djlVersion}"
+
+    // Test
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.assertj:assertj-core'
+    testImplementation 'org.mockito:mockito-core'
+    testImplementation "com.redis:testcontainers-redis:${testcontainersRedisVersion}"
+    testImplementation "com.karuslabs:elementary:${elementaryVersion}"
+    testImplementation "org.testcontainers:junit-jupiter"
+
+    // Other
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    compileOnly "javax.enterprise:cdi-api:${cdi}"
+}
+
+// Use -parameters flag for Spring
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs << '-parameters'
+}
+
+// Configure annotation processing
+compileTestJava {
+    options.annotationProcessorPath = configurations.testAnnotationProcessor
+    options.annotationProcessorGeneratedSourcesDirectory = file("${buildDir}/generated/sources/annotationProcessor/java/test")
+}
+
+test {
+    useJUnitPlatform()
+    maxHeapSize = "1g"
+
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat = 'full'
+    }
+}

@@ -3,14 +3,14 @@ description = 'Redis OM Spring AI'
 dependencies {
     implementation project(':redis-om-spring')
 
-    compileOnly "org.springframework.ai:spring-ai-openai:${springAiVersion}"
+    implementation "org.springframework.ai:spring-ai-openai:${springAiVersion}"
     compileOnly "jakarta.websocket:jakarta.websocket-api"
     compileOnly "jakarta.websocket:jakarta.websocket-client-api"
-    compileOnly "org.springframework.ai:spring-ai-ollama:${springAiVersion}"
-    compileOnly "org.springframework.ai:spring-ai-azure-openai:${springAiVersion}"
-    compileOnly "org.springframework.ai:spring-ai-vertex-ai-embedding:${springAiVersion}"
-    compileOnly "org.springframework.ai:spring-ai-bedrock:${springAiVersion}"
-    compileOnly "org.springframework.ai:spring-ai-transformers:${springAiVersion}"
+    implementation "org.springframework.ai:spring-ai-ollama:${springAiVersion}"
+    implementation "org.springframework.ai:spring-ai-azure-openai:${springAiVersion}"
+    implementation "org.springframework.ai:spring-ai-vertex-ai-embedding:${springAiVersion}"
+    implementation "org.springframework.ai:spring-ai-bedrock:${springAiVersion}"
+    implementation "org.springframework.ai:spring-ai-transformers:${springAiVersion}"
     compileOnly "org.springframework.ai:spring-ai-mistral-ai:${springAiVersion}"
     compileOnly "org.springframework.ai:spring-ai-minimax:${springAiVersion}"
     compileOnly "org.springframework.ai:spring-ai-zhipuai:${springAiVersion}"
@@ -18,10 +18,9 @@ dependencies {
     compileOnly "com.google.auto.service:auto-service:${autoServiceVersion}"
 
     // DJL Dependencies
-    compileOnly "ai.djl.spring:djl-spring-boot-starter-autoconfigure:${djlStarterVersion}"
-    compileOnly "ai.djl.spring:djl-spring-boot-starter-pytorch-auto:${djlStarterVersion}"
-    compileOnly "ai.djl.huggingface:tokenizers:${djlVersion}"
-
+    implementation "ai.djl.spring:djl-spring-boot-starter-autoconfigure:${djlStarterVersion}"
+    implementation "ai.djl.spring:djl-spring-boot-starter-pytorch-auto:${djlStarterVersion}"
+    implementation "ai.djl.huggingface:tokenizers:${djlVersion}"
 
     testImplementation "org.mockito:mockito-core"
     testImplementation "com.karuslabs:elementary:${elementaryVersion}"
