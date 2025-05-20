@@ -14,6 +14,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.lang.Nullable;
+import org.springframework.web.client.DefaultResponseErrorHandler;
+import org.springframework.web.client.ResponseErrorHandler;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.reactive.function.client.WebClient;
+import io.micrometer.observation.ObservationRegistry;
 
 import com.redis.om.spring.vectorize.DefaultEmbedder;
 import com.redis.om.spring.vectorize.Embedder;
@@ -79,9 +84,40 @@ public class AIRedisConfiguration {
 ////    }
 
   @Bean
-  public EmbeddingModelFactory embeddingModelFactory(AIRedisOMProperties properties,
-      SpringAiProperties springAiProperties) {
-    return new EmbeddingModelFactory(properties, springAiProperties);
+  public RestClient.Builder restClientBuilder() {
+    return RestClient.builder();
+  }
+  
+  @Bean
+  public WebClient.Builder webClientBuilder() {
+    return WebClient.builder();
+  }
+  
+  @Bean
+  public ResponseErrorHandler defaultResponseErrorHandler() {
+    return new DefaultResponseErrorHandler();
+  }
+  
+  @Bean
+  public ObservationRegistry observationRegistry() {
+    return ObservationRegistry.create();
+  }
+
+  @Bean
+  public EmbeddingModelFactory embeddingModelFactory(
+      AIRedisOMProperties properties,
+      SpringAiProperties springAiProperties, 
+      RestClient.Builder restClientBuilder,
+      WebClient.Builder webClientBuilder, 
+      ResponseErrorHandler responseErrorHandler,
+      ObservationRegistry observationRegistry) {
+    return new EmbeddingModelFactory(
+        properties, 
+        springAiProperties, 
+        restClientBuilder, 
+        webClientBuilder, 
+        responseErrorHandler, 
+        observationRegistry);
   }
 
   @Bean(

@@ -498,7 +498,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     }
 
     RedisPersistentEntity<?> entity = this.converter.getMappingContext().getRequiredPersistentEntity(target.getClass());
-    if (entity.hasExplictTimeToLiveProperty()) {
+    if (entity.hasExplicitTimeToLiveProperty()) {
 
       RedisPersistentProperty ttlProperty = entity.getExplicitTimeToLiveProperty();
       if (ttlProperty == null) {

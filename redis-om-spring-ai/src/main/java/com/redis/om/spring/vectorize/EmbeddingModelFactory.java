@@ -27,7 +27,10 @@ import org.springframework.ai.vertexai.embedding.text.VertexAiTextEmbeddingModel
 import org.springframework.ai.vertexai.embedding.text.VertexAiTextEmbeddingOptions;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.ResponseErrorHandler;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.reactive.function.client.WebClient;
+import io.micrometer.observation.ObservationRegistry;
 
 import com.azure.ai.openai.OpenAIClient;
 import com.azure.ai.openai.OpenAIClientBuilder;
@@ -43,10 +46,24 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 public class EmbeddingModelFactory {
   private final AIRedisOMProperties properties;
   private final SpringAiProperties springAiProperties;
+  private final RestClient.Builder restClientBuilder;
+  private final WebClient.Builder webClientBuilder;
+  private final ResponseErrorHandler responseErrorHandler;
+  private final ObservationRegistry observationRegistry;
 
-  public EmbeddingModelFactory(AIRedisOMProperties properties, SpringAiProperties springAiProperties) {
+  public EmbeddingModelFactory(
+      AIRedisOMProperties properties, 
+      SpringAiProperties springAiProperties,
+      RestClient.Builder restClientBuilder,
+      WebClient.Builder webClientBuilder,
+      ResponseErrorHandler responseErrorHandler,
+      ObservationRegistry observationRegistry) {
     this.properties = properties;
     this.springAiProperties = springAiProperties;
+    this.restClientBuilder = restClientBuilder;
+    this.webClientBuilder = webClientBuilder;
+    this.responseErrorHandler = responseErrorHandler;
+    this.observationRegistry = observationRegistry;
   }
 
   public TransformersEmbeddingModel createTransformersEmbeddingModel(Vectorize vectorize) {
@@ -174,7 +191,12 @@ public class EmbeddingModelFactory {
   }
 
   public OllamaEmbeddingModel createOllamaEmbeddingModel(String model) {
-    OllamaApi api = new OllamaApi(properties.getOllama().getBaseUrl());
+    OllamaApi api = OllamaApi.builder()
+        .baseUrl(properties.getOllama().getBaseUrl())
+        .restClientBuilder(restClientBuilder)
+        .webClientBuilder(webClientBuilder)
+        .responseErrorHandler(responseErrorHandler)
+        .build();
 
     OllamaOptions options = OllamaOptions.builder().model(model).truncate(false).build();
 
@@ -228,6 +250,6 @@ public class EmbeddingModelFactory {
         properties.getAws().getRegion(), ModelOptionsUtils.OBJECT_MAPPER, Duration.ofMinutes(properties.getAws()
             .getBedrockTitan().getResponseTimeOut()));
 
-    return new BedrockTitanEmbeddingModel(titanEmbeddingApi);
+    return new BedrockTitanEmbeddingModel(titanEmbeddingApi, observationRegistry);
   }
 }
