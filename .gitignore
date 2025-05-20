@@ -39,3 +39,4 @@ docs/build/
 /out/
 build/
 .gradle/
+compile_debug.log
