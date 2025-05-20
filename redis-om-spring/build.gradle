@@ -17,6 +17,7 @@ dependencies {
     api "com.squareup:javapoet:${javapoetVersion}"
 
     compileOnly "javax.enterprise:cdi-api:${cdi}"
-    compileOnly "com.google.auto.service:auto-service:${autoServiceVersion}"
+    implementation "com.google.auto.service:auto-service:${autoServiceVersion}"
+    annotationProcessor "com.google.auto.service:auto-service:${autoServiceVersion}"
 
 }
