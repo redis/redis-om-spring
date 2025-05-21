@@ -1,26 +1,33 @@
 plugins {
-    id 'org.springframework.boot' version "${springBootVersion}" apply false
+	id 'org.springframework.boot' version "${springBootVersion}" apply false
+	id 'com.diffplug.spotless' version '6.25.0'
+	id 'java' // Add java plugin to root project
 }
 
 ext['jedis.version'] = "${jedisVersion}"
 
 allprojects {
-    version = project.version
-    group = project.group
-    description = project.description
-    repositories {
-        mavenLocal()
-        mavenCentral()
-    }
+	version = project.version
+	group = project.group
+	description = project.description
+	repositories {
+		mavenLocal()
+		mavenCentral()
+	}
 }
 
+// Apply the Spotless configuration
+apply from: "spotless.gradle"
+
 subprojects {
-    apply from: "$rootDir/gradle/build-conventions.gradle"
+	apply from: "$rootDir/gradle/build-conventions.gradle"
 }
 
 tasks.register('aggregateTestReport', TestReport) {
-    destinationDirectory = layout.buildDirectory.dir("reports/tests/aggregate")
-    testResults.setFrom(
-            subprojects.collect { it.tasks.withType(Test) }
-    )
+	destinationDirectory = layout.buildDirectory.dir("reports/tests/aggregate")
+	testResults.setFrom(
+			subprojects.collect {
+				it.tasks.withType(Test)
+			}
+			)
 }
