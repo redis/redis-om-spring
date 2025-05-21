@@ -18,7 +18,6 @@ import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.ResponseErrorHandler;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.reactive.function.client.WebClient;
-import io.micrometer.observation.ObservationRegistry;
 
 import com.redis.om.spring.vectorize.DefaultEmbedder;
 import com.redis.om.spring.vectorize.Embedder;
@@ -41,6 +40,7 @@ import ai.djl.repository.zoo.ModelZoo;
 import ai.djl.repository.zoo.ZooModel;
 import ai.djl.translate.Pipeline;
 import ai.djl.translate.Translator;
+import io.micrometer.observation.ObservationRegistry;
 
 @Configuration
 @EnableConfigurationProperties(
@@ -63,61 +63,52 @@ public class AIRedisConfiguration {
   //    private String password;
   //
   ////    @Bean
-////    @Primary
-////    public JedisConnectionFactory redisConnectionFactory() {
-////        RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration();
-////        redisStandaloneConfiguration.setHostName(host);
-////        redisStandaloneConfiguration.setPort(port);
-////        redisStandaloneConfiguration.setUsername(username);
-////        redisStandaloneConfiguration.setPassword(password);
-////        JedisConnectionFactory jediConnectionFactory = new JedisConnectionFactory(redisStandaloneConfiguration);
-////        jediConnectionFactory.setConvertPipelineAndTxResults(false);
-////        return jediConnectionFactory;
-////    }
-////
-////    @Bean
-////    public RedisTemplate<String, String> redisTemplate() {
-////
-////        RedisTemplate<String, String> template = new RedisTemplate<>();
-////        template.setConnectionFactory(redisConnectionFactory());
-////        return template;
-////    }
+  ////    @Primary
+  ////    public JedisConnectionFactory redisConnectionFactory() {
+  ////        RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration();
+  ////        redisStandaloneConfiguration.setHostName(host);
+  ////        redisStandaloneConfiguration.setPort(port);
+  ////        redisStandaloneConfiguration.setUsername(username);
+  ////        redisStandaloneConfiguration.setPassword(password);
+  ////        JedisConnectionFactory jediConnectionFactory = new JedisConnectionFactory(redisStandaloneConfiguration);
+  ////        jediConnectionFactory.setConvertPipelineAndTxResults(false);
+  ////        return jediConnectionFactory;
+  ////    }
+  ////
+  ////    @Bean
+  ////    public RedisTemplate<String, String> redisTemplate() {
+  ////
+  ////        RedisTemplate<String, String> template = new RedisTemplate<>();
+  ////        template.setConnectionFactory(redisConnectionFactory());
+  ////        return template;
+  ////    }
 
   @Bean
   public RestClient.Builder restClientBuilder() {
     return RestClient.builder();
   }
-  
+
   @Bean
   public WebClient.Builder webClientBuilder() {
     return WebClient.builder();
   }
-  
+
   @Bean
   public ResponseErrorHandler defaultResponseErrorHandler() {
     return new DefaultResponseErrorHandler();
   }
-  
+
   @Bean
   public ObservationRegistry observationRegistry() {
     return ObservationRegistry.create();
   }
 
   @Bean
-  public EmbeddingModelFactory embeddingModelFactory(
-      AIRedisOMProperties properties,
-      SpringAiProperties springAiProperties, 
-      RestClient.Builder restClientBuilder,
-      WebClient.Builder webClientBuilder, 
-      ResponseErrorHandler responseErrorHandler,
-      ObservationRegistry observationRegistry) {
-    return new EmbeddingModelFactory(
-        properties, 
-        springAiProperties, 
-        restClientBuilder, 
-        webClientBuilder, 
-        responseErrorHandler, 
-        observationRegistry);
+  public EmbeddingModelFactory embeddingModelFactory(AIRedisOMProperties properties,
+      SpringAiProperties springAiProperties, RestClient.Builder restClientBuilder, WebClient.Builder webClientBuilder,
+      ResponseErrorHandler responseErrorHandler, ObservationRegistry observationRegistry) {
+    return new EmbeddingModelFactory(properties, springAiProperties, restClientBuilder, webClientBuilder,
+        responseErrorHandler, observationRegistry);
   }
 
   @Bean(

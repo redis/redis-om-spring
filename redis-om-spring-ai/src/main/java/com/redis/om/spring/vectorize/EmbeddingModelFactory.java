@@ -30,7 +30,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.ResponseErrorHandler;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.reactive.function.client.WebClient;
-import io.micrometer.observation.ObservationRegistry;
 
 import com.azure.ai.openai.OpenAIClient;
 import com.azure.ai.openai.OpenAIClientBuilder;
@@ -39,6 +38,7 @@ import com.azure.identity.DefaultAzureCredentialBuilder;
 import com.redis.om.spring.AIRedisOMProperties;
 import com.redis.om.spring.annotations.Vectorize;
 
+import io.micrometer.observation.ObservationRegistry;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -51,13 +51,9 @@ public class EmbeddingModelFactory {
   private final ResponseErrorHandler responseErrorHandler;
   private final ObservationRegistry observationRegistry;
 
-  public EmbeddingModelFactory(
-      AIRedisOMProperties properties, 
-      SpringAiProperties springAiProperties,
-      RestClient.Builder restClientBuilder,
-      WebClient.Builder webClientBuilder,
-      ResponseErrorHandler responseErrorHandler,
-      ObservationRegistry observationRegistry) {
+  public EmbeddingModelFactory(AIRedisOMProperties properties, SpringAiProperties springAiProperties,
+      RestClient.Builder restClientBuilder, WebClient.Builder webClientBuilder,
+      ResponseErrorHandler responseErrorHandler, ObservationRegistry observationRegistry) {
     this.properties = properties;
     this.springAiProperties = springAiProperties;
     this.restClientBuilder = restClientBuilder;
@@ -191,12 +187,8 @@ public class EmbeddingModelFactory {
   }
 
   public OllamaEmbeddingModel createOllamaEmbeddingModel(String model) {
-    OllamaApi api = OllamaApi.builder()
-        .baseUrl(properties.getOllama().getBaseUrl())
-        .restClientBuilder(restClientBuilder)
-        .webClientBuilder(webClientBuilder)
-        .responseErrorHandler(responseErrorHandler)
-        .build();
+    OllamaApi api = OllamaApi.builder().baseUrl(properties.getOllama().getBaseUrl()).restClientBuilder(
+        restClientBuilder).webClientBuilder(webClientBuilder).responseErrorHandler(responseErrorHandler).build();
 
     OllamaOptions options = OllamaOptions.builder().model(model).truncate(false).build();
 

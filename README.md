@@ -632,22 +632,22 @@ detail. [Open an issue on GitHub](https://github.com/redis-om/redis-om-spring/is
 
 ### Code Style
 
-This project uses the Spotless Maven plugin with Eclipse formatter to enforce a consistent code style. Before submitting a pull request, please make sure your code follows our formatting guidelines by running:
+This project uses the Spotless Gradle plugin with Eclipse formatter to enforce a consistent code style. Before submitting a pull request, please make sure your code follows our formatting guidelines by running:
 
 ```bash
-mvn spotless:apply
+./gradlew spotlessApply
 ```
 
 This will automatically reformat your code to match the project's style. You can also check if your code meets the formatting requirements without changing it:
 
 ```bash
-mvn spotless:check
+./gradlew spotlessCheck
 ```
 
 The main formatting rules include:
 - 2-space indentation (not 4)
 - KNR brace style (braces at end of line)
-- Maximum line length of 100 characters
+- Maximum line length of 120 characters
 - Consistent import ordering (java, javax, org, com, other imports)
 
 ## 🧑‍🤝‍🧑 Sibling Projects

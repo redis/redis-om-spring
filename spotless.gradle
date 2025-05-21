@@ -1,0 +1,43 @@
+// Spotless configuration
+apply plugin: 'com.diffplug.spotless'
+
+spotless {
+	// Format Gradle files
+	groovyGradle {
+		target fileTree('.') {
+			include '**/*.gradle'
+			exclude '**/build/**',
+					'**/generated/**',
+					'**/target/**',
+					'**/.mvn/**',
+					'**/demos/**/.mvn/**'
+		}
+		greclipse()
+	}
+
+	// Target all Java files within the project
+	java {
+		target fileTree('.') {
+			include '**/*.java'
+			exclude '**/build/**',
+					'**/generated/**',
+					'**/target/**',
+					'**/test/**',
+					'**/.mvn/**',
+					'**/demos/**/.mvn/**'  // Skip build output, generated files, and .mvn folders
+		}
+
+		// Use Eclipse formatter with custom config
+		eclipse().configFile("${rootDir}/.spotless/roms-style.xml")
+		removeUnusedImports()
+		importOrder('java', 'javax', 'org', 'com', '')
+	}
+
+	lineEndings = 'UNIX'
+	encoding 'UTF-8'
+}
+
+// Add dependency for the Gradle task execution order
+tasks.named('spotlessGroovyGradle') {
+	mustRunAfter 'spotlessJava'
+}

@@ -32,6 +32,10 @@ jobs:
           key: ${{ runner.os }}-gradlew-${{ hashFiles('**/gradlew') }}
           restore-keys: ${{ runner.os }}-gradlew-
 
+      - name: Code Style Check
+        run: |
+          ./gradlew spotlessCheck -S
+
       - name: Build
         run: |
           ./gradlew build aggregateTestReport -S
