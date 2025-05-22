@@ -1,0 +1,1001 @@
+= References Between Entities
+:page-toclevels: 3
+:page-pagination:
+
+Redis OM Spring supports references between entities, allowing you to model complex relationships in your Redis-based applications. References work with both JSON documents (`@Document`) and Redis Hash entities (`@RedisHash`), providing a flexible way to connect related data.
+
+== Overview
+
+References in Redis OM Spring enable you to:
+
+* **Model relationships** between entities (one-to-one, one-to-many, many-to-many)
+* **Maintain referential integrity** through automatic loading and resolution
+* **Query related data** using repository methods and Entity Streams
+* **Index reference fields** for efficient searching
+* **Store collections** of referenced entities
+
+References are resolved **eagerly** by default, meaning referenced entities are loaded automatically when the parent entity is retrieved, eliminating the need for separate queries.
+
+== Basic Reference Definition
+
+=== Using @Reference Annotation
+
+References are defined using Spring Data's `@Reference` annotation:
+
+[source,java]
+----
+@Document
+public class City {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String name;
+  
+  @Reference
+  @Indexed  // References can be indexed for searching
+  private State state;
+  
+  // getters and setters
+}
+
+@Document
+public class State {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String name;
+  
+  @Reference
+  private Country country;
+  
+  // getters and setters
+}
+
+@Document
+public class Country {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String name;
+  
+  @Indexed
+  private String code;
+  
+  // getters and setters
+}
+----
+
+== Reference Types
+
+=== One-to-One References
+
+The most basic reference type connects two entities directly:
+
+[source,java]
+----
+@Document
+public class User {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String email;
+  
+  @Reference
+  private UserProfile profile;
+  
+  // getters and setters
+}
+
+@Document
+public class UserProfile {
+  @Id
+  private String id;
+  
+  @Searchable
+  private String displayName;
+  
+  @Indexed
+  private String department;
+  
+  @Indexed
+  private LocalDateTime lastLoginDate;
+  
+  // getters and setters
+}
+----
+
+=== One-to-Many References with Collections
+
+References can point to collections of entities:
+
+[source,java]
+----
+@Document
+public class Department {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String name;
+  
+  @Reference
+  private Set<Employee> employees;
+  
+  @Reference
+  private Manager manager;
+  
+  // getters and setters
+}
+
+@Document  
+public class Employee {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String employeeNumber;
+  
+  @Searchable
+  private String name;
+  
+  @Indexed
+  private String role;
+  
+  @Reference
+  private Department department;
+  
+  // getters and setters
+}
+----
+
+=== Complex Reference Collections
+
+You can use different collection types for references:
+
+[source,java]
+----
+@Document
+public class Project {
+  @Id
+  private String id;
+  
+  @Searchable
+  private String name;
+  
+  @Indexed
+  private String status;
+  
+  // Set for unique team members
+  @Reference
+  private Set<Employee> teamMembers;
+  
+  // List for ordered milestones
+  @Reference
+  private List<Milestone> milestones;
+  
+  @Reference
+  private Employee projectManager;
+  
+  // getters and setters
+}
+
+@Document
+public class Milestone {
+  @Id
+  private String id;
+  
+  @Searchable
+  private String title;
+  
+  @Indexed
+  private LocalDate dueDate;
+  
+  @Indexed
+  private String status;
+  
+  @Reference
+  private Set<Employee> assignees;
+  
+  // getters and setters
+}
+----
+
+== Eager Loading Behavior
+
+=== Automatic Reference Resolution
+
+References are loaded eagerly, meaning no additional queries are needed:
+
+[source,java]
+----
+@Service
+public class LocationService {
+  @Autowired
+  private CityRepository cityRepository;
+  
+  public String getFullLocationName(String cityId) {
+    City city = cityRepository.findById(cityId).orElseThrow();
+    
+    // State and Country are already loaded - no additional queries
+    String stateName = city.getState().getName();
+    String countryName = city.getState().getCountry().getName();
+    
+    return city.getName() + ", " + stateName + ", " + countryName;
+  }
+}
+----
+
+=== Collection Reference Loading
+
+Reference collections are also loaded completely:
+
+[source,java]
+----
+@Service
+public class DepartmentService {
+  @Autowired
+  private DepartmentRepository departmentRepository;
+  
+  public List<String> getDepartmentEmployeeNames(String departmentId) {
+    Department department = departmentRepository.findById(departmentId).orElseThrow();
+    
+    // All employees are loaded with the department
+    return department.getEmployees().stream()
+      .map(Employee::getName)
+      .sorted()
+      .collect(Collectors.toList());
+  }
+}
+----
+
+== Repository Queries with References
+
+=== Simple Reference Queries
+
+Repository methods can query by reference fields:
+
+[source,java]
+----
+public interface CityRepository extends RedisDocumentRepository<City, String> {
+  
+  // Find cities by referenced state
+  List<City> findByState(State state);
+  
+  // Find cities by state ID
+  List<City> findByStateId(String stateId);
+  
+  // Find cities by country through state reference
+  List<City> findByStateCountry(Country country);
+  
+  // Find cities by country name through nested references
+  List<City> findByStateCountryName(String countryName);
+}
+
+public interface EmployeeRepository extends RedisDocumentRepository<Employee, String> {
+  
+  // Find employees by department
+  List<Employee> findByDepartment(Department department);
+  
+  // Find employees by department name
+  List<Employee> findByDepartmentName(String departmentName);
+  
+  // Find employees by role and department
+  List<Employee> findByRoleAndDepartment(String role, Department department);
+}
+----
+
+=== Complex Reference Queries
+
+[source,java]
+----
+@Service
+public class EmployeeQueryService {
+  @Autowired
+  private EmployeeRepository employeeRepository;
+  
+  @Autowired
+  private DepartmentRepository departmentRepository;
+  
+  public List<Employee> findEmployeesInDepartments(List<String> departmentNames) {
+    List<Department> departments = departmentRepository.findByNameIn(departmentNames);
+    
+    return departments.stream()
+      .flatMap(dept -> employeeRepository.findByDepartment(dept).stream())
+      .distinct()
+      .collect(Collectors.toList());
+  }
+  
+  public Map<Department, List<Employee>> getEmployeesByDepartment() {
+    List<Employee> allEmployees = employeeRepository.findAll();
+    
+    return allEmployees.stream()
+      .collect(Collectors.groupingBy(Employee::getDepartment));
+  }
+}
+----
+
+== Entity Streams with References
+
+=== Filtering by References
+
+Entity Streams support reference field filtering:
+
+[source,java]
+----
+@Service
+public class LocationAnalyticsService {
+  @Autowired
+  private EntityStream entityStream;
+  
+  public List<City> getCitiesInCountry(Country country) {
+    return entityStream
+      .of(City.class)
+      .filter(City$.STATE.eq(state -> state.getCountry().equals(country)))
+      .collect(Collectors.toList());
+  }
+  
+  public List<Employee> getEmployeesInDepartment(String departmentName) {
+    return entityStream
+      .of(Employee.class)
+      .filter(Employee$.DEPARTMENT.eq(dept -> departmentName.equals(dept.getName())))
+      .collect(Collectors.toList());
+  }
+  
+  public List<City> getCitiesInStates(Set<State> states) {
+    return entityStream
+      .of(City.class)
+      .filter(City$.STATE.in(states))
+      .collect(Collectors.toList());
+  }
+}
+----
+
+=== Advanced Reference Queries
+
+[source,java]
+----
+@Service
+public class ProjectAnalyticsService {
+  @Autowired
+  private EntityStream entityStream;
+  
+  public List<Project> getActiveProjectsWithEmployee(Employee employee) {
+    return entityStream
+      .of(Project.class)
+      .filter(Project$.STATUS.eq("ACTIVE"))
+      .filter(Project$.TEAM_MEMBERS.contains(employee))
+      .collect(Collectors.toList());
+  }
+  
+  public List<Employee> getEmployeesWorkingOnMultipleProjects() {
+    List<Project> allProjects = entityStream.of(Project.class).collect(Collectors.toList());
+    
+    Map<Employee, Long> employeeProjectCount = allProjects.stream()
+      .flatMap(project -> project.getTeamMembers().stream())
+      .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+    
+    return employeeProjectCount.entrySet().stream()
+      .filter(entry -> entry.getValue() > 1)
+      .map(Map.Entry::getKey)
+      .collect(Collectors.toList());
+  }
+}
+----
+
+== Indexing References
+
+=== Making References Searchable
+
+Reference fields can be indexed for efficient searching:
+
+[source,java]
+----
+@Document
+public class Order {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String orderNumber;
+  
+  @Reference
+  @Indexed  // Index the customer reference for fast lookups
+  private Customer customer;
+  
+  @Reference  
+  @Indexed  // Index product references for searching
+  private List<Product> products;
+  
+  @Indexed
+  private LocalDateTime orderDate;
+  
+  @Indexed
+  private BigDecimal totalAmount;
+  
+  // getters and setters
+}
+
+public interface OrderRepository extends RedisDocumentRepository<Order, String> {
+  
+  // Efficient queries thanks to indexed references
+  List<Order> findByCustomer(Customer customer);
+  List<Order> findByProducts(Product product);
+  List<Order> findByCustomerAndOrderDateBetween(Customer customer, LocalDateTime start, LocalDateTime end);
+}
+----
+
+=== Reference Field Indexing Options
+
+[source,java]
+----
+@Document
+public class Article {
+  @Id
+  private String id;
+  
+  @Searchable
+  private String title;
+  
+  @Reference
+  @Indexed(sortable = true)  // Allow sorting by author
+  private Author author;
+  
+  @Reference
+  @Indexed  // Enable searching by category
+  private Category category;
+  
+  @Reference
+  @Indexed  // Index tag collection for filtering
+  private Set<Tag> tags;
+  
+  // getters and setters
+}
+----
+
+== Bidirectional References
+
+While Redis OM Spring doesn't enforce bidirectional relationships, you can model them manually:
+
+[source,java]
+----
+@Document
+public class Author {
+  @Id
+  private String id;
+  
+  @Searchable
+  private String name;
+  
+  @Indexed
+  private String email;
+  
+  // Note: This is not automatically maintained
+  // You must manage this relationship manually
+  @Reference
+  private List<Article> articles;
+  
+  // getters and setters
+}
+
+@Document  
+public class Article {
+  @Id
+  private String id;
+  
+  @Searchable
+  private String title;
+  
+  @Reference
+  @Indexed
+  private Author author;
+  
+  // getters and setters
+}
+
+@Service
+public class ArticleManagementService {
+  @Autowired
+  private ArticleRepository articleRepository;
+  
+  @Autowired
+  private AuthorRepository authorRepository;
+  
+  @Transactional
+  public Article createArticle(String title, String content, String authorId) {
+    Author author = authorRepository.findById(authorId).orElseThrow();
+    
+    Article article = new Article();
+    article.setTitle(title);
+    article.setContent(content);
+    article.setAuthor(author);
+    
+    Article savedArticle = articleRepository.save(article);
+    
+    // Manually maintain bidirectional relationship
+    if (author.getArticles() == null) {
+      author.setArticles(new ArrayList<>());
+    }
+    author.getArticles().add(savedArticle);
+    authorRepository.save(author);
+    
+    return savedArticle;
+  }
+}
+----
+
+== Advanced Reference Patterns
+
+=== Hierarchical References
+
+[source,java]
+----
+@Document
+public class Category {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String name;
+  
+  @Reference
+  private Category parentCategory;  // Self-reference for hierarchy
+  
+  @Reference
+  private List<Category> subcategories;
+  
+  // getters and setters
+}
+
+@Service
+public class CategoryService {
+  @Autowired
+  private CategoryRepository categoryRepository;
+  
+  public List<Category> getCategoryHierarchy(String rootCategoryId) {
+    Category root = categoryRepository.findById(rootCategoryId).orElseThrow();
+    return buildHierarchy(root);
+  }
+  
+  private List<Category> buildHierarchy(Category category) {
+    List<Category> hierarchy = new ArrayList<>();
+    hierarchy.add(category);
+    
+    if (category.getSubcategories() != null) {
+      for (Category subcategory : category.getSubcategories()) {
+        hierarchy.addAll(buildHierarchy(subcategory));
+      }
+    }
+    
+    return hierarchy;
+  }
+}
+----
+
+=== Polymorphic References
+
+[source,java]
+----
+// Base interface or class
+public interface Assignable {
+  String getId();
+  String getName();
+  String getType();
+}
+
+@Document
+public class Task {
+  @Id
+  private String id;
+  
+  @Searchable
+  private String title;
+  
+  @Indexed
+  private String status;
+  
+  // Can reference different types of assignables
+  @Reference
+  private List<? extends Assignable> assignees;
+  
+  // getters and setters
+}
+
+@Document
+public class Employee implements Assignable {
+  @Id
+  private String id;
+  
+  @Searchable
+  private String name;
+  
+  @Override
+  public String getType() {
+    return "EMPLOYEE";
+  }
+  
+  // getters and setters
+}
+
+@Document
+public class Team implements Assignable {
+  @Id
+  private String id;
+  
+  @Searchable
+  private String name;
+  
+  @Reference
+  private Set<Employee> members;
+  
+  @Override
+  public String getType() {
+    return "TEAM";
+  }
+  
+  // getters and setters
+}
+----
+
+== Performance Considerations
+
+=== Reference Loading Overhead
+
+* **Eager Loading**: All references are loaded automatically, which can impact performance for deep object graphs
+* **Collection Size**: Large reference collections can consume significant memory
+* **Nested References**: Deep reference chains (A→B→C→D) result in multiple Redis lookups
+
+=== Optimization Strategies
+
+==== Limit Reference Depth
+
+[source,java]
+----
+// Good: Shallow reference structure
+@Document
+public class Order {
+  @Reference
+  private Customer customer;     // 1 level deep
+  
+  @Reference  
+  private List<Product> products; // 1 level deep
+}
+
+// Avoid: Deep reference chains
+@Document
+public class DeepEntity {
+  @Reference
+  private Level1 level1;  // level1 → level2 → level3 → level4
+}
+----
+
+==== Use Indexed References for Queries
+
+[source,java]
+----
+@Document
+public class Order {
+  @Reference
+  @Indexed  // Essential for efficient customer queries
+  private Customer customer;
+  
+  @Reference
+  @Indexed  // Enable fast product lookups
+  private List<Product> products;
+}
+----
+
+==== Consider Reference Cardinality
+
+[source,java]
+----
+// Good: Bounded collections
+@Document
+public class BlogPost {
+  @Reference
+  private List<Tag> tags;  // Typically 5-10 tags
+  
+  @Reference
+  private List<Comment> recentComments;  // Limit to recent N comments
+}
+
+// Be careful: Unbounded collections
+@Document
+public class User {
+  @Reference
+  private List<Order> allOrders;  // Could be thousands - consider pagination
+}
+----
+
+== Testing References
+
+=== Unit Testing Reference Relationships
+
+[source,java]
+----
+@SpringBootTest
+class ReferenceTest {
+  
+  @Autowired
+  private CityRepository cityRepository;
+  
+  @Autowired
+  private StateRepository stateRepository;
+  
+  @Autowired
+  private CountryRepository countryRepository;
+  
+  @Test
+  void testNestedReferences() {
+    // Create country
+    Country usa = new Country();
+    usa.setName("United States");
+    usa.setCode("US");
+    Country savedCountry = countryRepository.save(usa);
+    
+    // Create state
+    State california = new State();
+    california.setName("California");
+    california.setCountry(savedCountry);
+    State savedState = stateRepository.save(california);
+    
+    // Create city
+    City sanFrancisco = new City();
+    sanFrancisco.setName("San Francisco");
+    sanFrancisco.setState(savedState);
+    City savedCity = cityRepository.save(sanFrancisco);
+    
+    // Verify eager loading
+    City retrievedCity = cityRepository.findById(savedCity.getId()).orElseThrow();
+    assertThat(retrievedCity.getState()).isNotNull();
+    assertThat(retrievedCity.getState().getName()).isEqualTo("California");
+    assertThat(retrievedCity.getState().getCountry()).isNotNull();
+    assertThat(retrievedCity.getState().getCountry().getName()).isEqualTo("United States");
+  }
+  
+  @Test
+  void testReferenceCollections() {
+    // Create department
+    Department engineering = new Department();
+    engineering.setName("Engineering");
+    Department savedDept = departmentRepository.save(engineering);
+    
+    // Create employees
+    Employee emp1 = createEmployee("John Doe", "Senior Developer", savedDept);
+    Employee emp2 = createEmployee("Jane Smith", "Tech Lead", savedDept);
+    
+    Employee savedEmp1 = employeeRepository.save(emp1);
+    Employee savedEmp2 = employeeRepository.save(emp2);
+    
+    // Update department with employees
+    savedDept.setEmployees(Set.of(savedEmp1, savedEmp2));
+    departmentRepository.save(savedDept);
+    
+    // Verify collection loading
+    Department retrievedDept = departmentRepository.findById(savedDept.getId()).orElseThrow();
+    assertThat(retrievedDept.getEmployees()).hasSize(2);
+    assertThat(retrievedDept.getEmployees())
+      .extracting(Employee::getName)
+      .containsExactlyInAnyOrder("John Doe", "Jane Smith");
+  }
+  
+  private Employee createEmployee(String name, String role, Department department) {
+    Employee employee = new Employee();
+    employee.setName(name);
+    employee.setRole(role);
+    employee.setDepartment(department);
+    return employee;
+  }
+}
+----
+
+=== Integration Testing with References
+
+[source,java]
+----
+@SpringBootTest
+class ReferenceIntegrationTest {
+  
+  @Autowired
+  private OrderRepository orderRepository;
+  
+  @Autowired
+  private CustomerRepository customerRepository;
+  
+  @Autowired
+  private ProductRepository productRepository;
+  
+  @Test
+  void testCompleteOrderWorkflow() {
+    // Setup test data
+    Customer customer = createAndSaveCustomer("john@example.com", "John Doe");
+    Product product1 = createAndSaveProduct("Laptop", new BigDecimal("999.99"));
+    Product product2 = createAndSaveProduct("Mouse", new BigDecimal("29.99"));
+    
+    // Create order with references
+    Order order = new Order();
+    order.setOrderNumber("ORD-001");
+    order.setCustomer(customer);
+    order.setProducts(List.of(product1, product2));
+    order.setOrderDate(LocalDateTime.now());
+    order.setTotalAmount(new BigDecimal("1029.98"));
+    
+    Order savedOrder = orderRepository.save(order);
+    
+    // Test queries
+    List<Order> customerOrders = orderRepository.findByCustomer(customer);
+    assertThat(customerOrders).hasSize(1);
+    assertThat(customerOrders.get(0).getProducts()).hasSize(2);
+    
+    List<Order> laptopOrders = orderRepository.findByProducts(product1);
+    assertThat(laptopOrders).hasSize(1);
+    assertThat(laptopOrders.get(0).getCustomer().getName()).isEqualTo("John Doe");
+  }
+}
+----
+
+== Best Practices
+
+=== Reference Design Guidelines
+
+==== Use References for Related Entities
+
+[source,java]
+----
+// Good: References for related entities
+@Document
+public class Invoice {
+  @Reference
+  private Customer customer;      // Related entity
+  
+  @Reference
+  private List<LineItem> items;   // Composition relationship
+}
+
+// Avoid: References for simple values
+@Document
+public class User {
+  private String email;           // Simple value - don't use reference
+  private String countryCode;     // Simple code - don't use reference
+}
+----
+
+==== Index Frequently Queried References
+
+[source,java]
+----
+@Document
+public class Event {
+  @Reference
+  @Indexed  // Frequently query events by organizer
+  private User organizer;
+  
+  @Reference
+  @Indexed  // Often filter events by venue
+  private Venue venue;
+  
+  @Reference  // Not indexed - rarely query by attendees individually
+  private List<User> attendees;
+}
+----
+
+==== Manage Bidirectional Relationships
+
+[source,java]
+----
+@Service
+public class RelationshipService {
+  
+  @Transactional
+  public void addEmployeeToDepartment(String employeeId, String departmentId) {
+    Employee employee = employeeRepository.findById(employeeId).orElseThrow();
+    Department department = departmentRepository.findById(departmentId).orElseThrow();
+    
+    // Update both sides of the relationship
+    employee.setDepartment(department);
+    employeeRepository.save(employee);
+    
+    if (department.getEmployees() == null) {
+      department.setEmployees(new HashSet<>());
+    }
+    department.getEmployees().add(employee);
+    departmentRepository.save(department);
+  }
+}
+----
+
+==== Handle Null References Gracefully
+
+[source,java]
+----
+@Service
+public class SafeReferenceService {
+  
+  public String getLocationDescription(City city) {
+    if (city == null) return "Unknown location";
+    
+    StringBuilder location = new StringBuilder(city.getName());
+    
+    State state = city.getState();
+    if (state != null) {
+      location.append(", ").append(state.getName());
+      
+      Country country = state.getCountry();
+      if (country != null) {
+        location.append(", ").append(country.getName());
+      }
+    }
+    
+    return location.toString();
+  }
+}
+----
+
+== Limitations and Considerations
+
+=== Current Limitations
+
+* **No Cascade Operations**: Deleting a referenced entity doesn't automatically update references
+* **No Lazy Loading**: All references are loaded eagerly, which can impact performance
+* **Manual Bidirectional Management**: Bidirectional relationships must be maintained manually
+* **No Reference Validation**: No automatic validation that referenced entities exist
+
+=== Working Around Limitations
+
+==== Manual Cascade Deletion
+
+[source,java]
+----
+@Service
+public class CascadeService {
+  
+  @Transactional
+  public void deleteCustomerAndOrders(String customerId) {
+    Customer customer = customerRepository.findById(customerId).orElseThrow();
+    
+    // Delete related orders first
+    List<Order> orders = orderRepository.findByCustomer(customer);
+    orderRepository.deleteAll(orders);
+    
+    // Then delete customer
+    customerRepository.delete(customer);
+  }
+}
+----
+
+==== Reference Validation
+
+[source,java]
+----
+@Service
+public class ValidationService {
+  
+  public void validateOrderReferences(Order order) {
+    if (order.getCustomer() != null) {
+      if (!customerRepository.existsById(order.getCustomer().getId())) {
+        throw new IllegalArgumentException("Referenced customer does not exist");
+      }
+    }
+    
+    if (order.getProducts() != null) {
+      for (Product product : order.getProducts()) {
+        if (!productRepository.existsById(product.getId())) {
+          throw new IllegalArgumentException("Referenced product does not exist: " + product.getId());
+        }
+      }
+    }
+  }
+}
+----
+
+== Learning More
+
+For additional information on entity relationships and modeling:
+
+* xref:entity-streams.adoc[Entity Streams] - Advanced querying with references
+* xref:repository-queries.adoc[Repository Query Methods] - Query patterns for references
+* xref:index-annotations.adoc[Index Annotations] - Indexing strategies for references
+* xref:keyspaces.adoc[Keyspaces] - Organizing related entities with keyspaces

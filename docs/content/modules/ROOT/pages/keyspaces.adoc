@@ -1,0 +1,624 @@
+= Keyspaces
+:page-toclevels: 3
+:page-pagination:
+
+Keyspaces in Redis OM Spring provide a way to logically organize and namespace your Redis keys, enabling multi-tenancy, environment separation, and better key management. Redis OM Spring uses Spring Data's `@KeySpace` annotation under the hood to control how Redis keys are generated and organized.
+
+== Overview
+
+Keyspaces serve as prefixes for Redis keys, allowing you to:
+
+* **Organize data** by logical groups or domains
+* **Implement multi-tenancy** by separating data for different tenants
+* **Environment separation** between development, staging, and production
+* **Prevent key collisions** when multiple applications share the same Redis instance
+* **Simplify data management** with consistent naming patterns
+
+Redis OM Spring automatically handles keyspace management for both `@Document` and `@RedisHash` entities, ensuring that all related keys (data, indexes, and metadata) use consistent prefixes.
+
+== Default Keyspace Behavior
+
+=== Automatic Keyspace Generation
+
+By default, Redis OM Spring uses the entity class name as the keyspace:
+
+[source,java]
+----
+@Document
+public class User {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String email;
+  
+  @Searchable
+  private String name;
+}
+----
+
+This generates Redis keys like:
+* **Entity data**: `User:12345` (where 12345 is the ID)
+* **Search index**: `UserIdx`
+* **Keyspace prefix for search**: `User:`
+
+=== RedisHash Default Behavior
+
+[source,java]
+----
+@RedisHash
+public class Product {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String name;
+  
+  @Indexed
+  private String category;
+}
+----
+
+This generates Redis keys like:
+* **Entity data**: `Product:67890`
+* **Search index**: `ProductIdx`
+* **Keyspace prefix for search**: `Product:`
+
+== Custom Keyspaces
+
+=== Using @Document Value
+
+You can specify a custom keyspace by providing a value to the `@Document` annotation:
+
+[source,java]
+----
+@Document("tst")  // Custom keyspace "tst"
+public class Permit {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String permitNumber;
+  
+  @Searchable
+  private String description;
+}
+----
+
+This generates Redis keys like:
+* **Entity data**: `tst:12345`
+* **Search index**: `PermitIdx`
+* **Keyspace prefix for search**: `tst:`
+
+=== Environment-Specific Keyspaces
+
+A common pattern is to use environment-specific keyspaces:
+
+[source,java]
+----
+@Document("${app.environment:dev}_users")
+public class User {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String email;
+  
+  @Searchable
+  private String name;
+}
+----
+
+With application properties:
+[source,yaml]
+----
+# application-dev.yml
+app:
+  environment: dev
+
+# application-staging.yml  
+app:
+  environment: staging
+
+# application-prod.yml
+app:
+  environment: prod
+----
+
+This generates environment-specific keys:
+* **Development**: `dev_users:12345`
+* **Staging**: `staging_users:12345`
+* **Production**: `prod_users:12345`
+
+== Multi-Tenant Keyspaces
+
+=== Tenant-Specific Prefixes
+
+For multi-tenant applications, you can use tenant-specific keyspaces:
+
+[source,java]
+----
+@Document("tenant_${tenant.id:default}_orders")
+public class Order {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String customerId;
+  
+  @Indexed
+  private LocalDateTime orderDate;
+  
+  @Indexed
+  private BigDecimal amount;
+}
+----
+
+Configuration:
+[source,yaml]
+----
+tenant:
+  id: ${TENANT_ID:default}
+----
+
+This generates tenant-specific keys:
+* **Tenant ABC**: `tenant_abc_orders:12345`
+* **Tenant XYZ**: `tenant_xyz_orders:12345`
+
+=== Runtime Keyspace Resolution
+
+For more dynamic scenarios, you can configure custom keyspace resolvers:
+
+[source,java]
+----
+@Configuration
+public class KeyspaceConfig {
+  
+  @Bean
+  public RedisMappingContext keyValueMappingContext() {
+    RedisMappingContext context = new RedisMappingContext();
+    
+    // Custom keyspace resolver
+    context.setKeySpaceResolver(type -> {
+      String tenantId = getCurrentTenantId(); // Your logic to get tenant ID
+      String environment = getEnvironment();  // Your logic to get environment
+      
+      return environment + "_" + tenantId + "_" + type.getSimpleName();
+    });
+    
+    return context;
+  }
+  
+  private String getCurrentTenantId() {
+    // Implementation depends on your tenant resolution strategy
+    // Could come from ThreadLocal, JWT token, HTTP header, etc.
+    return TenantContext.getCurrentTenantId();
+  }
+  
+  private String getEnvironment() {
+    return System.getProperty("app.environment", "dev");
+  }
+}
+----
+
+This could generate keys like:
+* **Dev/Tenant A**: `dev_tenantA_Order:12345`
+* **Prod/Tenant B**: `prod_tenantB_Order:12345`
+
+== Keyspace Configuration Examples
+
+=== Simple Application Namespacing
+
+[source,java]
+----
+// Application: E-commerce platform
+@Document("ecommerce_products")
+public class Product {
+  @Id
+  private String id;
+  
+  @Searchable
+  private String name;
+  
+  @Indexed
+  private String category;
+  
+  @Indexed
+  private BigDecimal price;
+}
+
+@Document("ecommerce_orders")
+public class Order {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String customerId;
+  
+  @Indexed
+  private LocalDateTime orderDate;
+}
+
+@Document("ecommerce_customers")
+public class Customer {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String email;
+  
+  @Searchable
+  private String name;
+}
+----
+
+=== Feature-Based Keyspaces
+
+[source,java]
+----
+// Feature: Analytics
+@Document("analytics_events")
+public class AnalyticsEvent {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String eventType;
+  
+  @Indexed
+  private LocalDateTime timestamp;
+}
+
+// Feature: User Management
+@Document("users_profiles")
+public class UserProfile {
+  @Id
+  private String id;
+  
+  @Searchable
+  private String displayName;
+  
+  @Indexed
+  private String department;
+}
+
+// Feature: Content Management
+@Document("cms_articles")
+public class Article {
+  @Id
+  private String id;
+  
+  @Searchable
+  private String title;
+  
+  @Indexed
+  private String category;
+}
+----
+
+=== Version-Based Keyspaces
+
+[source,java]
+----
+@Document("v2_users")  // Version 2 of user entity
+public class User {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String email;
+  
+  @Searchable
+  private String fullName;  // Changed from separate first/last name
+  
+  @Indexed
+  private LocalDateTime lastLoginDate;  // New field
+}
+
+// Allows gradual migration from v1_users to v2_users
+----
+
+== Advanced Keyspace Patterns
+
+=== Hierarchical Keyspaces
+
+[source,java]
+----
+@Document("company_${company.id}_department_${department.id}_employees")
+public class Employee {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String employeeNumber;
+  
+  @Searchable
+  private String name;
+  
+  @Indexed
+  private String role;
+}
+----
+
+Configuration:
+[source,yaml]
+----
+company:
+  id: ${COMPANY_ID}
+department:
+  id: ${DEPARTMENT_ID}
+----
+
+=== Time-Based Keyspaces
+
+[source,java]
+----
+@Document("logs_${log.date:#{T(java.time.LocalDate).now().toString()}}")
+public class LogEntry {
+  @Id
+  private String id;
+  
+  @Indexed
+  private LocalDateTime timestamp;
+  
+  @Indexed
+  private String level;
+  
+  @Searchable
+  private String message;
+}
+----
+
+This creates daily keyspaces like:
+* `logs_2024-01-15:12345`
+* `logs_2024-01-16:67890`
+
+== Repository Usage with Keyspaces
+
+Repositories automatically work with the configured keyspaces:
+
+[source,java]
+----
+public interface UserRepository extends RedisDocumentRepository<User, String> {
+  // These methods automatically use the configured keyspace
+  List<User> findByEmail(String email);
+  List<User> findByName(String name);
+}
+
+@Service
+public class UserService {
+  @Autowired
+  private UserRepository userRepository;
+  
+  public User createUser(String email, String name) {
+    User user = new User();
+    user.setEmail(email);
+    user.setName(name);
+    
+    // Saved with configured keyspace prefix
+    return userRepository.save(user);
+  }
+  
+  public List<User> searchUsers(String query) {
+    // Search operates within the configured keyspace
+    return userRepository.findByName(query);
+  }
+}
+----
+
+== Entity Streams with Keyspaces
+
+Entity Streams also respect keyspace configuration:
+
+[source,java]
+----
+@Service
+public class ProductAnalyticsService {
+  @Autowired
+  private EntityStream entityStream;
+  
+  public List<Product> getProductsByCategory(String category) {
+    // Automatically uses the configured keyspace for Product entities
+    return entityStream
+      .of(Product.class)
+      .filter(Product$.CATEGORY.eq(category))
+      .collect(Collectors.toList());
+  }
+}
+----
+
+== Testing with Keyspaces
+
+=== Test-Specific Keyspaces
+
+[source,java]
+----
+@SpringBootTest
+@TestPropertySource(properties = {
+  "app.environment=test"
+})
+class ProductServiceTest {
+  
+  @Autowired
+  private ProductRepository productRepository;
+  
+  @Test
+  void testProductCreation() {
+    Product product = new Product();
+    product.setName("Test Product");
+    product.setCategory("Electronics");
+    
+    // Saved with "test_products:" prefix
+    Product saved = productRepository.save(product);
+    
+    assertThat(saved.getId()).isNotNull();
+  }
+  
+  @AfterEach
+  void cleanup() {
+    // Only cleans up test keyspace
+    productRepository.deleteAll();
+  }
+}
+----
+
+=== Keyspace Isolation in Tests
+
+[source,java]
+----
+@Configuration
+@Profile("test")
+public class TestKeyspaceConfig {
+  
+  @Bean
+  @Primary
+  public RedisMappingContext testKeyValueMappingContext() {
+    RedisMappingContext context = new RedisMappingContext();
+    
+    // Add test prefix to all keyspaces
+    context.setKeySpaceResolver(type -> 
+      "test_" + System.currentTimeMillis() + "_" + type.getSimpleName()
+    );
+    
+    return context;
+  }
+}
+----
+
+== Performance Considerations
+
+=== Keyspace Design Impact
+
+* **Index Performance**: Each keyspace has its own search indexes, which can improve query performance by reducing index size
+* **Memory Usage**: Multiple keyspaces may increase memory usage due to separate indexes
+* **Operational Complexity**: Too many keyspaces can complicate monitoring and maintenance
+
+=== Best Practices
+
+==== Keep Keyspaces Simple
+
+[source,java]
+----
+// Good: Simple, clear keyspace
+@Document("users")
+public class User { ... }
+
+// Avoid: Overly complex keyspace
+@Document("${app.name}_${app.version}_${environment}_${region}_users")
+public class User { ... }
+----
+
+==== Use Consistent Naming
+
+[source,java]
+----
+// Good: Consistent naming pattern
+@Document("ecommerce_products")
+@Document("ecommerce_orders")
+@Document("ecommerce_customers")
+
+// Avoid: Inconsistent patterns
+@Document("products_ecom")
+@Document("ecommerce_orders")
+@Document("customer_data")
+----
+
+==== Consider Query Patterns
+
+[source,java]
+----
+// If queries often span tenants, avoid tenant-specific keyspaces
+@Document("global_analytics")  // Better for cross-tenant reports
+
+// If queries are tenant-specific, use tenant keyspaces
+@Document("tenant_${tenant.id}_orders")  // Better for tenant isolation
+----
+
+== Monitoring and Troubleshooting
+
+=== Key Pattern Analysis
+
+Use Redis commands to analyze key patterns:
+
+[source,bash]
+----
+# List all keys with a specific keyspace prefix
+redis-cli KEYS "ecommerce_products:*"
+
+# Count keys in a keyspace
+redis-cli EVAL "return #redis.call('keys', ARGV[1])" 0 "ecommerce_products:*"
+
+# Get keyspace information
+redis-cli INFO keyspace
+----
+
+=== Search Index Information
+
+[source,java]
+----
+@Service
+public class KeyspaceMonitoringService {
+  @Autowired
+  private RedisModulesOperations<String> modulesOperations;
+  
+  public Map<String, Object> getIndexInfo(String indexName) {
+    SearchOperations<String> searchOps = modulesOperations.opsForSearch(indexName);
+    return searchOps.getInfo();
+  }
+  
+  public void logKeyspaceUsage() {
+    Map<String, Object> userIndexInfo = getIndexInfo("UserIdx");
+    Map<String, Object> productIndexInfo = getIndexInfo("ProductIdx");
+    
+    // Log index statistics for monitoring
+    logger.info("User index docs: {}", userIndexInfo.get("num_docs"));
+    logger.info("Product index docs: {}", productIndexInfo.get("num_docs"));
+  }
+}
+----
+
+== Migration Strategies
+
+=== Keyspace Migration
+
+When changing keyspaces, you may need to migrate existing data:
+
+[source,java]
+----
+@Service
+public class KeyspaceMigrationService {
+  @Autowired
+  private RedisTemplate<String, String> redisTemplate;
+  
+  @Autowired
+  private RedisModulesOperations<String> modulesOperations;
+  
+  public void migrateKeyspace(String oldPrefix, String newPrefix) {
+    Set<String> oldKeys = redisTemplate.keys(oldPrefix + ":*");
+    
+    for (String oldKey : oldKeys) {
+      String newKey = oldKey.replace(oldPrefix + ":", newPrefix + ":");
+      
+      // Copy data to new key
+      redisTemplate.rename(oldKey, newKey);
+    }
+    
+    // Update search indexes if needed
+    updateSearchIndexes(oldPrefix, newPrefix);
+  }
+  
+  private void updateSearchIndexes(String oldPrefix, String newPrefix) {
+    // Implementation depends on your specific requirements
+    // May involve dropping old indexes and creating new ones
+  }
+}
+----
+
+== Learning More
+
+For additional information on Redis organization and management:
+
+* xref:configuration.adoc[Configuration] - Redis OM Spring configuration options
+* xref:entity-streams.adoc[Entity Streams] - Advanced querying across keyspaces
+* xref:index-creation.adoc[Index Creation and Management] - How indexes work with keyspaces
+* xref:time-to-live.adoc[Time To Live] - TTL behavior with keyspaces

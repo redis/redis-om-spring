@@ -1,0 +1,185 @@
+= Index Creation and Management
+:page-toclevels: 3
+:experimental:
+:source-highlighter: highlight.js
+
+== Introduction to Index Creation
+
+Redis OM Spring automates the creation and management of Redis Query Engine indices based on your entity annotations. As of Redis 8, the Query Engine is a standard component of Redis. The process involves:
+
+- Entity annotations (@Document, @Indexed, etc.) define the structure
+- Index creation process generates appropriate Redis Query Engine indices
+- Different creation modes control how indices are managed
+
+Benefits include fast queries, full-text search, numeric range queries, geospatial search, and vector similarity search.
+
+== Index Creation Process
+
+=== Automatic Index Creation
+
+When your application starts, Redis OM Spring scans for annotated entity classes and creates the necessary indices:
+
+[source,java]
+----
+@Document(indexName = "product-idx")
+public class Product {
+    @Id
+    private String id;
+
+    @TextIndexed
+    private String name;
+
+    @TextIndexed(weight = 0.5)
+    private String description;
+
+    @NumericIndexed
+    private double price;
+
+    @TagIndexed
+    private List<String> categories;
+
+    // Other fields, getters, setters
+}
+----
+
+Based on these annotations, Redis OM Spring will create a Redis Query Engine index named `product-idx` with appropriate field definitions.
+
+=== Index Creation Modes
+
+Control how indices are created using the `indexCreationMode` attribute:
+
+[source,java]
+----
+@Document(indexName = "product-idx", indexCreationMode = IndexCreationMode.RECREATE_INDEXES)
+public class Product {
+    // Fields
+}
+----
+
+Available modes:
+
+* `CREATE_IF_NOT_EXIST` (default) - Only create the index if it doesn't exist
+* `RECREATE_INDEXES` - Drop and recreate the index on application startup
+* `NO_CREATE_NO_DROP` - Don't create or drop indices (manual management)
+
+The index creation process varies based on the selected mode:
+
+1. With `CREATE_IF_NOT_EXIST` (default):
+   - Redis OM Spring checks if the index already exists
+   - If it doesn't exist, creates the index
+   - If it exists, skips creation
+
+2. With `RECREATE_INDEXES`:
+   - Drops the index if it exists
+   - Creates a new index
+
+3. With `NO_CREATE_NO_DROP`:
+   - Skips all index operations
+
+== Advanced Index Configuration
+
+=== @IndexingOptions
+
+The `@IndexingOptions` annotation provides advanced configuration for your indices:
+
+[source,java]
+----
+@Document
+@IndexingOptions(
+    stopWords = {"a", "an", "the", "in", "on", "at"}, 
+    language = "English",
+    prefixes = {"product:"}
+)
+public class Product {
+    // Fields
+}
+----
+
+Configuration options:
+
+* `stopWords` - Words to ignore in text searches
+* `language` - Default language for stemming (e.g., "English", "French", "German")
+* `prefixes` - Key prefixes to include in the index
+* `filter` - Custom filtering expression for the index
+* `maxTextFields` - Whether to index all text fields
+* `temporaryIndex` - Create a temporary index that will be deleted when the connection closes
+
+=== Field-Level Configuration
+
+Configure individual fields with specific indexing options:
+
+[source,java]
+----
+@Document
+public class Article {
+    @Id
+    private String id;
+    
+    @TextIndexed(sortable = true, weight = 1.5, nostem = true)
+    private String title;
+    
+    @TextIndexed(weight = 1.0)
+    private String content;
+    
+    @TextIndexed(phonetic = "dm:en")
+    private String authorName;
+    
+    // Other fields
+}
+----
+
+== Manual Index Management
+
+=== Programmatic Index Creation
+
+For advanced cases, you can manage indices programmatically using the `RediSearchIndexer` class:
+
+[source,java]
+----
+@Service
+public class IndexService {
+    
+    @Autowired
+    private RediSearchIndexer indexer;
+    
+    public void recreateIndex(Class<?> entityClass) {
+        // Drop the existing index and documents for the entity
+        indexer.dropIndexAndDocumentsFor(entityClass);
+        
+        // Create a new index for the entity
+        indexer.createIndexFor(entityClass);
+    }
+}
+----
+
+=== Redis CLI Commands
+
+You can also manage indices directly using the Redis CLI:
+
+[source,bash]
+----
+# List all indices
+FT._LIST
+
+# Get index info
+FT.INFO product-idx
+
+# Drop an index
+FT.DROPINDEX product-idx
+----
+
+== Best Practices
+
+* Choose the appropriate index creation mode for your environment
+* Use `CREATE_IF_NOT_EXIST` for production to avoid disruption
+* Use `RECREATE_INDEXES` during development for schema changes
+* Configure language settings for proper text searching
+* Define appropriate stop words for your domain
+* Consider index size and memory usage
+* Be careful with sortable fields as they increase memory usage
+
+== Next Steps
+
+* xref:search.adoc[Redis Query Engine Integration]
+* xref:entity-streams.adoc[Entity Streams]
+* xref:vector-search.adoc[Vector Similarity Search]

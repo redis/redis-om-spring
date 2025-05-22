@@ -1,0 +1,76 @@
+= Optimistic Locking
+
+Redis OM supports optimistic locking to prevent overwrite conflicts.
+
+== Version Field
+
+Add a `version` field to your entity:
+
+[source,java]
+----
+public class MyEntity {
+
+  @Version
+  private Long version;
+  
+  //...
+}
+----
+
+This will be used to track revisions.
+
+== Initial Save
+
+Saving a new entity starts version at 1:
+
+[source,java]
+----
+MyEntity entity = new MyEntity();
+repository.save(entity);
+
+entity.getVersion(); // 1
+----
+
+== Updating 
+
+When updating, the version is incremented:
+
+[source,java]
+----
+entity.setFoo("updated");
+repository.save(entity); 
+
+entity.getVersion(); // 2
+----
+
+== Conflict Detection
+
+If concurrent updates try to save an outdated version, an error is thrown:
+
+[source,java]
+----
+// In thread 1 
+entity.setFoo("v1");
+repository.save(entity);
+
+// In thread 2
+entity.setFoo("v2"); 
+repository.save(entity); // ERROR!
+---- 
+
+This prevents overwriting newer changes.
+
+== Delete
+
+Deleting also verifies the version:
+
+[source,java]
+----
+// In thread 1
+repository.delete(entity) 
+
+// In thread 2 
+repository.delete(entity) // ERROR!
+----
+
+The version field enables detecting conflicts on save/delete.

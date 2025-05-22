@@ -1,0 +1,48 @@
+graph TD
+    subgraph "Spring Application"
+        SpringApp("Spring Boot Application")
+        
+        subgraph "Redis OM Spring"
+            redisOM["Redis OM Spring Core\n(@Document, @RedisHash, etc.)"]
+            redisOMAI["Redis OM Spring AI\n(@Vectorize)"]
+            redisOMRepo["Repository Abstractions\n(RedisDocumentRepository)"]
+            redisOMSearch["Search & Indexing\n(@Indexed, @Searchable)"]
+            redisOMStream["Entity Streams\n(Filter, Sort, Aggregate)"]
+            
+            redisOM --> redisOMRepo
+            redisOM --> redisOMSearch
+            redisOM --> redisOMStream
+            redisOMAI -.-> redisOM
+            redisOMAI -.-> SpringAI
+        end
+        
+        SpringAI["Spring AI\n(Embedding Providers)"]
+        SpringApp --> redisOM
+    end
+    
+    subgraph "Redis 8.0.0+"
+        Redis[(Redis Core)]
+        QueryEngine[("Query Engine")]
+        JSON[("JSON Documents")]
+        ProbFilters[("Probabilistic Filters")]
+        VectorSearch[("Vector Similarity Search")]
+        
+        Redis --- QueryEngine
+        Redis --- JSON
+        Redis --- ProbFilters
+        Redis --- VectorSearch
+    end
+    
+    redisOM --> Redis
+    redisOMSearch --> QueryEngine
+    redisOM --> JSON
+    redisOM --> ProbFilters
+    redisOMAI --> VectorSearch
+    
+    style redisOM fill:#f9f,stroke:#333,stroke-width:2px
+    style redisOMAI fill:#bbf,stroke:#333,stroke-width:2px
+    style Redis fill:#f96,stroke:#333,stroke-width:2px
+    style QueryEngine fill:#9f6,stroke:#333,stroke-width:2px
+    style JSON fill:#9f6,stroke:#333,stroke-width:2px
+    style ProbFilters fill:#9f6,stroke:#333,stroke-width:2px
+    style VectorSearch fill:#9f6,stroke:#333,stroke-width:2px

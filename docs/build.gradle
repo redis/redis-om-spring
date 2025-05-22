@@ -1,0 +1,69 @@
+plugins {
+	id 'base'
+	id 'com.github.node-gradle.node' version '7.0.2'
+}
+
+// Don't publish this module
+tasks.matching { it.name.startsWith('publish') }.configureEach {
+	enabled = false
+}
+
+description = 'Redis OM Spring Documents Site'
+
+// Define properties similar to Maven pom.xml
+ext {
+	nodeVersion = '20.5.0' // Note: no 'v' prefix for node-gradle plugin
+	npmVersion = '9.8.0'
+	antoraVersion = '3.1.4'
+}
+
+// Configure Node.js plugin
+node {
+	version = nodeVersion
+	npmVersion = project.ext.npmVersion
+	download = true
+	nodeProjectDir = file("${project.projectDir}")
+}
+
+// Install Antora CLI and generator
+task installAntora(type: NpmTask) {
+	args = [
+		'install',
+		"@antora/cli@${antoraVersion}",
+		"@antora/site-generator-default@${antoraVersion}"
+	]
+}
+
+// Generate Antora site
+task generateSite(type: NodeTask) {
+	dependsOn installAntora
+	script = file('node_modules/@antora/cli/bin/antora')
+
+	// Add options to handle multi-version gracefully
+	args = [
+		'--fetch',
+		'--stacktrace',
+		'--log-format=pretty',
+		'antora-playbook.yml',
+		'--to-dir=build/site'
+	]
+
+	// Capture buildDir at configuration time to avoid execution-time project access
+	def buildDirectory = project.buildDir
+	outputs.dir("${buildDirectory}/site")
+
+	doFirst {
+		mkdir "${buildDirectory}/site"
+		logger.lifecycle("Building multi-version documentation with Antora...")
+	}
+}
+
+// Make the build task depend on generating the Antora site
+build.dependsOn generateSite
+assemble.dependsOn generateSite
+
+// Clean up Antora-related directories when cleaning the project
+clean {
+	delete 'node_modules'
+	delete project.buildDir
+}

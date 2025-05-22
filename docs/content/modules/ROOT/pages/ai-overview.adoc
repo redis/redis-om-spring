@@ -1,0 +1,197 @@
+= AI Integration Overview
+:page-toclevels: 3
+:page-pagination:
+
+Redis OM Spring offers seamless integration with AI capabilities, primarily through vector embeddings and similarity search functionality. This integration provides a powerful foundation for building AI-enhanced applications with Redis as your database.
+
+== Introduction to Vector Search
+
+Vector Similarity Search (VSS) is a technique that allows searching for items based on how similar they are in a multi-dimensional space. Unlike traditional exact-match searches, VSS finds items that are conceptually or semantically similar.
+
+Redis Stack implements vector search through the Redis Query Engine (formerly RediSearch), which provides high-performance vector indexing and search capabilities. As of Redis 8, the Query Engine is a standard component of Redis. Redis OM Spring makes these capabilities easily accessible through familiar Spring patterns.
+
+== Key AI Features in Redis OM Spring
+
+Redis OM Spring provides several key features for AI integration:
+
+* **Embedding Generation**: Automatic generation of embeddings for text and images
+* **Vector Storage**: Efficient storage of vector data in Redis
+* **Vector Indexing**: Creation and management of vector indices for fast similarity search
+* **Query API**: Simple API for vector similarity search
+* **Spring AI Integration**: Seamless integration with Spring AI for embedding generation
+* **Cloud Provider Support**: Support for Azure OpenAI and other embedding providers
+
+== Architecture Overview
+
+The architecture of Redis OM Spring's AI integration consists of:
+
+1. **Domain Objects** are annotated with `@Document` and `@Vectorize` to enable vector search capabilities
+2. **Repositories** provide an interface to search these objects
+3. **Vector Search API** handles vector similarity queries
+4. **Embedding Generation** converts text or images to vector embeddings using various providers
+5. **Index Management** creates and manages vector indices using either HNSW (hierarchical navigable small world) or FLAT algorithms
+6. **RediSearch** executes the searches within Redis
+7. **RedisJSON** stores the domain objects and their vector representations
+
+== Using AI Features
+
+To use the AI features in Redis OM Spring, you need to:
+
+1. Add the necessary dependencies
+2. Configure an embedding provider
+3. Annotate your domain objects with `@Vectorize` and `@VectorIndexed`
+4. Create repositories that support vector searches
+5. Perform similarity searches with the provided APIs
+
+=== Adding Dependencies
+
+[source,xml]
+----
+<!-- Core Redis OM Spring -->
+<dependency>
+  <groupId>com.redis.om</groupId>
+  <artifactId>redis-om-spring</artifactId>
+  <version>{redis-om-version}</version>
+</dependency>
+
+<!-- AI integration module -->
+<dependency>
+  <groupId>com.redis.om</groupId>
+  <artifactId>redis-om-spring-ai</artifactId>
+  <version>{redis-om-version}</version>
+</dependency>
+
+<!-- Spring AI integration -->
+<dependency>
+  <groupId>org.springframework.ai</groupId>
+  <artifactId>spring-ai-openai-spring-boot-starter</artifactId>
+  <version>1.0.0</version>
+</dependency>
+----
+
+=== Configuring Embedding Providers
+
+Redis OM Spring supports several embedding providers:
+
+* Spring AI (OpenAI, Azure OpenAI, etc.)
+* Hugging Face
+* Custom embedding providers
+
+Configuration can be done in your `application.properties` or `application.yaml` file:
+
+[source,yaml]
+----
+spring:
+  ai:
+    openai:
+      api-key: your-openai-key
+
+redis:
+  om:
+    ai:
+      embedding-provider: azure-openai
+      embedding-model: text-embedding-ada-002
+----
+
+== Example: Vectorizing a Model
+
+Here's a simple example of annotating a domain object for vector search:
+
+[source,java]
+----
+@Document
+public class Product {
+  @Id
+  private String id;
+
+  @Indexed
+  private String name;
+
+  @Indexed
+  private String description;
+
+  // Source field for embedding generation
+  @Vectorize(
+    destination = "textEmbedding",
+    embeddingType = EmbeddingType.SENTENCE,
+    provider = EmbeddingProvider.OPENAI
+  )
+  private String productText;
+
+  // Vector field with index
+  @Indexed(
+    schemaFieldType = SchemaFieldType.VECTOR,
+    algorithm = VectorAlgorithm.HNSW,
+    type = VectorType.FLOAT32,
+    dimension = 1536,
+    distanceMetric = DistanceMetric.COSINE
+  )
+  private float[] textEmbedding; // float[] for @Document entities
+
+  // getters and setters
+}
+----
+
+In this example:
+- `@Vectorize` specifies which field to use for generating the embedding and where to store it
+- `@Indexed` with vector schema type creates a vector index for the field
+- When a Product is saved, Redis OM Spring automatically generates an embedding based on the productText field
+
+== Vector Search Types
+
+Redis OM Spring supports several types of vector searches:
+
+* **KNN Search**: Find the K nearest neighbors to a query vector
+* **Range Search**: Find all items within a certain distance
+* **Hybrid Search**: Combine vector search with traditional filtering
+
+=== Example: Performing a KNN Search
+
+[source,java]
+----
+@Autowired
+EntityStream entityStream;
+
+@Autowired
+ProductRepository repository;
+
+// Find products similar to a given product
+public List<Product> findSimilarProducts(String productId, int k) {
+  Optional<Product> maybeProduct = repository.findById(productId);
+  if (maybeProduct.isPresent()) {
+    Product product = maybeProduct.get();
+
+    return entityStream
+      .of(Product.class)
+      .filter(Product$.TEXT_EMBEDDING.knn(k, product.getTextEmbedding()))
+      .sorted(Product$._TEXT_EMBEDDING_SCORE)
+      .limit(k)
+      .collect(Collectors.toList());
+  }
+  return Collections.emptyList();
+}
+----
+
+== Vector Search Applications
+
+Vector search has many practical applications:
+
+* **Semantic Search**: Find documents by meaning rather than keywords
+* **Recommendation Systems**: Recommend similar items based on embeddings
+* **Image Search**: Find similar images based on visual features
+* **Anomaly Detection**: Identify outliers in data
+
+For concrete implementations of these use cases, check out the xref:vector-search-examples.adoc[Vector Search Examples] section.
+
+== Azure OpenAI Integration
+
+Redis OM Spring provides special support for Azure OpenAI, including authentication via Microsoft Entra ID. This integration is covered in detail in the xref:azure-openai.adoc[Azure OpenAI Integration] section.
+
+== Learning More
+
+To dive deeper into AI and vector search capabilities:
+
+* xref:vector-search.adoc[Vector Similarity Search] - Technical details of vector search
+* xref:embedding-providers.adoc[Embedding Providers] - Available embedding providers and configuration
+* xref:azure-openai.adoc[Azure OpenAI Integration] - Working with Azure OpenAI and Entra ID
+* xref:vector-search-examples.adoc[Vector Search Examples] - Real-world examples using the demo applications

@@ -1,0 +1,428 @@
+[[hash.mappings]]
+= Redis Hash Mappings
+:page-toclevels: 3
+:experimental:
+:source-highlighter: highlight.js
+
+== Introduction
+
+Spring Data Redis (SDR), the library that Redis OM Spring extends, provides mapping of Spring Entities to Redis Hashes. Redis OM Spring enhances this capability by integrating with the Query Engine available in Redis 8.0.0+ (or via Redis Stack for older versions).
+
+This integration brings powerful search and indexing capabilities to Redis Hashes, while maintaining compatibility with existing Spring Data Redis code.
+
+== Key Benefits of Redis OM Spring Hash Mapping
+
+* **Enhanced Query Capabilities**: Full text search, numeric ranges, geo-spatial queries
+* **Backward Compatibility**: Works with existing Spring Data Redis code
+* **Simple Annotations**: Easy to add indexing without changing your data model
+* **Performance**: Efficient storage format for simple objects
+
+== Basic Usage
+
+The examples in this page are based on a Spring Boot application with the Redis OM Spring dependency added to the POM as shown in the xref:setup.adoc[setup section].
+
+=== Entity Definition
+
+Redis OM Spring enables entities annotated with the `@RedisHash` annotation to be persisted as https://redis.io/docs/data-types/hashes/[Redis Hashes]:
+
+.Sample Person Entity
+====
+[source,java]
+----
+@Data
+@NoArgsConstructor(force = true)
+@RequiredArgsConstructor(staticName = "of")
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@RedisHash("people")
+public class Person {
+
+  @Id
+  String id;
+  
+  @NonNull
+  @Indexed
+  String name;
+  
+  @NonNull
+  @Indexed
+  String email;
+  
+  @NonNull
+  String nickname;
+  
+  @NonNull
+  @Indexed
+  Set<String> roles = new HashSet<>();
+  
+  @NonNull
+  Set<String> favoriteFoods = new HashSet<>();
+}
+----
+====
+
+The key components in this entity definition are:
+
+1. `@RedisHash("people")` - Designates this class as a Redis Hash entity with the keyspace "people"
+2. `@Id` - Identifies the unique ID field (automatically generated if null)
+3. `@Indexed` - Marks fields for secondary indexing to enable queries
+
+=== Repository Definition
+
+To take advantage of Redis OM Spring's enhanced capabilities, create a repository that extends `RedisEnhancedRepository`:
+
+.Redis Enhanced Repository Interface
+====
+[source,java]
+----
+public interface PersonRepository extends RedisEnhancedRepository<Person, String> {
+  // Custom query methods
+  boolean existsByEmail(String email);
+  boolean existsByNickname(String nickname);
+  
+  // Find by indexed fields
+  Iterable<Person> findByName(String name);
+  Iterable<Person> findByEmail(String email);
+  
+  // Find by tag field
+  Iterable<Person> findByRoles(Set<String> roles);
+  Iterable<Person> findByRolesContainingAll(Set<String> roles);
+  
+  // Custom RediSearch query
+  @Query("@roles:{$roles}")
+  Iterable<Person> withRoles(@Param("roles") Set<String> roles);
+}
+----
+====
+
+=== Enabling the Repository
+
+Enable the repositories in your Spring Boot application:
+
+.Application Configuration
+====
+[source,java]
+----
+@SpringBootApplication
+@EnableRedisEnhancedRepositories
+public class RedisOmHashesApplication {
+  public static void main(String[] args) {
+    SpringApplication.run(RedisOmHashesApplication.class, args);
+  }
+  
+  @Bean
+  CommandLineRunner repositoryDemo(PersonRepository repository) {
+    return args -> {
+      // Create and save a person
+      Person person = new Person();
+      person.setName("Mat Cauthon");
+      person.setEmail("mat@bandoftheredhand.com");
+      person.setNickname("Prince of Ravens");
+      person.getRoles().add("general");
+      person.getRoles().add("gambler");
+      person.getFavoriteFoods().add("apple pie");
+      
+      // Note: Address field removed from Person model in this example
+      // Focus on the roles and other simple fields
+      
+      repository.save(person);
+      
+      // Find by indexed field using Set query
+      Set<String> roles = Set.of("general");
+      Iterable<Person> generals = repository.findByRoles(roles);
+      System.out.println("Generals: " + generals);
+      
+      // Note: This example uses a Company model with location field
+      // List<Company> nearbyCompanies = companyRepository.findByLocationNear(
+      //     new Point(15.0, 37.0), new Distance(200, Metrics.KILOMETERS));
+      // System.out.println("Companies near coordinates: " + nearbyCompanies);
+    };
+  }
+}
+----
+====
+
+== Basic CRUD Operations
+
+Once your repository is set up, you can perform standard CRUD operations:
+
+[source,java]
+----
+// Create
+Person newPerson = new Person();
+newPerson.setName("Perrin Aybara");
+newPerson.setEmail("perrin@wolfbrother.com");
+repository.save(newPerson);
+
+// Read
+Optional<Person> found = repository.findById(newPerson.getId());
+List<Person> allPeople = repository.findAll();
+
+// Update
+found.ifPresent(person -> {
+  person.setNickname("Lord of the Two Rivers");
+  repository.save(person);
+});
+
+// Delete
+repository.deleteById(newPerson.getId());
+----
+
+== How Redis OM Spring Stores Redis Hashes
+
+Redis Hashes are flat key-value structures. When storing Java objects, Redis OM Spring follows these mapping rules:
+
+=== Object-to-Hash Mapping
+
+[cols="1,2,3"]
+|===
+|Java Type |Sample |Redis Hash Representation
+
+|Simple Type (String, Number, etc.)
+|`String name = "Mat";`
+|`name = "Mat"`
+
+|Enum
+|`Status status = Status.ACTIVE;`
+|`status = "ACTIVE"`
+
+|Date/Time
+|`LocalDate birthdate = LocalDate.of(2023, 1, 15);`
+|`birthdate = "2023-01-15"`
+
+|Complex Type
+|`Address address = new Address("Tear");`
+|`address.city = "Tear"`
+
+|List/Set of Simple Type
+|`List<String> nicknames = List.of("Mat", "Matrim");`
+|`nicknames.[0] = "Mat"` +
+`nicknames.[1] = "Matrim"`
+
+|Map of Simple Type
+|`Map<String, String> attrs = Map.of("height", "tall");`
+|`attrs.[height] = "tall"`
+
+|List of Complex Type
+|`List<Address> addresses = List.of(new Address("Tear"));`
+|`addresses.[0].city = "Tear"`
+|===
+
+Additionally, Redis OM Spring adds a `_class` attribute to store type information:
+
+[source,text]
+----
+_class = com.example.Person
+id = 01HXYZ123ABC
+name = Mat Cauthon
+email = mat@bandoftheredhand.com
+roles.[0] = general
+roles.[1] = gambler
+address.city = Tear
+address.street = High Street
+----
+
+== Indexing and Searching
+
+=== Simple Property Indexes
+
+Use the `@Indexed` annotation to create secondary indexes for fields:
+
+[source,java]
+----
+@RedisHash("people")
+public class Person {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String name;
+  
+  @Indexed
+  private String email;
+}
+----
+
+This creates Redis Sets for each value:
+
+[source,text]
+----
+SADD people:name:Mat people:01HXYZ123ABC
+SADD people:email:mat@example.com people:01HXYZ123ABC
+----
+
+=== Geospatial Indexes
+
+For location-based queries, use the `@Indexed` annotation on Point fields:
+
+[source,java]
+----
+@RedisHash
+public class Company {
+  @Id
+  private String id;
+  
+  @Indexed
+  private Point location;
+  
+  @Searchable(sortable = true)
+  private String name;
+}
+----
+
+This enables geo-spatial queries:
+
+[source,text]
+----
+GEOADD CompanyIdx:location 13.361389 38.115556 Company:01HXYZ123ABC
+----
+
+=== Query Methods
+
+Define query methods in your repository interface:
+
+[source,java]
+----
+public interface PersonRepository extends RedisEnhancedRepository<Person, String> {
+  // Simple property query
+  List<Person> findByName(String name);
+  
+  // Composite query (AND)
+  List<Company> findByNameAndEmail(String name, String email);
+  
+  // Collection membership
+  List<Company> findByTags(Set<String> tags);
+  
+  // Boolean query
+  List<Company> findByPubliclyListed(boolean publiclyListed);
+  
+  // Geo-spatial query (using Company model with location)
+  List<Company> findByLocationNear(Point point, Distance distance);
+  
+  // String operations
+  List<Company> findByEmailStartingWith(String prefix);
+  List<Company> findByEmailEndingWith(String suffix);
+}
+----
+
+For detailed query capabilities, see the xref:repository-queries.adoc[Repository Query Methods] section.
+
+== Time To Live (TTL)
+
+You can set expiration times for entities:
+
+=== Class-Level TTL
+
+[source,java]
+----
+@RedisHash(timeToLive = 5) // 5 seconds
+public class ExpiringPerson {
+  @Id
+  String id;
+  
+  @NonNull
+  String name;
+}
+----
+
+=== Property-Level TTL
+
+[source,java]
+----
+@RedisHash(timeToLive = 5)
+public class ExpiringPerson {
+  @Id
+  String id;
+  
+  @NonNull
+  String name;
+  
+  @NonNull
+  @TimeToLive
+  Long ttl; // Overrides class-level TTL
+}
+----
+
+=== Default TTL (Class-Level Only)
+
+[source,java]
+----
+@RedisHash(timeToLive = 5)
+public class ExpiringPersonWithDefault {
+  @Id
+  String id;
+  
+  @NonNull
+  String name;
+  
+  // Uses class-level TTL (5 seconds)
+}
+----
+
+== Custom Keyspaces
+
+You can customize the keyspace (prefix) for your entities:
+
+=== Annotation-Based
+
+[source,java]
+----
+@RedisHash("customers")
+public class Person {
+  // ...
+}
+----
+
+=== Programmatic Configuration
+
+[source,java]
+----
+@Configuration
+@EnableRedisEnhancedRepositories
+public class RedisConfig {
+  
+  @Bean
+  public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+    RedisTemplate<String, Object> template = new RedisTemplate<>();
+    template.setConnectionFactory(connectionFactory);
+    template.setDefaultSerializer(new GenericJackson2JsonRedisSerializer());
+    return template;
+  }
+  
+  // Custom keyspace configuration can be done through 
+  // application.properties or by using different @RedisHash values
+}
+----
+
+== Redis Cluster Considerations
+
+When using Redis Cluster, it's important to ensure that related data is stored in the same hash slot to enable atomic operations and efficient queries.
+
+Use the `@IdAsHashTag` annotation to ensure that keys for an entity and its indexes are stored in the same hash slot:
+
+[source,java]
+----
+@RedisHash("hwht")
+public class HashWithHashTagId {
+  @Id
+  @IdFilter(value = IdAsHashTag.class)
+  private String id;
+  
+  @Indexed
+  @NonNull
+  private String name;
+}
+----
+
+== Performance Considerations
+
+* Redis Hashes are very efficient for simple data structures
+* Each query operation requires multiple Redis commands (index lookup + hash retrieval)
+* For complex nested objects, consider using xref:json_mappings.adoc[Redis JSON] instead
+* Writing objects to a Redis hash deletes and re-creates the whole hash, so data not mapped is lost
+
+== Next Steps
+
+* xref:json_mappings.adoc[Redis JSON Mappings] - Compare with JSON document mapping
+* xref:repository-queries.adoc[Repository Query Methods] - Learn about query capabilities
+* xref:entity-streams.adoc[Entity Streams] - Explore fluent query API
+* xref:search.adoc[Redis Query Engine Integration] - Understand the search capabilities

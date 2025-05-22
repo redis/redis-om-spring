@@ -1,0 +1,355 @@
+= Embedding Providers
+:page-toclevels: 3
+:page-pagination:
+
+Redis OM Spring supports multiple embedding providers to generate vector representations for your data. This page covers the available providers, how to configure them, and how to select the appropriate provider for your use case.
+
+== What are Embedding Providers?
+
+Embedding providers are services that generate vector embeddings from your data (text, images, etc.). These embeddings capture the semantic meaning of the data and can be used for similarity search, classification, and other machine learning tasks.
+
+Redis OM Spring abstracts the complexity of working with different embedding providers, allowing you to switch between them with minimal code changes.
+
+== Supported Embedding Providers
+
+Redis OM Spring supports the following embedding providers:
+
+[cols="1,3"]
+|===
+|Provider |Description
+
+|`OPEN_AI`
+|OpenAI's embedding API (default)
+
+|`AZURE_OPEN_AI`
+|Microsoft Azure's OpenAI service
+
+|`HF`
+|Hugging Face models (local or remote)
+
+|`SPRING_AI`
+|Models supported by the Spring AI project
+
+|`CUSTOM`
+|Your own custom implementation
+|===
+
+== Configuring Embedding Providers
+
+You can configure embedding providers through application properties or programmatically.
+
+=== Configuration via Properties
+
+[source,yaml]
+----
+redis:
+  om:
+    ai:
+      # The embedding provider to use (open-ai, azure-openai, hf, spring-ai, custom)
+      embedding-provider: azure-openai
+      
+      # The model to use for generating embeddings
+      embedding-model: text-embedding-ada-002
+      
+      # Azure OpenAI specific settings
+      azure-resource-name: your-azure-resource
+      azure-deployment-id: your-deployment-id
+      azure-api-version: 2023-05-15
+      
+      # Spring AI specific settings
+      spring-ai-bean-name: embeddingModel
+----
+
+=== Programmatic Configuration
+
+You can also configure embedding providers programmatically by creating a custom `Embedder` bean:
+
+[source,java]
+----
+@Configuration
+public class EmbeddingConfig {
+    @Bean
+    public Embedder customEmbedder() {
+        return new CustomEmbedder();
+    }
+}
+----
+
+== OpenAI Embedding Provider
+
+The OpenAI embedding provider uses OpenAI's API to generate embeddings.
+
+=== Configuration
+
+[source,yaml]
+----
+redis:
+  om:
+    ai:
+      embedding-provider: open-ai
+      embedding-model: text-embedding-ada-002
+      api-key: ${OPENAI_API_KEY}
+----
+
+=== Supported Models
+
+The OpenAI embedding provider supports various embedding models, including:
+
+* `text-embedding-ada-002` - 1536 dimensions (recommended)
+* `text-embedding-3-small` - 1536 dimensions
+* `text-embedding-3-large` - 3072 dimensions
+
+== Azure OpenAI Embedding Provider
+
+The Azure OpenAI provider uses Microsoft's Azure OpenAI service to generate embeddings.
+
+=== Configuration
+
+[source,yaml]
+----
+redis:
+  om:
+    ai:
+      embedding-provider: azure-openai
+      embedding-model: text-embedding-ada-002
+      azure-resource-name: your-azure-resource
+      azure-deployment-id: your-deployment-id
+      azure-api-version: 2023-05-15
+      api-key: ${AZURE_API_KEY}
+----
+
+=== Entra ID Authentication
+
+Redis OM Spring also supports Microsoft Entra ID (formerly Azure AD) authentication for Azure OpenAI:
+
+[source,yaml]
+----
+redis:
+  om:
+    ai:
+      embedding-provider: azure-openai
+      embedding-model: text-embedding-ada-002
+      azure-resource-name: your-azure-resource
+      azure-deployment-id: your-deployment-id
+      azure-api-version: 2023-05-15
+      entra-id:
+        enabled: true
+        client-id: ${AZURE_CLIENT_ID}
+        tenant-id: ${AZURE_TENANT_ID}
+        client-secret: ${AZURE_CLIENT_SECRET}
+----
+
+== Spring AI Embedding Provider
+
+The Spring AI provider leverages the Spring AI project to generate embeddings, providing access to a variety of models.
+
+=== Configuration
+
+[source,yaml]
+----
+redis:
+  om:
+    ai:
+      embedding-provider: spring-ai
+      spring-ai-bean-name: embeddingModel
+----
+
+=== Spring AI Integration
+
+To use Spring AI, you need to set up the appropriate Spring AI dependencies and configuration:
+
+[source,xml]
+----
+<dependency>
+  <groupId>org.springframework.ai</groupId>
+  <artifactId>spring-ai-openai-spring-boot-starter</artifactId>
+  <version>0.8.0</version>
+</dependency>
+----
+
+Then configure Spring AI:
+
+[source,yaml]
+----
+spring:
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+----
+
+And create a bean for the embedding model:
+
+[source,java]
+----
+@Configuration
+public class SpringAiConfig {
+    @Bean
+    public EmbeddingModel embeddingModel(OpenAiApi openAiApi) {
+        return new OpenAiEmbeddingModel(openAiApi);
+    }
+}
+----
+
+== Hugging Face Embedding Provider
+
+The Hugging Face provider allows you to use models from Hugging Face's model hub.
+
+=== Configuration
+
+[source,yaml]
+----
+redis:
+  om:
+    ai:
+      embedding-provider: hf
+      embedding-model: sentence-transformers/all-MiniLM-L6-v2
+      hf-api-key: ${HF_API_KEY}
+----
+
+== Creating a Custom Embedding Provider
+
+You can create a custom embedding provider by implementing the `Embedder` interface:
+
+[source,java]
+----
+@Component
+public class CustomEmbedder implements Embedder {
+    @Override
+    public float[] embed(String text) {
+        // Your custom embedding logic here
+        // ...
+    }
+    
+    @Override
+    public float[] embedImage(String imagePath) {
+        // Your custom image embedding logic here
+        // ...
+    }
+}
+----
+
+Then configure Redis OM Spring to use your custom provider:
+
+[source,yaml]
+----
+redis:
+  om:
+    ai:
+      embedding-provider: custom
+----
+
+== Using Embeddings with Different Data Types
+
+=== Text Embeddings
+
+Text embeddings are the most common type and are supported by all providers. To generate text embeddings, use:
+
+[source,java]
+----
+@Document
+public class Article {
+    // ...
+    
+    @Vectorize(
+        from = {"title", "content"},
+        dimensions = 1536,
+        embeddingType = EmbeddingType.TEXT
+    )
+    @VectorIndexed(dimensions = 1536)
+    private float[] embedding;
+}
+----
+
+=== Image Embeddings
+
+Some providers also support image embeddings. To generate image embeddings, use:
+
+[source,java]
+----
+@Document
+public class Product {
+    // ...
+    
+    @Searchable
+    private String imagePath;
+    
+    @Vectorize(
+        from = {"imagePath"},
+        dimensions = 1024,
+        embeddingType = EmbeddingType.IMAGE
+    )
+    @VectorIndexed(dimensions = 1024)
+    private float[] imageEmbedding;
+}
+----
+
+== Best Practices
+
+=== Selecting an Embedding Provider
+
+Consider the following when selecting an embedding provider:
+
+* **Quality**: Different models produce embeddings of varying quality
+* **Dimensions**: Higher dimensions can capture more information but use more storage
+* **Cost**: Cloud-based providers charge based on usage
+* **Latency**: Local models may be slower but have no network latency
+* **Privacy**: Sensitive data might require on-premises models
+
+=== Embedding Caching
+
+Redis OM Spring will not regenerate embeddings unless the source fields change, which helps reduce API calls and costs.
+
+=== Multi-modal Embeddings
+
+For applications that need both text and image embeddings, you can use multiple `@Vectorize` annotations with different providers:
+
+[source,java]
+----
+@Document
+public class Product {
+    // ...
+    
+    @Vectorize(
+        from = {"name", "description"},
+        dimensions = 1536,
+        embeddingProvider = EmbeddingProvider.AZURE_OPEN_AI
+    )
+    @VectorIndexed(dimensions = 1536)
+    private float[] textEmbedding;
+    
+    @Vectorize(
+        from = {"imagePath"},
+        dimensions = 1024,
+        embeddingType = EmbeddingType.IMAGE,
+        embeddingProvider = EmbeddingProvider.CUSTOM
+    )
+    @VectorIndexed(dimensions = 1024)
+    private float[] imageEmbedding;
+}
+----
+
+== Troubleshooting
+
+=== Common Issues
+
+* **Missing API Keys**: Ensure you've provided the necessary API keys for your chosen provider
+* **Model Not Found**: Verify the model name is correct and available in your region
+* **Dimension Mismatch**: Ensure the dimensions in `@Vectorize` and `@VectorIndexed` match
+* **Rate Limiting**: Cloud providers may have rate limits; consider implementing retries
+
+=== Debugging Embedding Generation
+
+To debug embedding generation, you can enable debug logging:
+
+[source,yaml]
+----
+logging:
+  level:
+    com.redis.om.spring.vectorize: DEBUG
+----
+
+== Further Reading
+
+* xref:ai-overview.adoc[AI Integration Overview] - Overview of AI capabilities in Redis OM Spring
+* xref:vector-search.adoc[Vector Similarity Search] - How to perform vector similarity searches
+* xref:azure-openai.adoc[Azure OpenAI Integration] - Detailed guide for Azure OpenAI integration

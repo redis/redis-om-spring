@@ -1,0 +1,570 @@
+/* Redis OM Spring Documentation Custom Styles */
+
+/* Google Fonts Import for Redis Brand Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400&family=JetBrains+Mono:wght@400&display=swap');
+
+/* Redis Colors */
+:root {
+  --redis-red: #DC382C;
+  --redis-dark-red: #9a0000;
+  --redis-light-red: #ffdede;
+  --redis-gray: #5f6368;
+  --redis-light-gray: #f5f5f5;
+  --redis-dark-gray: #333333;
+  --redis-black: #1A1A1A;
+  --redis-white: #FFFFFF;
+  --redis-highlight-yellow: #FFF200;
+  
+  /* Redis Brand Dark Colors */
+  --redis-dark-theme-bg: #22242A; /* Main bg color - Dusk */
+  --redis-dark-theme-panel: #2B2E36; /* Panel color - Night */
+  --redis-dark-theme-sidebar: #2B2E36; /* Sidebar color - Night */
+  --redis-dark-theme-text: #E6E6E6; /* Light text color */
+  --redis-dark-theme-border: #3C3F48; /* Border color */
+  
+  /* Page background color - allows for immediate change */
+  --page-background-color: white;
+  
+  /* Diagram Colors */
+  --diagram-primary: #DC382C;
+  --diagram-secondary: #2C3E50;
+  --diagram-tertiary: #3498DB;
+  --diagram-background: #FFFFFF;
+  --diagram-border: #E0E0E0;
+  --diagram-text: #333333;
+}
+
+/* Override Spring UI with Redis Branding */
+:root {
+  --body-font-family: 'Space Grotesk', sans-serif;
+  --heading-font-family: 'Space Grotesk', sans-serif;
+  --monospace-font-family: 'JetBrains Mono', 'Space Mono', monospace;
+  
+  /* Colors */
+  --color-brand-primary: var(--redis-red);
+  --color-brand-secondary: var(--redis-dark-red);
+  
+  /* Link colors */
+  --link-color: var(--redis-red);
+  --link-hover-color: var(--redis-dark-red);
+  
+  /* Code block styling */
+  --pre-border-color: var(--redis-red);
+}
+
+/* Dark Theme Colors */
+.dark-theme {
+  --color-text: var(--redis-dark-theme-text);
+  --color-navbar-bg: var(--redis-dark-theme-panel);
+  --color-panel-bg: var(--redis-dark-theme-panel);
+  --color-sidebar-bg: var(--redis-dark-theme-sidebar);
+  --color-border: var(--redis-dark-theme-border);
+  
+  /* Dark mode overrides */
+  --color-code-background: var(--redis-dark-theme-panel);
+  --color-code-border: var(--redis-red);
+  --color-admonition-background: var(--redis-dark-theme-panel);
+  
+  /* Diagram colors */
+  --diagram-background: var(--redis-dark-theme-panel);
+  --diagram-text: var(--redis-dark-theme-text);
+  
+  background-color: var(--redis-dark-theme-bg);
+  color: var(--redis-dark-theme-text);
+}
+
+/* Base Styles */
+body {
+  font-family: var(--body-font-family);
+  font-weight: 400;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--heading-font-family);
+}
+
+pre, code {
+  font-family: var(--monospace-font-family);
+}
+
+/* Breadcrumbs - smaller font size */
+.breadcrumbs {
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+.breadcrumbs a {
+  font-weight: normal;
+}
+
+/* Theme toggle with animation and rounded background */
+.theme-toggle-wrapper {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.theme-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background-color: #e8e8e8;
+  height: 32px;
+  width: 64px;
+  cursor: pointer;
+  padding: 4px;
+  transition: background-color 0.3s ease;
+  border: none;
+}
+
+.dark-theme .theme-toggle {
+  background-color: #3C3F48;
+}
+
+.theme-toggle .toggle-thumb {
+  position: absolute;
+  background-color: white;
+  border-radius: 50%;
+  height: 20px;
+  width: 20px;
+  left: 6px;
+  top: 6px;
+  transition: transform 0.3s ease, background-color 0.3s ease;
+  z-index: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.theme-toggle.dark .toggle-thumb {
+  transform: translateX(32px);
+  background-color: #22242A;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.theme-toggle .toggle-thumb.animating {
+  animation: pulse 0.3s ease-in-out;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.85); }
+  100% { transform: scale(1); }
+}
+
+.theme-toggle .icon {
+  color: #444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+  z-index: 2;
+}
+
+.theme-toggle .icon.sun {
+  left: 8px;
+}
+
+.theme-toggle .icon.moon {
+  right: 10px;
+}
+
+.theme-toggle.dark .icon.sun {
+  opacity: 0;
+}
+
+.theme-toggle.dark .icon.moon {
+  opacity: 1;
+}
+
+.theme-toggle:not(.dark) .icon.sun {
+  opacity: 1;
+}
+
+.theme-toggle:not(.dark) .icon.moon {
+  opacity: 0;
+}
+
+.theme-toggle:hover .icon {
+  color: var(--redis-red);
+}
+
+/* Navigation Selected Page Highlighting */
+.nav-item.is-current-page > .nav-link,
+.nav-item.is-current-page > .nav-text {
+  color: var(--redis-red) !important;
+  font-weight: 500;
+  position: relative;
+}
+
+.nav-item.is-current-page > .nav-link::before,
+.nav-item.is-current-page > .nav-text::before {
+  content: "";
+  position: absolute;
+  left: -0.75rem;
+  top: 0;
+  height: 100%;
+  width: 3px;
+  background-color: var(--redis-red);
+  border-radius: 0 2px 2px 0;
+}
+
+/* Edit this page link */
+.edit-this-page {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.edit-link {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.85rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background-color: #f0f0f0;
+  color: var(--redis-gray);
+  text-decoration: none;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.edit-link:hover {
+  background-color: var(--redis-light-red);
+  color: var(--redis-red);
+  text-decoration: none;
+}
+
+.edit-link svg {
+  margin-right: 0.25rem;
+  width: 16px;
+  height: 16px;
+}
+
+.dark-theme .edit-this-page {
+  border-top-color: var(--redis-dark-theme-border);
+}
+
+.dark-theme .edit-link {
+  background-color: var(--redis-dark-theme-panel);
+  color: var(--redis-dark-theme-text);
+}
+
+.dark-theme .edit-link:hover {
+  background-color: #444;
+  color: var(--redis-red);
+}
+
+/* Search Box */
+.search-input-wrap {
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: white;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.dark-theme .search-input-wrap {
+  border-color: var(--redis-dark-theme-border);
+  background-color: var(--redis-dark-theme-panel);
+}
+
+.search-input-wrap svg {
+  color: #888;
+  margin-right: 0.5rem;
+}
+
+.search-input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  color: inherit;
+  font-family: var(--body-font-family);
+  font-size: 0.9rem;
+}
+
+.search-input:focus {
+  outline: none;
+}
+
+.dark-theme .search-input {
+  color: var(--redis-dark-theme-text);
+}
+
+/* Override Spring navigation fonts and colors */
+.nav-menu {
+  font-family: var(--body-font-family);
+  font-size: 0.85rem;
+}
+
+.nav-item {
+  margin-bottom: 0.25rem;
+}
+
+.nav-link,
+.nav-text {
+  font-size: 0.75rem;
+}
+
+/* Override any hover colors in the Spring UI bundle */
+.nav-menu .nav-list .nav-item .nav-link:hover,
+.nav-menu .nav-item .nav-link:hover,
+.nav .nav-item .nav-link:hover,
+.nav-item .nav-link:hover,
+.navbar-item:hover,
+a:hover {
+  color: var(--redis-red) !important;
+}
+
+/* Navigation hover highlight */
+.nav-link:hover {
+  background-color: var(--redis-light-red) !important;
+  color: var(--redis-red) !important;
+  border-radius: 3px;
+}
+
+/* Dark mode navigation hover */
+.dark-theme .nav-link:hover {
+  background-color: rgba(220, 56, 44, 0.2) !important;
+}
+
+/* Selected page in dark mode - fix text color */
+.dark-theme .nav-item.is-current-page > .nav-link,
+.dark-theme .nav-item.is-current-page > .nav-text {
+  color: #ffffff !important;
+  background-color: rgba(220, 56, 44, 0.6) !important;
+  border-radius: 3px;
+}
+
+.dark-theme .nav-item.is-current-page > .nav-link::before,
+.dark-theme .nav-item.is-current-page > .nav-text::before {
+  background-color: #ffffff;
+}
+
+/* Redis Logo */
+.navbar-logo {
+  height: 26px;
+  max-height: 26px;
+  width: auto;
+  margin-right: 0.75rem;
+}
+
+/* Apply Redis brand font to specific elements */
+.doc h1, .doc h2, .doc h3, .doc h4, .doc h5, .doc h6 {
+  font-family: var(--heading-font-family);
+}
+
+.doc p, .doc li, .doc td, .doc th {
+  font-family: var(--body-font-family);
+}
+
+.doc pre, .doc code {
+  font-family: var(--monospace-font-family);
+}
+
+/* Metadata footer (version number, last updated, etc) */
+.doc-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+  font-size: 0.75rem;
+  color: var(--redis-gray);
+}
+
+.dark-theme .doc-footer {
+  border-top-color: var(--redis-dark-theme-border);
+}
+
+/* Footer */
+.footer {
+  background-color: var(--redis-light-gray);
+  border-top: 1px solid #e0e0e0;
+  color: var(--redis-gray);
+  padding: 0.75em 1em;
+  text-align: center;
+  font-size: 0.75rem;
+}
+
+.dark-theme .footer {
+  background-color: var(--redis-dark-theme-panel);
+  border-top: 1px solid var(--redis-dark-theme-border);
+  color: var(--redis-dark-theme-text);
+}
+
+.redis-footer-copyright {
+  color: var(--redis-gray);
+  display: inline-block;
+  margin-left: 0.5em;
+}
+
+.dark-theme .redis-footer-copyright {
+  color: var(--redis-dark-theme-text);
+}
+
+.redis-footer-links {
+  font-size: 0.75rem;
+}
+
+.redis-footer-links a {
+  color: var(--redis-red);
+  text-decoration: none;
+  margin: 0 0.25em;
+}
+
+.redis-footer-links a:hover {
+  text-decoration: underline;
+}
+
+/* Mermaid Diagram Styles */
+.mermaid {
+  margin: 2em 0;
+  text-align: center;
+  background-color: var(--diagram-background);
+  border: 1px solid var(--diagram-border);
+  border-radius: 4px;
+  padding: 1em;
+  overflow-x: auto;
+}
+
+/* Mermaid nodes */
+.mermaid .node rect,
+.mermaid .node circle,
+.mermaid .node ellipse,
+.mermaid .node polygon,
+.mermaid .node path {
+  fill: var(--diagram-background);
+  stroke: var(--diagram-primary);
+  stroke-width: 2px;
+}
+
+.mermaid .cluster rect {
+  fill: var(--redis-light-gray);
+  stroke: var(--diagram-border);
+  stroke-width: 1px;
+}
+
+.mermaid .edgePath .path {
+  stroke: var(--diagram-secondary);
+  stroke-width: 2px;
+}
+
+.mermaid .edgeLabel {
+  background-color: var(--diagram-background);
+  color: var(--diagram-text);
+  font-family: var(--body-font-family);
+}
+
+.mermaid .label text {
+  fill: var(--diagram-text);
+  font-family: var(--body-font-family);
+}
+
+/* Dark theme specific overrides for Spring UI elements */
+.dark-theme .nav-container,
+.dark-theme .toolbar,
+.dark-theme .navbar,
+.dark-theme .doc .admonitionblock,
+.dark-theme .doc,
+.dark-theme .doc pre.highlight,
+.dark-theme .doc :not(pre) > code {
+  background-color: var(--redis-dark-theme-bg);
+  color: var(--redis-dark-theme-text);
+}
+
+.dark-theme .nav-container {
+  background-color: var(--redis-dark-theme-sidebar);
+  border-right-color: var(--redis-dark-theme-border);
+}
+
+.dark-theme pre {
+  background: var(--redis-dark-theme-panel) !important;
+}
+
+.dark-theme code {
+  color: var(--redis-dark-theme-text) !important;
+}
+
+/* Important overrides to ensure theme works */
+html, body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Fix for flash effect when clicking in dark mode */
+.dark-theme .nav-link:active,
+.dark-theme .nav-link:focus,
+.dark-theme .nav-link:visited {
+  background-color: rgba(220, 56, 44, 0.2) !important;
+  color: var(--redis-red) !important;
+  outline: none;
+}
+
+/* Ensure link transitions are smooth */
+.nav-link {
+  transition: background-color 0.2s ease, color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Apply background color to html */
+html {
+  background-color: var(--page-background-color);
+}
+
+/* Prevent flash of nav items and background */
+html.dark-theme, 
+body.dark-theme,
+.dark-theme *,
+.dark-theme .nav-menu, 
+.dark-theme .nav-container, 
+.dark-theme .toolbar, 
+.dark-theme .navbar, 
+.dark-theme .doc,
+.dark-theme a,
+.dark-theme a:hover,
+.dark-theme a:visited,
+.dark-theme a:active,
+.dark-theme a:link {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Force background color for all elements */
+.dark-theme .doc *:not(pre):not(code) {
+  background-color: var(--redis-dark-theme-bg) !important;
+}
+
+/* Force nav background - but keep specific elements visible */
+.dark-theme .nav-menu * {
+  background-color: var(--redis-dark-theme-sidebar) !important;
+}
+
+/* Fixing the version tag in dark mode */
+.dark-theme .version {
+  background-color: #10B981 !important;
+  color: white !important;
+}
+
+/* Make sure nav text is visible in dark mode, even in selected sections */
+.dark-theme .nav-item .nav-text,
+.dark-theme .nav-item .nav-link {
+  color: var(--redis-dark-theme-text) !important;
+}
+
+/* But keep the selected item highlighted properly */
+.dark-theme .nav-item.is-current-page > .nav-link,
+.dark-theme .nav-item.is-current-page > .nav-text {
+  color: #ffffff !important;
+  background-color: rgba(220, 56, 44, 0.6) !important;
+}

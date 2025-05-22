@@ -1,0 +1,182 @@
+[[redis.repositories]]
+= Repositories with Redis OM Spring
+
+The purpose of the Spring Data repositories is to provide a data-access bridge expressed in the language of
+mapped entities. We can think of repositories as a higher-level of abstraction than DAOs (Data Access Objects).
+
+In Spring, different Spring Data libraries provide different levels of capabilities in their repositories,
+based on the capabilities of the underlying data store. In Spring Data Redis, the framework that Redis OM
+Spring builds upon the repositories are based on the https://docs.spring.io/spring-data/keyvalue/docs/current/api/org/springframework/data/keyvalue/repository/KeyValueRepository.html[`KeyValueRepository`].
+
+To support simple property searches, Spring Data Redis uses redis data structures to create secondary indices. This is
+no longer necessary when using Redis OM Spring which relies on Redis Stack's Query Engine to create proper search indices. As of Redis 8, the Query Engine is a standard component of Redis.
+
+Redis OM Spring supports two different types of repositories:
+
+* **Hash Repositories**: "Enhanced" Hash Repositories via `RedisEnhancedRepository` extends `KeyValueRepository` to back all search-related
+repository operations with Redis Query Engine (formerly RediSearch) queries and aggregations.
+
+* **Document Repositories**: Document ("JSON") Repositories via `RedisDocumentRepository` extends  `KeyValueRepository` to back all search-related
+repository operations with Redis Query Engine queries and aggregations.
+
+== Setup
+
+The repository infrastructure can be enabled using the Redis Stack specific annotations `@EnableRedisEnhancedRepositories`
+and `@EnableRedisDocumentRepositories` a JavaConfig class.
+
+For example, to enable "enhanced" Redis Hash Repositories use:
+
+====
+[source, java]
+----
+@Configuration
+@EnableEnhancedRedisRepositories("com.acme.repositories")
+class ApplicationConfiguration {
+
+  @Bean
+  public EntityManagerFactory entityManagerFactory() {
+    // …
+  }
+}
+----
+
+A typical place to put the `@EnableRedisEnhancedRepositories` or `@EnableRedisDocumentRepository` is on your
+`@SpringBootApplication` annotated main class:
+
+====
+[source, java]
+----
+@SpringBootApplication
+@EnableRedisDocumentRepositories
+public class RomsDocumentsApplication {
+
+  @Autowired
+  CompanyRepository companyRepo;
+
+  // …
+}
+----
+
+== Built-in Repository Methods
+
+Both `RedisEnhancedRepository` and `RedisDocumentRepository` extend `KeyValueRepository` which is a combination of `ListCrudRepository` and `ListPagingAndSortingRepository`. The interface `ListCrudRepository` extends the foundational
+`CrudRepository` and `ListPagingAndSortingRepository` extends `PagingAndSortingRepository` as well, this hierarchy is shown in the following diagram:
+
+image::RedisDocumentRepository.png[]
+
+=== OM Repositories Common Methods
+
+The following table lists the common methods implemented by `RedisEnhancedRepository` and `RedisDocumentRepository`, these methods deal mostly with entities IDs, retrieving/projecting individual fields, and TTLs (Time-to-live):
+
+|===
+|Method |Description
+
+|Iterable<ID> getIds()
+|Returns an Iterable containing all the IDs in the collection
+
+|Page<ID> getIds(Pageable pageable)
+|Returns a paged collection of IDs
+
+|<F> Iterable<F> getFieldsByIds(Iterable<ID> ids, MetamodelField<T, F> field)
+|Returns an iterable of field values for a given field for the provided IDs
+
+|Long getExpiration(ID id)
+|Returns the remaining time to live of a ID that has a timeout. This introspection capability allows a Redis client to check how many seconds a given key will continue to be part of the dataset. Returns -2 if the key does not exist, -1 if the key exists but has no associated expire.
+
+|<S extends T> S update(S entity)
+|Updates/upserts the given entity
+
+|===
+
+=== CrudRepository
+
+The CrudRepository provides sophisticated CRUD functionality for the entity class that is being managed.
+The following table lists the methods implemented from https://docs.spring.io/spring-data/commons/docs/current/api/org/springframework/data/repository/CrudRepository.html[CrudRepository] which exposes generic CRUD operations on a repository for a specific type:
+
+|===
+|Method |Description
+
+|long count()
+|Returns the number of entities available.
+
+|void delete(T entity)
+|Deletes a given entity.
+
+|void deleteAll()
+|Deletes all entities managed by the repository.
+
+|void deleteAll(Iterable<? extends T> entities)
+|Deletes the given entities.
+
+|void deleteAllById(Iterable<? extends ID> ids)
+|Deletes all instances of the type T with the given IDs.
+
+|void deleteById(ID id)
+|Deletes the entity with the given id.
+
+|boolean existsById(ID id)
+|Returns whether an entity with the given id exists.
+
+|Iterable<T> findAll()
+|Returns all instances of the type.
+
+|Iterable<T> findAllById(Iterable<ID> ids)
+|Returns all instances of the type T with the given IDs.
+
+|Optional<T> findById(ID id)
+|Retrieves an entity by its id.
+
+|<S extends T> S save(S entity)
+|Saves a given entity.
+
+|<S extends T> Iterable<S> saveAll(Iterable<S> entities)
+|Saves all given entities.
+|===
+
+=== ListCrudRepository
+
+The following table lists the methods implemented from https://docs.spring.io/spring-data/commons/docs/current/api/org/springframework/data/repository/ListCrudRepository.html[ListCrudRepository] which adds finder versions returning `List` rather than `Iterable`:
+
+|===
+|Method |Description
+
+|List<T> findAll()
+|Returns all instances of the type.
+
+|List<T> findAllById(Iterable<ID> ids)
+|Returns all instances of the type T with the given IDs.
+
+|<S extends T> List<S> saveAll(Iterable<S> entities)
+|Saves all given entities.
+|===
+
+=== PagingSortingRepository
+
+On top of the CrudRepository there is a https://docs.spring.io/spring-data/commons/docs/current/api/org/springframework/data/repository/PagingAndSortingRepository.html[`PagingAndSortingRepository`] abstraction that adds additional methods to ease paginated access to entities. The following table lists the methods implemented from https://docs.spring.io/spring-data/commons/docs/current/api/org/springframework/data/repository/PagingAndSortingRepository.html[PagingSortingRepository] which exposes methods to retrieve entities using the pagination and sorting abstraction:
+
+|===
+|Method |Description
+
+|Page<T> findAll(Pageable pageable)
+|Returns a Page of entities meeting the paging restriction provided in the Pageable object.
+
+|Iterable<T> findAll(Sort sort)
+|Returns all entities sorted by the given options.
+|===
+
+=== ListPagingAndSortingRepository
+
+The following table lists the methods implemented from https://docs.spring.io/spring-data/commons/docs/current/api/org/springframework/data/repository/ListPagingAndSortingRepository.html[ListPagingAndSortingRepository] which adds finder versions returning `List` rather than `Iterable`:
+
+|===
+|Method |Description
+
+|List<T> findAll(Sort sort)
+|Returns all entities sorted by the given options.
+|===
+
+== Query Methods
+
+Standard CRUD functionality repositories usually have queries on the underlying datastore. With Spring Data, declaring those queries becomes a four-step process:
+
+

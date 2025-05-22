@@ -1,0 +1,60 @@
+= Document Expiration
+
+Redis OM allows configuring document expiration through Time-To-Live (TTL).
+
+== Default TTL
+
+A default TTL can be set at the entity class level:
+
+[source,java]
+----
+@Document
+@TimeToLive(5) <1>
+public class MyEntity {
+  // ...
+}
+----
+<1> 5 second default TTL
+
+All instances will expire after 5 seconds.
+
+== Per Document TTL
+
+TTL can be specified when saving a document:
+
+[source,java]
+----
+MyEntity entity = new MyEntity();
+
+repository.save(entity, 10); <1>
+----
+<1> 10 second TTL
+
+This overrides the default TTL.
+
+== Time Units
+
+The TTL unit can be set to seconds, minutes, hours, days etc:
+
+[source,java]
+----
+@TimeToLive(value = 2, unit = TimeUnit.HOURS)
+public class MyEntity {
+  // ...
+}
+----
+
+== Expiration
+
+Documents are automatically removed from the index when their TTL expires.
+
+Expired documents are no longer queryable:
+
+[source,java]
+----
+Thread.sleep(5000); // wait for expiration
+
+repository.findById("doc123"); // not found
+----
+
+TTL provides a simple way to manage document lifetime in Redis OM.

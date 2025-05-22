@@ -1,0 +1,284 @@
+[[why-roms]]
+= Why Redis OM Spring?
+:page-toclevels: 3
+:page-pagination:
+
+While Spring Data Redis provides excellent foundational Redis connectivity for Spring applications, Redis OM Spring builds upon this solid foundation to offer enhanced capabilities specifically designed for Redis 8+ and its powerful built-in modules. This page explains the additional value Redis OM Spring brings to your development experience.
+
+== Redis OM Spring's Enhanced Capabilities
+
+Redis OM Spring extends Spring Data Redis with specialized features that unlock the full potential of Redis's advanced search, JSON, and analytics capabilities:
+
+== Key Enhancements Redis OM Spring Provides
+
+Redis OM Spring enhances your Redis development experience by adding:
+
+=== 1. Advanced Search-Enabled Object Mapping
+
+Redis OM Spring extends object mapping with declarative search capabilities that work seamlessly with Redis's built-in search engine:
+
+[source,java]
+----
+// Standard Spring Data Redis Hash
+@RedisHash("person")
+public class Person {
+    @Id
+    private String id;
+    private String name;
+    private int age;
+}
+
+// Redis OM Spring Document with built-in search indexing
+@Document
+public class Person {
+    @Id
+    private String id;
+    
+    @Searchable         // Full-text search capability
+    private String name;
+    
+    @NumericIndexed     // Range and numeric queries
+    private int age;
+    
+    @GeoIndexed         // Geospatial queries
+    private Point location;
+    
+    @VectorIndexed(     // Vector similarity search
+        algorithm = VectorAlgorithm.HNSW,
+        type = VectorType.FLOAT32,
+        dimension = 384, 
+        distanceMetric = DistanceMetric.COSINE
+    )
+    private float[] embedding;
+}
+----
+
+=== 2. Built-in Redis Module Integration
+
+Redis OM Spring provides native integration with Redis's powerful built-in modules, enabling:
+
+* **Search Engine Integration**: Full-text search with stemming, phonetics, and fuzzy matching
+* **JSON Support**: Native JSON document storage with nested object querying
+* **Vector Search**: AI-powered similarity search and recommendations
+* **Geospatial Queries**: Location-based search and proximity filtering
+* **Aggregations**: Advanced analytics and data summarization
+
+=== 3. Automatic Index Management
+
+Redis OM Spring automatically creates and manages search indices based on your entity annotations, eliminating manual index setup:
+
+[source,java]
+----
+@EnableRedisDocumentRepositories
+@SpringBootApplication
+public class MyApplication {
+    // Redis OM Spring automatically creates indices for all 
+    // annotated entities in your application
+}
+----
+
+=== 4. Enhanced Repository Pattern
+
+Redis OM Spring extends Spring Data's repository pattern with Redis search and analytics capabilities:
+
+[source,java]
+----
+public interface ProductRepository extends RedisDocumentRepository<Product, String> {
+    // Familiar Spring Data method naming conventions
+    List<Product> findByNameStartingWith(String prefix);
+    List<Product> findByPriceBetween(BigDecimal min, BigDecimal max);
+    
+    // Enhanced with Redis search query syntax
+    @Query("@category:{electronics} @price:[100 500]")
+    List<Product> findElectronicsInPriceRange();
+    
+    // Built-in aggregation support
+    @Aggregation("@category:{$category} GROUPBY 1 @brand REDUCE COUNT 0 AS count")
+    AggregationResult getBrandCounts(@Param("category") String category);
+}
+----
+
+=== 5. Type-Safe Fluent Query API
+
+Redis OM Spring adds a modern, type-safe query API inspired by Java 8 Streams:
+
+[source,java]
+----
+// Type-safe queries with compile-time checking
+List<Product> products = entityStream
+    .of(Product.class)
+    .filter(
+        Product$.CATEGORY.eq("electronics")
+        .and(Product$.PRICE.between(100, 500))
+    )
+    .sorted(Product$.PRICE, SortOrder.DESC)
+    .limit(10)
+    .collect(Collectors.toList());
+
+// Advanced aggregations with tuples
+List<Pair<String, Long>> brandCounts = entityStream
+    .of(Product.class)
+    .groupBy(Product$.BRAND)
+    .reduce(ReducerFunction.COUNT).as("count")
+    .sorted(Order.desc("@count"))
+    .toList(String.class, Long.class);
+----
+
+=== 6. Enhanced JSON Document Support
+
+Redis OM Spring provides seamless integration with Redis's native JSON capabilities for complex document structures:
+
+[source,java]
+----
+@Document
+public class Order {
+    @Id
+    private String id;
+    
+    @Searchable
+    private String customerName;
+    
+    @Indexed
+    private OrderStatus status;
+    
+    // Nested collections are automatically serialized to JSON
+    private List<OrderItem> items;
+    
+    // Complex nested objects with searchable fields
+    @Indexed
+    private Address shippingAddress;
+    
+    // Nested objects can have their own search annotations
+    public static class OrderItem {
+        @Searchable
+        private String productName;
+        
+        @NumericIndexed  
+        private BigDecimal price;
+        
+        private int quantity;
+    }
+}
+----
+
+== Feature Comparison
+
+[cols="1,1,1,1"]
+|===
+|Feature |Redis OM Spring |Spring Data Redis |JPA/RDBMS
+
+|Document Storage
+|Native JSON with indexing
+|Hash serialization
+|Relational tables
+
+|Query Language
+|Method names + Redis search syntax
+|Key patterns + method names
+|JPQL/HQL + method names
+
+|Search Indexing
+|Automatic with annotations
+|Manual setup required
+|Automatic with JPA
+
+|Full-text Search
+|Built-in search integration
+|Basic key matching
+|Database-dependent
+
+|Geospatial Queries
+|Native geo operations
+|Basic geo operations
+|PostGIS or similar extensions
+
+|Vector Search
+|Built-in with AI integration
+|Not available
+|Requires extensions
+
+|Complex Aggregations
+|Native Redis aggregations
+|Client-side processing
+|Database aggregation functions
+
+|Performance
+|In-memory with persistence
+|In-memory with persistence
+|Disk-based with caching
+
+|Scalability
+|Redis clustering
+|Redis clustering
+|Read replicas + sharding
+
+|Schema Flexibility
+|Schema-on-read
+|Schema-on-read
+|Schema-on-write
+
+|ACID Transactions
+|Redis transactions
+|Redis transactions
+|Full ACID compliance
+
+|Learning Curve
+|Spring Data + Redis modules
+|Spring Data + Redis basics
+|JPA + SQL knowledge
+|===
+
+== When Redis OM Spring Provides Maximum Value
+
+Redis OM Spring delivers the most benefit in these scenarios:
+
+=== Search-Intensive Applications
+
+When you need sophisticated search capabilities beyond simple key-value access:
+
+* **E-commerce platforms** with faceted search, filters, and product discovery
+* **Content management systems** requiring full-text search across documents
+* **Knowledge bases** with complex document relationships and search
+* **Social platforms** with user discovery and content recommendation
+
+=== AI-Powered Applications
+
+When building modern applications with AI integration:
+
+* **Recommendation engines** using vector similarity search
+* **Content discovery** with semantic search capabilities  
+* **Document similarity** and clustering applications
+* **Retrieval-Augmented Generation (RAG)** systems
+
+=== Location-Aware Services
+
+When geographic data and proximity are core to your application:
+
+* **Delivery and logistics** with route optimization
+* **Location-based recommendations** (restaurants, services, events)
+* **Fleet management** and real-time tracking
+* **Geographic analytics** and reporting
+
+=== High-Performance Analytics
+
+When you need real-time insights with complex queries:
+
+* **Business intelligence dashboards** with live data
+* **User behavior analytics** with aggregation and filtering
+* **IoT data processing** with time-series and geospatial analysis
+* **Financial analytics** with complex calculations and reporting
+
+=== Hybrid Caching Solutions
+
+When traditional caching isn't enough and you need queryable cache layers:
+
+* **Session stores** with user preference search
+* **Product catalogs** with real-time inventory and search
+* **Configuration management** with searchable settings
+* **API response caches** with complex invalidation rules
+
+== Getting Started
+
+Ready to experience these benefits firsthand? Check out our xref:setup.adoc[Installation & Setup] guide to get started with Redis OM Spring.
+
+TIP: The xref:quickstart.adoc[Quick Start Example] demonstrates many of these advantages with practical code examples.

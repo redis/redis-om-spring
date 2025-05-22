@@ -1,0 +1,200 @@
+= Search Capabilities
+:page-toclevels: 3
+:page-pagination:
+
+== Introduction to Redis Search
+
+Redis OM Spring leverages the Redis Query Engine (formerly known as RediSearch) to provide powerful search capabilities. As of Redis 8, the Query Engine and JSON modules are standard components of Redis, making these features available without requiring separate module installation.
+
+== The @Searchable Annotation
+
+The `@Searchable` annotation is used to mark fields that should be indexed as text fields for full-text search in Redis.
+
+[source,java]
+----
+@Data
+@Document("games")
+public class Game {
+  @Id
+  private String asin;
+  
+  @Searchable(sortable = true)
+  private String title;
+  
+  @Searchable
+  private String description;
+  
+  @Searchable(nostem = true, sortable = true)
+  private String brand;
+  
+  @Indexed
+  private Double price;
+}
+----
+
+=== Attributes
+
+The `@Searchable` annotation supports the following attributes:
+
+[cols="1,3,1"]
+|===
+|Attribute |Description |Default
+
+|`weight`
+|The importance of the field in scoring (higher numbers = more important)
+|1.0
+
+|`nostem`
+|Whether to disable stemming for the field
+|false
+
+|`phonetic`
+|Enables phonetic matching using Double Metaphone encoding
+|""
+
+|`sortable`
+|Whether the field can be used for sorting results
+|false
+|===
+
+=== Searching Text Fields
+
+Text fields marked with `@Searchable` can be queried in multiple ways:
+
+==== 1. Using repository methods
+
+[source,java]
+----
+public interface GameRepository extends RedisDocumentRepository<Game, String> {
+  // Simple text search
+  List<Game> findByTitle(String title);
+  
+  // Prefix search
+  List<Game> findByTitleStartingWith(String prefix);
+  
+  // Text containing a string
+  List<Game> findByDescriptionContaining(String term);
+  
+  // Search brand (nostem field)
+  List<Game> findByBrand(String brand);
+}
+----
+
+==== 2. Using the `@Query` annotation
+
+For more complex queries:
+
+[source,java]
+----
+public interface GameRepository extends RedisDocumentRepository<Game, String> {
+  // Native query format
+  @Query("@title:%s* @description:%s")
+  List<Game> findByTitleAndDescription(String titlePrefix, String descTerm);
+  
+  // Using parameters
+  @Query("@title:{$title} @description:{$desc}")
+  List<Game> search(@Param("title") String title, @Param("desc") String description);
+}
+----
+
+==== 3. Using the Entity Stream API
+
+[source,java]
+----
+GameMeta $ = GameMeta.getInstance();
+
+List<Game> results = entityStream
+  .of(Game.class)
+  .filter($.title().match("adventure"))
+  .filter($.description().match("action"))
+  .sorted($.price().desc())
+  .collect(Collectors.toList());
+----
+
+== Text Search Features
+
+=== Full-Text Search
+
+Redis OM Spring supports full-text search with features like:
+
+* Word stemming (finding grammatical variants)
+* Stop word filtering
+* Prefix matching
+* Fuzzy matching
+* Exact phrase matching
+
+=== Text Query Syntax
+
+When using the `@Query` annotation, you can use the Redis Query Engine's query syntax:
+
+* `term` - Single word
+* `"exact phrase"` - Exact phrase match
+* `prefix*` - Prefix search
+* `%fuzzy%` - Fuzzy search
+* `@field:term` - Field-specific search
+* `-term` - Exclude term
+* `term1 term2` - Implicit AND
+* `term1|term2` - OR operation
+
+Example:
+
+[source,java]
+----
+@Query("@title:redis (@description:database|nosql) -tutorial")
+List<Article> findRedisArticlesAboutDatabasesNotTutorials();
+----
+
+== Advanced Search Features
+
+=== Highlighting Search Results
+
+You can highlight matched terms in search results:
+
+[source,java]
+----
+SearchStream<Game> stream = entityStream
+  .of(Game.class)
+  .filter(title.match("adventure"))
+  .highlight(HighlightOptions.builder()
+    .field("title")
+    .field("description")
+    .tags("<mark>", "</mark>")
+    .build());
+  
+// Result will include highlighted HTML with <mark> tags
+----
+
+=== Scoring and Sorting
+
+Control how results are scored and sorted:
+
+[source,java]
+----
+// Sort by relevance (score)
+List<Game> results = entityStream
+  .of(Game.class)
+  .filter(title.match("adventure"))
+  .sorted(ScoreSortOrder.descending())
+  .collect(Collectors.toList());
+
+// Sort by field
+List<Game> results = entityStream
+  .of(Game.class)
+  .filter(title.match("adventure"))
+  .sorted(price.asc())
+  .collect(Collectors.toList());
+----
+
+== Performance Considerations
+
+* Use `@Searchable` selectively on fields that need text search
+* Use `sortable=true` only when necessary as it increases memory usage
+* For large result sets, use pagination
+* For complex queries, use the `@Query` annotation with the native query syntax
+* Consider using `weight` to adjust the importance of different fields
+
+== Next Steps
+
+* xref:repository-queries.adoc[Repository Queries]
+* xref:entity-streams.adoc[Entity Streams API]
+* xref:index-annotations.adoc[Index Annotations]

@@ -1,0 +1,667 @@
+= @Aggregation Annotation Reference
+:page-toclevels: 3
+:page-pagination:
+
+The `@Aggregation` annotation provides a declarative way to define complex aggregation queries directly on repository methods. It translates to Redis Query Engine aggregation commands, enabling powerful data analysis operations with type-safe method signatures.
+
+== Introduction
+
+The `@Aggregation` annotation allows you to define sophisticated aggregation queries using a structured approach rather than writing raw Redis aggregation syntax. It supports grouping, reducing, filtering, sorting, mathematical expressions, and data loading operations.
+
+== Prerequisites
+
+* Repository extending `RedisDocumentRepository` or `RedisEnhancedRepository`
+* Entities with indexed fields for aggregation operations
+* Understanding of Redis aggregation concepts
+
+== Basic Usage
+
+=== Simple Count Aggregation
+
+[source,java]
+----
+@Aggregation(
+    groupBy = {
+        @GroupBy(
+            properties = "@brand",
+            reduce = {
+                @Reducer(func = ReducerFunction.COUNT, alias = "count")
+            }
+        )
+    },
+    sortBy = {
+        @SortBy(field = "@count", direction = Direction.DESC)
+    }
+)
+Page<Map<String, String>> countByBrand(Pageable pageable);
+----
+
+This aggregation:
+1. Groups games by brand
+2. Counts items in each group
+3. Sorts by count in descending order
+4. Returns paginated results as a Map
+
+== Annotation Structure
+
+The `@Aggregation` annotation supports several key attributes:
+
+[cols="1,3,1"]
+|===
+|Attribute |Description |Example
+
+|`value`
+|Query filter expression
+|`"sony"`, `"$brand"`
+
+|`groupBy`
+|Array of grouping operations
+|`@GroupBy(properties = "@brand", ...)`
+
+|`reduce`
+|Array of reduction functions (when not in GroupBy)
+|`@Reducer(func = COUNT, alias = "total")`
+
+|`sortBy`
+|Array of sorting criteria
+|`@SortBy(field = "@count", direction = DESC)`
+
+|`filter`
+|Array of filter expressions
+|`{"@count > 5", "@brand != ''"}`
+
+|`apply`
+|Array of mathematical expressions
+|`@Apply(expression = "@price * 1.1", alias = "markup")`
+
+|`load`
+|Array of fields to load
+|`@Load(property = "@title")`
+
+|`limit`
+|Maximum number of results
+|`10`
+
+|`sortByMax`
+|Maximum results for sorting
+|`5`
+|===
+
+== Grouping Operations
+
+=== Single Field Grouping
+
+[source,java]
+----
+@Aggregation(
+    groupBy = {
+        @GroupBy(
+            properties = "@brand",
+            reduce = {
+                @Reducer(func = ReducerFunction.COUNT),
+                @Reducer(func = ReducerFunction.MIN, args = {"@price"}, alias = "minPrice")
+            }
+        )
+    },
+    sortBy = {
+        @SortBy(field = "@minPrice", direction = Direction.DESC)
+    }
+)
+AggregationResult minPricesByBrand();
+----
+
+=== Multiple Field Grouping
+
+[source,java]
+----
+@Aggregation(
+    groupBy = {
+        @GroupBy(
+            properties = {"@title", "@brand"},
+            reduce = {
+                @Reducer(func = ReducerFunction.COUNT),
+                @Reducer(func = ReducerFunction.MAX, args = {"@price"}, alias = "price")
+            }
+        )
+    },
+    limit = 10
+)
+AggregationResult groupByTitleAndBrand();
+----
+
+== Reducer Functions
+
+=== Statistical Functions
+
+[source,java]
+----
+@Aggregation(
+    groupBy = {
+        @GroupBy(
+            properties = "@brand",
+            reduce = {
+                @Reducer(func = ReducerFunction.COUNT, alias = "rowcount"),
+                @Reducer(func = ReducerFunction.SUM, args = {"@price"}, alias = "totalPrice"),
+                @Reducer(func = ReducerFunction.AVG, args = {"@price"}, alias = "avgPrice"),
+                @Reducer(func = ReducerFunction.MIN, args = {"@price"}, alias = "minPrice"),
+                @Reducer(func = ReducerFunction.MAX, args = {"@price"}, alias = "maxPrice"),
+                @Reducer(func = ReducerFunction.STDDEV, args = {"@price"}, alias = "stddev(price)")
+            }
+        )
+    },
+    sortBy = {
+        @SortBy(field = "@rowcount", direction = Direction.DESC)
+    },
+    limit = 10
+)
+AggregationResult comprehensiveStats();
+----
+
+=== Advanced Functions
+
+[source,java]
+----
+@Aggregation(
+    groupBy = {
+        @GroupBy(
+            properties = "@brand",
+            reduce = {
+                @Reducer(func = ReducerFunction.QUANTILE, args = {"@price", "0.50"}, alias = "q50"),
+                @Reducer(func = ReducerFunction.QUANTILE, args = {"@price", "0.90"}, alias = "q90"),
+                @Reducer(func = ReducerFunction.QUANTILE, args = {"@price", "0.95"}, alias = "q95"),
+                @Reducer(func = ReducerFunction.COUNT_DISTINCT, args = {"@title"}, alias = "uniqueTitles"),
+                @Reducer(func = ReducerFunction.RANDOM_SAMPLE, args = {"@price", "10"}, alias = "sample")
+            }
+        )
+    },
+    sortByMax = 1
+)
+AggregationResult advancedStatistics();
+----
+
+=== Collection Functions
+
+[source,java]
+----
+@Aggregation(
+    groupBy = {
+        @GroupBy(
+            properties = "@brand",
+            reduce = {
+                @Reducer(func = ReducerFunction.COUNT_DISTINCT, args = "@price", alias = "count"),
+                @Reducer(func = ReducerFunction.TOLIST, args = "@price", alias = "prices")
+            }
+        )
+    },
+    sortBy = {
+        @SortBy(field = "@count", direction = Direction.DESC)
+    },
+    limit = 5
+)
+AggregationResult priceCollections();
+----
+
+== Parameterized Queries
+
+=== Using Method Parameters
+
+[source,java]
+----
+@Aggregation(
+    value = "$brand",  // Parameter placeholder
+    groupBy = {
+        @GroupBy(
+            properties = "@brand",
+            reduce = {
+                @Reducer(func = ReducerFunction.COUNT),
+                @Reducer(func = ReducerFunction.MIN, args = {"@price"}, alias = "minPrice")
+            }
+        )
+    },
+    sortBy = {
+        @SortBy(field = "@minPrice", direction = Direction.DESC)
+    }
+)
+AggregationResult minPricesByBrand(@Param("brand") String brand);
+----
+
+== Mathematical Expressions
+
+=== Apply Operations
+
+[source,java]
+----
+@Aggregation(
+    apply = {
+        @Apply(expression = "1517417144", alias = "dt"),
+        @Apply(expression = "timefmt(@dt)", alias = "timefmt"),
+        @Apply(expression = "day(@dt)", alias = "day"),
+        @Apply(expression = "hour(@dt)", alias = "hour"),
+        @Apply(expression = "minute(@dt)", alias = "minute"),
+        @Apply(expression = "month(@dt)", alias = "month"),
+        @Apply(expression = "dayofweek(@dt)", alias = "dayofweek"),
+        @Apply(expression = "dayofmonth(@dt)", alias = "dayofmonth"),
+        @Apply(expression = "dayofyear(@dt)", alias = "dayofyear"),
+        @Apply(expression = "year(@dt)", alias = "year")
+    },
+    limit = 1
+)
+AggregationResult timeFunctions();
+----
+
+=== String Formatting
+
+[source,java]
+----
+@Aggregation(
+    groupBy = {
+        @GroupBy(
+            properties = {"@title", "@brand"},
+            reduce = {
+                @Reducer(func = ReducerFunction.COUNT),
+                @Reducer(func = ReducerFunction.MAX, args = {"@price"}, alias = "price")
+            }
+        )
+    },
+    apply = {
+        @Apply(
+            expression = "format(\"%s|%s|%s|%s\", @title, @brand, \"Mark\", @price)", 
+            alias = "titleBrand"
+        )
+    },
+    limit = 10
+)
+AggregationResult stringFormat();
+----
+
+=== Mathematical Operations
+
+[source,java]
+----
+@Aggregation(
+    groupBy = {
+        @GroupBy(
+            properties = "@brand",
+            reduce = {
+                @Reducer(func = ReducerFunction.SUM, args = "@price", alias = "price")
+            }
+        )
+    },
+    apply = {
+        @Apply(expression = "(@price % 10)", alias = "price")  // Modulo operation
+    },
+    sortBy = {
+        @SortBy(field = "@price", direction = Direction.ASC),
+        @SortBy(field = "@brand", direction = Direction.DESC)
+    },
+    sortByMax = 10
+)
+AggregationResult mathematicalOperations();
+----
+
+== Filtering Results
+
+=== Post-Aggregation Filtering
+
+[source,java]
+----
+@Aggregation(
+    groupBy = {
+        @GroupBy(
+            properties = "@brand",
+            reduce = {
+                @Reducer(func = ReducerFunction.COUNT, alias = "count")
+            }
+        )
+    },
+    filter = {
+        "@count < 5",
+        "@count > 2 && @brand != \"\""
+    }
+)
+AggregationResult filteredResults();
+----
+
+This example:
+1. Groups games by brand and counts them
+2. Filters to include only brands with 2-5 games
+3. Excludes empty brand names
+
+== Data Loading
+
+=== Loading Specific Fields
+
+[source,java]
+----
+@Aggregation(
+    load = @Load(property = "@title"),
+    sortBy = @SortBy(field = "@price", direction = Direction.DESC),
+    limit = 2
+)
+AggregationResult loadWithSort();
+----
+
+=== Loading Multiple Fields
+
+[source,java]
+----
+@Aggregation(
+    load = {
+        @Load(property = "@brand"),
+        @Load(property = "@price"),
+        @Load(property = "@__key")  // Document key
+    },
+    sortBy = @SortBy(field = "@price", direction = Direction.DESC),
+    sortByMax = 4
+)
+AggregationResult loadMultipleFields();
+----
+
+== Sorting and Limiting
+
+=== Complex Sorting
+
+[source,java]
+----
+@Aggregation(
+    groupBy = {
+        @GroupBy(
+            properties = "@brand",
+            reduce = {
+                @Reducer(func = ReducerFunction.SUM, args = "@price", alias = "sum(price)")
+            }
+        )
+    },
+    sortBy = {
+        @SortBy(field = "@sum(price)", direction = Direction.DESC)
+    },
+    limit = 5
+)
+AggregationResult topBrandsByRevenue();
+----
+
+=== Multiple Sort Criteria
+
+[source,java]
+----
+@Aggregation(
+    groupBy = {
+        @GroupBy(
+            properties = "@brand",
+            reduce = {
+                @Reducer(func = ReducerFunction.SUM, args = "@price", alias = "price")
+            }
+        )
+    },
+    sortBy = {
+        @SortBy(field = "@price", direction = Direction.ASC),
+        @SortBy(field = "@brand", direction = Direction.DESC)
+    },
+    sortByMax = 10
+)
+AggregationResult multiSort();
+----
+
+== Return Types
+
+=== AggregationResult
+
+Most aggregation methods return `AggregationResult`:
+
+[source,java]
+----
+@Aggregation(
+    groupBy = {
+        @GroupBy(
+            properties = "@brand",
+            reduce = {
+                @Reducer(func = ReducerFunction.COUNT, alias = "count"),
+                @Reducer(func = ReducerFunction.AVG, args = {"@price"}, alias = "avgPrice")
+            }
+        )
+    }
+)
+AggregationResult brandStatistics();
+
+// Usage:
+AggregationResult result = gameRepository.brandStatistics();
+List<Map<String, Object>> rows = result.getResults();
+for (Map<String, Object> row : rows) {
+    String brand = (String) row.get("brand");
+    Long count = (Long) row.get("count");
+    Double avgPrice = (Double) row.get("avgPrice");
+    // Process results...
+}
+----
+
+=== Paginated Results
+
+For paginated aggregations, use `Page<Map<String, String>>`:
+
+[source,java]
+----
+@Aggregation(
+    groupBy = {
+        @GroupBy(
+            properties = "@brand",
+            reduce = {
+                @Reducer(func = ReducerFunction.COUNT, alias = "count")
+            }
+        )
+    },
+    sortBy = {
+        @SortBy(field = "@count", direction = Direction.DESC)
+    }
+)
+Page<Map<String, String>> countByBrand(Pageable pageable);
+
+// Usage:
+PageRequest pageRequest = PageRequest.of(0, 10);
+Page<Map<String, String>> page = gameRepository.countByBrand(pageRequest);
+----
+
+== Real-World Examples
+
+=== E-commerce Analytics
+
+[source,java]
+----
+// Product performance by brand
+@Aggregation(
+    groupBy = {
+        @GroupBy(
+            properties = "@brand",
+            reduce = {
+                @Reducer(func = ReducerFunction.COUNT, alias = "productCount"),
+                @Reducer(func = ReducerFunction.SUM, args = {"@price"}, alias = "totalRevenue"),
+                @Reducer(func = ReducerFunction.AVG, args = {"@price"}, alias = "avgPrice"),
+                @Reducer(func = ReducerFunction.MIN, args = {"@price"}, alias = "minPrice"),
+                @Reducer(func = ReducerFunction.MAX, args = {"@price"}, alias = "maxPrice")
+            }
+        )
+    },
+    sortBy = {
+        @SortBy(field = "@totalRevenue", direction = Direction.DESC)
+    },
+    limit = 20
+)
+AggregationResult brandPerformanceAnalysis();
+----
+
+=== Price Distribution Analysis
+
+[source,java]
+----
+// Quantile analysis for pricing strategy
+@Aggregation(
+    groupBy = {
+        @GroupBy(
+            properties = "@brand",
+            reduce = {
+                @Reducer(func = ReducerFunction.QUANTILE, args = {"@price", "0.25"}, alias = "q25"),
+                @Reducer(func = ReducerFunction.QUANTILE, args = {"@price", "0.50"}, alias = "median"),
+                @Reducer(func = ReducerFunction.QUANTILE, args = {"@price", "0.75"}, alias = "q75"),
+                @Reducer(func = ReducerFunction.QUANTILE, args = {"@price", "0.95"}, alias = "q95"),
+                @Reducer(func = ReducerFunction.STDDEV, args = {"@price"}, alias = "priceStdDev"),
+                @Reducer(func = ReducerFunction.COUNT, alias = "sampleSize")
+            }
+        )
+    },
+    filter = {"@sampleSize > 10"},  // Only brands with sufficient data
+    sortBy = {
+        @SortBy(field = "@median", direction = Direction.DESC)
+    }
+)
+AggregationResult priceDistributionAnalysis();
+----
+
+=== Time-based Reporting
+
+[source,java]
+----
+// Daily sales report with time functions
+@Aggregation(
+    apply = {
+        @Apply(expression = "now()", alias = "currentTimestamp"),
+        @Apply(expression = "timefmt(@currentTimestamp)", alias = "reportDate"),
+        @Apply(expression = "dayofweek(@currentTimestamp)", alias = "dayOfWeek"),
+        @Apply(expression = "month(@currentTimestamp)", alias = "month")
+    },
+    groupBy = {
+        @GroupBy(
+            properties = "@brand",
+            reduce = {
+                @Reducer(func = ReducerFunction.COUNT, alias = "itemCount"),
+                @Reducer(func = ReducerFunction.SUM, args = {"@price"}, alias = "dailyRevenue")
+            }
+        )
+    },
+    sortBy = {
+        @SortBy(field = "@dailyRevenue", direction = Direction.DESC)
+    }
+)
+AggregationResult dailySalesReport();
+----
+
+== Best Practices
+
+=== Performance Optimization
+
+1. **Index Fields**: Ensure aggregated fields are properly indexed
+2. **Filter Early**: Use `value` parameter to filter before aggregation
+3. **Limit Results**: Always specify appropriate `limit` values
+4. **Choose Return Types**: Use `AggregationResult` for complex results, `Page<Map>` for pagination
+
+=== Code Organization
+
+[source,java]
+----
+// Good: Descriptive method names that reflect the aggregation purpose
+@Aggregation(...)
+AggregationResult calculateMonthlyRevenueByCategory();
+
+@Aggregation(...)
+Page<Map<String, String>> findTopPerformingBrands(Pageable pageable);
+
+// Good: Use meaningful aliases
+@Reducer(func = ReducerFunction.AVG, args = {"@price"}, alias = "averagePrice")
+@Reducer(func = ReducerFunction.COUNT, alias = "totalProducts")
+----
+
+=== Error Handling
+
+[source,java]
+----
+@Service
+public class GameAnalyticsService {
+    
+    @Autowired
+    private GameRepository gameRepository;
+    
+    public List<BrandStats> getBrandStatistics() {
+        try {
+            AggregationResult result = gameRepository.brandPerformanceAnalysis();
+            return result.getResults().stream()
+                .map(this::mapToBrandStats)
+                .collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error("Failed to retrieve brand statistics", e);
+            return Collections.emptyList();
+        }
+    }
+    
+    private BrandStats mapToBrandStats(Map<String, Object> row) {
+        return BrandStats.builder()
+            .brand((String) row.get("brand"))
+            .productCount(((Number) row.get("productCount")).longValue())
+            .totalRevenue(((Number) row.get("totalRevenue")).doubleValue())
+            .avgPrice(((Number) row.get("avgPrice")).doubleValue())
+            .build();
+    }
+}
+----
+
+== Comparison with Entity Streams
+
+|===
+|Feature |@Aggregation |Entity Streams
+
+|**Definition Style**
+|Declarative annotation
+|Fluent programmatic API
+
+|**Type Safety**
+|Method signature only
+|Full type safety with metamodel
+
+|**Complexity**
+|Better for complex, fixed aggregations
+|Better for dynamic, conditional logic
+
+|**Reusability**
+|High (method-based)
+|High (composable)
+
+|**Performance**
+|Optimized for specific queries
+|Flexible but may require tuning
+
+|**Learning Curve**
+|Requires annotation knowledge
+|Familiar to Java Stream users
+|===
+
+== Migration from Entity Streams
+
+You can often convert Entity Stream aggregations to `@Aggregation` methods:
+
+[source,java]
+----
+// Entity Stream version
+List<Pair<String, Long>> streamResult = entityStream.of(Game.class)
+    .groupBy(Game$.BRAND)
+    .reduce(COUNT)
+    .sorted(Order.desc("@count"))
+    .limit(10)
+    .toList(String.class, Long.class);
+
+// @Aggregation equivalent
+@Aggregation(
+    groupBy = {
+        @GroupBy(
+            properties = "@brand",
+            reduce = {@Reducer(func = ReducerFunction.COUNT, alias = "count")}
+        )
+    },
+    sortBy = {@SortBy(field = "@count", direction = Direction.DESC)},
+    limit = 10
+)
+AggregationResult topBrandsByCount();
+----
+
+== Next Steps
+
+* xref:entity-streams-aggregations.adoc[Entity Streams Aggregations]
+* xref:entity-streams.adoc[Entity Streams Reference]
+* xref:search.adoc[Search Capabilities]
+* xref:repository-queries.adoc[Repository Query Methods]

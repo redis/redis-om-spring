@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>{{#if page.title}}{{{page.title}}}{{else}}{{site.title}}{{/if}}{{#if site.title}} :: {{site.title}}{{/if}}</title>
+    {{#if page.next}}
+    <link rel="next" href="{{{page.next.url}}}">
+    {{/if}}
+    {{#if page.previous}}
+    <link rel="prev" href="{{{page.previous.url}}}">
+    {{/if}}
+    <meta name="generator" content="Antora {{antora.version}}">
+    {{#if (and env.SITE_SEARCH_PROVIDER env.SITE_SEARCH_PROVIDER)}}
+    <script>
+      window.siteSearchAnalyticsIfAllowed=function(){}
+      window.siteSearchUrl="{{env.SITE_SEARCH_URL}}"
+      window.siteSearchProvider="{{env.SITE_SEARCH_PROVIDER}}"
+      {{#if env.SITE_SEARCH_INDEX}}
+      window.siteSearchIndex="{{env.SITE_SEARCH_INDEX}}"
+      {{/if}}
+    </script>
+    {{/if}}
+    <script>
+!function (theme, navWidth) {
+  if (theme === 'dark') document.documentElement.classList.add('dark-theme')
+  if (navWidth) document.documentElement.style.setProperty('--nav-width', `${navWidth}px`)
+}(localStorage && localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: dark)')?.matches && 'dark'),
+  localStorage && localStorage.getItem('nav-width'))
+    </script>
+    <link rel="stylesheet" href="{{{uiRootPath}}}/css/site.css">
+    <link rel="stylesheet" href="{{{uiRootPath}}}/css/vendor/search.css">
+    <link rel="stylesheet" href="{{{uiRootPath}}}/css/vendor/page-search.css">
+    <link rel="stylesheet" href="{{{uiRootPath}}}/css/vendor/spring-tabs.css">
+
+    <!-- Redis OM Spring head metadata -->
+    <!-- Prevent flash of unstyled content -->
+    <script>
+      (function() {
+        var savedTheme = localStorage.getItem('redis-om-theme');
+        if (savedTheme === 'dark') {
+          document.documentElement.style.backgroundColor = '#22242A'; // Dark background
+          document.documentElement.classList.add('dark-theme');
+          document.documentElement.style.color = '#E6E6E6'; // Light text
+        } else {
+          document.documentElement.style.backgroundColor = 'white';
+          document.documentElement.classList.remove('dark-theme');
+        }
+      })();
+    </script>
+
+    <!-- Redis Favicons - using absolute paths to ensure they take precedence -->
+    <link rel="icon" type="image/x-icon" href="{{{siteRootPath}}}/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{{siteRootPath}}}/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{{siteRootPath}}}/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="{{{uiRootPath}}}/img/Redis_Favicon_144x144_Red.png">
+    <link rel="manifest" href="{{{siteRootPath}}}/site.webmanifest">
+    <link rel="stylesheet" href="{{{uiRootPath}}}/css/redis-brand.css">
+    <meta name="theme-color" content="#DC382C">
+    <meta name="description" content="Redis OM Spring - Object Mapping and Repository Support for Spring Data Redis">
+    <meta name="keywords" content="Redis, Spring, Java, Object Mapping, NoSQL, Vector Search, AI">
+    <meta property="og:title" content="Redis OM Spring Documentation">
+    <meta property="og:description" content="Redis OM Spring - Object Mapping and Repository Support for Spring Data Redis">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://redis.github.io/redis-om-spring/">
+    <meta property="og:image" content="{{{uiRootPath}}}/img/Redis_Logo_Red_RGB.svg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Redis OM Spring Documentation">
+    <meta name="twitter:description" content="Redis OM Spring - Object Mapping and Repository Support for Spring Data Redis">
+    <meta name="twitter:image" content="{{{uiRootPath}}}/img/Redis_Logo_Red_RGB.svg">
+
+    <!-- Mermaid diagram support -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.2.3/dist/mermaid.min.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        mermaid.initialize({
+          startOnLoad: true,
+          theme: 'neutral',
+          flowchart: {
+            useMaxWidth: true,
+            htmlLabels: true,
+            curve: 'linear',
+          },
+          securityLevel: 'loose'
+        });
+        
+        // Initialize all mermaid diagrams
+        setTimeout(function() {
+          mermaid.init(undefined, '.mermaid');
+        }, 500);
+      });
+    </script>
+
+    <!-- Theme toggle support -->
+    <script src="{{{uiRootPath}}}/js/theme-toggle.js"></script>
+    {{> head}}
+  </head>
+  <body class="{{page.layout}}{{#if env.DOCSEARCH_ENABLED}} with-algolia{{/if}}">
+    {{> header}}
+    {{> body}}
+    {{> footer}}
+  </body>
+</html>

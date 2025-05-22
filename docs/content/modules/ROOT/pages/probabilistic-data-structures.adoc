@@ -1,0 +1,617 @@
+= Probabilistic Data Structures
+:page-toclevels: 3
+:page-pagination:
+
+Probabilistic data structures provide memory-efficient solutions for problems that can tolerate some uncertainty in their results. Redis OM Spring integrates seamlessly with Redis Stack's probabilistic data structure capabilities through the RedisBloom module, offering both declarative annotations and programmatic APIs.
+
+== Overview
+
+Probabilistic data structures trade exact accuracy for significant space and time efficiency. They are particularly useful for:
+
+* **Large-scale applications** where memory usage is critical
+* **Real-time systems** requiring fast approximate answers
+* **Analytics and monitoring** where exact precision isn't necessary
+* **Fraud detection** and security applications
+
+Redis OM Spring provides support for five key probabilistic data structures through Redis Stack:
+
+* **Bloom Filters** - Set membership testing with false positives
+* **Cuckoo Filters** - Set membership with deletion support
+* **Count-Min Sketch** - Frequency estimation for streaming data
+* **T-Digest** - Quantile estimation and percentile calculations
+* **Top-K** - Tracking most frequent items
+
+== Bloom Filters
+
+Bloom filters are space-efficient probabilistic data structures used to test whether an element is a member of a set. They can have false positives but never false negatives.
+
+=== Use Cases
+
+* **Cache optimization**: Check if data exists before expensive lookups
+* **Duplicate detection**: Filter duplicate URLs, emails, or IDs
+* **Database query optimization**: Pre-filter before database queries
+* **Content filtering**: Block known malicious content
+
+=== Usage with Annotations
+
+[source,java]
+----
+@RedisHash("users")
+public class User {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String name;
+  
+  // Bloom filter for email uniqueness checking
+  @Bloom(
+    name = "bf_user_emails",
+    capacity = 100000,
+    errorRate = 0.001
+  )
+  private String email;
+  
+  // getters and setters
+}
+----
+
+The `@Bloom` annotation parameters:
+
+[cols="1,3,1"]
+|===
+|Parameter |Description |Default
+
+|`name`
+|Unique name for the Bloom filter
+|Generated from field name
+
+|`capacity`
+|Expected number of elements
+|Required
+
+|`errorRate`
+|Desired false positive probability (0.0-1.0)
+|0.001 (0.1%)
+|===
+
+=== Repository Integration
+
+[source,java]
+----
+public interface UserRepository extends RedisDocumentRepository<User, String> {
+  // Automatically uses Bloom filter for quick existence check
+  boolean existsByEmail(String email);
+}
+
+@Service
+public class UserService {
+  @Autowired
+  private UserRepository userRepository;
+  
+  public boolean isEmailTaken(String email) {
+    // Returns false if email definitely doesn't exist
+    // Returns true if email might exist (requires verification)
+    return userRepository.existsByEmail(email);
+  }
+}
+----
+
+=== Direct Operations API
+
+[source,java]
+----
+@Autowired
+private RedisModulesOperations<String> modulesOperations;
+
+public void bloomFilterOperations() {
+  BloomOperations<String> bloom = modulesOperations.opsForBloom();
+  
+  // Create filter
+  bloom.createFilter("emails", 0.001, 100000);
+  
+  // Add elements
+  bloom.add("emails", "user@example.com");
+  bloom.addMulti("emails", "admin@example.com", "test@example.com");
+  
+  // Check existence
+  boolean exists = bloom.exists("emails", "user@example.com");
+  Boolean[] results = bloom.existsMulti("emails", "user1@example.com", "user2@example.com");
+  
+  // Get filter information
+  Map<String, Object> info = bloom.info("emails");
+}
+----
+
+== Cuckoo Filters
+
+Cuckoo filters provide similar functionality to Bloom filters but support deletions and have better space efficiency for lower false positive rates.
+
+=== Advantages over Bloom Filters
+
+* **Deletions supported**: Can remove elements from the filter
+* **Better space efficiency**: More memory efficient at lower error rates
+* **Exact item counts**: Can count occurrences of items
+
+=== Usage with Annotations
+
+[source,java]
+----
+@RedisHash("products")
+public class Product {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String name;
+  
+  // Cuckoo filter for tracking viewed products
+  @Cuckoo(
+    name = "cf_viewed_products",
+    capacity = 50000,
+    bucketSize = 4,
+    maxIterations = 20,
+    expansion = 1
+  )
+  private String sku;
+  
+  // getters and setters
+}
+----
+
+The `@Cuckoo` annotation parameters:
+
+[cols="1,3,1"]
+|===
+|Parameter |Description |Default
+
+|`name`
+|Unique name for the Cuckoo filter
+|Generated from field name
+
+|`capacity`
+|Expected number of elements
+|Required
+
+|`bucketSize`
+|Number of items per bucket
+|2
+
+|`maxIterations`
+|Maximum iterations for insertion
+|20
+
+|`expansion`
+|Expansion factor when filter fills
+|1
+|===
+
+=== Direct Operations API
+
+[source,java]
+----
+@Autowired
+private RedisModulesOperations<String> modulesOperations;
+
+public void cuckooFilterOperations() {
+  CuckooFilterOperations<String> cuckoo = modulesOperations.opsForCuckooFilter();
+  
+  // Create filter
+  cuckoo.createFilter("viewed_skus", 50000);
+  
+  // Add and remove elements
+  cuckoo.add("viewed_skus", "SKU-12345");
+  cuckoo.delete("viewed_skus", "SKU-12345");
+  
+  // Check existence and count
+  boolean exists = cuckoo.exists("viewed_skus", "SKU-12345");
+  long count = cuckoo.count("viewed_skus", "SKU-12345");
+  
+  // Batch operations
+  cuckoo.addNX("viewed_skus", "SKU-67890"); // Add if not exists
+}
+----
+
+== Count-Min Sketch
+
+Count-Min Sketch estimates the frequency of elements in a data stream using significantly less memory than exact counting methods.
+
+=== Use Cases
+
+* **Real-time analytics**: Track page views, API calls, user actions
+* **Fraud detection**: Monitor suspicious activity patterns
+* **Rate limiting**: Count requests per user/IP
+* **Trend analysis**: Identify popular content or products
+
+=== Usage with Annotations
+
+[source,java]
+----
+@RedisHash("events")
+public class UserEvent {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String userId;
+  
+  @Indexed
+  private String eventType;
+  
+  // Count-Min Sketch for tracking event frequencies
+  @CountMin(
+    name = "cms_user_events",
+    errorRate = 0.001,
+    probability = 0.99
+  )
+  private String userAction;
+  
+  // getters and setters
+}
+----
+
+The `@CountMin` annotation parameters:
+
+[cols="1,3,1"]
+|===
+|Parameter |Description |Default
+
+|`name`
+|Unique name for the Count-Min Sketch
+|Generated from field name
+
+|`initMode`
+|Initialization mode: `PROBABILITY` or `DIMENSIONS`
+|PROBABILITY
+
+|`errorRate`
+|Maximum error rate for estimates
+|0.001
+
+|`probability`
+|Probability that estimate is within error bounds
+|0.99
+
+|`width`
+|Width parameter (when using DIMENSIONS mode)
+|0
+
+|`depth`
+|Depth parameter (when using DIMENSIONS mode)
+|0
+|===
+
+=== Direct Operations API
+
+[source,java]
+----
+@Autowired
+private RedisModulesOperations<String> modulesOperations;
+
+public void countMinSketchOperations() {
+  CountMinSketchOperations<String> cms = modulesOperations.opsForCountMinSketch();
+  
+  // Create sketch
+  cms.initByProbability("user_actions", 0.001, 0.99);
+  
+  // Increment counters
+  cms.incrementBy("user_actions", "login", 1);
+  cms.incrementBy("user_actions", Map.of("login", 5L, "logout", 3L));
+  
+  // Query frequencies
+  Long count = cms.query("user_actions", "login");
+  Long[] counts = cms.query("user_actions", "login", "logout", "signup");
+  
+  // Get sketch information
+  Map<String, Object> info = cms.info("user_actions");
+}
+----
+
+== T-Digest
+
+T-Digest provides accurate quantile estimation for streaming data, making it ideal for calculating percentiles and statistical summaries.
+
+=== Use Cases
+
+* **Performance monitoring**: Calculate response time percentiles
+* **Resource monitoring**: Track CPU, memory usage distributions
+* **Quality metrics**: Monitor error rates and SLA compliance
+* **A/B testing**: Compare metric distributions between variants
+
+=== Direct Operations API
+
+[source,java]
+----
+@Autowired
+private RedisModulesOperations<String> modulesOperations;
+
+public void tDigestOperations() {
+  TDigestOperations<String> tDigest = modulesOperations.opsForTDigest();
+  
+  // Create T-Digest
+  tDigest.create("response_times", 100);
+  
+  // Add observations
+  tDigest.add("response_times", 45.2, 67.1, 123.5, 89.3);
+  
+  // Calculate quantiles
+  Double median = tDigest.quantile("response_times", 0.5);
+  Double p95 = tDigest.quantile("response_times", 0.95);
+  Double p99 = tDigest.quantile("response_times", 0.99);
+  
+  // Get multiple quantiles at once
+  Double[] percentiles = tDigest.quantile("response_times", 0.5, 0.9, 0.95, 0.99);
+  
+  // Calculate CDF
+  Double cdf = tDigest.cdf("response_times", 100.0); // Probability of value <= 100
+  
+  // Get min/max values
+  Double min = tDigest.min("response_times");
+  Double max = tDigest.max("response_times");
+  
+  // Calculate trimmed mean (exclude outliers)
+  Double trimmedMean = tDigest.trimmedMean("response_times", 0.1, 0.9);
+}
+----
+
+== Top-K
+
+Top-K tracks the most frequent items in a data stream, providing an efficient way to identify popular or trending elements.
+
+=== Use Cases
+
+* **Trending topics**: Identify popular hashtags, keywords
+* **Popular products**: Track best-selling items
+* **Hot content**: Find most-viewed articles or videos
+* **Resource monitoring**: Identify top resource consumers
+
+=== Direct Operations API
+
+[source,java]
+----
+@Autowired
+private RedisModulesOperations<String> modulesOperations;
+
+public void topKOperations() {
+  TopKOperations<String> topK = modulesOperations.opsForTopK();
+  
+  // Create Top-K structure to track top 10 items
+  topK.reserve("popular_products", 10, 1000, 5, 0.9);
+  
+  // Add/increment items
+  topK.add("popular_products", "product-123", "product-456", "product-789");
+  topK.incrementBy("popular_products", "product-123", 5);
+  topK.incrementBy("popular_products", Map.of("product-456", 3L, "product-789", 2L));
+  
+  // Query items
+  Boolean isTop = topK.query("popular_products", "product-123");
+  Boolean[] results = topK.query("popular_products", "product-123", "product-999");
+  
+  // Get current top items with counts
+  List<String> topItems = topK.list("popular_products");
+  Map<String, Long> topItemsWithCounts = topK.listWithCount("popular_products");
+  
+  // Get information
+  Map<String, Object> info = topK.info("popular_products");
+}
+----
+
+== Configuration
+
+=== Redis Stack Requirements
+
+All probabilistic data structures require Redis Stack with the RedisBloom module:
+
+[source,yaml]
+----
+# docker-compose.yml
+version: '3.8'
+services:
+  redis:
+    image: redis/redis-stack:latest
+    ports:
+      - "6379:6379"
+      - "8001:8001"  # RedisInsight
+----
+
+=== Application Configuration
+
+[source,yaml]
+----
+# application.yml
+spring:
+  redis:
+    host: localhost
+    port: 6379
+    timeout: 2000ms
+    
+redis:
+  om:
+    # Enable automatic index creation
+    indexing:
+      mode: CREATE_AND_REPLACE
+----
+
+== Performance Considerations
+
+=== Memory Usage
+
+* **Bloom Filters**: Memory usage is fixed and predictable
+* **Cuckoo Filters**: More memory efficient at low error rates
+* **Count-Min Sketch**: Memory usage depends on accuracy requirements
+* **T-Digest**: Memory grows with the number of unique quantiles
+* **Top-K**: Fixed memory based on K parameter
+
+=== Accuracy Trade-offs
+
+Each structure has different accuracy characteristics:
+
+[cols="1,2,2,1"]
+|===
+|Structure |Accuracy |Trade-off |Best For
+
+|Bloom Filter
+|False positives possible, no false negatives
+|Memory vs accuracy
+|Membership testing
+
+|Cuckoo Filter
+|False positives possible, supports deletions
+|Memory vs accuracy
+|Dynamic membership
+
+|Count-Min Sketch
+|Overestimates frequencies
+|Memory vs accuracy
+|Frequency counting
+
+|T-Digest
+|High accuracy for quantiles
+|Memory vs precision
+|Statistical analysis
+
+|Top-K
+|Approximate top items
+|Memory vs completeness
+|Popularity tracking
+|===
+
+== Error Handling
+
+[source,java]
+----
+@Service
+public class ProbabilisticDataService {
+  @Autowired
+  private RedisModulesOperations<String> modulesOperations;
+  
+  public boolean safeBloomCheck(String filterName, String item) {
+    try {
+      BloomOperations<String> bloom = modulesOperations.opsForBloom();
+      return bloom.exists(filterName, item);
+    } catch (Exception e) {
+      // Log error and return conservative result
+      log.warn("Bloom filter check failed for {}: {}", filterName, e.getMessage());
+      return true; // Assume item exists to be safe
+    }
+  }
+}
+----
+
+== Best Practices
+
+=== Choosing the Right Structure
+
+* Use **Bloom filters** for simple membership testing with immutable data
+* Use **Cuckoo filters** when you need to delete items or have strict memory constraints
+* Use **Count-Min Sketch** for frequency estimation in high-volume streams
+* Use **T-Digest** for statistical analysis and percentile calculations
+* Use **Top-K** for identifying trending or popular items
+
+=== Configuration Guidelines
+
+* **Size filters appropriately**: Underestimating capacity degrades performance
+* **Balance accuracy vs memory**: Lower error rates require more memory
+* **Monitor filter saturation**: Full filters have degraded performance
+* **Use batch operations**: More efficient than individual operations
+
+=== Integration Patterns
+
+[source,java]
+----
+@Service
+public class RecommendationService {
+  @Autowired
+  private RedisModulesOperations<String> modulesOperations;
+  
+  public List<String> getRecommendations(String userId) {
+    BloomOperations<String> bloom = modulesOperations.opsForBloom();
+    TopKOperations<String> topK = modulesOperations.opsForTopK();
+    
+    // Get popular items
+    List<String> popularItems = topK.list("trending_products");
+    
+    // Filter out items user has already seen
+    return popularItems.stream()
+      .filter(item -> !bloom.exists("user_seen:" + userId, item))
+      .collect(Collectors.toList());
+  }
+}
+----
+
+== Testing Probabilistic Data Structures
+
+[source,java]
+----
+@SpringBootTest
+class ProbabilisticDataStructuresTest {
+  
+  @Autowired
+  private RedisModulesOperations<String> modulesOperations;
+  
+  @Test
+  void testBloomFilterAccuracy() {
+    BloomOperations<String> bloom = modulesOperations.opsForBloom();
+    bloom.createFilter("test_bf", 0.01, 1000);
+    
+    // Add known items
+    Set<String> addedItems = Set.of("item1", "item2", "item3");
+    addedItems.forEach(item -> bloom.add("test_bf", item));
+    
+    // Verify no false negatives
+    addedItems.forEach(item -> 
+      assertThat(bloom.exists("test_bf", item)).isTrue());
+    
+    // Test for false positives (should be rare)
+    long falsePositives = IntStream.range(0, 1000)
+      .mapToObj(i -> "unknown_item_" + i)
+      .filter(item -> bloom.exists("test_bf", item))
+      .count();
+    
+    // Should be approximately 1% false positive rate
+    assertThat(falsePositives).isLessThan(20);
+  }
+}
+----
+
+== Advanced Use Cases
+
+=== Fraud Detection Pipeline
+
+[source,java]
+----
+@Component
+public class FraudDetectionService {
+  @Autowired
+  private RedisModulesOperations<String> modulesOperations;
+  
+  public boolean assessTransaction(Transaction transaction) {
+    String userId = transaction.getUserId();
+    String cardNumber = transaction.getCardNumber();
+    
+    BloomOperations<String> bloom = modulesOperations.opsForBloom();
+    CountMinSketchOperations<String> cms = modulesOperations.opsForCountMinSketch();
+    
+    // Check against known fraudulent patterns
+    if (bloom.exists("fraudulent_cards", cardNumber)) {
+      return false; // Definitely suspicious
+    }
+    
+    // Count transactions per user
+    cms.incrementBy("user_tx_count", userId, 1);
+    Long txCount = cms.query("user_tx_count", userId);
+    
+    // Flag if too many transactions
+    return txCount <= 100; // Conservative limit
+  }
+}
+----
+
+== Learning More
+
+For additional information on probabilistic data structures:
+
+* https://redis.io/docs/latest/develop/data-types/probabilistic/[Redis Probabilistic Data Types Documentation]
+* https://redis.io/docs/latest/commands/?group=bf[RedisBloom Commands Reference]
+* xref:autocomplete.adoc[Autocomplete] - Another advanced Redis feature
+* xref:time-to-live.adoc[Time To Live] - Managing data lifecycle

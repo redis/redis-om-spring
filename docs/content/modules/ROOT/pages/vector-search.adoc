@@ -1,0 +1,419 @@
+= Vector Similarity Search
+:page-toclevels: 3
+:page-pagination:
+
+Vector Similarity Search (VSS) provides the ability to find items that are conceptually or semantically similar based on their vector representations. Redis OM Spring makes it easy to implement VSS in your applications.
+
+== Understanding Vector Search
+
+=== What are Vectors?
+
+In the context of machine learning and search, vectors are numerical representations of data in a multi-dimensional space. These vectors (also called embeddings) capture the semantic meaning or features of the data, allowing for similarity comparisons.
+
+For example:
+- The word "king" might be represented as `[0.2, -0.5, 0.7, ...]`
+- The word "queen" might be represented as `[0.25, -0.45, 0.72, ...]`
+
+These vectors are positioned close to each other in the vector space because the concepts they represent are semantically related.
+
+=== How Vector Search Works
+
+Vector search works by:
+
+1. Converting your data (text, images, etc.) into vector embeddings
+2. Storing these vectors in a searchable index
+3. When searching, converting the query to a vector
+4. Finding the vectors in the index that are closest to the query vector
+
+"Closeness" is measured using various distance metrics like Euclidean distance, Cosine similarity, or Dot product.
+
+Vector search consists of two main phases:
+
+1. **Indexing Phase**: Data is processed into vector embeddings and stored in Redis
+2. **Query Phase**: A user query is converted to a vector and compared against stored vectors to find similar items
+
+== Vector Search in Redis Stack
+
+As of Redis 8, the Query Engine is a standard component of Redis, making these features available without requiring separate module installation.
+
+Redis Stack implements vector search through the Redis Query Engine (formerly RediSearch module), which provides:
+
+* Efficient storage of vector data
+* Fast vector indexing using algorithms like HNSW (Hierarchical Navigable Small World)
+* Query capabilities for finding nearest neighbors
+* Hybrid queries combining vector similarity with traditional filters
+
+Redis OM Spring provides a Java-friendly interface to these capabilities.
+
+== Vector Indexing with Redis OM Spring
+
+=== Vector Field Indexing with @Indexed
+
+Redis OM Spring uses the standard `@Indexed` annotation with specific schema field type configuration for vector fields. This approach integrates vector indexing with the existing indexing system.
+
+[cols="1,3,1"]
+|===
+|Attribute |Description |Default
+
+|`schemaFieldType`
+|Must be `SchemaFieldType.VECTOR`
+|Required
+
+|`algorithm`
+|The indexing algorithm: `VectorAlgorithm.HNSW` or `VectorAlgorithm.FLAT`
+|HNSW
+
+|`type`
+|Vector data type: `VectorType.FLOAT32` or `VectorType.FLOAT64`
+|FLOAT32
+
+|`dimension`
+|The number of dimensions in the vector
+|Required
+
+|`distanceMetric`
+|Distance metric: `DistanceMetric.COSINE`, `DistanceMetric.L2`, `DistanceMetric.IP`
+|COSINE
+
+|`initialCapacity`
+|Initial index capacity for performance optimization
+|1000
+
+|`m`
+|HNSW parameter: max number of connections per node
+|16
+
+|`efConstruction`
+|HNSW parameter: size of dynamic candidate list during construction
+|200
+
+|`efRuntime`
+|HNSW parameter: size of dynamic candidate list at query time
+|10
+|===
+
+=== Example: Defining a Vector Index
+
+[source,java]
+----
+@Document
+public class Product {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String name;
+  
+  @Indexed(
+    schemaFieldType = SchemaFieldType.VECTOR,
+    algorithm = VectorAlgorithm.HNSW,
+    type = VectorType.FLOAT32,
+    dimension = 512,
+    distanceMetric = DistanceMetric.COSINE,
+    initialCapacity = 10000,
+    m = 16,
+    efConstruction = 200
+  )
+  private float[] embedding; // float[] for @Document entities
+  
+  // getters and setters
+}
+----
+
+**Note**: Vector field data types depend on the entity annotation:
+
+* For `@Document` entities: use `float[]` arrays
+* For `@RedisHash` entities: use `byte[]` arrays
+
+== Vector Generation with Redis OM Spring
+
+=== The @Vectorize Annotation
+
+The `@Vectorize` annotation automatically generates vector embeddings from source fields using AI embedding providers. This annotation is part of the `redis-om-spring-ai` module.
+
+[cols="1,3,1"]
+|===
+|Attribute |Description |Default
+
+|`destination`
+|The target field name to store the generated embedding
+|Required
+
+|`embeddingType`
+|Type of embedding: `SENTENCE`, `IMAGE`, `FACE`
+|SENTENCE
+
+|`provider`
+|Embedding provider: `TRANSFORMERS`, `OPENAI`, `AZURE_OPENAI`, `OLLAMA`, etc.
+|TRANSFORMERS
+
+|`openAiEmbeddingModel`
+|OpenAI model: `TEXT_EMBEDDING_ADA_002`, `TEXT_EMBEDDING_3_LARGE`, etc.
+|TEXT_EMBEDDING_ADA_002
+
+|`azureOpenAiDeploymentName`
+|Azure OpenAI deployment name
+|"text-embedding-ada-002"
+
+|`ollamaEmbeddingModel`
+|Ollama model to use
+|MISTRAL
+
+|`transformersModel`
+|Hugging Face Transformers model name
+|""
+|===
+
+=== Example: Automatic Vector Generation
+
+[source,java]
+----
+@Document
+public class Product {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String name;
+  
+  private String description;
+  
+  // Source field for embedding generation
+  @Vectorize(
+    destination = "textEmbedding",
+    embeddingType = EmbeddingType.SENTENCE,
+    provider = EmbeddingProvider.OPENAI,
+    openAiEmbeddingModel = EmbeddingModel.TEXT_EMBEDDING_3_LARGE
+  )
+  private String productText;
+  
+  // Vector field with index
+  @Indexed(
+    schemaFieldType = SchemaFieldType.VECTOR,
+    algorithm = VectorAlgorithm.HNSW,
+    type = VectorType.FLOAT32,
+    dimension = 3072,  // TEXT_EMBEDDING_3_LARGE dimensions
+    distanceMetric = DistanceMetric.COSINE
+  )
+  private float[] textEmbedding; // float[] for @Document entities
+  
+  // Image vectorization
+  @Vectorize(
+    destination = "imageEmbedding",
+    embeddingType = EmbeddingType.IMAGE
+  )
+  private String imagePath;
+  
+  @Indexed(
+    schemaFieldType = SchemaFieldType.VECTOR,
+    algorithm = VectorAlgorithm.HNSW,
+    type = VectorType.FLOAT32,
+    dimension = 512,
+    distanceMetric = DistanceMetric.COSINE
+  )
+  private float[] imageEmbedding; // float[] for @Document entities
+  
+  // getters and setters
+}
+----
+
+=== Configuring Embedding Providers
+
+Redis OM Spring supports several embedding providers that can be configured in your application properties:
+
+[source,yaml]
+----
+redis:
+  om:
+    ai:
+      embedding-provider: azure-openai
+      embedding-model: text-embedding-ada-002
+      api-key: ${AZURE_API_KEY}
+      resource-name: your-azure-resource
+      deployment-id: your-deployment-id
+      api-version: 2023-05-15
+      entra-id:
+        enabled: true
+        client-id: ${AZURE_CLIENT_ID}
+        tenant-id: ${AZURE_TENANT_ID}
+        client-secret: ${AZURE_CLIENT_SECRET}
+----
+
+== Performing Vector Searches
+
+Redis OM Spring provides two main ways to perform vector searches:
+
+1. Using repository methods
+2. Using the EntityStream API
+
+=== Vector Search with EntityStream
+
+Redis OM Spring provides vector similarity search through the EntityStream API using the `.knn()` method:
+
+[source,java]
+----
+@Service
+public class ProductService {
+  @Autowired
+  private EntityStream entityStream;
+  
+  @Autowired
+  private ProductRepository repository;
+  
+  public List<Product> findSimilarProducts(String productId, int k) {
+    Optional<Product> maybeProduct = repository.findById(productId);
+    if (maybeProduct.isPresent()) {
+      Product product = maybeProduct.get();
+      
+      return entityStream
+        .of(Product.class)
+        .filter(Product$.TEXT_EMBEDDING.knn(k, product.getTextEmbedding()))
+        .sorted(Product$._TEXT_EMBEDDING_SCORE)
+        .limit(k)
+        .collect(Collectors.toList());
+    }
+    return Collections.emptyList();
+  }
+  
+  public List<Product> findSimilarProductsWithScores(String productId, int k) {
+    Optional<Product> maybeProduct = repository.findById(productId);
+    if (maybeProduct.isPresent()) {
+      Product product = maybeProduct.get();
+      
+      return entityStream
+        .of(Product.class)
+        .filter(Product$.TEXT_EMBEDDING.knn(k, product.getTextEmbedding()))
+        .sorted(Product$._TEXT_EMBEDDING_SCORE)
+        .limit(k)
+        .map(Fields.of(Product$._THIS, Product$._TEXT_EMBEDDING_SCORE))
+        .collect(Collectors.toList())
+        .stream()
+        .map(Pair::getFirst)  // Extract just the Product objects
+        .collect(Collectors.toList());
+    }
+    return Collections.emptyList();
+  }
+  
+  public List<Product> findSimilarProductsInCategory(String productId, String category, int k) {
+    Optional<Product> maybeProduct = repository.findById(productId);
+    if (maybeProduct.isPresent()) {
+      Product product = maybeProduct.get();
+      
+      SearchStream<Product> stream = entityStream.of(Product.class);
+      
+      // Apply category filter if specified
+      if (category != null && !category.equalsIgnoreCase("all")) {
+        stream.filter(Product$.MASTER_CATEGORY.eq(category));
+      }
+      
+      return stream
+        .filter(Product$.TEXT_EMBEDDING.knn(k, product.getTextEmbedding()))
+        .sorted(Product$._TEXT_EMBEDDING_SCORE)
+        .limit(k)
+        .collect(Collectors.toList());
+    }
+    return Collections.emptyList();
+  }
+}
+----
+
+=== KNN Query Syntax
+
+The `.knn()` method signature is:
+
+[source,java]
+----
+// Basic KNN search for @RedisHash entities
+field.knn(int k, byte[] vector)
+
+// Basic KNN search for @Document entities
+field.knn(int k, float[] vector)
+
+// Example usage
+Product$.TEXT_EMBEDDING.knn(10, queryVector)
+Product$.IMAGE_EMBEDDING.knn(5, imageVector)
+----
+
+=== Accessing Similarity Scores
+
+Vector search returns similarity scores that can be accessed using special score fields:
+
+[source,java]
+----
+List<Pair<Product, Double>> productsWithScores = entityStream
+  .of(Product.class)
+  .filter(Product$.TEXT_EMBEDDING.knn(k, queryVector))
+  .sorted(Product$._TEXT_EMBEDDING_SCORE)
+  .limit(k)
+  .map(Fields.of(Product$._THIS, Product$._TEXT_EMBEDDING_SCORE))
+  .collect(Collectors.toList());
+
+// Convert scores to similarity percentages (for COSINE distance)
+List<Double> similarityPercentages = productsWithScores.stream()
+  .map(Pair::getSecond)
+  .map(score -> 100.0 * (1 - score / 2))  // Convert distance to similarity %
+  .collect(Collectors.toList());
+----
+
+== Distance Metrics
+
+Redis OM Spring supports three main distance metrics for vector similarity:
+
+=== Cosine Similarity (COSINE)
+
+Measures the cosine of the angle between two vectors. The result is bounded between -1 and 1, with 1 representing identical vectors. It's particularly useful for text data because it focuses on the direction (angle) rather than the magnitude.
+
+=== Euclidean Distance (L2)
+
+Measures the straight-line distance between two points in the vector space. Lower values indicate more similar items. This is useful when the magnitude of the vectors is important.
+
+=== Inner Product (IP)
+
+The dot product of two vectors. Higher values indicate more similarity. This is useful when vectors are normalized and can be faster to compute than cosine similarity.
+
+**When to use each metric:**
+
+* **COSINE**: Best for text embeddings and when vector magnitudes vary
+* **L2**: Better for image embeddings and when distances in the space are meaningful
+* **IP**: Fastest option when vectors are normalized
+
+== Vector Index Algorithms
+
+Redis OM Spring supports two vector index algorithms:
+
+=== HNSW (Hierarchical Navigable Small World)
+
+HNSW is an approximate nearest neighbor search algorithm that builds a navigable small world graph. It's very fast, even with high-dimensional vectors, but requires more memory and build time.
+
+Key parameters:
+- `m`: Maximum number of connections per node (default: 16)
+- `efConstruction`: Size of the dynamic candidate list during construction (default: 200)
+- `efRuntime`: Size of the dynamic candidate list at query time (default: 10)
+
+=== FLAT
+
+The FLAT algorithm performs an exhaustive search over all vectors. It's more accurate but slower than HNSW for large datasets. It uses less memory and has faster index build times.
+
+== Performance Considerations
+
+When implementing vector search, consider the following:
+
+* **Vector Dimensions**: Higher dimensions can capture more information but require more storage and computation
+* **Index Algorithm**: HNSW is faster for queries but uses more memory; FLAT is slower but more accurate and uses less memory
+* **Distance Metric**: Choose based on your use case (COSINE for text, L2 for images, etc.)
+* **Index Parameters**: Tune HNSW parameters (m, efConstruction, efRuntime) based on your specific needs
+
+== Example Applications
+
+For complete examples of vector search in action, check out:
+
+* xref:vector-search-examples.adoc[Vector Search Examples] - Detailed examples from the demos
+* The `roms-vss` demo application for product search
+* The `roms-vss-movies` demo application for movie recommendations
+
+== Advanced Topics
+
+For more advanced topics related to vector search, see:
+
+* xref:embedding-providers.adoc[Embedding Providers] - Details on supported embedding providers
+* xref:azure-openai.adoc[Azure OpenAI Integration] - Working with Azure OpenAI and Entra ID

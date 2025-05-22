@@ -1,0 +1,355 @@
+= Entity IDs and ULID
+:page-toclevels: 3
+:experimental:
+:source-highlighter: highlight.js
+
+== Introduction to Entity IDs
+
+Every entity stored in Redis requires a unique identifier. Redis OM Spring provides flexible options for generating and managing these identifiers, with a focus on using ULID (Universally Unique Lexicographically Sortable Identifier) as the default ID generation strategy.
+
+== ID Fields
+
+=== The @Id Annotation
+
+Use the `@Id` annotation from `org.springframework.data.annotation.Id` to designate a field as the entity's unique identifier:
+
+[source,java]
+----
+@Document
+public class Product {
+    @Id
+    private String id;
+    
+    private String name;
+    private BigDecimal price;
+    // Other fields
+}
+----
+
+This annotation can be applied to both `@Document` (Redis JSON) and `@RedisHash` (Redis Hash) entities.
+
+=== ID Data Types
+
+Redis OM Spring supports several ID field types through its ULID identifier generator:
+
+* `String` - Most common, automatically generates ULID strings (26 characters)
+* `Ulid` - Native ULID type from `com.github.f4b6a3.ulid.Ulid`
+* `Integer` - Generates random integers
+* `Long` - Generates random long values
+
+For maximum flexibility and time-ordered benefits, `String` (ULID) is recommended.
+
+== ULID: Default ID Generation
+
+=== What is ULID?
+
+ULID (Universally Unique Lexicographically Sortable Identifier) is the default ID generation strategy in Redis OM Spring. ULIDs are 128-bit identifiers that combine:
+
+* A timestamp component (first 48 bits)
+* A random component (remaining 80 bits)
+
+They are encoded as a 26-character string using Crockford's base32 encoding.
+
+Example ULID: `01H1VECDJ6MANDVQFTGA3SMP02`
+
+=== Benefits of ULID
+
+ULIDs offer several advantages over other ID generation strategies:
+
+[cols="1,3"]
+|===
+|Feature |Benefit
+
+|Time-ordered
+|Lexicographic sorting correlates with creation time (newer items sort after older ones)
+
+|High entropy
+|128 bits of entropy with very low collision probability
+
+|URL-safe
+|Base32 encoded (no special characters)
+
+|Distributed generation
+|No coordination needed between servers or instances
+
+|Timestamp extraction
+|Can extract creation time from the ID
+
+|Compact
+|26 characters vs 36 for UUID
+
+|Monotonic
+|When generated in sequence, ULIDs within the same millisecond are guaranteed to increase
+|===
+
+=== Automatic ULID Generation
+
+When you create a new entity with a null ID field, Redis OM Spring automatically generates a ULID:
+
+[source,java]
+----
+@Document
+public class Person {
+    @Id
+    private String id;
+    
+    @Indexed
+    private String name;
+    
+    @Indexed  
+    private String email;
+    
+    // Static factory method pattern (common with Lombok)
+    public static Person of(String name, String email) {
+        Person person = new Person();
+        person.setName(name);
+        person.setEmail(email);
+        // ID will be auto-generated when saved
+        return person;
+    }
+}
+
+// Usage example
+Person person = Person.of("John Doe", "john@example.com");
+Person saved = repository.save(person);
+// saved.getId() will now contain a ULID like "01H1VECDJ6MANDVQFTGA3SMP02"
+----
+
+=== Working with ULIDs
+
+You can work with ULIDs directly using the `Ulid` class from the `com.github.f4b6a3.ulid` library:
+
+[source,java]
+----
+import com.github.f4b6a3.ulid.Ulid;
+import com.github.f4b6a3.ulid.UlidCreator;
+
+// Creating a ULID
+Ulid ulid = UlidCreator.getMonotonicUlid();
+String ulidString = ulid.toString();
+
+// Parsing a ULID from string
+Ulid parsed = Ulid.from("01H1VECDJ6MANDVQFTGA3SMP02");
+
+// Extracting timestamp from ULID
+Instant timestamp = ulid.getInstant();
+
+// Comparing ULIDs (time-ordered)
+Ulid ulid1 = UlidCreator.getMonotonicUlid();
+Ulid ulid2 = UlidCreator.getMonotonicUlid();
+boolean isAfter = ulid2.getInstant().isAfter(ulid1.getInstant());
+----
+
+== Custom ID Generation
+
+=== Providing Your Own IDs
+
+You can assign IDs explicitly in your code:
+
+[source,java]
+----
+@Document
+public class Order {
+    @Id
+    private String id;
+    
+    @Indexed
+    private String customerId;
+    
+    private LocalDateTime orderDate;
+    private List<OrderItem> items;
+    
+    // Getters and setters
+}
+
+// Service example with custom ID assignment
+@Service
+public class OrderService {
+    private final OrderRepository repository;
+    
+    public Order createOrder(String customerId, List<OrderItem> items) {
+        Order order = new Order();
+        order.setId("ORD-" + customerId + "-" + System.currentTimeMillis());
+        order.setCustomerId(customerId);
+        order.setItems(items);
+        order.setOrderDate(LocalDateTime.now());
+        return repository.save(order);
+    }
+}
+----
+
+=== Custom ID Generation Strategy
+
+For specific requirements, you can implement custom ID generation:
+
+[source,java]
+----
+@Component
+public class PrefixedIdGenerator {
+    private final String prefix;
+    
+    public PrefixedIdGenerator(@Value("${app.id-prefix:PROD}") String prefix) {
+        this.prefix = prefix;
+    }
+    
+    public String generate() {
+        return prefix + "-" + UlidCreator.getMonotonicUlid().toString();
+    }
+}
+
+@Service
+public class ProductService {
+    private final PrefixedIdGenerator idGenerator;
+    private final ProductRepository repository;
+    
+    public ProductService(PrefixedIdGenerator idGenerator, ProductRepository repository) {
+        this.idGenerator = idGenerator;
+        this.repository = repository;
+    }
+    
+    public Product createProduct(String name, String description) {
+        Product product = new Product();
+        product.setId(idGenerator.generate()); // e.g., "PROD-01H1VECDJ6MANDVQFTGA3SMP02"
+        product.setName(name);
+        product.setDescription(description);
+        return repository.save(product);
+    }
+}
+----
+
+== ID-Related Annotations
+
+=== @IdAsHashTag with @IdFilter
+
+For Redis Cluster deployments, use `@IdFilter` with `IdAsHashTag` to ensure entities are stored in the same hash slot:
+
+[source,java]
+----
+@RedisHash("orders")
+public class Order {
+    @Id
+    @IdFilter(value = IdAsHashTag.class)
+    private String id;
+    
+    @Indexed
+    private String customerId;
+    
+    // Other fields
+}
+----
+
+This ensures that operations on related entities can be executed in atomic transactions in a clustered environment.
+
+=== Explicit ULID Type Usage
+
+You can use the native `Ulid` type directly for type safety:
+
+[source,java]
+----
+@Document
+public class Customer {
+    @Id
+    private Ulid id;  // Will be auto-generated as Ulid type
+    
+    private String name;
+    private String email;
+    // Other fields
+}
+----
+
+== Keys and Keyspaces
+
+Redis OM Spring uses the entity ID to create the Redis key:
+
+* For `@Document` entities: `<keyspace>:<id>`
+* For `@RedisHash` entities: `<keyspace>:<id>`
+
+The keyspace is determined by:
+
+1. The `@Document` or `@RedisHash` annotation's keyspace/value attribute, if specified
+2. The entity class name otherwise
+
+[source,java]
+----
+// Default keyspace based on class name
+@Document
+public class Product {
+    @Id
+    private String id;
+    // Other fields
+}
+// Redis key: "Product:<id>"
+
+// Custom keyspace for Document
+@Document(keyspace = "products")
+public class Product {
+    @Id
+    private String id;
+    // Other fields
+}
+// Redis key: "products:<id>"
+
+// Custom keyspace for Hash
+@RedisHash("orders")
+public class Order {
+    @Id
+    private String id;
+    // Other fields
+}
+// Redis key: "orders:<id>"
+----
+
+== ULID vs UUID vs Auto-Increment
+
+[cols="1,1,1,1"]
+|===
+|Feature |ULID |UUID (v4) |Auto-Increment
+
+|Sortable by time
+|✓ (Lexicographically)
+|✗
+|✓ (Numerically)
+
+|Distributed generation
+|✓
+|✓
+|✗ (Requires coordination)
+
+|Size
+|26 chars
+|36 chars
+|Variable
+
+|Timestamp extraction
+|✓
+|✗
+|✗
+
+|Collision probability
+|Extremely low
+|Extremely low
+|Zero with coordination
+
+|Predictability
+|Low
+|Low
+|High
+|===
+
+== Best Practices
+
+* Let Redis OM Spring generate IDs when possible
+* Add descriptive prefixes for manually assigned IDs
+* Use `@IdAsHashTag` for clustered Redis deployments
+* Consider ID length when designing for storage efficiency
+* Treat IDs as immutable after creation
+* Use appropriate ID types for your use case:
+  ** `String` for maximum flexibility (recommended)
+  ** `Long` for numeric IDs when compatibility with other systems is required
+  ** Custom types when integrating with existing ID schemes
+
+== Next Steps
+
+* xref:keyspaces.adoc[Working with Keyspaces]
+* xref:hash-mappings.adoc[Redis Hash Mapping]
+* xref:json_mappings.adoc[Redis JSON Mapping]

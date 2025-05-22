@@ -1,0 +1,319 @@
+= Redis JSON Mappings
+:page-toclevels: 3
+:experimental:
+:source-highlighter: highlight.js
+
+== Introduction
+
+Redis OM Spring provides comprehensive support for mapping Java objects to Redis JSON documents using the JSON capabilities of Redis 8+ (or Redis Stack). This approach is ideal for complex data structures that benefit from JSON's rich data model and native support for nested objects, arrays, and full-text search.
+
+== Key Benefits of JSON Documents
+
+* **Complex Data Structures**: Native support for nested objects and arrays
+* **Rich Query Capabilities**: Full-text search, numeric ranges, geo-spatial queries
+* **Atomic Operations**: JSON operations are atomic at the document level
+* **Flexible Schema**: Easy to evolve data models without migrations
+* **Full-Text Search**: Built-in tokenization and search capabilities
+
+== Basic Usage
+
+=== Entity Definition
+
+Use the `@Document` annotation to designate a class as a Redis JSON document:
+
+[source,java]
+----
+@Data
+@RequiredArgsConstructor(staticName = "of")
+@NoArgsConstructor(force = true)
+@Document
+public class Company {
+    @Id
+    private String id;
+    
+    @NonNull
+    @Searchable(sortable = true)
+    private String name;
+    
+    @NonNull
+    @Indexed
+    private Integer yearFounded;
+    
+    @NonNull
+    @Indexed
+    private LocalDate lastValuation;
+    
+    @NonNull
+    @Indexed
+    private Point location;
+    
+    @Indexed
+    private Set<String> tags = new HashSet<>();
+    
+    @NonNull
+    @Indexed
+    private String email;
+    
+    @Indexed
+    private boolean publiclyListed;
+    
+    // Audit fields
+    @CreatedDate
+    private Date createdDate;
+    
+    @LastModifiedDate
+    private Date lastModifiedDate;
+}
+----
+
+=== Repository Definition
+
+Create a repository interface extending `RedisDocumentRepository`:
+
+[source,java]
+----
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    // Basic queries
+    List<Company> findByName(String name);
+    boolean existsByEmail(String email);
+    Optional<Company> findFirstByName(String name);
+    
+    // String operations
+    List<Company> findByEmailStartingWith(String prefix);
+    List<Company> findByEmailEndingWith(String suffix);
+    
+    // Boolean queries
+    List<Company> findByPubliclyListed(boolean publiclyListed);
+    
+    // Collection queries
+    List<Company> findByTags(Set<String> tags);
+    
+    // Geo-spatial queries
+    Iterable<Company> findByLocationNear(Point point, Distance distance);
+    
+    // Order by
+    List<Company> findByYearFoundedOrderByNameAsc(int year);
+    List<Company> findByYearFoundedOrderByNameDesc(int year);
+}
+----
+
+=== Enabling Repositories
+
+Enable Redis Document repositories in your Spring Boot application:
+
+[source,java]
+----
+@SpringBootApplication
+@EnableRedisDocumentRepositories
+public class Application {
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}
+----
+
+== JSON Document Structure
+
+When a Company object is saved, it's stored as a JSON document in Redis:
+
+[source,json]
+----
+{
+  "id": "01H1VECDJ6MANDVQFTGA3SMP02",
+  "name": "Redis Inc",
+  "yearFounded": 2011,
+  "lastValuation": "2021-05-01",
+  "location": {
+    "x": -122.066540,
+    "y": 37.377690
+  },
+  "tags": ["fast", "scalable", "reliable"],
+  "email": "info@redis.com",
+  "publiclyListed": false,
+  "createdDate": "2023-01-15T10:30:00Z",
+  "lastModifiedDate": "2023-01-15T10:30:00Z"
+}
+----
+
+== Complex Data Models
+
+=== Nested Objects and Collections
+
+JSON documents excel at representing complex, nested data structures:
+
+[source,java]
+----
+@Document
+public class Person {
+    @Id
+    private String id;
+    
+    @Searchable
+    private String name;
+    
+    @Indexed(sortable = true)
+    private Point home;
+    
+    @Indexed(sortable = true)
+    private Point work;
+    
+    @Indexed
+    private PersonAddress personAddress;  // Nested object
+    
+    @Indexed(sortable = true)
+    private int age;
+    
+    @Indexed
+    private String[] nickNames;          // Array
+    
+    @Indexed
+    private List<String> nickNamesList;  // List
+    
+    @Indexed
+    private String email;
+}
+
+// Nested object example
+public class PersonAddress {
+    private String street;
+    private String city;
+    private String state;
+    private String zipCode;
+    private Point location;
+}
+----
+
+=== Working with Collections
+
+JSON documents can contain arrays and nested objects:
+
+[source,java]
+----
+@Document
+public class Company {
+    @Id
+    private String id;
+    
+    @Indexed
+    private Set<String> tags;
+    
+    @Indexed  
+    private Set<Employee> employees;  // Collection of objects
+    
+    @Indexed
+    private Set<CompanyMeta> metaList; // Complex nested objects
+}
+----
+
+== Indexing and Search
+
+=== Field-Level Indexing
+
+Use various indexing annotations to enable search capabilities:
+
+[source,java]
+----
+@Document
+public class Product {
+    @Id
+    private String id;
+    
+    @Indexed                    // Basic indexing
+    private String name;
+    
+    @Searchable(sortable = true)  // Full-text search with sorting
+    private String description;
+    
+    @Indexed(sortable = true)     // Indexed with sorting support
+    private double price;
+    
+    @Indexed                    // Tag-style indexing for exact matches
+    private Set<String> categories;
+}
+----
+
+=== Querying Nested Properties
+
+Query nested object properties using underscore notation:
+
+[source,java]
+----
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    // Query nested employee properties
+    List<Company> findByEmployees_name(String employeeName);
+    
+    // Query nested metadata
+    List<Company> findByMetaList_stringValue(String value);
+    List<Company> findByMetaList_numberValue(Integer value);
+    List<Company> findByMetaList_tagValues(Set<String> tags);
+}
+----
+
+== Time To Live (TTL)
+
+Configure document expiration:
+
+[source,java]
+----
+@Document(timeToLive = 5)  // TTL in seconds
+public class ExpiringPerson {
+    @Id
+    String id;
+    
+    @NonNull
+    @Indexed
+    String name;
+    
+    @NonNull
+    @TimeToLive  // Field-level TTL override
+    Long ttl;
+}
+----
+
+## JSON vs Hash Comparison
+
+[cols="1,2,2"]
+|===
+|Feature |JSON Documents |Hash Mapping
+
+|Data Structure
+|Nested objects, arrays
+|Flat key-value pairs
+
+|Query Complexity  
+|Rich querying on nested data
+|Simple property queries
+
+|Storage Overhead
+|Higher (JSON structure)
+|Lower (flat structure)
+
+|Schema Flexibility
+|Very flexible, easy evolution
+|Limited to flat structures
+
+|Full-Text Search
+|Native support with tokenization
+|Limited text search
+
+|Best Use Cases
+|Complex domain models, content management
+|Simple entities, caching, sessions
+|===
+
+== Best Practices
+
+* **Use JSON documents** for complex domain models with nested relationships
+* **Index strategically** - only fields that will be queried frequently
+* **Consider TTL** for temporary or session-based entities
+* **Use consistent naming** for nested property queries
+* **Leverage full-text search** for content-rich applications
+* **Monitor index size** as JSON indexing can be more resource-intensive
+
+== Next Steps
+
+* xref:document-annotation.adoc[Document Annotation Details]
+* xref:repository-queries.adoc[Repository Query Methods]
+* xref:entity-streams.adoc[Entity Streams for JSON Documents]
+* xref:search.adoc[Advanced Search Capabilities]
+* xref:vector-search.adoc[Vector Similarity Search]

@@ -1,0 +1,417 @@
+= Entity Streams Reference Manual
+:page-toclevels: 3
+:page-pagination:
+
+The `EntityStream` API in Redis OM Spring provides a Java 8 Streams-like interface for searching Redis documents and hashes with powerful query capabilities leveraging the Redis Query Engine.
+
+== Introduction
+
+Entity Streams offer a fluent, type-safe API for complex queries, aggregations, and data transformations. The API is built on top of the Redis Query Engine (formerly RediSearch) and provides seamless integration with Spring Data.
+
+== Prerequisites
+
+* Entities annotated with `@Document` or `@RedisHash`
+* Fields indexed with `@Indexed`, `@Searchable`, or specialized annotations
+* EntityStream bean injected into your service or component
+
+[source,java]
+----
+@Autowired
+EntityStream entityStream;
+----
+
+== Creating a Stream
+
+Create a stream for any indexed entity:
+
+[source,java]
+----
+SearchStream<Company> stream = entityStream.of(Company.class);
+----
+
+This creates a stream that can operate on all `Company` entities in Redis.
+
+== Basic Filtering
+
+=== Equality Predicates
+
+Filter using the metamodel fields with type-safe predicates:
+
+[source,java]
+----
+// Single condition
+List<Company> redisInc = entityStream.of(Company.class)
+    .filter(Company$.NAME.eq("RedisInc"))
+    .collect(Collectors.toList());
+
+// Multiple conditions with AND
+List<Company> companies = entityStream.of(Company.class)
+    .filter(Company$.NAME.eq("RedisInc").and(Company$.YEAR_FOUNDED.eq(2011)))
+    .collect(Collectors.toList());
+----
+
+=== OR Conditions
+
+[source,java]
+----
+// OR using multiple .or() calls
+List<Company> companies = entityStream.of(Company.class)
+    .filter(
+        Company$.NAME.eq("RedisInc")
+            .or(Company$.NAME.eq("Microsoft"))
+            .or(Company$.NAME.eq("Tesla"))
+    )
+    .collect(Collectors.toList());
+
+// OR using .in() for cleaner syntax
+List<Company> companies = entityStream.of(Company.class)
+    .filter(Company$.NAME.in("RedisInc", "Microsoft", "Tesla"))
+    .collect(Collectors.toList());
+----
+
+== Field Predicates
+
+=== Numeric Comparisons
+
+[source,java]
+----
+// Greater than
+List<Company> modernCompanies = entityStream.of(Company.class)
+    .filter(Company$.YEAR_FOUNDED.gt(2000))
+    .collect(Collectors.toList());
+
+// Between ranges  
+List<Company> millennialCompanies = entityStream.of(Company.class)
+    .filter(Company$.YEAR_FOUNDED.between(2000, 2010))
+    .collect(Collectors.toList());
+
+// Multiple numeric values
+List<Company> specificYears = entityStream.of(Company.class)
+    .filter(Company$.YEAR_FOUNDED.in(2011, 1975, 2003))
+    .collect(Collectors.toList());
+----
+
+=== String Operations
+
+[source,java]
+----
+// Text search on searchable fields
+List<Company> companies = entityStream.of(Company.class)
+    .filter(Company$.NAME.containing("Redis"))
+    .collect(Collectors.toList());
+
+// Prefix matching
+List<Company> prefixMatches = entityStream.of(Company.class)
+    .filter(Company$.NAME.startsWith("Red"))
+    .collect(Collectors.toList());
+----
+
+=== Boolean Predicates
+
+[source,java]
+----
+// Boolean field filtering
+List<Company> publicCompanies = entityStream.of(Company.class)
+    .filter(Company$.PUBLICLY_LISTED.isTrue())
+    .collect(Collectors.toList());
+
+List<Company> privateCompanies = entityStream.of(Company.class)
+    .filter(Company$.PUBLICLY_LISTED.isFalse())
+    .collect(Collectors.toList());
+----
+
+=== Geospatial Queries
+
+[source,java]
+----
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Metrics;
+import org.springframework.data.geo.Point;
+
+// Find companies near a location (within 30 miles)
+List<String> nearbyCompanies = entityStream.of(Company.class)
+    .filter(Company$.LOCATION.near(new Point(-122.064, 37.384), new Distance(30, Metrics.MILES)))
+    .sorted(Company$.NAME, SortOrder.DESC)
+    .map(Company$.NAME)
+    .collect(Collectors.toList());
+
+// Find companies outside an area
+List<String> outsideCompanies = entityStream.of(Company.class)
+    .filter(Company$.LOCATION.outsideOf(new Point(-122.064, 37.384), new Distance(30, Metrics.MILES)))
+    .map(Company$.NAME)
+    .collect(Collectors.toList());
+
+// Exact location matching
+List<String> exactLocation = entityStream.of(Company.class)
+    .filter(Company$.LOCATION.eq(new Point(-122.066540, 37.377690)))
+    .map(Company$.NAME)
+    .collect(Collectors.toList());
+----
+
+=== Tag and Collection Queries
+
+[source,java]
+----
+// Find companies with specific tags
+List<String> reliableCompanies = entityStream.of(Company.class)
+    .filter(Company$.TAGS.in("reliable"))
+    .map(Company$.NAME)
+    .collect(Collectors.toList());
+
+// Multiple tag search (OR)
+List<String> techCompanies = entityStream.of(Company.class)
+    .filter(Company$.TAGS.in("reliable", "ai"))
+    .map(Company$.NAME)
+    .collect(Collectors.toList());
+
+// Companies containing ALL specified tags
+List<String> comprehensiveCompanies = entityStream.of(Company.class)
+    .filter(Company$.TAGS.containsAll("fast", "scalable", "reliable", "database", "nosql"))
+    .map(Company$.NAME)
+    .collect(Collectors.toList());
+
+// Exact tag set matching
+Set<String> targetTags = Set.of("fast", "scalable", "reliable", "database", "nosql");
+List<String> exactTagMatch = entityStream.of(Company.class)
+    .filter(Company$.TAGS.eq(targetTags))
+    .map(Company$.NAME)
+    .collect(Collectors.toList());
+----
+
+== Projections and Mapping
+
+=== Single Field Projection
+
+Extract specific fields instead of full entities:
+
+[source,java]
+----
+// Project to company names
+List<String> companyNames = entityStream.of(Company.class)
+    .filter(Company$.YEAR_FOUNDED.gt(2000))
+    .map(Company$.NAME)
+    .collect(Collectors.toList());
+
+// Project to founding years
+List<Integer> foundingYears = entityStream.of(Company.class)
+    .filter(Company$.NAME.containing("tech"))
+    .map(Company$.YEAR_FOUNDED)
+    .collect(Collectors.toList());
+----
+
+=== Multiple Field Projections
+
+Create tuples for multiple field projections:
+
+[source,java]
+----
+// Project to name and year pairs
+List<Pair<String, Integer>> companyInfo = entityStream.of(Company.class)
+    .filter(Company$.PUBLICLY_LISTED.isTrue())
+    .map(Company$.NAME, Company$.YEAR_FOUNDED)
+    .collect(Collectors.toList());
+
+// Triple projection
+List<Triple<String, Integer, Point>> companyDetails = entityStream.of(Company.class)
+    .map(Company$.NAME, Company$.YEAR_FOUNDED, Company$.LOCATION)
+    .collect(Collectors.toList());
+
+// Quad projection  
+List<Quad<String, Integer, Point, Boolean>> fullCompanyInfo = entityStream.of(Company.class)
+    .map(Company$.NAME, Company$.YEAR_FOUNDED, Company$.LOCATION, Company$.PUBLICLY_LISTED)
+    .collect(Collectors.toList());
+----
+
+== Sorting and Ordering
+
+=== Single Field Sorting
+
+[source,java]
+----
+import redis.clients.jedis.search.aggr.SortedField.SortOrder;
+
+// Sort by name ascending (default)
+List<Company> sortedByName = entityStream.of(Company.class)
+    .sorted(Company$.NAME)
+    .collect(Collectors.toList());
+
+// Sort by year founded descending
+List<Company> newestFirst = entityStream.of(Company.class)
+    .sorted(Company$.YEAR_FOUNDED, SortOrder.DESC)
+    .collect(Collectors.toList());
+----
+
+=== Multi-Field Sorting
+
+[source,java]
+----
+// Sort by year, then by name
+List<Company> sortedMultiple = entityStream.of(Company.class)
+    .sorted(Company$.YEAR_FOUNDED, SortOrder.ASC)
+    .sorted(Company$.NAME, SortOrder.ASC)
+    .collect(Collectors.toList());
+----
+
+== Limiting and Pagination
+
+[source,java]
+----
+// Limit results
+List<Company> top10 = entityStream.of(Company.class)
+    .sorted(Company$.YEAR_FOUNDED, SortOrder.DESC)
+    .limit(10)
+    .collect(Collectors.toList());
+
+// Skip and limit (pagination)
+List<Company> secondPage = entityStream.of(Company.class)
+    .sorted(Company$.NAME)
+    .skip(10)
+    .limit(10)
+    .collect(Collectors.toList());
+----
+
+== Advanced Operations
+
+=== Count and Aggregation
+
+[source,java]
+----
+// Count results
+long totalCompanies = entityStream.of(Company.class)
+    .filter(Company$.YEAR_FOUNDED.gt(2000))
+    .count();
+
+// Check if any exist
+boolean hasModernCompanies = entityStream.of(Company.class)
+    .filter(Company$.YEAR_FOUNDED.gt(2000))
+    .anyMatch();
+
+// Find first result
+Optional<Company> firstModern = entityStream.of(Company.class)
+    .filter(Company$.YEAR_FOUNDED.gt(2000))
+    .sorted(Company$.YEAR_FOUNDED)
+    .findFirst();
+----
+
+=== Functional Operations
+
+[source,java]
+----
+// ForEach processing
+entityStream.of(Company.class)
+    .filter(Company$.TAGS.in("reliable"))
+    .forEach(company -> {
+        System.out.println("Reliable company: " + company.getName());
+    });
+
+// Iterate with consumer function
+AtomicInteger counter = new AtomicInteger(0);
+entityStream.of(Company.class)
+    .filter(Company$.PUBLICLY_LISTED.isTrue())
+    .forEach(company -> {
+        System.out.println(counter.incrementAndGet() + ": " + company.getName());
+    });
+----
+
+=== Collecting to Different Types
+
+[source,java]
+----
+// Collect to Set
+Set<String> uniqueNames = entityStream.of(Company.class)
+    .map(Company$.NAME)
+    .collect(Collectors.toSet());
+
+// Collect to Map
+Map<String, Integer> companyYears = entityStream.of(Company.class)
+    .collect(Collectors.toMap(
+        company -> company.getName(),
+        company -> company.getYearFounded()
+    ));
+----
+
+== Stream Chaining and Complex Queries
+
+=== Multi-Step Filtering
+
+[source,java]
+----
+// Complex query with multiple filters and transformations
+List<String> modernTechCompanies = entityStream.of(Company.class)
+    .filter(Company$.YEAR_FOUNDED.gt(2000))                 // Modern companies
+    .filter(Company$.TAGS.in("ai", "database", "nosql"))    // Tech-related tags
+    .filter(Company$.PUBLICLY_LISTED.isFalse())             // Private companies
+    .sorted(Company$.NAME)                                   // Sort alphabetically
+    .limit(5)                                                // Top 5 results
+    .map(Company$.NAME)                                      // Extract names
+    .collect(Collectors.toList());
+----
+
+=== Combining with Standard Streams
+
+[source,java]
+----
+// Use Entity Stream for Redis query, then standard Stream for processing
+List<String> processedNames = entityStream.of(Company.class)
+    .filter(Company$.YEAR_FOUNDED.between(2000, 2020))
+    .map(Company$.NAME)
+    .collect(Collectors.toList())
+    .stream()                                                // Switch to standard Stream
+    .map(String::toUpperCase)                               // Transform with standard operations
+    .filter(name -> name.length() > 5)                     // Additional filtering
+    .collect(Collectors.toList());
+----
+
+== Performance Considerations
+
+=== Efficient Querying
+
+[source,java]
+----
+// Prefer indexed field filtering first
+List<Company> efficient = entityStream.of(Company.class)
+    .filter(Company$.YEAR_FOUNDED.gt(2000))    // Indexed field - efficient
+    .filter(Company$.NAME.containing("tech"))   // Searchable field - efficient
+    .collect(Collectors.toList());
+
+// Use projections when you don't need full entities
+List<String> namesOnly = entityStream.of(Company.class)
+    .filter(Company$.TAGS.in("database"))
+    .map(Company$.NAME)                        // Project to reduce data transfer
+    .collect(Collectors.toList());
+----
+
+=== Best Practices
+
+1. **Filter early**: Apply the most selective filters first
+2. **Use projections**: Map to specific fields when you don't need full entities  
+3. **Limit results**: Use `limit()` for large datasets
+4. **Index appropriately**: Ensure fields used in filters are properly indexed
+5. **Combine filters**: Use compound filters rather than multiple filter calls when possible
+
+== Integration with Query By Example
+
+Entity Streams can work with Spring Data Query By Example:
+
+[source,java]
+----
+// Create QBE probe
+Company probe = new Company();
+probe.setName("Redis");
+probe.setPubliclyListed(true);
+
+Example<Company> example = Example.of(probe, 
+    ExampleMatcher.matching().withStringMatcher(StringMatcher.CONTAINING));
+
+// Use with Entity Stream
+List<Company> results = entityStream.of(Company.class)
+    .filter(example)
+    .sorted(Company$.YEAR_FOUNDED)
+    .collect(Collectors.toList());
+----
+
+== Next Steps
+
+* xref:entity-streams-aggregations.adoc[Entity Streams Aggregations]
+* xref:search.adoc[Search Capabilities]
+* xref:query-annotation.adoc[Query Annotation]

@@ -1,0 +1,363 @@
+[[setup]]
+= Installation & Setup
+:page-toclevels: 3
+:page-pagination:
+
+This guide will help you set up Redis OM Spring in your project and configure it to work with Redis 8.0.0 or newer.
+
+== Prerequisites
+
+Redis OM Spring has the following requirements:
+
+* *Java 17+*: Redis OM Spring requires JDK 17 or newer
+* *Spring Boot 3.0+*: Built on Spring Framework 6.0.11+
+* *Redis 8.0.0+*: Requires Redis with JSON and Query Engine capabilities
+* *Jedis 5.2.0+* (included): Redis OM Spring uses Jedis as its Redis client
+* *Spring Data Redis 3.4.1+* (included): Built on Spring Data Redis
+
+== Setting up Redis
+
+Redis OM Spring is designed to work with Redis 8.0.0, or any distribution which includes:
+
+* *Redis Query Engine*: Provides querying capabilities, secondary indexing, full-text search, and vector similarity search. See https://redis.io/docs/interact/search-and-query/
+* *JSON*: Enables native JSON document storage in Redis. See https://redis.io/docs/data-types/json/
+* *Probabilistic Data Structures*: Bloom filters, Cuckoo filters, and other probabilistic data structures. See https://redis.io/docs/data-types/probabilistic/
+
+=== Using Docker
+
+The simplest way to get started is with Docker and Docker Compose:
+
+[source,yaml]
+----
+# docker-compose.yml
+services:
+  redis:
+    image: "redis:8.0.0"
+    ports:
+      - "6379:6379"
+    environment:
+      - "REDIS_ARGS=--appendonly yes"
+    volumes:
+      - ./data:/data
+----
+
+Start Redis with:
+
+[source,bash]
+----
+docker compose up -d
+----
+
+TIP: For a web-based GUI, you can also install RedisInsight separately. It's available at https://redis.io/docs/connect/insight/
+
+=== Self-Hosted Redis
+
+For self-hosted Redis, follow the installation instructions at https://redis.io/docs/latest/get-started/.
+
+=== Redis Cloud
+
+Redis Cloud provides fully-managed Redis instances with all the required capabilities. Sign up at https://redis.com/try-free/.
+
+NOTE: For versions prior to Redis 8.0.0, you'll need to use Redis Stack which includes the necessary modules as extensions.
+
+== Adding Redis OM Spring to Your Project
+
+If you're starting a new project, you can create a basic Spring Boot application using https://start.spring.io/[Spring Initializr]:
+
+1. Go to https://start.spring.io/
+2. Select:
+   * Project: Maven or Gradle
+   * Language: Java
+   * Spring Boot: 3.0.0+
+   * Java: 17+
+
+3. Generate and download the project
+
+Then, whether you're creating a new project or adding to an existing one, add the Redis OM Spring dependencies to your build configuration:
+
+=== Maven
+
+Add the dependency to your `pom.xml`:
+
+[source,xml]
+----
+<!-- Core Redis OM Spring -->
+<dependency>
+  <groupId>com.redis.om</groupId>
+  <artifactId>redis-om-spring</artifactId>
+  <version>1.0.0-RC2</version>
+</dependency>
+
+<!-- Optional: AI module for vector embeddings -->
+<dependency>
+  <groupId>com.redis.om</groupId>
+  <artifactId>redis-om-spring-ai</artifactId>
+  <version>1.0.0-RC2</version>
+</dependency>
+----
+
+NOTE: There's no need to explicitly add Spring Data Redis as a dependency - it's included automatically as part of Redis OM Spring.
+
+==== Explicitly configuring the annotation processor
+
+Redis OM Spring uses code generation to create metamodels. If you encounter issues with metamodel generation, explicitly configure the annotation processor in your Maven build:
+
+[source,xml]
+----
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-compiler-plugin</artifactId>
+  <version>${maven-compiler-plugin.version}</version>
+  <configuration>
+    <annotationProcessorPaths>
+      <path>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-configuration-processor</artifactId>
+        <version>3.3.0</version>
+      </path>
+      <path>
+        <groupId>org.projectlombok</groupId>
+        <artifactId>lombok</artifactId>
+        <version>${lombok.version}</version>
+      </path>
+      <path>
+        <groupId>com.redis.om</groupId>
+        <artifactId>redis-om-spring</artifactId>
+        <version>1.0.0-RC2</version>
+      </path>
+    </annotationProcessorPaths>
+  </configuration>
+</plugin>
+----
+
+==== Using Snapshot Releases
+
+To use SNAPSHOT releases, add the snapshots repository to your `pom.xml`:
+
+[source,xml]
+----
+<repositories>
+  <repository>
+    <id>snapshots-repo</id>
+    <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+  </repository>
+</repositories>
+
+<dependency>
+  <groupId>com.redis.om</groupId>
+  <artifactId>redis-om-spring</artifactId>
+  <version>1.0.0-RC3-SNAPSHOT</version>
+</dependency>
+----
+
+=== Gradle
+
+Add the dependency to your `build.gradle`:
+
+[source,groovy]
+----
+ext {
+  redisOmVersion = '1.0.0-RC2'
+}
+
+dependencies {
+  // Core Redis OM Spring
+  implementation "com.redis.om:redis-om-spring:${redisOmVersion}"
+  annotationProcessor "com.redis.om:redis-om-spring:${redisOmVersion}"
+  
+  // Optional: AI module for vector embeddings
+  implementation "com.redis.om:redis-om-spring-ai:${redisOmVersion}"
+}
+----
+
+==== Configuring annotation processing
+
+For proper annotation processing with Gradle, configure your project to recognize the generated sources:
+
+[source,groovy]
+----
+// Tell Gradle to include the generated sources directory
+sourceSets {
+  main {
+    java {
+      srcDir file("${buildDir}/generated/sources/annotationProcessor/java/main")
+    }
+  }
+  test {
+    java {
+      srcDir file("${buildDir}/generated/sources/annotationProcessor/java/test")
+    }
+  }
+}
+
+// Configure the Java compile task
+compileJava {
+  options.annotationProcessorPath = configurations.annotationProcessor
+  options.annotationProcessorGeneratedSourcesDirectory = file("${buildDir}/generated/sources/annotationProcessor/java/main")
+}
+
+// For test sources
+compileTestJava {
+  options.annotationProcessorPath = configurations.testAnnotationProcessor
+  options.annotationProcessorGeneratedSourcesDirectory = file("${buildDir}/generated/sources/annotationProcessor/java/test")
+}
+----
+
+==== Using Snapshot Releases
+
+To use SNAPSHOT releases with Gradle, add the snapshots repository:
+
+[source,groovy]
+----
+repositories {
+  mavenCentral()
+  maven {
+    url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+  }
+}
+
+ext {
+  redisOmVersion = '1.0.0-RC3-SNAPSHOT'
+}
+----
+
+== Configuring Redis Connection
+
+By default, Redis OM Spring connects to `localhost` at port `6379`. To configure a different connection:
+
+=== application.properties
+
+[source,properties]
+----
+spring.data.redis.host=your.cloud.db.redislabs.com
+spring.data.redis.port=12345
+spring.data.redis.password=xxxxxxxx
+spring.data.redis.username=default
+----
+
+=== application.yaml
+
+[source,yaml]
+----
+spring:
+  data:
+    redis:
+      host: your.cloud.db.redislabs.com
+      port: 12345
+      password: xxxxxxxx
+      username: default
+----
+
+=== Redis Cluster Configuration
+
+Redis OM Spring supports Redis Cluster deployments. To configure Redis Cluster:
+
+[source,yaml]
+----
+spring:
+  data:
+    redis:
+      cluster:
+        nodes:
+          - node1.example.com:6379
+          - node2.example.com:6379
+          - node3.example.com:6379
+        max-redirects: 3  # Optional, defaults to 5
+      password: xxxxxxxx  # Optional
+----
+
+When using Redis Cluster, it's recommended to use the `@IdAsHashTag` annotation on your entity classes to ensure related data is stored in the same hash slot:
+
+[source,java]
+----
+@Document
+@IdAsHashTag
+public class Product {
+    @Id
+    private String id;
+    // other fields
+}
+----
+
+=== Redis Sentinel Configuration
+
+Redis Sentinel provides high availability for Redis. To configure Redis OM Spring with Sentinel:
+
+[source,yaml]
+----
+spring:
+  redis:
+    sentinel:
+      master: mymaster           # Required: master node name
+      nodes: sentinel1:26379,sentinel2:26379,sentinel3:26379  # Required: comma-separated list of host:port pairs
+    password: xxxxxxxx           # Optional: Redis password
+----
+
+For more details on Redis Sentinel configuration, see the xref:sentinel.adoc[Redis Sentinel Support] page.
+
+== Enabling Redis OM Spring
+
+Add the appropriate annotation to your Spring Boot application class:
+
+[source,java]
+----
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
+
+@SpringBootApplication
+@EnableRedisDocumentRepositories // For JSON documents
+// OR
+// @EnableRedisEnhancedRepositories // For Redis hashes
+public class MyApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(MyApplication.class, args);
+    }
+}
+----
+
+== Troubleshooting
+
+=== Common Issues
+
+==== Missing Metamodel Classes
+
+*Symptom*: Compilation errors referring to missing classes with `$` suffix (e.g., `Person$`).
+
+*Solution*: 
+
+For Maven:
+1. Ensure the `maven-compiler-plugin` is configured with the Redis OM Spring annotation processor
+2. Run a clean build: `./mvnw clean compile`
+
+For Gradle:
+1. Verify the `annotationProcessor` dependency is added: `annotationProcessor "com.redis.om:redis-om-spring:$\{redisOmVersion}"`
+2. Check that your `sourceSets` are configured to include the generated sources directory
+3. Ensure the compile tasks are correctly configured with the annotation processor path
+4. Run a clean build: `./gradlew clean compileJava`
+
+==== Connection Refused
+
+*Symptom*: `Connection refused` errors when starting the application.
+
+*Solution*: 
+1. Verify Redis is running: `docker ps` or `redis-cli ping`
+2. Check connection properties in `application.properties` or `application.yaml`
+3. Ensure firewalls allow connections to Redis port (default: 6379)
+
+==== Search Index Creation Failures
+
+*Symptom*: Errors about creating indices or search fields.
+
+*Solution*:
+1. Verify you're using Redis 8.0.0+
+2. Check that your entity classes are properly annotated
+3. Look for invalid field types or configurations
+
+== Next Steps
+
+Now that you've set up Redis OM Spring, learn how to:
+
+* xref:configuration.adoc[Configure] advanced settings
+* xref:quickstart.adoc[Create your first application] with Redis OM Spring
+* xref:data-models.adoc[Understand Redis data models]

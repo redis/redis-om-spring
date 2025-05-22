@@ -1,0 +1,308 @@
+= Query By Example
+:page-toclevels: 3
+:page-pagination:
+
+== Introduction to Query by Example
+
+Query by Example (QBE) is a user-friendly querying technique that allows you to create dynamic queries without writing complex query syntax or using the underlying query language. It's particularly useful for creating dynamic queries at runtime based on user input.
+
+Redis OM Spring provides comprehensive support for Spring Data's Query by Example feature, making it easy to build dynamic search conditions for both document and hash entities.
+
+== How Query by Example Works
+
+QBE consists of three main parts:
+
+1. **Probe** - An instance of the entity class with populated fields to match against
+2. **Example Matcher** - Defines how matching should behave (exact vs containing, case sensitivity, etc.)
+3. **Example** - Combines the probe and matcher to create a complete query
+
+This approach offers a simple, intuitive way to create queries:
+
+[source,java]
+----
+// 1. Create a probe with the fields you want to match
+MyDoc probe = new MyDoc();
+probe.setTitle("hello world");
+probe.setANumber(1);
+
+// 2. Define a matcher with custom matching behavior
+ExampleMatcher matcher = ExampleMatcher.matching()
+    .withStringMatcher(StringMatcher.CONTAINING)
+    .withIgnoreCase();
+
+// 3. Create the example
+Example<MyDoc> example = Example.of(probe, matcher);
+
+// 4. Execute the query using the repository
+List<MyDoc> results = myDocRepository.findAll(example);
+----
+
+== Using QBE with Repositories
+
+Any repository that extends `QueryByExampleExecutor` can execute Example queries:
+
+[source,java]
+----
+public interface MyDocRepository extends RedisDocumentRepository<MyDoc, String>, 
+                                         QueryByExampleExecutor<MyDoc> {
+}
+----
+
+Redis OM Spring's document and hash repositories already implement `QueryByExampleExecutor`, so you can immediately use QBE methods:
+
+[source,java]
+----
+// Find a single result
+Optional<MyDoc> doc = repository.findOne(example);
+
+// Find all matching results
+List<MyDoc> docs = repository.findAll(example);
+
+// Count matching results
+long count = repository.count(example);
+
+// Check if any matches exist
+boolean exists = repository.exists(example);
+----
+
+== Customizing the Matcher
+
+`ExampleMatcher` allows you to customize how field values are matched:
+
+=== String Matching Strategies
+
+[source,java]
+----
+// Default: exact matching
+ExampleMatcher exactMatcher = ExampleMatcher.matching();
+
+// Containing substring matching
+ExampleMatcher containingMatcher = ExampleMatcher.matching()
+    .withStringMatcher(StringMatcher.CONTAINING);
+
+// Prefix matching
+ExampleMatcher prefixMatcher = ExampleMatcher.matching()
+    .withStringMatcher(StringMatcher.STARTING);
+----
+
+=== Case Sensitivity
+
+[source,java]
+----
+// Case-insensitive matching
+ExampleMatcher caseInsensitiveMatcher = ExampleMatcher.matching()
+    .withIgnoreCase();
+----
+
+=== Logical Operations
+
+[source,java]
+----
+// Default: match ALL criteria (AND)
+ExampleMatcher allMatcher = ExampleMatcher.matchingAll();
+
+// Match ANY criteria (OR)
+ExampleMatcher anyMatcher = ExampleMatcher.matchingAny();
+----
+
+=== Ignoring Properties
+
+[source,java]
+----
+// Ignore specific properties
+ExampleMatcher ignoringMatcher = ExampleMatcher.matching()
+    .withIgnorePaths("dateCreated", "lastModified");
+
+// Include null values
+ExampleMatcher nullMatcher = ExampleMatcher.matching()
+    .withIncludeNullValues();
+----
+
+== Advanced Usage
+
+=== String Matching with QBE
+
+For text fields, you can use different string matching strategies:
+
+[source,java]
+----
+// Exact matching (default)
+MyDoc probe = new MyDoc();
+probe.setTitle("hello world");
+Example<MyDoc> exactExample = Example.of(probe);
+
+// Prefix matching (STARTING)
+MyDoc prefixProbe = new MyDoc();
+prefixProbe.setTitle("hel");
+Example<MyDoc> prefixExample = Example.of(prefixProbe, 
+    ExampleMatcher.matching().withStringMatcher(StringMatcher.STARTING));
+
+// Suffix matching (ENDING)
+MyDoc suffixProbe = new MyDoc();
+suffixProbe.setTitle("ndo");
+Example<MyDoc> suffixExample = Example.of(suffixProbe, 
+    ExampleMatcher.matching().withStringMatcher(StringMatcher.ENDING));
+
+// Substring matching (CONTAINING)
+MyDoc containsProbe = new MyDoc();
+containsProbe.setTitle("llo");
+Example<MyDoc> containsExample = Example.of(containsProbe, 
+    ExampleMatcher.matching().withStringMatcher(StringMatcher.CONTAINING));
+----
+
+=== Tag and Collection Queries
+
+For tag and collection fields:
+
+[source,java]
+----
+// Find documents with specific tags
+MyDoc probe = new MyDoc();
+probe.setTag(Set.of("news"));
+Example<MyDoc> tagExample = Example.of(probe);
+
+// Find documents with multiple tags using ANY matching
+MyDoc multiTagProbe = new MyDoc();
+multiTagProbe.setTag(Set.of("noticias"));
+Example<MyDoc> anyTagExample = Example.of(multiTagProbe, 
+    ExampleMatcher.matchingAny());
+----
+
+=== Numeric Queries
+
+For numeric fields:
+
+[source,java]
+----
+// Exact numeric matching
+MyDoc probe = new MyDoc();
+probe.setANumber(1);
+Example<MyDoc> numericExample = Example.of(probe);
+
+List<MyDoc> results = repository.findAll(numericExample);
+----
+
+=== Ignoring Fields
+
+Use `withIgnorePaths()` to exclude certain fields from matching:
+
+[source,java]
+----
+MyDoc probe = new MyDoc();
+probe.setTitle("hello world");
+probe.setANumber(3);  // This will be ignored
+
+Example<MyDoc> example = Example.of(probe, 
+    ExampleMatcher.matchingAny().withIgnorePaths("aNumber"));
+
+// Only matches by title, ignoring aNumber
+List<MyDoc> results = repository.findAll(example);
+----
+
+== Redis OM Spring QBE Capabilities
+
+Redis OM Spring leverages the Redis Query Engine (formerly RediSearch) to implement QBE efficiently, translating QBE criteria into Redis queries. As of Redis 8, the Query Engine is a standard component of Redis.
+
+What's supported:
+
+* Indexed fields (`@Indexed`, `@TextIndexed`, `@TagIndexed`, `@NumericIndexed`, `@Searchable`, etc.)
+* String matchers (EXACT, CONTAINING, STARTING)
+* Case sensitivity control
+* Logical operations (AND/OR)
+* Null handling
+* Fluentable queries (sorting, pagination, etc.)
+
+Considerations:
+
+* Fields must be indexed to be included in QBE queries
+* For full-text search capability, use `@Searchable` annotation
+* When using QBE with EntityStream, you gain additional flexibility
+
+== Real-World Examples
+
+=== Example 1: Basic ID Matching
+
+[source,java]
+----
+// Find document by ID
+MyDoc probe = new MyDoc();
+probe.setId("doc123");
+
+Example<MyDoc> example = Example.of(probe);
+
+Optional<MyDoc> result = repository.findOne(example);
+----
+
+=== Example 2: Text Search with Containing
+
+[source,java]
+----
+// Find documents with "llo" in their title
+MyDoc probe = new MyDoc();
+probe.setTitle("llo");
+
+Example<MyDoc> example = Example.of(probe, 
+    ExampleMatcher.matching()
+        .withStringMatcher(StringMatcher.CONTAINING));
+
+List<MyDoc> results = repository.findAll(example);
+// Returns documents with titles like "hello world", "hello mundo"
+----
+
+=== Example 3: Tag-Based Search
+
+[source,java]
+----
+// Find documents tagged with "noticias"
+MyDoc probe = new MyDoc();
+probe.setTag(Set.of("noticias"));
+
+Example<MyDoc> example = Example.of(probe);
+
+List<MyDoc> results = repository.findAll(example);
+// Returns documents that have "noticias" tag
+----
+
+=== Example 4: Multiple Field Matching with OR
+
+[source,java]
+----
+// Find documents that match title OR have specific tag
+MyDoc probe = new MyDoc();
+probe.setTitle("hello world");
+probe.setTag(Set.of("article"));
+
+Example<MyDoc> example = Example.of(probe, 
+    ExampleMatcher.matchingAny());  // OR semantics
+
+List<MyDoc> results = repository.findAll(example);
+----
+
+=== Example 5: Nested Field Queries
+
+[source,java]
+----
+// Find companies with specific metadata
+Company companyProbe = new Company();
+CompanyMeta meta = new CompanyMeta();
+meta.setStringValue("RD");
+companyProbe.setMetaList(Set.of(meta));
+
+Example<Company> example = Example.of(companyProbe);
+
+List<Company> results = companyRepository.findAll(example);
+----
+
+== Best Practices
+
+1. **Index fields properly** - Ensure fields used in QBE are properly indexed
+2. **Understand matcher behavior** - Different string matchers affect query performance
+3. **Use QBE for dynamic queries** - QBE excels at runtime-constructed queries from user input
+4. **Combine with EntityStream** - For complex querying needs, combine QBE with entity streams
+5. **Consider alternatives** - For fixed queries, use repository methods or `@Query` annotation
+
+== Next Steps
+
+* xref:search.adoc[Search Capabilities]
+* xref:entity-streams.adoc[Entity Streams API]
+* xref:query-annotation.adoc[Query Annotation]

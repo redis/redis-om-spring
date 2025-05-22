@@ -1,0 +1,185 @@
+= Repository Query Methods
+:page-toclevels: 3
+:experimental:
+:source-highlighter: highlight.js
+
+== Introduction to Repository Query Methods
+
+Redis OM Spring provides a powerful query mechanism for repositories that follows the Spring Data method naming conventions while leveraging the capabilities of Redis Query Engine (formerly RediSearch). As of Redis 8, the Query Engine is a standard component of Redis.
+
+== Query Method Naming Conventions
+
+=== Basic Structure
+
+Query methods follow a pattern:
+
+[source]
+----
+find[Distinct][Top/First<N>]By<Property>[Operator][And/Or<Property>[Operator]]
+----
+
+Where:
+* `find` - The basic query verb
+* `Distinct` - Optional, for distinct results
+* `Top/First<N>` - Optional, for limiting results
+* `<Property>` - The field name to query
+* `[Operator]` - Optional, the type of comparison
+* `And/Or` - Optional, for composing multiple conditions
+
+=== Example Repository Interface
+
+[source,java]
+----
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    // Find all companies with the exact name
+    List<Company> findByName(String companyName);
+    
+    // Find companies founded after a specific year
+    List<Company> findByYearFoundedGreaterThan(int year);
+    
+    // Find companies matching name and public listing status
+    List<Company> findByNameAndPubliclyListed(String name, boolean publiclyListed);
+    
+    // Find companies founded between two years, ordered by name
+    List<Company> findByYearFoundedBetweenOrderByNameAsc(int startYear, int endYear);
+    
+    // Find a limited number of companies for a specific year
+    List<Company> findByYearFoundedOrderByNameDesc(int year);
+    
+    // Check if a company exists by email
+    boolean existsByEmail(String email);
+    
+    // Find first company by name
+    Optional<Company> findFirstByName(String name);
+}
+----
+
+== Supported Query Methods
+
+=== FindBy Operations
+
+* `findBy<Property>` - Finds entities where the property equals the given value
+* `findBy<Property>In` - Finds entities where the property is in the given collection
+* `findBy<Property>NotIn` - Finds entities where the property is not in the given collection
+* `findBy<Property>Like` - Text search for a pattern
+
+=== Comparison Operations
+
+* `findBy<Property>LessThan` - Numeric field less than value
+* `findBy<Property>LessThanEqual` - Numeric field less than or equal to value
+* `findBy<Property>GreaterThan` - Numeric field greater than value
+* `findBy<Property>GreaterThanEqual` - Numeric field greater than or equal to value
+* `findBy<Property>Between` - Numeric field between two values
+
+=== Logical Operations
+
+* `findBy<Property1>And<Property2>` - Both conditions must match
+* `findBy<Property1>Or<Property2>` - Either condition must match
+* `findBy<Property>Not` - Negates the condition
+
+=== Special Operations
+
+* `findBy<Property>Near` - Geospatial search for nearby points
+* `findBy<Property>Starting` - Text field starting with pattern
+* `findBy<Property>Ending` - Text field ending with pattern
+* `findBy<Property>Containing` - Text field containing pattern
+* `findBy<Property>IsNull` - Property is null
+* `findBy<Property>IsNotNull` - Property is not null
+
+=== Result Handling
+
+* `findDistinctBy<Property>` - Return distinct results
+* `findTop<N>By<Property>` - Limit results to the first N
+* `findFirst<N>By<Property>` - Same as Top
+* `findBy<Property>OrderBy<Property2>Asc` - Order results ascending
+* `findBy<Property>OrderBy<Property2>Desc` - Order results descending
+
+=== Non-Query Methods
+
+* `countBy<Property>` - Count entities that match
+* `existsBy<Property>` - Check if any entity matches
+* `deleteBy<Property>` - Delete entities that match
+
+== Working with Return Types
+
+Redis OM Spring repositories support various return types:
+
+[source,java]
+----
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    // Return a single entity or null
+    Company findByEmail(String email);
+    
+    // Return an Optional
+    Optional<Company> findFirstByName(String name);
+    
+    // Return a collection
+    List<Company> findByYearFounded(int year);
+    
+    // Return an Iterable for geospatial queries
+    Iterable<Company> findByLocationNear(Point point, Distance distance);
+    
+    // Return SearchStream for advanced operations
+    SearchStream<Company> findByYearFoundedGreaterThan(int year);
+    
+    // Return boolean for existence checks
+    boolean existsByEmail(String email);
+}
+----
+
+== Advanced Query Examples
+
+=== String Matching Operations
+
+[source,java]
+----
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    // String prefix/suffix matching
+    List<Company> findByEmailStartingWith(String prefix);
+    List<Company> findByEmailEndingWith(String suffix);
+    List<Company> findByNameStartingWith(String prefix);
+}
+----
+
+=== Collection Queries
+
+[source,java]
+----
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    // Find companies with specific tags
+    List<Company> findByTags(Set<String> tags);
+    
+    // Query nested collection properties
+    List<Company> findByEmployees_name(String employeeName);
+    List<Company> findByMetaList_stringValue(String value);
+    List<Company> findByMetaList_numberValue(Integer value);
+    List<Company> findByMetaList_tagValues(Set<String> tags);
+}
+----
+
+=== Geospatial Queries
+
+[source,java]
+----
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Point;
+
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    // Find companies near a specific location
+    Iterable<Company> findByLocationNear(Point point, Distance distance);
+}
+----
+
+== Best Practices
+
+* Use the appropriate query method for your needs
+* Leverage indexing for fields used in queries
+* Be aware of performance implications for complex queries
+* Use projections to limit the data retrieved
+* Consider using Entity Streams for complex filtering and aggregation
+
+== Next Steps
+
+* xref:query-annotation.adoc[Query Annotation]
+* xref:entity-streams.adoc[Entity Streams]
+* xref:qbe.adoc[Query By Example]

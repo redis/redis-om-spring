@@ -40,3 +40,4 @@ docs/build/
 build/
 .gradle/
 compile_debug.log
+docs/.cache/*

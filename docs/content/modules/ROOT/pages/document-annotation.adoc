@@ -1,0 +1,191 @@
+= Document Annotation
+:page-toclevels: 3
+:experimental:
+:source-highlighter: highlight.js
+
+== Introduction to the @Document Annotation
+
+The `@Document` annotation is a core component of Redis OM Spring that enables mapping Java objects to Redis JSON documents. This page explains how to use the annotation and its various configuration options.
+
+== Basic Usage
+
+=== Simple Document Mapping
+
+To map a Java class to a Redis JSON document, simply add the `@Document` annotation:
+
+[source,java]
+----
+import com.redis.om.spring.annotations.Document;
+import org.springframework.data.annotation.Id;
+
+@Data
+@Document
+public class Person {
+    @Id
+    private String id;
+    
+    @Searchable
+    private String name;
+    
+    @Indexed
+    private String email;
+    
+    @Indexed(sortable = true)
+    private int age;
+    
+    private boolean engineer;
+}
+----
+
+When an instance of this class is saved, it will be stored as a JSON document in Redis.
+
+== Configuration Options
+
+The `@Document` annotation provides several options to customize how entities are stored and indexed.
+
+=== Document Keyspace
+
+By default, Redis OM Spring uses the entity's simple class name as the keyspace. You can customize this using the `value` attribute:
+
+[source,java]
+----
+@Document("customers")
+public class Person {
+    @Id
+    private String id;
+    // Other fields
+}
+----
+
+This would store Person entities with keys like `customers:01H1VECDJ6MANDVQFTGA3SMP02`.
+
+=== Index Name
+
+You can specify a custom name for the Redis Query Engine index that will be created:
+
+[source,java]
+----
+@Document(indexName = "customer_idx")
+public class Customer {
+    // Fields
+}
+----
+
+=== Time To Live (TTL)
+
+Configure expiration for documents:
+
+[source,java]
+----
+@Document(timeToLive = 3600) // TTL in seconds
+public class Session {
+    @Id
+    private String id;
+    private String userId;
+    private LocalDateTime lastAccess;
+    // Other fields
+}
+----
+
+=== Index Creation Configuration
+
+By default, Redis OM Spring creates indexes automatically. The `@Document` annotation itself controls basic index creation:
+
+[source,java]
+----
+@Document  // Indexes are created automatically for @Indexed fields
+public class Product {
+    @Id
+    private String id;
+    
+    @Indexed
+    private String name;
+    
+    @Searchable
+    private String description;
+    
+    @Indexed(sortable = true)
+    private double price;
+}
+----
+
+Index creation is managed automatically based on the indexing annotations used in your entity fields.
+
+== Nested Objects and Collections
+
+=== Handling Complex Structures
+
+Redis JSON supports nested objects and collections, making it ideal for complex data models:
+
+[source,java]
+----
+@Document
+public class Company {
+    @Id
+    private String id;
+    
+    @Searchable(sortable = true)
+    private String name;
+    
+    @Indexed
+    private Set<String> tags;           // Collection of strings
+    
+    @Indexed
+    private Set<Employee> employees;    // Collection of objects
+    
+    @Indexed
+    private Set<CompanyMeta> metaList;  // Complex nested objects
+    
+    @CreatedDate
+    private Date createdDate;
+}
+
+public class Employee {
+    private String name;
+    private String title;
+    private String email;
+}
+----
+
+== Indexing with @Document
+
+The `@Document` annotation works in conjunction with indexing annotations to enable search capabilities:
+
+[source,java]
+----
+@Document
+public class Product {
+    @Id
+    private String id;
+    
+    @Indexed
+    private String name;
+    
+    @Searchable
+    private String description;
+    
+    @Indexed(sortable = true)
+    private double price;
+    
+    @Indexed
+    private List<String> categories;
+    
+    // Vector search capabilities
+    @Indexed(schemaFieldType = SchemaFieldType.VECTOR)
+    private float[] embedding;
+}
+----
+
+== Best Practices
+
+* Use `@Document` for complex objects that benefit from JSON representation
+* Configure appropriate indices for fields that will be queried
+* Consider TTL for temporary entities
+* Use custom index names in production environments
+* Use consistent keyspace prefixes across your application
+
+== Next Steps
+
+* xref:json_mappings.adoc[Redis JSON Mappings]
+* xref:search.adoc[Redis Query Engine Integration]
+* xref:index-annotations.adoc[Index Annotations]

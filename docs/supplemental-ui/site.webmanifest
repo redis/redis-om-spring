@@ -1,0 +1,24 @@
+{
+  "name": "Redis OM Spring Documentation",
+  "short_name": "Redis OM Spring",
+  "icons": [
+    {
+      "src": "img/Redis_Favicon_32x32_Red.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "img/Redis_Favicon_16x16_Red.png",
+      "sizes": "16x16",
+      "type": "image/png"
+    },
+    {
+      "src": "img/Redis_Favicon_144x144_Red.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#DC382C",
+  "background_color": "#ffffff",
+  "display": "standalone"
+}

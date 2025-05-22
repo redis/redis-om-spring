@@ -548,7 +548,9 @@ dependencies {
 
 ## 📚 Documentation
 
-The Redis OM documentation is available [here](docs/index.md).
+The Redis OM Spring documentation is available at:
+- [Local Documentation](docs/index.md)
+- [Online Documentation](https://redis.github.io/redis-om-spring/) (Generated from the main branch)
 
 ## Demos
 

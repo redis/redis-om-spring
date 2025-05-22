@@ -1,0 +1,538 @@
+= Overview
+:page-toclevels: 3
+:page-pagination:
+
+Redis OM Spring is a comprehensive advanced object-mapping, querying and repositories framework for Spring applications using Redis, it extends and enhances Spring Data Redis. While Spring Data Redis provides basic Redis functionality, Redis OM Spring delivers a complete solution designed specifically to leverage the advanced features of Redis 8+, Redis Enterprise, and Redis Cloud.
+
+== What is Redis OM Spring?
+
+Redis OM Spring is an Object Mapping framework designed specifically for Redis, allowing Java developers to work with Redis data using familiar annotations and repository patterns. Redis OM Spring reimagines how Redis should integrate with Spring applications to provide a more intuitive and powerful developer experience.
+
+image::redis-om-spring-architecture.png[Redis OM Spring Architecture,width=100%]
+
+[.lead]
+Redis OM Spring consists of two modules:
+
+* *redis-om-spring* - Core module providing modeling, indexing, search, and repository capabilities
+* *redis-om-spring-ai* - AI module offering vector embedding generation through Spring AI integration
+
+== Redis Integration
+
+Redis OM Spring is built to work with Redis 8.0.0+, which includes these essential capabilities:
+
+* *Query Engine* - Powerful search and query engine (formerly RediSearch)
+* *JSON* - Native JSON document storage 
+* *Probabilistic Data Structures* - Bloom filters, Cuckoo filters, and more
+* *Auto-Complete* - Fast auto-complete server-side functionality
+
+Redis OM Spring harnesses these capabilities to provide a fully-featured Spring Data solution that goes beyond basic key-value operations.
+
+NOTE: For Redis versions prior to 8.0.0, you'll need Redis with the search, JSON, and other modules available (such as through the Redis Stack distribution).
+
+== Key Features
+
+Redis OM Spring offers the following key capabilities organized by importance and use case:
+
+== Core Foundation Features
+
+These essential features form the foundation that all users need to understand first.
+
+=== Document Mapping
+
+* `@Document` annotation to map Spring Data models to Redis JSON documents
+* Comprehensive Redis JSON support with nested objects, collections, and references
+* Full control over JSON structure and storage
+
+[source,java]
+----
+@Document
+public class Company {
+    @Id
+    private String id;
+    
+    @Searchable
+    private String name;
+    
+    @Indexed
+    private Integer yearFounded;
+    
+    @Indexed
+    private Set<String> tags;
+    
+    // Getters and setters
+}
+----
+
+=== Enhanced Redis Hash Support
+
+* Enhanced Redis Hash capabilities via `@EnableRedisEnhancedRepositories`
+* Native Redis Query Engine integration to handle complex search needs
+* Adds support for references
+
+[source,java]
+----
+@RedisHash
+public class Person {
+    @Id
+    private String id;
+    
+    @Indexed
+    private String name;
+    
+    @TextIndexed
+    private String bio;
+    
+    @NumericIndexed
+    private Integer age;
+    
+    // Getters and setters
+}
+----
+
+== Query and Data Access Features
+
+These features are what you'll use daily for querying and accessing your data.
+
+=== Powerful Repository Abstractions
+
+* `RedisDocumentRepository` and `RedisEnhancedRepository` with the ability to implement complex declarative repository methods
+* Type-safe querying with method naming conventions
+* Query derivation from method names
+* Ability to provide query and aggregation templates using `@Query` and `@Aggregation` annotations
+* Provides link:https://github.com/ulid/spec[ULID] as a default for String `@Id` annotated fields for improved sorting and performance
+
+[source,java]
+----
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    List<Company> findByNameStartingWith(String prefix);
+    List<Company> findByYearFoundedBetween(Integer start, Integer end);
+    
+    @Query("@tags:{$tags}")
+    List<Company> findByTags(@Param("tags") Set<String> tags);
+}
+----
+
+=== Advanced Search Capabilities
+
+* Declarative Search Indices via `@Indexed`
+* Full-text Search Indices via `@Searchable`
+* Geospatial search with `@GeoIndexed`
+* Vector similarity search with `@VectorIndexed`
+* Numeric range querying with `@NumericIndexed`
+
+[source,java]
+----
+@Document
+public class MyDoc {
+    @Id
+    private String id;
+    
+    @TextIndexed(sortable = true)
+    private String title;
+    
+    @GeoIndexed
+    private Point location;
+    
+    @NumericIndexed
+    private Integer aNumber;
+    
+    @TagIndexed
+    private Set<String> tags;
+    
+    @VectorIndexed(algorithm = VectorAlgorithm.HNSW, 
+                   type = VectorType.FLOAT32, 
+                   dimension = 512, 
+                   distanceMetric = DistanceMetric.COSINE)
+    private float[] embedding;
+}
+----
+
+=== Entity Streams Fluent Queries and Aggregations
+
+* `EntityStream`: Java 8 streams-inspired query API
+* Type-safe query construction with generated metamodels
+* Fluent filtering, sorting, and projection
+* Powerful aggregation capabilities with grouping and reduction
+
+[source,java]
+----
+// Find companies founded between 1980 and 2020, sorted by name
+List<Company> companies = entityStream
+    .of(Company.class)
+    .filter(Company$.YEAR_FOUNDED.between(1980, 2020))
+    .sorted(Company$.NAME)
+    .collect(Collectors.toList());
+
+// Aggregation: Count games by brand, get top 5
+List<Pair<String, Long>> topBrands = entityStream
+    .of(Game.class)
+    .groupBy(Game$.BRAND)
+    .reduce(ReducerFunction.COUNT).as("count")
+    .sorted(Order.desc("@count"))
+    .limit(5)
+    .toList(String.class, Long.class);
+
+// Complex aggregation: Calculate price statistics by brand
+List<Quintuple<String, Double, Double, Double, Long>> priceStats = entityStream
+    .of(Game.class)
+    .groupBy(Game$.BRAND)
+    .reduce(ReducerFunction.AVG, Game$.PRICE).as("avgPrice")
+    .reduce(ReducerFunction.MIN, Game$.PRICE).as("minPrice")
+    .reduce(ReducerFunction.MAX, Game$.PRICE).as("maxPrice")
+    .reduce(ReducerFunction.COUNT).as("count")
+    .sorted(Order.desc("@count"))
+    .toList(String.class, Double.class, Double.class, Double.class, Long.class);
+----
+
+=== Aggregation Support
+
+* Native Redis aggregation framework integration
+* Grouping, reducing, and analyzing data
+* Powerful data transformation capabilities
+
+[source,java]
+----
+public interface GameRepository extends RedisDocumentRepository<Game, String> {
+    @Aggregation(
+        groupBy = {
+            @GroupBy(
+                properties = "@brand",
+                reduce = {@Reducer(func = ReducerFunction.COUNT, alias = "count")}
+            )
+        },
+        sortBy = {@SortBy(field = "@count", direction = Direction.DESC)}
+    )
+    Page<Map<String, String>> countByBrand(Pageable pageable);
+}
+----
+
+=== Query by Example (QBE)
+
+* Spring Data Query by Example support for both document and hash repositories
+* Type-safe example-based queries without writing explicit query strings
+* Fluent API integration with EntityStream for complex example queries
+
+[source,java]
+----
+// Create an example object
+MyDoc probe = new MyDoc();
+probe.setTitle("hello");
+
+// Use Example with matcher
+Example<MyDoc> example = Example.of(probe, 
+    ExampleMatcher.matching()
+        .withStringMatcher(StringMatcher.CONTAINING)
+        .withIgnoreCase());
+
+// Query using the example
+List<MyDoc> results = repository.findAll(example);
+----
+
+=== Tuple Support and Projections
+
+* Type-safe result projections using Tuple classes (Single, Pair, Triple, etc.)
+* Support for up to 20-element tuples (Vigintuple)
+* Clean API for selecting specific fields from search results
+
+[source,java]
+----
+// Project specific fields into a tuple
+List<Pair<String, Integer>> results = entityStream
+    .of(Company.class)
+    .map(Fields.of(Company$.NAME, Company$.YEAR_FOUNDED))
+    .collect(Collectors.toList());
+----
+
+== Data Management Features
+
+Important features for managing data lifecycle and ensuring data integrity in production applications.
+
+=== Audit Annotations Support
+
+* Adds support for Spring Data `@CreatedDate` and `@LastModifiedDate` for both `@RedisHash` and `@Document` annotated entities.
+
+[source,java]
+----
+@Document
+public class Company {
+    @Id
+    private String id;
+    
+    @Searchable
+    private String name;
+    
+    @CreatedDate
+    private Date createdDate;
+    
+    @LastModifiedDate
+    private Date lastModifiedDate;
+    
+    // Other fields...
+}
+----
+
+=== Time-to-Live (TTL) Support
+
+* Automatic data expiration with TTL support at the document level
+* Integration with Spring Data's `@TimeToLive` annotation for fine-grained control
+* Built-in TTL management for both JSON documents and enhanced hash structures
+
+[source,java]
+----
+@Document(timeToLive = 5)  // Document-level TTL in seconds
+public class ExpiringPerson {
+    @Id
+    private String id;
+    
+    @Indexed
+    private String name;
+    
+    @TimeToLive  // Field-level TTL control
+    private Long ttl;
+}
+----
+
+=== Optimistic Locking
+
+* Built-in optimistic locking support using Spring Data's `@Version` annotation
+* Automatic version management for concurrent modification detection
+* Works with both JSON documents and enhanced hash structures
+
+[source,java]
+----
+@Document
+public class VersionedEntity {
+    @Id
+    private long id;
+    
+    @Version
+    private long version;
+    
+    private String name;
+    
+    // Getters and setters
+}
+----
+
+=== Advanced Id Handling
+
+* Flexible identifier generation with support for ULID, String, Integer, and Long types
+* `ULIDIdentifierGenerator` provides secure, sortable identifiers by default
+* `@IdFilter` annotation for custom identifier transformations before saving/reading
+* `IdAsHashTag` for Redis Cluster hash tag support to ensure key locality
+* `IdentifierFilter` interface for implementing custom ID processing logic
+
+[source,java]
+----
+@Document
+public class DocWithHashTagId {
+    @Id
+    @IdFilter(IdAsHashTag.class)  // Ensures cluster-friendly key distribution
+    private String id;
+    
+    @Indexed
+    private String name;
+    
+    // Other fields...
+}
+----
+
+== Advanced and Specialized Features
+
+These features cater to specific use cases and advanced scenarios.
+
+=== AI and Vector Search Integration
+
+* `@Vectorize` annotation to generate embeddings for text and images
+* Integration with Spring AI for embedding generation
+* Azure OpenAI integration with Entra ID authentication
+* Vector Similarity Search capabilities
+
+[source,java]
+----
+@Document
+public class DocWithOpenAIEmbedding {
+    @Id
+    private String id;
+    
+    @Indexed
+    private String name;
+    
+    // Vector field for storing embeddings
+    @Indexed(
+        schemaFieldType = SchemaFieldType.VECTOR,
+        algorithm = VectorAlgorithm.HNSW,
+        type = VectorType.FLOAT32,
+        dimension = 1536,  // OpenAI text-embedding-ada-002 dimension
+        distanceMetric = DistanceMetric.COSINE
+    )
+    private float[] textEmbedding;
+    
+    // Automatically generate embeddings from this text field
+    @Vectorize(
+        destination = "textEmbedding",
+        embeddingType = EmbeddingType.SENTENCE,
+        provider = EmbeddingProvider.OPENAI
+    )
+    private String text;
+}
+
+// Vector similarity search
+List<DocWithOpenAIEmbedding> similarDocs = entityStream
+    .of(DocWithOpenAIEmbedding.class)
+    .filter(DocWithOpenAIEmbedding$.TEXT_EMBEDDING.knn(10, queryVector))
+    .collect(Collectors.toList());
+----
+
+[TIP]
+====
+AI features require the separate `redis-om-spring-ai` module:
+
+[source,xml]
+----
+<dependency>
+  <groupId>com.redis.om</groupId>
+  <artifactId>redis-om-spring-ai</artifactId>
+  <version>1.0.0-RC2</version>
+</dependency>
+----
+====
+
+=== Probabilistic Data Structures
+
+* `@Bloom`, `@Cuckoo`, `@CountMin` annotations for probabilistic set membership checks
+* Support for TopK and TDigest probabilistic algorithms
+
+[source,java]
+----
+@Document
+public class Company {
+    @Id
+    private String id;
+    
+    @Bloom(name = "bf_company_email", capacity = 100000, errorRate = 0.001)
+    @Indexed
+    private String email;
+    
+    @Cuckoo(name = "cf_company_tags")
+    private Set<String> tags;
+    
+    // Other fields...
+}
+----
+
+=== Autocomplete
+
+* `@AutoComplete` and `@AutoCompletePayload` annotations for fast and easy server-side auto-complete functionality.
+
+[source,java]
+----
+@Document
+public class Airport {
+    @Id
+    private String id;
+    
+    @AutoComplete
+    private String name;
+    
+    @AutoCompletePayload("name")
+    private String code;
+    
+    @AutoCompletePayload("name")
+    private String state;
+}
+----
+
+=== Metamodel Generation
+
+* Compile-time metamodel generation with `@Metamodel` annotation
+* Type-safe field references for queries and projections  
+* IDE auto-completion support for field names and types
+
+== Developer and Integration Features
+
+These features are designed for power users, customization, and advanced integration scenarios.
+
+=== Raw Operations
+
+* Direct access to Redis modules through type-safe operations interfaces
+* `RedisModulesOperations` provides factory methods for specialized operations
+* JSON operations via `JSONOperations` for low-level JSON document manipulation
+* Search operations via `SearchOperations` for direct RediSearch functionality
+* Probabilistic data structure operations: `BloomOperations`, `CuckooFilterOperations`, `CountMinSketchOperations`, `TopKOperations`, `TDigestOperations`
+
+[source,java]
+----
+@Autowired
+private RedisModulesOperations<String> modulesOperations;
+
+// Direct JSON operations
+JSONOperations<String> jsonOps = modulesOperations.opsForJSON();
+jsonOps.set("obj", myObject);
+MyObject retrieved = jsonOps.get("obj", MyObject.class);
+
+// Direct search operations  
+SearchOperations<String> searchOps = modulesOperations.opsForSearch("myIndex");
+SearchResult result = searchOps.search(new Query("@name:redis"));
+
+// Probabilistic data structures
+BloomOperations<String> bloomOps = modulesOperations.opsForBloom();
+bloomOps.createFilter("seen-users", 10000, 0.001);
+boolean added = bloomOps.add("seen-users", "user123");
+boolean exists = bloomOps.exists("seen-users", "user123");
+----
+
+=== Multi-Language Search Support
+
+* Built-in support for multiple languages in search indexes
+* Language-specific stemming and tokenization
+* Configurable via `@Document` annotation language parameter
+
+=== Query Dialects
+
+* Support for multiple RediSearch query dialects
+* `@UseDialect` annotation for flexible query syntax
+* Backward compatibility with different Redis versions
+
+=== Enterprise Features
+
+* Redis Sentinel support for high availability
+* Redis Enterprise integration
+* Redis Cloud deployment support
+
+== When to Use Redis OM Spring
+
+Redis OM Spring is ideal for these scenarios:
+
+* Building search-intensive applications that need advanced text search or filtering
+* Creating recommendation systems with vector similarity search
+* Applications requiring high-performance JSON document storage
+* Systems that need geospatial queries and proximity search
+* Real-time analytics applications with aggregation requirements
+* Projects that need object mapping with automatic index management
+
+== Technology Requirements
+
+Redis OM Spring has the following requirements:
+
+* Java 17 or higher
+* Spring Boot 3.0+
+* Redis 8.0.0+
+* Jedis 5.2.0+ client library
+* Spring Data Redis 3.4.1+
+
+[source,yaml]
+----
+# Docker Compose example for Redis 8.0.0
+services:
+  redis:
+    image: redis:8.0.0
+    ports:
+      - "6379:6379"
+----
+
+== Getting Started
+
+Ready to get started with Redis OM Spring? Check out the xref:setup.adoc[Installation & Setup] guide to install the library and configure your project.
+
+TIP: For a quick introduction, try the xref:quickstart.adoc[Quick Start Example] that demonstrates the core features with runnable code samples.

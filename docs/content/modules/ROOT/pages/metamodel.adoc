@@ -1,0 +1,196 @@
+= Metamodel-Based Queries
+:page-toclevels: 3
+:experimental:
+:source-highlighter: highlight.js
+
+== Introduction to Metamodel
+
+Redis OM Spring provides a powerful metamodel feature that enables type-safe queries using generated classes. This approach eliminates string-based field references and provides compile-time safety for your queries.
+
+== Generating Metamodel Classes
+
+=== Automatically Generated Classes
+
+Redis OM Spring automatically generates metamodel classes for your entities at compile time. For a class named `Product`, it will generate a class named `Product$` with static field references.
+
+=== Accessing Metamodel Classes
+
+You can access the generated metamodel classes in your services:
+
+[source,java]
+----
+import com.mycompany.model.Product$;
+import com.redis.om.spring.search.stream.EntityStream;
+
+@Service
+public class ProductService {
+    private final EntityStream entityStream;
+    
+    public ProductService(EntityStream entityStream) {
+        this.entityStream = entityStream;
+    }
+    
+    public List<Product> getExpensiveElectronics() {
+        return entityStream.of(Product.class)
+            .filter(Product$.CATEGORIES.in("electronics"))
+            .filter(Product$.PRICE.gt(100.0))
+            .sorted(Product$.PRICE.desc())
+            .collect(Collectors.toList());
+    }
+}
+----
+
+== Using Metamodel Classes
+
+=== Field References
+
+The metamodel class contains static field references that correspond to your entity's properties:
+
+[source,java]
+----
+// Original entity
+@Document
+public class Product {
+    @Id
+    private String id;
+    
+    @TextIndexed
+    private String name;
+    
+    @NumericIndexed
+    private double price;
+    
+    @TagIndexed
+    private Set<String> categories;
+    
+    // Getters and setters
+}
+
+// Generated metamodel (you don't write this)
+public final class Product$ {
+    public static TextField<Product, String> NAME;
+    public static NumericField<Product, Double> PRICE;
+    public static TagField<Product, Set<String>> CATEGORIES;
+    
+    // More generated code
+}
+----
+
+=== Filtering
+
+Use metamodel fields for type-safe filtering:
+
+[source,java]
+----
+@Service
+public class ProductService {
+    private final EntityStream entityStream;
+    
+    // Constructor
+    
+    public List<Product> getProductsInPriceRange(double min, double max) {
+        return entityStream.of(Product.class)
+            .filter(Product$.PRICE.between(min, max))
+            .collect(Collectors.toList());
+    }
+    
+    public List<Product> searchProductsByName(String keyword) {
+        return entityStream.of(Product.class)
+            .filter(Product$.NAME.containing(keyword))
+            .collect(Collectors.toList());
+    }
+}
+----
+
+=== Sorting
+
+Use metamodel fields for type-safe sorting:
+
+[source,java]
+----
+public List<Product> getProductsSortedByPrice() {
+    return entityStream.of(Product.class)
+        .sorted(Product$.PRICE.asc())
+        .collect(Collectors.toList());
+}
+
+public List<Product> getProductsSortedByName() {
+    return entityStream.of(Product.class)
+        .sorted(Product$.NAME.asc())
+        .collect(Collectors.toList());
+}
+----
+
+=== Complex Queries
+
+Combine multiple conditions for complex queries:
+
+[source,java]
+----
+public List<Product> findGamingLaptops() {
+    return entityStream.of(Product.class)
+        .filter(Product$.CATEGORIES.in("laptops"))
+        .filter(Product$.CATEGORIES.in("gaming"))
+        .filter(Product$.PRICE.between(800, 2000))
+        .sorted(Product$.PRICE.desc())
+        .collect(Collectors.toList());
+}
+----
+
+
+== Metamodel with Entity Streams
+
+Metamodel classes are particularly useful with entity streams for building complex queries:
+
+[source,java]
+----
+@Service
+public class AnalyticsService {
+    private final EntityStream entityStream;
+    
+    // Constructor
+    
+    public Map<String, Double> getAveragePriceByCategory() {
+        return entityStream.of(Product.class)
+            .groupBy(Product$.CATEGORIES)
+            .avg(Product$.PRICE)
+            .collect(Collectors.toMap(
+                pair -> pair.getFirst(), 
+                pair -> pair.getSecond()
+            ));
+    }
+    
+    public List<Product> getTopSellingProductsByCategory(String category, int limit) {
+        return entityStream.of(Product.class)
+            .filter(Product$.CATEGORIES.in(category))
+            .sorted(Product$.PRICE.desc()) // Using PRICE instead of non-existent SALES_COUNT
+            .limit(limit)
+            .collect(Collectors.toList());
+    }
+}
+----
+
+== Advantages of Metamodel
+
+* **Type Safety** - Compile-time checking of field references
+* **Refactoring Support** - Rename fields with IDE refactoring tools
+* **Discoverability** - IDE auto-completion for available fields
+* **Consistency** - Consistent query style across your application
+* **Readability** - Clear and expressive query syntax
+
+== Best Practices
+
+* Leverage generated `$` suffix classes for type-safe queries
+* Use EntityStream with metamodel fields for powerful, expressive queries
+* Utilize the appropriate field methods for different operations:
+  - `in()` for tag fields with multiple values
+  - `containing()` for text search
+  - `between()`, `gt()`, `lt()` for numeric ranges
+* Combine multiple filters for complex queries
+* Use appropriate sorting methods with `asc()` and `desc()`
+
+== Next Steps
+
+* xref:entity-streams.adoc[Entity Streams API]
+* xref:entity-streams-aggregations.adoc[Aggregation Capabilities]
+* xref:qbe.adoc[Query By Example]

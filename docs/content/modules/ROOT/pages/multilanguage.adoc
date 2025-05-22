@@ -1,0 +1,231 @@
+a= Multi-Language Support
+:page-toclevels: 3
+:experimental:
+:source-highlighter: highlight.js
+
+== Introduction
+
+Redis OM Spring provides comprehensive multi-language support for text indexing and search operations. This enables proper stemming, tokenization, and search behavior for different languages using the Redis Query Engine's built-in language capabilities.
+
+== Language Configuration Methods
+
+=== Document-Level Language Configuration
+
+Set a specific language for an entire document using the `language` attribute:
+
+[source,java]
+----
+@Data
+@Document(language = SearchLanguage.SPANISH)
+public class SpanishDoc {
+    @Id
+    private String id;
+    
+    @Indexed
+    private String title;
+    
+    @Searchable
+    private String body;
+}
+----
+
+This applies Spanish stemming and tokenization rules to all text fields in the document.
+
+=== Dynamic Language Field
+
+For documents that contain content in multiple languages, use the `languageField` attribute:
+
+[source,java]
+----
+@Data
+@Document(languageField = "language")
+public class MultiLingualDoc {
+    @Id
+    private String id;
+    
+    @Indexed
+    private String language;  // Contains language code: "en", "es", "fr", etc.
+    
+    @Searchable
+    private String body;      // Content in the specified language
+}
+----
+
+With this approach, each document can specify its own language, and Redis OM Spring will apply the appropriate language rules based on the value in the language field.
+
+== Language Processing Features
+
+=== Stemming
+
+Different languages have specific stemming rules that reduce words to their root forms:
+
+**English Examples:**
+----
+"running" → "run"
+"better" → "better" 
+"writing" → "writ"
+----
+
+**Spanish Examples:**
+----
+"corriendo" → "corr"
+"escribiendo" → "escrib"
+"hablando" → "habl"
+----
+
+**French Examples:**
+----
+"parlant" → "parl"
+"écrivant" → "écriv"
+"courant" → "cour"
+----
+
+This allows searches to match related word forms automatically.
+
+=== Tokenization
+
+Each language has specific tokenization rules for breaking text into searchable terms, handling:
+
+- Word boundaries
+- Punctuation
+- Accented characters
+- Special character handling
+
+=== Stop Words
+
+Common words that are typically excluded from search indexes vary by language:
+
+- **English**: "the", "and", "or", "but", "in", "on", "at", "to", "for"
+- **Spanish**: "el", "la", "de", "que", "y", "a", "en", "un", "es", "se"
+- **French**: "le", "de", "et", "à", "un", "il", "être", "et", "en", "avoir"
+
+== Supported Languages
+
+Redis OM Spring supports the following languages through the `SearchLanguage` enum:
+
+[cols="2,2,2"]
+|===
+|Language |Code |Example Usage
+
+|Arabic |`ARABIC` |`SearchLanguage.ARABIC`
+|Basque |`BASQUE` |`SearchLanguage.BASQUE`
+|Catalan |`CATALAN` |`SearchLanguage.CATALAN`
+|Chinese |`CHINESE` |`SearchLanguage.CHINESE`
+|Czech |`CZECH` |`SearchLanguage.CZECH`
+|Danish |`DANISH` |`SearchLanguage.DANISH`
+|Dutch |`DUTCH` |`SearchLanguage.DUTCH`
+|English |`ENGLISH` |`SearchLanguage.ENGLISH`
+|Finnish |`FINNISH` |`SearchLanguage.FINNISH`
+|French |`FRENCH` |`SearchLanguage.FRENCH`
+|German |`GERMAN` |`SearchLanguage.GERMAN`
+|Greek |`GREEK` |`SearchLanguage.GREEK`
+|Hindi |`HINDI` |`SearchLanguage.HINDI`
+|Hungarian |`HUNGARIAN` |`SearchLanguage.HUNGARIAN`
+|Indonesian |`INDONESIAN` |`SearchLanguage.INDONESIAN`
+|Irish |`IRISH` |`SearchLanguage.IRISH`
+|Italian |`ITALIAN` |`SearchLanguage.ITALIAN`
+|Lithuanian |`LITHUANIAN` |`SearchLanguage.LITHUANIAN`
+|Nepali |`NEPALI` |`SearchLanguage.NEPALI`
+|Norwegian |`NORWEGIAN` |`SearchLanguage.NORWEGIAN`
+|Portuguese |`PORTUGUESE` |`SearchLanguage.PORTUGUESE`
+|Romanian |`ROMANIAN` |`SearchLanguage.ROMANIAN`
+|Russian |`RUSSIAN` |`SearchLanguage.RUSSIAN`
+|Spanish |`SPANISH` |`SearchLanguage.SPANISH`
+|Swedish |`SWEDISH` |`SearchLanguage.SWEDISH`
+|Tamil |`TAMIL` |`SearchLanguage.TAMIL`
+|Turkish |`TURKISH` |`SearchLanguage.TURKISH`
+|===
+
+== Practical Examples
+
+=== Spanish Document Example
+
+[source,java]
+----
+@Repository
+public interface SpanishDocRepository extends RedisDocumentRepository<SpanishDoc, String> {
+    // Search methods automatically use Spanish language rules
+    List<SpanishDoc> findByTitleContaining(String term);
+    
+    @Query("@body:{$term}")
+    List<SpanishDoc> searchBody(@Param("term") String term);
+}
+
+// Usage
+SpanishDoc doc = SpanishDoc.of("Don Quijote", "El ingenioso hidalgo don Quijote de la Mancha");
+repository.save(doc);
+
+// Search will use Spanish stemming
+List<SpanishDoc> results = repository.findByTitleContaining("quijote");
+----
+
+=== Multi-Language Document Example
+
+[source,java]
+----
+@Service
+public class MultiLingualService {
+    private final MultiLingualDocRepository repository;
+    
+    public void saveContent(String language, String content) {
+        MultiLingualDoc doc = new MultiLingualDoc();
+        doc.setLanguage(language);  // "en", "es", "fr", etc.
+        doc.setBody(content);
+        repository.save(doc);
+    }
+    
+    public List<MultiLingualDoc> searchInLanguage(String language, String term) {
+        // This will use the appropriate language rules for each document
+        return repository.findByLanguageAndBodyContaining(language, term);
+    }
+}
+----
+
+== Entity Streams with Languages
+
+When using Entity Streams, language-specific processing is applied automatically:
+
+[source,java]
+----
+// Search Spanish documents
+List<SpanishDoc> results = entityStream
+    .of(SpanishDoc.class)
+    .filter(SpanishDoc$.BODY.match("ingenioso"))  // Uses Spanish stemming
+    .collect(Collectors.toList());
+
+// Search multi-language documents
+List<MultiLingualDoc> results = entityStream
+    .of(MultiLingualDoc.class)
+    .filter(MultiLingualDoc$.LANGUAGE.eq("fr"))
+    .filter(MultiLingualDoc$.BODY.match("bonjour"))  // Uses French rules
+    .collect(Collectors.toList());
+----
+
+== Best Practices
+
+=== Language Selection
+* **Use `language` attribute** for single-language documents
+* **Use `languageField` attribute** for multi-language applications
+* **Choose the most appropriate language** for your content's primary language
+
+=== Content Organization
+* **Separate documents by language** when possible for better performance
+* **Store language codes consistently** (ISO 639-1 format recommended)
+* **Consider language detection** for user-generated content
+
+=== Search Optimization
+* **Language-specific stop words** improve search relevance
+* **Stemming** enables finding related word forms
+* **Consistent language tagging** ensures proper processing
+
+=== Performance Considerations
+* **Language processing** happens at index time, not search time
+* **Different languages** may have different index sizes
+* **Consider memory usage** for large multi-language datasets
+
+== Next Steps
+
+* xref:search.adoc[Search Capabilities] - Learn about search features
+* xref:index-annotations.adoc[Index Annotations] - Understand indexing options
+* xref:entity-streams.adoc[Entity Streams] - Advanced query capabilities
+* xref:repository-queries.adoc[Repository Queries] - Query method patterns
