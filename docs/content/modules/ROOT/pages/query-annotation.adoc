@@ -1,0 +1,233 @@
+= Query Annotation
+:page-toclevels: 3
+:page-pagination:
+
+== Introduction to the @Query Annotation
+
+The `@Query` annotation provides a way to directly use the Redis Query Engine's syntax for defining repository queries. This allows for more expressive and powerful queries than what can be achieved with method name queries alone.
+
+== Basic Usage
+
+The `@Query` annotation is placed on repository methods:
+
+[source,java]
+----
+public interface MyDocRepository extends RedisDocumentRepository<MyDoc, String> {
+  
+  // Using native query syntax with parameter binding for tags
+  @Query("@tag:{$tags}")
+  Iterable<MyDoc> findByTags(@Param("tags") Set<String> tags);
+  
+  // Search by title with wildcards
+  @Query("@title:$prefix*")
+  Page<MyDoc> customFindAllByTitleStartingWith(@Param("prefix") String prefix, Pageable pageable);
+  
+  // Complex query with OR condition
+  @Query("(@id:{$title}) | (@title:$title)")
+  List<MyDoc> searchByIdOrTitle(@Param("title") String title);
+}
+----
+
+== Annotation Attributes
+
+The `@Query` annotation supports several attributes:
+
+[cols="1,3,1"]
+|===
+|Attribute |Description |Default
+
+|`value`
+|The query string in Redis Query Engine format
+|"*" (all documents)
+
+|`returnFields`
+|Array of field names to return (projection)
+|{} (all fields)
+
+|`offset`
+|Number of records to skip
+|Integer.MIN_VALUE (no offset)
+
+|`limit`
+|Maximum number of results to return
+|Integer.MIN_VALUE (no limit)
+
+|`sortBy`
+|Field to sort by
+|"" (no sorting)
+
+|`sortAscending`
+|Direction of sort
+|true
+|===
+
+== Query Syntax
+
+The query string follows the Redis Query Engine syntax, which is powerful and flexible:
+
+=== Field-Specific Filters
+
+Use `@field:` prefix to specify which field to search:
+
+[source,java]
+----
+@Query("@title:$title @tag:{$tags}")
+Iterable<MyDoc> findByTitleAndTags(@Param("title") String title, @Param("tags") Set<String> tags);
+----
+
+=== Tag Queries
+
+For fields indexed as tags, use curly braces:
+
+[source,java]
+----
+// Single tag parameter binding
+@Query("@tag:{$tags}")
+Iterable<MyDoc> findByTags(@Param("tags") Set<String> tags);
+
+// Multiple tag search
+@Query("@tag:{news|article}")
+List<MyDoc> findNewsOrArticles();
+----
+
+=== Numeric Ranges
+
+For numeric fields:
+
+[source,java]
+----
+// Range query
+@Query("@price:[100 200]")
+List<Product> findProductsInPriceRange();
+
+// Parameter binding with ranges
+@Query("@price:[$min $max]")
+List<Product> findByPriceRange(@Param("min") double min, @Param("max") double max);
+----
+
+=== Logical Operators
+
+Combine conditions with logical operators:
+
+[source,java]
+----
+// Implicit AND
+@Query("@category:{electronics} @price:[0 100]")
+List<Product> findCheapElectronics();
+
+// OR operator
+@Query("@category:{electronics} | @category:{computers}")
+List<Product> findElectronicsOrComputers();
+
+// Negation
+@Query("@category:{electronics} -@price:[500 +inf]")
+List<Product> findElectronicsNotExpensive();
+----
+
+=== Full-Text Search
+
+Use text search capabilities:
+
+[source,java]
+----
+// Simple word match
+@Query("@description:wireless")
+List<Product> findWirelessProducts();
+
+// Exact phrase
+@Query("@description:\"wireless earbuds\"")
+List<Product> findWirelessEarbuds();
+
+// Prefix search
+@Query("@name:blu*")
+List<Product> findNameStartsWithBlu();
+
+// Fuzzy search (matches words that are at most 1 Levenshtein distance)
+@Query("@description:%headfone%")
+List<Product> findHeadphones();
+----
+
+== Combining with Method Parameters
+
+You can use method parameters in your queries in two ways:
+
+=== String Format Style
+
+Using `%s` placeholders:
+
+[source,java]
+----
+@Query("@name:%s* @price:[%d +inf]")
+List<Product> search(String namePrefix, int minPrice);
+----
+
+=== Named Parameters
+
+Using `$paramName` with `@Param`:
+
+[source,java]
+----
+@Query("@category:{$category} @price:[$minPrice $maxPrice]")
+List<Product> search(
+    @Param("category") String category, 
+    @Param("minPrice") double min, 
+    @Param("maxPrice") double max
+);
+----
+
+== Controlling Results
+
+=== Return Fields (Projection)
+
+Specify which fields to return using JSON path expressions:
+
+[source,java]
+----
+// Return only specific fields with alias
+@Query(returnFields = {"$.tag[0]", "AS", "first_tag"})
+SearchResult getFirstTag();
+
+// Return specific fields with limit and offset
+@Query(value = "@title:$prefix*", returnFields = {"title", "aNumber"}, limit = 12, offset = 1, sortBy = "title")
+SearchResult customFindAllByTitleStartingWithReturnFieldsAndLimit(@Param("prefix") String prefix);
+----
+
+=== Pagination
+
+Control the number of results with Spring Data Pageable or annotation attributes:
+
+[source,java]
+----
+// Using Pageable parameter
+@Query("@title:$prefix*")
+Page<MyDoc> customFindAllByTitleStartingWith(@Param("prefix") String prefix, Pageable pageable);
+
+// Using annotation attributes
+@Query(value = "*", offset = 10, limit = 10)
+List<MyDoc> findAllPage2();
+----
+
+== Best Practices
+
+1. **Use named parameters** for better readability and to avoid issues with special characters
+2. **Test queries** in Redis CLI before adding them to your code
+3. **Consider type safety** - query errors will be discovered at runtime, not compile time
+4. **For very complex queries**, consider using Entity Streams with the metamodel
+5. **Document your queries** - the syntax can be cryptic for team members unfamiliar with it
+
+== Example: Complex Query
+
+Here's an example of a more complex query:
+
+[source,java]
+----
+@Query("(@category:{electronics|computers} @price:[100 500]) | " + 
+       "(@category:{accessories} @brand:{$brand} @price:[0 50])")
+List<Product> findMidRangeElectronicsOrBrandAccessories(@Param("brand") String brand);
+----
+
+== Next Steps
+
+* xref:search.adoc[Search Capabilities]
+* xref:entity-streams.adoc[Entity Streams]
+* xref:qbe.adoc[Query by Example]

@@ -1,0 +1,126 @@
+name: Deploy Docs
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+  repository_dispatch:
+    types: [build-docs]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and Deploy Docs
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for all branches and tags
+          fetch-tags: true  # Explicitly fetch tags
+
+      - name: Fetch all tags
+        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'zulu'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}-${{ hashFiles('**/gradle.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Cache Gradle wrapper
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradlew-${{ hashFiles('**/gradlew') }}
+          restore-keys: ${{ runner.os }}-gradlew-
+
+      - name: Set Release Version in Docs
+        run: |
+          VERSION=$(cat gradle.properties | grep "version" | cut -d'=' -f2 | tr -d ' ')
+          echo "Setting documentation version to $VERSION"
+          
+          # For current version
+          sed -i "s/display_version: '.*'/display_version: '$VERSION'/" docs/content/antora.yml
+          sed -i "s/redis-om-version: '.*'/redis-om-version: '$VERSION'/" docs/content/antora.yml
+          
+          # Check for existing tag in playbook
+          if ! grep -q "v$VERSION" docs/antora-playbook.yml; then
+            if [[ ! "$VERSION" == *-SNAPSHOT ]]; then
+              echo "Version $VERSION not found in playbook. Adding if tag exists."
+              # Only add the tag if it exists in the repository
+              if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+                echo "Adding version v$VERSION to Antora playbook"
+                sed -i "/tags:/a \        - v${VERSION}" docs/antora-playbook.yml
+              fi
+            fi
+          fi
+
+      - name: Show Git Info
+        run: |
+          echo "Available tags:"
+          git tag -l
+          
+          echo "Current branch:"
+          git branch --show-current
+          
+          echo "Antora playbook content:"
+          cat docs/antora-playbook.yml
+
+      - name: Build Documentation
+        run: |
+          cd docs
+          ./gradlew generateSite
+          if [ ! -d "build/site" ] || [ -z "$(ls -A build/site)" ]; then
+            echo "Site build failed or directory is empty. Falling back to direct Antora command."
+            npm install
+            ./node_modules/.bin/antora --fetch --stacktrace --log-format=pretty antora-playbook.yml --to-dir=build/site
+          fi
+
+      - name: Verify Build Output
+        run: |
+          if [ ! -d "docs/build/site" ] || [ -z "$(ls -A docs/build/site)" ]; then
+            echo "ERROR: Documentation build failed. Site directory is empty."
+            exit 1
+          fi
+          echo "Documentation built successfully."
+          ls -la docs/build/site
+
+      - name: Add .nojekyll file
+        run: touch docs/build/site/.nojekyll
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'docs/build/site'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

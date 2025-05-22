@@ -9,6 +9,7 @@ spotless {
 			exclude '**/build/**',
 					'**/generated/**',
 					'**/target/**',
+					'**/tmp/**',
 					'**/.mvn/**',
 					'**/demos/**/.mvn/**'
 		}

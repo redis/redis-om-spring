@@ -1,0 +1,334 @@
+= Entity Streams Aggregations
+:page-toclevels: 3
+:page-pagination:
+
+The EntityStreams API provides powerful aggregation capabilities through the Redis Query Engine. Aggregations allow you to perform statistical operations, grouping, and data analysis directly within Redis, making complex analytics operations efficient and fast.
+
+== Introduction to Aggregations
+
+Entity Streams aggregations enable:
+
+* **Grouping** data by field values
+* **Reducing** groups with statistical functions (COUNT, SUM, AVG, MIN, MAX)
+* **Filtering** aggregated results
+* **Sorting** aggregated data
+* **Applying** mathematical expressions
+* **Limiting** result sets
+
+All aggregation operations are executed server-side in Redis for optimal performance.
+
+== Prerequisites
+
+* Entities with indexed fields for grouping and aggregation
+* Understanding of Redis aggregation concepts
+* EntityStream bean injected into your component
+
+[source,java]
+----
+@Autowired
+EntityStream entityStream;
+----
+
+== Basic Aggregations
+
+=== Count Aggregations
+
+[source,java]
+----
+import static com.redis.om.spring.annotations.ReducerFunction.COUNT;
+
+// Count games by brand
+List<Pair<String, Long>> gamesPerBrand = entityStream.of(Game.class)
+    .groupBy(Game$.BRAND)
+    .reduce(COUNT)
+    .toList(String.class, Long.class);
+
+// Count persons by department
+List<Pair<Integer, Long>> personsPerDepartment = entityStream.of(Person.class)
+    .groupBy(Person$.DEPARTMENT_NUMBER)
+    .reduce(COUNT)
+    .toList(Integer.class, Long.class);
+----
+
+=== Sum and Average Aggregations
+
+[source,java]
+----
+import static com.redis.om.spring.annotations.ReducerFunction.*;
+
+// Sum sales by department
+List<Pair<Integer, Double>> salesByDepartment = entityStream.of(Person.class)
+    .groupBy(Person$.DEPARTMENT_NUMBER)
+    .reduce(SUM, Person$.SALES)
+    .toList(Integer.class, Double.class);
+
+// Average age by department  
+List<Pair<Integer, Double>> avgAgeByDepartment = entityStream.of(Person.class)
+    .groupBy(Person$.DEPARTMENT_NUMBER)
+    .reduce(AVG, Person$.AGE)
+    .toList(Integer.class, Double.class);
+----
+
+=== Min and Max Aggregations
+
+[source,java]
+----
+// Minimum and maximum values by group
+List<Pair<Integer, Integer>> minAgeByDept = entityStream.of(Person.class)
+    .groupBy(Person$.DEPARTMENT_NUMBER)
+    .reduce(MIN, Person$.AGE)
+    .toList(Integer.class, Integer.class);
+
+List<Pair<Integer, Integer>> maxAgeByDept = entityStream.of(Person.class)
+    .groupBy(Person$.DEPARTMENT_NUMBER)
+    .reduce(MAX, Person$.AGE)
+    .toList(Integer.class, Integer.class);
+----
+
+== Multiple Field Aggregations
+
+=== Multi-Field Grouping
+
+[source,java]
+----
+// Group by multiple fields
+List<Triple<Integer, String, Long>> complexGrouping = entityStream.of(Person.class)
+    .groupBy(Person$.DEPARTMENT_NUMBER, Person$.NAME)
+    .reduce(COUNT)
+    .toList(Integer.class, String.class, Long.class);
+----
+
+=== Multiple Reducers
+
+[source,java]
+----
+// Apply multiple aggregation functions
+List<Quad<Integer, Long, Double, Double>> comprehensiveStats = entityStream.of(Person.class)
+    .groupBy(Person$.DEPARTMENT_NUMBER)
+    .reduce(COUNT).as("count")
+    .reduce(AVG, Person$.SALES).as("avgSales")
+    .reduce(SUM, Person$.SALES).as("totalSales")
+    .toList(Integer.class, Long.class, Double.class, Double.class);
+----
+
+== Advanced Aggregation Features
+
+=== Applying Mathematical Expressions
+
+[source,java]
+----
+// Calculate adjusted sales with expressions
+List<Pair<String, Double>> adjustedSales = entityStream.of(Person.class)
+    .apply("@sales * @salesAdjustment", "adjustedSales")
+    .groupBy(Person$.NAME)
+    .reduce(SUM, Alias.of("adjustedSales"))
+    .toList(String.class, Double.class);
+
+// Complex mathematical operations
+List<Triple<String, Double, Double>> calculations = entityStream.of(Person.class)
+    .apply("@sales * 1.15", "boostedSales")           // Apply 15% increase
+    .apply("@height * 2.54", "heightInCm")            // Convert inches to cm
+    .groupBy(Person$.NAME)
+    .reduce(AVG, Alias.of("boostedSales"))
+    .reduce(MAX, Alias.of("heightInCm"))
+    .toList(String.class, Double.class, Double.class);
+----
+
+=== Filtering Aggregated Results
+
+[source,java]
+----
+// Filter groups after aggregation
+List<Pair<Integer, Long>> largeDepartments = entityStream.of(Person.class)
+    .groupBy(Person$.DEPARTMENT_NUMBER)
+    .reduce(COUNT)
+    .filter("@count > 1")                              // Only departments with >1 person
+    .toList(Integer.class, Long.class);
+
+// Complex filtering with multiple conditions
+List<Pair<Integer, Double>> highValueDepartments = entityStream.of(Person.class)
+    .groupBy(Person$.DEPARTMENT_NUMBER)
+    .reduce(SUM, Person$.SALES).as("totalSales")
+    .filter("@totalSales > 500000")                    // High-value departments
+    .toList(Integer.class, Double.class);
+----
+
+=== Sorting Aggregated Results
+
+[source,java]
+----
+import org.springframework.data.domain.Sort.Order;
+
+// Sort aggregation results
+List<Pair<Integer, Long>> sortedByCount = entityStream.of(Person.class)
+    .groupBy(Person$.DEPARTMENT_NUMBER)
+    .reduce(COUNT).as("count")
+    .sorted(Order.desc("@count"))                      // Sort by count descending
+    .toList(Integer.class, Long.class);
+
+// Multiple sort criteria
+List<Triple<Integer, Double, Long>> sortedMultiple = entityStream.of(Person.class)
+    .groupBy(Person$.DEPARTMENT_NUMBER)
+    .reduce(AVG, Person$.SALES).as("avgSales")
+    .reduce(COUNT).as("count")
+    .sorted(Order.desc("@avgSales"))                   // First by avg sales
+    .sorted(Order.asc("@count"))                       // Then by count
+    .toList(Integer.class, Double.class, Long.class);
+----
+
+=== Limiting Aggregation Results
+
+[source,java]
+----
+// Get top N results
+List<Pair<String, Double>> topPerformers = entityStream.of(Person.class)
+    .groupBy(Person$.NAME)
+    .reduce(SUM, Person$.SALES)
+    .sorted(Order.desc("@sum"))
+    .limit(5)                                          // Top 5 performers
+    .toList(String.class, Double.class);
+
+// Pagination with offset and limit
+List<Pair<Integer, Long>> page2Departments = entityStream.of(Person.class)
+    .groupBy(Person$.DEPARTMENT_NUMBER)
+    .reduce(COUNT)
+    .sorted(Order.asc("@count"))
+    .limit(5, 10)                                      // Skip 5, take 10
+    .toList(Integer.class, Long.class);
+----
+
+== Real-World Aggregation Examples
+
+=== Sales Analysis
+
+[source,java]
+----
+// Comprehensive sales analysis by department
+List<Sextuple<Integer, Long, Double, Double, Double, Double>> salesAnalysis = 
+    entityStream.of(Person.class)
+        .groupBy(Person$.DEPARTMENT_NUMBER)
+        .reduce(COUNT).as("headcount")
+        .reduce(SUM, Person$.SALES).as("totalSales")
+        .reduce(AVG, Person$.SALES).as("avgSales")
+        .reduce(MIN, Person$.SALES).as("minSales")
+        .reduce(MAX, Person$.SALES).as("maxSales")
+        .sorted(Order.desc("@totalSales"))
+        .toList(Integer.class, Long.class, Double.class, Double.class, Double.class, Double.class);
+----
+
+=== Performance Metrics
+
+[source,java]
+----
+// Calculate performance ratios
+List<Triple<String, Double, Double>> performanceMetrics = entityStream.of(Person.class)
+    .apply("@sales / 1000", "salesK")                  // Sales in thousands
+    .apply("@sales / @age", "salesPerAge")             // Sales efficiency by age
+    .groupBy(Person$.NAME)
+    .reduce(AVG, Alias.of("salesK"))
+    .reduce(MAX, Alias.of("salesPerAge"))
+    .sorted(Order.desc("@avg"))
+    .toList(String.class, Double.class, Double.class);
+----
+
+=== Game Analytics (using Game entity)
+
+[source,java]
+----
+// Analyze games by brand and price ranges
+List<Triple<String, Long, Double>> gameAnalytics = entityStream.of(Game.class)
+    .filter(Game$.PRICE.between(10.0, 100.0))          // Focus on mid-range games
+    .groupBy(Game$.BRAND)
+    .reduce(COUNT).as("gameCount")
+    .reduce(AVG, Game$.PRICE).as("avgPrice")
+    .filter("@gameCount > 5")                          // Brands with substantial catalog
+    .sorted(Order.desc("@avgPrice"))
+    .limit(10)                                         // Top 10 premium brands
+    .toList(String.class, Long.class, Double.class);
+----
+
+== Working with Aggregation Results
+
+=== Converting to DTOs
+
+[source,java]
+----
+// Convert aggregation results to custom DTOs
+public class DepartmentStats {
+    private Integer departmentNumber;
+    private Long headcount;
+    private Double totalSales;
+    private Double avgSales;
+    
+    // constructors, getters, setters
+}
+
+List<DepartmentStats> departmentStats = entityStream.of(Person.class)
+    .groupBy(Person$.DEPARTMENT_NUMBER)
+    .reduce(COUNT).as("headcount")
+    .reduce(SUM, Person$.SALES).as("totalSales")
+    .reduce(AVG, Person$.SALES).as("avgSales")
+    .sorted(Order.desc("@totalSales"))
+    .toList(Integer.class, Long.class, Double.class, Double.class)
+    .stream()
+    .map(quad -> new DepartmentStats(
+        quad.getFirst(),    // department number
+        quad.getSecond(),   // headcount
+        quad.getThird(),    // total sales
+        quad.getFourth()    // avg sales
+    ))
+    .collect(Collectors.toList());
+----
+
+=== Streaming Large Result Sets
+
+[source,java]
+----
+// Process large aggregation results as stream
+entityStream.of(Person.class)
+    .groupBy(Person$.DEPARTMENT_NUMBER, Person$.NAME)
+    .reduce(SUM, Person$.SALES)
+    .sorted(Order.desc("@sum"))
+    .limit(1000)
+    .toList(Integer.class, String.class, Double.class)
+    .stream()
+    .filter(triple -> triple.getThird() > 100000)      // Client-side filtering
+    .forEach(triple -> {
+        System.out.printf("Dept %d: %s - $%.2f%n", 
+            triple.getFirst(), triple.getSecond(), triple.getThird());
+    });
+----
+
+== Performance Considerations
+
+=== Efficient Aggregations
+
+[source,java]
+----
+// Prefer server-side filtering before aggregation
+List<Pair<Integer, Double>> efficientAgg = entityStream.of(Person.class)
+    .filter(Person$.SALES.gt(50000))                   // Filter first
+    .groupBy(Person$.DEPARTMENT_NUMBER)                // Then aggregate
+    .reduce(AVG, Person$.SALES)
+    .toList(Integer.class, Double.class);
+
+// Use indexed fields for grouping
+List<Pair<Integer, Long>> indexedGrouping = entityStream.of(Person.class)
+    .groupBy(Person$.DEPARTMENT_NUMBER)                // Indexed field - efficient
+    .reduce(COUNT)
+    .toList(Integer.class, Long.class);
+----
+
+=== Best Practices
+
+1. **Filter before aggregating**: Apply entity filters before grouping
+2. **Use indexed fields**: Group by indexed fields for better performance
+3. **Limit result sets**: Use `limit()` to control memory usage
+4. **Server-side operations**: Prefer Redis aggregations over client-side processing
+5. **Appropriate data types**: Use proper tuple types (Pair, Triple, etc.) for results
+
+== Next Steps
+
+* xref:entity-streams.adoc[Entity Streams Reference]
+* xref:search.adoc[Search Capabilities]  
+* xref:metamodel.adoc[Metamodel and Type Safety]

@@ -1,0 +1,627 @@
+= Vector Search Examples
+:page-toclevels: 3
+:page-pagination:
+
+This section provides comprehensive examples of vector search implementations using Redis OM Spring, drawn from real-world demo applications.
+
+== Introduction
+
+Vector search enables finding semantically similar items based on their vector representations rather than exact keyword matches. Redis OM Spring makes it easy to implement vector search for various use cases like product recommendations, content discovery, and image similarity.
+
+== Demo Applications Overview
+
+Redis OM Spring includes two comprehensive demo applications that showcase vector search capabilities:
+
+* **roms-vss**: Product similarity search with both text and image embeddings
+* **roms-vss-movies**: Movie recommendation system using OpenAI text embeddings
+
+== Product Search Demo (roms-vss)
+
+The `roms-vss` demo demonstrates a product search system that uses both text and image embeddings to find similar products.
+
+=== Domain Model
+
+[source,java]
+----
+@RedisHash
+public class Product {
+  @Id
+  private String id;
+
+  @Indexed
+  private String gender;
+
+  @Indexed
+  private String masterCategory;
+
+  @Indexed
+  private String subCategory;
+
+  @Indexed
+  private String articleType;
+
+  @Indexed
+  private String baseColour;
+
+  @Indexed
+  private String productDisplayName;
+
+  // Image embedding with HNSW index
+  @Indexed(
+    schemaFieldType = SchemaFieldType.VECTOR,
+    algorithm = VectorAlgorithm.HNSW,
+    type = VectorType.FLOAT32,
+    dimension = 512,
+    distanceMetric = DistanceMetric.COSINE,
+    initialCapacity = 10
+  )
+  private byte[] imageEmbedding;
+
+  // Source field for image vectorization
+  @Vectorize(
+    destination = "imageEmbedding",
+    embeddingType = EmbeddingType.IMAGE
+  )
+  private String imagePath;
+
+  // Text embedding with HNSW index
+  @Indexed(
+    schemaFieldType = SchemaFieldType.VECTOR,
+    algorithm = VectorAlgorithm.HNSW,
+    type = VectorType.FLOAT32,
+    dimension = 384,
+    distanceMetric = DistanceMetric.COSINE,
+    initialCapacity = 10
+  )
+  private byte[] sentenceEmbedding;
+
+  // Source field for text vectorization
+  @Vectorize(
+    destination = "sentenceEmbedding",
+    embeddingType = EmbeddingType.SENTENCE
+  )
+  private String productText;
+
+  // getters and setters
+}
+----
+
+=== Repository Interface
+
+[source,java]
+----
+public interface ProductRepository extends RedisEnhancedRepository<Product, String> {
+  // Standard repository methods are automatically available
+  // Vector search is performed through EntityStream API
+}
+----
+
+=== Controller Implementation
+
+The actual demo controller shows real vector search patterns:
+
+[source,java]
+----
+@Controller
+@RequestMapping("/")
+public class ProductController {
+  private static final int K = 15;
+
+  @Autowired
+  private ProductRepository repository;
+
+  @Autowired
+  private EntityStream entityStream;
+
+  @GetMapping("/vss/text/{id}")
+  public String findSimilarByText(Model model,
+      @PathVariable("id") String id,
+      @RequestParam Optional<String> gender,
+      @RequestParam Optional<String> category) {
+
+    Optional<Product> maybeProduct = repository.findById(id);
+    if (maybeProduct.isPresent()) {
+      Product product = maybeProduct.get();
+
+      SearchStream<Product> stream = entityStream.of(Product.class);
+
+      // Apply filters before vector search
+      applyFilters(stream, gender, category);
+
+      // Perform KNN search with score retrieval
+      List<Pair<Product, Double>> productsAndScores = stream
+        .filter(Product$.SENTENCE_EMBEDDING.knn(K, product.getSentenceEmbedding()))
+        .sorted(Product$._SENTENCE_EMBEDDING_SCORE)
+        .limit(K)
+        .map(Fields.of(Product$._THIS, Product$._SENTENCE_EMBEDDING_SCORE))
+        .collect(Collectors.toList());
+
+      List<Product> products = productsAndScores.stream()
+        .map(Pair::getFirst)
+        .toList();
+
+      // Convert distance scores to similarity percentages
+      List<Double> scores = productsAndScores.stream()
+        .map(Pair::getSecond)
+        .map(d -> 100.0 * (1 - d / 2))  // COSINE distance to similarity %
+        .toList();
+
+      // Add to model for rendering
+      model.addAttribute("products", products);
+      model.addAttribute("scores", scores);
+    }
+
+    return "fragments :: root";
+  }
+
+  @GetMapping("/vss/image/{id}")
+  public String findSimilarByImage(Model model,
+      @PathVariable("id") String id,
+      @RequestParam Optional<String> gender,
+      @RequestParam Optional<String> category) {
+
+    Optional<Product> maybeProduct = repository.findById(id);
+    if (maybeProduct.isPresent()) {
+      Product product = maybeProduct.get();
+
+      SearchStream<Product> stream = entityStream.of(Product.class);
+
+      // Apply filters
+      applyFilters(stream, gender, category);
+
+      // Image similarity search
+      List<Pair<Product, Double>> productsAndScores = stream
+        .filter(Product$.IMAGE_EMBEDDING.knn(K, product.getImageEmbedding()))
+        .sorted(Product$._IMAGE_EMBEDDING_SCORE)
+        .limit(K)
+        .map(Fields.of(Product$._THIS, Product$._IMAGE_EMBEDDING_SCORE))
+        .collect(Collectors.toList());
+
+      List<Product> products = productsAndScores.stream()
+        .map(Pair::getFirst)
+        .toList();
+
+      List<Double> scores = productsAndScores.stream()
+        .map(Pair::getSecond)
+        .map(d -> 100.0 * (1 - d / 2))
+        .toList();
+
+      model.addAttribute("products", products);
+      model.addAttribute("scores", scores);
+    }
+
+    return "fragments :: root";
+  }
+
+  private void applyFilters(SearchStream<Product> stream,
+                           Optional<String> gender,
+                           Optional<String> category) {
+    if (gender.isPresent() && !gender.get().equalsIgnoreCase("all")) {
+      stream.filter(Product$.GENDER.eq(gender.get()));
+    }
+
+    if (category.isPresent() && !category.get().equalsIgnoreCase("all")) {
+      stream.filter(Product$.MASTER_CATEGORY.eq(category.get()));
+    }
+  }
+}
+----
+
+== Movie Recommendation Demo (roms-vss-movies)
+
+The `roms-vss-movies` demo shows how to build a movie recommendation system using OpenAI text embeddings.
+
+=== Domain Model
+
+[source,java]
+----
+@RedisHash
+public class Movie {
+  @Id
+  private String title;
+
+  @Indexed(sortable = true)
+  private int year;
+
+  @Indexed
+  private List<String> cast;
+
+  @Indexed
+  private List<String> genres;
+
+  private String href;
+
+  // Source field for embedding generation
+  @Vectorize(
+    destination = "embeddedExtract",
+    embeddingType = EmbeddingType.SENTENCE,
+    provider = EmbeddingProvider.OPENAI,
+    openAiEmbeddingModel = OpenAiApi.EmbeddingModel.TEXT_EMBEDDING_3_LARGE
+  )
+  private String extract;
+
+  // Vector field with FLAT algorithm for accuracy
+  @Indexed(
+    schemaFieldType = SchemaFieldType.VECTOR,
+    algorithm = VectorField.VectorAlgorithm.FLAT,
+    type = VectorType.FLOAT32,
+    dimension = 3072,  // TEXT_EMBEDDING_3_LARGE dimensions
+    distanceMetric = DistanceMetric.COSINE,
+    initialCapacity = 10
+  )
+  private byte[] embeddedExtract;
+
+  private String thumbnail;
+  private int thumbnailWidth;
+  private int thumbnailHeight;
+
+  // getters and setters
+}
+----
+
+=== Search Service
+
+The movie demo can implement search like this:
+
+[source,java]
+----
+@Service
+public class MovieService {
+  @Autowired
+  private EntityStream entityStream;
+
+  @Autowired
+  private MovieRepository movieRepository;
+
+  public List<Movie> findSimilarMovies(String movieTitle, int k) {
+    Optional<Movie> movie = movieRepository.findById(movieTitle);
+    if (movie.isPresent()) {
+      return entityStream
+        .of(Movie.class)
+        .filter(Movie$.EMBEDDED_EXTRACT.knn(k, movie.get().getEmbeddedExtract()))
+        .sorted(Movie$._EMBEDDED_EXTRACT_SCORE)
+        .limit(k)
+        .collect(Collectors.toList());
+    }
+    return Collections.emptyList();
+  }
+
+  public List<Movie> findMoviesByGenreAndSimilarity(String movieTitle, String genre, int k) {
+    Optional<Movie> movie = movieRepository.findById(movieTitle);
+    if (movie.isPresent()) {
+      return entityStream
+        .of(Movie.class)
+        .filter(Movie$.GENRES.in(genre))  // Pre-filter by genre
+        .filter(Movie$.EMBEDDED_EXTRACT.knn(k, movie.get().getEmbeddedExtract()))
+        .sorted(Movie$._EMBEDDED_EXTRACT_SCORE)
+        .limit(k)
+        .collect(Collectors.toList());
+    }
+    return Collections.emptyList();
+  }
+
+  public List<Movie> findMoviesByYearRange(String movieTitle, int startYear, int endYear, int k) {
+    Optional<Movie> movie = movieRepository.findById(movieTitle);
+    if (movie.isPresent()) {
+      return entityStream
+        .of(Movie.class)
+        .filter(Movie$.YEAR.between(startYear, endYear))
+        .filter(Movie$.EMBEDDED_EXTRACT.knn(k, movie.get().getEmbeddedExtract()))
+        .sorted(Movie$._EMBEDDED_EXTRACT_SCORE)
+        .limit(k)
+        .collect(Collectors.toList());
+    }
+    return Collections.emptyList();
+  }
+}
+----
+
+== Advanced Vector Search Patterns
+
+=== Hybrid Search (Vector + Traditional Filters)
+
+Combine vector similarity with traditional field-based filtering for more precise results:
+
+[source,java]
+----
+public List<Product> hybridProductSearch(String productId, String gender, String category, int k) {
+  Optional<Product> maybeProduct = repository.findById(productId);
+  if (maybeProduct.isPresent()) {
+    Product product = maybeProduct.get();
+
+    SearchStream<Product> stream = entityStream.of(Product.class);
+
+    // Apply traditional filters first to reduce search space
+    if (gender != null && !gender.equalsIgnoreCase("all")) {
+      stream.filter(Product$.GENDER.eq(gender));
+    }
+
+    if (category != null && !category.equalsIgnoreCase("all")) {
+      stream.filter(Product$.MASTER_CATEGORY.eq(category));
+    }
+
+    // Then apply vector similarity
+    return stream
+      .filter(Product$.SENTENCE_EMBEDDING.knn(k, product.getSentenceEmbedding()))
+      .sorted(Product$._SENTENCE_EMBEDDING_SCORE)
+      .limit(k)
+      .collect(Collectors.toList());
+  }
+  return Collections.emptyList();
+}
+----
+
+=== Multi-Vector Search
+
+Search across multiple vector fields for comprehensive similarity:
+
+[source,java]
+----
+public class MultiVectorSearchResult {
+  private List<Product> textResults;
+  private List<Product> imageResults;
+  private List<Double> textScores;
+  private List<Double> imageScores;
+
+  // constructors, getters, setters
+}
+
+public MultiVectorSearchResult multiVectorSearch(String productId, int k) {
+  Optional<Product> maybeProduct = repository.findById(productId);
+  if (maybeProduct.isPresent()) {
+    Product product = maybeProduct.get();
+
+    // Search by text embedding
+    List<Pair<Product, Double>> textResults = entityStream
+      .of(Product.class)
+      .filter(Product$.SENTENCE_EMBEDDING.knn(k, product.getSentenceEmbedding()))
+      .sorted(Product$._SENTENCE_EMBEDDING_SCORE)
+      .limit(k)
+      .map(Fields.of(Product$._THIS, Product$._SENTENCE_EMBEDDING_SCORE))
+      .collect(Collectors.toList());
+
+    // Search by image embedding
+    List<Pair<Product, Double>> imageResults = entityStream
+      .of(Product.class)
+      .filter(Product$.IMAGE_EMBEDDING.knn(k, product.getImageEmbedding()))
+      .sorted(Product$._IMAGE_EMBEDDING_SCORE)
+      .limit(k)
+      .map(Fields.of(Product$._THIS, Product$._IMAGE_EMBEDDING_SCORE))
+      .collect(Collectors.toList());
+
+    return new MultiVectorSearchResult(
+      textResults.stream().map(Pair::getFirst).collect(Collectors.toList()),
+      imageResults.stream().map(Pair::getFirst).collect(Collectors.toList()),
+      textResults.stream().map(Pair::getSecond).collect(Collectors.toList()),
+      imageResults.stream().map(Pair::getSecond).collect(Collectors.toList())
+    );
+  }
+  return new MultiVectorSearchResult(Collections.emptyList(), Collections.emptyList(),
+                                   Collections.emptyList(), Collections.emptyList());
+}
+----
+
+=== Score-Based Filtering
+
+Filter results based on similarity scores to ensure quality:
+
+[source,java]
+----
+public List<Product> findHighQualitySimilarProducts(String productId, double minSimilarity, int maxResults) {
+  Optional<Product> maybeProduct = repository.findById(productId);
+  if (maybeProduct.isPresent()) {
+    Product product = maybeProduct.get();
+
+    return entityStream
+      .of(Product.class)
+      .filter(Product$.SENTENCE_EMBEDDING.knn(maxResults * 2, product.getSentenceEmbedding()))
+      .sorted(Product$._SENTENCE_EMBEDDING_SCORE)
+      .map(Fields.of(Product$._THIS, Product$._SENTENCE_EMBEDDING_SCORE))
+      .collect(Collectors.toList())
+      .stream()
+      .filter(pair -> {
+        // Convert distance to similarity percentage
+        double similarity = 100.0 * (1 - pair.getSecond() / 2);
+        return similarity >= minSimilarity;
+      })
+      .map(Pair::getFirst)
+      .limit(maxResults)
+      .collect(Collectors.toList());
+  }
+  return Collections.emptyList();
+}
+----
+
+== Configuration Examples
+
+=== Dependencies
+
+Add the required dependencies for AI integration:
+
+[source,xml]
+----
+<dependencies>
+  <!-- Core Redis OM Spring -->
+  <dependency>
+    <groupId>com.redis.om</groupId>
+    <artifactId>redis-om-spring</artifactId>
+    <version>{redis-om-version}</version>
+  </dependency>
+
+  <!-- AI integration module -->
+  <dependency>
+    <groupId>com.redis.om</groupId>
+    <artifactId>redis-om-spring-ai</artifactId>
+    <version>{redis-om-version}</version>
+  </dependency>
+
+  <!-- Spring AI OpenAI integration -->
+  <dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-openai-spring-boot-starter</artifactId>
+    <version>1.0.0</version>
+  </dependency>
+</dependencies>
+----
+
+=== Application Properties
+
+[source,yaml]
+----
+# Redis connection
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  # OpenAI configuration
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        model: gpt-4o
+      embedding:
+        model: text-embedding-3-large
+
+# Redis OM Spring configuration
+redis:
+  om:
+    repository:
+      query:
+        limit: 10000
+----
+
+=== Bean Configuration
+
+[source,java]
+----
+@Configuration
+@EnableRedisEnhancedRepositories(basePackages = "com.example.repositories")
+public class VectorSearchConfiguration {
+
+  @Bean
+  @Primary
+  public LettuceConnectionFactory redisConnectionFactory() {
+    return new LettuceConnectionFactory(
+      new RedisStandaloneConfiguration("localhost", 6379));
+  }
+}
+----
+
+== Performance Considerations
+
+=== Index Algorithm Selection
+
+Choose the right algorithm based on your use case:
+
+[source,java]
+----
+// HNSW: Fast approximate search, good for large datasets
+@Indexed(
+  schemaFieldType = SchemaFieldType.VECTOR,
+  algorithm = VectorAlgorithm.HNSW,
+  type = VectorType.FLOAT32,
+  dimension = 1536,
+  distanceMetric = DistanceMetric.COSINE,
+  initialCapacity = 100000,  // Large dataset
+  m = 32,                    // Higher connections for better recall
+  efConstruction = 400       // Higher quality index
+)
+private byte[] embedding;
+
+// FLAT: Exact search, good for smaller datasets or high accuracy needs
+@Indexed(
+  schemaFieldType = SchemaFieldType.VECTOR,
+  algorithm = VectorAlgorithm.FLAT,
+  type = VectorType.FLOAT32,
+  dimension = 3072,
+  distanceMetric = DistanceMetric.COSINE,
+  initialCapacity = 10000
+)
+private byte[] embedding;
+----
+
+=== Query Optimization
+
+[source,java]
+----
+// Pre-filter to reduce vector search scope
+public List<Product> optimizedSearch(String productId, String category, int k) {
+  Optional<Product> maybeProduct = repository.findById(productId);
+  if (maybeProduct.isPresent()) {
+    Product product = maybeProduct.get();
+
+    return entityStream
+      .of(Product.class)
+      .filter(Product$.MASTER_CATEGORY.eq(category))  // Reduce search space first
+      .filter(Product$.SENTENCE_EMBEDDING.knn(k, product.getSentenceEmbedding()))
+      .sorted(Product$._SENTENCE_EMBEDDING_SCORE)
+      .limit(k)
+      .collect(Collectors.toList());
+  }
+  return Collections.emptyList();
+}
+----
+
+== Running the Demo Applications
+
+=== Product Search Demo (roms-vss)
+
+Navigate to the `demos/roms-vss` directory and run:
+
+[source,bash]
+----
+# Start Redis Stack
+docker compose up -d
+
+# Build and run the application
+../../mvnw clean spring-boot:run
+
+# Access the web interface
+open http://localhost:8080
+----
+
+=== Movie Recommendation Demo (roms-vss-movies)
+
+Navigate to the `demos/roms-vss-movies` directory and run:
+
+[source,bash]
+----
+# Start Redis Stack
+docker compose up -d
+
+# Set your OpenAI API key
+export OPENAI_API_KEY=your-api-key-here
+
+# Build and run the application
+../../mvnw clean spring-boot:run
+
+# Access the web interface
+open http://localhost:8080
+----
+
+== Best Practices
+
+=== Vector Field Design
+
+1. **Use byte[] for storage efficiency**: Vector fields should be `byte[]` rather than `float[]`
+2. **Choose appropriate dimensions**: Match your embedding model (384 for sentence transformers, 1536 for OpenAI ada-002, 3072 for text-embedding-3-large)
+3. **Select the right distance metric**: COSINE for text, L2 for images
+4. **Tune HNSW parameters**: Higher `m` and `efConstruction` for better quality, at the cost of memory and build time
+
+=== Search Strategy
+
+1. **Pre-filter when possible**: Apply traditional filters before vector search to reduce scope
+2. **Limit result sets**: Use reasonable K values (10-50) for good performance
+3. **Handle scores appropriately**: Convert distances to similarity percentages for user-friendly display
+4. **Combine multiple vectors**: Use both text and image embeddings for comprehensive similarity
+
+=== Production Considerations
+
+1. **Monitor index performance**: Track search latency and recall
+2. **Scale vector dimensions carefully**: Higher dimensions = more memory and slower search
+3. **Batch embedding generation**: Generate embeddings efficiently during data ingestion
+4. **Cache frequently accessed vectors**: Cache popular product embeddings
+
+For complete working examples, check out the `roms-vss` and `roms-vss-movies` demo applications in the Redis OM Spring repository.

@@ -91,7 +91,7 @@ tasks.withType(JavaCompile).configureEach {
 // Configure annotation processing
 compileTestJava {
 	options.annotationProcessorPath = configurations.testAnnotationProcessor
-	options.annotationProcessorGeneratedSourcesDirectory = file("${buildDir}/generated/sources/annotationProcessor/java/test")
+	options.generatedSourceOutputDirectory = file("${buildDir}/generated/sources/annotationProcessor/java/test")
 }
 
 test {

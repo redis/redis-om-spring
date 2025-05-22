@@ -1,0 +1,17 @@
+{
+  "name": "redis-om-spring-docs",
+  "version": "1.0.0",
+  "description": "Documentation for Redis OM Spring",
+  "dependencies": {
+    "@antora/cli": "^3.1.4",
+    "@antora/site-generator": "^3.1.10",
+    "@antora/site-generator-default": "^3.1.4"
+  },
+  "scripts": {
+    "build": "antora --stacktrace antora-playbook.yml",
+    "serve": "http-server build/site -c-1 -p 5000"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}

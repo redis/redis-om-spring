@@ -1,0 +1,169 @@
+= Redis Sentinel Support
+:page-toclevels: 3
+:experimental:
+:source-highlighter: highlight.js
+
+== Introduction to Redis Sentinel
+
+Redis Sentinel provides high availability for Redis through automatic failover. Redis OM Spring supports connecting to Redis deployments that use Sentinel for monitoring and failover management.
+
+== Configuring Sentinel Support
+
+=== Application Properties
+
+Configure Redis OM Spring to use Sentinel in your `application.properties` or `application.yml`:
+
+[source,yaml]
+----
+spring:
+  redis:
+    sentinel:
+      master: mymaster
+      nodes: sentinel1:26379,sentinel2:26379,sentinel3:26379
+    password: your-redis-password  # Optional
+----
+
+=== Java Configuration
+
+You can also configure Sentinel programmatically:
+
+[source,java]
+----
+@Configuration
+public class RedisSentinelConfig {
+
+    @Bean
+    public RedisConnectionFactory redisConnectionFactory() {
+        RedisSentinelConfiguration sentinelConfig = new RedisSentinelConfiguration()
+            .master("mymaster")
+            .sentinel("sentinel1", 26379)
+            .sentinel("sentinel2", 26379)
+            .sentinel("sentinel3", 26379);
+        
+        // Optional password
+        sentinelConfig.setPassword("your-redis-password");
+        
+        return new LettuceConnectionFactory(sentinelConfig);
+    }
+}
+----
+
+== Using Redis OM Spring with Sentinel
+
+Once configured, Redis OM Spring will work transparently with Sentinel. Your repositories and other Redis OM Spring features will automatically handle failovers and reconnections.
+
+=== Repository Example
+
+[source,java]
+----
+@Repository
+public interface ProductRepository extends RedisDocumentRepository<Product, String> {
+    List<Product> findByCategory(String category);
+}
+
+@Service
+public class ProductService {
+    private final ProductRepository productRepository;
+    
+    public ProductService(ProductRepository productRepository) {
+        this.productRepository = productRepository;
+    }
+    
+    public List<Product> getProductsByCategory(String category) {
+        return productRepository.findByCategory(category);
+    }
+}
+----
+
+== Testing with Sentinel
+
+=== Using TestContainers
+
+For integration testing with Sentinel, use TestContainers:
+
+[source,java]
+----
+@SpringBootTest
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public class SentinelIntegrationTest extends AbstractBaseDocumentSentinelTest {
+
+    @Autowired
+    private ProductRepository productRepository;
+    
+    @Test
+    void testSaveAndRetrieve() {
+        // Create and save a product
+        Product product = new Product();
+        product.setName("Test Product");
+        product.setPrice(99.99);
+        productRepository.save(product);
+        
+        // Retrieve the product
+        Product retrieved = productRepository.findById(product.getId()).orElse(null);
+        assertThat(retrieved).isNotNull();
+        assertThat(retrieved.getName()).isEqualTo("Test Product");
+    }
+}
+----
+
+=== AbstractBaseDocumentSentinelTest
+
+Redis OM Spring provides a base test class for Sentinel tests:
+
+[source,java]
+----
+public class YourSentinelTest extends AbstractBaseDocumentSentinelTest {
+    // Your test methods
+}
+----
+
+== Sentinel Monitoring and Management
+
+=== Monitoring Sentinel Status
+
+You can use the Redis CLI to monitor Sentinel status:
+
+[source,bash]
+----
+redis-cli -p 26379
+sentinel master mymaster
+sentinel sentinels mymaster
+sentinel slaves mymaster
+----
+
+=== Handling Sentinel Events
+
+For applications that need to react to Sentinel events, use the Spring Data Redis sentinel listeners:
+
+[source,java]
+----
+@Component
+public class SentinelEventListener {
+    
+    private static final Logger log = LoggerFactory.getLogger(SentinelEventListener.class);
+    
+    @EventListener
+    public void onSentinelEvent(SentinelMasterChangedEvent event) {
+        log.info("Master changed: {}", event.getMaster());
+    }
+    
+    @EventListener
+    public void onRedisConnectionFailure(RedisConnectionFailureEvent event) {
+        log.error("Redis connection failure: {}", event.getCause().getMessage());
+    }
+}
+----
+
+== Best Practices
+
+* Configure multiple Sentinel nodes for redundancy
+* Use appropriate timeout and retry settings
+* Implement proper exception handling
+* Monitor Sentinel logs and events
+* Test failover scenarios thoroughly
+* Consider using Redis Cluster for horizontal scalability
+
+== Next Steps
+
+* xref:vector-search.adoc[Vector Similarity Search]
+* xref:entity-streams.adoc[Entity Streams API]

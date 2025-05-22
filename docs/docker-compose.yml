@@ -1,0 +1,13 @@
+services:
+  docs:
+    image: nginx:stable-alpine
+    container_name: roms-documentation
+    ports:
+      - "8000:80"
+    volumes:
+      - ./build/site:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+    environment:
+      - NGINX_HOST=localhost
+      - NGINX_PORT=80

@@ -1,0 +1,756 @@
+= Autocomplete
+:page-toclevels: 3
+:page-pagination:
+
+Redis OM Spring provides sophisticated autocomplete (search-as-you-type) functionality that enables fast, real-time suggestion queries. The autocomplete feature automatically manages suggestion dictionaries in Redis and provides flexible querying options including fuzzy matching, payload data, and relevance scoring.
+
+== Overview
+
+Autocomplete functionality in Redis OM Spring leverages Redis Stack's suggestion capabilities to provide:
+
+* **Fast prefix matching** - Sub-millisecond suggestion lookups
+* **Automatic management** - Suggestions are maintained automatically as entities change
+* **Rich metadata** - Associate additional data with suggestions via payloads
+* **Fuzzy matching** - Handle typos and approximate matches
+* **Relevance scoring** - Rank suggestions by relevance
+* **Repository integration** - Seamless integration with Spring Data patterns
+
+The autocomplete system uses Redis Stack's `FT.SUG*` commands under the hood for high-performance suggestion storage and retrieval.
+
+== Core Annotations
+
+=== @AutoComplete
+
+The `@AutoComplete` annotation marks fields that should be indexed for autocomplete functionality:
+
+[source,java]
+----
+@Document
+public class Airport {
+  @Id
+  private String id;
+  
+  @AutoComplete
+  private String name;
+  
+  @Indexed
+  private String city;
+  
+  @Indexed
+  private String country;
+}
+----
+
+When an entity with `@AutoComplete` fields is saved, the annotated field values are automatically added to Redis suggestion dictionaries.
+
+=== @AutoCompletePayload
+
+The `@AutoCompletePayload` annotation associates additional metadata with autocomplete suggestions:
+
+[source,java]
+----
+@Document
+public class Airport {
+  @Id
+  private String id;
+  
+  @AutoComplete
+  private String name;
+  
+  @AutoCompletePayload("name")  // Links to the "name" autocomplete field
+  private String code;
+  
+  @AutoCompletePayload("name")
+  private String city;
+  
+  @AutoCompletePayload("name")
+  private String country;
+}
+----
+
+Fields annotated with `@AutoCompletePayload` are stored as metadata associated with the autocomplete suggestions, allowing you to retrieve additional context without performing separate lookups.
+
+== Repository Integration
+
+=== Automatic Method Generation
+
+Repository interfaces automatically generate autocomplete methods for fields marked with `@AutoComplete`:
+
+[source,java]
+----
+public interface AirportRepository extends RedisDocumentRepository<Airport, String> {
+  
+  // Automatically generated autocomplete methods
+  List<Suggestion> autoCompleteName(String query);
+  List<Suggestion> autoCompleteName(String query, AutoCompleteOptions options);
+}
+----
+
+The method naming convention is: `autoComplete[FieldName](String query[, AutoCompleteOptions options])`
+
+=== Basic Autocomplete Queries
+
+[source,java]
+----
+@Service
+public class AirportSearchService {
+  @Autowired
+  private AirportRepository airportRepository;
+  
+  public List<Suggestion> searchAirportsByName(String query) {
+    // Simple autocomplete query
+    return airportRepository.autoCompleteName(query);
+  }
+  
+  public List<String> getAirportNameSuggestions(String query) {
+    // Extract just the suggestion strings
+    return airportRepository.autoCompleteName(query)
+      .stream()
+      .map(Suggestion::getString)
+      .collect(Collectors.toList());
+  }
+}
+----
+
+== Suggestion Objects
+
+The `Suggestion` class represents autocomplete results:
+
+[source,java]
+----
+public class Suggestion {
+  private String string;           // The suggestion text
+  private Double score;            // Relevance score (optional)
+  private Map<String, String> payload; // Associated payload data (optional)
+  
+  // getters and methods
+}
+----
+
+=== Accessing Suggestion Data
+
+[source,java]
+----
+@Service
+public class AutocompleteService {
+  @Autowired
+  private AirportRepository airportRepository;
+  
+  public List<AirportSuggestion> getAirportSuggestions(String query) {
+    AutoCompleteOptions options = AutoCompleteOptions.get()
+      .withPayload()
+      .withScore()
+      .limit(10);
+    
+    return airportRepository.autoCompleteName(query, options)
+      .stream()
+      .map(this::mapToAirportSuggestion)
+      .collect(Collectors.toList());
+  }
+  
+  private AirportSuggestion mapToAirportSuggestion(Suggestion suggestion) {
+    AirportSuggestion result = new AirportSuggestion();
+    result.setName(suggestion.getString());
+    result.setScore(suggestion.getScore());
+    
+    // Extract payload data
+    Map<String, String> payload = suggestion.getPayload();
+    if (payload != null) {
+      result.setCode(payload.get("code"));
+      result.setCity(payload.get("city"));
+      result.setCountry(payload.get("country"));
+    }
+    
+    return result;
+  }
+}
+
+// DTO class for structured suggestions
+public class AirportSuggestion {
+  private String name;
+  private String code;
+  private String city;
+  private String country;
+  private Double score;
+  
+  // getters and setters
+}
+----
+
+== Query Options
+
+The `AutoCompleteOptions` class provides fine-grained control over autocomplete queries:
+
+=== Basic Options
+
+[source,java]
+----
+// Get top 5 suggestions
+AutoCompleteOptions options = AutoCompleteOptions.get().limit(5);
+
+// Enable fuzzy matching for typo tolerance
+AutoCompleteOptions options = AutoCompleteOptions.get().fuzzy();
+
+// Include relevance scores
+AutoCompleteOptions options = AutoCompleteOptions.get().withScore();
+
+// Include payload data
+AutoCompleteOptions options = AutoCompleteOptions.get().withPayload();
+----
+
+=== Combining Options
+
+[source,java]
+----
+AutoCompleteOptions options = AutoCompleteOptions.get()
+  .fuzzy()          // Enable fuzzy matching
+  .withScore()      // Include relevance scores
+  .withPayload()    // Include payload data
+  .limit(10);       // Limit to 10 results
+
+List<Suggestion> suggestions = airportRepository.autoCompleteName("john f k", options);
+----
+
+=== Option Details
+
+[cols="1,3,1"]
+|===
+|Option |Description |Default
+
+|`limit(int)`
+|Maximum number of suggestions to return
+|10
+
+|`fuzzy()`
+|Enable fuzzy matching for typo tolerance
+|false
+
+|`withScore()`
+|Include relevance scores in results
+|false
+
+|`withPayload()`
+|Include associated payload data
+|false
+|===
+
+== Advanced Usage Examples
+
+=== Product Autocomplete with Rich Metadata
+
+[source,java]
+----
+@Document
+public class Product {
+  @Id
+  private String id;
+  
+  @AutoComplete
+  private String name;
+  
+  @AutoCompletePayload("name")
+  private String sku;
+  
+  @AutoCompletePayload("name")
+  private String category;
+  
+  @AutoCompletePayload("name")
+  private BigDecimal price;
+  
+  @AutoCompletePayload("name")
+  private String imageUrl;
+  
+  // getters and setters
+}
+
+@Service
+public class ProductSearchService {
+  @Autowired
+  private ProductRepository productRepository;
+  
+  public List<ProductSuggestion> searchProducts(String query) {
+    AutoCompleteOptions options = AutoCompleteOptions.get()
+      .fuzzy()
+      .withPayload()
+      .limit(8);
+    
+    return productRepository.autoCompleteName(query, options)
+      .stream()
+      .map(this::convertToProductSuggestion)
+      .collect(Collectors.toList());
+  }
+  
+  private ProductSuggestion convertToProductSuggestion(Suggestion suggestion) {
+    ProductSuggestion product = new ProductSuggestion();
+    product.setName(suggestion.getString());
+    
+    Map<String, String> payload = suggestion.getPayload();
+    if (payload != null) {
+      product.setSku(payload.get("sku"));
+      product.setCategory(payload.get("category"));
+      product.setPrice(new BigDecimal(payload.get("price")));
+      product.setImageUrl(payload.get("imageUrl"));
+    }
+    
+    return product;
+  }
+}
+----
+
+=== Multi-field Autocomplete
+
+[source,java]
+----
+@Document
+public class User {
+  @Id
+  private String id;
+  
+  @AutoComplete
+  private String firstName;
+  
+  @AutoComplete
+  private String lastName;
+  
+  @AutoComplete
+  private String email;
+  
+  @AutoCompletePayload("firstName")
+  @AutoCompletePayload("lastName") 
+  @AutoCompletePayload("email")
+  private String department;
+  
+  @AutoCompletePayload("firstName")
+  @AutoCompletePayload("lastName")
+  @AutoCompletePayload("email")
+  private String title;
+  
+  // getters and setters
+}
+
+@Service
+public class UserSearchService {
+  @Autowired
+  private UserRepository userRepository;
+  
+  public List<Suggestion> searchUsersByFirstName(String query) {
+    return userRepository.autoCompleteFirstName(query);
+  }
+  
+  public List<Suggestion> searchUsersByLastName(String query) {
+    return userRepository.autoCompleteLastName(query);
+  }
+  
+  public List<Suggestion> searchUsersByEmail(String query) {
+    AutoCompleteOptions options = AutoCompleteOptions.get()
+      .withPayload()
+      .limit(5);
+    
+    return userRepository.autoCompleteEmail(query, options);
+  }
+  
+  // Combined search across multiple fields
+  public List<UserSuggestion> searchUsers(String query) {
+    List<UserSuggestion> results = new ArrayList<>();
+    
+    // Search in first names
+    results.addAll(searchInField(query, "firstName"));
+    
+    // Search in last names  
+    results.addAll(searchInField(query, "lastName"));
+    
+    // Search in emails
+    results.addAll(searchInField(query, "email"));
+    
+    // Remove duplicates and sort by relevance
+    return results.stream()
+      .distinct()
+      .sorted(Comparator.comparing(UserSuggestion::getScore).reversed())
+      .limit(10)
+      .collect(Collectors.toList());
+  }
+  
+  private List<UserSuggestion> searchInField(String query, String field) {
+    AutoCompleteOptions options = AutoCompleteOptions.get()
+      .fuzzy()
+      .withScore()
+      .withPayload()
+      .limit(10);
+    
+    List<Suggestion> suggestions;
+    switch (field) {
+      case "firstName": suggestions = userRepository.autoCompleteFirstName(query, options); break;
+      case "lastName": suggestions = userRepository.autoCompleteLastName(query, options); break;
+      case "email": suggestions = userRepository.autoCompleteEmail(query, options); break;
+      default: return Collections.emptyList();
+    }
+    
+    return suggestions.stream()
+      .map(s -> convertToUserSuggestion(s, field))
+      .collect(Collectors.toList());
+  }
+}
+----
+
+== Automatic Lifecycle Management
+
+=== Entity Save Operations
+
+When entities are saved, autocomplete suggestions are automatically updated:
+
+[source,java]
+----
+@Service
+public class AirportService {
+  @Autowired
+  private AirportRepository airportRepository;
+  
+  public Airport createAirport(String name, String code, String city) {
+    Airport airport = new Airport();
+    airport.setName(name);
+    airport.setCode(code);
+    airport.setCity(city);
+    
+    // When saved, "name" field is automatically added to autocomplete
+    // "code" and "city" are stored as payload data for "name" suggestions
+    return airportRepository.save(airport);
+  }
+  
+  public Airport updateAirportName(String id, String newName) {
+    Optional<Airport> maybeAirport = airportRepository.findById(id);
+    if (maybeAirport.isPresent()) {
+      Airport airport = maybeAirport.get();
+      String oldName = airport.getName();
+      
+      airport.setName(newName);
+      
+      // When saved:
+      // 1. Old suggestion for "oldName" is removed
+      // 2. New suggestion for "newName" is added with updated payload
+      return airportRepository.save(airport);
+    }
+    throw new EntityNotFoundException("Airport not found");
+  }
+}
+----
+
+=== Entity Delete Operations
+
+When entities are deleted, their autocomplete suggestions are automatically removed:
+
+[source,java]
+----
+@Service
+public class AirportService {
+  @Autowired
+  private AirportRepository airportRepository;
+  
+  public void deleteAirport(String id) {
+    Optional<Airport> maybeAirport = airportRepository.findById(id);
+    if (maybeAirport.isPresent()) {
+      // When deleted, all autocomplete suggestions for this entity are removed
+      airportRepository.delete(maybeAirport.get());
+    }
+  }
+}
+----
+
+== Testing Autocomplete
+
+=== Unit Testing
+
+[source,java]
+----
+@SpringBootTest
+class AutocompleteTest {
+  
+  @Autowired
+  private AirportRepository airportRepository;
+  
+  @BeforeEach
+  void setUp() {
+    // Create test data
+    Airport jfk = new Airport();
+    jfk.setName("John F Kennedy International Airport");
+    jfk.setCode("JFK");
+    jfk.setCity("New York");
+    airportRepository.save(jfk);
+    
+    Airport lax = new Airport();
+    lax.setName("Los Angeles International Airport");
+    lax.setCode("LAX");
+    lax.setCity("Los Angeles");
+    airportRepository.save(lax);
+  }
+  
+  @Test
+  void testBasicAutocomplete() {
+    List<Suggestion> suggestions = airportRepository.autoCompleteName("john");
+    
+    assertThat(suggestions).hasSize(1);
+    assertThat(suggestions.get(0).getString()).contains("John F Kennedy");
+  }
+  
+  @Test
+  void testFuzzyAutocomplete() {
+    AutoCompleteOptions options = AutoCompleteOptions.get().fuzzy();
+    List<Suggestion> suggestions = airportRepository.autoCompleteName("jon", options);
+    
+    // Should find "John F Kennedy" despite typo
+    assertThat(suggestions).isNotEmpty();
+    assertThat(suggestions.get(0).getString()).contains("John F Kennedy");
+  }
+  
+  @Test
+  void testAutocompleteWithPayload() {
+    AutoCompleteOptions options = AutoCompleteOptions.get()
+      .withPayload()
+      .limit(1);
+    
+    List<Suggestion> suggestions = airportRepository.autoCompleteName("john", options);
+    
+    assertThat(suggestions).hasSize(1);
+    
+    Suggestion suggestion = suggestions.get(0);
+    assertThat(suggestion.getString()).contains("John F Kennedy");
+    
+    Map<String, String> payload = suggestion.getPayload();
+    assertThat(payload).isNotNull();
+    assertThat(payload.get("code")).isEqualTo("JFK");
+    assertThat(payload.get("city")).isEqualTo("New York");
+  }
+  
+  @Test
+  void testAutocompleteWithScores() {
+    AutoCompleteOptions options = AutoCompleteOptions.get().withScore();
+    List<Suggestion> suggestions = airportRepository.autoCompleteName("los", options);
+    
+    assertThat(suggestions).isNotEmpty();
+    assertThat(suggestions.get(0).getScore()).isNotNull();
+    assertThat(suggestions.get(0).getScore()).isGreaterThan(0.0);
+  }
+  
+  @Test 
+  void testAutocompleteEntityDeletion() {
+    // First verify suggestion exists
+    List<Suggestion> before = airportRepository.autoCompleteName("john");
+    assertThat(before).hasSize(1);
+    
+    // Delete the entity
+    Airport jfk = airportRepository.findByCode("JFK").get();
+    airportRepository.delete(jfk);
+    
+    // Verify suggestion is removed
+    List<Suggestion> after = airportRepository.autoCompleteName("john");
+    assertThat(after).isEmpty();
+  }
+}
+----
+
+=== Integration Testing
+
+[source,java]
+----
+@SpringBootTest
+@TestMethodOrder(OrderAnnotation.class)
+class AutocompleteIntegrationTest {
+  
+  @Autowired
+  private ProductRepository productRepository;
+  
+  @Test
+  @Order(1)
+  void testProductAutocompleteLifecycle() {
+    // Create product
+    Product product = new Product();
+    product.setName("MacBook Pro 16-inch");
+    product.setSku("MBP-16-2023");
+    product.setCategory("Laptops");
+    product.setPrice(new BigDecimal("2499.00"));
+    
+    Product saved = productRepository.save(product);
+    
+    // Test autocomplete works
+    List<Suggestion> suggestions = productRepository.autoCompleteName("macbook");
+    assertThat(suggestions).hasSize(1);
+    assertThat(suggestions.get(0).getString()).isEqualTo("MacBook Pro 16-inch");
+    
+    // Update product name
+    saved.setName("MacBook Pro 16-inch M3");
+    productRepository.save(saved);
+    
+    // Test old suggestion is gone, new one exists
+    List<Suggestion> oldSuggestions = productRepository.autoCompleteName("MacBook Pro 16-inch");
+    assertThat(oldSuggestions).isEmpty();
+    
+    List<Suggestion> newSuggestions = productRepository.autoCompleteName("MacBook Pro 16-inch M3");
+    assertThat(newSuggestions).hasSize(1);
+    
+    // Test with payload
+    AutoCompleteOptions options = AutoCompleteOptions.get().withPayload();
+    List<Suggestion> withPayload = productRepository.autoCompleteName("macbook", options);
+    
+    assertThat(withPayload).hasSize(1);
+    Map<String, String> payload = withPayload.get(0).getPayload();
+    assertThat(payload.get("sku")).isEqualTo("MBP-16-2023");
+    assertThat(payload.get("category")).isEqualTo("Laptops");
+    assertThat(payload.get("price")).isEqualTo("2499.00");
+  }
+}
+----
+
+== Performance Considerations
+
+=== Memory Usage
+
+* **Suggestion Storage**: Each autocomplete field creates a separate suggestion dictionary in Redis
+* **Payload Data**: Payload information is stored in Redis hashes, consuming additional memory
+* **Key Strategy**: Suggestions use predictable key patterns: `sugg:[EntityName]:[fieldName]`
+
+=== Query Performance
+
+* **Sub-millisecond Lookups**: Redis autocomplete operations are extremely fast
+* **Prefix Matching**: Performance scales well with dictionary size
+* **Fuzzy Matching**: Slightly slower than exact prefix matching but still very fast
+
+=== Best Practices
+
+==== Limit Autocomplete Fields
+
+[source,java]
+----
+@Document
+public class Product {
+  @AutoComplete  // Good - primary search field
+  private String name;
+  
+  @Indexed       // Good - for exact searches, not autocomplete
+  private String sku;
+  
+  // Avoid @AutoComplete on too many fields
+  private String description; // Long text - not suitable for autocomplete
+}
+----
+
+==== Use Payload Judiciously
+
+[source,java]
+----
+@Document
+public class Article {
+  @AutoComplete
+  private String title;
+  
+  @AutoCompletePayload("title")  // Good - small, useful metadata
+  private String category;
+  
+  @AutoCompletePayload("title")  // Good - small identifier
+  private String authorId;
+  
+  // Avoid large payload data
+  private String content; // Large text - don't use as payload
+}
+----
+
+==== Configure Query Limits
+
+[source,java]
+----
+@Service
+public class SearchService {
+  
+  public List<Suggestion> getQuickSuggestions(String query) {
+    // Limit results for fast response
+    AutoCompleteOptions options = AutoCompleteOptions.get().limit(5);
+    return repository.autoCompleteName(query, options);
+  }
+  
+  public List<Suggestion> getDetailedSuggestions(String query) {
+    // More results with payload for detailed display
+    AutoCompleteOptions options = AutoCompleteOptions.get()
+      .withPayload()
+      .limit(10);
+    return repository.autoCompleteName(query, options);
+  }
+}
+----
+
+== Common Patterns
+
+=== Search-as-you-type UI
+
+[source,java]
+----
+@RestController
+public class SearchController {
+  @Autowired
+  private ProductRepository productRepository;
+  
+  @GetMapping("/api/search/products")
+  public ResponseEntity<List<ProductSuggestion>> searchProducts(
+    @RequestParam String q,
+    @RequestParam(defaultValue = "8") int limit,
+    @RequestParam(defaultValue = "false") boolean fuzzy
+  ) {
+    
+    if (q.length() < 2) {
+      return ResponseEntity.ok(Collections.emptyList());
+    }
+    
+    AutoCompleteOptions.Builder optionsBuilder = AutoCompleteOptions.get()
+      .withPayload()
+      .limit(limit);
+    
+    if (fuzzy) {
+      optionsBuilder.fuzzy();
+    }
+    
+    List<Suggestion> suggestions = productRepository.autoCompleteName(q, optionsBuilder.build());
+    
+    List<ProductSuggestion> results = suggestions.stream()
+      .map(this::mapToProductSuggestion)
+      .collect(Collectors.toList());
+    
+    return ResponseEntity.ok(results);
+  }
+}
+----
+
+=== Category-specific Autocomplete
+
+[source,java]
+----
+@Service
+public class CategoryAwareSearchService {
+  @Autowired
+  private ProductRepository productRepository;
+  
+  @Autowired
+  private EntityStream entityStream;
+  
+  public List<ProductSuggestion> searchInCategory(String query, String category) {
+    // Get autocomplete suggestions
+    AutoCompleteOptions options = AutoCompleteOptions.get()
+      .withPayload()
+      .limit(20);
+    
+    List<Suggestion> suggestions = productRepository.autoCompleteName(query, options);
+    
+    // Filter by category using payload data
+    return suggestions.stream()
+      .filter(s -> category.equals(s.getPayload().get("category")))
+      .limit(10)
+      .map(this::mapToProductSuggestion)
+      .collect(Collectors.toList());
+  }
+}
+----
+
+== Learning More
+
+For additional information on search and indexing:
+
+* xref:search.adoc[Redis Query Engine Integration] - Full-text search capabilities
+* xref:index-annotations.adoc[Index Annotations] - Detailed indexing options
+* xref:repository-queries.adoc[Repository Query Methods] - Advanced query patterns
+* xref:entity-streams.adoc[Entity Streams] - Fluent query API

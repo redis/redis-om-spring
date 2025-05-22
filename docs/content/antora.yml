@@ -1,0 +1,19 @@
+name: redis-om-spring
+title: Redis OM Spring
+version: 'current'
+display_version: '1.0.0-RC2'
+prerelease: true
+start_page: ROOT:index.adoc
+nav:
+  - modules/ROOT/nav.adoc
+asciidoc:
+  attributes:
+    source-language: java
+    source-highlighter: highlight.js
+    spring-version: '3.2.0'
+    redis-om-version: '1.0.0-RC2'
+    url-redis-om: https://github.com/redis/redis-om-spring
+    url-spring-data: https://docs.spring.io/spring-data/redis/docs/current/reference/html/
+    url-redis-stack: https://redis.io/docs/stack/
+    url-redis-search: https://redis.io/docs/stack/search/
+    url-redis-json: https://redis.io/docs/stack/json/

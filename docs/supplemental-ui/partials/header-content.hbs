@@ -1,0 +1,74 @@
+<!-- Redis OM Spring header content -->
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="{{{or site.url (or site.url siteRootPath)}}}" target="_top">
+        <img class="navbar-logo" src="{{uiRootPath}}/img/Redis_Logo_Red_RGB.svg" alt="Redis Logo">
+        <span class="navbar-brand-title">Redis OM Spring</span>
+      </a>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="https://github.com/redis/redis-om-spring" target="_blank">GitHub</a>
+        <a class="navbar-item" href="https://redis.io/docs" target="_blank">Redis Docs</a>
+        <a class="navbar-item" href="https://discord.gg/redis" target="_blank">Community</a>
+        <div class="navbar-item theme-toggle-wrapper">
+          <button id="theme-toggle-button" class="theme-toggle">
+            <span class="toggle-thumb"></span>
+            <span class="icon sun">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+            </span>
+            <span class="icon moon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<!-- Breadcrumbs and version -->
+<div class="toolbar">
+  <div class="breadcrumbs">
+    {{#if page.breadcrumbs}}
+    {{#each page.breadcrumbs}}
+    <a href="{{{relativize ./url}}}">{{./content}}</a>
+    <span class="separator">/</span>
+    {{/each}}
+    <span>{{page.title}}</span>
+    {{/if}}
+  </div>
+  <div class="context">
+    <span class="title">Version</span>
+    <span class="version">{{page.version}}</span>
+  </div>
+  
+  <!-- Search box -->
+  <div class="search-container">
+    <div class="search-input-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" class="search-input" placeholder="Search..." disabled>
+    </div>
+  </div>
+</div>

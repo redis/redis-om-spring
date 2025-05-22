@@ -1,0 +1,510 @@
+= Auditing
+:page-toclevels: 3
+:page-pagination:
+
+Redis OM Spring provides automatic auditing capabilities for tracking when entities are created and modified. The auditing system works transparently with both JSON documents and Redis Hash entities, requiring no additional configuration beyond adding annotations to your entity fields.
+
+== Overview
+
+Auditing in Redis OM Spring automatically tracks temporal information about your entities:
+
+* **Creation timestamps** - When an entity was first saved
+* **Modification timestamps** - When an entity was last updated
+
+The auditing system integrates seamlessly with the Redis OM Spring persistence layer and works with both `@Document` and `@RedisHash` entities.
+
+== Supported Audit Annotations
+
+Redis OM Spring supports the standard Spring Data auditing annotations for timestamp tracking:
+
+=== @CreatedDate
+
+The `@CreatedDate` annotation marks a field to be populated with the timestamp when the entity is first saved. This field is set only once during the initial save operation.
+
+=== @LastModifiedDate
+
+The `@LastModifiedDate` annotation marks a field to be updated with the current timestamp every time the entity is saved, including both initial creation and subsequent updates.
+
+== Supported Data Types
+
+The following data types are supported for audit fields:
+
+* `java.util.Date`
+* `java.time.LocalDateTime`
+* `java.time.LocalDate`
+
+== Usage Examples
+
+=== JSON Document Auditing
+
+[source,java]
+----
+@Document
+public class Company {
+  @Id
+  private String id;
+  
+  @Searchable
+  private String name;
+  
+  @Indexed
+  private String industry;
+  
+  // Audit fields
+  @CreatedDate
+  private Date createdDate;
+  
+  @LastModifiedDate
+  private Date lastModifiedDate;
+  
+  // getters and setters
+}
+----
+
+=== Redis Hash Entity Auditing
+
+[source,java]
+----
+@RedisHash
+public class User {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String email;
+  
+  @Indexed
+  private String name;
+  
+  // Audit fields using LocalDateTime
+  @CreatedDate
+  private LocalDateTime createdDate;
+  
+  @LastModifiedDate
+  private LocalDateTime lastModifiedDate;
+  
+  // getters and setters
+}
+----
+
+=== Mixed Data Types
+
+You can use different temporal data types for different audit fields:
+
+[source,java]
+----
+@Document
+public class Product {
+  @Id
+  private String id;
+  
+  @Searchable
+  private String name;
+  
+  @Indexed
+  private String category;
+  
+  // Creation date as LocalDate (date only)
+  @CreatedDate
+  private LocalDate createdOn;
+  
+  // Last modified as full timestamp
+  @LastModifiedDate
+  private LocalDateTime lastUpdated;
+  
+  // getters and setters
+}
+----
+
+== How Auditing Works
+
+=== Automatic Processing
+
+The auditing system works automatically without requiring any configuration:
+
+1. **Entity Detection**: When an entity is saved, the system checks if it's a new entity or an existing one
+2. **Creation Handling**: For new entities, `@CreatedDate` fields are populated with the current timestamp
+3. **Modification Handling**: For all save operations, `@LastModifiedDate` fields are updated with the current timestamp
+4. **Persistence**: The entity is saved with the updated audit information
+
+=== New vs Existing Entity Detection
+
+The system determines if an entity is new by checking if the corresponding Redis key already exists:
+
+* **New Entity**: Redis key doesn't exist → `@CreatedDate` field is set
+* **Existing Entity**: Redis key exists → only `@LastModifiedDate` field is updated
+
+== Repository Operations
+
+Auditing works seamlessly with all repository operations:
+
+=== Single Entity Operations
+
+[source,java]
+----
+@Service
+public class CompanyService {
+  @Autowired
+  private CompanyRepository companyRepository;
+  
+  public Company createCompany(String name, String industry) {
+    Company company = new Company();
+    company.setName(name);
+    company.setIndustry(industry);
+    
+    // Auditing happens automatically
+    Company saved = companyRepository.save(company);
+    
+    // At this point:
+    // - createdDate is set to current timestamp
+    // - lastModifiedDate is set to current timestamp
+    
+    return saved;
+  }
+  
+  public Company updateCompany(String id, String newName) {
+    Optional<Company> maybeCompany = companyRepository.findById(id);
+    if (maybeCompany.isPresent()) {
+      Company company = maybeCompany.get();
+      company.setName(newName);
+      
+      // Auditing happens automatically
+      Company updated = companyRepository.save(company);
+      
+      // At this point:
+      // - createdDate remains unchanged
+      // - lastModifiedDate is updated to current timestamp
+      
+      return updated;
+    }
+    throw new EntityNotFoundException("Company not found");
+  }
+}
+----
+
+=== Batch Operations
+
+Auditing also works with batch save operations:
+
+[source,java]
+----
+@Service
+public class UserBatchService {
+  @Autowired
+  private UserRepository userRepository;
+  
+  public List<User> createUsers(List<String> emails) {
+    List<User> users = emails.stream()
+      .map(email -> {
+        User user = new User();
+        user.setEmail(email);
+        user.setName(extractNameFromEmail(email));
+        return user;
+      })
+      .collect(Collectors.toList());
+    
+    // Auditing happens for each entity in the batch
+    return (List<User>) userRepository.saveAll(users);
+  }
+}
+----
+
+== Integration with Search
+
+Audit fields can be indexed and searched like any other field:
+
+[source,java]
+----
+@Document
+public class Article {
+  @Id
+  private String id;
+  
+  @Searchable
+  private String title;
+  
+  @Searchable
+  private String content;
+  
+  // Index audit fields for querying
+  @Indexed(sortable = true)
+  @CreatedDate
+  private LocalDateTime createdDate;
+  
+  @Indexed(sortable = true)
+  @LastModifiedDate
+  private LocalDateTime lastModifiedDate;
+  
+  // getters and setters
+}
+
+// Repository methods can query audit fields
+public interface ArticleRepository extends RedisDocumentRepository<Article, String> {
+  
+  // Find articles created after a certain date
+  List<Article> findByCreatedDateAfter(LocalDateTime date);
+  
+  // Find articles modified within a time range
+  List<Article> findByLastModifiedDateBetween(LocalDateTime start, LocalDateTime end);
+  
+  // Find articles ordered by creation date
+  List<Article> findAllByOrderByCreatedDateDesc();
+}
+----
+
+== Entity Streams with Audit Fields
+
+Audit fields can be used in Entity Stream queries:
+
+[source,java]
+----
+@Service
+public class ArticleAnalyticsService {
+  @Autowired
+  private EntityStream entityStream;
+  
+  public List<Article> getRecentArticles(int days) {
+    LocalDateTime cutoffDate = LocalDateTime.now().minusDays(days);
+    
+    return entityStream
+      .of(Article.class)
+      .filter(Article$.CREATED_DATE.ge(cutoffDate))
+      .sorted(Article$.CREATED_DATE, SortedField.Direction.DESC)
+      .collect(Collectors.toList());
+  }
+  
+  public List<Article> getFrequentlyUpdatedArticles() {
+    LocalDateTime oneWeekAgo = LocalDateTime.now().minusWeeks(1);
+    
+    return entityStream
+      .of(Article.class)
+      .filter(Article$.LAST_MODIFIED_DATE.ge(oneWeekAgo))
+      .sorted(Article$.LAST_MODIFIED_DATE, SortedField.Direction.DESC)
+      .collect(Collectors.toList());
+  }
+}
+----
+
+== Testing Auditing
+
+=== Unit Testing
+
+[source,java]
+----
+@SpringBootTest
+class AuditingTest {
+  
+  @Autowired
+  private CompanyRepository companyRepository;
+  
+  @Test
+  void testAuditFieldsOnCreate() {
+    // Given
+    Company company = new Company();
+    company.setName("Test Company");
+    company.setIndustry("Technology");
+    
+    // Initially no audit fields are set
+    assertThat(company.getCreatedDate()).isNull();
+    assertThat(company.getLastModifiedDate()).isNull();
+    
+    // When
+    Company saved = companyRepository.save(company);
+    
+    // Then
+    assertThat(saved.getCreatedDate()).isNotNull();
+    assertThat(saved.getLastModifiedDate()).isNotNull();
+    assertThat(saved.getCreatedDate()).isEqualTo(saved.getLastModifiedDate());
+  }
+  
+  @Test
+  void testAuditFieldsOnUpdate() throws InterruptedException {
+    // Given - create entity first
+    Company company = new Company();
+    company.setName("Original Name");
+    company.setIndustry("Technology");
+    Company saved = companyRepository.save(company);
+    
+    Date originalCreatedDate = saved.getCreatedDate();
+    Date originalModifiedDate = saved.getLastModifiedDate();
+    
+    // Wait to ensure timestamp difference
+    Thread.sleep(100);
+    
+    // When - update the entity
+    saved.setName("Updated Name");
+    Company updated = companyRepository.save(saved);
+    
+    // Then
+    assertThat(updated.getCreatedDate()).isEqualTo(originalCreatedDate); // Unchanged
+    assertThat(updated.getLastModifiedDate()).isAfter(originalModifiedDate); // Updated
+  }
+  
+  @Test
+  void testBatchAuditing() {
+    // Given
+    List<Company> companies = Arrays.asList(
+      createCompany("Company A", "Tech"),
+      createCompany("Company B", "Finance"),
+      createCompany("Company C", "Healthcare")
+    );
+    
+    // When
+    List<Company> saved = (List<Company>) companyRepository.saveAll(companies);
+    
+    // Then
+    saved.forEach(company -> {
+      assertThat(company.getCreatedDate()).isNotNull();
+      assertThat(company.getLastModifiedDate()).isNotNull();
+    });
+  }
+  
+  private Company createCompany(String name, String industry) {
+    Company company = new Company();
+    company.setName(name);
+    company.setIndustry(industry);
+    return company;
+  }
+}
+----
+
+== Limitations and Considerations
+
+=== Current Limitations
+
+* **No User Auditing**: Redis OM Spring currently doesn't support `@CreatedBy` and `@LastModifiedBy` annotations for tracking which user made changes
+* **No AuditorAware Integration**: There's no support for `AuditorAware` beans to automatically determine the current user
+* **No Custom Configuration**: Audit behavior cannot be customized (always uses current system time)
+
+=== Performance Considerations
+
+* **Minimal Overhead**: Auditing adds negligible performance overhead
+* **Index Usage**: Consider indexing audit fields if you frequently query by creation or modification dates
+* **Memory Impact**: Audit fields consume additional memory - choose appropriate data types based on precision needs
+
+=== Best Practices
+
+==== Choose Appropriate Data Types
+
+[source,java]
+----
+// For date-only tracking (saves memory)
+@CreatedDate
+private LocalDate createdOn;
+
+// For full timestamp precision
+@LastModifiedDate 
+private LocalDateTime lastModified;
+
+// For legacy compatibility
+@CreatedDate
+private Date createdDate;
+----
+
+==== Index Audit Fields for Queries
+
+[source,java]
+----
+@Document
+public class Event {
+  @Id
+  private String id;
+  
+  // Index audit fields that will be queried
+  @Indexed(sortable = true)
+  @CreatedDate
+  private LocalDateTime timestamp;
+  
+  // Don't index if not queried
+  @LastModifiedDate
+  private LocalDateTime lastModified;
+}
+----
+
+==== Validate Audit Fields in Tests
+
+[source,java]
+----
+@Test
+void testEventCreation() {
+  Event event = eventRepository.save(new Event("test-event"));
+  
+  // Always verify audit fields are set correctly
+  assertThat(event.getTimestamp())
+    .isNotNull()
+    .isCloseTo(LocalDateTime.now(), within(1, ChronoUnit.SECONDS));
+}
+----
+
+== Advanced Use Cases
+
+=== Audit-Based Analytics
+
+[source,java]
+----
+@Service
+public class ActivityAnalyticsService {
+  @Autowired
+  private EntityStream entityStream;
+  
+  public Map<LocalDate, Long> getDailyCreationCounts(Class<?> entityType, int days) {
+    LocalDateTime cutoff = LocalDateTime.now().minusDays(days);
+    
+    // This assumes entities have indexed @CreatedDate fields
+    return entityStream
+      .of(entityType)
+      .filter("createdDate:[" + cutoff + " +inf]")
+      .collect(Collectors.groupingBy(
+        entity -> getCreatedDate(entity).toLocalDate(),
+        Collectors.counting()
+      ));
+  }
+  
+  private LocalDateTime getCreatedDate(Object entity) {
+    // Use reflection to get @CreatedDate field value
+    // Implementation depends on your entity structure
+    return null; // Simplified for brevity
+  }
+}
+----
+
+=== Soft Delete with Audit Trail
+
+[source,java]
+----
+@Document
+public class SoftDeletableEntity {
+  @Id
+  private String id;
+  
+  @Indexed
+  private String name;
+  
+  @Indexed
+  private boolean deleted = false;
+  
+  @CreatedDate
+  private LocalDateTime createdDate;
+  
+  @LastModifiedDate
+  private LocalDateTime lastModifiedDate;
+  
+  // Additional audit field for deletion tracking
+  @Indexed
+  private LocalDateTime deletedDate;
+  
+  public void markDeleted() {
+    this.deleted = true;
+    this.deletedDate = LocalDateTime.now();
+    // lastModifiedDate will be updated automatically on save
+  }
+}
+----
+
+== Learning More
+
+For additional information on entity management:
+
+* xref:optimistic-locking.adoc[Optimistic Locking] - Preventing concurrent modification conflicts
+* xref:time-to-live.adoc[Time To Live] - Automatic expiration of entities
+* xref:entity-streams.adoc[Entity Streams] - Advanced querying capabilities

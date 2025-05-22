@@ -1,0 +1,1129 @@
+= Quick Start Example
+:page-toclevels: 3
+:page-pagination:
+:source-highlighter: highlight.js
+
+This quick start guide will walk you through building a Spring Boot application that uses Redis OM Spring. We'll build a basic document repository application step-by-step, closely following the roms-documents demo included in the Redis OM Spring repository.
+
+== Prerequisites
+
+Before you begin, make sure you have:
+
+* Java 17 or higher
+* Maven 3.6+
+* Docker (for running Redis)
+
+== Setting Up Redis
+
+Start by running Redis 8, which includes the Query Engine and JSON capabilities:
+
+[source,bash]
+----
+docker run -p 6379:6379 redis:8.0.0
+----
+
+This launches Redis with:
+
+* Redis Query Engine
+* JSON capabilities
+
+=== Installing RedisInsight (Optional)
+
+For a graphical interface to manage and visualize your Redis data, we recommend installing the RedisInsight desktop application. It's a standalone GUI tool that can connect to any Redis instance, including Redis 8.
+
+Download RedisInsight desktop from the https://redis.io/docs/latest/operate/redisinsight/install/[Redis website].
+
+Alternatively, you can run RedisInsight as a Docker container:
+
+[source,bash]
+----
+docker run -d --name redisinsight -p 8001:8001 redislabs/redisinsight:latest
+----
+
+Then access RedisInsight at http://localhost:8001
+
+== Step 1: Create a Spring Boot Project
+
+First, let's create a new Maven project with the necessary dependencies:
+
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.4.5</version>
+        <relativePath/>
+    </parent>
+    
+    <groupId>com.example</groupId>
+    <artifactId>redis-om-quickstart</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>redis-om-quickstart</name>
+    <description>Redis OM Spring Quick Start Demo</description>
+    
+    <properties>
+        <java.version>17</java.version>
+        <redis-om-spring.version>1.0.0-RC2</redis-om-spring.version>
+    </properties>
+    
+    <dependencies>
+        <!-- Spring Boot -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        
+        <!-- Redis OM Spring -->
+        <dependency>
+            <groupId>com.redis.om</groupId>
+            <artifactId>redis-om-spring</artifactId>
+            <version>${redis-om-spring.version}</version>
+        </dependency>
+        
+        <!-- Lombok to reduce boilerplate -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.springframework.boot</groupId>
+                            <artifactId>spring-boot-configuration-processor</artifactId>
+                            <version>${project.parent.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <path>
+                            <groupId>com.redis.om</groupId>
+                            <artifactId>redis-om-spring</artifactId>
+                            <version>${redis-om-spring.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+----
+
+== Step 2: Create a Basic Spring Boot Application
+
+Now, let's create a simple Spring Boot application class with Redis OM Spring document repositories enabled:
+
+[source,java]
+----
+package com.example.demo;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
+
+@SpringBootApplication
+@EnableRedisDocumentRepositories  // Enable Redis OM Spring document repositories
+public class Application {
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}
+----
+
+The `@EnableRedisDocumentRepositories` annotation is key - it enables Redis OM Spring's document repository functionality.
+
+== Step 3: Create Your First Domain Model
+
+Let's create a simple `Company` class to represent companies in our application:
+
+[source,java]
+----
+package com.example.demo.domain;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import org.springframework.data.annotation.Id;
+import org.springframework.data.geo.Point;
+
+import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.annotations.Indexed;
+import com.redis.om.spring.annotations.Searchable;
+
+import lombok.*;
+
+@Data
+@NoArgsConstructor
+@RequiredArgsConstructor(staticName = "of")
+@Document
+public class Company {
+    @Id
+    private String id;
+
+    @NonNull
+    @Searchable
+    private String name;
+
+    @Indexed
+    private Set<String> tags = new HashSet<>();
+
+    @NonNull
+    private String url;
+
+    @NonNull
+    @Indexed
+    private Point location;
+
+    @NonNull
+    @Indexed
+    private Integer numberOfEmployees;
+
+    @NonNull
+    @Indexed
+    private Integer yearFounded;
+
+    private boolean publiclyListed;
+}
+----
+
+Notice the Redis OM Spring annotations:
+
+- `@Document`: Marks this class as a Redis JSON document
+- `@Searchable`: Will create a full-text search field in the schema for the `name` field
+- `@Indexed`: Creates an appropriate search field based on the field data type (`NUMERIC` for integer types, `GEO` for Point, `TAG` for the collection types like `Set<String>`)
+
+== Step 4: Create a Repository Interface
+
+Next, let's create a repository interface for the `Company` class. The `RedisDocumentRepository` interface extends `KeyValueRepository` which in turn extends `ListCrudRepository` and `ListPagingAndSortingRepository` providing all the basic methods to interact with your mapped entities:
+
+[source,java]
+----
+package com.example.demo.repositories;
+
+import java.util.Optional;
+
+import com.example.demo.domain.Company;
+import com.redis.om.spring.repository.RedisDocumentRepository;
+
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    // Find one by property
+    Optional<Company> findOneByName(String name);
+}
+----
+
+The repository extends `RedisDocumentRepository` with `Company` as the entity type and `String` as the ID type. We've added a single query method that will find a company by its name. Behind the scenes, ROMS will craft the appropriate Redis Query Engine command to fulfill the request.
+
+== Step 5: Load Sample Data
+
+Now, let's update our application class to load some sample data:
+
+[source,java]
+----
+package com.example.demo;
+
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.data.geo.Point;
+
+import com.example.demo.domain.Company;
+import com.example.demo.repositories.CompanyRepository;
+import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
+
+@SpringBootApplication
+@EnableRedisDocumentRepositories
+public class Application {
+
+    @Autowired
+    CompanyRepository companyRepo;
+
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+
+    @Bean
+    CommandLineRunner loadTestData() {
+        return args -> {
+            // Clear existing data
+            companyRepo.deleteAll();
+            
+            // Create and save companies
+            Company redis = Company.of("Redis", "https://redis.com", 
+                new Point(-122.066540, 37.377690), 526, 2011);
+            redis.setTags(Set.of("fast", "scalable", "reliable"));
+
+            Company microsoft = Company.of("Microsoft", "https://microsoft.com", 
+                new Point(-122.124500, 47.640160), 182268, 1975);
+            microsoft.setTags(Set.of("innovative", "reliable"));
+
+            companyRepo.save(redis);
+            companyRepo.save(microsoft);
+            
+            System.out.println("Sample data loaded successfully!");
+        };
+    }
+}
+----
+
+We've added:
+
+1. An autowired `CompanyRepository`
+2. A `CommandLineRunner` bean that:
+
+   - Clears existing data
+   - Creates two company entities
+   - Sets tags fields on each company
+   - Saves the companies to Redis using the repository `save` method (you can also save entities in bulk using the `saveAll` method)
+
+== Step 6: Create a REST Controller
+
+Let's create a REST controller to expose the repository operations:
+
+[source,java]
+----
+package com.example.demo.controllers;
+
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import com.example.demo.domain.Company;
+import com.example.demo.repositories.CompanyRepository;
+
+@RestController
+@RequestMapping("/api/companies")
+public class CompanyController {
+    @Autowired
+    CompanyRepository repository;
+
+    @GetMapping
+    public Iterable<Company> getAllCompanies() {
+        return repository.findAll();
+    }
+
+    @GetMapping("{id}")
+    public Optional<Company> byId(@PathVariable("id") String id) {
+        return repository.findById(id);
+    }
+    
+    @GetMapping("name/{name}")
+    public Optional<Company> byName(@PathVariable("name") String name) {
+        return repository.findOneByName(name);
+    }
+}
+----
+
+This controller provides endpoints to:
+
+1. Get all companies
+2. Find a company by ID
+3. Find a company by name
+
+Note that for more complex business logic we would likely use a service class to encapsulate both the data access and business logic. Since we are simply passing thru to exercise the data access, this is acceptable.
+
+== Step 7: Run the Application
+
+Now you can run the application:
+
+[source,bash]
+----
+./mvnw spring-boot:run
+----
+
+Using the browser, of curl we can test it by hitting the following endpoints:
+
+[source,bash]
+----
+curl http://localhost:8080/api/companies
+curl http://localhost:8080/api/companies/name/Redis
+----
+
+== Step 8: Add More Query Methods
+
+Now let's enhance our repository with more query capabilities, that will showcase the flexibility of ROMS when creating more complex declarative repository queries:
+
+[source,java]
+----
+package com.example.demo.repositories;
+
+import java.util.Optional;
+import java.util.Set;
+
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Point;
+import org.springframework.data.repository.query.Param;
+
+import com.example.demo.domain.Company;
+import com.redis.om.spring.annotations.Query;
+import com.redis.om.spring.repository.RedisDocumentRepository;
+
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    // Find one by property
+    Optional<Company> findOneByName(String name);
+    
+    // Geospatial query
+    Iterable<Company> findByLocationNear(Point point, Distance distance);
+    
+    // Find by tag field using a custom query
+    @Query("@tags:{$tags}")
+    Iterable<Company> findByTags(@Param("tags") Set<String> tags);
+    
+    // Find by numeric property
+    Iterable<Company> findByNumberOfEmployees(int noe);
+    
+    // Find by numeric property range
+    Iterable<Company> findByNumberOfEmployeesBetween(int noeGT, int noeLT);
+    
+    // Starting with/ending with
+    Iterable<Company> findByNameStartingWith(String prefix);
+}
+----
+
+We've added:
+1. Geospatial queries using `findByLocationNear`
+2. Tag-based search using a custom `@Query`
+3. Numeric equality and range queries
+4. Prefix search with `findByNameStartingWith`
+
+The `@Query` annotation is a low-level way to control the exact content of the generated `FT.SEARCH` command being set to Redis.
+
+== Step 9: Update the Controller
+
+Let's update our controller to expose the new query methods:
+
+[source,java]
+----
+package com.example.demo.controllers;
+
+import java.util.Optional;
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Metrics;
+import org.springframework.data.geo.Point;
+import org.springframework.web.bind.annotation.*;
+
+import com.example.demo.domain.Company;
+import com.example.demo.repositories.CompanyRepository;
+
+@RestController
+@RequestMapping("/api/companies")
+public class CompanyController {
+    @Autowired
+    CompanyRepository repository;
+
+    @GetMapping
+    public Iterable<Company> getAllCompanies() {
+        return repository.findAll();
+    }
+
+    @GetMapping("{id}")
+    public Optional<Company> byId(@PathVariable("id") String id) {
+        return repository.findById(id);
+    }
+    
+    @GetMapping("name/{name}")
+    public Optional<Company> byName(@PathVariable("name") String name) {
+        return repository.findOneByName(name);
+    }
+    
+    @GetMapping("employees/count/{count}")
+    public Iterable<Company> byNumberOfEmployees(@PathVariable("count") int count) {
+        return repository.findByNumberOfEmployees(count);
+    }
+    
+    @GetMapping("employees/range/{low}/{high}")
+    public Iterable<Company> byNumberOfEmployeesRange(
+            @PathVariable("low") int low, 
+            @PathVariable("high") int high) {
+        return repository.findByNumberOfEmployeesBetween(low, high);
+    }
+    
+    @GetMapping("all")
+    public Page<Company> all(Pageable pageable) {
+        return repository.findAll(pageable);
+    }
+    
+    @GetMapping("near")
+    public Iterable<Company> byLocationNear(
+            @RequestParam("lat") double lat,
+            @RequestParam("lon") double lon,
+            @RequestParam("d") double distance) {
+        return repository.findByLocationNear(
+            new Point(lon, lat), 
+            new Distance(distance, Metrics.MILES)
+        );
+    }
+    
+    @GetMapping("name/starts/{prefix}")
+    public Iterable<Company> byNameStartingWith(@PathVariable("prefix") String prefix) {
+        return repository.findByNameStartingWith(prefix);
+    }
+    
+    @GetMapping("tags")
+    public Iterable<Company> byTags(@RequestParam("tags") Set<String> tags) {
+        return repository.findByTags(tags);
+    }
+}
+----
+
+== Step 10: Create the Person Entity
+
+Let's add another entity to our application, the `Person` entity contains some full-text (`TEXT`) search fields for the Person's name and a `TAG` field for the email:
+
+[source,java]
+----
+package com.example.demo.domain;
+
+import org.springframework.data.annotation.Id;
+
+import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.annotations.Indexed;
+import com.redis.om.spring.annotations.Searchable;
+
+import lombok.*;
+
+@Data
+@NoArgsConstructor
+@RequiredArgsConstructor(staticName = "of")
+@Document
+public class Person {
+    @Id
+    private String id;
+
+    @NonNull
+    @Searchable
+    private String firstName;
+
+    @NonNull
+    @Searchable
+    private String lastName;
+
+    @NonNull
+    @Indexed
+    private String email;
+}
+----
+
+== Step 11: Create the Person Repository
+
+In the `PersonRepository` we, once again, use the `@Query` annotation to control the generated `FT.SEARCH` command, although we could have just remove it and the ROMS declarative repository method handling would have handled it on our behalf. Typically, you only want to use `@Query` for very complex queries which might not be possible to deal with declaratively.
+
+[source,java]
+----
+package com.example.demo.repositories;
+
+import org.springframework.data.repository.query.Param;
+
+import com.example.demo.domain.Person;
+import com.redis.om.spring.annotations.Query;
+import com.redis.om.spring.repository.RedisDocumentRepository;
+
+public interface PersonRepository extends RedisDocumentRepository<Person, String> {
+    @Query("@firstName:{$firstName} @lastName:{$lastName}")
+    Iterable<Person> findByFirstNameAndLastName(
+        @Param("firstName") String firstName, 
+        @Param("lastName") String lastName
+    );
+}
+----
+
+== Step 12: Update Application to Load Person Data
+
+[source,java]
+----
+package com.example.demo;
+
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.data.geo.Point;
+
+import com.example.demo.domain.Company;
+import com.example.demo.domain.Person;
+import com.example.demo.repositories.CompanyRepository;
+import com.example.demo.repositories.PersonRepository;
+import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
+
+@SpringBootApplication
+@EnableRedisDocumentRepositories
+public class Application {
+
+    @Autowired
+    CompanyRepository companyRepo;
+    
+    @Autowired
+    PersonRepository personRepo;
+
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+
+    @Bean
+    CommandLineRunner loadTestData() {
+        return args -> {
+            // Clear existing company data
+            companyRepo.deleteAll();
+            
+            // Create and save companies
+            Company redis = Company.of("Redis", "https://redis.com", 
+                new Point(-122.066540, 37.377690), 526, 2011);
+            redis.setTags(Set.of("fast", "scalable", "reliable"));
+
+            Company microsoft = Company.of("Microsoft", "https://microsoft.com", 
+                new Point(-122.124500, 47.640160), 182268, 1975);
+            microsoft.setTags(Set.of("innovative", "reliable"));
+
+            companyRepo.save(redis);
+            companyRepo.save(microsoft);
+            
+            // Clear existing person data
+            personRepo.deleteAll();
+            
+            // Create and save people
+            personRepo.save(Person.of("John", "Doe", "john.doe@example.com"));
+            personRepo.save(Person.of("Jane", "Smith", "jane.smith@example.com"));
+            
+            System.out.println("Sample data loaded successfully!");
+        };
+    }
+}
+----
+
+== Step 13: Create a Person Controller
+
+The `PersonController` wires in the `PersonController` and uses the built-in repository methods `findAll` and `findById`
+, as well as the custom `findByFirstNameAndLastName`:
+
+[source,java]
+----
+package com.example.demo.controllers;
+
+import java.util.Collections;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import com.example.demo.domain.Person;
+import com.example.demo.repositories.PersonRepository;
+
+@RestController
+@RequestMapping("/api/people")
+public class PersonController {
+    @Autowired
+    PersonRepository repository;
+
+    @GetMapping
+    public Iterable<Person> getAllPeople() {
+        return repository.findAll();
+    }
+
+    @GetMapping("{id}")
+    public Optional<Person> byId(@PathVariable("id") String id) {
+        return repository.findById(id);
+    }
+    
+    @GetMapping("search")
+    public Iterable<Person> search(
+            @RequestParam("firstName") String firstName,
+            @RequestParam("lastName") String lastName) {
+        Iterable<Person> people = repository.findByFirstNameAndLastName(firstName, lastName);
+        if (!people.iterator().hasNext()) {
+            return Collections.emptyList();
+        } else {
+            return people;
+        }
+    }
+}
+----
+
+== Step 14: Create the Event Entity for EntityStream API
+
+Now let's create a new entity that we'll use to demonstrate the EntityStream API:
+
+[source,java]
+----
+package com.example.demo.domain;
+
+import java.time.LocalDateTime;
+
+import org.springframework.data.annotation.Id;
+
+import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.annotations.Indexed;
+import com.redis.om.spring.annotations.Searchable;
+
+import lombok.*;
+
+@Data
+@NoArgsConstructor
+@RequiredArgsConstructor(staticName = "of")
+@Document
+public class Event {
+    @Id
+    private String id;
+
+    @NonNull
+    @Searchable
+    private String name;
+
+    @Indexed
+    private LocalDateTime beginDate;
+
+    @Indexed
+    private LocalDateTime endDate;
+}
+----
+
+== Step 15: Create the Event Repository
+
+[source,java]
+----
+package com.example.demo.repositories;
+
+import com.example.demo.domain.Event;
+import com.redis.om.spring.repository.RedisDocumentRepository;
+
+public interface EventRepository extends RedisDocumentRepository<Event, String> {
+    // No custom methods needed for now
+}
+----
+
+== Step 16: Create the Event Service Interface
+
+[source,java]
+----
+package com.example.demo.service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import com.example.demo.domain.Event;
+
+public interface EventService {
+    List<Event> searchByBeginDateBetween(LocalDateTime start, LocalDateTime end);
+}
+----
+
+== Step 17: Implement the Event Service with EntityStream API
+
+[source,java]
+----
+package com.example.demo.service.impl;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
+import com.example.demo.domain.Event;
+import com.example.demo.domain.Event$; // Auto-generated metamodel class
+import com.example.demo.service.EventService;
+import com.redis.om.spring.search.stream.EntityStream;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class EventServiceImpl implements EventService {
+
+    private final EntityStream entityStream;
+
+    @Override
+    public List<Event> searchByBeginDateBetween(LocalDateTime start, LocalDateTime end) {
+        // Use the metamodel class for type-safe querying
+        return entityStream
+            .of(Event.class)
+            .filter(Event$.BEGIN_DATE.between(start, end))
+            .collect(Collectors.toList());
+    }
+}
+----
+
+This shows how to use the Entity Streams API with the auto-generated metamodel class `Event$`. The metamodel provides type-safe access to entity properties
+and their operations applicable in the context of searching. For example, the `filter` method uses the metamodel to find `Event`s with `beginDate`s property (`BEGIN_DATE`) `between` two given values.
+
+== Step 18: Update Application to Load Event Data
+
+[source,java]
+----
+package com.example.demo;
+
+import java.time.LocalDateTime;
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.data.geo.Point;
+
+import com.example.demo.domain.Company;
+import com.example.demo.domain.Event;
+import com.example.demo.domain.Person;
+import com.example.demo.repositories.CompanyRepository;
+import com.example.demo.repositories.EventRepository;
+import com.example.demo.repositories.PersonRepository;
+import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
+
+@SpringBootApplication
+@EnableRedisDocumentRepositories
+public class Application {
+
+    @Autowired
+    CompanyRepository companyRepo;
+    
+    @Autowired
+    PersonRepository personRepo;
+    
+    @Autowired
+    EventRepository eventRepo;
+
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+
+    @Bean
+    CommandLineRunner loadTestData() {
+        return args -> {
+            // Clear existing company data
+            companyRepo.deleteAll();
+            
+            // Create and save companies
+            Company redis = Company.of("Redis", "https://redis.com", 
+                new Point(-122.066540, 37.377690), 526, 2011);
+            redis.setTags(Set.of("fast", "scalable", "reliable"));
+
+            Company microsoft = Company.of("Microsoft", "https://microsoft.com", 
+                new Point(-122.124500, 47.640160), 182268, 1975);
+            microsoft.setTags(Set.of("innovative", "reliable"));
+
+            companyRepo.save(redis);
+            companyRepo.save(microsoft);
+            
+            // Clear existing person data
+            personRepo.deleteAll();
+            
+            // Create and save people
+            personRepo.save(Person.of("John", "Doe", "john.doe@example.com"));
+            personRepo.save(Person.of("Jane", "Smith", "jane.smith@example.com"));
+            
+            // Clear and load Event data
+            eventRepo.deleteAll();
+            
+            Event conference = Event.of("Redis Conference");
+            conference.setBeginDate(LocalDateTime.now().plusDays(30));
+            conference.setEndDate(LocalDateTime.now().plusDays(32));
+            
+            Event workshop = Event.of("Spring Workshop");
+            workshop.setBeginDate(LocalDateTime.now().plusDays(15));
+            workshop.setEndDate(LocalDateTime.now().plusDays(15).plusHours(8));
+            
+            Event hackathon = Event.of("Hackathon");
+            hackathon.setBeginDate(LocalDateTime.now().plusDays(45));
+            hackathon.setEndDate(LocalDateTime.now().plusDays(46));
+            
+            eventRepo.save(conference);
+            eventRepo.save(workshop);
+            eventRepo.save(hackathon);
+            
+            System.out.println("Sample data loaded successfully!");
+        };
+    }
+}
+----
+
+== Step 19: Create an Event Controller
+
+The controller will simply wrap the two service methods passing values and providing some defaults to the calls:
+
+[source,java]
+----
+package com.example.demo.controllers;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.demo.domain.Event;
+import com.example.demo.service.EventService;
+
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/events")
+@RequiredArgsConstructor
+public class EventController {
+
+    private final EventService eventService;
+
+    @GetMapping
+    public Iterable<Event> getAllEvents() {
+        return eventService.searchByBeginDateBetween(
+            LocalDateTime.now().minusYears(1),
+            LocalDateTime.now().plusYears(1)
+        );
+    }
+
+    @GetMapping("between")
+    public List<Event> byDateRange(
+            @RequestParam("start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
+            @RequestParam("end") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
+        
+        return eventService.searchByBeginDateBetween(start, end);
+    }
+}
+----
+
+== Step 20: Understanding the Entity Streams API
+
+The Entity Streams API is a powerful feature of Redis OM Spring that allows for more complex and type-safe querying. Here's a closer look:
+
+1. **Generated Metamodel**: For each entity class like `Event`, Redis OM Spring generates a metamodel class `Event$` during compilation, which provides type-safe access to entity properties.
+
+2. **Type-Safe Queries**: The metamodel enables type-safe conditions like `Event$.BEGIN_DATE.between(start, end)`.
+
+3. **Fluent API**: Operations can be chained, like filtering, sorting, and pagination.
+
+4. **Complex Conditions**: Supports complex filter conditions, including:
+   * Equality: `.eq(value)`
+   * Comparison: `.gt(value)`, `.lt(value)`, `.between(min, max)`
+   * Text search: `.match(text)`, `.matchPrefix(prefix)`
+   * Geospatial: `.near(point, distance)`
+   * Boolean operators: `.and()`, `.or()`
+
+Here's an example of a more complex query using the Entity Streams API:
+
+[source,java]
+----
+List<Company> findLargeCompaniesWithTag(String tag, int minEmployees) {
+  return entityStream
+      .of(Company.class)
+      .filter(
+          Company$.TAGS.contains(tag)
+          .and(Company$.NUMBER_OF_EMPLOYEES.gt(minEmployees))
+      )
+      .sorted(Company$.YEAR_FOUNDED.desc())
+      .limit(10)
+      .collect(Collectors.toList());
+}
+----
+
+It is important to understand that as opposed to a regular Java stream, most operations assemble a query or an aggregation to
+be executed server-side. On the query above the query is executed during and only during the terminal `collect` operation. At that point you
+will have a `List<Company>` objects now loaded in memory.
+
+== Testing the REST API
+
+After starting your application with `./mvnw spring-boot:run`, you can test the various endpoints:
+
+=== Company Endpoints
+
+Retrieve all companies:
+[source,bash]
+----
+curl http://localhost:8080/api/companies
+----
+
+Retrieve a company by name:
+[source,bash]
+----
+curl http://localhost:8080/api/companies/name/Redis
+----
+
+Find companies by employee count:
+[source,bash]
+----
+curl http://localhost:8080/api/companies/employees/count/526
+----
+
+Find companies in an employee range:
+[source,bash]
+----
+curl http://localhost:8080/api/companies/employees/range/500/200000
+----
+
+Find companies near a location:
+[source,bash]
+----
+curl "http://localhost:8080/api/companies/near?lat=37.37&lon=-122.06&d=10"
+----
+
+Find companies by name prefix:
+[source,bash]
+----
+curl http://localhost:8080/api/companies/name/starts/Red
+----
+
+Find companies by tags:
+[source,bash]
+----
+curl "http://localhost:8080/api/companies/tags?tags=reliable"
+----
+
+=== Person Endpoints
+
+Get all people:
+[source,bash]
+----
+curl http://localhost:8080/api/people
+----
+
+Search people by first and last name:
+[source,bash]
+----
+curl "http://localhost:8080/api/people/search?firstName=John&lastName=Doe"
+----
+
+=== Event Endpoints
+
+Get all events:
+[source,bash]
+----
+curl http://localhost:8080/api/events
+----
+
+Find events between dates:
+[source,bash]
+----
+curl "http://localhost:8080/api/events/between?start=2023-06-01T00:00:00&end=2023-07-31T23:59:59"
+----
+
+== Testing
+
+Here's an example of how you can test your repositories with TestContainers:
+
+[source,java]
+----
+package com.example.demo.repositories;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.Set;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Metrics;
+import org.springframework.data.geo.Point;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+import com.example.demo.domain.Company;
+
+@SpringBootTest
+@Testcontainers
+class CompanyRepositoryTest {
+
+    @Container
+    static GenericContainer<?> redis = new GenericContainer<>("redis:8.0.0")
+            .withExposedPorts(6379);
+
+    @DynamicPropertySource
+    static void redisProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.data.redis.host", redis::getHost);
+        registry.add("spring.data.redis.port", redis::getFirstMappedPort);
+    }
+
+    @Autowired
+    private CompanyRepository repository;
+
+    @BeforeEach
+    void setup() {
+        repository.deleteAll();
+
+        Company redis = Company.of("Redis", "https://redis.com", 
+            new Point(-122.066540, 37.377690), 526, 2011);
+        redis.setTags(Set.of("fast", "scalable", "reliable"));
+
+        Company microsoft = Company.of("Microsoft", "https://microsoft.com", 
+            new Point(-122.124500, 47.640160), 182268, 1975);
+        microsoft.setTags(Set.of("innovative", "reliable"));
+
+        repository.save(redis);
+        repository.save(microsoft);
+    }
+
+    @Test
+    void testFindOneByName() {
+        assertThat(repository.findOneByName("Redis")).isPresent()
+            .get().extracting(Company::getName).isEqualTo("Redis");
+    }
+
+    @Test
+    void testFindByLocationNear() {
+        Iterable<Company> companies = repository.findByLocationNear(
+            new Point(-122.066540, 37.377690),
+            new Distance(10, Metrics.MILES)
+        );
+        
+        assertThat(companies).hasSize(1)
+            .extracting(Company::getName)
+            .containsExactly("Redis");
+    }
+}
+----
+
+== Next Steps
+
+This quick start guide demonstrated the basics of Redis OM Spring. To learn more, explore:
+
+* xref:json_mappings.adoc[Redis JSON Basics] for more on JSON document mapping
+* xref:entity-streams.adoc[Entity Streams] for advanced querying
+* xref:index-annotations.adoc[Index Annotations] for more indexing options
+* xref:vector-search.adoc[Vector Search] for AI-powered similarity search
+* xref:repository-queries.adoc[Repository Query Methods] for more query capabilities
+* Check out the full demo applications in the `/demos` directory of the Redis OM Spring repository

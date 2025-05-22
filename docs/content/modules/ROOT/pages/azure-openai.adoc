@@ -1,0 +1,370 @@
+= Azure OpenAI Integration
+:page-toclevels: 3
+:page-pagination:
+
+Redis OM Spring provides comprehensive integration with Azure OpenAI services, allowing you to use Microsoft's AI capabilities for generating embeddings and performing vector similarity searches. This guide covers how to set up and use Azure OpenAI with Redis OM Spring, including the new Microsoft Entra ID authentication.
+
+== Azure OpenAI Overview
+
+Azure OpenAI Service provides REST API access to OpenAI's powerful language models including GPT-4, GPT-3.5-Turbo, and Embeddings model series. With Azure OpenAI, you get:
+
+* The same models available in the OpenAI API
+* Azure enterprise-grade security and compliance
+* Regional availability to satisfy data residency requirements
+* Virtual network support
+
+Redis OM Spring leverages Azure OpenAI primarily for generating vector embeddings used in vector similarity search.
+
+== Prerequisites
+
+Before using Azure OpenAI with Redis OM Spring, you need:
+
+1. An Azure subscription
+2. Access to Azure OpenAI Service (requires approval)
+3. An Azure OpenAI deployment of an embedding model (like `text-embedding-ada-002`)
+4. Authentication credentials (API key or Entra ID credentials)
+
+== Authentication Methods
+
+Redis OM Spring supports two authentication methods for Azure OpenAI:
+
+1. **API Key Authentication**: Traditional approach using an API key
+2. **Microsoft Entra ID Authentication**: More secure approach using OAuth 2.0
+
+== Configuration with API Key
+
+To configure Azure OpenAI with an API key:
+
+[source,yaml]
+----
+redis:
+  om:
+    ai:
+      # Specify the Azure OpenAI provider
+      embedding-provider: azure-openai
+      
+      # The embedding model to use
+      embedding-model: text-embedding-ada-002
+      
+      # Azure OpenAI configuration
+      azure-resource-name: your-azure-resource
+      azure-deployment-id: your-embedding-deployment
+      azure-api-version: 2023-05-15
+      
+      # API key authentication
+      api-key: ${AZURE_OPENAI_API_KEY}
+----
+
+== Configuration with Entra ID
+
+Entra ID authentication (formerly Azure Active Directory) provides a more secure approach:
+
+[source,yaml]
+----
+redis:
+  om:
+    ai:
+      # Specify the Azure OpenAI provider
+      embedding-provider: azure-openai
+      
+      # The embedding model to use
+      embedding-model: text-embedding-ada-002
+      
+      # Azure OpenAI configuration
+      azure-resource-name: your-azure-resource
+      azure-deployment-id: your-embedding-deployment
+      azure-api-version: 2023-05-15
+      
+      # Entra ID authentication
+      entra-id:
+        enabled: true
+        client-id: ${AZURE_CLIENT_ID}
+        tenant-id: ${AZURE_TENANT_ID}
+        client-secret: ${AZURE_CLIENT_SECRET}
+----
+
+== Setting Up Entra ID Authentication
+
+Follow these steps to set up Entra ID authentication:
+
+1. **Register an Application in Entra ID**:
+   - Go to Azure Portal > Microsoft Entra ID > App registrations
+   - Click "New registration"
+   - Enter a name for your application
+   - Select the appropriate account type
+   - Click "Register"
+
+2. **Create a Client Secret**:
+   - In your registered app, go to "Certificates & secrets"
+   - Create a new client secret
+   - Save the secret value (you'll only see it once)
+
+3. **Assign Azure OpenAI Permissions**:
+   - Go to your Azure OpenAI resource
+   - Click on "Access control (IAM)"
+   - Add a role assignment
+   - Assign the "Cognitive Services User" role to your application
+
+4. **Configure Redis OM Spring**:
+   - Use the configuration shown above
+   - Set the client-id to your application's ID
+   - Set the tenant-id to your Azure tenant ID
+   - Set the client-secret to the secret you created
+
+== Using Azure OpenAI Embeddings
+
+Once configured, you can use Azure OpenAI embeddings in your application:
+
+[source,java]
+----
+@Document
+public class Article {
+    @Id
+    private String id;
+    
+    @Searchable
+    private String title;
+    
+    @Searchable
+    private String content;
+    
+    // Vector embedding for the article
+    @Vectorize(
+        from = {"title", "content"},
+        dimensions = 1536,
+        embeddingProvider = EmbeddingProvider.AZURE_OPEN_AI
+    )
+    @VectorIndexed(dimensions = 1536)
+    private float[] embedding;
+    
+    // getters and setters
+}
+----
+
+== Configuring the Embedding Model
+
+Azure OpenAI offers several embedding models:
+
+[cols="1,1,1,3"]
+|===
+|Model |Dimensions |Context Length |Description
+
+|`text-embedding-ada-002`
+|1536
+|8191
+|General purpose embedding model with good performance
+
+|`text-embedding-3-small`
+|1536
+|8191
+|Newer model with improved performance (if available)
+
+|`text-embedding-3-large`
+|3072
+|8191
+|Highest quality embeddings (if available)
+|===
+
+To specify the model:
+
+[source,yaml]
+----
+redis:
+  om:
+    ai:
+      embedding-provider: azure-openai
+      embedding-model: text-embedding-ada-002  # or another model
+----
+
+== Sharing Redis and Azure OpenAI Authentication
+
+If your application uses both Redis Enterprise with Entra ID authentication and Azure OpenAI with Entra ID authentication, you can configure them to share authentication settings:
+
+[source,yaml]
+----
+# Shared Entra ID settings
+azure:
+  entra-id:
+    enabled: true
+    client-id: ${AZURE_CLIENT_ID}
+    tenant-id: ${AZURE_TENANT_ID}
+    client-secret: ${AZURE_CLIENT_SECRET}
+
+# Redis configuration
+spring:
+  data:
+    redis:
+      host: your-redis-host.redis.cache.windows.net
+      port: 6380
+      ssl: true
+      entra-id: true  # Enable Entra ID auth for Redis
+
+# Redis OM configuration
+redis:
+  om:
+    ai:
+      embedding-provider: azure-openai
+      embedding-model: text-embedding-ada-002
+      azure-resource-name: your-azure-resource
+      azure-deployment-id: your-embedding-deployment
+      azure-api-version: 2023-05-15
+      entra-id: true  # Use the shared Entra ID settings
+----
+
+== Example: Semantic Search with Azure OpenAI
+
+Here's a complete example of implementing semantic search using Azure OpenAI embeddings:
+
+=== Domain Model
+
+[source,java]
+----
+@Document
+public class Document {
+    @Id
+    private String id;
+    
+    @Searchable
+    private String title;
+    
+    @Searchable
+    private String content;
+    
+    @Vectorize(
+        from = {"title", "content"},
+        dimensions = 1536
+    )
+    @VectorIndexed(dimensions = 1536)
+    private float[] embedding;
+    
+    // getters and setters
+}
+----
+
+=== Repository
+
+[source,java]
+----
+public interface DocumentRepository extends RedisDocumentRepository<Document, String> {
+    // Standard repository methods
+}
+----
+
+=== Service
+
+[source,java]
+----
+@Service
+public class SearchService {
+    @Autowired
+    private EntityStream entityStream;
+    
+    @Autowired
+    private Embedder embedder;
+    
+    public List<Document> semanticSearch(String query, int limit) {
+        // Generate embedding for the query using Azure OpenAI
+        float[] queryEmbedding = embedder.embed(query);
+        
+        // Perform vector similarity search
+        return entityStream
+            .of(Document.class)
+            .knn(Document$.EMBEDDING, queryEmbedding, limit)
+            .collect(Collectors.toList());
+    }
+    
+    public List<Document> hybridSearch(String query, String textFilter, int limit) {
+        float[] queryEmbedding = embedder.embed(query);
+        
+        // Combine vector search with text filtering
+        return entityStream
+            .of(Document.class)
+            .filter(Document$.CONTENT.containsAll(textFilter))
+            .knn(Document$.EMBEDDING, queryEmbedding, limit)
+            .collect(Collectors.toList());
+    }
+}
+----
+
+=== Controller
+
+[source,java]
+----
+@RestController
+@RequestMapping("/api/search")
+public class SearchController {
+    @Autowired
+    private SearchService searchService;
+    
+    @GetMapping("/semantic")
+    public List<Document> semanticSearch(@RequestParam String query, 
+                                         @RequestParam(defaultValue = "10") int limit) {
+        return searchService.semanticSearch(query, limit);
+    }
+    
+    @GetMapping("/hybrid")
+    public List<Document> hybridSearch(@RequestParam String query,
+                                       @RequestParam String filter,
+                                       @RequestParam(defaultValue = "10") int limit) {
+        return searchService.hybridSearch(query, filter, limit);
+    }
+}
+----
+
+== Troubleshooting Azure OpenAI Integration
+
+=== Common Issues
+
+1. **Authentication Errors**:
+   - Verify your API key or Entra ID credentials
+   - Check that your application has the correct permissions
+
+2. **Resource Not Found**:
+   - Ensure your Azure resource name is correct
+   - Verify that your deployment ID exists and matches the configuration
+
+3. **Rate Limiting**:
+   - Azure OpenAI enforces rate limits; implement retry logic if needed
+
+4. **Model Not Available**:
+   - Some models might not be available in all regions
+   - Check that your requested model is deployed in your Azure OpenAI resource
+
+=== Debugging Tips
+
+Enable debug logging for more detailed information:
+
+[source,yaml]
+----
+logging:
+  level:
+    com.redis.om.spring.vectorize: DEBUG
+    com.redis.om.spring.client: DEBUG
+----
+
+== Best Practices
+
+1. **Secure Credentials**:
+   - Use environment variables for sensitive information
+   - Prefer Entra ID authentication over API keys for production
+
+2. **Handle Rate Limits**:
+   - Implement retry logic with exponential backoff
+   - Consider caching embeddings for frequently used queries
+
+3. **Optimize Costs**:
+   - Azure OpenAI charges based on token usage
+   - Batch embedding requests when possible
+   - Cache embeddings for static content
+
+4. **Monitor Usage**:
+   - Set up monitoring for your Azure OpenAI resource
+   - Track token usage and costs
+
+== Further Reading
+
+* [Azure OpenAI Service Documentation](https://learn.microsoft.com/en-us/azure/ai-services/openai/)
+* [Microsoft Entra ID Documentation](https://learn.microsoft.com/en-us/entra/fundamentals/)
+* xref:ai-overview.adoc[AI Integration Overview] - Overview of AI capabilities in Redis OM Spring
+* xref:vector-search.adoc[Vector Similarity Search] - How to perform vector similarity searches
+* xref:embedding-providers.adoc[Embedding Providers] - Available embedding providers

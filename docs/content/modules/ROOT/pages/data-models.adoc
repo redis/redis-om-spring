@@ -1,0 +1,231 @@
+= Redis OM Spring Data Models
+:page-toclevels: 3
+:experimental:
+:source-highlighter: highlight.js
+
+== Overview
+
+Redis OM Spring provides two powerful data models for mapping Java objects to Redis, each optimized for different use cases. This page helps you understand when and how to use each model effectively.
+
+== Supported Data Models
+
+Redis OM Spring focuses on two primary data models that provide the best combination of performance, flexibility, and search capabilities:
+
+=== 1. Enhanced Redis Hash Model
+
+Redis OM Spring enhances the traditional `@RedisHash` annotation from Spring Data Redis with powerful search capabilities. This model stores objects as Redis Hash data structures with automatic indexing for searchable fields.
+
+[source,java]
+----
+@RedisHash
+public class Product {
+    @Id
+    private String id;
+    
+    @TextIndexed 
+    private String name;
+    
+    @NumericIndexed
+    private double price;
+    
+    @TagIndexed
+    private String category;
+    
+    private String description;  // Stored but not indexed
+    
+    // getters and setters
+}
+----
+
+**Key Benefits:**
+
+* **High Performance**: Extremely fast for simple object operations
+* **Memory Efficient**: Optimal memory usage for flat object structures  
+* **Search-Enabled**: Full-text search, numeric ranges, and tag filtering
+* **Spring Data Compatible**: Works with existing Spring Data Redis code
+* **Vector Efficient**: Most space-efficient storage for AI embeddings and vectors
+
+=== 2. JSON Document Model
+
+The `@Document` annotation maps Java objects to Redis JSON documents, providing native support for complex nested structures, collections, and hierarchical data.
+
+[source,java]
+----
+@Document
+public class Customer {
+    @Id
+    private String id;
+    
+    @Searchable 
+    private String name;
+    
+    @GeoIndexed
+    private Point location;
+    
+    // Nested object with searchable fields
+    private Address address;
+    
+    // Collections are stored as JSON arrays
+    private List<Order> orders;
+    
+    // getters and setters
+}
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Address {
+    @TextIndexed
+    private String street;
+    
+    @TextIndexed
+    private String city;
+    
+    @TagIndexed
+    private String zipCode;
+    
+    private String country;
+}
+
+@Data
+public class Order {
+    private String orderId;
+    private LocalDate orderDate;
+    
+    @NumericIndexed
+    private BigDecimal totalAmount;
+    
+    private List<LineItem> items;
+}
+----
+
+**Key Benefits:**
+
+* **Complex Structures**: Native support for nested objects and collections
+* **Schema Flexibility**: Easy to evolve object structures over time
+* **Rich Queries**: Query on nested properties and array elements  
+* **JSON Native**: Leverages Redis's native JSON capabilities
+
+== Choosing the Right Data Model
+
+Use this guide to select the optimal data model for your use case:
+
+[cols="1,2,2"]
+|===
+|Factor |Enhanced Redis Hash (`@RedisHash`) |JSON Document (`@Document`)
+
+|**Object Complexity**
+|Simple, flat objects with basic properties
+|Complex objects with nested structures and collections
+
+|**Query Requirements**
+|Field-level search and filtering
+|Nested property queries and array element searches
+
+|**Performance Priority**
+|Maximum performance for simple operations
+|Balanced performance for complex data operations
+
+|**Memory Usage**
+|Extremely memory efficient
+|More memory usage but better for complex data
+
+|**Schema Evolution**
+|Requires careful planning for changes
+|Natural support for schema evolution
+
+|**Spring Data Migration**
+|Drop-in replacement for existing `@RedisHash` code
+|New development or complex data requirements
+
+|**Vector Storage Efficiency**
+|More space-efficient for vectors and embeddings
+|Less space-efficient but supports vectors in nested objects
+|===
+
+== Decision Framework
+
+=== Choose Enhanced Redis Hash When:
+
+✅ **Simple Domain Objects**: Your entities have mostly primitive fields and minimal nesting
+
+✅ **Maximum Performance**: You need the absolute fastest read/write operations
+
+✅ **Memory Constraints**: Memory efficiency is a top priority
+
+✅ **Legacy Integration**: You're enhancing existing Spring Data Redis applications
+
+✅ **High Throughput**: You have very high-volume, simple operations
+
+=== Choose JSON Document When:
+
+✅ **Complex Data Models**: Your objects have nested structures, collections, or hierarchical relationships
+
+✅ **Rich Querying**: You need to search within nested objects or array elements
+
+✅ **Schema Flexibility**: Your data model evolves frequently or varies between instances
+
+✅ **Nested Vectors**: You need vector embeddings within nested objects or collections
+
+✅ **Modern Applications**: You're building new applications with complex data requirements
+
+== AI and Vector Capabilities
+
+Both data models support AI integration and vector search:
+
+* **Hash Model**: More space-efficient for vector storage, ideal for simple entities with embeddings
+* **Document Model**: Supports vectors within nested structures, better for complex AI applications
+
+Choose based on your data structure needs, not AI requirements.
+
+== Practical Examples
+
+=== Hash Model: User Profile with AI
+[source,java]
+----
+@RedisHash
+public class UserProfile {
+    @Id private String userId;
+    @TextIndexed private String username;
+    @NumericIndexed private int age;
+    @TagIndexed private String status;
+    @GeoIndexed private Point lastLocation;
+    
+    // Vector embeddings are space-efficient in Hash model
+    @VectorIndexed(algorithm = VectorAlgorithm.HNSW,
+                   type = VectorType.FLOAT32,
+                   dimension = 384,
+                   distanceMetric = DistanceMetric.COSINE)
+    private float[] profileEmbedding;
+}
+----
+
+=== Document Model: E-commerce Order
+[source,java]
+----
+@Document
+public class Order {
+    @Id private String orderId;
+    @Searchable private String customerName;
+    private Address shippingAddress;    // Nested object
+    private List<OrderItem> items;      // Collection with potential vectors
+    private PaymentInfo payment;        // Nested object
+    
+    // Vectors work in JSON but are less space-efficient
+    @VectorIndexed(algorithm = VectorAlgorithm.HNSW,
+                   type = VectorType.FLOAT32,
+                   dimension = 384,
+                   distanceMetric = DistanceMetric.COSINE)
+    private float[] contentEmbedding;
+}
+----
+
+== Next Steps
+
+Ready to implement your chosen data model? Here are the next steps:
+
+* **Hash Model**: xref:hash-mappings.adoc[Learn Redis Hash mapping details]
+* **Document Model**: xref:json_mappings.adoc[Explore JSON document mapping]
+* **Repository Setup**: xref:redis-repositories.adoc[Configure repositories for your model]
+* **Search Features**: xref:search.adoc[Add search capabilities to your models]
+* **Getting Started**: xref:quickstart.adoc[Quick start with practical examples]

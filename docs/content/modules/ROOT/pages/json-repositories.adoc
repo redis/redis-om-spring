@@ -1,0 +1,342 @@
+= Document Repositories
+:page-toclevels: 3
+:experimental:
+:source-highlighter: highlight.js
+
+== Introduction
+
+Redis OM Spring provides `RedisDocumentRepository` for working with Redis JSON documents. This repository interface extends Spring Data's repository abstractions while adding powerful search and query capabilities specific to JSON documents.
+
+== Repository Interface
+
+=== Basic Repository Setup
+
+Create a repository by extending `RedisDocumentRepository`:
+
+[source,java]
+----
+import com.redis.om.spring.repository.RedisDocumentRepository;
+
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    // Spring Data query methods are automatically available
+}
+----
+
+=== Available Base Methods
+
+The `RedisDocumentRepository` provides standard CRUD operations:
+
+[source,java]
+----
+// Save operations
+Company save(Company entity);
+Iterable<Company> saveAll(Iterable<Company> entities);
+
+// Find operations  
+Optional<Company> findById(String id);
+Iterable<Company> findAll();
+Iterable<Company> findAllById(Iterable<String> ids);
+
+// Existence checks
+boolean existsById(String id);
+long count();
+
+// Delete operations
+void deleteById(String id);
+void delete(Company entity);
+void deleteAll();
+----
+
+== Query Method Patterns
+
+=== Simple Property Queries
+
+Find by single properties using method naming conventions:
+
+[source,java]
+----
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    // Find by exact match
+    List<Company> findByName(String name);
+    
+    // Check existence
+    boolean existsByEmail(String email);
+    
+    // Find first/one result
+    Optional<Company> findFirstByName(String name);
+    Optional<Company> findOneByName(String name);
+}
+----
+
+=== Multiple Property Queries
+
+Combine multiple criteria using `And`/`Or`:
+
+[source,java]
+----
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    // AND combination
+    List<Company> findByYearFoundedAndName(int year, String name);
+    
+    // OR combination  
+    List<Company> findByYearFoundedOrName(int year, String name);
+    
+    // Complex combinations
+    List<Company> findByYearFoundedAndPubliclyListedAndEmailStartingWith(
+        int year, boolean listed, String emailPrefix);
+}
+----
+
+=== Nested Property Queries
+
+Query nested object properties using underscore notation:
+
+[source,java]
+----
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    // Query nested employee properties
+    List<Company> findByEmployees_name(String employeeName);
+    
+    // Query deeply nested properties
+    List<Company> findByMetaList_stringValue(String value);
+    List<Company> findByMetaList_numberValue(Integer value);
+    List<Company> findByMetaList_tagValues(Set<String> tags);
+}
+----
+
+=== String Operations
+
+Perform string-based queries:
+
+[source,java]
+----
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    // Prefix matching
+    List<Company> findByEmailStartingWith(String prefix);
+    List<Company> findByNameStartingWith(String prefix);
+    
+    // Suffix matching
+    List<Company> findByEmailEndingWith(String suffix);
+    
+    // Contains (for full-text searchable fields)
+    List<Company> findByDescriptionContaining(String text);
+}
+----
+
+=== Collection Queries
+
+Work with Set and List properties:
+
+[source,java]
+----
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    // Find by collection contents
+    List<Company> findByTags(Set<String> tags);
+    
+    // Collection membership (contains any)
+    List<Company> findByTagsContaining(String tag);
+    
+    // Collection membership (contains all)
+    List<Company> findByTagsContainingAll(String... tags);
+}
+----
+
+=== Geospatial Queries
+
+Perform location-based searches:
+
+[source,java]
+----
+import org.springframework.data.geo.Distance;
+import org.springframework.data.geo.Point;
+
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    // Find within distance of a point
+    Iterable<Company> findByLocationNear(Point point, Distance distance);
+    
+    // Example usage:
+    // Point center = new Point(-122.066540, 37.377690);
+    // Distance radius = new Distance(10, Metrics.KILOMETERS);
+    // Iterable<Company> nearby = repository.findByLocationNear(center, radius);
+}
+----
+
+=== Ordering Results
+
+Control result ordering:
+
+[source,java]
+----
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    // Order by single field
+    List<Company> findByYearFoundedOrderByNameAsc(int year);
+    List<Company> findByYearFoundedOrderByNameDesc(int year);
+    
+    // Multiple ordering criteria
+    List<Company> findByPubliclyListedOrderByYearFoundedAscNameAsc(boolean listed);
+    
+    // Numeric ordering
+    List<Company> findByYearFoundedGreaterThanOrderByYearFoundedAsc(int year);
+}
+----
+
+=== Limiting Results
+
+Get first or top N results:
+
+[source,java]
+----
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    // Get first result
+    Optional<Company> findFirstByYearFounded(int year);
+    
+    // Get top N results  
+    List<Company> findTop5ByYearFoundedOrderByNameAsc(int year);
+    List<Company> findTop10ByPubliclyListedOrderByYearFoundedDesc(boolean listed);
+}
+----
+
+== Advanced Query Patterns
+
+=== Numeric Range Queries
+
+Query numeric fields with ranges:
+
+[source,java]
+----
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    // Greater than / Less than
+    List<Company> findByYearFoundedGreaterThan(int year);
+    List<Company> findByYearFoundedLessThan(int year);
+    
+    // Between (inclusive)
+    List<Company> findByYearFoundedBetween(int start, int end);
+    List<Company> findByYearFoundedBetweenOrderByNameAsc(int start, int end);
+}
+----
+
+=== Boolean Queries
+
+Work with boolean properties:
+
+[source,java]
+----
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    // Boolean exact match
+    List<Company> findByPubliclyListed(boolean publiclyListed);
+    
+    // Combined with other criteria
+    List<Company> findByPubliclyListedAndYearFoundedGreaterThan(boolean listed, int year);
+}
+----
+
+== Entity Streams Integration
+
+Repositories can return `SearchStream` for fluent query operations:
+
+[source,java]
+----
+import com.redis.om.spring.search.stream.SearchStream;
+
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    // Return SearchStream for advanced operations
+    SearchStream<Company> findByYearFoundedGreaterThan(int year);
+    
+    // Usage example:
+    // SearchStream<Company> stream = repository.findByYearFoundedGreaterThan(2000);
+    // List<String> names = stream
+    //     .filter(Company$.PUBLICLY_LISTED.eq(true))
+    //     .map(Company$.NAME)
+    //     .collect(Collectors.toList());
+}
+----
+
+== Example Usage
+
+Here's a complete example showing repository usage:
+
+[source,java]
+----
+@Service
+public class CompanyService {
+    private final CompanyRepository repository;
+    
+    public CompanyService(CompanyRepository repository) {
+        this.repository = repository;
+    }
+    
+    public void demonstrateQueries() {
+        // Basic CRUD
+        Company company = new Company();
+        company.setName("Redis Inc");
+        company.setYearFounded(2011);
+        company.setEmail("info@redis.com");
+        company.setPubliclyListed(false);
+        company.setTags(Set.of("database", "nosql", "fast"));
+        
+        Company saved = repository.save(company);
+        
+        // Find by properties
+        List<Company> redisCorp = repository.findByName("Redis Inc");
+        
+        // Find by multiple criteria
+        List<Company> recent = repository.findByYearFoundedGreaterThan(2000);
+        
+        // Find by collection
+        List<Company> dbCompanies = repository.findByTagsContaining("database");
+        
+        // Ordered results
+        List<Company> orderedByName = repository
+            .findByYearFoundedGreaterThanOrderByNameAsc(1990);
+        
+        // Check existence
+        boolean exists = repository.existsByEmail("info@redis.com");
+        
+        // Nested property query (if employees exist)
+        List<Company> companiesWithJohn = repository
+            .findByEmployees_name("John");
+    }
+}
+----
+
+== Best Practices
+
+=== Query Method Naming
+
+* Use clear, descriptive method names
+* Follow Spring Data naming conventions
+* Combine criteria logically with `And`/`Or`
+* Use appropriate return types (`List`, `Optional`, `Iterable`)
+
+=== Performance Considerations
+
+* **Index Required Fields**: Ensure queried properties have appropriate annotations (`@Indexed`, `@Searchable`)
+* **Limit Result Sets**: Use `findFirst`, `findTop`, or pagination for large datasets
+* **Avoid Complex Queries**: Consider using Entity Streams for complex filtering
+* **Use Specific Queries**: Prefer specific property queries over broad searches
+
+=== Error Handling
+
+[source,java]
+----
+@Service
+public class CompanyService {
+    private final CompanyRepository repository;
+    
+    public Optional<Company> findCompanySafely(String name) {
+        try {
+            return repository.findFirstByName(name);
+        } catch (Exception e) {
+            log.error("Error finding company by name: {}", name, e);
+            return Optional.empty();
+        }
+    }
+}
+----
+
+== Next Steps
+
+* xref:json_mappings.adoc[Redis JSON Mappings]
+* xref:entity-streams.adoc[Entity Streams for Advanced Queries]
+* xref:repository-queries.adoc[Repository Query Methods]
+* xref:search.adoc[Full-Text Search Capabilities]

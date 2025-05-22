@@ -103,3 +103,9 @@ jobs:
           path: |
             out/jreleaser/trace.log
             out/jreleaser/output.properties
+            
+      - name: Trigger documentation build
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.GIT_ACCESS_TOKEN }}
+          event-type: build-docs

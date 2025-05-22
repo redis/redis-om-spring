@@ -1,0 +1,11 @@
+static_files:
+- favicon.ico
+- favicon-32x32.png
+- favicon-16x16.png
+- img/Redis_Favicon_32x32_Red.png
+- img/Redis_Favicon_16x16_Red.png
+- img/Redis_Favicon_144x144_Red.png
+- img/favicon.ico
+- img/favicon-32x32.png
+- img/favicon-16x16.png
+- site.webmanifest

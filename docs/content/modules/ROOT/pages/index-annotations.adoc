@@ -1,0 +1,274 @@
+= Index Annotations
+:page-toclevels: 3
+:experimental:
+:source-highlighter: highlight.js
+
+== Introduction to Index Annotations
+
+Redis OM Spring provides a comprehensive set of annotations to define how your entity fields should be indexed in Redis Query Engine (formerly RediSearch). As of Redis 8, the Query Engine is a standard component of Redis. This page explains the available annotations and their configuration options.
+
+== Core Indexing Annotations
+
+=== @Indexed
+
+The `@Indexed` annotation is the primary indexing annotation that can handle multiple data types through auto-detection:
+
+[source,java]
+----
+@Document
+public class Company {
+    @Id
+    private String id;
+    
+    @Indexed                    // String field - TAG index
+    private String email;
+    
+    @Indexed                    // Numeric field - NUMERIC index
+    private Integer yearFounded;
+    
+    @Indexed                    // Date field - NUMERIC index
+    private LocalDate lastValuation;
+    
+    @Indexed                    // Point field - GEO index
+    private Point location;
+    
+    @Indexed                    // Collection field - TAG index
+    private Set<String> tags;
+}
+----
+
+=== @Searchable
+
+For full-text search on string fields, use `@Searchable` which provides rich text search capabilities:
+
+[source,java]
+----
+@Document("games")
+public class Game {
+    @Id
+    private String asin;
+    
+    @Searchable(sortable = true)
+    private String title;
+    
+    @Searchable
+    private String description;
+    
+    @Searchable(nostem = true, sortable = true)
+    private String brand;
+}
+----
+
+==== Configuration Options:
+
+* `weight` - Relative importance of this field (default: 1.0)
+* `sortable` - Whether the field can be used for sorting (default: false)
+* `nostem` - Disable stemming for this field (default: false)
+* `phonetic` - Enable phonetic matching using Double Metaphone algorithm (default: "")
+* `indexMissing` - Index missing/null values (default: false)
+* `indexEmpty` - Index empty string values (default: false)
+
+== Specialized Indexing Annotations
+
+While `@Indexed` handles most cases through auto-detection, specialized annotations provide explicit control:
+
+=== @NumericIndexed
+
+Explicitly create numeric indexes for range queries:
+
+[source,java]
+----
+@Document
+public class Product {
+    @Id
+    private String id;
+    
+    @Searchable
+    private String name;
+    
+    @NumericIndexed(sortable = true)
+    private double price;
+    
+    @NumericIndexed
+    private int stockQuantity;
+}
+----
+
+==== Configuration Options:
+
+* `sortable` - Whether the field can be used for sorting (default: false)
+* `fieldName` - Custom field name in the index
+* `alias` - Field alias for queries
+
+=== @TagIndexed
+
+For exact-match queries and faceted search:
+
+[source,java]
+----
+@Document
+public class Product {
+    @Id
+    private String id;
+    
+    @TagIndexed
+    private String category;
+    
+    @TagIndexed(separator = "|")
+    private List<String> tags;
+}
+----
+
+==== Configuration Options:
+
+* `separator` - Character used to separate multiple values (default: "|")
+* `fieldName` - Custom field name in the index
+* `alias` - Field alias for queries
+* `indexMissing` - Index missing/null values (default: false)
+* `indexEmpty` - Index empty values (default: false)
+
+=== @GeoIndexed
+
+For explicit geospatial indexing (though `@Indexed` on Point fields works the same way):
+
+[source,java]
+----
+import org.springframework.data.geo.Point;
+
+@Document
+public class Company {
+    @Id
+    private String id;
+    
+    @Searchable(sortable = true)
+    private String name;
+    
+    @GeoIndexed  // Explicit geo indexing
+    private Point location;
+    
+    // This also works:
+    // @Indexed
+    // private Point location;
+}
+----
+
+==== Configuration Options:
+
+* `fieldName` - Custom field name in the index
+* `alias` - Field alias for queries
+* `noindex` - Disable indexing but store the field (default: false)
+
+=== Vector Indexing with @Indexed
+
+For AI-powered similarity search, use `@Indexed` with vector-specific configuration:
+
+[source,java]
+----
+@Document
+public class Product {
+    @Id
+    private String id;
+    
+    @Indexed
+    @NonNull
+    private String name;
+    
+    @Indexed(
+        schemaFieldType = SchemaFieldType.VECTOR,
+        algorithm = VectorAlgorithm.HNSW,
+        type = VectorType.FLOAT32,
+        dimension = 384,
+        distanceMetric = DistanceMetric.COSINE,
+        initialCapacity = 10
+    )
+    private float[] sentenceEmbedding;
+    
+    @Vectorize(destination = "sentenceEmbedding", embeddingType = EmbeddingType.SENTENCE)
+    @NonNull
+    private String description;
+}
+----
+
+==== Vector Configuration Options:
+
+* `algorithm` - Vector index algorithm (FLAT or HNSW)
+* `dimension` - Number of dimensions in the vector
+* `distanceMetric` - Distance metric (COSINE, IP, or L2)
+* `initialCapacity` - Initial capacity of the index
+* `type` - Vector type (FLOAT32 or FLOAT64)
+* `m` - HNSW parameter for number of connections (default: 16)
+* `efConstruction` - HNSW parameter for build time/accuracy trade-off (default: 200)
+* `efRuntime` - HNSW parameter for query time/accuracy trade-off (default: 10)
+
+== Indexing Collections
+
+=== Arrays and Lists
+
+Redis OM Spring handles indexing of collection fields automatically:
+
+[source,java]
+----
+@Document
+public class Company {
+    @Id
+    private String id;
+    
+    @Searchable(sortable = true)
+    private String name;
+    
+    @Indexed  // Automatically detected as TAG index for Set<String>
+    private Set<String> tags;
+    
+    @Indexed  // Complex objects in collections
+    private Set<Employee> employees;
+}
+----
+
+== Index Configuration
+
+=== @IndexingOptions
+
+Advanced configuration for index creation can be set at the class level:
+
+[source,java]
+----
+@Document
+@IndexingOptions(
+    stopWords = {"a", "an", "the", "in", "on", "at"}, 
+    prefixes = {"company:"},
+    language = "English"
+)
+public class Company {
+    // Fields
+}
+----
+
+==== Configuration Options:
+
+* `stopWords` - List of words to ignore in text indices
+* `prefixes` - Key prefixes to include in the index
+* `language` - Default language for stemming
+* `filter` - Filter expression for the index
+* `maxTextFields` - Whether to index all text fields (default: false)
+* `temporaryIndex` - Create temporary index (default: false)
+
+== Best Practices
+
+* **Use `@Indexed` for most cases** - It auto-detects the appropriate index type
+* **Use `@Searchable` for full-text search** - Provides rich text search capabilities
+* **Index only fields you query** - Each index consumes memory
+* **Use `sortable = true` sparingly** - Increases memory usage significantly
+* **Choose the right annotation**:
+  - `@Indexed` - General purpose, auto-detection
+  - `@Searchable` - Full-text search with stemming, weighting
+  - `@TagIndexed` - Exact matches, faceted search
+  - `@NumericIndexed` - Explicit numeric range queries
+  - `@GeoIndexed` - Explicit geospatial queries
+* **Configure language settings** for international applications
+* **Consider performance implications** when indexing large collections
+
+== Next Steps
+
+* xref:index-creation.adoc[Index Creation and Management]
+* xref:search.adoc[Redis Query Engine Integration]
+* xref:vector-search.adoc[Vector Similarity Search]

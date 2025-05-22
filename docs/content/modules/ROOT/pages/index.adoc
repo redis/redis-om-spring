@@ -1,0 +1,113 @@
+= Redis OM Spring
+:!sectids:
+:imagesdir: ./images
+
+[.lead]
+Redis OM Spring provides advanced object-mapping, querying and repositories for Spring applications using Redis. It leverages and extends Spring Data Redis and Spring AI with the latest features from Redis including our powerful Query Engine, JSON documents support, probabilistic data structures and more.
+
+== What is Redis OM Spring?
+
+Redis OM Spring offers Java developers a familiar Spring-based approach to store, index, query, and manage objects in Redis, taking full advantage of advanced Redis capabilities like:
+
+* Redis JSON for document storage
+* Redis Query Engine for secondary indexing, full-text search and vector similarity search
+* Annotation-based vectorization support using Spring AI and DJL
+* Probabilistic data structures (Bloom, Cuckoo, Count-Min Sketch and more)
+
+As of Redis 8, the Query Engine and JSON modules are standard components of Redis, making these features available without requiring separate module installation.
+
+== Resources
+
+++++
+<div class="cards">
+  <div class="card">
+    <div class="card-body">
+      <h3 class="card-title">Getting Started</h3>
+      <p>Set up your project and start working with Redis OM Spring.</p>
+      <a href="setup.html" class="arrow-link">
+        <span class="title-container">
+          <span class="title">Get Started</span>
+        </span>
+        <span class="arrow">→</span>
+      </a>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body">
+      <h3 class="card-title">Quickstart Example</h3>
+      <p>See Redis OM Spring in action with a complete example.</p>
+      <a href="quickstart.html" class="arrow-link">
+        <span class="title-container">
+          <span class="title">View Example</span>
+        </span>
+        <span class="arrow">→</span>
+      </a>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body">
+      <h3 class="card-title">Documentation</h3>
+      <p>Browse the complete documentation for Redis OM Spring.</p>
+      <a href="overview.html" class="arrow-link">
+        <span class="title-container">
+          <span class="title">Read Docs</span>
+        </span>
+        <span class="arrow">→</span>
+      </a>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body">
+      <h3 class="card-title">AI and Vector Search</h3>
+      <p>Learn about AI integration and vector similarity search.</p>
+      <a href="ai-overview.html" class="arrow-link">
+        <span class="title-container">
+          <span class="title">Explore AI Features</span>
+        </span>
+        <span class="arrow">→</span>
+      </a>
+    </div>
+  </div>
+</div>
+<style>
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+@media (max-width: 768px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+++++
+
+== Features
+
+Redis OM Spring offers powerful features for working with Redis:
+
+* *Document & Hash Mapping* - Map Java objects to Redis JSON documents or Redis Hashes
+* *Repository Pattern* - Use Spring Data repositories for type-safe data access
+* *Powerful Queries* - Search, filter, and sort your data with ease
+* *Entity Streams* - Fluent API for querying and aggregating data
+* *Vector Search* - Implement semantic search and AI-powered applications
+* *Autocomplete* - Add autocomplete capabilities to your applications
+* *Probabilistic Data Structures* - Work with Bloom filters, Cuckoo filters, and more
+
+== Example Projects
+
+Check out these example projects to see Redis OM Spring in action:
+
+* https://github.com/redis/redis-om-spring/tree/main/demos/roms-documents[roms-documents^] - Document repositories demo
+* https://github.com/redis/redis-om-spring/tree/main/demos/roms-hashes[roms-hashes^] - Enhanced hash repositories demo
+* https://github.com/redis/redis-om-spring/tree/main/demos/roms-vss[roms-vss^] - Vector similarity search demo
+* https://github.com/redis/redis-om-spring/tree/main/demos/roms-vss-movies[roms-vss-movies^] - Movie recommendation with vector search demo
+
+== Connecting with the Community
+
+Join the Redis community to get help, share your experiences, and contribute:
+
+* https://discord.gg/redis[Redis Discord Server^]
+* https://github.com/redis/redis-om-spring[GitHub Repository^]
+* https://stackoverflow.com/questions/tagged/redis-om-spring[Stack Overflow^]
