@@ -93,10 +93,10 @@ jobs:
 
       - name: Build Documentation
         run: |
-          cd docs
-          ./gradlew generateSite
-          if [ ! -d "build/site" ] || [ -z "$(ls -A build/site)" ]; then
+          ./gradlew :docs:generateSite
+          if [ ! -d "docs/build/site" ] || [ -z "$(ls -A docs/build/site)" ]; then
             echo "Site build failed or directory is empty. Falling back to direct Antora command."
+            cd docs
             npm install
             ./node_modules/.bin/antora --fetch --stacktrace --log-format=pretty antora-playbook.yml --to-dir=build/site
           fi
