@@ -29,5 +29,5 @@ tasks.register('aggregateTestReport', TestReport) {
 			subprojects.collect {
 				it.tasks.withType(Test)
 			}
-	)
+			)
 }
