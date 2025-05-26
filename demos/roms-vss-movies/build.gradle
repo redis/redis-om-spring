@@ -1,0 +1,67 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot'
+	id 'io.spring.dependency-management'
+}
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+// Don't publish this module
+tasks.matching { it.name.startsWith('publish') }.configureEach {
+	enabled = false
+}
+
+repositories {
+	mavenLocal()
+	mavenCentral()
+	maven {
+		name = 'Spring Milestones'
+		url = 'https://repo.spring.io/milestone'
+	}
+	maven {
+		name = 'Spring Snapshots'
+		url = 'https://repo.spring.io/snapshot'
+	}
+}
+
+dependencies {
+	implementation project(':redis-om-spring')
+	implementation project(':redis-om-spring-ai')
+
+	// Important for RedisOM annotation processing!
+	annotationProcessor project(':redis-om-spring')
+	testAnnotationProcessor project(':redis-om-spring')
+
+	// Lombok
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	testCompileOnly 'org.projectlombok:lombok'
+	testAnnotationProcessor 'org.projectlombok:lombok'
+
+	// Spring Boot starters
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-devtools'
+
+	// Spring AI dependencies for @Vectorize annotation
+	implementation "org.springframework.ai:spring-ai-openai:${springAiVersion}"
+	implementation "org.springframework.ai:spring-ai-ollama:${springAiVersion}"
+	implementation "org.springframework.ai:spring-ai-bedrock:${springAiVersion}"
+
+	// Test dependencies
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+// Use -parameters flag for Spring
+tasks.withType(JavaCompile).configureEach {
+	options.compilerArgs << '-parameters'
+	options.fork = true
+	options.forkOptions.jvmArgs << '-Xshare:off'
+}
+
+test {
+	useJUnitPlatform()
+}
