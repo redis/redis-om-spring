@@ -54,7 +54,7 @@ jobs:
         run: |
           sed -i "s/^version\s*=.*/version = ${{ inputs.version }}/" gradle.properties
           git add gradle.properties
-          git commit --allow-empty -m "Releasing version ${{ inputs.version }}"
+          git commit --allow-empty -m "release: Releasing version ${{ inputs.version }}"
           git push origin HEAD
 
       - name: Build
