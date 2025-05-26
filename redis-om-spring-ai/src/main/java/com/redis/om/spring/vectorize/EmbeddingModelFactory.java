@@ -67,9 +67,8 @@ public class EmbeddingModelFactory {
 
   /**
    * Generates a cache key for a model based on its type and parameters
-   * 
    * @param modelType The type of the model
-   * @param params    Parameters that uniquely identify the model configuration
+   * @param params Parameters that uniquely identify the model configuration
    * @return A string key for caching
    */
   private String generateCacheKey(String modelType, String... params) {
@@ -92,7 +91,7 @@ public class EmbeddingModelFactory {
    * Removes a specific model from the cache.
    *
    * @param modelType The type of the model (e.g., "openai", "transformers")
-   * @param params    Parameters that were used to create the model
+   * @param params Parameters that were used to create the model
    * @return true if a model was removed, false otherwise
    */
   public boolean removeFromCache(String modelType, String... params) {
@@ -110,8 +109,12 @@ public class EmbeddingModelFactory {
   }
 
   public TransformersEmbeddingModel createTransformersEmbeddingModel(Vectorize vectorize) {
-    String cacheKey = generateCacheKey("transformers", vectorize.transformersModel(), vectorize.transformersTokenizer(),
-        vectorize.transformersResourceCacheConfiguration(), String.join(",", vectorize.transformersTokenizerOptions()));
+    String cacheKey = generateCacheKey("transformers",
+            vectorize.transformersModel(),
+            vectorize.transformersTokenizer(),
+            vectorize.transformersResourceCacheConfiguration(),
+            String.join(",", vectorize.transformersTokenizerOptions()));
+
 
     TransformersEmbeddingModel cachedModel = (TransformersEmbeddingModel) modelCache.get(cacheKey);
 
@@ -173,9 +176,15 @@ public class EmbeddingModelFactory {
 
     OpenAiApi openAiApi = OpenAiApi.builder().apiKey(properties.getOpenAi().getApiKey()).restClientBuilder(RestClient
         .builder().requestFactory(factory)).build();
-
-    OpenAiEmbeddingModel embeddingModel = new OpenAiEmbeddingModel(openAiApi, MetadataMode.EMBED, OpenAiEmbeddingOptions
-        .builder().model(model).build(), RetryUtils.DEFAULT_RETRY_TEMPLATE);
+    
+    OpenAiEmbeddingModel embeddingModel = new OpenAiEmbeddingModel(
+            openAiApi,
+            MetadataMode.EMBED,
+            OpenAiEmbeddingOptions.builder()
+                    .model(model)
+                    .build(),
+            RetryUtils.DEFAULT_RETRY_TEMPLATE
+    );
 
     modelCache.put(cacheKey, embeddingModel);
     return embeddingModel;
@@ -194,9 +203,11 @@ public class EmbeddingModelFactory {
   }
 
   public AzureOpenAiEmbeddingModel createAzureOpenAiEmbeddingModel(String deploymentName) {
-    String cacheKey = generateCacheKey("azure-openai", deploymentName, properties.getAzure().getOpenAi().getApiKey(),
-        properties.getAzure().getOpenAi().getEndpoint(), String.valueOf(properties.getAzure().getEntraId()
-            .isEnabled()));
+    String cacheKey = generateCacheKey("azure-openai",
+            deploymentName,
+            properties.getAzure().getOpenAi().getApiKey(),
+            properties.getAzure().getOpenAi().getEndpoint(),
+            String.valueOf(properties.getAzure().getEntraId().isEnabled()));
 
     AzureOpenAiEmbeddingModel cachedModel = (AzureOpenAiEmbeddingModel) modelCache.get(cacheKey);
 
@@ -228,8 +239,12 @@ public class EmbeddingModelFactory {
   }
 
   public VertexAiTextEmbeddingModel createVertexAiTextEmbeddingModel(String model) {
-    String cacheKey = generateCacheKey("vertex-ai", model, properties.getVertexAi().getApiKey(), properties
-        .getVertexAi().getEndpoint(), properties.getVertexAi().getProjectId(), properties.getVertexAi().getLocation());
+    String cacheKey = generateCacheKey("vertex-ai",
+            model,
+            properties.getVertexAi().getApiKey(),
+            properties.getVertexAi().getEndpoint(),
+            properties.getVertexAi().getProjectId(),
+            properties.getVertexAi().getLocation());
 
     VertexAiTextEmbeddingModel cachedModel = (VertexAiTextEmbeddingModel) modelCache.get(cacheKey);
 
@@ -282,7 +297,9 @@ public class EmbeddingModelFactory {
   }
 
   public OllamaEmbeddingModel createOllamaEmbeddingModel(String model) {
-    String cacheKey = generateCacheKey("ollama", model, properties.getOllama().getBaseUrl());
+    String cacheKey = generateCacheKey("ollama",
+            model,
+            properties.getOllama().getBaseUrl());
 
     OllamaEmbeddingModel cachedModel = (OllamaEmbeddingModel) modelCache.get(cacheKey);
 
@@ -294,8 +311,11 @@ public class EmbeddingModelFactory {
         restClientBuilder).webClientBuilder(webClientBuilder).responseErrorHandler(responseErrorHandler).build();
 
     OllamaOptions options = OllamaOptions.builder().model(model).truncate(false).build();
-
-    OllamaEmbeddingModel embeddingModel = OllamaEmbeddingModel.builder().ollamaApi(api).defaultOptions(options).build();
+    
+    OllamaEmbeddingModel embeddingModel = OllamaEmbeddingModel.builder()
+            .ollamaApi(api)
+            .defaultOptions(options)
+            .build();
 
     modelCache.put(cacheKey, embeddingModel);
 
@@ -325,9 +345,12 @@ public class EmbeddingModelFactory {
   }
 
   public BedrockCohereEmbeddingModel createCohereEmbeddingModel(String model) {
-    String cacheKey = generateCacheKey("bedrock-cohere", model, properties.getAws().getAccessKey(), properties.getAws()
-        .getSecretKey(), properties.getAws().getRegion(), String.valueOf(properties.getAws().getBedrockCohere()
-            .getResponseTimeOut()));
+    String cacheKey = generateCacheKey("bedrock-cohere",
+            model,
+            properties.getAws().getAccessKey(),
+            properties.getAws().getSecretKey(),
+            properties.getAws().getRegion(),
+            String.valueOf(properties.getAws().getBedrockCohere().getResponseTimeOut()));
 
     BedrockCohereEmbeddingModel cachedModel = (BedrockCohereEmbeddingModel) modelCache.get(cacheKey);
 
@@ -353,9 +376,12 @@ public class EmbeddingModelFactory {
   }
 
   public BedrockTitanEmbeddingModel createTitanEmbeddingModel(String model) {
-    String cacheKey = generateCacheKey("bedrock-titan", model, properties.getAws().getAccessKey(), properties.getAws()
-        .getSecretKey(), properties.getAws().getRegion(), String.valueOf(properties.getAws().getBedrockTitan()
-            .getResponseTimeOut()));
+    String cacheKey = generateCacheKey("bedrock-titan",
+            model,
+            properties.getAws().getAccessKey(),
+            properties.getAws().getSecretKey(),
+            properties.getAws().getRegion(),
+            String.valueOf(properties.getAws().getBedrockTitan().getResponseTimeOut()));
 
     BedrockTitanEmbeddingModel cachedModel = (BedrockTitanEmbeddingModel) modelCache.get(cacheKey);
 
