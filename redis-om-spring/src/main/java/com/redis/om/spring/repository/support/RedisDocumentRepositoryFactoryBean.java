@@ -21,6 +21,31 @@ import com.redis.om.spring.mapping.RedisEnhancedMappingContext;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.vectorize.Embedder;
 
+/**
+ * Factory bean for creating Redis document repository factory instances.
+ * <p>
+ * This factory bean integrates with Spring's IoC container to provide repository instances
+ * for Redis JSON document storage. It extends Spring Data's KeyValueRepositoryFactoryBean
+ * to add Redis OM Spring specific functionality including search indexing, vector embeddings,
+ * and custom query execution.
+ * </p>
+ * <p>
+ * The factory bean automatically configures:
+ * <ul>
+ * <li>Redis operations for JSON document storage</li>
+ * <li>Search indexing through RediSearchIndexer</li>
+ * <li>AI embedding capabilities</li>
+ * <li>Mapping context for entity relationships</li>
+ * <li>Query execution infrastructure</li>
+ * </ul>
+ *
+ * @param <T>  the repository type
+ * @param <S>  the domain type the repository manages
+ * @param <ID> the type of the id of the entity the repository manages
+ * @see org.springframework.data.keyvalue.repository.support.KeyValueRepositoryFactoryBean
+ * @see RedisDocumentRepositoryFactory
+ * @since 0.1.0
+ */
 public class RedisDocumentRepositoryFactoryBean<T extends Repository<S, ID>, S, ID> extends
     KeyValueRepositoryFactoryBean<T, S, ID> {
 

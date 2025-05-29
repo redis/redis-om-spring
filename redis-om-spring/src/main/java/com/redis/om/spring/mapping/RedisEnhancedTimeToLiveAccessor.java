@@ -19,7 +19,40 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.*;
 
 /**
- * TimeToLiveAccessor implementation for Redis OM Spring considering KeyspaceConfiguration
+ * Enhanced Time-To-Live (TTL) accessor implementation for Redis OM Spring that provides
+ * comprehensive TTL management capabilities for Redis entities.
+ * 
+ * <p>This implementation extends Spring Data Redis's TTL functionality by integrating
+ * with Redis OM Spring's {@link KeyspaceConfiguration} and {@link RedisEnhancedMappingContext}
+ * to provide flexible TTL resolution strategies. It supports multiple TTL configuration
+ * approaches including annotation-based, property-based, and method-based TTL definitions.
+ * 
+ * <p>The TTL resolution follows this priority order:
+ * <ol>
+ * <li>Property-level {@code @TimeToLive} annotations on entity fields</li>
+ * <li>Method-level {@code @TimeToLive} annotations on entity methods</li>
+ * <li>Class-level {@code @RedisHash(timeToLive = ...)} configurations</li>
+ * <li>KeyspaceConfiguration default timeouts</li>
+ * </ol>
+ * 
+ * <p>This accessor is particularly useful in Redis environments where different entity
+ * types require different expiration strategies, and supports both static and dynamic
+ * TTL values based on entity state.
+ * 
+ * <p>Key features:
+ * <ul>
+ * <li>Caches resolved TTL properties and methods for performance</li>
+ * <li>Supports multiple time units (seconds, minutes, hours, etc.)</li>
+ * <li>Handles partial updates through {@link PartialUpdate} objects</li>
+ * <li>Integrates with Redis OM Spring's enhanced mapping context</li>
+ * </ul>
+ * 
+ * @author Redis OM Spring Team
+ * @since 1.0.0
+ * @see TimeToLiveAccessor
+ * @see KeyspaceConfiguration
+ * @see RedisEnhancedMappingContext
+ * @see TimeToLive
  */
 public class RedisEnhancedTimeToLiveAccessor implements TimeToLiveAccessor {
 
@@ -29,6 +62,24 @@ public class RedisEnhancedTimeToLiveAccessor implements TimeToLiveAccessor {
   private final KeyspaceConfiguration keyspaceConfig;
   private final RedisEnhancedMappingContext mappingContext;
 
+  /**
+   * Constructs a new RedisEnhancedTimeToLiveAccessor with the specified configuration
+   * and mapping context.
+   * 
+   * <p>This constructor initializes the TTL accessor with the necessary components
+   * for resolving TTL values from various sources including keyspace configuration,
+   * entity annotations, and dynamic property values.
+   * 
+   * <p>The accessor will use the provided keyspace configuration to determine
+   * default TTL values for entity types, and the mapping context to access
+   * entity metadata and property values during TTL resolution.
+   * 
+   * @param keyspaceConfig the keyspace configuration containing default TTL settings
+   *                       for different entity types, must not be {@literal null}
+   * @param mappingContext the Redis enhanced mapping context for accessing entity
+   *                       metadata and property values, must not be {@literal null}
+   * @throws IllegalArgumentException if either parameter is {@literal null}
+   */
   public RedisEnhancedTimeToLiveAccessor(KeyspaceConfiguration keyspaceConfig,
       RedisEnhancedMappingContext mappingContext) {
     Assert.notNull(keyspaceConfig, "KeyspaceConfiguration must not be null");

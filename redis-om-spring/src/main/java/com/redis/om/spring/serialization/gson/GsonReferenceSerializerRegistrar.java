@@ -20,6 +20,11 @@ import com.google.gson.reflect.TypeToken;
 import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.ops.json.JSONOperations;
 
+/**
+ * A Spring component responsible for registering Gson type adapters for fields annotated with @Reference.
+ * This registrar scans for entities with @Reference fields and configures appropriate serialization/deserialization
+ * handling for those reference relationships.
+ */
 @Component
 public class GsonReferenceSerializerRegistrar {
   private static final Log logger = LogFactory.getLog(GsonReferenceSerializerRegistrar.class);
@@ -28,11 +33,22 @@ public class GsonReferenceSerializerRegistrar {
   private final ApplicationContext ac;
   private JSONOperations<?> ops;
 
+  /**
+   * Constructs a new GsonReferenceSerializerRegistrar.
+   * 
+   * @param builder the GsonBuilder to register type adapters with
+   * @param ac      the Spring ApplicationContext for bean lookups
+   */
   public GsonReferenceSerializerRegistrar(GsonBuilder builder, ApplicationContext ac) {
     this.builder = builder;
     this.ac = ac;
   }
 
+  /**
+   * Registers reference type adapters for all beans of the specified class type that contain @Reference fields.
+   * 
+   * @param cls the class type to scan for @Reference annotated fields
+   */
   public void registerReferencesFor(Class<?> cls) {
     Set<BeanDefinition> beanDefs = new HashSet<>(getBeanDefinitionsFor(ac, cls));
 
@@ -48,6 +64,11 @@ public class GsonReferenceSerializerRegistrar {
     }
   }
 
+  /**
+   * Processes an entity class to find and register type adapters for @Reference fields.
+   * 
+   * @param clazz the entity class to process
+   */
   private void processEntity(Class<?> clazz) {
     ops = ac.getBean("redisJSONOperations", JSONOperations.class);
     final List<java.lang.reflect.Field> allClassFields = getDeclaredFieldsTransitively(clazz);
@@ -59,6 +80,11 @@ public class GsonReferenceSerializerRegistrar {
     }
   }
 
+  /**
+   * Processes a specific field annotated with @Reference and registers the appropriate type adapter.
+   * 
+   * @param field the field to process
+   */
   private void processField(Field field) {
     TypeToken<?> typeToken;
     if (isCollection(field)) {

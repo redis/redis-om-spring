@@ -19,19 +19,62 @@ import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.AggregationResult;
 
+/**
+ * Implementation of Spring Data's Page interface for Redis aggregation results.
+ * This class provides pagination support for aggregation queries, allowing large
+ * result sets to be processed in manageable chunks.
+ * 
+ * <p>AggregationPage supports both cursor-based and offset-based pagination
+ * depending on the underlying aggregation configuration. It handles the conversion
+ * of raw Redis aggregation results into typed entities.</p>
+ * 
+ * <p>Key features:</p>
+ * <ul>
+ * <li>Lazy loading of aggregation results</li>
+ * <li>Support for cursor-based pagination for large datasets</li>
+ * <li>Automatic conversion from Redis results to entity objects</li>
+ * <li>Integration with Spring Data pagination abstractions</li>
+ * </ul>
+ * 
+ * @param <E> the entity type of the page content
+ * 
+ * @since 1.0
+ * @see Page
+ * @see AggregationStream
+ */
 public class AggregationPage<E> implements Page<E>, Serializable {
   private final transient Pageable pageable;
   private final transient Gson gson;
+  /** The class type of the entities in this page. */
   private final Class<E> entityClass;
+  /** Flag indicating whether entities are stored as JSON documents (true) or hashes (false). */
   private final boolean isDocument;
   private final transient MappingRedisOMConverter mappingConverter;
+  /** The search operations instance used for executing aggregation queries. */
   private final SearchOperations<String> search;
+  /** The actual content of this page, lazily populated from aggregation results. */
   private List<E> content;
   private transient AggregationStream<E> aggregationStream;
+  /** The cursor ID for pagination, -1 indicates no cursor. */
   private long cursorId = -1;
+  /** The raw aggregation result from Redis, used for content extraction. */
   private AggregationResult aggregationResult;
+  /** The total number of elements across all pages, cached after first calculation. */
   private Long totalElementCount;
 
+  /**
+   * Creates a new AggregationPage from an aggregation stream.
+   * This constructor is used for lazy evaluation where the aggregation
+   * is executed when the page content is first accessed.
+   * 
+   * @param aggregationStream the aggregation stream to execute
+   * @param pageable          the pagination parameters
+   * @param entityClass       the class of entities in this page
+   * @param gson              the JSON serializer for entity conversion
+   * @param mappingConverter  the Redis mapping converter
+   * @param isDocument        whether entities are document-based or hash-based
+   * @param search            the search operations for executing queries
+   */
   public AggregationPage(AggregationStream<E> aggregationStream, Pageable pageable, Class<E> entityClass, Gson gson,
       MappingRedisOMConverter mappingConverter, boolean isDocument, SearchOperations<String> search) {
     this.aggregationStream = aggregationStream;
@@ -43,6 +86,19 @@ public class AggregationPage<E> implements Page<E>, Serializable {
     this.search = search;
   }
 
+  /**
+   * Creates a new AggregationPage from pre-executed aggregation results.
+   * This constructor is used when the aggregation has already been executed
+   * and the results are available.
+   * 
+   * @param aggregationResult the pre-executed aggregation results
+   * @param pageable          the pagination parameters
+   * @param entityClass       the class of entities in this page
+   * @param gson              the JSON serializer for entity conversion
+   * @param mappingConverter  the Redis mapping converter
+   * @param isDocument        whether entities are document-based or hash-based
+   * @param search            the search operations for executing queries
+   */
   public AggregationPage(AggregationResult aggregationResult, Pageable pageable, Class<E> entityClass, Gson gson,
       MappingRedisOMConverter mappingConverter, boolean isDocument, SearchOperations<String> search) {
     this.aggregationResult = aggregationResult;
@@ -177,6 +233,16 @@ public class AggregationPage<E> implements Page<E>, Serializable {
     return cursorId;
   }
 
+  /**
+   * Converts the page content using the provided converter function.
+   * This method applies the converter to each element in the page and returns
+   * a new list with the converted elements.
+   * 
+   * @param <U>       the target type for conversion
+   * @param converter the function to apply to each element for conversion
+   * @return a list of converted elements
+   * @throws IllegalArgumentException if converter is null
+   */
   @SuppressWarnings(
     "unchecked"
   )

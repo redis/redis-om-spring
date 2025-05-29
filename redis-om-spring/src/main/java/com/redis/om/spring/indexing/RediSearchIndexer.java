@@ -49,6 +49,39 @@ import redis.clients.jedis.search.FieldName;
 import redis.clients.jedis.search.IndexDataType;
 import redis.clients.jedis.search.schemafields.*;
 
+/**
+ * Component responsible for creating and managing RediSearch indices for Redis OM Spring entities.
+ * 
+ * This class handles the automatic creation of search indices for entities annotated with {@link Document}
+ * or {@link RedisHash}. It processes field annotations like {@link Indexed}, {@link Searchable},
+ * {@link TextIndexed}, {@link TagIndexed}, {@link NumericIndexed}, {@link GeoIndexed}, and
+ * {@link VectorIndexed} to configure appropriate search schema fields.
+ * 
+ * <p>The indexer maintains mappings between:
+ * <ul>
+ * <li>Redis keyspaces and entity classes</li>
+ * <li>Entity classes and their corresponding search index names</li>
+ * <li>Entity fields and their search index aliases</li>
+ * <li>Entity classes and their identifier filters</li>
+ * </ul>
+ * 
+ * <p>Key features include:
+ * <ul>
+ * <li>Automatic index creation with configurable creation modes</li>
+ * <li>Support for JSON documents and hash structures</li>
+ * <li>Vector similarity search capabilities</li>
+ * <li>Nested object indexing</li>
+ * <li>Reference field indexing</li>
+ * <li>TTL (Time To Live) configuration</li>
+ * </ul>
+ * 
+ * @see Document
+ * @see RedisHash
+ * @see IndexingOptions
+ * @see Indexed
+ * @see Searchable
+ * @since 1.0.0
+ */
 @Component
 public class RediSearchIndexer {
   private static final Log logger = LogFactory.getLog(RediSearchIndexer.class);
@@ -66,6 +99,14 @@ public class RediSearchIndexer {
   private final GsonBuilder gsonBuilder;
   private final RedisOMProperties properties;
 
+  /**
+   * Constructs a new RediSearchIndexer with the required dependencies.
+   * Initializes Redis modules operations and mapping context from the application context.
+   *
+   * @param ac          the Spring application context for accessing beans
+   * @param properties  the Redis OM configuration properties
+   * @param gsonBuilder the Gson builder for JSON serialization configuration
+   */
   @SuppressWarnings(
     "unchecked"
   )
@@ -77,6 +118,12 @@ public class RediSearchIndexer {
     this.gsonBuilder = gsonBuilder;
   }
 
+  /**
+   * Creates search indices for all entities annotated with the specified annotation class.
+   * Scans for bean definitions and creates indices for each discovered entity class.
+   *
+   * @param cls the annotation class to search for (e.g., Document.class or RedisHash.class)
+   */
   public void createIndicesFor(Class<?> cls) {
     Set<BeanDefinition> beanDefs = new HashSet<>(getBeanDefinitionsFor(ac, cls));
 
@@ -93,6 +140,13 @@ public class RediSearchIndexer {
     }
   }
 
+  /**
+   * Creates a RediSearch index for the specified entity class.
+   * Processes all indexed fields, configures index parameters, and creates the search index
+   * with appropriate schema fields based on the entity's annotations.
+   *
+   * @param cl the entity class to create an index for
+   */
   public void createIndexFor(Class<?> cl) {
     Optional<IndexDataType> maybeType = determineIndexTarget(cl);
     IndexDataType idxType;
@@ -188,22 +242,54 @@ public class RediSearchIndexer {
     }
   }
 
+  /**
+   * Drops the search index and all associated documents for the specified entity class.
+   * This is a destructive operation that removes both the index definition and all indexed data.
+   *
+   * @param cl the entity class whose index and documents should be dropped
+   */
   public void dropIndexAndDocumentsFor(Class<?> cl) {
     dropIndex(cl, true, false);
   }
 
+  /**
+   * Drops the existing search index for the specified entity class and recreates it.
+   * The documents remain intact, only the index definition is recreated.
+   *
+   * @param cl the entity class whose index should be dropped and recreated
+   */
   public void dropAndRecreateIndexFor(Class<?> cl) {
     dropIndex(cl, false, true);
   }
 
+  /**
+   * Drops the search index for the specified entity class.
+   * The documents remain in Redis, only the index definition is removed.
+   *
+   * @param cl the entity class whose index should be dropped
+   */
   public void dropIndexFor(Class<?> cl) {
     dropIndex(cl, false, false);
   }
 
+  /**
+   * Retrieves the index name for the specified keyspace.
+   * Looks up the entity class associated with the keyspace and returns its index name.
+   *
+   * @param keyspace the Redis keyspace to look up
+   * @return the index name associated with the keyspace
+   */
   public String getIndexName(String keyspace) {
     return getIndexName(keyspaceToEntityClass.get(getKeyspace(keyspace)));
   }
 
+  /**
+   * Retrieves the index name for the specified entity class.
+   * Returns the configured index name or generates a default name if not found.
+   *
+   * @param entityClass the entity class to get the index name for
+   * @return the index name for the entity class, or a default name based on the class name
+   */
   public String getIndexName(Class<?> entityClass) {
     if (entityClass != null && entityClassToIndexName.containsKey(entityClass)) {
       return entityClassToIndexName.get(entityClass);
@@ -212,6 +298,14 @@ public class RediSearchIndexer {
     }
   }
 
+  /**
+   * Adds a mapping between a Redis keyspace and an entity class.
+   * This establishes the relationship between Redis key prefixes and Java entity types
+   * for search index management.
+   *
+   * @param keyspace    the Redis keyspace (key prefix)
+   * @param entityClass the entity class associated with the keyspace
+   */
   public void addKeySpaceMapping(String keyspace, Class<?> entityClass) {
     String key = getKeyspace(keyspace);
     keyspaceToEntityClass.put(key, entityClass);
@@ -219,6 +313,14 @@ public class RediSearchIndexer {
     indexedEntityClasses.add(entityClass);
   }
 
+  /**
+   * Removes the mapping between a Redis keyspace and an entity class.
+   * This method cleans up the internal mappings when an entity class is no longer
+   * associated with a particular keyspace, typically during index cleanup operations.
+   * 
+   * @param keyspace    the Redis keyspace (key prefix) to remove from mappings
+   * @param entityClass the entity class to disassociate from the keyspace
+   */
   public void removeKeySpaceMapping(String keyspace, Class<?> entityClass) {
     String key = getKeyspace(keyspace);
     keyspaceToEntityClass.remove(key);
@@ -226,10 +328,23 @@ public class RediSearchIndexer {
     indexedEntityClasses.remove(entityClass);
   }
 
+  /**
+   * Retrieves the entity class associated with the specified keyspace.
+   *
+   * @param keyspace the Redis keyspace to look up
+   * @return the entity class mapped to the keyspace, or null if no mapping exists
+   */
   public Class<?> getEntityClassForKeyspace(String keyspace) {
     return keyspaceToEntityClass.get(getKeyspace(keyspace));
   }
 
+  /**
+   * Retrieves the identifier filter for the specified entity class.
+   * Identifier filters are used to process entity IDs before indexing or querying.
+   *
+   * @param entityClass the entity class to get the identifier filter for
+   * @return an Optional containing the identifier filter, or empty if none is configured
+   */
   public Optional<IdentifierFilter<?>> getIdentifierFilterFor(Class<?> entityClass) {
     if (entityClass != null && entityClassToIdentifierFilter.containsKey(entityClass)) {
       return Optional.of(entityClassToIdentifierFilter.get(entityClass));
@@ -238,10 +353,25 @@ public class RediSearchIndexer {
     }
   }
 
+  /**
+   * Retrieves the identifier filter for the specified keyspace.
+   * Looks up the entity class for the keyspace and returns its identifier filter.
+   *
+   * @param keyspace the Redis keyspace to get the identifier filter for
+   * @return an Optional containing the identifier filter, or empty if none is configured
+   */
   public Optional<IdentifierFilter<?>> getIdentifierFilterFor(String keyspace) {
     return getIdentifierFilterFor(keyspaceToEntityClass.get(keyspace.endsWith(":") ? keyspace : keyspace + ":"));
   }
 
+  /**
+   * Retrieves the Redis keyspace (key prefix) for the specified entity class.
+   * If no explicit mapping exists, derives the keyspace from the entity's persistent configuration
+   * or uses the class name as fallback.
+   *
+   * @param entityClass the entity class to get the keyspace for
+   * @return the Redis keyspace associated with the entity class
+   */
   public String getKeyspaceForEntityClass(Class<?> entityClass) {
     String keyspace = entityClassToKeySpace.get(entityClass);
     if (keyspace == null) {
@@ -254,10 +384,27 @@ public class RediSearchIndexer {
     return keyspace;
   }
 
+  /**
+   * Checks whether an index definition exists for the specified entity class.
+   * This method verifies if the entity class has been registered and processed
+   * for index creation, regardless of whether the actual Redis index exists.
+   * 
+   * @param entityClass the entity class to check for index definition
+   * @return true if an index definition exists for the entity class, false otherwise
+   */
   public boolean indexDefinitionExistsFor(Class<?> entityClass) {
     return indexedEntityClasses.contains(entityClass);
   }
 
+  /**
+   * Checks whether a RediSearch index actually exists in Redis for the specified entity class.
+   * This method queries Redis directly to verify the existence of the search index,
+   * unlike {@link #indexDefinitionExistsFor(Class)} which only checks internal mappings.
+   * 
+   * @param entityClass the entity class to check for index existence in Redis
+   * @return true if the search index exists in Redis, false otherwise
+   * @throws JedisDataException if a Redis error occurs other than "Unknown index name"
+   */
   public boolean indexExistsFor(Class<?> entityClass) {
     try {
       return getIndexInfo(entityClass) != null;
@@ -276,6 +423,15 @@ public class RediSearchIndexer {
     return opsForSearch.getInfo();
   }
 
+  /**
+   * Retrieves the search schema fields for the specified entity class.
+   * The schema contains the complete field definitions used to create the RediSearch index,
+   * including field names, types, and indexing options.
+   * 
+   * @param entityClass the entity class to get the search schema for
+   * @return a list of SearchField objects representing the index schema,
+   *         or null if no schema has been generated for the entity class
+   */
   public List<SearchField> getSchemaFor(Class<?> entityClass) {
     return entityClassToSchema.get(entityClass);
   }
@@ -908,11 +1064,24 @@ public class RediSearchIndexer {
     return FieldName.of(name).as(alias);
   }
 
+  /**
+   * Retrieves the search index field alias for the specified entity class and field name.
+   * Aliases are used to map entity field names to their corresponding search index field names.
+   *
+   * @param cl        the entity class containing the field
+   * @param fieldName the name of the field to get the alias for
+   * @return the search index alias for the field, or the original field name if no alias exists
+   */
   public String getAlias(Class<?> cl, String fieldName) {
     var alias = entityClassFieldToAlias.get(Tuples.of(cl, fieldName));
     return alias != null ? alias : fieldName;
   }
 
+  /**
+   * Retrieves the Redis OM configuration properties.
+   *
+   * @return the RedisOMProperties instance containing configuration settings
+   */
   public RedisOMProperties getProperties() {
     return properties;
   }

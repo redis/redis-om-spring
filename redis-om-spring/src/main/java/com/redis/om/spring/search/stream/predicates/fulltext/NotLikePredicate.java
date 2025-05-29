@@ -8,19 +8,52 @@ import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 
 import redis.clients.jedis.search.querybuilder.Node;
 
+/**
+ * Predicate for performing "not like" operations on full-text indexed fields.
+ * This predicate excludes documents where the specified field matches the given
+ * pattern. It supports SQL-style wildcard patterns (%) and converts them to
+ * RediSearch syntax, then negates the result to exclude matching documents.
+ *
+ * @param <E> the entity type being queried
+ * @param <T> the type of the pattern being compared
+ */
 public class NotLikePredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   private final T value;
 
+  /**
+   * Constructs a NotLikePredicate for the specified field and pattern.
+   *
+   * @param field the search field accessor for the field to be queried
+   * @param value the pattern that should not match the field value (supports % wildcards)
+   */
   public NotLikePredicate(SearchFieldAccessor field, T value) {
     super(field);
     this.value = value;
   }
 
+  /**
+   * Gets the pattern that should not match the field value.
+   *
+   * @return the pattern to exclude from matches
+   */
   public T getValue() {
     return value;
   }
 
+  /**
+   * Applies the "not like" predicate to the query node tree.
+   * Creates a negated query that excludes documents where the field matches the
+   * specified pattern. Supports various SQL-style wildcard patterns:
+   * - prefix% (prefix matching)
+   * - %suffix (suffix matching)
+   * - %contains% (substring matching)
+   * - complex patterns with multiple wildcards
+   * 
+   * @param root the root query node to which this predicate will be applied
+   * @return the modified query node with the "not like" condition applied,
+   *         or the original root if the value is empty
+   */
   @Override
   public Node apply(Node root) {
     if (!ObjectUtils.isNotEmpty(getValue())) {
@@ -155,28 +188,6 @@ public class NotLikePredicate<E, T> extends BaseAbstractPredicate<E, T> {
         }
       };
     }
-  }
-
-  /**
-   * Escapes special characters in a wildcard pattern while preserving the * characters
-   */
-  private String escapeWildcardPattern(String pattern) {
-    StringBuilder sb = new StringBuilder();
-    char[] chars = pattern.toCharArray();
-
-    for (char c : chars) {
-      // If it's a special character (except *) that needs escaping
-      if (QueryUtils.TAG_ESCAPE_CHARS.contains(c) && c != '*') {
-        sb.append("\\");
-      }
-      // Add backslash before spaces when used in queries
-      if (c == ' ') {
-        sb.append("\\");
-      }
-      sb.append(c);
-    }
-
-    return sb.toString();
   }
 
 }

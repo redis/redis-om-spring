@@ -5,8 +5,22 @@ import java.util.Date;
 
 import com.google.gson.*;
 
+/**
+ * Gson type adapter for Date serialization and deserialization.
+ */
 public class DateTypeAdapter implements JsonSerializer<Date>, JsonDeserializer<Date> {
 
+  /**
+   * Creates a new DateTypeAdapter.
+   */
+  public DateTypeAdapter() {
+  }
+
+  /**
+   * Returns a singleton instance of DateTypeAdapter.
+   *
+   * @return the DateTypeAdapter instance
+   */
   public static DateTypeAdapter getInstance() {
     return new DateTypeAdapter();
   }

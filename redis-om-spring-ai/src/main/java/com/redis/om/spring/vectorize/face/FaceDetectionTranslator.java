@@ -28,17 +28,66 @@ import ai.djl.ndarray.types.Shape;
 import ai.djl.translate.Translator;
 import ai.djl.translate.TranslatorContext;
 
+/**
+ * Translator for face detection that processes images and detects faces with their landmarks.
+ * This class implements the DJL (Deep Java Library) Translator interface to handle the
+ * pre-processing and post-processing of face detection models.
+ * 
+ * <p>The translator performs the following operations:
+ * <ul>
+ * <li>Pre-processes input images for face detection models</li>
+ * <li>Post-processes model outputs to extract face bounding boxes and landmarks</li>
+ * <li>Applies non-maximum suppression (NMS) to filter overlapping detections</li>
+ * <li>Extracts facial landmarks (5 key points) for each detected face</li>
+ * </ul>
+ * 
+ * <p>This translator is designed to work with face detection models that output:
+ * <ul>
+ * <li>Bounding box predictions</li>
+ * <li>Confidence scores</li>
+ * <li>Facial landmark coordinates</li>
+ * </ul>
+ * 
+ * @see ai.djl.translate.Translator
+ * @see ai.djl.modality.cv.output.DetectedObjects
+ * @see com.redis.om.spring.vectorize.face.FaceFeatureTranslator
+ */
 public class FaceDetectionTranslator implements Translator<Image, DetectedObjects> {
 
+  /** Confidence threshold for filtering low-confidence detections */
   private final double confThresh;
+
+  /** Non-maximum suppression threshold for filtering overlapping detections */
   private final double nmsThresh;
+
+  /** Maximum number of face detections to return */
   private final int topK;
+
+  /** Variance values used for decoding bounding box predictions */
   private final double[] variance;
+
+  /** Scale configurations for multi-scale face detection */
   private final int[][] scales;
+
+  /** Step sizes for feature map generation at different scales */
   private final int[] steps;
+
+  /** Width of the input image */
   private int width;
+
+  /** Height of the input image */
   private int height;
 
+  /**
+   * Constructs a FaceDetectionTranslator with the specified parameters.
+   * 
+   * @param confThresh confidence threshold for filtering detections (0.0 to 1.0)
+   * @param nmsThresh  non-maximum suppression threshold for filtering overlapping boxes (0.0 to 1.0)
+   * @param variance   variance values for decoding predictions, typically {0.1, 0.2}
+   * @param topK       maximum number of detections to return
+   * @param scales     scale configurations for multi-scale detection, e.g., {{10, 16, 24}, {32, 48}, {64, 96}}
+   * @param steps      step sizes for feature maps at different scales, e.g., {8, 16, 32}
+   */
   public FaceDetectionTranslator(double confThresh, double nmsThresh, double[] variance, int topK, int[][] scales,
       int[] steps) {
     this.confThresh = confThresh;
@@ -50,7 +99,20 @@ public class FaceDetectionTranslator implements Translator<Image, DetectedObject
   }
 
   /**
-   * {@inheritDoc}
+   * Pre-processes the input image for face detection.
+   * 
+   * <p>This method performs the following transformations:
+   * <ul>
+   * <li>Converts the image to an NDArray</li>
+   * <li>Transposes from HWC (Height-Width-Channel) to CHW format</li>
+   * <li>Flips color channels from RGB to BGR</li>
+   * <li>Converts to FLOAT32 data type if necessary</li>
+   * <li>Subtracts mean values [104, 117, 123] for normalization</li>
+   * </ul>
+   * 
+   * @param ctx   the translator context providing NDManager and other resources
+   * @param input the input image to process
+   * @return an NDList containing the pre-processed image tensor
    */
   @Override
   public NDList processInput(TranslatorContext ctx, Image input) {
@@ -68,7 +130,27 @@ public class FaceDetectionTranslator implements Translator<Image, DetectedObject
   }
 
   /**
-   * {@inheritDoc}
+   * Post-processes the model output to extract detected faces with landmarks.
+   * 
+   * <p>This method performs the following operations:
+   * <ul>
+   * <li>Decodes bounding box predictions using anchor boxes and variance</li>
+   * <li>Decodes facial landmark coordinates (5 key points per face)</li>
+   * <li>Filters detections based on confidence threshold</li>
+   * <li>Applies non-maximum suppression to remove overlapping detections</li>
+   * <li>Returns the top-K detections with highest confidence scores</li>
+   * </ul>
+   * 
+   * <p>The expected model outputs are:
+   * <ul>
+   * <li>list[0]: Bounding box predictions</li>
+   * <li>list[1]: Confidence scores</li>
+   * <li>list[2]: Facial landmark predictions</li>
+   * </ul>
+   * 
+   * @param ctx  the translator context providing NDManager and other resources
+   * @param list the NDList containing model outputs
+   * @return DetectedObjects containing detected faces with their bounding boxes, confidence scores, and landmarks
    */
   @Override
   public DetectedObjects processOutput(TranslatorContext ctx, NDList list) {
@@ -143,6 +225,20 @@ public class FaceDetectionTranslator implements Translator<Image, DetectedObject
     return new DetectedObjects(retNames, retProbs, retBB);
   }
 
+  /**
+   * Generates anchor boxes (default boxes) for face detection at multiple scales.
+   * 
+   * <p>This method creates a grid of anchor boxes across the image at different scales
+   * and aspect ratios. These anchor boxes serve as reference boxes for the model's
+   * bounding box predictions.
+   * 
+   * @param manager the NDManager for creating NDArrays
+   * @param width   the width of the input image
+   * @param height  the height of the input image
+   * @param scales  the scale configurations for each feature map level
+   * @param steps   the step sizes (stride) for each feature map level
+   * @return an NDArray containing normalized anchor box coordinates [cx, cy, w, h]
+   */
   private NDArray boxRecover(NDManager manager, int width, int height, int[][] scales, int[] steps) {
     int[][] aspectRatio = new int[steps.length][2];
     for (int i = 0; i < steps.length; i++) {
@@ -175,7 +271,24 @@ public class FaceDetectionTranslator implements Translator<Image, DetectedObject
     return manager.create(boxes).clip(0.0, 1.0);
   }
 
-  // decode face landmarks, 5 points per face
+  /**
+   * Decodes facial landmark predictions to absolute coordinates.
+   * 
+   * <p>This method decodes the model's landmark predictions from relative offsets
+   * to absolute coordinates. Each face has 5 key landmarks:
+   * <ul>
+   * <li>Left eye</li>
+   * <li>Right eye</li>
+   * <li>Nose tip</li>
+   * <li>Left mouth corner</li>
+   * <li>Right mouth corner</li>
+   * </ul>
+   * 
+   * @param pre     the predicted landmark offsets from the model
+   * @param priors  the anchor box coordinates
+   * @param scaleXY the scaling factor for landmark predictions
+   * @return an NDArray containing decoded landmark coordinates for all detections
+   */
   private NDArray decodeLandm(NDArray pre, NDArray priors, double scaleXY) {
     NDArray point1 = pre.get(":, :2").mul(scaleXY).mul(priors.get(":, 2:")).add(priors.get(":, :2"));
     NDArray point2 = pre.get(":, 2:4").mul(scaleXY).mul(priors.get(":, 2:")).add(priors.get(":, :2"));

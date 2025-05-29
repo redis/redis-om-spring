@@ -16,19 +16,46 @@ import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import redis.clients.jedis.search.querybuilder.Values;
 
+/**
+ * A predicate that represents a "less than" comparison for numeric and temporal values.
+ * This predicate can handle various data types including dates, times, and numeric values,
+ * converting them to appropriate Redis search query conditions.
+ *
+ * @param <E> the entity type being queried
+ * @param <T> the type of the value being compared
+ */
 public class LessThanPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   private final T value;
 
+  /**
+   * Constructs a new LessThanPredicate with the specified field and value.
+   *
+   * @param field the search field accessor for the field to compare
+   * @param value the value to compare against (must be less than this value)
+   */
   public LessThanPredicate(SearchFieldAccessor field, T value) {
     super(field);
     this.value = value;
   }
 
+  /**
+   * Gets the value being compared against.
+   *
+   * @return the comparison value
+   */
   public T getValue() {
     return value;
   }
 
+  /**
+   * Applies the less than predicate to the given root node.
+   * This method handles various data types and converts them to appropriate Redis search syntax.
+   *
+   * @param root the root query node to apply this predicate to
+   * @return the modified query node with the less than condition applied,
+   *         or the original root node if the value is empty
+   */
   @Override
   public Node apply(Node root) {
     if (isEmpty(getValue()))

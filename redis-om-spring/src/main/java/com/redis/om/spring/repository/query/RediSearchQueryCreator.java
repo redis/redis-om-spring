@@ -14,10 +14,31 @@ import org.springframework.data.repository.query.parser.PartTree;
  */
 public class RediSearchQueryCreator extends AbstractQueryCreator<KeyValueQuery<RediSearchQuery>, RediSearchQuery> {
 
+  /**
+   * Creates a new RediSearchQueryCreator from a parsed method name.
+   * <p>
+   * This constructor is used when creating queries from repository method names
+   * without additional parameter context. The PartTree contains the parsed
+   * structure of the method name including property paths and query keywords.
+   * </p>
+   *
+   * @param tree the parsed method name structure
+   */
   public RediSearchQueryCreator(PartTree tree) {
     super(tree);
   }
 
+  /**
+   * Creates a new RediSearchQueryCreator with method name and parameter context.
+   * <p>
+   * This constructor is used when creating queries that require access to method
+   * parameters for query construction. The ParameterAccessor provides type-safe
+   * access to method arguments during query building.
+   * </p>
+   *
+   * @param tree       the parsed method name structure
+   * @param parameters accessor for method parameters and their types
+   */
   public RediSearchQueryCreator(PartTree tree, ParameterAccessor parameters) {
     super(tree, parameters);
   }

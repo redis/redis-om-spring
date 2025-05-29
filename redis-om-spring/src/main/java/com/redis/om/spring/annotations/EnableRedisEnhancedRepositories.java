@@ -24,6 +24,22 @@ import com.redis.om.spring.repository.configuration.RedisEnhancedRepositoriesReg
 import com.redis.om.spring.repository.query.RedisEnhancedQuery;
 import com.redis.om.spring.repository.support.RedisEnhancedRepositoryFactoryBean;
 
+/**
+ * Annotation to enable Redis Enhanced repositories. This annotation configures Spring to scan for
+ * interfaces that extend {@link com.redis.om.spring.repository.RedisEnhancedRepository} and create
+ * Spring beans for them. Redis Enhanced repositories work with Redis hash structures and provide
+ * enhanced search capabilities via RediSearch indexing while maintaining backward compatibility
+ * with standard Spring Data Redis hash mappings.
+ *
+ * <p>Example usage:</p>
+ * <pre>
+ * &#64;Configuration
+ * &#64;EnableRedisEnhancedRepositories(basePackages = "com.example.repositories")
+ * public class RedisConfig {
+ * // configuration
+ * }
+ * </pre>
+ */
 @Target(
   ElementType.TYPE
 )

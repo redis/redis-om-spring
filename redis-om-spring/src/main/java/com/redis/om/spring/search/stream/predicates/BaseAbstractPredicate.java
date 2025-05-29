@@ -15,15 +15,48 @@ import com.redis.om.spring.metamodel.SearchFieldAccessor;
 
 import redis.clients.jedis.search.Schema.FieldType;
 
+/**
+ * Abstract base class for search predicates that operate on specific fields.
+ * This class provides common functionality for predicates that are bound to
+ * specific entity fields and need to determine the appropriate Redis field type.
+ * 
+ * <p>BaseAbstractPredicate analyzes field annotations to determine the correct
+ * Redis field type (TEXT, TAG, NUMERIC, GEO) and provides access to field
+ * metadata for query construction.</p>
+ * 
+ * <p>This class serves as the foundation for field-specific predicates in
+ * Redis OM search operations, handling the mapping between Java field types
+ * and annotations to Redis search field types.</p>
+ * 
+ * @param <E> the entity type being filtered
+ * @param <T> the field type of the predicate
+ * 
+ * @since 1.0
+ * @see SearchFieldPredicate
+ * @see SearchFieldAccessor
+ */
 public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicate<E, T> {
 
+  /** The Redis field type for this predicate's target field */
   private FieldType fieldType;
+
+  /** The field accessor that provides metadata about the target field */
   private SearchFieldAccessor field;
 
+  /**
+   * Creates a new BaseAbstractPredicate without a specific field.
+   * This constructor is used for compound predicates that don't target a specific field.
+   */
   protected BaseAbstractPredicate() {
 
   }
 
+  /**
+   * Creates a new BaseAbstractPredicate for the specified field.
+   * This constructor analyzes the field to determine its Redis field type.
+   * 
+   * @param field the field accessor for the target field
+   */
   protected BaseAbstractPredicate(SearchFieldAccessor field) {
     this.field = field;
     this.fieldType = getFieldTypeFor(field.getField());

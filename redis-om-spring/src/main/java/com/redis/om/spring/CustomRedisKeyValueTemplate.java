@@ -8,6 +8,9 @@ import org.springframework.data.redis.core.mapping.RedisMappingContext;
 
 import com.redis.om.spring.id.ULIDIdentifierGenerator;
 
+/**
+ * Custom Redis key-value template extending KeyValueTemplate with Redis-specific functionality.
+ */
 public class CustomRedisKeyValueTemplate extends KeyValueTemplate {
 
   private final RedisKeyValueAdapter adapter;

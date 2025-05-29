@@ -13,23 +13,49 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisOperations;
 
+/**
+ * Auditor for automatically setting entity audit fields like created and last modified dates.
+ */
 public class EntityAuditor {
   private final RedisOperations<?, ?> redisOperations;
 
+  /**
+   * Creates a new entity auditor.
+   *
+   * @param redisOperations the Redis operations
+   */
   public EntityAuditor(RedisOperations<?, ?> redisOperations) {
     this.redisOperations = redisOperations;
   }
 
+  /**
+   * Processes entity audit fields based on whether the key exists.
+   *
+   * @param redisKey the Redis key
+   * @param item     the entity to audit
+   */
   public void processEntity(byte[] redisKey, Object item) {
     boolean isNew = (boolean) redisOperations.execute((RedisCallback<Object>) connection -> !connection.keyCommands()
         .exists(redisKey));
     processEntity(item, isNew);
   }
 
+  /**
+   * Processes entity audit fields based on whether the key exists.
+   *
+   * @param redisKey the Redis key
+   * @param item     the entity to audit
+   */
   public void processEntity(String redisKey, Object item) {
     processEntity(redisKey.getBytes(), item);
   }
 
+  /**
+   * Processes entity audit fields.
+   *
+   * @param item  the entity to audit
+   * @param isNew whether the entity is new
+   */
   public void processEntity(Object item, boolean isNew) {
     var auditClass = isNew ? CreatedDate.class : LastModifiedDate.class;
 

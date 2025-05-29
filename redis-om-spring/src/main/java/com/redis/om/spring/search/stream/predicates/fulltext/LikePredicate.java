@@ -9,19 +9,47 @@ import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
 
+/**
+ * A predicate that represents a "LIKE" pattern matching operation for text search.
+ * This predicate supports SQL-style wildcard patterns using '%' and converts them
+ * to appropriate Redis search syntax with '*' wildcards.
+ *
+ * @param <E> the entity type being queried
+ * @param <T> the type of the value being matched
+ */
 public class LikePredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   private final T value;
 
+  /**
+   * Constructs a new LikePredicate with the specified field and pattern value.
+   *
+   * @param field the search field accessor for the field to match against
+   * @param value the pattern value containing wildcards ('%' for SQL-style patterns)
+   */
   public LikePredicate(SearchFieldAccessor field, T value) {
     super(field);
     this.value = value;
   }
 
+  /**
+   * Gets the pattern value being matched against.
+   *
+   * @return the pattern value with potential wildcards
+   */
   public T getValue() {
     return value;
   }
 
+  /**
+   * Applies the LIKE pattern matching predicate to the given root node.
+   * This method converts SQL-style wildcard patterns ('%') to Redis search patterns ('*')
+   * and handles various pattern types including prefix, suffix, contains, and complex patterns.
+   *
+   * @param root the root query node to apply this predicate to
+   * @return the modified query node with the pattern matching condition applied,
+   *         or the original root node if the value is empty
+   */
   @Override
   public Node apply(Node root) {
     if (!ObjectUtils.isNotEmpty(getValue())) {
@@ -160,7 +188,12 @@ public class LikePredicate<E, T> extends BaseAbstractPredicate<E, T> {
   }
 
   /**
-   * Escapes special characters in a wildcard pattern while preserving the * characters
+   * Escapes special characters in a wildcard pattern while preserving the * characters.
+   * This method ensures that Redis search special characters are properly escaped
+   * while maintaining wildcard functionality.
+   *
+   * @param pattern the wildcard pattern to escape
+   * @return the escaped pattern with special characters handled
    */
   private String escapeWildcardPattern(String pattern) {
     StringBuilder sb = new StringBuilder();

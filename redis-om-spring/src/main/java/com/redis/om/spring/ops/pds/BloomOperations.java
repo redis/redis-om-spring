@@ -5,6 +5,33 @@ import java.util.Map;
 
 import redis.clients.jedis.bloom.BFInsertParams;
 
+/**
+ * Operations interface for Redis Bloom Filter commands.
+ * <p>
+ * This interface provides a high-level abstraction for working with Redis Bloom Filters,
+ * which are space-efficient probabilistic data structures that can test whether an element
+ * is a member of a set. Bloom filters can produce false positives but never false negatives,
+ * making them ideal for applications where some false positives are acceptable in exchange
+ * for significant space savings.
+ *
+ * <p>Redis OM Spring automatically integrates Bloom filter operations when entities are
+ * annotated with {@link com.redis.om.spring.annotations.Bloom}. This enables automatic
+ * maintenance of Bloom filters during entity save operations, allowing for efficient
+ * existence checks without querying the main data store.
+ *
+ * <p>Key features:
+ * <ul>
+ * <li>Configurable false positive rates and capacity</li>
+ * <li>Batch operations for improved performance</li>
+ * <li>Automatic filter creation with optimal parameters</li>
+ * <li>Integration with Spring's transaction management</li>
+ * </ul>
+ *
+ * @param <K> the type of keys used to identify bloom filters
+ * @see com.redis.om.spring.annotations.Bloom
+ * @see com.redis.om.spring.bloom.BloomAspect
+ * @since 0.1.0
+ */
 public interface BloomOperations<K> {
   /**
    * Reserve a bloom filter.

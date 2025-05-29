@@ -7,9 +7,32 @@ import java.util.stream.Collectors;
 
 import com.redis.om.spring.client.RedisModulesClient;
 
+/**
+ * Default implementation of {@link CountMinSketchOperations} that delegates to Redis Count-Min Sketch commands.
+ * <p>
+ * This implementation provides concrete Redis Count-Min Sketch operations by wrapping the underlying
+ * Jedis Count-Min Sketch client. It handles the conversion of operation parameters and manages the
+ * communication with Redis Stack's Count-Min Sketch module.
+ * </p>
+ * <p>
+ * The implementation is automatically configured by Redis OM Spring when Count-Min Sketch
+ * functionality is enabled and is used by the {@link com.redis.om.spring.countmin.CountMinAspect}
+ * for transparent frequency tracking during entity operations.
+ * </p>
+ *
+ * @param <K> the type of keys used to identify count-min sketches
+ * @see CountMinSketchOperations
+ * @see com.redis.om.spring.client.RedisModulesClient
+ * @since 0.1.0
+ */
 public class CountMinSketchOperationsImpl<K> implements CountMinSketchOperations<K> {
   final RedisModulesClient client;
 
+  /**
+   * Creates a new CountMinSketchOperationsImpl with the specified Redis modules client.
+   *
+   * @param client the Redis modules client for executing Count-Min Sketch commands
+   */
   public CountMinSketchOperationsImpl(RedisModulesClient client) {
     this.client = client;
   }

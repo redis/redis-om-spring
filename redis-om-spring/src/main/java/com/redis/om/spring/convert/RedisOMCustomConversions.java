@@ -6,6 +6,23 @@ import java.util.List;
 
 import org.springframework.data.redis.core.convert.RedisCustomConversions;
 
+/**
+ * Custom conversions configuration for Redis OM Spring framework.
+ * <p>
+ * This class extends Spring Data Redis's {@link RedisCustomConversions} to provide
+ * additional type converters specifically needed for Redis OM Spring functionality.
+ * <p>
+ * The following additional converters are registered:
+ * <ul>
+ * <li>ULID converters for universally unique lexicographically sortable identifiers</li>
+ * <li>Point converters for geospatial coordinates</li>
+ * <li>Enhanced date/time converters for various temporal types</li>
+ * <li>Boolean converters for proper boolean handling</li>
+ * <li>YearMonth converters for date period handling</li>
+ * </ul>
+ *
+ * @since 1.0.0
+ */
 public class RedisOMCustomConversions extends RedisCustomConversions {
   private static final List<Object> omConverters = new ArrayList<>();
 

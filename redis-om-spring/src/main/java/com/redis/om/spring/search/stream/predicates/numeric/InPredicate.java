@@ -20,15 +20,35 @@ import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import redis.clients.jedis.search.querybuilder.QueryNode;
 import redis.clients.jedis.search.querybuilder.Values;
 
+/**
+ * Represents an "in" predicate for numeric field searches.
+ * This predicate generates RediSearch queries that match documents where the specified
+ * numeric field equals any of the provided values. Supports various numeric types including
+ * integers, longs, doubles, BigDecimal, and date/time types.
+ *
+ * @param <E> the entity type
+ * @param <T> the field value type
+ */
 public class InPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   private final List<T> values;
 
+  /**
+   * Constructs a new numeric "in" predicate.
+   *
+   * @param field  the search field accessor
+   * @param values the list of numeric values to search for
+   */
   public InPredicate(SearchFieldAccessor field, List<T> values) {
     super(field);
     this.values = values;
   }
 
+  /**
+   * Gets the list of numeric values to search for in this predicate.
+   *
+   * @return the list of values used in the "in" comparison
+   */
   public List<T> getValues() {
     return values;
   }

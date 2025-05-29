@@ -34,6 +34,27 @@ import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.query.RediSearchQuery;
 import com.redis.om.spring.vectorize.Embedder;
 
+/**
+ * Factory for creating Redis document repositories.
+ * <p>
+ * This factory extends Spring Data's KeyValueRepositoryFactory to create repository instances
+ * specifically designed for Redis JSON document storage. It integrates with Redis OM Spring's
+ * features including search indexing, query execution, and AI-powered embeddings.
+ * </p>
+ * <p>
+ * The factory handles the creation of repository proxies that support:
+ * <ul>
+ * <li>Redis JSON document operations</li>
+ * <li>RediSearch index management</li>
+ * <li>Custom query execution via SpEL</li>
+ * <li>Vector similarity search capabilities</li>
+ * <li>Automatic embedding generation</li>
+ * </ul>
+ *
+ * @see org.springframework.data.keyvalue.repository.support.KeyValueRepositoryFactory
+ * @see com.redis.om.spring.repository.RedisDocumentRepository
+ * @since 0.1.0
+ */
 public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
 
   private static final Class<SpelQueryCreator> DEFAULT_QUERY_CREATOR = SpelQueryCreator.class;
@@ -91,6 +112,8 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
    * @param queryCreator       must not be {@literal null}.
    * @param mappingContext     must not be {@literal null}.
    * @param gsonBuilder        must not be {@literal null}.
+   * @param embedder           must not be {@literal null}.
+   * @param properties         must not be {@literal null}.
    */
   public RedisDocumentRepositoryFactory( //
       KeyValueOperations keyValueOperations, //

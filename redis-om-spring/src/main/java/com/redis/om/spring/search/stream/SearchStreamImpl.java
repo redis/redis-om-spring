@@ -50,6 +50,25 @@ import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import redis.clients.jedis.util.SafeEncoder;
 
+/**
+ * Implementation of {@link SearchStream} that provides search capabilities for Redis OM entities.
+ * <p>
+ * This class implements a fluent API for building and executing Redis Search queries against
+ * indexed documents. It supports various search operations including filtering, sorting,
+ * pagination, aggregation, and vector similarity search.
+ * </p>
+ * <p>
+ * The stream integrates with Redis Search (RediSearch) module to provide:
+ * <ul>
+ * <li>Full-text and field-based search</li>
+ * <li>Vector similarity search (KNN)</li>
+ * <li>Query-by-example (QBE) functionality</li>
+ * <li>Result projection and summarization</li>
+ * <li>Highlighting and sorting</li>
+ * </ul>
+ *
+ * @param <E> the entity type being searched
+ */
 public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @SuppressWarnings(
@@ -90,6 +109,19 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private Pair<String, String> highlightTags;
   private boolean isQBE = false;
 
+  /**
+   * Creates a new SearchStreamImpl for the given entity class.
+   * <p>
+   * This constructor automatically determines the search index name and ID field
+   * from the entity class annotations and introspection.
+   * </p>
+   *
+   * @param entityClass       the entity class to create a search stream for
+   * @param modulesOperations the Redis modules operations instance
+   * @param gsonBuilder       the Gson builder for JSON serialization
+   * @param indexer           the Redis search indexer
+   * @throws IllegalArgumentException if the entity class does not have an ID field
+   */
   public SearchStreamImpl(Class<E> entityClass, RedisModulesOperations<String> modulesOperations,
       GsonBuilder gsonBuilder, RediSearchIndexer indexer) {
     this.indexer = indexer;
@@ -110,6 +142,21 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     this.exampleToNodeConverter = new ExampleToNodeConverter<>(indexer);
   }
 
+  /**
+   * Creates a new SearchStreamImpl with explicit search index and ID field configuration.
+   * <p>
+   * This constructor allows for more explicit control over the search index and ID field,
+   * useful when working with custom search indexes or when the automatic detection
+   * is not sufficient.
+   * </p>
+   *
+   * @param entityClass       the entity class to create a search stream for
+   * @param searchIndex       the explicit search index name to use
+   * @param idField           the ID field of the entity
+   * @param modulesOperations the Redis modules operations instance
+   * @param gsonBuilder       the Gson builder for JSON serialization
+   * @param indexer           the Redis search indexer
+   */
   public SearchStreamImpl(Class<E> entityClass, String searchIndex, Field idField,
       RedisModulesOperations<String> modulesOperations, GsonBuilder gsonBuilder, RediSearchIndexer indexer) {
     this.indexer = indexer;
@@ -201,6 +248,16 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     return this;
   }
 
+  /**
+   * Processes a search field predicate and applies it to the current query tree.
+   * <p>
+   * This method takes a search field predicate and integrates it with the existing
+   * root query node, allowing predicates to be combined into complex search expressions.
+   * </p>
+   *
+   * @param predicate the search field predicate to process
+   * @return the query node representing the processed predicate
+   */
   public Node processPredicate(SearchFieldPredicate<? super E, ?> predicate) {
     return predicate.apply(rootNode);
   }

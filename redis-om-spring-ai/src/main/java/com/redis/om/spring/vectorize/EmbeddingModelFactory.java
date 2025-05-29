@@ -44,16 +44,56 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 
+/**
+ * Factory class responsible for creating and caching embedding models from various AI providers.
+ * 
+ * <p>This factory provides a centralized way to create embedding models with the following features:
+ * <ul>
+ * <li>Model instance caching to avoid recreating expensive model objects</li>
+ * <li>Support for multiple AI providers (OpenAI, Azure OpenAI, Ollama, Vertex AI, AWS Bedrock, Transformers)</li>
+ * <li>Configuration fallback mechanism (annotation → properties → Spring AI properties → environment variables)</li>
+ * <li>Thread-safe model creation and caching</li>
+ * </ul>
+ * 
+ * <p>The factory uses a cache key strategy to ensure that models with different configurations
+ * are cached separately, while identical configurations reuse the same model instance.
+ * 
+ * @see DefaultEmbedder
+ * @see AIRedisOMProperties
+ * @see SpringAiProperties
+ */
 public class EmbeddingModelFactory {
+  /** Main configuration properties for Redis OM AI features */
   private final AIRedisOMProperties properties;
+
+  /** Spring AI configuration properties used as fallback */
   private final SpringAiProperties springAiProperties;
+
+  /** Thread-safe cache for storing created model instances */
   private final Map<String, Object> modelCache = new ConcurrentHashMap<>();
 
+  /** REST client builder for synchronous HTTP calls */
   private final RestClient.Builder restClientBuilder;
+
+  /** WebClient builder for reactive HTTP calls */
   private final WebClient.Builder webClientBuilder;
+
+  /** Error handler for HTTP responses */
   private final ResponseErrorHandler responseErrorHandler;
+
+  /** Registry for observability and metrics */
   private final ObservationRegistry observationRegistry;
 
+  /**
+   * Constructs a new EmbeddingModelFactory with all required dependencies.
+   * 
+   * @param properties           Redis OM AI configuration properties
+   * @param springAiProperties   Spring AI configuration properties for fallback
+   * @param restClientBuilder    Builder for creating REST clients
+   * @param webClientBuilder     Builder for creating reactive web clients
+   * @param responseErrorHandler Handler for HTTP error responses
+   * @param observationRegistry  Registry for metrics and observability
+   */
   public EmbeddingModelFactory(AIRedisOMProperties properties, SpringAiProperties springAiProperties,
       RestClient.Builder restClientBuilder, WebClient.Builder webClientBuilder,
       ResponseErrorHandler responseErrorHandler, ObservationRegistry observationRegistry) {
@@ -109,6 +149,16 @@ public class EmbeddingModelFactory {
     return modelCache.size();
   }
 
+  /**
+   * Creates or retrieves a cached Transformers embedding model.
+   * 
+   * <p>Transformers models run locally and support custom models from Hugging Face.
+   * The method caches models based on their configuration to avoid reloading.
+   * 
+   * @param vectorize Configuration from the @Vectorize annotation
+   * @return Configured and initialized TransformersEmbeddingModel
+   * @throws RuntimeException if model initialization fails
+   */
   public TransformersEmbeddingModel createTransformersEmbeddingModel(Vectorize vectorize) {
     String cacheKey = generateCacheKey("transformers", vectorize.transformersModel(), vectorize.transformersTokenizer(),
         vectorize.transformersResourceCacheConfiguration(), String.join(",", vectorize.transformersTokenizerOptions()));
@@ -150,10 +200,28 @@ public class EmbeddingModelFactory {
     return embeddingModel;
   }
 
+  /**
+   * Creates or retrieves a cached OpenAI embedding model using an enum value.
+   * 
+   * @param model OpenAI embedding model enum
+   * @return Configured OpenAiEmbeddingModel instance
+   */
   public OpenAiEmbeddingModel createOpenAiEmbeddingModel(EmbeddingModel model) {
     return createOpenAiEmbeddingModel(model.value);
   }
 
+  /**
+   * Creates or retrieves a cached OpenAI embedding model.
+   * 
+   * <p>The API key is resolved in the following order:
+   * <ol>
+   * <li>Redis OM properties</li>
+   * <li>Spring AI properties</li>
+   * </ol>
+   * 
+   * @param model Model identifier (e.g., "text-embedding-ada-002")
+   * @return Configured OpenAiEmbeddingModel instance
+   */
   public OpenAiEmbeddingModel createOpenAiEmbeddingModel(String model) {
     String cacheKey = generateCacheKey("openai", model, properties.getOpenAi().getApiKey());
     OpenAiEmbeddingModel cachedModel = (OpenAiEmbeddingModel) modelCache.get(cacheKey);
@@ -181,6 +249,13 @@ public class EmbeddingModelFactory {
     return embeddingModel;
   }
 
+  /**
+   * Creates an Azure OpenAI client with appropriate authentication.
+   * 
+   * <p>Supports both API key and Entra ID (Azure AD) authentication methods.
+   * 
+   * @return Configured OpenAIClient for Azure
+   */
   private OpenAIClient getOpenAIClient() {
     OpenAIClientBuilder builder = new OpenAIClientBuilder();
     if (properties.getAzure().getEntraId().isEnabled()) {
@@ -193,6 +268,15 @@ public class EmbeddingModelFactory {
     return builder.buildClient();
   }
 
+  /**
+   * Creates or retrieves a cached Azure OpenAI embedding model.
+   * 
+   * <p>Supports both API key and Entra ID authentication. Configuration is resolved
+   * from Redis OM properties with fallback to Spring AI properties.
+   * 
+   * @param deploymentName Azure OpenAI deployment name
+   * @return Configured AzureOpenAiEmbeddingModel instance
+   */
   public AzureOpenAiEmbeddingModel createAzureOpenAiEmbeddingModel(String deploymentName) {
     String cacheKey = generateCacheKey("azure-openai", deploymentName, properties.getAzure().getOpenAi().getApiKey(),
         properties.getAzure().getOpenAi().getEndpoint(), String.valueOf(properties.getAzure().getEntraId()
@@ -227,6 +311,20 @@ public class EmbeddingModelFactory {
     return embeddingModel;
   }
 
+  /**
+   * Creates or retrieves a cached Vertex AI text embedding model.
+   * 
+   * <p>Configuration is resolved in the following order:
+   * <ol>
+   * <li>Redis OM properties</li>
+   * <li>Spring AI properties</li>
+   * <li>Environment variables (VERTEX_AI_API_KEY)</li>
+   * <li>System properties (SPRING_AI_VERTEX_AI_API_KEY)</li>
+   * </ol>
+   * 
+   * @param model Model identifier for Vertex AI
+   * @return Configured VertexAiTextEmbeddingModel instance
+   */
   public VertexAiTextEmbeddingModel createVertexAiTextEmbeddingModel(String model) {
     String cacheKey = generateCacheKey("vertex-ai", model, properties.getVertexAi().getApiKey(), properties
         .getVertexAi().getEndpoint(), properties.getVertexAi().getProjectId(), properties.getVertexAi().getLocation());
@@ -281,6 +379,15 @@ public class EmbeddingModelFactory {
     return embeddingModel;
   }
 
+  /**
+   * Creates or retrieves a cached Ollama embedding model.
+   * 
+   * <p>Ollama provides local LLM inference. The base URL must be configured
+   * to point to the Ollama server instance.
+   * 
+   * @param model Model name available in Ollama (e.g., "llama2", "mistral")
+   * @return Configured OllamaEmbeddingModel instance
+   */
   public OllamaEmbeddingModel createOllamaEmbeddingModel(String model) {
     String cacheKey = generateCacheKey("ollama", model, properties.getOllama().getBaseUrl());
 
@@ -302,6 +409,13 @@ public class EmbeddingModelFactory {
     return embeddingModel;
   }
 
+  /**
+   * Retrieves AWS credentials for Bedrock services.
+   * 
+   * <p>Credentials are resolved from Redis OM properties with fallback to Spring AI properties.
+   * 
+   * @return AWS credentials for authentication
+   */
   private AwsCredentials getAwsCredentials() {
     String accessKey = properties.getAws().getAccessKey();
     if (!StringUtils.hasText(accessKey)) {
@@ -324,6 +438,14 @@ public class EmbeddingModelFactory {
     return AwsBasicCredentials.create(properties.getAws().getAccessKey(), properties.getAws().getSecretKey());
   }
 
+  /**
+   * Creates or retrieves a cached AWS Bedrock Cohere embedding model.
+   * 
+   * <p>Uses AWS credentials and region configuration to access Bedrock services.
+   * 
+   * @param model Cohere model identifier in Bedrock
+   * @return Configured BedrockCohereEmbeddingModel instance
+   */
   public BedrockCohereEmbeddingModel createCohereEmbeddingModel(String model) {
     String cacheKey = generateCacheKey("bedrock-cohere", model, properties.getAws().getAccessKey(), properties.getAws()
         .getSecretKey(), properties.getAws().getRegion(), String.valueOf(properties.getAws().getBedrockCohere()
@@ -352,6 +474,14 @@ public class EmbeddingModelFactory {
     return embeddingModel;
   }
 
+  /**
+   * Creates or retrieves a cached AWS Bedrock Titan embedding model.
+   * 
+   * <p>Amazon Titan is AWS's native embedding model available through Bedrock.
+   * 
+   * @param model Titan model identifier in Bedrock
+   * @return Configured BedrockTitanEmbeddingModel instance
+   */
   public BedrockTitanEmbeddingModel createTitanEmbeddingModel(String model) {
     String cacheKey = generateCacheKey("bedrock-titan", model, properties.getAws().getAccessKey(), properties.getAws()
         .getSecretKey(), properties.getAws().getRegion(), String.valueOf(properties.getAws().getBedrockTitan()

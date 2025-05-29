@@ -53,6 +53,33 @@ import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.util.SafeEncoder;
 
+/**
+ * JSON document-focused {@link RedisKeyValueAdapter} implementation that leverages RedisJSON
+ * for storing and retrieving entities as JSON documents in Redis.
+ * <p>
+ * This adapter provides specialized functionality for Redis OM Spring's JSON document storage,
+ * including:
+ * <ul>
+ * <li>RedisJSON integration for native JSON document operations</li>
+ * <li>RediSearch integration for full-text and vector search on JSON documents</li>
+ * <li>Entity embedding processing via {@link Embedder}</li>
+ * <li>Enhanced entity auditing capabilities</li>
+ * <li>Composite ID support for complex entity keys</li>
+ * <li>Optimized batch operations for large JSON document datasets</li>
+ * </ul>
+ * <p>
+ * Unlike {@link RedisEnhancedKeyValueAdapter} which stores entities as Redis Hash structures,
+ * this adapter stores entities as JSON documents using RedisJSON commands, enabling
+ * more complex nested data structures and JSON path operations.
+ *
+ * @author Redis OM Spring Development Team
+ * @see RedisKeyValueAdapter
+ * @see RedisModulesOperations
+ * @see RediSearchIndexer
+ * @see Embedder
+ * @see JSONOperations
+ * @since 1.0
+ */
 public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private static final Log logger = LogFactory.getLog(RedisJSONKeyValueAdapter.class);
   private final JSONOperations<?> redisJSONOperations;
@@ -66,13 +93,16 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   private final RedisOMProperties redisOMProperties;
 
   /**
-   * Creates new {@link RedisKeyValueAdapter} with default
+   * Creates new {@link RedisJSONKeyValueAdapter} with default
    * {@link RedisCustomConversions}.
    *
-   * @param redisOps       must not be {@literal null}.
-   * @param rmo            must not be {@literal null}.
-   * @param mappingContext must not be {@literal null}.
-   * @param indexer        must not be {@literal null}.
+   * @param redisOps          must not be {@literal null}.
+   * @param rmo               must not be {@literal null}.
+   * @param mappingContext    must not be {@literal null}.
+   * @param indexer           must not be {@literal null}.
+   * @param gsonBuilder       the GSON builder for JSON serialization, must not be {@literal null}.
+   * @param embedder          the embedder for processing entity embeddings, must not be {@literal null}.
+   * @param redisOMProperties the Redis OM configuration properties, must not be {@literal null}.
    */
   @SuppressWarnings(
     "unchecked"
@@ -151,6 +181,17 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     return get(key, type);
   }
 
+  /**
+   * Retrieves an entity of the specified type using the provided Redis key.
+   * <p>
+   * This method performs a direct JSON document retrieval using RedisJSON operations
+   * without the need for keyspace and ID construction.
+   *
+   * @param key  the complete Redis key for the JSON document
+   * @param type the target entity type to deserialize to
+   * @param <T>  the entity type parameter
+   * @return the deserialized entity instance, or {@code null} if not found
+   */
   @Nullable
   public <T> T get(String key, Class<T> type) {
     @SuppressWarnings(
@@ -185,6 +226,18 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
         .toList();
   }
 
+  /**
+   * Retrieves all entity keys for the given keyspace and type using RediSearch.
+   * <p>
+   * This method performs a wildcard search on the RediSearch index to find all JSON documents
+   * and extracts their Redis key identifiers. It's optimized to return only the key identifiers
+   * rather than full document content for better performance.
+   *
+   * @param keyspace the Redis keyspace to search in
+   * @param type     the entity type to retrieve keys for
+   * @param <T>      the type parameter for the entity class
+   * @return a list of Redis key strings for all entities in the keyspace
+   */
   public <T> List<String> getAllKeys(String keyspace, Class<T> type) {
     String searchIndex = indexer.getIndexName(keyspace);
     SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
@@ -405,6 +458,17 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     return dbVersionArray != null ? dbVersionArray[0] : null;
   }
 
+  /**
+   * Creates a Redis key string by combining the keyspace and entity ID.
+   * <p>
+   * This method handles keyspace formatting and applies any configured identifier filters
+   * to ensure proper key generation for JSON document storage. The resulting key follows
+   * the pattern: {@code keyspace:id} or {@code keyspaceid} depending on keyspace format.
+   *
+   * @param keyspace the Redis keyspace (namespace) for the entity
+   * @param id       the entity identifier
+   * @return the complete Redis key as a string
+   */
   public String createKeyAsString(String keyspace, Object id) {
     String format = keyspace.endsWith(":") ? "%s%s" : "%s:%s";
 

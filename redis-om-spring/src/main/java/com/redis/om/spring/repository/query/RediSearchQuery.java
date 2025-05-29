@@ -53,6 +53,37 @@ import redis.clients.jedis.search.aggr.*;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 import redis.clients.jedis.util.SafeEncoder;
 
+/**
+ * A Spring Data repository query implementation that executes queries against Redis using RediSearch.
+ * This class is the core query execution engine for Redis OM Spring, supporting various query types
+ * including full-text search, aggregations, probabilistic data structure operations, and autocomplete.
+ *
+ * <p>RediSearchQuery analyzes repository method signatures and annotations to determine the appropriate
+ * query strategy and generates optimized RediSearch queries. It supports both declarative query methods
+ * (using method naming conventions) and explicit queries (using {@code @Query} and {@code @Aggregation}
+ * annotations).
+ *
+ * <p>Supported query types:
+ * <ul>
+ * <li><strong>Search queries</strong> - Full-text and field-based searches using RediSearch syntax</li>
+ * <li><strong>Aggregation queries</strong> - Complex data processing and grouping operations</li>
+ * <li><strong>Delete queries</strong> - Bulk deletion operations based on search criteria</li>
+ * <li><strong>Tag value queries</strong> - Retrieving distinct values from tag fields</li>
+ * <li><strong>Autocomplete queries</strong> - Suggestion-based search functionality</li>
+ * <li><strong>Probabilistic queries</strong> - Bloom filter, Cuckoo filter, and Count-Min Sketch operations</li>
+ * </ul>
+ *
+ * <p>The class automatically handles query optimization, including projection support, pagination,
+ * sorting, and parameter binding. It integrates with Spring Data's query infrastructure to provide
+ * seamless repository method execution.
+ *
+ * @author Redis OM Spring Team
+ * @see RepositoryQuery
+ * @see QueryMethod
+ * @see RediSearchIndexer
+ * @see RedisModulesOperations
+ * @since 1.0
+ */
 public class RediSearchQuery implements RepositoryQuery {
 
   private static final Log logger = LogFactory.getLog(RediSearchQuery.class);
@@ -93,6 +124,36 @@ public class RediSearchQuery implements RepositoryQuery {
   private boolean isNullParamQuery;
   private Dialect dialect = Dialect.TWO;
 
+  /**
+   * Creates a new RediSearchQuery instance for the given repository method.
+   *
+   * <p>This constructor analyzes the provided query method to determine the query type and strategy.
+   * It examines method annotations ({@code @Query}, {@code @Aggregation}, {@code @UseDialect}),
+   * method naming patterns, and parameter types to configure the appropriate query execution plan.
+   *
+   * <p>The constructor performs several key initialization tasks:
+   * <ul>
+   * <li>Determines query type (search, aggregation, delete, etc.) based on method analysis</li>
+   * <li>Parses method name using Spring Data's PartTree for derived queries</li>
+   * <li>Configures field mappings and query clauses based on entity annotations</li>
+   * <li>Sets up specialized query executors for probabilistic data structures</li>
+   * <li>Initializes pagination, sorting, and projection capabilities</li>
+   * </ul>
+   *
+   * @param queryMethod               the repository method metadata containing signature and return type information
+   * @param metadata                  the repository metadata providing domain type and interface details
+   * @param indexer                   the RediSearch indexer for managing search indexes and field mappings
+   * @param evaluationContextProvider Spring Data's context provider for SpEL expression evaluation
+   * @param keyValueOperations        low-level Redis key-value operations template
+   * @param rmo                       Redis modules operations providing access to RediSearch, RedisJSON, and
+   *                                  probabilistic data structures
+   * @param queryCreator              the query creator class for building Redis queries (currently unused but reserved
+   *                                  for future extensibility)
+   * @param gsonBuilder               pre-configured Gson builder for JSON serialization/deserialization of Redis
+   *                                  documents
+   * @param redisOMProperties         configuration properties for Redis OM Spring behavior and defaults
+   *
+   */
   @SuppressWarnings(
     "unchecked"
   )

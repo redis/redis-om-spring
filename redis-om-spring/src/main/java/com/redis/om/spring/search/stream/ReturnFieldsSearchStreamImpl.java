@@ -32,6 +32,30 @@ import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 import redis.clients.jedis.util.SafeEncoder;
 
+/**
+ * Implementation of SearchStream that handles field projection for search results.
+ * This class provides a specialized search stream that can return specific fields
+ * or tuples of fields from Redis search operations instead of full entities.
+ * 
+ * <p>This implementation wraps an underlying {@link SearchStreamImpl} and transforms
+ * the results to return only the requested fields. It supports both single field
+ * returns and tuple returns for multiple fields. The class handles the complexity
+ * of field extraction from Redis documents and hash structures.</p>
+ * 
+ * <p>Key features:</p>
+ * <ul>
+ * <li>Field projection from search results</li>
+ * <li>Support for both indexed and non-indexed fields</li>
+ * <li>Tuple creation for multiple field returns</li>
+ * <li>Optimized handling for ID-only queries</li>
+ * <li>Support for both JSON documents and hash structures</li>
+ * </ul>
+ * 
+ * @param <E> the entity type being searched
+ * @param <T> the return type (field type or tuple type)
+ * 
+ * @since 1.0.0
+ */
 public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
 
   @SuppressWarnings(
@@ -50,6 +74,15 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
   private Stream<T> resolvedStream;
   private Runnable closeHandler;
 
+  /**
+   * Creates a new ReturnFieldsSearchStreamImpl instance.
+   * 
+   * @param entitySearchStream the underlying search stream for the entity
+   * @param returning          the list of metamodel fields to return in the result
+   * @param mappingConverter   the converter for mapping Redis data to objects
+   * @param gson               the Gson instance for JSON processing
+   * @param isDocument         true if the entity is a JSON document, false if it's a hash
+   */
   public ReturnFieldsSearchStreamImpl( //
       SearchStreamImpl<E> entitySearchStream, //
       List<MetamodelField<E, ?>> returning, //

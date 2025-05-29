@@ -9,9 +9,19 @@ import com.redis.om.spring.client.RedisModulesClient;
 import redis.clients.jedis.bloom.CFInsertParams;
 import redis.clients.jedis.bloom.CFReserveParams;
 
+/**
+ * Implementation of CuckooFilterOperations interface.
+ * 
+ * @param <K> the key type
+ */
 public class CuckooFilterOperationsImpl<K> implements CuckooFilterOperations<K> {
   final RedisModulesClient client;
 
+  /**
+   * Creates a new CuckooFilterOperationsImpl with the given Redis modules client.
+   *
+   * @param client the Redis modules client
+   */
   public CuckooFilterOperationsImpl(RedisModulesClient client) {
     this.client = client;
   }

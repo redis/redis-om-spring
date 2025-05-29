@@ -24,6 +24,21 @@ import com.redis.om.spring.repository.query.RediSearchQuery;
 import com.redis.om.spring.repository.query.RediSearchQueryCreator;
 import com.redis.om.spring.repository.support.RedisDocumentRepositoryFactoryBean;
 
+/**
+ * Annotation to enable Redis Document repositories. This annotation configures Spring to scan for
+ * interfaces that extend {@link com.redis.om.spring.repository.RedisDocumentRepository} and create
+ * Spring beans for them. Redis Document repositories work with JSON documents stored in Redis using
+ * the RedisJSON module and provide full-text search capabilities via RediSearch.
+ *
+ * <p>Example usage:</p>
+ * <pre>
+ * &#64;Configuration
+ * &#64;EnableRedisDocumentRepositories(basePackages = "com.example.repositories")
+ * public class RedisConfig {
+ * // configuration
+ * }
+ * </pre>
+ */
 @Target(
   ElementType.TYPE
 )

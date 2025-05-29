@@ -21,6 +21,27 @@ import com.redis.om.spring.RedisOMProperties.References;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.util.ObjectUtils;
 
+/**
+ * Custom Gson deserializer for handling Redis entity references during JSON deserialization.
+ * <p>
+ * This deserializer is responsible for resolving Redis entity references by their keys and
+ * reconstructing the full object graph. It supports both individual references and collections
+ * of references, with optional caching to improve performance for frequently accessed entities.
+ * <p>
+ * The deserializer handles three types of JSON input:
+ * <ul>
+ * <li>Primitive strings representing Redis keys - fetched and deserialized from Redis</li>
+ * <li>JSON objects - directly deserialized as embedded entities</li>
+ * <li>JSON arrays - deserialized as collections of references or embedded entities</li>
+ * </ul>
+ * <p>
+ * Caching is configurable per entity type through {@link RedisOMProperties.References}
+ * configuration, allowing selective caching of frequently accessed reference types.
+ * 
+ * @see JsonDeserializer
+ * @see RedisOMProperties.References
+ * @see JSONOperations
+ */
 public class ReferenceDeserializer implements JsonDeserializer<Object> {
   private static final Log logger = LogFactory.getLog(ReferenceDeserializer.class);
 
@@ -31,6 +52,18 @@ public class ReferenceDeserializer implements JsonDeserializer<Object> {
   private final Cache referenceCache;
   private final List<String> cachedReferenceClasses;
 
+  /**
+   * Constructs a new ReferenceDeserializer for the specified field.
+   * <p>
+   * Initializes the deserializer with the target field's type information, Redis operations
+   * client, and caching configuration. For collection fields, the element type is extracted
+   * and used as the target deserialization type.
+   * 
+   * @param field        the field being deserialized, used to determine the target type
+   * @param ops          the JSON operations client for Redis interactions
+   * @param properties   Redis OM configuration properties, including reference caching settings
+   * @param cacheManager Spring cache manager for reference caching
+   */
   @SuppressWarnings(
     "unchecked"
   )
@@ -114,6 +147,24 @@ public class ReferenceDeserializer implements JsonDeserializer<Object> {
     return reference;
   }
 
+  /**
+   * Creates and returns an appropriate collection instance based on the given type.
+   * <p>
+   * This method handles the instantiation of collection types during deserialization.
+   * For interface types, it provides default implementations:
+   * <ul>
+   * <li>{@link List} → {@link ArrayList}</li>
+   * <li>{@link Set} → {@link HashSet}</li>
+   * <li>{@link Queue} → {@link LinkedList}</li>
+   * </ul>
+   * For concrete collection classes, it attempts to create an instance using the
+   * default constructor.
+   * 
+   * @param type the parameterized collection type to instantiate
+   * @return a new collection instance appropriate for the given type
+   * @throws IllegalArgumentException if the type is an unsupported interface or
+   *                                  cannot be instantiated
+   */
   public Collection<?> instantiateCollection(Type type) {
     Class<?> rawType = (Class<?>) ((ParameterizedType) type).getRawType();
     if (rawType.isInterface()) {

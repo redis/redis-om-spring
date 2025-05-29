@@ -1,5 +1,23 @@
 package com.redis.om.spring.annotations;
 
+/**
+ * Enumeration of available reducer functions for aggregation operations.
+ * <p>
+ * These functions correspond to the reducer functions available in RediSearch
+ * aggregation queries. Each function performs a specific type of calculation
+ * or transformation on grouped data during aggregation operations.
+ * <p>
+ * Reducer functions are categorized into:
+ * <ul>
+ * <li><strong>Counting functions:</strong> COUNT, COUNT_DISTINCT, COUNT_DISTINCTISH</li>
+ * <li><strong>Mathematical functions:</strong> SUM, MIN, MAX, AVG, STDDEV</li>
+ * <li><strong>Statistical functions:</strong> QUANTILE, RANDOM_SAMPLE</li>
+ * <li><strong>Collection functions:</strong> TOLIST, FIRST_VALUE</li>
+ * </ul>
+ *
+ * @since 1.0.0
+ * @see Reducer
+ */
 public enum ReducerFunction {
   /**
    * REDUCE COUNT 0

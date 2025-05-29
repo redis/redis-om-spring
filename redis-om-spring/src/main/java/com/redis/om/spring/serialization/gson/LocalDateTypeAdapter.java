@@ -12,6 +12,17 @@ import com.google.gson.*;
  */
 public class LocalDateTypeAdapter implements JsonSerializer<LocalDate>, JsonDeserializer<LocalDate> {
 
+  /**
+   * Default constructor.
+   */
+  public LocalDateTypeAdapter() {
+  }
+
+  /**
+   * Gets a singleton instance of the adapter.
+   *
+   * @return a LocalDateTypeAdapter instance
+   */
   public static LocalDateTypeAdapter getInstance() {
     return new LocalDateTypeAdapter();
   }
