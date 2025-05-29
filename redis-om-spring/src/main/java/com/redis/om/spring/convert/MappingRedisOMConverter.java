@@ -42,6 +42,11 @@ import com.redis.om.spring.annotations.TagIndexed;
 import com.redis.om.spring.mapping.RedisEnhancedMappingContext;
 import com.redis.om.spring.repository.query.QueryUtils;
 
+/**
+ * Redis Object Mapper converter that provides enhanced mapping capabilities between
+ * Java objects and Redis data structures. This converter extends Spring Data Redis
+ * with support for complex object mappings, JSON documents, and search indexing.
+ */
 public class MappingRedisOMConverter implements RedisConverter, InitializingBean {
 
   private static final String INVALID_TYPE_ASSIGNMENT = "Value of type %s cannot be assigned to property %s of type %s.";
@@ -55,6 +60,11 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
   private @Nullable ReferenceResolver referenceResolver;
   private CustomConversions customConversions;
 
+  /**
+   * Creates a new {@link MappingRedisOMConverter} with default configuration.
+   * This constructor initializes the converter with a null mapping context,
+   * which will be set up with default values during initialization.
+   */
   public MappingRedisOMConverter() {
     this(null);
   }
@@ -223,6 +233,15 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     return (R) instance;
   }
 
+  /**
+   * Reads a property value from Redis data source and converts it to the appropriate type.
+   *
+   * @param entityClass        the entity class type
+   * @param path               the property path in the Redis structure
+   * @param source             the Redis data source
+   * @param persistentProperty the property metadata
+   * @return the converted property value or null if not found
+   */
   @Nullable
   protected Object readProperty(Class<?> entityClass, String path, RedisData source,
       RedisPersistentProperty persistentProperty) {
@@ -408,6 +427,12 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     }
   }
 
+  /**
+   * Writes a partial update to Redis, applying only the specified property changes.
+   *
+   * @param update the partial update containing the changes to apply
+   * @param sink   the Redis data destination
+   */
   protected void writePartialUpdate(PartialUpdate<?> update, RedisData sink) {
 
     RedisPersistentEntity<?> entity = mappingContext.getRequiredPersistentEntity(update.getTarget());
@@ -1074,6 +1099,11 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     return i > 0 ? targetArray : null;
   }
 
+  /**
+   * Sets the reference resolver used for resolving object references in Redis.
+   *
+   * @param referenceResolver the reference resolver instance
+   */
   public void setReferenceResolver(ReferenceResolver referenceResolver) {
     this.referenceResolver = referenceResolver;
   }
@@ -1248,8 +1278,11 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
    */
   public static class KeyspaceIdentifier {
 
+    /** Phantom key suffix used for temporary references */
     public static final String PHANTOM = "phantom";
+    /** Delimiter separating keyspace from object ID */
     public static final String DELIMITER = ":";
+    /** Complete phantom suffix combining delimiter and phantom marker */
     public static final String PHANTOM_SUFFIX = DELIMITER + PHANTOM;
 
     private final String keyspace;
@@ -1304,14 +1337,29 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       return keyspaceEndIndex > 0;
     }
 
+    /**
+     * Gets the keyspace portion of the identifier.
+     *
+     * @return the keyspace string
+     */
     public String getKeyspace() {
       return this.keyspace;
     }
 
+    /**
+     * Gets the ID portion of the identifier.
+     *
+     * @return the ID string
+     */
     public String getId() {
       return this.id;
     }
 
+    /**
+     * Checks if this is a phantom key (temporary reference).
+     *
+     * @return true if this is a phantom key, false otherwise
+     */
     public boolean isPhantomKey() {
       return this.phantomKey;
     }
@@ -1327,8 +1375,11 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
    */
   public static class BinaryKeyspaceIdentifier {
 
+    /** Binary delimiter separating keyspace from object ID */
     public static final byte DELIMITER = ':';
+    /** Binary phantom marker for temporary references */
     protected static final byte[] PHANTOM = KeyspaceIdentifier.PHANTOM.getBytes();
+    /** Binary phantom suffix combining delimiter and phantom marker */
     protected static final byte[] PHANTOM_SUFFIX = ByteUtils.concat(new byte[] { DELIMITER }, PHANTOM);
 
     private final byte[] keyspace;
@@ -1404,14 +1455,29 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       return keyspace;
     }
 
+    /**
+     * Gets the binary keyspace portion of the identifier.
+     *
+     * @return the keyspace as byte array
+     */
     public byte[] getKeyspace() {
       return this.keyspace;
     }
 
+    /**
+     * Gets the binary ID portion of the identifier.
+     *
+     * @return the ID as byte array
+     */
     public byte[] getId() {
       return this.id;
     }
 
+    /**
+     * Checks if this is a phantom key (temporary reference).
+     *
+     * @return true if this is a phantom key, false otherwise
+     */
     public boolean isPhantomKey() {
       return this.phantomKey;
     }

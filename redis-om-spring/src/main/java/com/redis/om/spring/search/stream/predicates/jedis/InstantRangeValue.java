@@ -6,10 +6,21 @@ import com.google.gson.JsonPrimitive;
 
 import redis.clients.jedis.search.querybuilder.RangeValue;
 
+/**
+ * A specialized RangeValue implementation for Instant-based range queries.
+ * This class converts Instant values to epoch milliseconds for use in RediSearch
+ * numeric range queries, supporting both inclusive and exclusive range boundaries.
+ */
 public class InstantRangeValue extends RangeValue {
   private final Instant from;
   private final Instant to;
 
+  /**
+   * Constructs a new InstantRangeValue with the specified range boundaries.
+   *
+   * @param from the start instant of the range
+   * @param to   the end instant of the range
+   */
   public InstantRangeValue(Instant from, Instant to) {
     this.from = from;
     this.to = to;

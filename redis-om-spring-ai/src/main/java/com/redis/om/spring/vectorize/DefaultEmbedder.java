@@ -43,18 +43,64 @@ import ai.djl.repository.zoo.ZooModel;
 import ai.djl.translate.Pipeline;
 import ai.djl.translate.TranslateException;
 
+/**
+ * Default implementation of the {@link Embedder} interface that provides comprehensive embedding capabilities
+ * for text and image data using various AI providers.
+ * 
+ * <p>This class serves as the central hub for generating vector embeddings from different types of data:
+ * <ul>
+ * <li>Text embeddings using providers like OpenAI, Azure OpenAI, Ollama, Vertex AI, AWS Bedrock, and Transformers</li>
+ * <li>Image embeddings for general image content</li>
+ * <li>Facial embeddings for face recognition tasks</li>
+ * </ul>
+ * 
+ * <p>The embedder automatically processes entities annotated with {@link Vectorize} and populates their
+ * embedding fields based on the configured embedding type and provider. It supports both single entity
+ * and batch processing for improved performance.
+ * 
+ * @see Embedder
+ * @see Vectorize
+ * @see EmbeddingModelFactory
+ */
 public class DefaultEmbedder implements Embedder {
+  /** Logger instance for this class */
   private static final Log logger = LogFactory.getLog(DefaultEmbedder.class);
+
+  /** Factory for creating embedding models with caching support */
   private final EmbeddingModelFactory embeddingModelFactory;
+
+  /** Image processing pipeline for preprocessing images before embedding */
   public final Pipeline imagePipeline;
-  //public final HuggingFaceTokenizer sentenceTokenizer;
+
+  /** Deep learning model for generating image embeddings */
   private final ZooModel<Image, float[]> imageEmbeddingModel;
+
+  /** Deep learning model specifically trained for facial recognition embeddings */
   private final ZooModel<Image, float[]> faceEmbeddingModel;
+
+  /** Factory for creating image objects from various sources */
   private final ImageFactory imageFactory;
+
+  /** Spring application context for resource loading */
   private final ApplicationContext applicationContext;
+
+  /** Feature extractor for processing images through the pipeline */
   private final ImageFeatureExtractor imageFeatureExtractor;
+
+  /** Configuration properties for AI and embedding settings */
   private final AIRedisOMProperties properties;
 
+  /**
+   * Constructs a new DefaultEmbedder with all required dependencies.
+   * 
+   * @param applicationContext    Spring application context for resource loading
+   * @param embeddingModelFactory Factory for creating and caching embedding models
+   * @param imageEmbeddingModel   Deep learning model for general image embeddings
+   * @param faceEmbeddingModel    Deep learning model for facial embeddings
+   * @param imageFactory          Factory for creating image objects from input streams
+   * @param imagePipeline         Processing pipeline for image preprocessing
+   * @param properties            Configuration properties for AI services
+   */
   public DefaultEmbedder( //
       ApplicationContext applicationContext, //
       EmbeddingModelFactory embeddingModelFactory, //
@@ -76,6 +122,12 @@ public class DefaultEmbedder implements Embedder {
     this.properties = properties;
   }
 
+  /**
+   * Generates image embeddings for a batch of images and returns them as byte arrays.
+   * 
+   * @param isList List of input streams containing image data
+   * @return List of byte arrays representing the image embeddings, empty list if processing fails
+   */
   private List<byte[]> getImageEmbeddingsAsByteArrayFor(List<InputStream> isList) {
     var imgs = isList.stream().map(is -> {
       try {
@@ -98,6 +150,12 @@ public class DefaultEmbedder implements Embedder {
     return List.of();
   }
 
+  /**
+   * Generates image embedding for a single image and returns it as a byte array.
+   * 
+   * @param is Input stream containing image data
+   * @return Byte array representing the image embedding, empty array if processing fails
+   */
   private byte[] getImageEmbeddingsAsByteArrayFor(InputStream is) {
     try {
       var img = imageFactory.fromInputStream(is);
@@ -109,22 +167,54 @@ public class DefaultEmbedder implements Embedder {
     }
   }
 
+  /**
+   * Generates image embeddings for a batch of images and returns them as float arrays.
+   * 
+   * @param isList List of input streams containing image data
+   * @return List of float arrays representing the image embeddings
+   */
   private List<float[]> getImageEmbeddingsAsFloatArrayFor(List<InputStream> isList) {
     return getImageEmbeddingsAsByteArrayFor(isList).stream().map(ObjectUtils::byteArrayToFloatArray).toList();
   }
 
+  /**
+   * Generates image embedding for a single image and returns it as a float array.
+   * 
+   * @param is Input stream containing image data
+   * @return Float array representing the image embedding
+   */
   private float[] getImageEmbeddingsAsFloatArrayFor(InputStream is) {
     return byteArrayToFloatArray(getImageEmbeddingsAsByteArrayFor(is));
   }
 
+  /**
+   * Generates facial embeddings for a batch of images and returns them as byte arrays.
+   * 
+   * @param isList List of input streams containing facial image data
+   * @return List of byte arrays representing the facial embeddings
+   */
   private List<byte[]> getFacialImageEmbeddingsAsByteArrayFor(List<InputStream> isList) {
     return getFacialImageEmbeddingsAsFloatArrayFor(isList).stream().map(ObjectUtils::floatArrayToByteArray).toList();
   }
 
+  /**
+   * Generates facial embedding for a single image and returns it as a byte array.
+   * 
+   * @param is Input stream containing facial image data
+   * @return Byte array representing the facial embedding
+   * @throws IOException        If there's an error reading the image data
+   * @throws TranslateException If there's an error during model inference
+   */
   private byte[] getFacialImageEmbeddingsAsByteArrayFor(InputStream is) throws IOException, TranslateException {
     return ObjectUtils.floatArrayToByteArray(getFacialImageEmbeddingsAsFloatArrayFor(is));
   }
 
+  /**
+   * Generates facial embeddings for a batch of images and returns them as float arrays.
+   * 
+   * @param isList List of input streams containing facial image data
+   * @return List of float arrays representing the facial embeddings, empty list if processing fails
+   */
   private List<float[]> getFacialImageEmbeddingsAsFloatArrayFor(List<InputStream> isList) {
     var imgs = isList.stream().map(is -> {
       try {
@@ -145,6 +235,14 @@ public class DefaultEmbedder implements Embedder {
     return List.of();
   }
 
+  /**
+   * Generates facial embedding for a single image and returns it as a float array.
+   * 
+   * @param is Input stream containing facial image data
+   * @return Float array representing the facial embedding
+   * @throws IOException        If there's an error reading the image data
+   * @throws TranslateException If there's an error during model inference
+   */
   private float[] getFacialImageEmbeddingsAsFloatArrayFor(InputStream is) throws IOException, TranslateException {
     try (Predictor<Image, float[]> predictor = faceEmbeddingModel.newPredictor()) {
       var img = imageFactory.fromInputStream(is);
@@ -152,22 +250,57 @@ public class DefaultEmbedder implements Embedder {
     }
   }
 
+  /**
+   * Generates text embeddings for a batch of texts using the specified model and returns them as byte arrays.
+   * 
+   * @param texts List of text strings to embed
+   * @param model The embedding model to use
+   * @return List of byte arrays representing the text embeddings
+   */
   private List<byte[]> getEmbeddingsAsByteArrayFor(List<String> texts, EmbeddingModel model) {
     return model.embed(texts).stream().map(ObjectUtils::floatArrayToByteArray).toList();
   }
 
+  /**
+   * Generates text embeddings for a batch of texts using the specified model and returns them as float arrays.
+   * 
+   * @param texts List of text strings to embed
+   * @param model The embedding model to use
+   * @return List of float arrays representing the text embeddings
+   */
   private List<float[]> getEmbeddingAsFloatArrayFor(List<String> texts, EmbeddingModel model) {
     return model.embed(texts);
   }
 
+  /**
+   * Generates text embedding for a single text using the specified model and returns it as a byte array.
+   * 
+   * @param text  Text string to embed
+   * @param model The embedding model to use
+   * @return Byte array representing the text embedding
+   */
   private byte[] getEmbeddingsAsByteArrayFor(String text, EmbeddingModel model) {
     return ObjectUtils.floatArrayToByteArray(model.embed(text));
   }
 
+  /**
+   * Generates text embedding for a single text using the specified model and returns it as a float array.
+   * 
+   * @param text  Text string to embed
+   * @param model The embedding model to use
+   * @return Float array representing the text embedding
+   */
   private float[] getEmbeddingAsFloatArrayFor(String text, EmbeddingModel model) {
     return model.embed(text);
   }
 
+  /**
+   * {@inheritDoc}
+   * 
+   * Processes a single entity, examining fields annotated with {@link Vectorize} and generating
+   * embeddings based on the configured embedding type and provider. The generated embeddings
+   * are automatically set on the destination fields specified in the annotation.
+   */
   @Override
   public void processEntity(Object item) {
     if (!isReady()) {
@@ -196,6 +329,13 @@ public class DefaultEmbedder implements Embedder {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   * 
+   * Processes multiple entities in batches for improved performance. Entities are grouped
+   * by embedding type and processed together to leverage batch inference capabilities
+   * of the underlying models.
+   */
   @Override
   public <S> void processEntities(Iterable<S> items) {
     if (!isReady()) {
@@ -234,10 +374,22 @@ public class DefaultEmbedder implements Embedder {
     }
   }
 
+  /**
+   * Processes a batch of field data by grouping them by embedding type and delegating
+   * to the appropriate batch processing method.
+   * 
+   * @param batch List of field data to process
+   */
   private void processBatch(List<FieldData> batch) {
     batch.stream().collect(Collectors.groupingBy(fd -> fd.vectorize().embeddingType())).forEach(this::vectorizeBatch);
   }
 
+  /**
+   * Vectorizes a batch of fields based on their embedding type.
+   * 
+   * @param embeddingType The type of embedding to generate
+   * @param fieldDataList List of field data to vectorize
+   */
   private void vectorizeBatch(EmbeddingType embeddingType, List<FieldData> fieldDataList) {
     switch (embeddingType) {
       case IMAGE -> processImageEmbedding(fieldDataList);
@@ -249,6 +401,11 @@ public class DefaultEmbedder implements Embedder {
     }
   }
 
+  /**
+   * Processes image embeddings for a batch of fields, handling both document and hash mappings.
+   * 
+   * @param fieldDataList List of field data containing image paths to process
+   */
   private void processImageEmbedding(List<FieldData> fieldDataList) {
     fieldDataList.stream().collect(Collectors.groupingBy(FieldData::isDocument)).forEach((isDocument,
         groupedByIsDocument) -> groupedByIsDocument.stream().collect(Collectors.groupingBy(FieldData::vectorize))
@@ -263,6 +420,12 @@ public class DefaultEmbedder implements Embedder {
             }));
   }
 
+  /**
+   * Maps field values to resource input streams.
+   * 
+   * @param fieldDataList List of field data containing resource paths
+   * @return List of input streams, empty list if any resource fails to load
+   */
   private List<InputStream> mapValuesToResources(List<FieldData> fieldDataList) {
     var resources = fieldDataList.stream().map(it -> {
       try {
@@ -275,6 +438,14 @@ public class DefaultEmbedder implements Embedder {
     return resources.contains(null) ? List.of() : resources;
   }
 
+  /**
+   * Processes image embedding for a single field.
+   * 
+   * @param accessor   Property accessor for setting the embedding value
+   * @param vectorize  Vectorize annotation containing configuration
+   * @param fieldValue The image resource path
+   * @param isDocument Whether the entity is a document (affects embedding format)
+   */
   private void processImageEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
       boolean isDocument) {
     Resource resource = applicationContext.getResource(fieldValue.toString());
@@ -290,6 +461,11 @@ public class DefaultEmbedder implements Embedder {
     }
   }
 
+  /**
+   * Processes facial embeddings for a batch of fields, handling both document and hash mappings.
+   * 
+   * @param fieldDataList List of field data containing facial image paths to process
+   */
   private void processFaceEmbedding(List<FieldData> fieldDataList) {
     fieldDataList.stream().collect(Collectors.groupingBy(FieldData::isDocument)).forEach((isDocument,
         groupedByIsDocument) -> groupedByIsDocument.stream().collect(Collectors.groupingBy(FieldData::vectorize))
@@ -304,6 +480,14 @@ public class DefaultEmbedder implements Embedder {
             }));
   }
 
+  /**
+   * Processes facial embedding for a single field.
+   * 
+   * @param accessor   Property accessor for setting the embedding value
+   * @param vectorize  Vectorize annotation containing configuration
+   * @param fieldValue The facial image resource path
+   * @param isDocument Whether the entity is a document (affects embedding format)
+   */
   private void processFaceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
       boolean isDocument) {
     Resource resource = applicationContext.getResource(fieldValue.toString());
@@ -320,6 +504,11 @@ public class DefaultEmbedder implements Embedder {
     }
   }
 
+  /**
+   * Processes sentence embeddings for a batch of fields, grouping by provider for efficient processing.
+   * 
+   * @param fieldDataList List of field data containing text to process
+   */
   private void processSentencesEmbedding(List<FieldData> fieldDataList) {
     fieldDataList.stream().collect(Collectors.groupingBy(it -> it.vectorize().provider())).forEach((provider,
         groupedFieldDataList) -> {
@@ -339,6 +528,14 @@ public class DefaultEmbedder implements Embedder {
     });
   }
 
+  /**
+   * Processes sentence embedding for a single field using the configured provider.
+   * 
+   * @param accessor   Property accessor for setting the embedding value
+   * @param vectorize  Vectorize annotation containing configuration
+   * @param fieldValue The text to embed
+   * @param isDocument Whether the entity is a document (affects embedding format)
+   */
   private void processSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
       boolean isDocument) {
     switch (vectorize.provider()) {
@@ -361,16 +558,35 @@ public class DefaultEmbedder implements Embedder {
     }
   }
 
+  /**
+   * Maps field values to string representations.
+   * 
+   * @param fieldDataList List of field data
+   * @return List of string values
+   */
   private List<String> mapValues(List<FieldData> fieldDataList) {
     return fieldDataList.stream().map(it -> it.value().toString()).toList();
   }
 
+  /**
+   * Applies generated embeddings to their corresponding destination fields.
+   * 
+   * @param fieldDataList List of field data to update
+   * @param embeddings    List of generated embeddings
+   * @param vectorize     Vectorize annotation containing destination field information
+   */
   private void applyEmbeddings(List<FieldData> fieldDataList, List<?> embeddings, Vectorize vectorize) {
     for (int i = 0; i < fieldDataList.size() && i < embeddings.size(); i++) {
       fieldDataList.get(i).accessor().setPropertyValue(vectorize.destination(), embeddings.get(i));
     }
   }
 
+  /**
+   * Processes sentence embeddings for a batch using a model function.
+   * 
+   * @param fieldDataList List of field data to process
+   * @param modelFunction Function to create the appropriate embedding model
+   */
   private void processSentenceEmbedding(List<FieldData> fieldDataList,
       Function<Vectorize, EmbeddingModel> modelFunction) {
     fieldDataList.stream().collect(Collectors.groupingBy(FieldData::isDocument)).forEach((isDocument,
@@ -387,6 +603,15 @@ public class DefaultEmbedder implements Embedder {
             }));
   }
 
+  /**
+   * Processes sentence embedding for a single field using a model function.
+   * 
+   * @param accessor      Property accessor for setting the embedding value
+   * @param vectorize     Vectorize annotation containing configuration
+   * @param fieldValue    The text to embed
+   * @param isDocument    Whether the entity is a document (affects embedding format)
+   * @param modelFunction Function to create the appropriate embedding model
+   */
   private void processSentenceEmbedding(PropertyAccessor accessor, Vectorize vectorize, Object fieldValue,
       boolean isDocument, Function<Vectorize, EmbeddingModel> modelFunction) {
     EmbeddingModel model = modelFunction.apply(vectorize);
@@ -397,40 +622,90 @@ public class DefaultEmbedder implements Embedder {
     }
   }
 
+  /**
+   * Creates or retrieves a Transformers embedding model based on the vectorize configuration.
+   * 
+   * @param vectorize Configuration containing model parameters
+   * @return Configured TransformersEmbeddingModel instance
+   */
   private TransformersEmbeddingModel getTransformersEmbeddingModel(Vectorize vectorize) {
     return embeddingModelFactory.createTransformersEmbeddingModel(vectorize);
   }
 
+  /**
+   * Creates or retrieves an OpenAI embedding model.
+   * 
+   * @param vectorize Configuration containing model parameters
+   * @return Configured OpenAiEmbeddingModel instance
+   */
   private OpenAiEmbeddingModel getOpenAiEmbeddingModel(Vectorize vectorize) {
     return embeddingModelFactory.createOpenAiEmbeddingModel(vectorize.openAiEmbeddingModel());
   }
 
+  /**
+   * Creates or retrieves an Ollama embedding model.
+   * 
+   * @param vectorize Configuration containing model parameters
+   * @return Configured OllamaEmbeddingModel instance
+   */
   private OllamaEmbeddingModel getOllamaEmbeddingModel(Vectorize vectorize) {
     return embeddingModelFactory.createOllamaEmbeddingModel(vectorize.ollamaEmbeddingModel().id());
   }
 
+  /**
+   * Creates or retrieves an Azure OpenAI embedding model.
+   * 
+   * @param vectorize Configuration containing deployment name
+   * @return Configured AzureOpenAiEmbeddingModel instance
+   */
   private AzureOpenAiEmbeddingModel getAzureOpenAiEmbeddingModel(Vectorize vectorize) {
     return embeddingModelFactory.createAzureOpenAiEmbeddingModel(vectorize.azureOpenAiDeploymentName());
   }
 
+  /**
+   * Creates or retrieves a Vertex AI text embedding model.
+   * 
+   * @param vectorize Configuration containing model parameters
+   * @return Configured VertexAiTextEmbeddingModel instance
+   */
   private VertexAiTextEmbeddingModel getVertexAiEmbeddingModel(Vectorize vectorize) {
     return embeddingModelFactory.createVertexAiTextEmbeddingModel(vectorize.vertexAiApiModel());
   }
 
+  /**
+   * Creates or retrieves an AWS Bedrock Cohere embedding model.
+   * 
+   * @param vectorize Configuration containing model parameters
+   * @return Configured BedrockCohereEmbeddingModel instance
+   */
   private BedrockCohereEmbeddingModel getBedrockCohereEmbeddingModel(Vectorize vectorize) {
     return embeddingModelFactory.createCohereEmbeddingModel(vectorize.cohereEmbeddingModel().id());
   }
 
+  /**
+   * Creates or retrieves an AWS Bedrock Titan embedding model.
+   * 
+   * @param vectorize Configuration containing model parameters
+   * @return Configured BedrockTitanEmbeddingModel instance
+   */
   private BedrockTitanEmbeddingModel getBedrockTitanEmbeddingModel(Vectorize vectorize) {
     return embeddingModelFactory.createTitanEmbeddingModel(vectorize.titanEmbeddingModel().id());
   }
 
+  /**
+   * {@inheritDoc}
+   * 
+   * @return Always returns true as models are created on demand
+   */
   @Override
   public boolean isReady() {
     //return this.faceEmbeddingModel != null && this.transformersEmbeddingModel != null;
     return true;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public List<byte[]> getTextEmbeddingsAsBytes(List<String> texts, Field field) {
     if (field.isAnnotationPresent(Vectorize.class)) {
@@ -443,6 +718,13 @@ public class DefaultEmbedder implements Embedder {
     }
   }
 
+  /**
+   * Generates sentence embeddings as byte arrays using the appropriate provider.
+   * 
+   * @param texts     List of texts to embed
+   * @param vectorize Configuration specifying the provider and model
+   * @return List of byte arrays representing the embeddings
+   */
   private List<byte[]> getSentenceEmbeddingAsBytes(List<String> texts, Vectorize vectorize) {
     return switch (vectorize.provider()) {
       case TRANSFORMERS -> {
@@ -477,6 +759,13 @@ public class DefaultEmbedder implements Embedder {
     };
   }
 
+  /**
+   * Generates sentence embeddings as float arrays using the appropriate provider.
+   * 
+   * @param texts     List of texts to embed
+   * @param vectorize Configuration specifying the provider and model
+   * @return List of float arrays representing the embeddings
+   */
   private List<float[]> getSentenceEmbeddingAsFloats(List<String> texts, Vectorize vectorize) {
     return switch (vectorize.provider()) {
       case TRANSFORMERS -> {
@@ -511,6 +800,9 @@ public class DefaultEmbedder implements Embedder {
     };
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public List<float[]> getTextEmbeddingsAsFloats(List<String> texts, Field field) {
     if (field.isAnnotationPresent(Vectorize.class)) {
@@ -523,17 +815,33 @@ public class DefaultEmbedder implements Embedder {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public List<byte[]> getTextEmbeddingsAsBytes(List<String> texts, MetamodelField<?, ?> metamodelField) {
     return getTextEmbeddingsAsBytes(texts, metamodelField.getSearchFieldAccessor().getField());
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public List<float[]> getTextEmbeddingsAsFloats(List<String> texts, MetamodelField<?, ?> metamodelField) {
     return getTextEmbeddingsAsFloats(texts, metamodelField.getSearchFieldAccessor().getField());
   }
 }
 
+/**
+ * Internal record for holding field data during batch processing.
+ * 
+ * @param vectorize  The Vectorize annotation configuration
+ * @param item       The entity being processed
+ * @param field      The field being vectorized
+ * @param accessor   Property accessor for the entity
+ * @param value      The field value to be vectorized
+ * @param isDocument Whether the entity is a Document (affects embedding format)
+ */
 record FieldData(Vectorize vectorize, Object item, Field field, PropertyAccessor accessor, Object value,
                  boolean isDocument) {
 }

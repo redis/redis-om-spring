@@ -2,10 +2,61 @@ package com.redis.om.spring.tuple.impl;
 
 import com.redis.om.spring.tuple.Novemdecuple;
 
+/**
+ * Implementation of {@link Novemdecuple} that holds nineteen typed values.
+ * <p>
+ * This implementation extends {@link AbstractTuple} and provides concrete
+ * implementations for accessing the nineteen elements of the tuple.
+ * </p>
+ *
+ * @param <T0>  the type of the first element
+ * @param <T1>  the type of the second element
+ * @param <T2>  the type of the third element
+ * @param <T3>  the type of the fourth element
+ * @param <T4>  the type of the fifth element
+ * @param <T5>  the type of the sixth element
+ * @param <T6>  the type of the seventh element
+ * @param <T7>  the type of the eighth element
+ * @param <T8>  the type of the ninth element
+ * @param <T9>  the type of the tenth element
+ * @param <T10> the type of the eleventh element
+ * @param <T11> the type of the twelfth element
+ * @param <T12> the type of the thirteenth element
+ * @param <T13> the type of the fourteenth element
+ * @param <T14> the type of the fifteenth element
+ * @param <T15> the type of the sixteenth element
+ * @param <T16> the type of the seventeenth element
+ * @param <T17> the type of the eighteenth element
+ * @param <T18> the type of the nineteenth element
+ */
 public final class NovemdecupleImpl<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>
     extends AbstractTuple implements
     Novemdecuple<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18> {
 
+  /**
+   * Constructs a new NovemdecupleImpl with the specified labels and values.
+   *
+   * @param labels the labels for the tuple elements
+   * @param e0     the first element
+   * @param e1     the second element
+   * @param e2     the third element
+   * @param e3     the fourth element
+   * @param e4     the fifth element
+   * @param e5     the sixth element
+   * @param e6     the seventh element
+   * @param e7     the eighth element
+   * @param e8     the ninth element
+   * @param e9     the tenth element
+   * @param e10    the eleventh element
+   * @param e11    the twelfth element
+   * @param e12    the thirteenth element
+   * @param e13    the fourteenth element
+   * @param e14    the fifteenth element
+   * @param e15    the sixteenth element
+   * @param e16    the seventeenth element
+   * @param e17    the eighteenth element
+   * @param e18    the nineteenth element
+   */
   public NovemdecupleImpl(String[] labels, T0 e0, T1 e1, T2 e2, T3 e3, T4 e4, T5 e5, T6 e6, T7 e7, T8 e8, T9 e9,
       T10 e10, T11 e11, T12 e12, T13 e13, T14 e14, T15 e15, T16 e16, T17 e17, T18 e18) {
     super(NovemdecupleImpl.class, labels, e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14, e15, e16,

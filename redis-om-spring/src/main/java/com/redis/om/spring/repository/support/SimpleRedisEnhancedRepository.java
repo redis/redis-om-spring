@@ -57,16 +57,36 @@ import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.util.SafeEncoder;
 
+/**
+ * Default implementation of {@link RedisEnhancedRepository} providing enhanced Redis operations
+ * for hash-based entities with search capabilities.
+ * <p>
+ * This repository implementation extends Spring Data Redis's {@link SimpleKeyValueRepository}
+ * and adds support for Redis Stack features including RediSearch indexing, vector similarity search,
+ * Query by Example, field-level updates, and batch operations.
+ * </p>
+ *
+ * @param <T>  the domain type the repository manages
+ * @param <ID> the type of the id of the entity the repository manages
+ */
 public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueRepository<T, ID> implements
     RedisEnhancedRepository<T, ID> {
 
+  /** Operations for Redis modules (Search, JSON, etc.) */
   protected final RedisModulesOperations<String> modulesOperations;
+  /** Metadata about the entity type managed by this repository */
   protected final EntityInformation<T, ID> metadata;
+  /** Core key-value operations */
   protected final KeyValueOperations operations;
+  /** Manages RediSearch indexes for entities */
   protected final RediSearchIndexer indexer;
+  /** Converts between Java objects and Redis data structures */
   protected final MappingRedisOMConverter mappingConverter;
+  /** Enhanced adapter for Redis key-value operations */
   protected final RedisEnhancedKeyValueAdapter enhancedKeyValueAdapter;
+  /** Handles entity auditing (created/modified timestamps) */
   protected final EntityAuditor auditor;
+  /** Handles vector embedding generation for AI/ML features */
   protected final Embedder embedder;
 
   private final ULIDIdentifierGenerator generator;
@@ -74,6 +94,16 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
 
   private final EntityStream entityStream;
 
+  /**
+   * Constructs a new {@code SimpleRedisEnhancedRepository} with the specified dependencies.
+   *
+   * @param metadata   metadata about the entity type
+   * @param operations key-value operations for basic Redis operations
+   * @param rmo        Redis modules operations for advanced features
+   * @param indexer    RediSearch indexer for managing search indexes
+   * @param embedder   embedder for generating vector embeddings
+   * @param properties configuration properties for Redis OM
+   */
   @SuppressWarnings(
     "unchecked"
   )
@@ -411,6 +441,13 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     return saved;
   }
 
+  /**
+   * Creates a Redis key from the given keyspace and ID, applying any configured identifier filters.
+   *
+   * @param keyspace the keyspace prefix for the entity type
+   * @param id       the entity identifier
+   * @return the complete Redis key as a byte array
+   */
   public byte[] createKey(String keyspace, String id) {
     // handle IdFilters
     var maybeIdentifierFilter = indexer.getIdentifierFilterFor(keyspace);

@@ -43,6 +43,33 @@ import com.redis.om.spring.util.ObjectUtils;
 import com.squareup.javapoet.*;
 import com.squareup.javapoet.CodeBlock.Builder;
 
+/**
+ * Annotation processor that generates metamodel classes for Redis OM Spring entities.
+ * This processor automatically creates type-safe metamodel classes that provide compile-time
+ * access to entity field information for building queries and accessing entity structure.
+ *
+ * <p>The metamodel generator processes classes annotated with {@link Document @Document}
+ * or {@link RedisHash @RedisHash} and generates corresponding metamodel classes with a "$"
+ * suffix. These metamodel classes contain static fields representing entity properties,
+ * enabling type-safe query construction and programmatic access to field metadata.</p>
+ *
+ * <p>Generated metamodel classes provide:</p>
+ * <ul>
+ * <li>Type-safe field references for query building</li>
+ * <li>Search field accessors for indexed fields</li>
+ * <li>Support for nested object navigation</li>
+ * <li>Vector field score accessors for similarity search</li>
+ * </ul>
+ *
+ * <p>The generator handles various field types including:
+ * primitives, collections, nested objects, date/time types, geospatial points,
+ * and vector embeddings.</p>
+ *
+ * @see Document
+ * @see RedisHash
+ * @see Indexed
+ * @see MetamodelField
+ */
 @SupportedAnnotationTypes(
     value = { "com.redis.om.spring.annotations.Document", "org.springframework.data.redis.core.RedisHash" }
 )
@@ -60,9 +87,18 @@ public final class MetamodelGenerator extends AbstractProcessor {
   private Messager messager;
   private TypeElement objectTypeElement;
 
+  /**
+   * Default constructor for the metamodel generator processor.
+   * Creates a new instance of the annotation processor.
+   */
   public MetamodelGenerator() {
   }
 
+  /**
+   * Returns the latest Java source version supported by this processor.
+   *
+   * @return the latest supported source version
+   */
   @Override
   public SourceVersion getSupportedSourceVersion() {
     return SourceVersion.latest();
@@ -79,6 +115,12 @@ public final class MetamodelGenerator extends AbstractProcessor {
         .build();
   }
 
+  /**
+   * Initializes the annotation processor with the provided processing environment.
+   * Sets up necessary tools for type processing and messaging.
+   *
+   * @param env the processing environment providing access to various utilities
+   */
   @Override
   public synchronized void init(ProcessingEnvironment env) {
     super.init(env);
@@ -93,6 +135,15 @@ public final class MetamodelGenerator extends AbstractProcessor {
     this.objectTypeElement = processingEnvironment.getElementUtils().getTypeElement("java.lang.Object");
   }
 
+  /**
+   * Processes the annotations and generates metamodel classes for Redis entities.
+   * This method is called by the annotation processing framework for each round
+   * of annotation processing.
+   *
+   * @param annotations the annotation types requested to be processed
+   * @param roundEnv    the environment for this round of processing
+   * @return true if the annotations are claimed by this processor
+   */
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 
@@ -118,6 +169,13 @@ public final class MetamodelGenerator extends AbstractProcessor {
     return true;
   }
 
+  /**
+   * Generates a metamodel class for the given annotated entity element.
+   * Creates type-safe field accessors and search field metadata for the entity.
+   *
+   * @param annotatedElement the entity element to generate a metamodel for
+   * @throws IOException if file generation fails
+   */
   void generateMetaModelClass(final Element annotatedElement) throws IOException {
     Pair<Boolean, String> innerClassInfo = isInnerClassWithEnclosing(annotatedElement);
     boolean isInnerClass = innerClassInfo.getFirst();

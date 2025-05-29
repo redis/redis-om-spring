@@ -10,15 +10,32 @@ import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import redis.clients.jedis.search.querybuilder.QueryNode;
 
+/**
+ * Tag field ends with predicate.
+ *
+ * @param <E> the entity type
+ * @param <T> the field type
+ */
 public class EndsWithPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   private final T value;
 
+  /**
+   * Creates a new ends with predicate.
+   *
+   * @param field the search field
+   * @param value the value to match
+   */
   public EndsWithPredicate(SearchFieldAccessor field, T value) {
     super(field);
     this.value = value;
   }
 
+  /**
+   * Gets the value being matched.
+   *
+   * @return the value
+   */
   public T getValue() {
     return value;
   }

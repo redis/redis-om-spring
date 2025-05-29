@@ -3,6 +3,34 @@ package com.redis.om.spring.ops.pds;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Operations interface for Redis Count-Min Sketch commands.
+ * <p>
+ * This interface provides a high-level abstraction for working with Redis Count-Min Sketches,
+ * which are probabilistic data structures that provide approximate frequency counts of items
+ * in a data stream. Count-Min Sketches are particularly useful for tracking the frequency
+ * of events or items when exact counts would require too much memory.
+ * </p>
+ * <p>
+ * Key characteristics of Count-Min Sketches:
+ * <ul>
+ * <li>Provide approximate frequency counts with configurable accuracy</li>
+ * <li>Use sub-linear space complexity</li>
+ * <li>Support increment operations and batch updates</li>
+ * <li>Can merge multiple sketches with identical dimensions</li>
+ * <li>May overestimate frequencies but never underestimate</li>
+ * </ul>
+ * <p>
+ * Redis OM Spring automatically integrates Count-Min Sketch operations when entities are
+ * annotated with {@link com.redis.om.spring.annotations.CountMin}. This enables automatic
+ * frequency tracking during entity save operations.
+ *
+ *
+ * @param <K> the type of keys used to identify count-min sketches
+ * @see com.redis.om.spring.annotations.CountMin
+ * @see com.redis.om.spring.countmin.CountMinAspect
+ * @since 0.1.0
+ */
 public interface CountMinSketchOperations<K> {
   /**
    * CMS.INITBYDIM Initializes a Count-Min Sketch to dimensions specified by user.

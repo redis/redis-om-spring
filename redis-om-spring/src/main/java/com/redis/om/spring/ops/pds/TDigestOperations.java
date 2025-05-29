@@ -5,6 +5,53 @@ import java.util.Map;
 
 import redis.clients.jedis.bloom.TDigestMergeParams;
 
+/**
+ * Interface for T-Digest probabilistic data structure operations in Redis.
+ * 
+ * <p>T-Digest is a probabilistic data structure for estimating quantiles and percentiles
+ * from streaming data or large datasets. It provides accurate estimates while using
+ * minimal memory, making it ideal for:</p>
+ * <ul>
+ * <li>Real-time analytics and monitoring</li>
+ * <li>Computing percentiles (e.g., P50, P95, P99) for latency measurements</li>
+ * <li>Estimating cumulative distribution functions</li>
+ * <li>Finding median values in large datasets</li>
+ * <li>Anomaly detection based on statistical distributions</li>
+ * </ul>
+ * 
+ * <p>Key features of T-Digest:</p>
+ * <ul>
+ * <li>Constant memory usage regardless of data size</li>
+ * <li>High accuracy for extreme quantiles (near 0 or 1)</li>
+ * <li>Support for merging multiple digests</li>
+ * <li>Fast updates and queries</li>
+ * </ul>
+ * 
+ * <p>Example usage:</p>
+ * <pre>{@code
+ * TDigestOperations<String> ops = redisModulesOperations.opsForTDigest();
+ * 
+ * // Create a new T-Digest for response times
+ * ops.create("response_times", 100);
+ * 
+ * // Add measurements
+ * ops.add("response_times", 15.2, 18.5, 22.1, 14.8, 25.3);
+ * 
+ * // Get percentiles
+ * List<Double> percentiles = ops.quantile("response_times", 0.5, 0.95, 0.99);
+ * // Returns [18.5, 24.7, 25.2] (P50, P95, P99)
+ * 
+ * // Get cumulative distribution
+ * List<Double> cdf = ops.cdf("response_times", 20.0);
+ * // Returns [0.75] (75% of values are <= 20.0)
+ * }</pre>
+ *
+ * @param <K> the Redis key type
+ * @author Redis OM Spring Developers
+ * @see BloomOperations
+ * @see CountMinSketchOperations
+ * @see CuckooFilterOperations
+ */
 public interface TDigestOperations<K> {
   /**
    * Create a new T-Digest sketch.

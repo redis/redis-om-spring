@@ -19,6 +19,20 @@ import redis.clients.jedis.search.aggr.AggregationResult;
 import redis.clients.jedis.search.schemafields.SchemaField;
 import redis.clients.jedis.util.SafeEncoder;
 
+/**
+ * Implementation of search operations using Redis Search (RediSearch) module.
+ * <p>
+ * This class provides a concrete implementation of {@link SearchOperations} that wraps
+ * the Redis Search functionality, including index management, document searching,
+ * aggregations, and auto-completion features.
+ * </p>
+ * <p>
+ * The implementation uses Jedis clients to communicate with Redis and provides
+ * type-safe operations for working with search indexes.
+ * </p>
+ *
+ * @param <K> the type of the search index key
+ */
 public class SearchOperationsImpl<K> implements SearchOperations<K> {
 
   private final RediSearchCommands search;
@@ -26,6 +40,13 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
   private final K index;
   private final StringRedisTemplate template;
 
+  /**
+   * Creates a new search operations implementation.
+   *
+   * @param index         the search index identifier
+   * @param modulesClient the Redis modules client for search operations
+   * @param template      the string Redis template for additional operations
+   */
   public SearchOperationsImpl(K index, RedisModulesClient modulesClient, StringRedisTemplate template) {
     this.index = index;
     this.modulesClient = modulesClient;

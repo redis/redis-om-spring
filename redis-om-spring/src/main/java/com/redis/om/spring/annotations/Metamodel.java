@@ -2,6 +2,9 @@ package com.redis.om.spring.annotations;
 
 import java.lang.annotation.*;
 
+/**
+ * Marker annotation for metamodel generation.
+ */
 @Documented
 @Retention(
   RetentionPolicy.RUNTIME

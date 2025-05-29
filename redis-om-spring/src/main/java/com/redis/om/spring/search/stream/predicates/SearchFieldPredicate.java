@@ -7,11 +7,47 @@ import java.util.function.Predicate;
 import redis.clients.jedis.search.Schema.FieldType;
 import redis.clients.jedis.search.querybuilder.Node;
 
+/**
+ * Interface for predicates that operate on searchable fields in Redis OM entities.
+ * This interface extends the standard {@link Predicate} with additional metadata
+ * about the field being searched, enabling the construction of Redis search queries.
+ * 
+ * <p>SearchFieldPredicate provides access to field metadata including the Redis
+ * field type, the Java field, and the search alias used in Redis queries.</p>
+ * 
+ * <p>Implementations of this interface can be combined using logical operators
+ * to create complex search conditions.</p>
+ * 
+ * @param <E> the entity type being filtered
+ * @param <T> the field type of the predicate
+ * 
+ * @since 1.0
+ * @see Predicate
+ * @see AndPredicate
+ * @see OrPredicate
+ */
 public interface SearchFieldPredicate<E, T> extends Predicate<T> {
+  /**
+   * Returns the Redis field type for the field this predicate operates on.
+   * This determines how the field is indexed and searched in Redis.
+   * 
+   * @return the Redis field type (TEXT, TAG, NUMERIC, GEO, etc.)
+   */
   FieldType getSearchFieldType();
 
+  /**
+   * Returns the Java field that this predicate operates on.
+   * 
+   * @return the Java field from the entity class
+   */
   Field getField();
 
+  /**
+   * Returns the search alias used for this field in Redis queries.
+   * The alias is typically the field name prefixed with '@'.
+   * 
+   * @return the search alias for the field
+   */
   String getSearchAlias();
 
   @SuppressWarnings(
@@ -38,6 +74,14 @@ public interface SearchFieldPredicate<E, T> extends Predicate<T> {
     return andPredicate;
   }
 
+  /**
+   * Applies this predicate to a RediSearch query node.
+   * This method transforms the predicate into a RediSearch query node
+   * that can be used to build the final search query.
+   * 
+   * @param node the base query node to apply this predicate to
+   * @return the modified query node with this predicate applied
+   */
   default Node apply(Node node) {
     return node;
   }

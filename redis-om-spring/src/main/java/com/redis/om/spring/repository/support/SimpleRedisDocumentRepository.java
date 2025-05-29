@@ -83,17 +83,51 @@ import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.util.SafeEncoder;
 
+/**
+ * Default implementation of {@link RedisDocumentRepository} providing Redis JSON document
+ * storage and search capabilities using RedisJSON and RediSearch modules.
+ * <p>
+ * This repository implementation manages entities as JSON documents in Redis, providing
+ * full CRUD operations, bulk operations, field-level updates, and advanced search
+ * capabilities through RediSearch integration. It handles entity mapping, ID generation,
+ * versioning, auditing, and reference resolution automatically.
+ * <p>
+ * The repository supports various features including:
+ * <ul>
+ * <li>Automatic ULID generation for entity IDs</li>
+ * <li>Optimistic locking through {@code @Version} support</li>
+ * <li>Entity auditing for creation and modification tracking</li>
+ * <li>Reference handling with {@code @Reference} annotation</li>
+ * <li>TTL (Time To Live) support for automatic expiration</li>
+ * <li>Query by Example (QBE) for dynamic queries</li>
+ * <li>Bulk operations with pipelined execution</li>
+ * <li>Vector embeddings with AI providers (when configured)</li>
+ * </ul>
+ *
+ * @param <T>  the domain entity type managed by this repository
+ * @param <ID> the type of the entity identifier
+ * @see RedisDocumentRepository
+ * @see SimpleKeyValueRepository
+ * @since 1.0.0
+ */
 public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueRepository<T, ID> implements
     RedisDocumentRepository<T, ID> {
 
   private final static Logger logger = LoggerFactory.getLogger(SimpleRedisDocumentRepository.class);
 
+  /** Redis operations handler for JSON and search modules */
   protected final RedisModulesOperations<String> modulesOperations;
+  /** Entity metadata containing type information and ID handling */
   protected final EntityInformation<T, ID> metadata;
+  /** Spring Data Key-Value operations for basic CRUD */
   protected final KeyValueOperations operations;
+  /** RediSearch index manager for search operations */
   protected final RediSearchIndexer indexer;
+  /** Converter for mapping between entities and Redis data structures */
   protected final MappingRedisOMConverter mappingConverter;
+  /** Auditor for tracking entity creation and modification */
   protected final EntityAuditor auditor;
+  /** Embedder for generating vector embeddings (AI integration) */
   protected final Embedder embedder;
   private final GsonBuilder gsonBuilder;
   private final ULIDIdentifierGenerator generator;
@@ -101,6 +135,21 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   private final RedisMappingContext mappingContext;
   private final EntityStream entityStream;
 
+  /**
+   * Constructs a new {@code SimpleRedisDocumentRepository} with the required dependencies.
+   * <p>
+   * This constructor initializes all necessary components for Redis document operations
+   * including JSON operations, search capabilities, entity mapping, and auditing.
+   *
+   * @param metadata       entity information containing type and ID metadata
+   * @param operations     Spring Data Key-Value operations for basic CRUD
+   * @param rmo            Redis modules operations for JSON and search functionality
+   * @param indexer        RediSearch indexer for managing search indexes
+   * @param mappingContext Redis mapping context for entity metadata
+   * @param gsonBuilder    Gson builder for JSON serialization customization
+   * @param embedder       embedder for AI-powered vector generation (may be no-op)
+   * @param properties     Redis OM configuration properties
+   */
   @SuppressWarnings(
     "unchecked"
   )
@@ -303,6 +352,21 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     return getKeyspace() + stringId;
   }
 
+  /**
+   * Creates a Redis key byte array for the given keyspace and ID.
+   * <p>
+   * This method constructs the full Redis key by combining the keyspace prefix
+   * with the entity ID, applying any configured ID filters in the process.
+   * The resulting key follows the pattern: {@code keyspace:id}
+   * <p>
+   * ID filters can transform the ID before it becomes part of the key,
+   * which is useful for implementing patterns like hash tags for Redis
+   * cluster slot allocation.
+   *
+   * @param keyspace the keyspace prefix for the entity type
+   * @param id       the entity identifier
+   * @return the complete Redis key as a byte array
+   */
   public byte[] createKey(String keyspace, String id) {
     // handle IdFilters
     var maybeIdentifierFilter = indexer.getIdentifierFilterFor(keyspace);
@@ -314,6 +378,21 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     return this.mappingConverter.toBytes(keyspace.endsWith(":") ? keyspace + id : keyspace + ":" + id);
   }
 
+  /**
+   * Processes {@code @Reference} annotated fields in an entity and updates their values in Redis.
+   * <p>
+   * This method handles the persistence of entity references by storing only the
+   * Redis keys of referenced entities instead of embedding the full objects.
+   * It supports both single references and collections of references.
+   * <p>
+   * For single references, the referenced entity's key is stored as a string.
+   * For collection references, an array of keys is stored. This allows for
+   * efficient loading of related entities without data duplication.
+   *
+   * @param objectKey the Redis key of the entity being processed
+   * @param entity    the entity containing reference fields
+   * @param pipeline  the Jedis pipeline for batched operations
+   */
   private void processReferenceAnnotations(byte[] objectKey, Object entity, Pipeline pipeline) {
     List<Field> fields = getFieldsWithAnnotation(entity.getClass(), Reference.class);
     if (!fields.isEmpty()) {
@@ -355,6 +434,21 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     }
   }
 
+  /**
+   * Determines the Time To Live (TTL) value for an entity based on configuration and annotations.
+   * <p>
+   * This method checks for TTL configuration in the following order:
+   * <ol>
+   * <li>Entity field annotated with {@code @TimeToLive} - supports dynamic TTL per entity</li>
+   * <li>Keyspace configuration settings - static TTL for all entities of a type</li>
+   * </ol>
+   * <p>
+   * When using field-based TTL, the method respects the time unit specified in the
+   * {@code @TimeToLive} annotation and converts it to seconds for Redis.
+   *
+   * @param entity the entity to determine TTL for
+   * @return an {@link Optional} containing the TTL in seconds, or empty if no TTL is configured
+   */
   private Optional<Long> getTTLForEntity(Object entity) {
     KeyspaceConfiguration keyspaceConfig = mappingContext.getMappingConfiguration().getKeyspaceConfiguration();
     if (keyspaceConfig.hasSettingsFor(entity.getClass())) {
@@ -386,6 +480,20 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     return Optional.empty();
   }
 
+  /**
+   * Validates entity version for optimistic locking before deletion.
+   * <p>
+   * This method implements optimistic locking by comparing the version field
+   * value in the entity with the current version stored in Redis. If the
+   * versions don't match, it indicates the entity has been modified by
+   * another process, and an {@link OptimisticLockingFailureException} is thrown.
+   * <p>
+   * Version fields must be annotated with {@code @Version} and be of type
+   * {@code Integer}, {@code int}, {@code Long}, or {@code long}.
+   *
+   * @param entity the entity to check version for
+   * @throws OptimisticLockingFailureException if version mismatch is detected
+   */
   private void checkVersion(T entity) {
     List<Field> fields = ObjectUtils.getFieldsWithAnnotation(entity.getClass(), Version.class);
     if (fields.size() == 1) {
@@ -406,6 +514,17 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     }
   }
 
+  /**
+   * Retrieves the current version value of an entity from Redis.
+   * <p>
+   * This method fetches the version field value directly from the JSON document
+   * stored in Redis using JSONPath. It's used as part of the optimistic locking
+   * mechanism to detect concurrent modifications.
+   *
+   * @param key             the Redis key of the entity
+   * @param versionProperty the name of the version property
+   * @return the current version number, or null if not found
+   */
   private Number getEntityVersion(String key, String versionProperty) {
     JSONOperations<String> ops = modulesOperations.opsForJSON();
     Class<?> type = new TypeToken<Long[]>() {
@@ -531,6 +650,22 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
         getSearchOps(), mappingConverter.getMappingContext()));
   }
 
+  /**
+   * Updates an entity based on the provided example, applying only non-null fields.
+   * <p>
+   * This method performs a partial update of an existing entity by applying only
+   * the non-null fields from the example probe object. The {@link ExampleMatcher}
+   * controls which properties are included in the update. After the update,
+   * the method retrieves and returns the updated entity from Redis.
+   * <p>
+   * The entity must have a non-null ID, and only fields that pass the matcher's
+   * criteria and have non-null values will be updated.
+   *
+   * @param <S>     the entity subtype
+   * @param example the example containing the probe entity and matcher
+   * @return the updated entity after applying the changes
+   * @throws IllegalArgumentException if the example probe has no ID
+   */
   @Override
   public <S extends T> S update(Example<S> example) {
     S probe = example.getProbe();
@@ -567,6 +702,21 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     return (S) getJSONOperations().get(key, entityType);
   }
 
+  /**
+   * Updates multiple entities based on the provided examples in a single batch operation.
+   * <p>
+   * This method efficiently updates multiple entities by collecting all update
+   * operations and executing them in a single pipelined batch. Each example
+   * in the iterable is processed according to its own {@link ExampleMatcher},
+   * allowing different update criteria for each entity.
+   * <p>
+   * All entities must have non-null IDs. The method returns immediately if
+   * the examples iterable is empty.
+   *
+   * @param <S>      the entity subtype
+   * @param examples an iterable of examples to process for updates
+   * @throws IllegalArgumentException if any example probe has no ID
+   */
   @Override
   public <S extends T> void updateAll(Iterable<Example<S>> examples) {
     if (!examples.iterator().hasNext()) {
@@ -605,6 +755,24 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     executePipelinedUpdates(updateOperations);
   }
 
+  /**
+   * Generates the complete Redis key for the given entity.
+   * <p>
+   * This method constructs the full Redis key by combining the entity's keyspace
+   * with its ID. It handles both simple and composite IDs appropriately:
+   * <ul>
+   * <li>Simple IDs: Converted directly to string and appended to keyspace</li>
+   * <li>Composite IDs: Individual ID components are joined with colons</li>
+   * </ul>
+   * <p>
+   * Any configured identifier filters are applied to transform the ID before
+   * constructing the final key. This is useful for Redis cluster environments
+   * where hash tags may be needed for proper slot distribution.
+   *
+   * @param entity the entity to generate a key for
+   * @return the complete Redis key for the entity
+   * @throws IllegalArgumentException if the entity has no ID
+   */
   @Override
   public String getKeyFor(T entity) {
     // Get the mapping context's entity info
@@ -639,10 +807,31 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     return getKeyspace() + stringId;
   }
 
+  /**
+   * Returns the JSON operations interface for RedisJSON module operations.
+   * <p>
+   * This convenience method provides access to the JSONOperations interface
+   * used for executing RedisJSON commands like JSON.GET, JSON.SET, etc.
+   *
+   * @return the {@link JSONOperations} instance for JSON operations
+   */
   private JSONOperations<String> getJSONOperations() {
     return modulesOperations.opsForJSON();
   }
 
+  /**
+   * Executes a batch of field update operations using Redis pipelining.
+   * <p>
+   * This method efficiently processes multiple field updates by batching them
+   * into a single pipeline execution. Each update operation uses RedisJSON's
+   * JSON.SET command with the "XX" flag to ensure updates only occur on
+   * existing documents.
+   * <p>
+   * Pipelining reduces network round trips and improves performance when
+   * updating multiple fields or multiple entities.
+   *
+   * @param updateOperations the list of update operations to execute
+   */
   private void executePipelinedUpdates(List<UpdateOperation> updateOperations) {
     try (Jedis jedis = modulesOperations.client().getJedis().get()) {
       Pipeline pipeline = jedis.pipelined();
@@ -661,12 +850,36 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     }
   }
 
+  /**
+   * Creates and returns search operations for the entity's search index.
+   * <p>
+   * This helper method constructs the appropriate {@link SearchOperations}
+   * instance for executing RediSearch queries against the entity's index.
+   * The search index name is derived from the entity's keyspace.
+   *
+   * @return configured {@link SearchOperations} for the entity type
+   */
   private SearchOperations<String> getSearchOps() {
     String keyspace = indexer.getKeyspaceForEntityClass(metadata.getJavaType());
     String searchIndex = indexer.getIndexName(keyspace);
     return modulesOperations.opsForSearch(searchIndex);
   }
 
+  /**
+   * Validates and formats an entity ID for use as a Redis key during write operations.
+   * <p>
+   * This method handles both simple and composite IDs. For entities using
+   * {@code @IdClass} for composite keys, it extracts values from all ID
+   * properties and joins them with colons. For simple IDs, it converts
+   * the ID to a string representation.
+   * <p>
+   * Composite key example: An entity with ID properties 'category' and 'productId'
+   * would produce a key like "electronics:12345".
+   *
+   * @param id   the ID value (may be simple or composite)
+   * @param item the entity being written
+   * @return the formatted ID string suitable for use in Redis keys
+   */
   private String validateKeyForWriting(Object id, Object item) {
     // Get the mapping context's entity info
     RedisEnhancedPersistentEntity<?> entity = (RedisEnhancedPersistentEntity<?>) mappingContext
@@ -691,6 +904,19 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     }
   }
 
+  /**
+   * Converts an ID value to its string representation, handling composite IDs.
+   * <p>
+   * This method provides special handling for composite IDs used with {@code @IdClass}.
+   * It introspects the mapping context to find entities that use the given value's
+   * class as their ID class, then extracts and combines the individual ID property
+   * values into a colon-separated string.
+   * <p>
+   * For simple IDs, it delegates to the conversion service for standard conversion.
+   *
+   * @param value the ID value to convert (simple or composite)
+   * @return the string representation of the ID
+   */
   private String asStringValue(Object value) {
     // For composite IDs used in @IdClass
     if (value != null) {

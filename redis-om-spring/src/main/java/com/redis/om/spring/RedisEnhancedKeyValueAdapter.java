@@ -44,6 +44,29 @@ import jakarta.persistence.IdClass;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 
+/**
+ * Enhanced {@link RedisKeyValueAdapter} implementation that extends Spring Data Redis capabilities
+ * with Redis Stack modules support including RediSearch, RedisJSON, and vector similarity search.
+ * <p>
+ * This adapter provides advanced functionality for Redis OM Spring, including:
+ * <ul>
+ * <li>RediSearch integration for full-text and vector search</li>
+ * <li>Entity embedding processing via {@link Embedder}</li>
+ * <li>Enhanced entity auditing capabilities</li>
+ * <li>Composite ID support for complex entity keys</li>
+ * <li>Optimized batch operations for large datasets</li>
+ * </ul>
+ * <p>
+ * The adapter works with both Redis Hash structures and JSON documents, automatically
+ * handling conversions, indexing, and search operations through Redis Stack modules.
+ *
+ * @author Redis OM Spring Development Team
+ * @see RedisKeyValueAdapter
+ * @see RedisModulesOperations
+ * @see RediSearchIndexer
+ * @see Embedder
+ * @since 1.0
+ */
 public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
   private static final Log logger = LogFactory.getLog(RedisEnhancedKeyValueAdapter.class);
@@ -59,9 +82,11 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * Creates new {@link RedisKeyValueAdapter} with default
    * {@link RedisMappingContext} and default {@link RedisCustomConversions}.
    *
-   * @param redisOps must not be {@literal null}.
-   * @param rmo      must not be {@literal null}.
-   * @param indexer  must not be {@literal null}.
+   * @param redisOps          must not be {@literal null}.
+   * @param rmo               must not be {@literal null}.
+   * @param indexer           must not be {@literal null}.
+   * @param embedder          must not be {@literal null}.
+   * @param redisOMProperties must not be {@literal null}.
    */
   public RedisEnhancedKeyValueAdapter( //
       RedisOperations<?, ?> redisOps, //
@@ -76,10 +101,12 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * Creates new {@link RedisKeyValueAdapter} with default
    * {@link RedisCustomConversions}.
    *
-   * @param redisOps       must not be {@literal null}.
-   * @param rmo            must not be {@literal null}.
-   * @param mappingContext must not be {@literal null}.
-   * @param indexer        must not be {@literal null}.
+   * @param redisOps          must not be {@literal null}.
+   * @param rmo               must not be {@literal null}.
+   * @param mappingContext    must not be {@literal null}.
+   * @param indexer           must not be {@literal null}.
+   * @param embedder          must not be {@literal null}.
+   * @param redisOMProperties must not be {@literal null}.
    */
   public RedisEnhancedKeyValueAdapter( //
       RedisOperations<?, ?> redisOps, //
@@ -99,6 +126,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * @param mappingContext    must not be {@literal null}.
    * @param customConversions can be {@literal null}.
    * @param indexer           must not be {@literal null}.
+   * @param embedder          must not be {@literal null}.
+   * @param redisOMProperties must not be {@literal null}.
    */
   @SuppressWarnings(
     "unchecked"
@@ -243,6 +272,18 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     }
   }
 
+  /**
+   * Retrieves all entity IDs for the given keyspace and type using RediSearch.
+   * <p>
+   * This method performs a wildcard search on the RediSearch index to find all documents
+   * and extracts their ID field values. It's optimized to return only the ID field
+   * rather than full documents for better performance.
+   *
+   * @param keyspace the Redis keyspace to search in
+   * @param type     the entity type to retrieve IDs for
+   * @param <T>      the type parameter for the entity class
+   * @return a list of string representations of all entity IDs in the keyspace
+   */
   public <T> List<String> getAllIds(String keyspace, Class<T> type) {
     String searchIndex = indexer.getIndexName(keyspace);
     SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
@@ -540,6 +581,17 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     return data.getTimeToLive() != null && data.getTimeToLive() > 0;
   }
 
+  /**
+   * Constructs a Redis key by combining the keyspace and entity ID.
+   * <p>
+   * This method sanitizes the keyspace to ensure proper key format and
+   * creates a string representation suitable for Redis key operations.
+   * The resulting key follows the pattern: {@code keyspace:id}
+   *
+   * @param keyspace the Redis keyspace (namespace) for the entity
+   * @param id       the entity identifier
+   * @return the complete Redis key as a string
+   */
   protected String getKey(String keyspace, Object id) {
     String sanitizedKeyspace = sanitizeKeyspace(keyspace);
     return String.format("%s:%s", sanitizedKeyspace, id);

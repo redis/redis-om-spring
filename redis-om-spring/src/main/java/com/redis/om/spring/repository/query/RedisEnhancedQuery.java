@@ -54,6 +54,47 @@ import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.*;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
+/**
+ * Enhanced query implementation for Redis OM Spring that provides advanced search and aggregation
+ * capabilities over Redis data structures. This class handles the execution of repository queries
+ * including RediSearch queries, aggregations, autocomplete, and probabilistic data structure operations.
+ *
+ * <p>This implementation supports:
+ * <ul>
+ * <li>Full-text search queries with various field types (TEXT, TAG, NUMERIC, GEO, VECTOR)</li>
+ * <li>Complex aggregation operations with grouping, filtering, and sorting</li>
+ * <li>Query by Example (QBE) for dynamic query construction</li>
+ * <li>Null parameter handling with EXISTS/NOT EXISTS filters</li>
+ * <li>Pagination and sorting support</li>
+ * <li>Bloom filter, Cuckoo filter, and Count-Min Sketch queries</li>
+ * <li>Autocomplete functionality</li>
+ * <li>Delete operations based on search criteria</li>
+ * </ul>
+ *
+ * <p>The query execution is determined by method annotations:
+ * <ul>
+ * <li>{@code @Query} - Custom RediSearch query with optional parameters</li>
+ * <li>{@code @Aggregation} - Complex aggregation with grouping and reducers</li>
+ * <li>Method naming conventions for automatic query generation</li>
+ * </ul>
+ *
+ * <p>Query optimization includes:
+ * <ul>
+ * <li>Field projection for reduced data transfer</li>
+ * <li>Index alias resolution for efficient field access</li>
+ * <li>Parameter binding and escaping for security</li>
+ * <li>Dialect-specific query syntax support</li>
+ * </ul>
+ *
+ * @see org.springframework.data.repository.query.RepositoryQuery
+ * @see com.redis.om.spring.annotations.Query
+ * @see com.redis.om.spring.annotations.Aggregation
+ * @see com.redis.om.spring.indexing.RediSearchIndexer
+ * @see com.redis.om.spring.ops.search.SearchOperations
+ *
+ * @author Redis OM Spring Team
+ * @since 1.0.0
+ */
 public class RedisEnhancedQuery implements RepositoryQuery {
 
   private static final Log logger = LogFactory.getLog(RedisEnhancedQuery.class);
@@ -96,6 +137,38 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   private boolean isNullParamQuery;
   private Dialect dialect = Dialect.ONE;
 
+  /**
+   * Constructs a new RedisEnhancedQuery instance for executing repository queries against Redis.
+   *
+   * <p>This constructor analyzes the query method to determine the appropriate execution strategy:
+   * <ul>
+   * <li>Parses method annotations ({@code @Query}, {@code @Aggregation}, {@code @UseDialect})</li>
+   * <li>Extracts query parameters and field mappings</li>
+   * <li>Builds query execution plans for different operation types</li>
+   * <li>Configures specialized query executors for probabilistic data structures</li>
+   * </ul>
+   *
+   * <p>The constructor performs method introspection to:
+   * <ul>
+   * <li>Identify indexed fields and their types (TEXT, TAG, NUMERIC, GEO, VECTOR)</li>
+   * <li>Parse PartTree expressions for method name-based queries</li>
+   * <li>Configure aggregation pipelines with grouping, filtering, and sorting</li>
+   * <li>Set up parameter binding for safe query execution</li>
+   * </ul>
+   *
+   * @param queryMethod               the Spring Data query method metadata containing method signature,
+   *                                  return type, and parameter information
+   * @param metadata                  the repository metadata providing domain type and interface information
+   * @param indexer                   the RediSearch indexer for index name resolution and field mapping
+   * @param evaluationContextProvider context provider for SpEL expression evaluation
+   * @param keyValueOperations        Spring Data KeyValue operations for basic entity operations
+   * @param redisOperations           low-level Redis operations for direct Redis access
+   * @param rmo                       Redis modules operations providing access to RediSearch, RedisJSON, and other
+   *                                  modules
+   * @param queryCreator              the query creator class for custom query construction (currently unused)
+   * @param redisOMProperties         configuration properties for Redis OM behavior and defaults
+   *
+   */
   @SuppressWarnings(
     "unchecked"
   )

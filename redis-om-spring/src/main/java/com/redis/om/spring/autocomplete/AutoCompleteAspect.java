@@ -27,6 +27,39 @@ import com.redis.om.spring.annotations.AutoCompletePayload;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 
+/**
+ * Aspect that automatically manages autocomplete suggestions for Redis entities.
+ * This aspect intercepts repository operations (save, delete) and maintains
+ * autocomplete dictionaries based on fields annotated with {@link AutoComplete}.
+ * 
+ * <p>The aspect monitors CRUD operations on entities and automatically:
+ * <ul>
+ * <li>Adds suggestions when entities are saved</li>
+ * <li>Removes suggestions when entities are deleted</li>
+ * <li>Manages bulk operations for efficiency</li>
+ * <li>Handles payload associations for enhanced suggestions</li>
+ * </ul>
+ * 
+ * <p>AutoComplete suggestions are stored in Redis using the RediSearch autocomplete
+ * feature, allowing for fast prefix-based searches with optional scoring and payload.</p>
+ * 
+ * <p>Example entity configuration:</p>
+ * <pre>{@code
+ * @Document
+ * public class Product {
+ * 
+ * @AutoComplete(name = "product_names")
+ *                    private String name;
+ * 
+ * @AutoCompletePayload
+ *                      private String category;
+ *                      }
+ *                      }</pre>
+ * 
+ * @since 1.0
+ * @see AutoComplete
+ * @see AutoCompletePayload
+ */
 @Aspect
 @Component
 public class AutoCompleteAspect implements Ordered {
@@ -35,18 +68,33 @@ public class AutoCompleteAspect implements Ordered {
   private final Gson gson;
   private final RedisModulesOperations<String> rmo;
 
+  /**
+   * Constructs a new AutoCompleteAspect with the required dependencies.
+   * 
+   * @param rmo      the Redis modules operations for executing RediSearch commands
+   * @param gson     the JSON serializer for handling payload data
+   * @param template the Redis template for basic Redis operations
+   */
   public AutoCompleteAspect(RedisModulesOperations<String> rmo, Gson gson, StringRedisTemplate template) {
     this.rmo = rmo;
     this.gson = gson;
     this.template = template;
   }
 
+  /**
+   * Pointcut that matches save operations on CrudRepository implementations.
+   * This pointcut captures entity save operations to trigger suggestion updates.
+   */
   @Pointcut(
     "execution(public * org.springframework.data.repository.CrudRepository+.save(..))"
   )
   public void inCrudRepositorySave() {
   }
 
+  /**
+   * Pointcut that matches save operations on RedisDocumentRepository implementations.
+   * This provides additional coverage for Redis-specific repository operations.
+   */
   @Pointcut(
     "execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.save(..))"
   )
@@ -59,6 +107,14 @@ public class AutoCompleteAspect implements Ordered {
   private void inSaveOperation() {
   }
 
+  /**
+   * Processes autocomplete suggestions after an entity save operation.
+   * This method extracts autocomplete fields from the saved entity and updates
+   * the corresponding suggestion dictionaries in Redis.
+   * 
+   * @param jp     the join point providing method execution context
+   * @param entity the entity that was saved
+   */
   @AfterReturning(
     "inSaveOperation() && args(entity,..)"
   )
@@ -66,12 +122,20 @@ public class AutoCompleteAspect implements Ordered {
     processSuggestionsForEntity(entity);
   }
 
+  /**
+   * Pointcut that matches saveAll operations on CrudRepository implementations.
+   * This captures bulk save operations for efficient batch processing.
+   */
   @Pointcut(
     "execution(public * org.springframework.data.repository.CrudRepository+.saveAll(..))"
   )
   public void inCrudRepositorySaveAll() {
   }
 
+  /**
+   * Pointcut that matches saveAll operations on RedisDocumentRepository implementations.
+   * This provides additional coverage for Redis-specific bulk save operations.
+   */
   @Pointcut(
     "execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.saveAll(..))"
   )
@@ -84,6 +148,14 @@ public class AutoCompleteAspect implements Ordered {
   private void inSaveAllOperation() {
   }
 
+  /**
+   * Processes autocomplete suggestions after a bulk save operation.
+   * This method iterates through all saved entities and updates their
+   * corresponding suggestion dictionaries in Redis.
+   * 
+   * @param jp       the join point providing method execution context
+   * @param entities the list of entities that were saved
+   */
   @AfterReturning(
     "inSaveAllOperation() && args(entities,..)"
   )
@@ -93,12 +165,24 @@ public class AutoCompleteAspect implements Ordered {
     }
   }
 
+  /**
+   * Pointcut that matches delete operations on RedisDocumentRepository implementations.
+   * This captures entity deletion operations to trigger suggestion removal.
+   */
   @Pointcut(
     "execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.delete(..))"
   )
   public void inRedisDocumentRepositoryDelete() {
   }
 
+  /**
+   * Removes autocomplete suggestions after an entity deletion operation.
+   * This method extracts autocomplete fields from the deleted entity and removes
+   * the corresponding suggestions from Redis dictionaries.
+   * 
+   * @param jp     the join point providing method execution context
+   * @param entity the entity that was deleted
+   */
   @AfterReturning(
     "inRedisDocumentRepositoryDelete() && args(entity,..)"
   )
@@ -106,12 +190,22 @@ public class AutoCompleteAspect implements Ordered {
     deleteSuggestionsForEntity(entity);
   }
 
+  /**
+   * Pointcut that matches deleteAll operations on RedisDocumentRepository implementations.
+   * This captures bulk deletion operations for clearing suggestion dictionaries.
+   */
   @Pointcut(
     "execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.deleteAll())"
   )
   public void inRedisDocumentRepositoryDeleteAll() {
   }
 
+  /**
+   * Removes all autocomplete suggestions after a deleteAll operation.
+   * This method clears all suggestion dictionaries associated with the repository's entity type.
+   * 
+   * @param jp the join point providing method execution context
+   */
   @AfterReturning(
     "inRedisDocumentRepositoryDeleteAll()"
   )
@@ -129,12 +223,24 @@ public class AutoCompleteAspect implements Ordered {
     }
   }
 
+  /**
+   * Pointcut that matches deleteAll operations with entity parameters on RedisDocumentRepository implementations.
+   * This captures bulk deletion operations for specific entities.
+   */
   @Pointcut(
     "execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.deleteAll(..))"
   )
   public void inRedisDocumentRepositoryDeleteAllEntities() {
   }
 
+  /**
+   * Removes autocomplete suggestions for a list of specific entities after deletion.
+   * This method iterates through the provided entities and removes their corresponding
+   * suggestions from Redis dictionaries.
+   * 
+   * @param jp       the join point providing method execution context
+   * @param entities the list of entities that were deleted
+   */
   @AfterReturning(
     "inRedisDocumentRepositoryDeleteAllEntities() && args(entities,..)"
   )
@@ -166,12 +272,24 @@ public class AutoCompleteAspect implements Ordered {
     }
   }
 
+  /**
+   * Pointcut that matches deleteById operations on RedisDocumentRepository implementations.
+   * This captures deletion by ID operations to trigger suggestion removal.
+   */
   @Pointcut(
     "execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.deleteById(..))"
   )
   public void inRedisDocumentRepositoryDeleteById() {
   }
 
+  /**
+   * Removes autocomplete suggestions before an entity is deleted by ID.
+   * This method retrieves the entity by ID first, then removes its suggestions.
+   * Uses @Before to ensure the entity still exists when suggestions are removed.
+   * 
+   * @param jp the join point providing method execution context
+   * @param id the ID of the entity to be deleted
+   */
   @SuppressWarnings(
     { "rawtypes", "unchecked" }
   )
@@ -187,12 +305,24 @@ public class AutoCompleteAspect implements Ordered {
     }
   }
 
+  /**
+   * Pointcut that matches deleteAllById operations on RedisDocumentRepository implementations.
+   * This captures bulk deletion by ID operations to trigger suggestion removal.
+   */
   @Pointcut(
     "execution(public * com.redis.om.spring.repository.RedisDocumentRepository+.deleteAllById(..))"
   )
   public void inRedisDocumentRepositoryDeleteAllById() {
   }
 
+  /**
+   * Removes autocomplete suggestions before entities are deleted by their IDs.
+   * This method retrieves each entity by ID first, then removes their suggestions.
+   * Uses @Before to ensure the entities still exist when suggestions are removed.
+   * 
+   * @param jp  the join point providing method execution context
+   * @param ids the list of IDs of entities to be deleted
+   */
   @SuppressWarnings(
     { "rawtypes", "unchecked" }
   )

@@ -24,6 +24,30 @@ import com.redis.om.spring.util.ObjectUtils;
 import redis.clients.jedis.search.aggr.*;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
+/**
+ * Default implementation of {@link AggregationStream} that provides Redis aggregation capabilities.
+ * This class builds and executes Redis aggregation queries using the RediSearch module,
+ * supporting complex data analysis operations like grouping, filtering, sorting, and reducing.
+ * 
+ * <p>AggregationStreamImpl manages the construction of Redis aggregation pipelines and
+ * handles the conversion of results back to Java objects. It supports both document-based
+ * and hash-based Redis OM entities.</p>
+ * 
+ * <p>Key features:</p>
+ * <ul>
+ * <li>Fluent API for building complex aggregation queries</li>
+ * <li>Automatic field loading and type conversion</li>
+ * <li>Support for various reducer functions and operations</li>
+ * <li>Pagination and cursor-based processing</li>
+ * <li>Integration with Spring Data abstractions</li>
+ * </ul>
+ * 
+ * @param <E> the source entity type for the aggregation
+ * @param <T> the target type for aggregation results
+ * 
+ * @since 1.0
+ * @see AggregationStream
+ */
 public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
   private static final Integer MAX_LIMIT = 10000;
   private final Class<E> entityClass;
@@ -39,6 +63,16 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
   private boolean limitSet = false;
   private final String query;
 
+  /**
+   * Constructs a new AggregationStreamImpl for the specified entity type and search criteria.
+   * 
+   * @param searchIndex       the Redis search index to query against
+   * @param modulesOperations the Redis modules operations for executing commands
+   * @param gson              the JSON serializer for entity conversion
+   * @param entityClass       the class of the source entity type
+   * @param query             the base query string for the aggregation
+   * @param fields            optional metamodel fields to initially load
+   */
   @SafeVarargs
   public AggregationStreamImpl(String searchIndex, RedisModulesOperations<String> modulesOperations, Gson gson,
       Class<E> entityClass, String query, MetamodelField<E, ?>... fields) {

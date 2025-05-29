@@ -5,8 +5,22 @@ import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 
 import redis.clients.jedis.search.querybuilder.Node;
 
+/**
+ * Represents an "is missing" predicate for field searches.
+ * This predicate generates RediSearch queries that match documents where the specified
+ * field is missing or not present in the document. This is useful for finding documents
+ * that lack certain fields or have null values.
+ *
+ * @param <E> the entity type
+ * @param <T> the field value type
+ */
 public class IsMissingPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
+  /**
+   * Constructs a new "is missing" predicate.
+   *
+   * @param field the search field accessor for the field to check for absence
+   */
   public IsMissingPredicate(SearchFieldAccessor field) {
     super(field);
   }

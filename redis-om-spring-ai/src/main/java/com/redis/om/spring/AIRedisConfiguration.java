@@ -42,6 +42,23 @@ import ai.djl.translate.Pipeline;
 import ai.djl.translate.Translator;
 import io.micrometer.observation.ObservationRegistry;
 
+/**
+ * Spring configuration class for Redis OM AI features.
+ * This configuration is automatically enabled when the property 'redis.om.spring.ai.enabled'
+ * is set to true. It sets up various AI-related beans including embedding models,
+ * vector databases, and document readers for different AI providers such as OpenAI,
+ * Azure OpenAI, Ollama, and others.
+ * 
+ * <p>The configuration provides support for:</p>
+ * <ul>
+ * <li>OpenAI embedding models and chat models</li>
+ * <li>Azure OpenAI integration</li>
+ * <li>Ollama local models</li>
+ * <li>Qdrant vector database</li>
+ * <li>Document processing and text readers</li>
+ * <li>Image embedding with DJL models</li>
+ * </ul>
+ */
 @Configuration
 @EnableConfigurationProperties(
   { AIRedisOMProperties.class }
@@ -50,6 +67,14 @@ import io.micrometer.observation.ObservationRegistry;
     name = "redis.om.spring.ai.enabled", havingValue = "true", matchIfMissing = false
 )
 public class AIRedisConfiguration {
+
+  /**
+   * Default constructor for Spring instantiation.
+   * This constructor is used by Spring Framework to create instances of this configuration class.
+   */
+  public AIRedisConfiguration() {
+    // Default constructor
+  }
 
   private static final Log logger = LogFactory.getLog(AIRedisConfiguration.class);
 
@@ -83,26 +108,66 @@ public class AIRedisConfiguration {
   ////        return template;
   ////    }
 
+  /**
+   * Creates a RestClient.Builder bean for building REST clients.
+   * This builder is used throughout the AI configuration for making HTTP requests
+   * to various AI providers.
+   *
+   * @return a new RestClient.Builder instance
+   */
   @Bean
   public RestClient.Builder restClientBuilder() {
     return RestClient.builder();
   }
 
+  /**
+   * Creates a WebClient.Builder bean for building reactive web clients.
+   * This builder is used for asynchronous HTTP requests to AI providers
+   * that support reactive programming models.
+   *
+   * @return a new WebClient.Builder instance
+   */
   @Bean
   public WebClient.Builder webClientBuilder() {
     return WebClient.builder();
   }
 
+  /**
+   * Creates a default ResponseErrorHandler bean for handling HTTP response errors.
+   * This handler is used by REST clients to process error responses from AI providers.
+   *
+   * @return a DefaultResponseErrorHandler instance
+   */
   @Bean
   public ResponseErrorHandler defaultResponseErrorHandler() {
     return new DefaultResponseErrorHandler();
   }
 
+  /**
+   * Creates an ObservationRegistry bean for monitoring and observability.
+   * This registry is used to track metrics and traces for AI operations,
+   * enabling monitoring of performance and usage patterns.
+   *
+   * @return a new ObservationRegistry instance
+   */
   @Bean
   public ObservationRegistry observationRegistry() {
     return ObservationRegistry.create();
   }
 
+  /**
+   * Creates an EmbeddingModelFactory bean responsible for creating embedding models
+   * for different AI providers. This factory supports multiple providers including
+   * OpenAI, Azure OpenAI, Ollama, and others.
+   *
+   * @param properties           AI Redis OM configuration properties
+   * @param springAiProperties   Spring AI configuration properties
+   * @param restClientBuilder    builder for creating REST clients
+   * @param webClientBuilder     builder for creating reactive web clients
+   * @param responseErrorHandler handler for HTTP response errors
+   * @param observationRegistry  registry for monitoring and observability
+   * @return a configured EmbeddingModelFactory instance
+   */
   @Bean
   public EmbeddingModelFactory embeddingModelFactory(AIRedisOMProperties properties,
       SpringAiProperties springAiProperties, RestClient.Builder restClientBuilder, WebClient.Builder webClientBuilder,
@@ -111,6 +176,13 @@ public class AIRedisConfiguration {
         responseErrorHandler, observationRegistry);
   }
 
+  /**
+   * Creates a DJL ImageFactory bean for image processing operations.
+   * This factory is used to create and manipulate images for computer vision tasks
+   * such as face detection and image embeddings.
+   *
+   * @return the singleton ImageFactory instance
+   */
   @Bean(
       name = "djlImageFactory"
   )
@@ -118,6 +190,14 @@ public class AIRedisConfiguration {
     return ImageFactory.getInstance();
   }
 
+  /**
+   * Creates criteria for loading DJL image embedding models.
+   * This criteria defines the model type, engine, and URLs for downloading
+   * the image embedding model used to convert images into vector representations.
+   *
+   * @param properties AI Redis OM configuration properties containing DJL settings
+   * @return criteria for loading image embedding models
+   */
   @Bean(
       name = "djlImageEmbeddingModelCriteria"
   )
@@ -128,6 +208,13 @@ public class AIRedisConfiguration {
         .build();
   }
 
+  /**
+   * Creates a translator for face detection models.
+   * This translator handles the preprocessing and postprocessing of images
+   * for face detection, including confidence thresholding and non-maximum suppression.
+   *
+   * @return a configured FaceDetectionTranslator with predefined detection parameters
+   */
   @Bean(
       name = "djlFaceDetectionTranslator"
   )
@@ -141,6 +228,15 @@ public class AIRedisConfiguration {
     return new FaceDetectionTranslator(confThresh, nmsThresh, variance, topK, scales, steps);
   }
 
+  /**
+   * Creates criteria for loading DJL face detection models.
+   * This criteria defines the model specifications including the translator,
+   * engine, and URLs for the face detection model.
+   *
+   * @param translator the face detection translator for preprocessing/postprocessing
+   * @param properties AI Redis OM configuration properties containing DJL settings
+   * @return criteria for loading face detection models
+   */
   @Bean(
       name = "djlFaceDetectionModelCriteria"
   )
@@ -158,6 +254,14 @@ public class AIRedisConfiguration {
         .build();
   }
 
+  /**
+   * Loads the DJL face detection model based on the provided criteria.
+   * This model is used to detect faces in images before extracting face embeddings.
+   * If the model cannot be loaded, returns null and logs a warning.
+   *
+   * @param criteria the criteria for loading the face detection model (nullable)
+   * @return the loaded face detection model, or null if loading fails
+   */
   @Bean(
       name = "djlFaceDetectionModel"
   )
@@ -172,6 +276,13 @@ public class AIRedisConfiguration {
     }
   }
 
+  /**
+   * Creates a translator for face embedding models.
+   * This translator handles the preprocessing and postprocessing of face images
+   * to extract facial feature vectors for similarity search.
+   *
+   * @return a new FaceFeatureTranslator instance
+   */
   @Bean(
       name = "djlFaceEmbeddingTranslator"
   )
@@ -179,6 +290,15 @@ public class AIRedisConfiguration {
     return new FaceFeatureTranslator();
   }
 
+  /**
+   * Creates criteria for loading DJL face embedding models.
+   * This criteria defines the model specifications for extracting facial features
+   * as vector embeddings that can be used for face recognition and similarity search.
+   *
+   * @param translator the face embedding translator for preprocessing/postprocessing
+   * @param properties AI Redis OM configuration properties containing DJL settings
+   * @return criteria for loading face embedding models
+   */
   @Bean(
       name = "djlFaceEmbeddingModelCriteria"
   )
@@ -197,6 +317,14 @@ public class AIRedisConfiguration {
         .build();
   }
 
+  /**
+   * Loads the DJL face embedding model based on the provided criteria.
+   * This model extracts facial features as vector embeddings for face recognition
+   * and similarity search. If the model cannot be loaded, returns null and logs a warning.
+   *
+   * @param criteria the criteria for loading the face embedding model (nullable)
+   * @return the loaded face embedding model, or null if loading fails
+   */
   @Bean(
       name = "djlFaceEmbeddingModel"
   )
@@ -211,6 +339,17 @@ public class AIRedisConfiguration {
     }
   }
 
+  /**
+   * Loads the DJL image embedding model based on the provided criteria.
+   * This model converts general images into vector embeddings for similarity search
+   * and image retrieval tasks.
+   *
+   * @param criteria the criteria for loading the image embedding model (nullable)
+   * @return the loaded image embedding model, or null if criteria is null
+   * @throws MalformedModelException if the model format is invalid
+   * @throws ModelNotFoundException  if the model cannot be found
+   * @throws IOException             if there's an error loading the model
+   */
   @Bean(
       name = "djlImageEmbeddingModel"
   )
@@ -220,6 +359,14 @@ public class AIRedisConfiguration {
     return criteria != null ? ModelZoo.loadModel(criteria) : null;
   }
 
+  /**
+   * Creates a default image preprocessing pipeline for DJL models.
+   * This pipeline applies transformations such as center cropping, resizing,
+   * and tensor conversion to prepare images for embedding models.
+   *
+   * @param properties AI Redis OM configuration properties containing pipeline settings
+   * @return a configured Pipeline with image transformations
+   */
   @Bean(
       name = "djlDefaultImagePipeline"
   )
@@ -236,6 +383,14 @@ public class AIRedisConfiguration {
         .add(new ToTensor());
   }
 
+  /**
+   * Creates a HuggingFace sentence tokenizer for text processing.
+   * This tokenizer is used to prepare text for sentence embedding models.
+   * Checks connectivity to HuggingFace before attempting to download the tokenizer.
+   *
+   * @param properties AI Redis OM configuration properties containing tokenizer settings
+   * @return a configured HuggingFaceTokenizer, or null if unable to connect or load
+   */
   @Bean(
       name = "djlSentenceTokenizer"
   )
@@ -255,6 +410,21 @@ public class AIRedisConfiguration {
     }
   }
 
+  /**
+   * Creates the primary Embedder bean responsible for generating embeddings.
+   * This embedder integrates various AI providers and models to create vector embeddings
+   * from text, images, and faces. It serves as the central component for the @Vectorize
+   * annotation functionality.
+   *
+   * @param imageEmbeddingModel   DJL model for general image embeddings (nullable)
+   * @param faceEmbeddingModel    DJL model for face embeddings (nullable)
+   * @param imageFactory          factory for creating and processing images (nullable)
+   * @param defaultImagePipeline  preprocessing pipeline for images (nullable)
+   * @param properties            AI Redis OM configuration properties
+   * @param embeddingModelFactory factory for creating embedding models for various providers
+   * @param ac                    Spring application context for accessing other beans
+   * @return a configured DefaultEmbedder instance
+   */
   @Primary
   @Bean(
       name = "featureExtractor"

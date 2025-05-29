@@ -18,11 +18,30 @@ import com.redis.om.spring.tuple.Pair;
 
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 
+/**
+ * A wrapper implementation of {@link SearchStream} that delegates stream operations
+ * to an underlying Java Stream while providing SearchStream-specific functionality.
+ * <p>
+ * This class acts as an adapter between standard Java Stream operations and the
+ * Redis OM search stream API. It delegates most standard stream operations to the
+ * backing stream while providing no-op implementations for Redis-specific search
+ * operations that cannot be performed on a wrapped stream.
+ * </p>
+ *
+ * @param <E> the type of elements in the stream
+ * @see SearchStream
+ * @see Stream
+ */
 public class WrapperSearchStream<E> implements SearchStream<E> {
 
   private final Stream<E> backingStream;
   private Runnable closeHandler;
 
+  /**
+   * Constructs a new WrapperSearchStream with the given backing stream.
+   *
+   * @param backingStream the underlying Java Stream to wrap
+   */
   public WrapperSearchStream(Stream<E> backingStream) {
     this.backingStream = backingStream;
   }

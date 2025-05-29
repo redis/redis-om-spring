@@ -16,15 +16,34 @@ import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import redis.clients.jedis.search.querybuilder.Values;
 
+/**
+ * Represents a "greater than or equal to" predicate for numeric field searches.
+ * This predicate generates RediSearch queries that match documents where the specified
+ * field's value is greater than or equal to the provided value.
+ *
+ * @param <E> the entity type
+ * @param <T> the field value type
+ */
 public class GreaterThanOrEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
 
   private final T value;
 
+  /**
+   * Constructs a new greater than or equal predicate.
+   *
+   * @param field the search field accessor
+   * @param value the value to compare against
+   */
   public GreaterThanOrEqualPredicate(SearchFieldAccessor field, T value) {
     super(field);
     this.value = value;
   }
 
+  /**
+   * Gets the comparison value for this predicate.
+   *
+   * @return the value used in the greater than or equal comparison
+   */
   public T getValue() {
     return value;
   }

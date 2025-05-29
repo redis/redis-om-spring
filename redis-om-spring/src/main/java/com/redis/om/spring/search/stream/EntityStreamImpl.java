@@ -9,6 +9,9 @@ import com.google.gson.GsonBuilder;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.ops.RedisModulesOperations;
 
+/**
+ * Implementation of EntityStream for creating search streams.
+ */
 public class EntityStreamImpl implements EntityStream {
 
   private final RedisModulesOperations<String> modulesOperations;
@@ -16,6 +19,13 @@ public class EntityStreamImpl implements EntityStream {
 
   private final RediSearchIndexer indexer;
 
+  /**
+   * Creates a new EntityStreamImpl.
+   *
+   * @param rmo         the Redis modules operations
+   * @param gsonBuilder the Gson builder
+   * @param indexer     the Redis search indexer
+   */
   @SuppressWarnings(
     "unchecked"
   )

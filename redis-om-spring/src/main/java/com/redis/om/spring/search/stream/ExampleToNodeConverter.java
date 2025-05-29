@@ -26,23 +26,63 @@ import redis.clients.jedis.search.querybuilder.QueryNode;
 import redis.clients.jedis.search.querybuilder.Values;
 import redis.clients.jedis.search.schemafields.*;
 
+/**
+ * Converts Spring Data Example objects to Redis search query nodes.
+ * <p>
+ * This class translates Spring Data Query By Example (QBE) queries into
+ * Redis search query syntax. It supports various field types including
+ * text, numeric, tag, geospatial, and vector fields, applying appropriate
+ * search predicates based on the example matcher configuration.
+ * </p>
+ * 
+ * @param <E> the entity type being queried
+ * @since 1.0.0
+ */
 public class ExampleToNodeConverter<E> {
 
   private final RediSearchIndexer indexer;
   private final double defaultDistance;
   private final Metrics defaultDistanceMetric;
 
+  /**
+   * Creates a new ExampleToNodeConverter with the specified indexer.
+   * <p>
+   * Initializes the converter with default distance and distance metric
+   * settings from the indexer properties.
+   * </p>
+   * 
+   * @param indexer the Redis search indexer containing schema information
+   */
   public ExampleToNodeConverter(RediSearchIndexer indexer) {
     this.indexer = indexer;
     this.defaultDistance = indexer.getProperties().getRepository().getQuery().getDefaultDistance();
     this.defaultDistanceMetric = indexer.getProperties().getRepository().getQuery().getDefaultDistanceMetrics();
   }
 
+  /**
+   * Extracts the alias for a schema field, if one exists.
+   * 
+   * @param schemaField the schema field to get the alias for
+   * @return an Optional containing the alias, or empty if no alias is defined
+   */
   private static Optional<String> getAliasForSchemaField(SchemaField schemaField) {
     final String alias = schemaField.getFieldName().getAttribute();
     return Optional.ofNullable(alias);
   }
 
+  /**
+   * Processes a Spring Data Example and converts it to a Redis search query node.
+   * <p>
+   * This method analyzes the example probe object and matcher configuration
+   * to build appropriate search predicates for each indexed field. It handles
+   * different field types (text, numeric, tag, geo, vector) and applies
+   * the correct search operators based on the matcher settings.
+   * </p>
+   * 
+   * @param example  the Spring Data Example containing the probe object and matcher
+   * @param rootNode the root query node to build upon
+   * @return the updated query node with example-based predicates
+   */
   public Node processExample(Example<E> example, Node rootNode) {
     Class<?> entityClass = example.getProbeType();
     final List<SearchField> schemaFields = indexer.getSchemaFor(entityClass);

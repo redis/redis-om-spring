@@ -38,6 +38,32 @@ import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.query.RedisEnhancedQuery;
 import com.redis.om.spring.vectorize.Embedder;
 
+/**
+ * Factory for creating Redis enhanced repositories.
+ * <p>
+ * This factory extends Spring Data's RepositoryFactorySupport to create repository instances
+ * specifically designed for Redis hash storage with enhanced search capabilities. It integrates
+ * with Redis OM Spring's features including search indexing, query execution, and AI-powered embeddings.
+ * </p>
+ * <p>
+ * Unlike the document repository factory which stores entities as Redis JSON documents,
+ * this factory creates repositories that store entities as Redis hashes while providing
+ * the same powerful search and indexing capabilities through RediSearch.
+ * </p>
+ * <p>
+ * The factory handles the creation of repository proxies that support:
+ * <ul>
+ * <li>Redis hash operations with enhanced mapping</li>
+ * <li>RediSearch index management for hash fields</li>
+ * <li>Custom query execution via SpEL</li>
+ * <li>Vector similarity search capabilities</li>
+ * <li>Automatic embedding generation</li>
+ * </ul>
+ *
+ * @see org.springframework.data.repository.core.support.RepositoryFactorySupport
+ * @see com.redis.om.spring.repository.RedisEnhancedRepository
+ * @since 0.1.0
+ */
 public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
 
   private static final Class<SpelQueryCreator> DEFAULT_QUERY_CREATOR = SpelQueryCreator.class;
@@ -107,15 +133,17 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
   }
 
   /**
-   * Creates a new {@link KeyValueRepositoryFactory} for the given
+   * Creates a new {@link RedisEnhancedRepositoryFactory} for the given
    * {@link KeyValueOperations} and {@link AbstractQueryCreator}-type.
    *
    * @param keyValueOperations  must not be {@literal null}.
    * @param redisOperations     must not be {@literal null}.
    * @param rmo                 must not be {@literal null}.
    * @param indexer             must not be {@literal null}.
+   * @param embedder            must not be {@literal null}.
    * @param queryCreator        must not be {@literal null}.
    * @param repositoryQueryType must not be {@literal null}.
+   * @param properties          must not be {@literal null}.
    */
   public RedisEnhancedRepositoryFactory( //
       KeyValueOperations keyValueOperations, //

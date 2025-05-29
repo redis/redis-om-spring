@@ -18,5 +18,10 @@ import java.lang.annotation.Target;
     value = { FIELD, METHOD, ANNOTATION_TYPE }
 )
 public @interface IdFilter {
+  /**
+   * The identifier filter class to use.
+   *
+   * @return the filter class
+   */
   Class<? extends IdentifierFilter<?>> value();
 }

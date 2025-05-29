@@ -24,6 +24,36 @@ import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.repository.query.RedisEnhancedQuery;
 import com.redis.om.spring.vectorize.Embedder;
 
+/**
+ * Factory bean for creating Redis enhanced repository factory instances.
+ * <p>
+ * This factory bean integrates with Spring's IoC container to provide repository instances
+ * for Redis hash storage with enhanced search capabilities. It extends Spring Data's
+ * RepositoryFactoryBeanSupport to add Redis OM Spring specific functionality including
+ * search indexing, vector embeddings, and custom query execution.
+ * </p>
+ * <p>
+ * Unlike the document repository factory bean which creates repositories for Redis JSON
+ * document storage, this factory bean creates repositories that work with Redis hashes
+ * while providing the same powerful search and indexing capabilities through RediSearch.
+ * </p>
+ * <p>
+ * The factory bean automatically configures:
+ * <ul>
+ * <li>Redis operations for hash storage with enhanced mapping</li>
+ * <li>Search indexing through RediSearchIndexer for hash fields</li>
+ * <li>AI embedding capabilities for vector search</li>
+ * <li>Enhanced mapping context for entity relationships</li>
+ * <li>Query execution infrastructure for hash-based entities</li>
+ * </ul>
+ *
+ * @param <T>  the repository type
+ * @param <S>  the domain type the repository manages
+ * @param <ID> the type of the id of the entity the repository manages
+ * @see org.springframework.data.repository.core.support.RepositoryFactoryBeanSupport
+ * @see RedisEnhancedRepositoryFactory
+ * @since 0.1.0
+ */
 public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, ID> extends
     RepositoryFactoryBeanSupport<T, S, ID> {
 
@@ -96,8 +126,13 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
     this.redisOperations = redisOperations;
   }
 
+  /**
+   * Configures the Redis OM Spring properties for the repositories.
+   *
+   * @param properties must not be {@literal null}.
+   */
   public void setRedisOMSpringProperties(RedisOMProperties properties) {
-    Assert.notNull(redisOperations, "RedisOMSpringProperties must not be null!");
+    Assert.notNull(properties, "RedisOMSpringProperties must not be null!");
     this.properties = properties;
   }
 
@@ -120,7 +155,13 @@ public class RedisEnhancedRepositoryFactoryBean<T extends Repository<S, ID>, S, 
     super.setMappingContext(enhancedContext);
   }
 
+  /**
+   * Configures the RediSearch indexer for managing search indexes.
+   *
+   * @param keyspaceToIndexMap must not be {@literal null}.
+   */
   public void setKeyspaceToIndexMap(RediSearchIndexer keyspaceToIndexMap) {
+    Assert.notNull(keyspaceToIndexMap, "RediSearchIndexer must not be null!");
     this.indexer = keyspaceToIndexMap;
   }
 
