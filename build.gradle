@@ -31,3 +31,64 @@ tasks.register('aggregateTestReport', TestReport) {
 			}
 			)
 }
+
+// Add aggregated Javadoc generation
+tasks.register('aggregateJavadoc', Javadoc) {
+	description = 'Generate aggregated Javadoc for all modules'
+	group = 'documentation'
+
+	source subprojects.findAll {
+		it.name in [
+			'redis-om-spring',
+			'redis-om-spring-ai'
+		]
+	}.collect { it.sourceSets.main.allJava }
+	classpath = files(subprojects.findAll {
+		it.name in [
+			'redis-om-spring',
+			'redis-om-spring-ai'
+		]
+	}.collect { it.sourceSets.main.compileClasspath })
+	destinationDir = layout.buildDirectory.dir("docs/javadoc/aggregate").get().asFile
+
+	options {
+		title = "Redis OM Spring ${project.version} API"
+		windowTitle = "Redis OM Spring ${project.version}"
+		author = true
+		version = true
+		use = true
+		splitIndex = true
+		links(
+				'https://docs.oracle.com/en/java/javase/21/docs/api/',
+				'https://docs.spring.io/spring-framework/docs/current/javadoc-api/',
+				'https://docs.spring.io/spring-data/redis/docs/current/api/',
+				'https://docs.spring.io/spring-boot/docs/current/api/'
+				)
+	}
+
+	// Ensure Javadoc generation succeeds
+	failOnError = false
+}
+
+// Individual module Javadocs
+tasks.register('generateModuleJavadocs') {
+	description = 'Generate Javadoc for individual modules'
+	group = 'documentation'
+
+	def moduleProjects = subprojects.findAll {
+		it.name in [
+			'redis-om-spring',
+			'redis-om-spring-ai'
+		]
+	}
+	dependsOn moduleProjects.collect { "${it.name}:javadoc" }
+
+	doLast {
+		moduleProjects.each { project ->
+			copy {
+				from project.tasks.javadoc.destinationDir
+				into layout.buildDirectory.dir("docs/javadoc/modules/${project.name}").get().asFile
+			}
+		}
+	}
+}

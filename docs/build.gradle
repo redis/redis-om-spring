@@ -34,9 +34,26 @@ task installAntora(type: NpmTask) {
 	]
 }
 
+// Add Javadoc integration task
+task copyJavadocs(type: Copy) {
+	description = 'Copy Javadoc outputs to Antora attachments'
+	group = 'documentation'
+
+	dependsOn ':aggregateJavadoc', ':generateModuleJavadocs'
+
+	from rootProject.layout.buildDirectory.dir('docs/javadoc')
+	into "${project.projectDir}/content/modules/ROOT/attachments/javadoc"
+
+	doFirst {
+		mkdir "${project.projectDir}/content/modules/ROOT/attachments"
+		mkdir "${project.projectDir}/content/modules/ROOT/attachments/javadoc"
+		logger.lifecycle("Copying Javadoc documentation to Antora attachments...")
+	}
+}
+
 // Generate Antora site
 task generateSite(type: NodeTask) {
-	dependsOn installAntora
+	dependsOn installAntora, copyJavadocs
 	script = file('node_modules/@antora/cli/bin/antora')
 
 	// Add options to handle multi-version gracefully
@@ -66,4 +83,6 @@ assemble.dependsOn generateSite
 clean {
 	delete 'node_modules'
 	delete project.buildDir
+	delete "${project.projectDir}/content/modules/ROOT/assets/javadoc"
+	delete "${project.projectDir}/content/modules/ROOT/attachments/javadoc"
 }

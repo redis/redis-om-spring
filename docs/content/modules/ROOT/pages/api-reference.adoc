@@ -1,0 +1,139 @@
+= API Reference
+:page-layout: default
+:page-description: Complete API documentation for Redis OM Spring modules
+:page-keywords: API, Javadoc, Redis OM Spring, Documentation
+:page-component-name: redis-om-spring
+:page-component-display-version: {redis-om-version}
+
+[.lead]
+Comprehensive API documentation for all Redis OM Spring components, generated from source code comments.
+
+[NOTE]
+====
+The API documentation is automatically generated from the latest release and includes:
+
+* **Complete method signatures** with parameter descriptions
+* **Usage examples** and code samples  
+* **Cross-references** between related classes
+* **Since tags** indicating version availability
+* **See also** links to related functionality
+====
+
+== Core Module (redis-om-spring)
+
+The core Redis OM Spring module provides the fundamental functionality for object mapping, repositories, and search capabilities.
+
+link:{attachmentsdir}/javadoc/modules/redis-om-spring/index.html[Redis OM Spring Core API^, role="external"]
+
+=== Key Packages
+
+* **Annotations**: `com.redis.om.spring.annotations` - Core annotations for mapping and indexing
+* **Repository**: `com.redis.om.spring.repository` - Repository interfaces and implementations  
+* **Search**: `com.redis.om.spring.search` - Search and query functionality
+* **Metamodel**: `com.redis.om.spring.metamodel` - Type-safe query metamodel
+* **Indexing**: `com.redis.om.spring.indexing` - Index creation and management
+* **Operations**: `com.redis.om.spring.ops` - Redis operations and client abstractions
+* **Tuple**: `com.redis.om.spring.tuple` - Tuple system for structured data handling
+
+== AI Module (redis-om-spring-ai)
+
+The AI extension module provides vector embedding and similarity search capabilities with multiple AI provider integrations.
+
+link:{attachmentsdir}/javadoc/modules/redis-om-spring-ai/index.html[Redis OM Spring AI API^, role="external"]
+
+=== Key Packages
+
+* **Annotations**: `com.redis.om.spring.annotations` - AI and vectorization annotations
+* **Vectorize**: `com.redis.om.spring.vectorize` - Embedding generation and processing
+* **Configuration**: `com.redis.om.spring` - AI configuration and auto-configuration
+
+== Complete API Reference
+
+For a unified view of all modules and their interactions:
+
+link:{attachmentsdir}/javadoc/aggregate/index.html[Complete API Reference^, role="external"]
+
+This aggregated documentation provides:
+
+* **Cross-module relationships** and dependencies
+* **Complete inheritance hierarchies** across modules
+* **Unified search** across all packages and classes
+* **Package overview** documentation for the entire framework
+
+== Most Important Classes
+
+=== Core Framework Classes
+
+[cols="1,3"]
+|===
+| Class | Description
+
+| `@Document`
+| Primary annotation for mapping entities to Redis JSON documents
+
+| `@RedisHash` 
+| Annotation for mapping entities to Redis hash structures with enhanced search
+
+| `RedisDocumentRepository<T, ID>`
+| Base repository interface for JSON document entities
+
+| `RedisEnhancedRepository<T, ID>`
+| Base repository interface for hash entities with search capabilities
+
+| `EntityStream`
+| Fluent API for type-safe queries and aggregations
+
+| `RediSearchIndexer`
+| Core component for creating and managing search indexes
+|===
+
+=== AI and Vector Search Classes
+
+[cols="1,3"]
+|===
+| Class | Description
+
+| `@Vectorize`
+| Annotation for automatic embedding generation from source fields
+
+| `@VectorIndexed`
+| Annotation for configuring vector similarity search indexes
+
+| `DefaultEmbedder`
+| Central component for generating embeddings from various AI providers
+
+| `EmbeddingModelFactory`
+| Factory for creating and caching embedding models
+
+| `AIRedisOMProperties`
+| Configuration properties for AI provider settings
+|===
+
+== Download API Documentation
+
+The API documentation is also available for offline use:
+
+* link:https://repo1.maven.org/maven2/com/redis/om/redis-om-spring/{redis-om-version}/redis-om-spring-{redis-om-version}-javadoc.jar[Core Module Javadoc JAR^]
+* link:https://repo1.maven.org/maven2/com/redis/om/redis-om-spring-ai/{redis-om-version}/redis-om-spring-ai-{redis-om-version}-javadoc.jar[AI Module Javadoc JAR^]
+
+== Integration with IDE
+
+For the best development experience, add the Javadoc JARs to your IDE:
+
+=== IntelliJ IDEA
+
+1. Go to **File** → **Project Structure** → **Libraries**
+2. Select the Redis OM Spring library
+3. Click **+** and add the Javadoc JAR
+4. Apply changes
+
+=== Eclipse
+
+1. Right-click on the Redis OM Spring JAR in **Package Explorer**
+2. Select **Properties** → **Javadoc Location**
+3. Choose **Javadoc in archive** and select the Javadoc JAR
+4. Apply changes
+
+=== VS Code
+
+Install the **Extension Pack for Java** which automatically downloads and integrates Javadoc documentation when available.
