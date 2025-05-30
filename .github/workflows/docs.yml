@@ -91,6 +91,24 @@ jobs:
           echo "Antora playbook content:"
           cat docs/antora-playbook.yml
 
+      - name: Generate Javadoc Documentation
+        run: |
+          echo "Cleaning any existing generated Javadoc files..."
+          rm -rf docs/content/modules/ROOT/attachments/javadoc
+          rm -rf docs/content/modules/ROOT/assets/javadoc
+          
+          echo "Generating Javadoc for all modules..."
+          ./gradlew aggregateJavadoc generateModuleJavadocs
+          
+          # Verify Javadoc generation
+          if [ ! -d "build/docs/javadoc" ]; then
+            echo "ERROR: Javadoc generation failed"
+            exit 1
+          fi
+          
+          echo "Javadoc generated successfully:"
+          find build/docs/javadoc -name "index.html" -type f | head -10
+
       - name: Build Documentation
         run: |
           ./gradlew :docs:generateSite
@@ -100,6 +118,10 @@ jobs:
             npm install
             ./node_modules/.bin/antora --fetch --stacktrace --log-format=pretty antora-playbook.yml --to-dir=build/site
           fi
+          
+          # Verify Javadoc assets are included
+          echo "Checking for Javadoc assets in site:"
+          find docs/build/site -path "*/javadoc/*" -name "index.html" | head -5 || echo "No Javadoc assets found"
 
       - name: Verify Build Output
         run: |

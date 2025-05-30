@@ -568,3 +568,101 @@ body.dark-theme,
   color: #ffffff !important;
   background-color: rgba(220, 56, 44, 0.6) !important;
 }
+
+/* Javadoc integration styling */
+.javadoc-link {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: #dc382d;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  margin: 0.25rem 0;
+  transition: background-color 0.2s ease;
+}
+
+.javadoc-link:hover {
+  background: #b8312a;
+  color: white;
+  text-decoration: none;
+}
+
+.api-reference-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.api-module-card {
+  border: 1px solid #e1e1e1;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #f8f9fa;
+}
+
+.api-module-card h3 {
+  margin-top: 0;
+  color: #dc382d;
+}
+
+/* Style external links to Javadoc */
+a[href*="javadoc"]:after {
+  content: " 📖";
+  font-size: 0.8em;
+}
+
+/* Enhanced code block styling for API references */
+.api-reference pre {
+  background: #f6f8fa;
+  border: 1px solid #e1e5e9;
+  border-radius: 6px;
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+/* Table styling for API reference */
+.api-reference table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+.api-reference table th,
+.api-reference table td {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #e1e5e9;
+}
+
+.api-reference table th {
+  background: #f6f8fa;
+  font-weight: 600;
+}
+
+.api-reference table tr:hover {
+  background: #f6f8fa;
+}
+
+/* Dark theme adjustments for Javadoc styling */
+.dark-theme .api-module-card {
+  background: var(--redis-dark-theme-panel);
+  border-color: var(--redis-dark-theme-border);
+}
+
+.dark-theme .api-module-card h3 {
+  color: #ff6b5a;
+}
+
+.dark-theme .api-reference pre {
+  background: var(--redis-dark-theme-panel);
+  border-color: var(--redis-dark-theme-border);
+}
+
+.dark-theme .api-reference table th {
+  background: var(--redis-dark-theme-panel);
+}
+
+.dark-theme .api-reference table tr:hover {
+  background: var(--redis-dark-theme-panel);
+}

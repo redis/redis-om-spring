@@ -57,3 +57,6 @@
 
 .Enterprise Features
 * xref:sentinel.adoc[Redis Sentinel Support]
+
+.API Reference
+* xref:api-reference.adoc[Javadoc API Reference]

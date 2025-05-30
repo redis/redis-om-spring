@@ -35,6 +35,10 @@ docs/node_modules/
 docs/node/
 docs/build/
 
+# Generated Javadoc documentation (build artifacts)
+docs/content/modules/ROOT/attachments/javadoc/
+docs/content/modules/ROOT/assets/javadoc/
+
 **/.claude/settings.local.json
 /out/
 build/

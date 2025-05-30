@@ -18,23 +18,39 @@ npm install
 
 ### Building the Site
 
-#### Using Gradle
+#### Using Gradle (Recommended)
 
 ```bash
-# From the project root
+# From the project root - includes Javadoc generation
 ./gradlew :docs:build
 
 # From the docs directory
 ../gradlew build
 ```
 
-The documentation will be built in the `build/site` directory.
+This builds both the documentation site and integrates the API documentation (Javadoc) automatically. The documentation will be built in the `build/site` directory.
 
-#### Using npm directly
+#### Building with Javadoc Integration
+
+To explicitly build with all API documentation:
+
+```bash
+# Generate Javadoc first, then build docs
+./gradlew aggregateJavadoc generateModuleJavadocs :docs:build
+
+# Or build everything in one command (same as above)
+./gradlew :docs:build
+```
+
+**Important**: Javadoc files are generated dynamically during the build process and are **NOT** checked into the repository. They are created fresh each time you build and are properly ignored by Git.
+
+#### Using npm directly (without Javadoc)
 
 ```bash
 npx antora antora-playbook.yml --to-dir=build/site
 ```
+
+**Note**: Building with npm directly will not include API documentation (Javadoc). Use the Gradle method for complete documentation including API references.
 
 ### Viewing the Documentation
 
@@ -43,6 +59,15 @@ After building, you can view the documentation by opening any of these files in 
 - `build/site/index.html` - Documentation homepage
 - `build/site/redis-om-spring/current/index.html` - Current version documentation
 - `build/site/redis-om-spring/current/overview.html` - Overview page
+- `build/site/redis-om-spring/current/api-reference.html` - API Reference page (includes Javadoc links)
+
+#### API Documentation Access
+
+When built with Gradle (including Javadoc), the API documentation is available at:
+
+- **Complete API**: `build/site/redis-om-spring/current/_attachments/javadoc/aggregate/index.html`
+- **Core Module**: `build/site/redis-om-spring/current/_attachments/javadoc/modules/redis-om-spring/index.html`  
+- **AI Module**: `build/site/redis-om-spring/current/_attachments/javadoc/modules/redis-om-spring-ai/index.html`
 
 ## Content Structure
 
@@ -70,16 +95,37 @@ The repository includes a Docker setup that uses Nginx to serve the documentatio
 #### Serving with Docker
 
 ```bash
-# First build the site
-./gradlew :docs:build
-# or 
-npx antora antora-playbook.yml --to-dir=build/site
+# Option 1: Using Makefile (recommended)
+cd docs
+make serve
 
-# Then serve with Docker (run from the docs directory)
-docker compose up -d
+# Option 2: Manual steps
+./gradlew :docs:build                # Build with Javadoc integration
+cd docs
+docker compose up -d                 # Start container
 ```
 
 The documentation will be available at http://localhost:8000.
+
+**Important**: Use `./gradlew :docs:build` to ensure API documentation is included. Using `npx antora` directly will serve the site without Javadoc integration.
+
+#### Quick Testing
+
+For comprehensive local testing including Javadoc validation:
+
+```bash
+cd docs
+make test
+# or manually:
+./scripts/test-local-docs.sh
+```
+
+This script will:
+- Build the complete documentation with Javadoc
+- Validate all API documentation is present
+- Start the Docker container
+- Test all key URLs
+- Provide direct links for testing
 
 #### Docker Configuration
 
@@ -104,6 +150,8 @@ If you encounter issues with the Docker setup:
 2. Check if port 8000 is already in use on your machine
 3. Verify Docker and Docker Compose are installed correctly
 4. Look at the Docker logs with `docker-compose logs` or `docker logs roms-documentation`
+5. For missing API documentation, ensure you built with `./gradlew :docs:build` (not npm directly)
+6. Validate Javadoc integration with `./docs/scripts/validate-javadoc.sh`
 
 ### Adding New Content
 
@@ -143,7 +191,28 @@ To add a new page:
 - Include more examples from demo applications
 - Standardize page structure and formatting
 - Add navigation breadcrumbs
-- Integrate automated API documentation
+- ~~Integrate automated API documentation~~ ✅ **Complete** (Javadoc integration implemented)
+
+## Javadoc Integration
+
+The documentation site includes automated API reference generation:
+
+### ✅ **Build Process**
+- Javadoc files are **generated dynamically** during build (NOT checked into repository)
+- Integrated into Antora as attachments for proper URL handling
+- Automatic generation in GitHub Actions workflow
+- Local builds regenerate fresh Javadoc
+
+### 📁 **Repository Management**  
+- Generated files are properly ignored in `.gitignore`
+- Source code comments are the source of truth
+- No manual maintenance of API documentation required
+- Fresh generation ensures docs stay synchronized with code
+
+### 🔧 **Local Development**
+- Use `make clean && make serve` for full rebuild with Javadoc
+- Use validation script: `./scripts/validate-javadoc.sh`
+- Clean generated files: `./scripts/clean-generated-javadoc.sh`
 
 ## Versioning
 
