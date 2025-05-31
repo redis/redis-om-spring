@@ -10,49 +10,24 @@ Redis OM Spring uses [JReleaser](https://jreleaser.org/) to automate the publica
 
 The release process involves these key files:
 
-1. `.github/workflows/version-and-release.yml` - GitHub Actions workflow triggered by GitHub releases
-2. `jreleaser.yml` - JReleaser configuration defining how artifacts are published
-3. `scripts/prepare-release.sh` - Helper script to prepare a new release version
+1. `.github/workflows/release.yml` - GitHub Actions workflow triggered by GitHub releases
+2. `jreleaser.yml` - JReleaser configuration defining how artifacts are released and/or published
 
 ## Release Steps
 
-To release a new version:
+To release a new version, go to the GitHub repo *Actions* section and click on the [Release workflow](https://github.com/redis/redis-om-spring/actions/workflows/release.yml).
 
-1. **Prepare the release**:
-   ```bash
-   ./scripts/prepare-release.sh <version>
-   ```
-   This script sets the version in all POM files.
+Then click on **Run worflow** and specify the version to release (for example `1.1.0`).
 
-2. **Verify and test**:
-   ```bash
-   mvn clean verify
-   ```
-   Ensure all tests pass.
+Finally, click on *Run workflow*.
+This will start the release process which consists of the following steps:
 
-3. **Commit version changes**:
-   ```bash
-   git commit -a -m "chore: prepare release v<version>"
-   git push
-   ```
-
-4. **Create a GitHub Release**:
-   - Go to GitHub and create a new release
-   - Set the tag to `v<version>` (e.g., `v0.6.0`)
-   - Provide release notes
-   - Publish the release
-
-5. **Workflow Execution**:
-   - When the release is published, the GitHub workflow will:
-     - Check out the repository
-     - Set the version from the release tag
-     - Build the artifacts with the publication profile
-     - Stage the artifacts for publication (excluding the parent POM)
-     - Use JReleaser to sign and publish the artifacts to Maven Central
-   
-6. **Monitoring**:
-   - Monitor the workflow execution in the "Actions" tab
-   - Check the JReleaser output artifact for detailed logs
+* Update `gradle.properties` with the specified version.
+* Build the project using the Gradle wrapper: `./gradlew build test aggregateTestReport publish`
+* Call the JReleaser action which performs the following tasks:
+  * Publish the artifacts to Maven Central
+  * Tag the repository with the specified version, generate the changelog using [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/), and create a GitHub release
+  * If enabled, announce the release to Slack and other channels
 
 ## Published Artifacts
 
@@ -67,11 +42,9 @@ Each artifact includes:
 - Javadoc JAR
 - POM file
 
-The parent POM (`redis-om-spring-parent`) is intentionally excluded from publication by only staging the specific artifacts we want to publish.
-
 ## Troubleshooting
 
-If the release fails:
+### Check the GitHub actions logs
 
 1. Check the JReleaser output artifact in the GitHub Actions run
 2. Verify that all required environment secrets are configured:
@@ -80,3 +53,20 @@ If the release fails:
    - `SONATYPE_USERNAME` and `SONATYPE_PASSWORD` - For Maven Central access
 3. Review the staging directory output to ensure the correct artifacts are being included
 4. If the release fails due to validation issues, fix them and create a new patch release
+
+### Run locally
+
+To troubleshoot the release process locally, run the Gradle command specified above under *Release Steps* and make sure the proper artifacts are created under `build/staging-deploy`.
+
+Then [install JReleaser](https://jreleaser.org/guide/latest/index.html) and set the following environment variables:
+* `JRELEASER_PROJECT_VERSION`: Should match version in `gradle.properties` (e.g. `1.0.1`)
+* `JRELEASER_GPG_SECRET_KEY`, `JRELEASER_GPG_PUBLIC_KEY`, `JRELEASER_GPG_PASSPHRASE`
+* `JRELEASER_GITHUB_TOKEN`
+* `JRELEASER_MAVENCENTRAL_USERNAME` and `JRELEASER_MAVENCENTRAL_PASSWORD`
+
+Run jreleaser with the `dry-run` option:
+
+```shell
+jreleaser full-release --dry-run
+```
+
