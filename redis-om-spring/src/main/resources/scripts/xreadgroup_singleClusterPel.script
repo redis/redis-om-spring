@@ -1,0 +1,184 @@
+-- invoke this script thusly: eval xreadgroup_singleRegionPEL.script 1 streamname groupname consumerID
+-- KEYS[1] is the name of the stream that holds the next interesting entry for the calling thread
+-- ARGV[1] == groupname for current thread ARGV[2] == consumername in group for current thread
+
+    local function mstime()
+       local res = redis.call("TIME")
+       local s = tonumber(res[1])
+       local us = tonumber(res[2])
+       return math.floor(s * 1000 + us / 1000)
+    end
+
+    local function group_last_dlvr_id(key, group)
+        local xinfo = redis.call("XINFO", "GROUPS", key)
+        for i, entry in ipairs(xinfo) do
+            if (entry[2] == group) then
+                return entry[8]
+            end
+        end
+    end
+
+    local function mysplit(inputstr, sep)
+       if sep == nil then
+          sep = "%s"
+       end
+       local t={}
+       for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+          table.insert(t, str)
+       end
+       return t
+    end
+
+    local function sid_cmp(a, b)
+        local a_pairs = mysplit(a, "-")
+        local a_ms = tonumber(a_pairs[1])
+        local a_seq = tonumber(a_pairs[2])
+        local b_pairs = mysplit(b, "-")
+        local b_ms = tonumber(b_pairs[1])
+        local b_seq = tonumber(b_pairs[2])
+        if (a_ms > b_ms) then
+            return 1
+        elseif (b_ms > a_ms) then
+            return -1
+        elseif (a_seq > b_seq) then
+            return 1
+        elseif (b_seq > a_seq) then
+            return -1
+        end
+        return 0
+    end
+
+    -- The first ID location depends on Redis version (6 vs. 7)
+    local function first_id(xinfo)
+        if (tonumber(xinfo[2]) == 0) then
+            return "0-0"
+        elseif (xinfo[13] == "recorded-first-entry-id") then
+            return xinfo[14]
+        else
+            return xinfo[12][1]
+        end
+    end
+
+    -- See comment above first_id
+    local function last_id(xinfo)
+        if (tonumber(xinfo[2]) == 0) then
+            return "0-0"
+        elseif (xinfo[7] == "last-generated-id") then
+            return xinfo[7]
+        else
+            return xinfo[14][1]
+        end
+    end
+
+    -- Just to raise an error if key or group don't exist
+    -- KEYS[1] is the name of the stream that holds the next interesting entry for the calling thread
+    redis.call("XPENDING", KEYS[1], ARGV[1])
+
+    local ttl = redis.call("TTL", KEYS[1])
+    local xlen = redis.call("XLEN", KEYS[1])
+    local xinfo = redis.call("XINFO", "STREAM", KEYS[1])
+
+    local entries_read_key = string.format("__entries_read_{%s}_%s", KEYS[1], ARGV[1])
+    local entries_read_key_ttl = redis.call("TTL", entries_read_key)
+    -- Can be nil in case entries_read_key doesn't exist
+    local entries_read = tonumber(redis.call("GET", entries_read_key))
+    if (entries_read == nil) then
+        -- edge case, stream is empty, the group lag is 0 because there's
+        -- nothing more to read
+        if (xlen == 0) then
+            entries_read = xlen
+        else
+            -- compare last-dlvr-id with stream first and last IDs
+            -- 1. if smaller than min, entries read is 0
+            -- 2. if equal to last, entries read is xlen
+            -- 3. otherwise, we can't tell so return nil
+            local stream_first_id = first_id(xinfo)
+            local stream_last_id = last_id(xinfo)
+            local actual_last_dlvr_id = group_last_dlvr_id(KEYS[1], ARGV[1])
+            if (actual_last_dlvr_id == stream_last_id) then
+                entries_read = xlen
+            elseif (sid_cmp(actual_last_dlvr_id, stream_first_id) < 0) then
+                entries_read = 0
+            else
+                entries_read = -1
+            end
+        end
+
+        redis.call("SET", entries_read_key, entries_read)
+        if (ttl > 0 and entries_read_key_ttl < 0) then
+            redis.call("EXPIRE", entries_read_key, ttl)
+        end
+    end
+
+-- not needed with singleRegionPEL:    local pel_key = string.format("__PEL_{%s}_%s", KEYS[1], ARGV[1])
+-- not needed with singleRegionPEL:    local pel_key_ttl = redis.call("TTL", pel_key)
+
+    -- We need to make sure that XREADGROUP moves the CG's last_dlvr_id (to minimize over-processing of messages
+    -- in case of a failover)
+    -- We do that by using a helper key (last_dlvr_id_key) which is updated with the maximal message ID returned
+    -- by XREADGROUP.
+    -- Before executing any XREADGROUP we need to set the last_dlvr_id of the group to whatever is in last_dlvr_id_key
+    -- (the block of code below)
+    -- last_dlvr_id_key is a stream, and we use the most recent entry as the CG's last_dlvr_id.
+    -- It is a stream because we want to keep this value monotonically increasing, as the stream's head is.
+    -- Here's an exmaple of how it could break monotonicity if it were a string:
+    -- R2 XREADGROUP 1-0 (last_dlvr_id_key is 1-0 in R2)
+    -- R2 XREADGROUP 2-0 (last_dlvr_id_key is 2-0 in R2)
+    -- R2 XACK 1-0 2-0 (last consecutive ack is 2-0 in R2)
+    -- R1 XREADGROUP 1-0 (last_dlvr_id_key is 1-0 in R1)
+    -- R1->R2
+    -- Now, R2's last_dlvr_id_key is 1-0 but last consecutive ack os 2-0. If the XREADGROUP script runs on R2 again,
+    -- XGROUP SETID will raise an error ("ERR This ID is in the initial set of consecutive messages ...")
+    local last_dlvr_id_key = string.format("__last_dlvr_id_{%s}_%s", KEYS[1], ARGV[1])
+    local last_dlvr_id_key_ttl = redis.call("TTL", last_dlvr_id_key)
+    -- Using redis.pcall because XINFO returns an error if key doesn't exist
+    local last_dlvr_id_key_xinfo = redis.pcall("XINFO", "STREAM", last_dlvr_id_key)
+    if last_dlvr_id_key_xinfo['err'] == nil then
+        -- XINFO[8] is the last-generated-id
+        redis.call("XGROUP", "SETID", KEYS[1], ARGV[1], last_dlvr_id_key_xinfo[8])
+    end
+    -- ARGV[1] == groupname for current thread ARGV[2] == consumername in group for current thread
+    local res = redis.call("XREADGROUP", "GROUP", ARGV[1], ARGV[2], "COUNT", 1, "STREAMS", KEYS[1], ">")
+
+    -- if res == false there is no processing to do - no entry is available now
+    if (res == false) then
+        return res
+    end
+
+    -- We always use COUNT 1 but having a loop is mre bulletproof
+    local now = mstime()
+    local last_dlvr_id = ""
+    for i, entry in ipairs(res[1][2]) do
+        last_dlvr_id = entry[1]
+-- not needed with singleRegionPEL:        redis.call("XADD", pel_key, last_dlvr_id, "consumer", ARGV[2], "delivery_time", now)
+
+-- not needed with singleRegionPEL:        if (ttl > 0 and pel_key_ttl < 0) then
+-- not needed with singleRegionPEL:            pel_key_ttl = ttl
+-- not needed with singleRegionPEL:            redis.call("EXPIRE", pel_key, ttl)
+-- not needed with singleRegionPEL:        end
+
+        if (entries_read ~= -1) then
+            entries_read = entries_read + 1
+        end
+    end
+
+    if (entries_read == -1) then
+        if (xinfo[8] == last_dlvr_id) then
+            -- CG has caught up with the stream's tip
+            redis.call("SET", entries_read_key, xlen, "KEEPTTL")
+            if (ttl > 0 and entries_read_key_ttl < 0) then
+                redis.call("EXPIRE", entries_read_key, ttl)
+            end
+        end
+    else
+        redis.call("SET", entries_read_key, entries_read, "KEEPTTL")
+        if (ttl > 0 and entries_read_key_ttl < 0) then
+            redis.call("EXPIRE", entries_read_key, ttl)
+        end
+    end
+
+    redis.call("XADD", last_dlvr_id_key, "MAXLEN", "1", last_dlvr_id, "f", "v")
+    if (ttl > 0 and last_dlvr_id_key_ttl < 0) then
+        redis.call("EXPIRE", last_dlvr_id_key, ttl)
+    end
+    return res

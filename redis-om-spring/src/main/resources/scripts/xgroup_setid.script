@@ -1,0 +1,31 @@
+    -- Just to raise an error if key or group doesn't exist
+    redis.call("XPENDING", KEYS[1], ARGV[1])
+    
+    -- First call the actual command because we want an early-exit if it fails (try to set the ID to be smaller than
+    -- last consecutive ack)
+    local res = redis.call("XGROUP", "SETID", KEYS[1], ARGV[1], ARGV[2])
+    
+    local entries_read_key = string.format("__entries_read_{%s}_%s", KEYS[1], ARGV[1])
+    local entries_read_key_ttl = redis.call("TTL", entries_read_key)
+    
+    local ttl = redis.call("TTL", KEYS[1])
+    local xinfo = redis.call("XINFO", "STREAM", KEYS[1])
+    
+    if (xinfo[8] == ARGV[2]) then
+        local xlen = redis.call("XLEN", KEYS[1])
+        redis.call("SET", entries_read_key, xlen, "KEEPTTL")
+    else
+        redis.call("SET", entries_read_key, "-1", "KEEPTTL")
+    end
+    if (ttl > 0 and entries_read_key_ttl < 0) then
+        redis.call("EXPIRE", entries_read_key, ttl)
+    end
+    
+    local last_dlvr_id_key = string.format("__last_dlvr_id_{%s}_%s", KEYS[1], ARGV[1])
+    local last_dlvr_id_key_ttl = redis.call("TTL", last_dlvr_id_key)
+    redis.call("SET", last_dlvr_id_key, ARGV[2], "KEEPTTL")
+    if (ttl > 0 and last_dlvr_id_key_ttl < 0) then
+        redis.call("EXPIRE", last_dlvr_id_key, ttl)
+    end
+    
+    return res

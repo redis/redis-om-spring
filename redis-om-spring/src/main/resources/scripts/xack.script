@@ -1,0 +1,4 @@
+    local pel_key = string.format("__PEL_{%s}_%s", KEYS[1], ARGV[1])
+    local response = redis.call("XDEL", pel_key, ARGV[2])
+    redis.call("XACK", KEYS[1], ARGV[1], ARGV[2])
+    return response

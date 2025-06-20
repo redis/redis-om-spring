@@ -1,0 +1,56 @@
+   local function group_last_dlvr_id(key, group)
+        local xinfo = redis.call("XINFO", "GROUPS", key)
+        for i, entry in ipairs(xinfo) do
+            if (entry[2] == group) then
+                return entry[8]
+            end
+        end
+    end
+
+    -- The first ID location depends on Redis version (6 vs. 7)
+    -- In 7, it's stored at "recorded-first-entry-id".
+    -- In 6, it's stored in a literal "first-entry" struct.
+    local function first_id(key)
+        local xinfo = redis.call("XINFO", "STREAM", KEYS[1])
+        if (xinfo[13] == "recorded-first-entry-id") then
+            return xinfo[14]
+        else
+            return xinfo[12][1]
+        end
+    end
+
+    local function sid2d(sid)
+        local tmp = string.gsub(sid, "-", ".")
+        return tonumber(tmp)
+    end
+
+    -- Just to raise an error if key or group don't exist
+    redis.call("XPENDING", KEYS[1], ARGV[1])
+
+    local entries_read_key = string.format("__entries_read_{%s}_%s", KEYS[1], ARGV[1])
+    local entries_read = tonumber(redis.call("GET", entries_read_key))
+    if (entries_read == nil) then
+        -- compare last-dlvr-id with stream first and last IDs
+        -- 1. if smaller than min, entries read is 0
+        -- 2. if equal to last, entries read is xlen
+        -- 3. otherwise, we can't tell so return nil
+        local xinfo = redis.call("XINFO", "STREAM", KEYS[1])
+        local stream_first_id = sid2d(first_id(KEYS[1]))
+        local stream_last_id = sid2d(xinfo[8])
+        local last_dlvr_id = sid2d(group_last_dlvr_id(KEYS[1], ARGV[1]))
+        if (last_dlvr_id == stream_last_id) then
+            local xlen = redis.call("XLEN", KEYS[1])
+            entries_read = xlen
+        elseif (last_dlvr_id < stream_first_id) then
+            entries_read = 0
+        else
+            entries_read = -1
+        end
+    end
+    
+    if (entries_read == -1) then
+        return nil
+    end
+    
+    local xlen = redis.call("XLEN", KEYS[1])
+    return xlen - entries_read
