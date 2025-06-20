@@ -14,7 +14,7 @@ import java.lang.annotation.*;
  * &#64;Configuration
  * &#64;EnableRedisStreams
  * public class AppConfig {
- *     // configuration details
+ * // configuration details
  * }
  * </pre>
  * 
@@ -22,7 +22,11 @@ import java.lang.annotation.*;
  * @since 1.0
  */
 @Documented
-@Target({ElementType.TYPE})
-@Retention(RetentionPolicy.RUNTIME)
+@Target(
+  { ElementType.TYPE }
+)
+@Retention(
+  RetentionPolicy.RUNTIME
+)
 public @interface EnableRedisStreams {
 }

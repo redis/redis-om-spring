@@ -13,15 +13,15 @@ package com.redis.om.streams.handler;
  */
 public interface RedisStreamsHandler {
 
-    /**
-     * Processes messages from a Redis Stream.
-     * 
-     * <p>This method is called to process messages from a Redis Stream. The implementation
-     * should handle consuming messages from the stream and applying the appropriate
-     * business logic to process them.</p>
-     * 
-     * @return true if a message was successfully processed, false otherwise
-     */
-    boolean process();
+  /**
+   * Processes messages from a Redis Stream.
+   * 
+   * <p>This method is called to process messages from a Redis Stream. The implementation
+   * should handle consuming messages from the stream and applying the appropriate
+   * business logic to process them.</p>
+   * 
+   * @return true if a message was successfully processed, false otherwise
+   */
+  boolean process();
 
 }
