@@ -27,6 +27,6 @@ public class GeoLoc {
       throw new IllegalArgumentException(String.format("unparseable point %s", s));
     }
 
-    return new GeoLoc(Double.parseDouble(parts[1]), Double.parseDouble(parts[1]));
+    return new GeoLoc(Double.parseDouble(parts[0]), Double.parseDouble(parts[1]));
   }
 }
