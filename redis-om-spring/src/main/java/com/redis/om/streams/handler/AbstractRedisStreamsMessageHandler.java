@@ -1,5 +1,10 @@
 package com.redis.om.streams.handler;
 
+import com.redis.om.streams.exception.TopicNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.redis.om.streams.TopicEntry;
 import com.redis.om.streams.command.ConsumerGroupBase;
 import com.redis.om.streams.command.noack.NoAckConsumerGroup;
 import com.redis.om.streams.command.serial.ConsumerGroup;
@@ -21,6 +26,9 @@ import com.redis.om.streams.command.singleclusterpel.SingleClusterPelConsumerGro
  * @see ConsumerGroupBase
  */
 public abstract class AbstractRedisStreamsMessageHandler implements RedisStreamsHandler {
+
+  /** The Logger */
+  protected final Logger logger = LoggerFactory.getLogger(getClass());
 
   /** The topic manager used to manage Redis Stream topics */
   protected final TopicManager topicManager;
@@ -59,6 +67,18 @@ public abstract class AbstractRedisStreamsMessageHandler implements RedisStreams
   public AbstractRedisStreamsMessageHandler(TopicManager topicManager, SingleClusterPelConsumerGroup consumerGroup) {
     this.topicManager = topicManager;
     this.consumerGroup = consumerGroup;
+  }
+
+  protected void printTopicEntry(TopicEntry topicEntry) {
+    if (logger.isDebugEnabled()) {
+      logger.debug("topicEntry: {}", topicEntry);
+    }
+    if (logger.isTraceEnabled() && topicEntry != null) {
+      logger.trace("topicEntry.getId(): {}", topicEntry.getId());
+      logger.trace("topicEntry.getGroupName(): {}", topicEntry.getGroupName());
+      logger.trace("topicEntry.getStreamName(): {}", topicEntry.getStreamName());
+      logger.trace("topicEntry.getMessage(): {}", topicEntry.getMessage());
+    }
   }
 
 }
