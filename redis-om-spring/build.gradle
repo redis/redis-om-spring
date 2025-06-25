@@ -31,5 +31,4 @@ dependencies {
 	implementation "com.hrakaroo:glob:$globVersion"
 	implementation 'io.micrometer:micrometer-core:1.15.0'
 	implementation 'jakarta.annotation:jakarta.annotation-api:2.1.1'
-
 }

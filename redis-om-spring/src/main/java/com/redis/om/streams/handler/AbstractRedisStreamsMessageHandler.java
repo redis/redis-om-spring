@@ -1,6 +1,5 @@
 package com.redis.om.streams.handler;
 
-import com.redis.om.streams.exception.TopicNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
