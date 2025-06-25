@@ -24,18 +24,46 @@ import com.redis.om.streams.command.singleclusterpel.SingleClusterPelConsumerGro
 
 import jakarta.annotation.PostConstruct;
 
+/**
+ * Registrar for Redis Stream consumers that scans for classes annotated with {@link RedisStreamConsumer}
+ * and registers them as Spring beans. This class is responsible for setting up the necessary infrastructure
+ * for Redis Streams integration, including topic configurations, consumer groups, and the actual consumer beans.
+ * <p>
+ * This registrar is activated by the {@link EnableRedisStreams} annotation and will scan the specified base
+ * packages for consumer classes.
+ * 
+ * @see EnableRedisStreams
+ * @see RedisStreamConsumer
+ * @see RedisStreamConsumerBeanDefinitionRegistrarSupport
+ */
 public class RedisStreamConsumerRegistrar extends RedisStreamConsumerBeanDefinitionRegistrarSupport {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
 
+  /**
+   * Default constructor for the RedisStreamConsumerRegistrar.
+   */
   public RedisStreamConsumerRegistrar() {
   }
 
+  /**
+   * Initialization method called after the bean has been constructed.
+   * Logs an informational message indicating that the registrar has been initialized.
+   */
   @PostConstruct
   private void init() {
     logger.info("RedisStreamConsumerRegistrar init");
   }
 
+  /**
+   * Registers bean definitions for Redis Stream consumers.
+   * This method scans for classes annotated with {@link RedisStreamConsumer} in the specified base packages
+   * and registers them as Spring beans along with the necessary infrastructure components.
+   *
+   * @param importingClassMetadata metadata about the importing class, which contains the {@link EnableRedisStreams}
+   *                               annotation
+   * @param registry               the bean definition registry to register beans with
+   */
   @Override
   public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
     Map<String, Object> attributes = importingClassMetadata.getAnnotationAttributes(EnableRedisStreams.class.getName());
@@ -67,6 +95,14 @@ public class RedisStreamConsumerRegistrar extends RedisStreamConsumerBeanDefinit
     }
   }
 
+  /**
+   * Registers all the necessary beans for a Redis Stream consumer.
+   * This includes the topic configuration, topic manager, consumer group, and the consumer class itself.
+   *
+   * @param consumerClass the class annotated with {@link RedisStreamConsumer}
+   * @param annotation    the {@link RedisStreamConsumer} annotation instance
+   * @param registry      the bean definition registry to register beans with
+   */
   private void registerConsumerBeans(Class<?> consumerClass, RedisStreamConsumer annotation,
       BeanDefinitionRegistry registry) {
     String topicName = annotation.topicName();
@@ -97,6 +133,13 @@ public class RedisStreamConsumerRegistrar extends RedisStreamConsumerBeanDefinit
     registerConsumerClass(consumerClass, registry);
   }
 
+  /**
+   * Registers a SerialTopicConfig bean for the specified topic.
+   * This bean contains the configuration for a Redis Stream topic.
+   *
+   * @param topicName the name of the Redis Stream topic
+   * @param registry  the bean definition registry to register the bean with
+   */
   private void registerSerialTopicConfig(String topicName, BeanDefinitionRegistry registry) {
     String beanName = topicName + "SerialTopicConfig";
     if (!registry.containsBeanDefinition(beanName)) {
@@ -107,6 +150,13 @@ public class RedisStreamConsumerRegistrar extends RedisStreamConsumerBeanDefinit
     }
   }
 
+  /**
+   * Registers a TopicManager bean for the specified topic.
+   * The TopicManager is responsible for creating and managing the Redis Stream topic.
+   *
+   * @param topicName the name of the Redis Stream topic
+   * @param registry  the bean definition registry to register the bean with
+   */
   private void registerTopicManager(String topicName, BeanDefinitionRegistry registry) {
     String beanName = topicName + "TopicManager";
     if (!registry.containsBeanDefinition(beanName)) {
@@ -121,6 +171,15 @@ public class RedisStreamConsumerRegistrar extends RedisStreamConsumerBeanDefinit
     }
   }
 
+  /**
+   * Registers a ConsumerGroup bean for the specified topic and group.
+   * This consumer group automatically acknowledges messages after processing.
+   *
+   * @param topicName     the name of the Redis Stream topic
+   * @param groupName     the name of the consumer group
+   * @param consumerClass the class that will consume messages from this group
+   * @param registry      the bean definition registry to register the bean with
+   */
   private void registerConsumerGroup(String topicName, String groupName, Class<?> consumerClass,
       BeanDefinitionRegistry registry) {
     String beanName = groupName + "ConsumerGroup";
@@ -136,6 +195,16 @@ public class RedisStreamConsumerRegistrar extends RedisStreamConsumerBeanDefinit
     }
   }
 
+  /**
+   * Registers a NoAckConsumerGroup bean for the specified topic and group.
+   * This consumer group does not automatically acknowledge messages after processing,
+   * requiring explicit acknowledgment by the consumer.
+   *
+   * @param topicName     the name of the Redis Stream topic
+   * @param groupName     the name of the consumer group
+   * @param consumerClass the class that will consume messages from this group
+   * @param registry      the bean definition registry to register the bean with
+   */
   private void registerNoAckConsumerGroup(String topicName, String groupName, Class<?> consumerClass,
       BeanDefinitionRegistry registry) {
     String beanName = groupName + "NoAckConsumerGroup";
@@ -151,6 +220,16 @@ public class RedisStreamConsumerRegistrar extends RedisStreamConsumerBeanDefinit
     }
   }
 
+  /**
+   * Registers a SingleClusterPelConsumerGroup bean for the specified topic and group.
+   * This consumer group is designed for use in a clustered environment, where multiple
+   * instances of the application can consume messages from the same stream.
+   *
+   * @param topicName     the name of the Redis Stream topic
+   * @param groupName     the name of the consumer group
+   * @param consumerClass the class that will consume messages from this group
+   * @param registry      the bean definition registry to register the bean with
+   */
   private void registerSingleClusterPelConsumerGroup(String topicName, String groupName, Class<?> consumerClass,
       BeanDefinitionRegistry registry) {
     String beanName = groupName + "SingleClusterPelConsumerGroup";
@@ -166,6 +245,13 @@ public class RedisStreamConsumerRegistrar extends RedisStreamConsumerBeanDefinit
     }
   }
 
+  /**
+   * Registers the consumer class itself as a Spring bean.
+   * This allows the consumer to be autowired into other components.
+   *
+   * @param consumerClass the class to register as a bean
+   * @param registry      the bean definition registry to register the bean with
+   */
   private void registerConsumerClass(Class<?> consumerClass, BeanDefinitionRegistry registry) {
     String beanName = StringUtils.uncapitalize(consumerClass.getSimpleName());
     if (!registry.containsBeanDefinition(beanName)) {
@@ -175,6 +261,12 @@ public class RedisStreamConsumerRegistrar extends RedisStreamConsumerBeanDefinit
     }
   }
 
+  /**
+   * Returns the annotation class that this registrar is looking for.
+   * In this case, it's the {@link EnableRedisStreams} annotation.
+   *
+   * @return the annotation class
+   */
   @Override
   protected Class<? extends Annotation> getAnnotation() {
     return EnableRedisStreams.class;
