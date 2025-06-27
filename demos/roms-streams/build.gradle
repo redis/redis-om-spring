@@ -21,6 +21,14 @@ tasks.withType(PublishToMavenRepository).configureEach {
 repositories {
 	mavenLocal()
 	mavenCentral()
+	maven {
+		name = 'Spring Milestones'
+		url = 'https://repo.spring.io/milestone'
+	}
+	maven {
+		name = 'Spring Snapshots'
+		url = 'https://repo.spring.io/snapshot'
+	}
 }
 
 dependencies {
@@ -28,7 +36,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 
 	// Redis OM for Spring (RC version)
-	implementation 'com.redis.om:redis-om-spring:1.0.0-RC3'
+	implementation project(':redis-om-spring')
 
 	// Jedis client
 	implementation 'redis.clients:jedis:5.2.0'
