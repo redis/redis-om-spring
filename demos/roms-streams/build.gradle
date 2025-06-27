@@ -1,0 +1,62 @@
+plugins {
+	id 'org.springframework.boot' version '3.4.5'
+	//    id 'io.spring.dependency-management' version '1.1.7'
+	id 'java'
+}
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+compileJava.options.encoding = 'UTF-8'
+compileTestJava.options.encoding = 'UTF-8'
+
+// Optional: Skip deploy if using a publishing step
+tasks.withType(PublishToMavenRepository).configureEach {
+	enabled = false
+}
+
+repositories {
+	mavenLocal()
+	mavenCentral()
+}
+
+dependencies {
+	// Spring
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+
+	// Redis OM for Spring (RC version)
+	implementation 'com.redis.om:redis-om-spring:1.0.0-RC3'
+
+	// Jedis client
+	implementation 'redis.clients:jedis:5.2.0'
+
+	// Jackson
+	implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.3'
+
+	// Faker
+	implementation('com.github.javafaker:javafaker:1.0.2') {
+		exclude group: 'org.yaml', module: 'snakeyaml'
+	}
+
+	// Lombok
+	compileOnly 'org.projectlombok:lombok:1.18.36'
+	annotationProcessor 'org.projectlombok:lombok:1.18.36'
+
+	// Test
+	testImplementation 'org.springframework.boot:spring-boot-starter-test:3.4.5'
+	testImplementation 'org.mockito:mockito-core:5.14.2'
+	testImplementation 'org.testcontainers:testcontainers:1.20.4'
+	testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
+	testImplementation 'com.redis:testcontainers-redis:2.2.4'
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+}
+
+test {
+	useJUnitPlatform()
+}
