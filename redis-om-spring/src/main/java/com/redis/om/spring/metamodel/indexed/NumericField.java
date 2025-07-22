@@ -163,4 +163,49 @@ public class NumericField<E, T> extends MetamodelField<E, T> {
     return new NumIncrByAction<>(searchFieldAccessor, -value);
   }
 
+  /**
+   * Creates an array membership predicate for this numeric field to check if the array contains any of the specified
+   * Double values.
+   * This method is similar to TagField.in() but for numeric arrays.
+   * 
+   * @param values the Double values to check for membership in the array
+   * @return an InPredicate that matches entities where this numeric array field contains any of the specified values
+   */
+  @SuppressWarnings(
+    "unchecked"
+  )
+  public InPredicate<E, ?> containsDouble(Double... values) {
+    return new InPredicate<>(searchFieldAccessor, Arrays.asList(values));
+  }
+
+  /**
+   * Creates an array membership predicate for this numeric field to check if the array contains any of the specified
+   * Long values.
+   * This method is similar to TagField.in() but for numeric arrays.
+   * 
+   * @param values the Long values to check for membership in the array
+   * @return an InPredicate that matches entities where this numeric array field contains any of the specified values
+   */
+  @SuppressWarnings(
+    "unchecked"
+  )
+  public InPredicate<E, ?> containsLong(Long... values) {
+    return new InPredicate<>(searchFieldAccessor, Arrays.asList(values));
+  }
+
+  /**
+   * Creates an array membership predicate for this numeric field to check if the array contains any of the specified
+   * Integer values.
+   * This method is similar to TagField.in() but for numeric arrays.
+   * 
+   * @param values the Integer values to check for membership in the array
+   * @return an InPredicate that matches entities where this numeric array field contains any of the specified values
+   */
+  @SuppressWarnings(
+    "unchecked"
+  )
+  public InPredicate<E, ?> containsInt(Integer... values) {
+    return new InPredicate<>(searchFieldAccessor, Arrays.asList(values));
+  }
+
 }
