@@ -137,6 +137,39 @@ public List<Product> findGamingLaptops() {
 }
 ----
 
+=== Numeric Array Field Methods
+
+For `NumericField` instances that represent arrays or collections, additional methods are available for array containment queries:
+
+[source,java]
+----
+@Document
+public class DataAnalysis {
+    @Id
+    private String id;
+    
+    @Indexed
+    private List<Double> measurements;
+    
+    @Indexed
+    private List<Long> counts; 
+    
+    @Indexed
+    private List<Integer> ratings;
+}
+
+// Generated metamodel provides specialized methods for numeric arrays
+public List<DataAnalysis> findByArrayContents() {
+    return entityStream.of(DataAnalysis.class)
+        .filter(DataAnalysis$.MEASUREMENTS.containsDouble(1.5, 2.5, 3.5))  // For double arrays
+        .filter(DataAnalysis$.COUNTS.containsLong(100L, 200L, 300L))       // For long arrays  
+        .filter(DataAnalysis$.RATINGS.containsInt(4, 5))                   // For int arrays
+        .collect(Collectors.toList());
+}
+----
+
+These methods work similarly to `TagField.in()` but provide type-safe containment searches specifically for numeric arrays.
+
 
 == Metamodel with Entity Streams
 

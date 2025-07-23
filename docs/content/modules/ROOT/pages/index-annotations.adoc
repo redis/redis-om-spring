@@ -221,8 +221,15 @@ public class Company {
     
     @Indexed  // Complex objects in collections
     private Set<Employee> employees;
-}
+    
+    @Indexed  // Numeric arrays support containment searches
+    private List<Double> scores;
+    
+    @Indexed  // Works with primitive arrays too
+    private int[] ratings;
 ----
+
+NOTE: Numeric arrays and collections indexed with `@Indexed` support containment searches using `containsDouble()`, `containsLong()`, and `containsInt()` methods on the generated metamodel fields. See xref:entity-streams.adoc#_numeric_array_queries[Numeric Array Queries] for examples.
 
 == Index Configuration
 
