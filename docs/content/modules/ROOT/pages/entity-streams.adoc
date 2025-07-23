@@ -91,6 +91,30 @@ List<Company> specificYears = entityStream.of(Company.class)
     .collect(Collectors.toList());
 ----
 
+=== Numeric Array Queries
+
+For numeric array fields (indexed with `@Indexed` or `@NumericIndexed`), you can search for entities where the array contains any of the specified values:
+
+[source,java]
+----
+// Find entities where double array contains any of the specified values
+List<DataAnalysis> highScores = entityStream.of(DataAnalysis.class)
+    .filter(DataAnalysis$.SCORES.containsDouble(85.5, 92.3, 95.0))
+    .collect(Collectors.toList());
+
+// Find entities where long array contains any of the specified values  
+List<Statistics> largeCounts = entityStream.of(Statistics.class)
+    .filter(Statistics$.COUNTS.containsLong(1000L, 5000L, 10000L))
+    .collect(Collectors.toList());
+
+// Find entities where integer array contains any of the specified values
+List<Survey> topRated = entityStream.of(Survey.class)
+    .filter(Survey$.RATINGS.containsInt(4, 5))
+    .collect(Collectors.toList());
+----
+
+NOTE: These methods work similarly to `TagField.in()` but are specifically designed for numeric arrays, providing type-safe array containment searches.
+
 === String Operations
 
 [source,java]
