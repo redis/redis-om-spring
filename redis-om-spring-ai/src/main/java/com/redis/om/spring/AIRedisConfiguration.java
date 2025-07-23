@@ -386,10 +386,11 @@ public class AIRedisConfiguration {
   /**
    * Creates a HuggingFace sentence tokenizer for text processing.
    * This tokenizer is used to prepare text for sentence embedding models.
-   * Checks connectivity to HuggingFace before attempting to download the tokenizer.
+   * First attempts to load from bundled resources, then falls back to downloading
+   * from HuggingFace if network is available.
    *
    * @param properties AI Redis OM configuration properties containing tokenizer settings
-   * @return a configured HuggingFaceTokenizer, or null if unable to connect or load
+   * @return a configured HuggingFaceTokenizer, or null if unable to load
    */
   @Bean(
       name = "djlSentenceTokenizer"
@@ -400,12 +401,26 @@ public class AIRedisConfiguration {
         "modelMaxLength", properties.getDjl().getSentenceTokenizerModelMaxLength() //
     );
 
+    // First try to load from bundled resources (for CI/offline environments)
+    try {
+      String resourcePath = "/tokenizers/" + properties.getDjl().getSentenceTokenizerModel() + "/tokenizer.json";
+      var resourceStream = getClass().getResourceAsStream(resourcePath);
+      if (resourceStream != null) {
+        logger.info("Loading HuggingFace tokenizer from bundled resources: " + resourcePath);
+        return HuggingFaceTokenizer.newInstance(resourceStream, options);
+      }
+    } catch (Exception e) {
+      logger.debug("Failed to load tokenizer from bundled resources, will try downloading", e);
+    }
+
+    // Fall back to downloading from HuggingFace (for normal environments)
     try {
       //noinspection ResultOfMethodCallIgnored
       InetAddress.getByName("www.huggingface.co").isReachable(5000);
+      logger.info("Loading HuggingFace tokenizer from remote: " + properties.getDjl().getSentenceTokenizerModel());
       return HuggingFaceTokenizer.newInstance(properties.getDjl().getSentenceTokenizerModel(), options);
     } catch (IOException ioe) {
-      logger.warn("Error retrieving default DJL sentence tokenizer");
+      logger.warn("Unable to download HuggingFace tokenizer (network unavailable or restricted environment)");
       return null;
     }
   }
