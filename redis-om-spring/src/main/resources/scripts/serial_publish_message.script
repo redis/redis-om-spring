@@ -1,0 +1,40 @@
+local stream_key = KEYS[1]
+local retention_time_seconds = tonumber(ARGV[1])
+local max_stream_length = tonumber(ARGV[2])
+local stream_switch_ttl = tonumber(ARGV[3])
+
+local function slice(data, start)
+    local table_copy = {}
+    for i, element in ipairs(data) do
+        if (i >= start) then
+            table.insert(table_copy, element)
+        end
+    end
+
+    return table_copy
+end
+
+local length = redis.call("XLEN", stream_key)
+if (tonumber(length) > (tonumber(max_stream_length) - 1)) then
+    return nil
+end
+
+-- Get the current TTL
+local ttl = tonumber(redis.call("TTL", stream_key))
+
+-- If the TTL is greater than 0, then the key exists and the TTL was set at some point
+if (ttl >= 0) then
+    -- If the TTL is less than the stream switch value, then we return nil
+    -- so that the caller will select the next stream
+    if (ttl <= stream_switch_ttl) then
+        return nil
+    end
+else
+    -- In this case, the stream was created at some point and is now expired. Therefore, return nil
+    return nil
+end
+
+local message = slice(ARGV, 4)
+local id = redis.call("XADD", stream_key, "*", unpack(message))
+
+return id

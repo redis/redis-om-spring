@@ -1,0 +1,34 @@
+    local topic_config_key = KEYS[1]
+    local stream_index_key = KEYS[2]
+    local full_streams_key = KEYS[3]
+    local topic_config_stream_id_field = ARGV[1]
+    local stream_base_name = ARGV[2]
+    local retention_time_seconds = ARGV[3]
+    local producer_stream_id = tonumber(ARGV[4])
+    local stream_expiry_at = ARGV[5]
+
+    -- Determine whether a current stream id exists in the config
+    local current_stream_id = redis.call("HGET", topic_config_key, topic_config_stream_id_field)
+
+    -- If it's null, no stream name has ever been created.
+    -- So, set the current stream id to 0. Then add the stream name to the list of stream names.
+    if ((current_stream_id == false) or (current_stream_id == nil)) then
+        local stream_id = "0"
+        redis.call("HSET", topic_config_key, topic_config_stream_id_field, stream_id)
+        local next_stream_name = stream_base_name .. stream_id
+        redis.call("ZADD", stream_index_key, stream_expiry_at, next_stream_name)
+        return next_stream_name
+    else
+        -- We need to perform this check to confirm that we should create a new stream name.
+        local latest_stream_name = stream_base_name .. current_stream_id
+        local full = redis.call("ZSCORE", full_streams_key, latest_stream_name)
+
+        if ((full ~= nil) and (producer_stream_id == tonumber(current_stream_id))) then
+            local next_stream_id = redis.call("HINCRBY", topic_config_key, topic_config_stream_id_field, 1)
+            local next_stream_name = stream_base_name .. next_stream_id
+            redis.call("ZADD", stream_index_key, stream_expiry_at, next_stream_name)
+            return next_stream_name
+        else
+            return latest_stream_name
+        end
+    end

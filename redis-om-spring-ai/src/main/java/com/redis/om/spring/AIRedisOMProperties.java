@@ -232,10 +232,10 @@ public class AIRedisOMProperties {
 
     /**
      * Model identifier for sentence embeddings.
-     * Default is "sentence-transformers/msmarco-distilbert-dot-v5".
+     * Default is "https://huggingface.co/sentence-transformers/msmarco-distilbert-dot-v5".
      */
     @NotNull
-    private String sentenceTokenizerModel = "sentence-transformers/msmarco-distilbert-dot-v5";
+    private String sentenceTokenizerModel = "https://huggingface.co/sentence-transformers/msmarco-distilbert-dot-v5";
 
     // face detection
     /**

@@ -1,0 +1,45 @@
+local topic_config_key = KEYS[1]
+local group_config_key = KEYS[2]
+local stream_index_key = KEYS[3]
+local full_streams_key = KEYS[4]
+
+local group_name = ARGV[1]
+local empty_stream_name = ARGV[2]
+local empty_stream_id = ARGV[3]
+local retention_time_seconds = ARGV[4]
+local current_stream_field_name = ARGV[5]
+local topic_config_stream_id_field = ARGV[6]
+local stream_base_name = ARGV[7]
+
+-- Get the name of the current stream for the consumer group
+local current_latest_stream_name = redis.call("HGET", group_config_key, current_stream_field_name)
+
+if (current_latest_stream_name ~= empty_stream_name) then
+    return current_latest_stream_name
+
+-- Otherwise, it's time to advance the stream. Advance only if the current stream
+-- has been marked full and there's a new stream to advance to.
+else
+    local full = redis.call("ZSCORE", full_streams_key, empty_stream_name)
+
+    -- If the current stream has not been marked full, return the current stream.
+    if (full == nil) then
+        return current_latest_stream_name
+    -- The current stream is full, so try to get the next one.
+    else
+        -- If the current stream id is less than the latest stream id, then there's a new stream
+        local latest_stream_id = redis.call("HGET", topic_config_key, topic_config_stream_id_field)
+        if (latest_stream_id == nil or latest_stream_id == false) then
+            return current_latest_stream_name
+        else
+            if (tonumber(latest_stream_id) > tonumber(empty_stream_id)) then
+                local subsequent_stream_id = tostring(tonumber(empty_stream_id) + 1)
+                local next_current_stream = stream_base_name .. subsequent_stream_id
+                redis.call("HSET", group_config_key, current_stream_field_name, next_current_stream)
+                return next_current_stream
+            else
+                return current_latest_stream_name
+            end
+        end
+    end
+end

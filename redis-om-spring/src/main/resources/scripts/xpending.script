@@ -1,0 +1,15 @@
+    local stream_key = KEYS[1]
+    local group_name = ARGV[1]
+    local min_id = ARGV[2]
+    local max_id = ARGV[3]
+    local max_entries = ARGV[4]
+
+    if ((max_entries == nil) or (tonumber(max_entries)) > 1000) then
+        max_entries = "1000"
+    end
+
+    -- Just to raise an error if key or group do not exist
+    -- redis.call("XPENDING", stream_key, group_name)
+
+    local pel_key = string.format("__PEL_{%s}_%s", stream_key, group_name)
+    return redis.call("XRANGE", pel_key, min_id, max_id, "COUNT", max_entries)
