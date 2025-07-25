@@ -463,15 +463,15 @@ public class RediSearchIndexer {
         if (CharSequence.class.isAssignableFrom(fieldType) || //
             (fieldType == Boolean.class) || (fieldType == UUID.class) || (fieldType == Ulid.class)) {
           fields.add(SearchField.of(field, indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed
-              .separator(), indexed.arrayIndex(), indexed.alias())));
+              .separator(), indexed.arrayIndex(), indexed.alias(), indexed.indexMissing(), indexed.indexEmpty())));
         } else if (fieldType.isEnum()) {
           if (Objects.requireNonNull(indexed.serializationHint()) == SerializationHint.ORDINAL) {
             fields.add(SearchField.of(field, indexAsNumericFieldFor(field, isDocument, prefix, indexed.sortable(),
-                indexed.noindex(), indexed.alias())));
+                indexed.noindex(), indexed.alias(), indexed.indexMissing(), indexed.indexEmpty())));
             gsonBuilder.registerTypeAdapter(fieldType, EnumTypeAdapter.of(fieldType));
           } else {
             fields.add(SearchField.of(field, indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed
-                .separator(), indexed.arrayIndex(), indexed.alias())));
+                .separator(), indexed.arrayIndex(), indexed.alias(), indexed.indexMissing(), indexed.indexEmpty())));
           }
         }
         //
@@ -486,7 +486,7 @@ public class RediSearchIndexer {
             (field.getType() == OffsetDateTime.class) //
         ) {
           fields.add(SearchField.of(field, indexAsNumericFieldFor(field, isDocument, prefix, indexed.sortable(), indexed
-              .noindex(), indexed.alias())));
+              .noindex(), indexed.alias(), indexed.indexMissing(), indexed.indexEmpty())));
         }
         //
         // Set / List
@@ -505,16 +505,16 @@ public class RediSearchIndexer {
 
             if (CharSequence.class.isAssignableFrom(collectionType) || (collectionType == Boolean.class)) {
               fields.add(SearchField.of(field, indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(), indexed
-                  .separator(), indexed.arrayIndex(), indexed.alias())));
+                  .separator(), indexed.arrayIndex(), indexed.alias(), indexed.indexMissing(), indexed.indexEmpty())));
             } else if (isDocument) {
               if (Number.class.isAssignableFrom(collectionType)) {
                 fields.add(SearchField.of(field, indexAsNumericFieldFor(field, true, prefix, indexed.sortable(), indexed
-                    .noindex(), indexed.alias())));
+                    .noindex(), indexed.alias(), indexed.indexMissing(), indexed.indexEmpty())));
               } else if (collectionType == Point.class) {
                 fields.add(SearchField.of(field, indexAsGeoFieldFor(field, true, prefix, indexed.alias())));
               } else if (collectionType == UUID.class || collectionType == Ulid.class) {
                 fields.add(SearchField.of(field, indexAsTagFieldFor(field, true, prefix, indexed.sortable(), indexed
-                    .separator(), 0, indexed.alias())));
+                    .separator(), 0, indexed.alias(), indexed.indexMissing(), indexed.indexEmpty())));
               } else {
                 // Index nested JSON fields
                 logger.debug(String.format("Found nested field on field of type: %s", field.getType()));
@@ -546,9 +546,10 @@ public class RediSearchIndexer {
       } else { // Schema field type hardcoded/set in @Indexed
         switch (indexed.schemaFieldType()) {
           case TAG -> fields.add(SearchField.of(field, indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(),
-              indexed.separator(), indexed.arrayIndex(), indexed.alias())));
+              indexed.separator(), indexed.arrayIndex(), indexed.alias(), indexed.indexMissing(), indexed
+                  .indexEmpty())));
           case NUMERIC -> fields.add(SearchField.of(field, indexAsNumericFieldFor(field, isDocument, prefix, indexed
-              .sortable(), indexed.noindex(), indexed.alias())));
+              .sortable(), indexed.noindex(), indexed.alias(), indexed.indexMissing(), indexed.indexEmpty())));
           case GEO -> fields.add(SearchField.of(field, indexAsGeoFieldFor(field, true, prefix, indexed.alias())));
           case VECTOR -> fields.add(SearchField.of(field, indexAsVectorFieldFor(field, isDocument, prefix, indexed)));
           case NESTED -> {
@@ -676,9 +677,16 @@ public class RediSearchIndexer {
 
   private SchemaField indexAsTagFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix,
       boolean sortable, String separator, int arrayIndex, String annotationAlias) {
+    return indexAsTagFieldFor(field, isDocument, prefix, sortable, separator, arrayIndex, annotationAlias, false,
+        false);
+  }
+
+  private SchemaField indexAsTagFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix,
+      boolean sortable, String separator, int arrayIndex, String annotationAlias, boolean indexMissing,
+      boolean indexEmpty) {
     FieldName fieldName = buildFieldName(field, prefix, isDocument, Optional.ofNullable(annotationAlias), Optional.of(
         arrayIndex));
-    return getTagField(fieldName, separator, sortable);
+    return getTagField(fieldName, separator, sortable, indexMissing, indexEmpty);
   }
 
   private TextField indexAsTextFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix,
@@ -710,6 +718,11 @@ public class RediSearchIndexer {
 
   private NumericField indexAsNumericFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix,
       boolean sortable, boolean noIndex, String annotationAlias) {
+    return indexAsNumericFieldFor(field, isDocument, prefix, sortable, noIndex, annotationAlias, false, false);
+  }
+
+  private NumericField indexAsNumericFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix,
+      boolean sortable, boolean noIndex, String annotationAlias, boolean indexMissing, boolean indexEmpty) {
     var fieldName = buildFieldName(field, prefix, isDocument, Optional.ofNullable(annotationAlias), Optional.empty());
 
     NumericField num = NumericField.of(fieldName);
@@ -717,6 +730,11 @@ public class RediSearchIndexer {
       num.sortable();
     if (noIndex)
       num.noIndex();
+    if (indexMissing)
+      num.indexMissing();
+    // Note: NumericField doesn't support indexEmpty() in current Jedis version
+    // if (indexEmpty)
+    //   num.indexEmpty();
     return num;
   }
 
@@ -827,6 +845,11 @@ public class RediSearchIndexer {
   }
 
   private TagField getTagField(FieldName fieldName, String separator, boolean sortable) {
+    return getTagField(fieldName, separator, sortable, false, false);
+  }
+
+  private TagField getTagField(FieldName fieldName, String separator, boolean sortable, boolean indexMissing,
+      boolean indexEmpty) {
     TagField tag = TagField.of(fieldName);
     if (separator != null) {
       if (separator.length() != 1) {
@@ -836,6 +859,10 @@ public class RediSearchIndexer {
     }
     if (sortable)
       tag.sortable();
+    if (indexMissing)
+      tag.indexMissing();
+    if (indexEmpty)
+      tag.indexEmpty();
     return tag;
   }
 

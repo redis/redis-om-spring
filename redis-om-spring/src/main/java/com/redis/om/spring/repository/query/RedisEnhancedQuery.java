@@ -622,9 +622,17 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     for (List<Pair<String, QueryClause>> orPartParts : queryOrParts) {
       for (Pair<String, QueryClause> pair : orPartParts) {
         if (pair.getSecond() == QueryClause.IS_NULL) {
-          aggregation.filter("!exists(@" + pair.getFirst() + ")");
+          if (hasIndexMissing(pair.getFirst())) {
+            aggregation.filter("ismissing(@" + pair.getFirst() + ")");
+          } else {
+            aggregation.filter("!exists(@" + pair.getFirst() + ")");
+          }
         } else if (pair.getSecond() == QueryClause.IS_NOT_NULL) {
-          aggregation.filter("exists(@" + pair.getFirst() + ")");
+          if (hasIndexMissing(pair.getFirst())) {
+            aggregation.filter("!ismissing(@" + pair.getFirst() + ")");
+          } else {
+            aggregation.filter("exists(@" + pair.getFirst() + ")");
+          }
         }
       }
     }
@@ -898,9 +906,17 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     for (List<Pair<String, QueryClause>> orPartParts : queryOrParts) {
       for (Pair<String, QueryClause> pair : orPartParts) {
         if (pair.getSecond() == QueryClause.IS_NULL) {
-          aggregation.filter("!exists(@" + pair.getFirst() + ")");
+          if (hasIndexMissing(pair.getFirst())) {
+            aggregation.filter("ismissing(@" + pair.getFirst() + ")");
+          } else {
+            aggregation.filter("!exists(@" + pair.getFirst() + ")");
+          }
         } else if (pair.getSecond() == QueryClause.IS_NOT_NULL) {
-          aggregation.filter("exists(@" + pair.getFirst() + ")");
+          if (hasIndexMissing(pair.getFirst())) {
+            aggregation.filter("!ismissing(@" + pair.getFirst() + ")");
+          } else {
+            aggregation.filter("exists(@" + pair.getFirst() + ")");
+          }
         }
       }
     }
@@ -969,6 +985,40 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       return entities.isEmpty() ? null : entities.get(0);
     } else {
       return entities;
+    }
+  }
+
+  /**
+   * Checks if a field has indexMissing enabled by examining its annotations.
+   * 
+   * @param fieldName the name of the field to check
+   * @return true if the field has indexMissing = true, false otherwise
+   */
+  private boolean hasIndexMissing(String fieldName) {
+    try {
+      Field field = ReflectionUtils.findField(domainType, fieldName);
+      if (field == null) {
+        return false;
+      }
+
+      // Check @Indexed annotation
+      if (field.isAnnotationPresent(com.redis.om.spring.annotations.Indexed.class)) {
+        com.redis.om.spring.annotations.Indexed indexed = field.getAnnotation(
+            com.redis.om.spring.annotations.Indexed.class);
+        return indexed.indexMissing();
+      }
+
+      // Check @Searchable annotation  
+      if (field.isAnnotationPresent(com.redis.om.spring.annotations.Searchable.class)) {
+        com.redis.om.spring.annotations.Searchable searchable = field.getAnnotation(
+            com.redis.om.spring.annotations.Searchable.class);
+        return searchable.indexMissing();
+      }
+
+      return false;
+    } catch (Exception e) {
+      logger.debug("Failed to check indexMissing for field: " + fieldName, e);
+      return false;
     }
   }
 }
