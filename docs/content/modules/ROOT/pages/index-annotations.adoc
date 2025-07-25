@@ -259,6 +259,72 @@ public class Company {
 * `maxTextFields` - Whether to index all text fields (default: false)
 * `temporaryIndex` - Create temporary index (default: false)
 
+== Advanced Null and Empty Value Indexing
+
+=== IndexMissing and IndexEmpty Support
+
+Redis OM Spring supports advanced null and empty value indexing using the `indexMissing` and `indexEmpty` parameters, which leverage Redis Query Engine's INDEXMISSING and INDEXEMPTY features:
+
+[source,java]
+----
+@Document
+public class Product {
+    @Id
+    private String id;
+    
+    @Indexed(indexMissing = true)  // Enhanced null queries 
+    private String title;
+    
+    @Searchable(indexMissing = true, indexEmpty = true)  // Full-text with null/empty
+    private String description;
+    
+    @Indexed(indexMissing = true)  // Numeric fields support indexMissing
+    private Integer price;
+    
+    @Indexed(indexEmpty = true)  // Tag fields support both options
+    private String category;
+}
+----
+
+==== Requirements:
+
+* **Redis Stack 2.10+** required for `indexMissing = true`
+* **Redis Stack 2.10+** required for `indexEmpty = true`
+* **Automatic fallback** to legacy `exists()` queries on older Redis versions
+
+==== Query Behavior:
+
+When `indexMissing = true` is used:
+
+* `findByTitleIsNull()` uses `ismissing(@title)` (Redis Stack 2.10+)
+* `findByTitleIsNotNull()` uses `!ismissing(@title)` (Redis Stack 2.10+)
+* Automatically falls back to `!exists(@title)` on older Redis versions
+
+==== Supported Field Types:
+
+* **TAG fields** (`@Indexed`, `@TagIndexed`) - supports both `indexMissing` and `indexEmpty`
+* **TEXT fields** (`@Searchable`, `@TextIndexed`) - supports both `indexMissing` and `indexEmpty`  
+* **NUMERIC fields** (`@Indexed`, `@NumericIndexed`) - supports `indexMissing` only
+
+==== Repository Query Examples:
+
+[source,java]
+----
+public interface ProductRepository extends RedisDocumentRepository<Product, String> {
+    // Enhanced null queries (uses ismissing() when indexMissing = true)
+    List<Product> findByTitleIsNull();
+    List<Product> findByTitleIsNotNull();
+    
+    // Works with complex queries
+    List<Product> findByTitleIsNullAndPriceGreaterThan(Double price);
+    
+    // Empty string queries (requires indexEmpty = true)
+    List<Product> findByCategoryIsNull();  // Matches both null and empty strings
+}
+----
+
+NOTE: The `indexMissing` and `indexEmpty` options provide more accurate null/empty value queries compared to the legacy `exists()` approach, especially for distinguishing between null values and missing fields.
+
 == Best Practices
 
 * **Use `@Indexed` for most cases** - It auto-detects the appropriate index type
