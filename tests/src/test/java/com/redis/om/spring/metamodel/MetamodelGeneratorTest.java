@@ -443,4 +443,120 @@ class MetamodelGeneratorTest {
   private List<String> getErrorStrings(Results results) {
     return results.find().errors().list().stream().map(w -> w.getMessage(Locale.US)).collect(Collectors.toList());
   }
+
+  @Test
+  @Classpath(
+    "data.metamodel.ValidDocumentNumericIndexedComplex"
+  )
+  void testValidDocumentNumericIndexedComplex(Results results) throws IOException {
+    List<String> warnings = getWarningStrings(results);
+    assertThat(warnings).isEmpty();
+
+    List<String> errors = getErrorStrings(results);
+    assertThat(errors).isEmpty();
+
+    assertThat(results.generated).hasSize(1);
+    JavaFileObject metamodel = results.generated.get(0);
+    assertThat(metamodel.getName()).isEqualTo("/SOURCE_OUTPUT/valid/ValidDocumentNumericIndexedComplex$.java");
+
+    var fileContents = metamodel.getCharContent(true);
+
+    assertAll( //
+        // Test the exact case from the GitHub issue
+        () -> assertThat(fileContents).contains(
+            "public static NumericField<ValidDocumentNumericIndexedComplex, Double> ISSUE_REPORTED_FIELD;"),
+        () -> assertThat(fileContents).contains(
+            "public static NumericField<ValidDocumentNumericIndexedComplex, Double> INDEXED_FIELD;"),
+
+        // Test all numeric types work with @NumericIndexed
+        () -> assertThat(fileContents).contains(
+            "public static NumericField<ValidDocumentNumericIndexedComplex, Integer> INTEGER_FIELD;"),
+        () -> assertThat(fileContents).contains(
+            "public static NumericField<ValidDocumentNumericIndexedComplex, Long> LONG_FIELD;"),
+        () -> assertThat(fileContents).contains(
+            "public static NumericField<ValidDocumentNumericIndexedComplex, Float> FLOAT_FIELD;"),
+        () -> assertThat(fileContents).contains(
+            "public static NumericField<ValidDocumentNumericIndexedComplex, BigDecimal> BIG_DECIMAL_FIELD;"),
+        () -> assertThat(fileContents).contains(
+            "public static NumericField<ValidDocumentNumericIndexedComplex, BigInteger> BIG_INTEGER_FIELD;"),
+
+        // Test primitive types
+        () -> assertThat(fileContents).contains(
+            "public static NumericField<ValidDocumentNumericIndexedComplex, Integer> PRIMITIVE_INT;"),
+        () -> assertThat(fileContents).contains(
+            "public static NumericField<ValidDocumentNumericIndexedComplex, Long> PRIMITIVE_LONG;"),
+        () -> assertThat(fileContents).contains(
+            "public static NumericField<ValidDocumentNumericIndexedComplex, Double> PRIMITIVE_DOUBLE;"),
+        () -> assertThat(fileContents).contains(
+            "public static NumericField<ValidDocumentNumericIndexedComplex, Float> PRIMITIVE_FLOAT;")
+    );
+  }
+
+  @Test
+  @Classpath(
+    "data.metamodel.ValidDocumentNumericIndexed"
+  )
+  void testValidDocumentNumericIndexed(Results results) throws IOException {
+    List<String> warnings = getWarningStrings(results);
+    assertThat(warnings).isEmpty();
+
+    List<String> errors = getErrorStrings(results);
+    assertThat(errors).isEmpty();
+
+    assertThat(results.generated).hasSize(1);
+    JavaFileObject metamodel = results.generated.get(0);
+    assertThat(metamodel.getName()).isEqualTo("/SOURCE_OUTPUT/valid/ValidDocumentNumericIndexed$.java");
+
+    var fileContents = metamodel.getCharContent(true);
+
+    assertAll( //
+
+        // test package matches source package
+        () -> assertThat(fileContents).contains("package valid;"), //
+
+        // test Fields generation
+        () -> assertThat(fileContents).contains("public static Field id;"), //
+        () -> assertThat(fileContents).contains("public static Field price;"), //
+        () -> assertThat(fileContents).contains("public static Field quantity;"), //
+        () -> assertThat(fileContents).contains("public static Field rating;"), //
+
+        // test fields initialization
+        () -> assertThat(fileContents).contains(
+            "id = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentNumericIndexed.class, \"id\");"),
+        //
+        () -> assertThat(fileContents).contains(
+            "price = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentNumericIndexed.class, \"price\");"),
+        //
+        () -> assertThat(fileContents).contains(
+            "quantity = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentNumericIndexed.class, \"quantity\");"),
+        //
+        () -> assertThat(fileContents).contains(
+            "rating = com.redis.om.spring.util.ObjectUtils.getDeclaredFieldTransitively(ValidDocumentNumericIndexed.class, \"rating\");"),
+        //
+
+        // test Metamodel Field generation
+        () -> assertThat(fileContents).contains("public static TextTagField<ValidDocumentNumericIndexed, String> ID;"), //
+        () -> assertThat(fileContents).contains(
+            "public static NumericField<ValidDocumentNumericIndexed, Double> PRICE;"), //
+        () -> assertThat(fileContents).contains(
+            "public static NumericField<ValidDocumentNumericIndexed, Integer> QUANTITY;"), //
+        () -> assertThat(fileContents).contains(
+            "public static NumericField<ValidDocumentNumericIndexed, Float> RATING;"), //
+
+        // test Metamodel Field initialization - verify aliases are used
+        () -> assertThat(fileContents).contains(
+            "ID = new TextTagField<ValidDocumentNumericIndexed, String>(new SearchFieldAccessor(\"id\", \"$.id\", id),true);"),
+        //
+        () -> assertThat(fileContents).contains(
+            "PRICE = new NumericField<ValidDocumentNumericIndexed, Double>(new SearchFieldAccessor(\"price\", \"$.price\", price),true);"),
+        //
+        () -> assertThat(fileContents).contains(
+            "QUANTITY = new NumericField<ValidDocumentNumericIndexed, Integer>(new SearchFieldAccessor(\"qty\", \"$.quantity\", quantity),true);"),
+        //
+        () -> assertThat(fileContents).contains(
+            "RATING = new NumericField<ValidDocumentNumericIndexed, Float>(new SearchFieldAccessor(\"rating\", \"$.rating\", rating),true);"),
+        //
+        () -> assertThat(fileContents).contains(
+            "_KEY = new MetamodelField<ValidDocumentNumericIndexed, String>(\"__key\", String.class, true);"));
+  }
 }
