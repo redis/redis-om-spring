@@ -636,7 +636,9 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
     enclosedFields.forEach((field, getter) -> {
       boolean fieldIsIndexed = (field.getAnnotation(Indexed.class) != null) || (field.getAnnotation(
-          Searchable.class) != null);
+          Searchable.class) != null) || (field.getAnnotation(NumericIndexed.class) != null) || (field.getAnnotation(
+              TagIndexed.class) != null) || (field.getAnnotation(TextIndexed.class) != null) || (field.getAnnotation(
+                  GeoIndexed.class) != null) || (field.getAnnotation(VectorIndexed.class) != null);
       boolean generateMetamodel = field.getAnnotation(Metamodel.class) != null;
 
       if (fieldIsIndexed || generateMetamodel) {
