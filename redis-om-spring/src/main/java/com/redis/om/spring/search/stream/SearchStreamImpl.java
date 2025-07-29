@@ -648,11 +648,15 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     if (projections.isEmpty()) {
       if (isDocument) {
         Gson g = getGson();
-        return searchResult.getDocuments().stream().map(d -> g.fromJson(SafeEncoder.encode((byte[]) d.get("$")),
-            entityClass)).toList();
+        return searchResult.getDocuments().stream().map(d -> {
+          E entity = g.fromJson(SafeEncoder.encode((byte[]) d.get("$")), entityClass);
+          return ObjectUtils.populateRedisKey(entity, d.getId());
+        }).toList();
       } else {
-        return searchResult.getDocuments().stream().map(d -> (E) ObjectUtils.documentToObject(d, entityClass,
-            mappingConverter)).toList();
+        return searchResult.getDocuments().stream().map(d -> {
+          E entity = (E) ObjectUtils.documentToObject(d, entityClass, mappingConverter);
+          return ObjectUtils.populateRedisKey(entity, d.getId());
+        }).toList();
       }
     } else {
       List<E> projectedEntities = new ArrayList<>();

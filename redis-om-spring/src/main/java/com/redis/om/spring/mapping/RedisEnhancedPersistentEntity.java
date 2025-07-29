@@ -1,7 +1,9 @@
 package com.redis.om.spring.mapping;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.keyvalue.core.mapping.KeySpaceResolver;
 import org.springframework.data.mapping.MappingException;
@@ -11,6 +13,9 @@ import org.springframework.data.redis.core.mapping.RedisPersistentEntity;
 import org.springframework.data.redis.core.mapping.RedisPersistentProperty;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.lang.Nullable;
+
+import com.redis.om.spring.annotations.RedisKey;
+import com.redis.om.spring.util.ObjectUtils;
 
 import jakarta.persistence.IdClass;
 
@@ -45,6 +50,7 @@ public class RedisEnhancedPersistentEntity<T> extends BasicRedisPersistentEntity
 
   private final List<RedisPersistentProperty> idProperties = new ArrayList<>();
   private final boolean hasIdClass;
+  private volatile Optional<Field> redisKeyField = null; // Lazy initialized
 
   /**
    * Creates a new {@code RedisEnhancedPersistentEntity} for the given type information.
@@ -124,5 +130,63 @@ public class RedisEnhancedPersistentEntity<T> extends BasicRedisPersistentEntity
    */
   public boolean isIdClassComposite() {
     return hasIdClass;
+  }
+
+  /**
+   * Returns the field annotated with @RedisKey if present.
+   * This method caches the result for performance.
+   * 
+   * @return an {@link Optional} containing the @RedisKey field if present,
+   *         or an empty Optional if no field has the annotation
+   */
+  public Optional<Field> getRedisKeyField() {
+    if (redisKeyField == null) {
+      synchronized (this) {
+        if (redisKeyField == null) {
+          redisKeyField = findRedisKeyField();
+        }
+      }
+    }
+    return redisKeyField;
+  }
+
+  /**
+   * Populates the @RedisKey field of the given entity with the provided Redis key.
+   * This method uses the cached field information for optimal performance.
+   * 
+   * @param entity   the entity to populate
+   * @param redisKey the Redis key to set
+   * @param <E>      the entity type
+   * @return the entity with populated @RedisKey field
+   */
+  @SuppressWarnings(
+    "unchecked"
+  )
+  public <E> E populateRedisKey(E entity, String redisKey) {
+    if (entity == null || redisKey == null) {
+      return entity;
+    }
+
+    Optional<Field> fieldOpt = getRedisKeyField();
+    if (fieldOpt.isPresent()) {
+      try {
+        fieldOpt.get().set(entity, redisKey);
+      } catch (IllegalAccessException e) {
+        throw new RuntimeException("Failed to set @RedisKey field", e);
+      }
+    }
+
+    return entity;
+  }
+
+  private Optional<Field> findRedisKeyField() {
+    List<Field> fields = ObjectUtils.getDeclaredFieldsTransitively(getType());
+    for (Field field : fields) {
+      if (field.isAnnotationPresent(RedisKey.class)) {
+        field.setAccessible(true);
+        return Optional.of(field);
+      }
+    }
+    return Optional.empty();
   }
 }

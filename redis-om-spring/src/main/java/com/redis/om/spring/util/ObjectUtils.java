@@ -14,6 +14,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -60,6 +61,7 @@ public class ObjectUtils {
    */
   public static final Character REPLACEMENT_CHARACTER = '_';
   static final Set<String> JAVA_LITERAL_WORDS = Set.of("true", "false", "null");
+  private static final ConcurrentHashMap<Class<?>, Boolean> HAS_REDIS_KEY_CACHE = new ConcurrentHashMap<>();
   // Java reserved keywords
   static final Set<String> JAVA_RESERVED_WORDS = Collections.unmodifiableSet(Stream.of(
       // Unused
@@ -1032,5 +1034,49 @@ public class ObjectUtils {
     } catch (Exception e) {
       throw new RuntimeException("Error getting property value", e);
     }
+  }
+
+  /**
+   * Populates fields annotated with @RedisKey with the Redis key value.
+   * This method searches for fields annotated with @RedisKey and sets their value
+   * to the provided Redis key.
+   *
+   * @param entity   the entity to populate
+   * @param redisKey the Redis key to set
+   * @param <T>      the entity type
+   * @return the entity with populated @RedisKey field
+   */
+  public static <T> T populateRedisKey(T entity, String redisKey) {
+    if (entity == null || redisKey == null) {
+      return entity;
+    }
+
+    Class<?> clazz = entity.getClass();
+
+    // Quick check: if this class doesn't have @RedisKey fields, return early
+    Boolean hasRedisKey = HAS_REDIS_KEY_CACHE.computeIfAbsent(clazz, cls -> {
+      List<Field> fields = getDeclaredFieldsTransitively(cls);
+      return fields.stream().anyMatch(f -> f.isAnnotationPresent(com.redis.om.spring.annotations.RedisKey.class));
+    });
+
+    if (!hasRedisKey) {
+      return entity;
+    }
+
+    // If we get here, we know there's at least one @RedisKey field
+    List<Field> fields = getDeclaredFieldsTransitively(clazz);
+
+    for (Field field : fields) {
+      if (field.isAnnotationPresent(com.redis.om.spring.annotations.RedisKey.class)) {
+        try {
+          field.setAccessible(true);
+          field.set(entity, redisKey);
+        } catch (IllegalAccessException e) {
+          throw new RuntimeException("Failed to set @RedisKey field", e);
+        }
+      }
+    }
+
+    return entity;
   }
 }

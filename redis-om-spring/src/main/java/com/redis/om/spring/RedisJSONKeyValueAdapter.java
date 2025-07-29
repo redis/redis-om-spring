@@ -197,7 +197,18 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     @SuppressWarnings(
       "unchecked"
     ) JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
-    return ops.get(key, type);
+    T entity = ops.get(key, type);
+    if (entity != null) {
+      // Use optimized method if we can get the persistent entity
+      RedisPersistentEntity<?> persistentEntity = mappingContext.getPersistentEntity(type);
+      if (persistentEntity instanceof RedisEnhancedPersistentEntity) {
+        ((RedisEnhancedPersistentEntity<?>) persistentEntity).populateRedisKey(entity, key);
+      } else {
+        // Fallback to utility method
+        ObjectUtils.populateRedisKey(entity, key);
+      }
+    }
+    return entity;
   }
 
   /**
@@ -222,8 +233,19 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
     query.limit(Math.toIntExact(offset), limit);
     SearchResult searchResult = searchOps.search(query);
     Gson gson = gsonBuilder.create();
-    return searchResult.getDocuments().stream().map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get("$")), type)) //
-        .toList();
+
+    // Get persistent entity once for all results
+    RedisPersistentEntity<?> persistentEntity = mappingContext.getPersistentEntity(type);
+    boolean useOptimized = persistentEntity instanceof RedisEnhancedPersistentEntity;
+
+    return searchResult.getDocuments().stream().map(d -> {
+      T entity = gson.fromJson(SafeEncoder.encode((byte[]) d.get("$")), type);
+      if (useOptimized) {
+        return ((RedisEnhancedPersistentEntity<?>) persistentEntity).populateRedisKey(entity, d.getId());
+      } else {
+        return ObjectUtils.populateRedisKey(entity, d.getId());
+      }
+    }).toList();
   }
 
   /**
