@@ -95,11 +95,27 @@ public class EqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
       Iterable<?> values = (Iterable<?>) getValue();
       QueryNode and = QueryBuilders.intersect();
       for (Object v : values) {
-        and.add(getSearchAlias(), "{\"" + v.toString() + "\"}");
+        and.add(getSearchAlias(), escapeTagValue(v.toString()));
       }
       return QueryBuilders.intersect(root, and);
     } else {
-      return QueryBuilders.intersect(root).add(getSearchAlias(), "{\"" + value.toString() + "\"}");
+      return QueryBuilders.intersect(root).add(getSearchAlias(), escapeTagValue(value.toString()));
+    }
+  }
+
+  /**
+   * Escapes a tag value for Redis tag queries.
+   * Values with special characters need to be escaped.
+   */
+  private String escapeTagValue(String value) {
+    // Check if the value contains special characters that need escaping
+    // Special characters in Redis tags: space, comma, period, <, >, {, }, [, ], ", ', :, ;, !, @, #, $, %, ^, &, *, (, ), -, +, =, ~, /
+    if (value.matches(".*[\\s,.<>{}\\[\\]\"':;!@#$%^&*()\\-+=~/].*")) {
+      // For values with special characters, wrap in quotes to handle escaping
+      return "{\"" + value + "\"}";
+    } else {
+      // For simple values (alphanumeric and underscore), no quotes needed
+      return "{" + value + "}";
     }
   }
 
