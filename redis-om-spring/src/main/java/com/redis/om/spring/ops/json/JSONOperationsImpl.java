@@ -61,7 +61,9 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
   @Override
   public String get(K key) {
     var result = client.clientForJSON().jsonGet(key.toString(), Path2.ROOT_PATH);
-    if (result instanceof JSONArray jsonArray) {
+    if (result == null) {
+      return null;
+    } else if (result instanceof JSONArray jsonArray) {
       return !jsonArray.isEmpty() ? jsonArray.get(0).toString() : null;
     } else if (result instanceof LinkedTreeMap<?, ?> linkedTreeMap) {
       return getGson().toJson(linkedTreeMap);
