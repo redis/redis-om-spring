@@ -1,6 +1,7 @@
 package com.redis.om.spring.annotations.document;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -285,5 +286,58 @@ class ReferenceTest extends AbstractBaseDocumentTest {
       assertThat(tmr.getRef9()).isNotNull();
       assertThat(tmr.getRef10()).isNotNull();
     }
+  }
+
+  @Test
+  void testNPEWithMissingReference() {
+    // First create a city with a valid state reference
+    var usa = countryRepository.save(Country.of("USA"));
+    var fl = stateRepository.save(State.of("FL", "Florida", usa));
+    var miami = cityRepository.save(City.of("Miami", fl));
+
+    // Verify the city was saved correctly
+    var savedCity = cityRepository.findById("Miami");
+    assertThat(savedCity).isPresent();
+    assertThat(savedCity.get().getState().getId()).isEqualTo("FL");
+
+    // Now delete the state that the city references
+    stateRepository.deleteById("FL");
+
+    // Verify the state is gone
+    var deletedState = stateRepository.findById("FL");
+    assertThat(deletedState).isEmpty();
+
+    // After the fix, this should no longer throw NPE
+    // Instead, it should return the city with null state reference
+    var cityWithMissingRef = cityRepository.findById("Miami");
+    assertThat(cityWithMissingRef).isPresent();
+    assertThat(cityWithMissingRef.get().getId()).isEqualTo("Miami");
+    assertThat(cityWithMissingRef.get().getState()).isNull();
+  }
+
+  @Test
+  void testCollectionWithMissingReferences() {
+    // Create states and a collection referencing them
+    var usa = countryRepository.save(Country.of("USA"));
+    var ny = stateRepository.save(State.of("NY", "New York", usa));
+    var nj = stateRepository.save(State.of("NJ", "New Jersey", usa));
+    var ct = stateRepository.save(State.of("CT", "Connecticut", usa));
+
+    var statesCollection = statesRepository.save(States.of("Tri-State Area", Set.of(ny, nj, ct)));
+
+    // Verify the collection was saved correctly
+    var saved = statesRepository.findById("Tri-State Area");
+    assertThat(saved).isPresent();
+    assertThat(saved.get().getStates()).hasSize(3);
+
+    // Delete one of the referenced states
+    stateRepository.deleteById("NJ");
+
+    // Retrieving the collection should not throw NPE
+    // It should only contain the existing states
+    var collectionWithMissingRef = statesRepository.findById("Tri-State Area");
+    assertThat(collectionWithMissingRef).isPresent();
+    assertThat(collectionWithMissingRef.get().getStates()).hasSize(2);
+    assertThat(collectionWithMissingRef.get().getStates()).extracting("id").containsExactlyInAnyOrder("NY", "CT");
   }
 }

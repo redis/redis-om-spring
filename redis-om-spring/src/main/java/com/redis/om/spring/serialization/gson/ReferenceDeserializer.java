@@ -106,10 +106,18 @@ public class ReferenceDeserializer implements JsonDeserializer<Object> {
       }
       if (referenceJSON == null) {
         referenceJSON = ops.get(referenceKey);
-        if (referenceCache != null && shouldCache(type)) {
+        if (referenceJSON != null && referenceCache != null && shouldCache(type)) {
           referenceCache.put(referenceKey, referenceJSON);
         }
       }
+
+      // Handle missing reference gracefully
+      if (referenceJSON == null) {
+        logger.warn(String.format("Referenced entity with key '%s' not found for type %s", referenceKey, type
+            .getName()));
+        return null;
+      }
+
       jsonObject = gson.fromJson(referenceJSON, JsonObject.class);
       reference = deserializeEntity(jsonObject, context);
     } else if (json.isJsonObject()) {
@@ -139,8 +147,19 @@ public class ReferenceDeserializer implements JsonDeserializer<Object> {
         } else {
           values = ops.mget(keys);
         }
-        ((Collection) reference).addAll(values.stream().map(raw -> gson.fromJson(raw, JsonObject.class)).map(
-            jo -> deserializeEntity(jo, context)).toList());
+        // Filter out null values (missing references) and log warnings
+        List<Object> deserializedReferences = new ArrayList<>();
+        for (int i = 0; i < values.size(); i++) {
+          String raw = values.get(i);
+          if (raw != null) {
+            JsonObject jo = gson.fromJson(raw, JsonObject.class);
+            deserializedReferences.add(deserializeEntity(jo, context));
+          } else {
+            logger.warn(String.format("Referenced entity with key '%s' not found for type %s", keys[i], type
+                .getName()));
+          }
+        }
+        ((Collection) reference).addAll(deserializedReferences);
       }
     }
 
