@@ -600,8 +600,10 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       Gson gson = gsonBuilder.create();
 
       if (searchResult.getTotalResults() > 0) {
-        List<T> content = searchResult.getDocuments().stream().map(d -> gson.fromJson(SafeEncoder.encode((byte[]) d.get(
-            "$")), metadata.getJavaType())).toList();
+        List<T> content = searchResult.getDocuments().stream().map(d -> {
+          T entity = gson.fromJson(SafeEncoder.encode((byte[]) d.get("$")), metadata.getJavaType());
+          return ObjectUtils.populateRedisKey(entity, d.getId());
+        }).toList();
 
         return new PageImpl<>(content, pageable, searchResult.getTotalResults());
       } else {

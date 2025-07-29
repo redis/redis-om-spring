@@ -580,8 +580,10 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     if (queryMethod.getReturnedObjectType() == SearchResult.class) {
       result = searchResult;
     } else if (queryMethod.isPageQuery()) {
-      List<Object> content = searchResult.getDocuments().stream().map(d -> ObjectUtils.documentToObject(d, queryMethod
-          .getReturnedObjectType(), mappingConverter)).collect(Collectors.toList());
+      List<Object> content = searchResult.getDocuments().stream().map(d -> {
+        Object entity = ObjectUtils.documentToObject(d, queryMethod.getReturnedObjectType(), mappingConverter);
+        return ObjectUtils.populateRedisKey(entity, d.getId());
+      }).collect(Collectors.toList());
 
       if (maybePageable.isPresent()) {
         Pageable pageable = maybePageable.get();
@@ -591,14 +593,17 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       }
     } else if (!queryMethod.isCollectionQuery()) {
       if (searchResult.getTotalResults() > 0 && !searchResult.getDocuments().isEmpty()) {
-        result = ObjectUtils.documentToObject(searchResult.getDocuments().get(0), queryMethod.getReturnedObjectType(),
-            mappingConverter);
+        redis.clients.jedis.search.Document doc = searchResult.getDocuments().get(0);
+        Object entity = ObjectUtils.documentToObject(doc, queryMethod.getReturnedObjectType(), mappingConverter);
+        result = ObjectUtils.populateRedisKey(entity, doc.getId());
       } else {
         result = null;
       }
     } else if (queryMethod.isCollectionQuery()) {
-      result = searchResult.getDocuments().stream().map(d -> ObjectUtils.documentToObject(d, queryMethod
-          .getReturnedObjectType(), mappingConverter)).collect(Collectors.toList());
+      result = searchResult.getDocuments().stream().map(d -> {
+        Object entity = ObjectUtils.documentToObject(d, queryMethod.getReturnedObjectType(), mappingConverter);
+        return ObjectUtils.populateRedisKey(entity, d.getId());
+      }).collect(Collectors.toList());
     } else {
       result = null;
     }

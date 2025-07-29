@@ -255,7 +255,10 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
         @SuppressWarnings(
           "unchecked"
         ) List<T> content = (List<T>) searchResult.getDocuments().stream() //
-            .map(d -> ObjectUtils.documentToObject(d, metadata.getJavaType(), mappingConverter)) //
+            .map(d -> {
+              Object entity = ObjectUtils.documentToObject(d, metadata.getJavaType(), mappingConverter);
+              return ObjectUtils.populateRedisKey(entity, d.getId());
+            }) //
             .toList();
         return new PageImpl<>(content, pageable, searchResult.getTotalResults());
       } else {

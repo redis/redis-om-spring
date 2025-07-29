@@ -231,7 +231,19 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     data.setId(stringId);
     data.setKeyspace(stringKeyspace);
 
-    return readTimeToLiveIfSet(binId, converter.read(type, data));
+    T entity = readTimeToLiveIfSet(binId, converter.read(type, data));
+    if (entity != null) {
+      String redisKey = new String(binId);
+      // Use optimized method if we can get the persistent entity
+      RedisPersistentEntity<?> persistentEntity = converter.getMappingContext().getPersistentEntity(type);
+      if (persistentEntity instanceof RedisEnhancedPersistentEntity) {
+        ((RedisEnhancedPersistentEntity<?>) persistentEntity).populateRedisKey(entity, redisKey);
+      } else {
+        // Fallback to utility method
+        com.redis.om.spring.util.ObjectUtils.populateRedisKey(entity, redisKey);
+      }
+    }
+    return entity;
   }
 
   /*
@@ -326,8 +338,19 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     query.limit(Math.toIntExact(offset), limit);
     SearchResult searchResult = searchOps.search(query);
 
+    // Get persistent entity once for all results
+    RedisPersistentEntity<?> persistentEntity = converter.getMappingContext().getPersistentEntity(type);
+    boolean useOptimized = persistentEntity instanceof RedisEnhancedPersistentEntity;
+
     return (List<T>) searchResult.getDocuments().stream() //
-        .map(d -> documentToObject(d, type, (MappingRedisOMConverter) converter)) //
+        .map(d -> {
+          Object entity = documentToObject(d, type, (MappingRedisOMConverter) converter);
+          if (useOptimized) {
+            return ((RedisEnhancedPersistentEntity<?>) persistentEntity).populateRedisKey(entity, d.getId());
+          } else {
+            return com.redis.om.spring.util.ObjectUtils.populateRedisKey(entity, d.getId());
+          }
+        }) //
         .toList();
   }
 

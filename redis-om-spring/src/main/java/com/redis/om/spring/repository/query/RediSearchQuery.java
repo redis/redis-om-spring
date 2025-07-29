@@ -597,11 +597,13 @@ public class RediSearchQuery implements RepositoryQuery {
 
     Gson gsonInstance = getGson();
 
-    return switch (dialect) {
+    Object entity = switch (dialect) {
       case ONE, TWO -> gsonInstance.fromJson(SafeEncoder.encode((byte[]) doc.get("$")), domainType);
       case THREE -> gsonInstance.fromJson(gsonInstance.fromJson(SafeEncoder.encode((byte[]) doc.get("$")),
           JsonArray.class).get(0), domainType);
     };
+
+    return ObjectUtils.populateRedisKey(entity, doc.getId());
   }
 
   private Object executeDeleteQuery(Object[] parameters) {
