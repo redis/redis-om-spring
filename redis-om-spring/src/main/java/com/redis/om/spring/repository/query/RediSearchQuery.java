@@ -438,7 +438,38 @@ public class RediSearchQuery implements RepositoryQuery {
         Optional<Class<?>> maybeCollectionType = ObjectUtils.getCollectionElementClass(field);
         if (maybeCollectionType.isPresent()) {
           Class<?> collectionType = maybeCollectionType.get();
-          if (Number.class.isAssignableFrom(collectionType)) {
+
+          // Check if this is a nested array field with @Indexed(schemaFieldType = SchemaFieldType.NESTED)
+          if (indexAnnotation.schemaFieldType() == SchemaFieldType.NESTED) {
+            // For nested arrays, we need to create the proper field path
+            String nestedFieldName = path.size() > level + 1 ? path.get(level + 1).getSegment() : "";
+            if (!nestedFieldName.isEmpty()) {
+              // Create the nested field path: arrayField_nestedField
+              String nestedKey = field.getName() + "_" + nestedFieldName;
+
+              logger.debug(String.format("Processing nested array field query: %s -> %s", key, nestedKey));
+
+              // Determine the field type for the nested field
+              Field nestedField = ReflectionUtils.findField(collectionType, nestedFieldName);
+              if (nestedField != null) {
+                // Get the alias matching the indexer logic
+                String alias = QueryUtils.searchIndexFieldAliasFor(nestedField, field.getName());
+                String actualNestedKey = (alias != null && !alias.isEmpty()) ? alias : nestedKey;
+                Class<?> nestedFieldType = ClassUtils.resolvePrimitiveIfNecessary(nestedField.getType());
+
+                if (CharSequence.class.isAssignableFrom(
+                    nestedFieldType) || nestedFieldType == Boolean.class || nestedFieldType == UUID.class || nestedFieldType == Ulid.class || nestedFieldType
+                        .isEnum()) {
+                  qf.add(Pair.of(actualNestedKey, QueryClause.get(FieldType.TAG, part.getType())));
+                } else if (Number.class.isAssignableFrom(
+                    nestedFieldType) || nestedFieldType == LocalDateTime.class || nestedFieldType == LocalDate.class || nestedFieldType == Date.class) {
+                  qf.add(Pair.of(actualNestedKey, QueryClause.get(FieldType.NUMERIC, part.getType())));
+                } else if (nestedFieldType == Point.class) {
+                  qf.add(Pair.of(actualNestedKey, QueryClause.get(FieldType.GEO, part.getType())));
+                }
+              }
+            }
+          } else if (Number.class.isAssignableFrom(collectionType)) {
             if (isANDQuery) {
               qf.add(Pair.of(actualKey, QueryClause.NUMERIC_CONTAINING_ALL));
             } else {

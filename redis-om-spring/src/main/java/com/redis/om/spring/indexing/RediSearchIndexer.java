@@ -569,12 +569,30 @@ public class RediSearchIndexer {
           case GEO -> fields.add(SearchField.of(field, indexAsGeoFieldFor(field, true, prefix, indexed.alias())));
           case VECTOR -> fields.add(SearchField.of(field, indexAsVectorFieldFor(field, isDocument, prefix, indexed)));
           case NESTED -> {
+            Class<?> nestedType = field.getType();
+
+            // Handle List<Model> fields by extracting the element type
+            if (List.class.isAssignableFrom(nestedType) || Set.class.isAssignableFrom(nestedType)) {
+              Optional<Class<?>> maybeCollectionType = getCollectionElementClass(field);
+              if (maybeCollectionType.isPresent()) {
+                nestedType = maybeCollectionType.get();
+                logger.info(String.format("Processing nested array field %s with element type %s", field.getName(),
+                    nestedType.getSimpleName()));
+              } else {
+                logger.warn(String.format("Could not determine element type for nested field %s", field.getName()));
+                break;
+              }
+            }
+
+            // Process all fields of the nested type automatically
             for (java.lang.reflect.Field subfield : com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(
-                field.getType())) {
+                nestedType)) {
               String subfieldPrefix = (prefix == null || prefix.isBlank()) ?
                   field.getName() :
                   String.join(".", prefix, field.getName());
-              fields.addAll(findIndexFields(subfield, subfieldPrefix, isDocument));
+
+              // For nested fields, automatically create index fields even without explicit annotations
+              fields.addAll(createNestedIndexFields(field, subfield, subfieldPrefix, isDocument));
             }
           }
           default -> {
@@ -867,6 +885,80 @@ public class RediSearchIndexer {
       }
     }
     return fieldList;
+  }
+
+  /**
+   * Creates index fields for nested array elements automatically.
+   * This method handles automatic indexing of all fields within nested objects
+   * when @Indexed(schemaFieldType = SchemaFieldType.NESTED) is used.
+   */
+  private List<SearchField> createNestedIndexFields(java.lang.reflect.Field arrayField,
+      java.lang.reflect.Field nestedField, String prefix, boolean isDocument) {
+    List<SearchField> fields = new ArrayList<>();
+
+    Class<?> nestedFieldType = ClassUtils.resolvePrimitiveIfNecessary(nestedField.getType());
+
+    // For nested arrays, the path should be: $.arrayField[*].nestedField
+    // The prefix already contains the array field name, so we just need [*].nestedField
+    String fullFieldPath = isDocument ?
+        "$." + arrayField.getName() + "[*]." + nestedField.getName() :
+        arrayField.getName() + "[*]." + nestedField.getName();
+
+    logger.info(String.format("Creating automatic nested field index: %s -> %s", arrayField.getName(), fullFieldPath));
+
+    // Determine field type and create appropriate index field
+    if (CharSequence.class.isAssignableFrom(
+        nestedFieldType) || nestedFieldType == Boolean.class || nestedFieldType == UUID.class || nestedFieldType == Ulid.class) {
+
+      // Create TAG field for strings, booleans, UUIDs, and ULIDs
+      FieldName fieldName = FieldName.of(fullFieldPath);
+      String alias = QueryUtils.searchIndexFieldAliasFor(nestedField, prefix);
+      if (alias != null && !alias.isEmpty()) {
+        fieldName = fieldName.as(alias);
+      }
+
+      fields.add(SearchField.of(arrayField, getTagField(fieldName, "|", false)));
+
+    } else if (Number.class.isAssignableFrom(
+        nestedFieldType) || nestedFieldType == LocalDateTime.class || nestedFieldType == LocalDate.class || nestedFieldType == Date.class || nestedFieldType == Instant.class || nestedFieldType == OffsetDateTime.class) {
+
+      // Create NUMERIC field for numbers and dates
+      FieldName fieldName = FieldName.of(fullFieldPath);
+      String alias = QueryUtils.searchIndexFieldAliasFor(nestedField, prefix);
+      if (alias != null && !alias.isEmpty()) {
+        fieldName = fieldName.as(alias);
+      }
+
+      fields.add(SearchField.of(arrayField, NumericField.of(fieldName)));
+
+    } else if (nestedFieldType == Point.class) {
+
+      // Create GEO field for Point objects
+      FieldName fieldName = FieldName.of(fullFieldPath);
+      String alias = QueryUtils.searchIndexFieldAliasFor(nestedField, prefix);
+      if (alias != null && !alias.isEmpty()) {
+        fieldName = fieldName.as(alias);
+      }
+
+      fields.add(SearchField.of(arrayField, GeoField.of(fieldName)));
+
+    } else if (nestedFieldType.isEnum()) {
+
+      // Create TAG field for enums
+      FieldName fieldName = FieldName.of(fullFieldPath);
+      String alias = QueryUtils.searchIndexFieldAliasFor(nestedField, prefix);
+      if (alias != null && !alias.isEmpty()) {
+        fieldName = fieldName.as(alias);
+      }
+
+      fields.add(SearchField.of(arrayField, getTagField(fieldName, "|", false)));
+
+    } else {
+      logger.debug(String.format("Skipping nested field %s of unsupported type %s", nestedField.getName(),
+          nestedFieldType.getSimpleName()));
+    }
+
+    return fields;
   }
 
   private TagField getTagField(FieldName fieldName, String separator, boolean sortable) {
