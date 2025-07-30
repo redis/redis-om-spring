@@ -65,11 +65,13 @@ public interface CompanyRepository extends RedisDocumentRepository<Company, Stri
 
 === Comparison Operations
 
-* `findBy<Property>LessThan` - Numeric field less than value
-* `findBy<Property>LessThanEqual` - Numeric field less than or equal to value
-* `findBy<Property>GreaterThan` - Numeric field greater than value
-* `findBy<Property>GreaterThanEqual` - Numeric field greater than or equal to value
-* `findBy<Property>Between` - Numeric field between two values
+* `findBy<Property>LessThan` - Field less than value (numeric or string with lexicographic=true)
+* `findBy<Property>LessThanEqual` - Field less than or equal to value
+* `findBy<Property>GreaterThan` - Field greater than value
+* `findBy<Property>GreaterThanEqual` - Field greater than or equal to value
+* `findBy<Property>Between` - Field between two values
+
+NOTE: String comparison operations require `@Indexed(lexicographic = true)` or `@Searchable(lexicographic = true)` on the field. See xref:index-annotations.adoc#_lexicographic_string_comparisons[Lexicographic String Comparisons] for details.
 
 === Logical Operations
 
@@ -140,6 +142,51 @@ public interface CompanyRepository extends RedisDocumentRepository<Company, Stri
     List<Company> findByNameStartingWith(String prefix);
 }
 ----
+
+=== String Comparison Queries (Lexicographic)
+
+For string range queries, enable lexicographic indexing on your fields:
+
+[source,java]
+----
+@Document
+public class Product {
+    @Id
+    private String id;
+    
+    @Indexed(lexicographic = true)
+    private String sku;
+    
+    @Indexed(lexicographic = true)
+    private String productCode;
+    
+    @Searchable(lexicographic = true)
+    private String name;
+}
+
+public interface ProductRepository extends RedisDocumentRepository<Product, String> {
+    // Find products with SKU greater than a value
+    List<Product> findBySkuGreaterThan(String sku);
+    
+    // Find products with SKU less than or equal to a value
+    List<Product> findBySkuLessThanEqual(String sku);
+    
+    // Find products with SKU between two values (inclusive)
+    List<Product> findBySkuBetween(String startSku, String endSku);
+    
+    // Find products with code in a specific range, ordered
+    List<Product> findByProductCodeBetweenOrderByProductCodeAsc(String start, String end);
+    
+    // Combine with other conditions
+    List<Product> findBySkuGreaterThanAndNameContaining(String sku, String keyword);
+}
+----
+
+Common use cases for lexicographic string comparisons:
+* ID ranges (e.g., `findByUserIdBetween("USER1000", "USER2000")`)
+* SKU/Product code ranges
+* Version string comparisons
+* Alphabetical ordering and filtering
 
 === Collection Queries
 

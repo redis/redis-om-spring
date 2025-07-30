@@ -1,23 +1,21 @@
 package com.redis.om.spring.metamodel;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Locale;
-import java.util.stream.Collectors;
-
-import javax.tools.JavaFileObject;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-
 import com.karuslabs.elementary.Results;
 import com.karuslabs.elementary.junit.JavacExtension;
 import com.karuslabs.elementary.junit.annotations.Classpath;
 import com.karuslabs.elementary.junit.annotations.Options;
 import com.karuslabs.elementary.junit.annotations.Processors;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
+import javax.tools.JavaFileObject;
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 @SuppressWarnings(
   "SpellCheckingInspection"
@@ -558,5 +556,42 @@ class MetamodelGeneratorTest {
         //
         () -> assertThat(fileContents).contains(
             "_KEY = new MetamodelField<ValidDocumentNumericIndexed, String>(\"__key\", String.class, true);"));
+  }
+
+  @Test
+  void testLexicographicPredicateGeneration() {
+    // Test that the generated metamodel fields produce correct lexicographic predicates
+    var gtPredicate = com.redis.om.spring.fixtures.document.model.LexicographicDoc$.SKU.gt("product003");
+    assertThat(gtPredicate).isInstanceOf(
+        com.redis.om.spring.search.stream.predicates.lexicographic.LexicographicGreaterThanMarker.class);
+    assertThat(
+        ((com.redis.om.spring.search.stream.predicates.lexicographic.LexicographicGreaterThanMarker<?, ?>) gtPredicate).getValue()).isEqualTo(
+        "product003");
+
+    var ltPredicate = com.redis.om.spring.fixtures.document.model.LexicographicDoc$.SKU.lt("product003");
+    assertThat(ltPredicate).isInstanceOf(
+        com.redis.om.spring.search.stream.predicates.lexicographic.LexicographicLessThanMarker.class);
+    assertThat(
+        ((com.redis.om.spring.search.stream.predicates.lexicographic.LexicographicLessThanMarker<?, ?>) ltPredicate).getValue()).isEqualTo(
+        "product003");
+
+    var betweenPredicate = com.redis.om.spring.fixtures.document.model.LexicographicDoc$.SKU.between("product001",
+        "product005");
+    assertThat(betweenPredicate).isInstanceOf(
+        com.redis.om.spring.search.stream.predicates.lexicographic.LexicographicBetweenMarker.class);
+    assertThat(
+        ((com.redis.om.spring.search.stream.predicates.lexicographic.LexicographicBetweenMarker<?, ?>) betweenPredicate).getMin()).isEqualTo(
+        "product001");
+    assertThat(
+        ((com.redis.om.spring.search.stream.predicates.lexicographic.LexicographicBetweenMarker<?, ?>) betweenPredicate).getMax()).isEqualTo(
+        "product005");
+
+    // Test that TextField also generates correct lexicographic predicates
+    var namePredicate = com.redis.om.spring.fixtures.document.model.LexicographicDoc$.NAME.lt("Product Gamma");
+    assertThat(namePredicate).isInstanceOf(
+        com.redis.om.spring.search.stream.predicates.lexicographic.LexicographicLessThanMarker.class);
+    assertThat(
+        ((com.redis.om.spring.search.stream.predicates.lexicographic.LexicographicLessThanMarker<?, ?>) namePredicate).getValue()).isEqualTo(
+        "Product Gamma");
   }
 }

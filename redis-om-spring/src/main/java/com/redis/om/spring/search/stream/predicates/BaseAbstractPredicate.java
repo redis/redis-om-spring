@@ -134,4 +134,13 @@ public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicat
     return false;
   }
 
+  /**
+   * Returns the search field accessor for this predicate.
+   *
+   * @return the search field accessor
+   */
+  public SearchFieldAccessor getSearchFieldAccessor() {
+    return field;
+  }
+
 }

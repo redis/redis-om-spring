@@ -43,6 +43,7 @@ import com.redis.om.spring.repository.query.bloom.BloomQueryExecutor;
 import com.redis.om.spring.repository.query.clause.QueryClause;
 import com.redis.om.spring.repository.query.countmin.CountMinQueryExecutor;
 import com.redis.om.spring.repository.query.cuckoo.CuckooQueryExecutor;
+import com.redis.om.spring.repository.query.lexicographic.LexicographicQueryExecutor;
 import com.redis.om.spring.util.ObjectUtils;
 
 import redis.clients.jedis.search.FieldName;
@@ -88,6 +89,20 @@ public class RediSearchQuery implements RepositoryQuery {
 
   private static final Log logger = LogFactory.getLog(RediSearchQuery.class);
 
+  /**
+   * Set of QueryClause types that represent lexicographic operations.
+   */
+  private static final Set<QueryClause> LEXICOGRAPHIC_QUERY_CLAUSES = Set.of(QueryClause.TEXT_GREATER_THAN,
+      QueryClause.TEXT_LESS_THAN, QueryClause.TEXT_GREATER_THAN_EQUAL, QueryClause.TEXT_LESS_THAN_EQUAL,
+      QueryClause.TEXT_BETWEEN, QueryClause.TAG_GREATER_THAN, QueryClause.TAG_LESS_THAN,
+      QueryClause.TAG_GREATER_THAN_EQUAL, QueryClause.TAG_LESS_THAN_EQUAL, QueryClause.TAG_BETWEEN);
+
+  /**
+   * Set of Part.Type values that represent lexicographic operations.
+   */
+  private static final Set<Part.Type> LEXICOGRAPHIC_PART_TYPES = Set.of(Part.Type.GREATER_THAN, Part.Type.LESS_THAN,
+      Part.Type.GREATER_THAN_EQUAL, Part.Type.LESS_THAN_EQUAL, Part.Type.BETWEEN);
+
   private final QueryMethod queryMethod;
   private final RedisOMProperties redisOMProperties;
   private final boolean hasLanguageParameter;
@@ -106,6 +121,7 @@ public class RediSearchQuery implements RepositoryQuery {
   private final CuckooQueryExecutor cuckooQueryExecutor;
   private final CountMinQueryExecutor countMinQueryExecutor;
   private final AutoCompleteQueryExecutor autoCompleteQueryExecutor;
+  private final LexicographicQueryExecutor lexicographicQueryExecutor;
   private final GsonBuilder gsonBuilder;
   private final RediSearchIndexer indexer;
   private RediSearchQueryType type;
@@ -181,6 +197,7 @@ public class RediSearchQuery implements RepositoryQuery {
     cuckooQueryExecutor = new CuckooQueryExecutor(this, modulesOperations);
     countMinQueryExecutor = new CountMinQueryExecutor(this, modulesOperations);
     autoCompleteQueryExecutor = new AutoCompleteQueryExecutor(this, modulesOperations);
+    lexicographicQueryExecutor = new LexicographicQueryExecutor(this, modulesOperations, indexer);
 
     Class<?> repoClass = metadata.getRepositoryInterface();
     @SuppressWarnings(
@@ -366,7 +383,15 @@ public class RediSearchQuery implements RepositoryQuery {
     } else if (field.isAnnotationPresent(Searchable.class)) {
       Searchable indexAnnotation = field.getAnnotation(Searchable.class);
       String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
-      qf.add(Pair.of(actualKey, QueryClause.get(FieldType.TEXT, part.getType())));
+      QueryClause clause;
+      if (indexAnnotation.lexicographic() && isLexicographicPartType(part.getType())) {
+        clause = getLexicographicQueryClause(FieldType.TEXT, part.getType());
+      } else {
+        clause = QueryClause.get(FieldType.TEXT, part.getType());
+      }
+      logger.debug(String.format("Searchable field %s: lexicographic=%s, partType=%s, clause=%s", actualKey,
+          indexAnnotation.lexicographic(), part.getType(), clause));
+      qf.add(Pair.of(actualKey, clause));
     } else if (field.isAnnotationPresent(TagIndexed.class)) {
       TagIndexed indexAnnotation = field.getAnnotation(TagIndexed.class);
       String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
@@ -389,7 +414,15 @@ public class RediSearchQuery implements RepositoryQuery {
       if (CharSequence.class.isAssignableFrom(
           fieldType) || (fieldType == Boolean.class) || (fieldType == UUID.class) || (fieldType == Ulid.class) || (fieldType
               .isEnum())) {
-        qf.add(Pair.of(actualKey, QueryClause.get(FieldType.TAG, part.getType())));
+        QueryClause clause;
+        if (indexAnnotation.lexicographic() && isLexicographicPartType(part.getType())) {
+          clause = getLexicographicQueryClause(FieldType.TAG, part.getType());
+        } else {
+          clause = QueryClause.get(FieldType.TAG, part.getType());
+        }
+        logger.debug(String.format("Indexed TAG field %s: lexicographic=%s, partType=%s, clause=%s", actualKey,
+            indexAnnotation.lexicographic(), part.getType(), clause));
+        qf.add(Pair.of(actualKey, clause));
       }
       //
       // Any Numeric class -> Numeric Search Field
@@ -486,7 +519,34 @@ public class RediSearchQuery implements RepositoryQuery {
     String indexName = indexer.getIndexName(this.domainType);
     SearchOperations<String> ops = modulesOperations.opsForSearch(indexName);
     boolean excludeNullParams = !isNullParamQuery;
-    String preparedQuery = prepareQuery(parameters, excludeNullParams);
+
+    // Check if all query parts are lexicographic
+    boolean allLexicographic = true;
+    for (List<Pair<String, QueryClause>> orPartParts : queryOrParts) {
+      for (Pair<String, QueryClause> pair : orPartParts) {
+        QueryClause clause = pair.getSecond();
+        logger.debug(String.format("Checking clause: %s, is lexicographic: %s", clause, isLexicographicClause(clause)));
+        if (!isLexicographicClause(clause)) {
+          allLexicographic = false;
+          break;
+        }
+      }
+    }
+
+    String preparedQuery;
+    if (allLexicographic && !queryOrParts.isEmpty()) {
+      // Process as lexicographic query
+      logger.debug("Processing as lexicographic query");
+      preparedQuery = lexicographicQueryExecutor.processLexicographicQuery(queryOrParts, parameters, domainType);
+      logger.debug(String.format("Lexicographic query returned: %s", preparedQuery));
+      if (preparedQuery == null) {
+        preparedQuery = "*"; // fallback
+      }
+    } else {
+      // Normal query processing
+      preparedQuery = prepareQuery(parameters, excludeNullParams);
+    }
+
     Query query = new Query(preparedQuery);
     query.dialect(2);
 
@@ -1008,5 +1068,64 @@ public class RediSearchQuery implements RepositoryQuery {
       logger.debug("Failed to check indexMissing for field: " + fieldName, e);
       return false;
     }
+  }
+
+  /**
+   * Checks if a Part.Type represents a lexicographic query operation.
+   *
+   * @param type the query part type to check
+   * @return true if the type is GREATER_THAN, LESS_THAN, GREATER_THAN_EQUAL, LESS_THAN_EQUAL, or BETWEEN
+   */
+  private boolean isLexicographicQueryType(Part.Type type) {
+    return LEXICOGRAPHIC_PART_TYPES.contains(type);
+  }
+
+  /**
+   * Checks if a QueryClause represents a lexicographic query.
+   *
+   * @param clause the query clause to check
+   * @return true if the clause is a lexicographic query clause
+   */
+  private boolean isLexicographicClause(QueryClause clause) {
+    return LEXICOGRAPHIC_QUERY_CLAUSES.contains(clause);
+  }
+
+  private boolean isLexicographicPartType(Part.Type partType) {
+    return LEXICOGRAPHIC_PART_TYPES.contains(partType);
+  }
+
+  private QueryClause getLexicographicQueryClause(FieldType fieldType, Part.Type partType) {
+    if (fieldType == FieldType.TEXT) {
+      switch (partType) {
+        case GREATER_THAN:
+          return QueryClause.TEXT_GREATER_THAN;
+        case LESS_THAN:
+          return QueryClause.TEXT_LESS_THAN;
+        case GREATER_THAN_EQUAL:
+          return QueryClause.TEXT_GREATER_THAN_EQUAL;
+        case LESS_THAN_EQUAL:
+          return QueryClause.TEXT_LESS_THAN_EQUAL;
+        case BETWEEN:
+          return QueryClause.TEXT_BETWEEN;
+        default:
+          return QueryClause.get(fieldType, partType);
+      }
+    } else if (fieldType == FieldType.TAG) {
+      switch (partType) {
+        case GREATER_THAN:
+          return QueryClause.TAG_GREATER_THAN;
+        case LESS_THAN:
+          return QueryClause.TAG_LESS_THAN;
+        case GREATER_THAN_EQUAL:
+          return QueryClause.TAG_GREATER_THAN_EQUAL;
+        case LESS_THAN_EQUAL:
+          return QueryClause.TAG_LESS_THAN_EQUAL;
+        case BETWEEN:
+          return QueryClause.TAG_BETWEEN;
+        default:
+          return QueryClause.get(fieldType, partType);
+      }
+    }
+    return QueryClause.get(fieldType, partType);
   }
 }

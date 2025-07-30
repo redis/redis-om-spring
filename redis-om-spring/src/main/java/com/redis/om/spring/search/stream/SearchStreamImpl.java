@@ -26,12 +26,15 @@ import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.metamodel.MetamodelField;
+import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.metamodel.indexed.NumericField;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.search.stream.actions.TakesJSONOperations;
+import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
+import com.redis.om.spring.search.stream.predicates.lexicographic.*;
 import com.redis.om.spring.search.stream.predicates.vector.KNNPredicate;
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.Pair;
@@ -259,6 +262,10 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
    * @return the query node representing the processed predicate
    */
   public Node processPredicate(SearchFieldPredicate<? super E, ?> predicate) {
+    // Handle lexicographic predicates specially
+    if (predicate instanceof LexicographicPredicate) {
+      return processLexicographicPredicate(predicate);
+    }
     return predicate.apply(rootNode);
   }
 
@@ -270,6 +277,31 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       return processPredicate(p);
     }
     return rootNode;
+  }
+
+  private Node processLexicographicPredicate(SearchFieldPredicate<? super E, ?> predicate) {
+    // Cast to BaseAbstractPredicate to access the search field accessor
+    if (!(predicate instanceof BaseAbstractPredicate)) {
+      throw new IllegalArgumentException("Lexicographic predicates must extend BaseAbstractPredicate");
+    }
+    SearchFieldAccessor searchFieldAccessor = ((BaseAbstractPredicate<?, ?>) predicate).getSearchFieldAccessor();
+
+    if (predicate instanceof LexicographicGreaterThanMarker) {
+      LexicographicGreaterThanPredicate<E, ?> actualPredicate = new LexicographicGreaterThanPredicate<>(
+          searchFieldAccessor, ((LexicographicGreaterThanMarker<E, ?>) predicate).getValue(), modulesOperations,
+          indexer);
+      return actualPredicate.apply(rootNode);
+    } else if (predicate instanceof LexicographicLessThanMarker) {
+      LexicographicLessThanPredicate<E, ?> actualPredicate = new LexicographicLessThanPredicate<>(searchFieldAccessor,
+          ((LexicographicLessThanMarker<E, ?>) predicate).getValue(), modulesOperations, indexer);
+      return actualPredicate.apply(rootNode);
+    } else if (predicate instanceof LexicographicBetweenMarker) {
+      LexicographicBetweenMarker<E, ?> marker = (LexicographicBetweenMarker<E, ?>) predicate;
+      LexicographicBetweenPredicate<E, ?> actualPredicate = new LexicographicBetweenPredicate<>(searchFieldAccessor,
+          marker.getMin(), marker.getMax(), modulesOperations, indexer);
+      return actualPredicate.apply(rootNode);
+    }
+    throw new IllegalArgumentException("Unknown lexicographic predicate type: " + predicate.getClass());
   }
 
   @Override

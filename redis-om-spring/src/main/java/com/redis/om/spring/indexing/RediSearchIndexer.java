@@ -93,6 +93,7 @@ public class RediSearchIndexer {
   private final List<Class<?>> indexedEntityClasses = new ArrayList<>();
   private final Map<Class<?>, List<SearchField>> entityClassToSchema = new ConcurrentHashMap<>();
   private final Map<Pair<Class<?>, String>, String> entityClassFieldToAlias = new ConcurrentHashMap<>();
+  private final Map<Class<?>, Set<String>> entityClassToLexicographicFields = new ConcurrentHashMap<>();
   private final ApplicationContext ac;
   private final RedisModulesOperations<String> rmo;
   private final RedisMappingContext mappingContext;
@@ -219,6 +220,8 @@ public class RediSearchIndexer {
           case SKIP_IF_EXIST:
             opsForSearch.createIndex(params, fields);
             logger.info(String.format("Created index %s...", indexName));
+            // Create sorted sets for lexicographic fields
+            createSortedSetsForLexicographicFields(cl, entityPrefix);
             break;
           case DROP_AND_RECREATE:
             if (indexExistsFor(cl)) {
@@ -227,6 +230,8 @@ public class RediSearchIndexer {
             }
             opsForSearch.createIndex(params, fields);
             logger.info(String.format("Created index %s", indexName));
+            // Create sorted sets for lexicographic fields
+            createSortedSetsForLexicographicFields(cl, entityPrefix);
             break;
           case SKIP_ALWAYS:
             // do nothing and like it!
@@ -237,6 +242,9 @@ public class RediSearchIndexer {
         opsForSearch.createIndex(params, fields);
         logger.info(String.format("Created index %s", indexName));
       }
+
+      // Create sorted sets for lexicographic fields
+      createSortedSetsForLexicographicFields(cl, entityPrefix);
     } catch (Exception e) {
       logger.warn(String.format(SKIPPING_INDEX_CREATION, indexName, e.getMessage()));
     }
@@ -444,6 +452,14 @@ public class RediSearchIndexer {
 
       Indexed indexed = field.getAnnotation(Indexed.class);
 
+      // Track lexicographic fields
+      if (indexed.lexicographic()) {
+        Class<?> entityClass = field.getDeclaringClass();
+        entityClassToLexicographicFields.computeIfAbsent(entityClass, k -> new HashSet<>()).add(field.getName());
+        logger.info(String.format("Tracked lexicographic field %s on class %s", field.getName(), entityClass
+            .getName()));
+      }
+
       Class<?> fieldType = ClassUtils.resolvePrimitiveIfNecessary(field.getType());
 
       if (field.isAnnotationPresent(Reference.class)) {
@@ -571,6 +587,15 @@ public class RediSearchIndexer {
     else if (field.isAnnotationPresent(Searchable.class)) {
       logger.info(String.format("Found @Searchable annotation on field of type: %s", field.getType()));
       Searchable searchable = field.getAnnotation(Searchable.class);
+
+      // Track lexicographic fields
+      if (searchable.lexicographic()) {
+        Class<?> entityClass = field.getDeclaringClass();
+        entityClassToLexicographicFields.computeIfAbsent(entityClass, k -> new HashSet<>()).add(field.getName());
+        logger.info(String.format("Tracked lexicographic field %s on class %s", field.getName(), entityClass
+            .getName()));
+      }
+
       fields.add(SearchField.of(field, indexAsTextFieldFor(field, isDocument, prefix, searchable)));
     }
     // Text
@@ -1111,5 +1136,33 @@ public class RediSearchIndexer {
    */
   public RedisOMProperties getProperties() {
     return properties;
+  }
+
+  /**
+   * Retrieves the set of lexicographic fields for the given entity class.
+   *
+   * @param entityClass the entity class to get lexicographic fields for
+   * @return a set of field names that have lexicographic indexing enabled, or an empty set if none exist
+   */
+  public Set<String> getLexicographicFields(Class<?> entityClass) {
+    return entityClassToLexicographicFields.getOrDefault(entityClass, Collections.emptySet());
+  }
+
+  /**
+   * Creates sorted sets for fields marked with lexicographic=true.
+   * These sorted sets enable efficient lexicographic range queries.
+   *
+   * @param entityClass  the entity class to process
+   * @param entityPrefix the Redis key prefix for the entity
+   */
+  private void createSortedSetsForLexicographicFields(Class<?> entityClass, String entityPrefix) {
+    Set<String> lexicographicFields = entityClassToLexicographicFields.get(entityClass);
+    if (lexicographicFields != null && !lexicographicFields.isEmpty()) {
+      for (String fieldName : lexicographicFields) {
+        String sortedSetKey = entityPrefix + fieldName + ":lex";
+        // Just log that we're tracking this field - the sorted set will be created on first insert
+        logger.info(String.format("Tracking lexicographic field %s with sorted set key %s", fieldName, sortedSetKey));
+      }
+    }
   }
 }

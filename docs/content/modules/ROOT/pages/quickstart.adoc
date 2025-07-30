@@ -961,6 +961,257 @@ It is important to understand that as opposed to a regular Java stream, most ope
 be executed server-side. On the query above the query is executed during and only during the terminal `collect` operation. At that point you
 will have a `List<Company>` objects now loaded in memory.
 
+== Step 21: Lexicographic String Comparisons
+
+Redis OM Spring supports lexicographic (alphabetical) string comparisons for range queries on string fields. This is useful for finding entities within ID ranges, SKU comparisons, or alphabetical filtering.
+
+Let's add a Product entity to demonstrate this feature:
+
+[source,java]
+----
+package com.example.demo.domain;
+
+import org.springframework.data.annotation.Id;
+
+import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.annotations.Indexed;
+import com.redis.om.spring.annotations.Searchable;
+
+import lombok.*;
+
+@Data
+@NoArgsConstructor
+@RequiredArgsConstructor(staticName = "of")
+@Document
+public class Product {
+    @Id
+    private String id;
+
+    @NonNull
+    @Searchable
+    private String name;
+
+    @NonNull
+    @Indexed(lexicographic = true)  // Enable lexicographic comparisons
+    private String sku;
+
+    @NonNull
+    @Indexed
+    private Double price;
+
+    @Indexed(lexicographic = true)  // Version strings can be compared
+    private String version;
+}
+----
+
+Notice the `lexicographic = true` parameter on the `@Indexed` annotation. This tells Redis OM Spring to create an additional sorted set index for string range queries.
+
+== Step 22: Create the Product Repository
+
+[source,java]
+----
+package com.example.demo.repositories;
+
+import java.util.List;
+
+import com.example.demo.domain.Product;
+import com.redis.om.spring.repository.RedisDocumentRepository;
+
+public interface ProductRepository extends RedisDocumentRepository<Product, String> {
+    // Lexicographic string comparisons
+    List<Product> findBySkuGreaterThan(String sku);
+    List<Product> findBySkuLessThan(String sku);
+    List<Product> findBySkuBetween(String startSku, String endSku);
+    
+    // Combine with other conditions
+    List<Product> findBySkuGreaterThanAndPriceGreaterThan(String sku, Double price);
+    
+    // Order by lexicographic field
+    List<Product> findByNameContainingOrderBySkuAsc(String keyword);
+}
+----
+
+These repository methods leverage the lexicographic index to perform efficient string range queries.
+
+== Step 23: Product Service with Entity Streams
+
+[source,java]
+----
+package com.example.demo.service;
+
+import java.util.List;
+
+import com.example.demo.domain.Product;
+
+public interface ProductService {
+    List<Product> findProductsInSkuRange(String startSku, String endSku);
+    List<Product> findNewerVersions(String version);
+}
+----
+
+[source,java]
+----
+package com.example.demo.service.impl;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
+import com.example.demo.domain.Product;
+import com.example.demo.domain.Product$;
+import com.example.demo.service.ProductService;
+import com.redis.om.spring.search.stream.EntityStream;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class ProductServiceImpl implements ProductService {
+
+    private final EntityStream entityStream;
+
+    @Override
+    public List<Product> findProductsInSkuRange(String startSku, String endSku) {
+        return entityStream
+            .of(Product.class)
+            .filter(Product$.SKU.between(startSku, endSku))
+            .sorted(Product$.SKU)  // Sort by SKU alphabetically
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Product> findNewerVersions(String version) {
+        return entityStream
+            .of(Product.class)
+            .filter(Product$.VERSION.gt(version))
+            .sorted(Product$.VERSION.desc())
+            .collect(Collectors.toList());
+    }
+}
+----
+
+The Entity Streams API provides type-safe methods for lexicographic comparisons:
+- `.gt(value)` - Greater than
+- `.lt(value)` - Less than  
+- `.between(start, end)` - Between two values (inclusive)
+
+== Step 24: Update Application to Load Product Data
+
+[source,java]
+----
+// Add to the Application class imports
+import com.example.demo.domain.Product;
+import com.example.demo.repositories.ProductRepository;
+
+// Add to the Application class fields
+@Autowired
+ProductRepository productRepo;
+
+// Add to the loadTestData() method
+// Clear and load Product data
+productRepo.deleteAll();
+
+// Create products with sequential SKUs
+productRepo.save(Product.of("Laptop Pro", "PROD-1001", 1299.99));
+productRepo.save(Product.of("Wireless Mouse", "PROD-1002", 29.99));
+productRepo.save(Product.of("USB-C Hub", "PROD-1003", 49.99));
+productRepo.save(Product.of("Monitor 4K", "PROD-2001", 599.99));
+productRepo.save(Product.of("Keyboard Mechanical", "PROD-2002", 149.99));
+
+// Products with versions
+Product software1 = Product.of("Analytics Suite", "SOFT-001", 499.99);
+software1.setVersion("2.1.0");
+productRepo.save(software1);
+
+Product software2 = Product.of("Database Manager", "SOFT-002", 799.99);
+software2.setVersion("3.0.1");
+productRepo.save(software2);
+
+Product software3 = Product.of("Cloud Platform", "SOFT-003", 999.99);
+software3.setVersion("1.9.5");
+productRepo.save(software3);
+----
+
+== Step 25: Create the Product Controller
+
+[source,java]
+----
+package com.example.demo.controllers;
+
+import java.util.List;
+
+import org.springframework.web.bind.annotation.*;
+
+import com.example.demo.domain.Product;
+import com.example.demo.repositories.ProductRepository;
+import com.example.demo.service.ProductService;
+
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/products")
+@RequiredArgsConstructor
+public class ProductController {
+
+    private final ProductRepository repository;
+    private final ProductService productService;
+
+    @GetMapping
+    public Iterable<Product> getAllProducts() {
+        return repository.findAll();
+    }
+
+    @GetMapping("sku/gt/{sku}")
+    public List<Product> bySkuGreaterThan(@PathVariable("sku") String sku) {
+        return repository.findBySkuGreaterThan(sku);
+    }
+
+    @GetMapping("sku/range/{start}/{end}")
+    public List<Product> bySkuRange(
+            @PathVariable("start") String start,
+            @PathVariable("end") String end) {
+        return productService.findProductsInSkuRange(start, end);
+    }
+
+    @GetMapping("version/newer/{version}")
+    public List<Product> newerVersions(@PathVariable("version") String version) {
+        return productService.findNewerVersions(version);
+    }
+}
+----
+
+== Testing Lexicographic Queries
+
+After adding the Product functionality, you can test the lexicographic string comparisons:
+
+Find products with SKU greater than a value:
+[source,bash]
+----
+curl http://localhost:8080/api/products/sku/gt/PROD-1002
+# Returns products with SKUs: PROD-1003, PROD-2001, PROD-2002, SOFT-001, etc.
+----
+
+Find products in a SKU range:
+[source,bash]
+----
+curl http://localhost:8080/api/products/sku/range/PROD-1001/PROD-2000
+# Returns products with SKUs between PROD-1001 and PROD-2000
+----
+
+Find software with version newer than 2.0.0:
+[source,bash]
+----
+curl http://localhost:8080/api/products/version/newer/2.0.0
+# Returns software with versions > 2.0.0 (e.g., 2.1.0, 3.0.1)
+----
+
+The lexicographic feature is particularly useful for:
+- **Product SKUs**: Finding products in specific code ranges
+- **Sequential IDs**: Querying entities with IDs in a certain range  
+- **Version strings**: Comparing semantic versions
+- **Alphabetical filtering**: Finding names within alphabetical ranges
+
 == Testing the REST API
 
 After starting your application with `./mvnw spring-boot:run`, you can test the various endpoints:

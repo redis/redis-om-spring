@@ -130,6 +130,54 @@ List<Company> prefixMatches = entityStream.of(Company.class)
     .collect(Collectors.toList());
 ----
 
+=== Lexicographic String Comparisons
+
+For fields marked with `@Indexed(lexicographic = true)` or `@Searchable(lexicographic = true)`, you can perform string range queries:
+
+[source,java]
+----
+@Document
+public class Product {
+    @Id
+    private String id;
+    
+    @Indexed(lexicographic = true)
+    private String sku;
+    
+    @Searchable(lexicographic = true)
+    private String name;
+}
+
+// Find products with SKU greater than a value
+List<Product> products = entityStream.of(Product.class)
+    .filter(Product$.SKU.gt("PROD-1000"))
+    .collect(Collectors.toList());
+
+// Find products with SKU less than a value
+List<Product> earlyProducts = entityStream.of(Product.class)
+    .filter(Product$.SKU.lt("PROD-0500"))
+    .collect(Collectors.toList());
+
+// Find products with SKU between two values
+List<Product> rangeProducts = entityStream.of(Product.class)
+    .filter(Product$.SKU.between("PROD-1000", "PROD-2000"))
+    .collect(Collectors.toList());
+
+// Combine with other predicates
+List<Product> filteredProducts = entityStream.of(Product.class)
+    .filter(Product$.SKU.gt("PROD-1000")
+        .and(Product$.NAME.containing("Premium")))
+    .sorted(Product$.SKU)
+    .collect(Collectors.toList());
+
+// Works with TextFields too (when lexicographic = true)
+List<Product> alphabeticalRange = entityStream.of(Product.class)
+    .filter(Product$.NAME.between("A", "M"))
+    .collect(Collectors.toList());
+----
+
+NOTE: Lexicographic comparisons use Redis sorted sets for efficient range queries. They're ideal for ID ranges, SKU comparisons, version strings, and alphabetical filtering.
+
 === Boolean Predicates
 
 [source,java]
