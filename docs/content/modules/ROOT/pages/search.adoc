@@ -185,6 +185,89 @@ List<Game> results = entityStream
   .collect(Collectors.toList());
 ----
 
+== Lexicographic String Indexing
+
+Redis OM Spring supports lexicographic (alphabetical) string comparisons through the `lexicographic` parameter on `@Indexed` and `@Searchable` annotations. This feature enables string range queries using Redis sorted sets.
+
+=== Enabling Lexicographic Indexing
+
+[source,java]
+----
+@Document
+public class Product {
+  @Id
+  private String id;
+  
+  @Indexed(lexicographic = true)
+  private String sku;
+  
+  @Searchable(lexicographic = true)
+  private String productName;
+  
+  @Indexed(lexicographic = true)
+  private String version;
+}
+----
+
+=== How It Works
+
+When `lexicographic = true` is set:
+
+1. Redis OM Spring creates an additional sorted set index for the field
+2. The sorted set uses the field value as the score for lexicographic ordering
+3. Range queries (>, <, >=, <=, between) become available for string fields
+
+=== Query Examples
+
+==== Repository Methods
+
+[source,java]
+----
+public interface ProductRepository extends RedisDocumentRepository<Product, String> {
+  // Find products with SKU greater than a value
+  List<Product> findBySkuGreaterThan(String sku);
+  
+  // Find products with SKU in a range
+  List<Product> findBySkuBetween(String startSku, String endSku);
+  
+  // Combine with other conditions
+  List<Product> findBySkuGreaterThanAndProductNameContaining(String sku, String keyword);
+}
+----
+
+==== Entity Streams
+
+[source,java]
+----
+// Find products with SKU after "PROD-5000"
+List<Product> products = entityStream.of(Product.class)
+  .filter(Product$.SKU.gt("PROD-5000"))
+  .sorted(Product$.SKU)
+  .collect(Collectors.toList());
+
+// Version string comparisons
+List<Product> newerVersions = entityStream.of(Product.class)
+  .filter(Product$.VERSION.gt("2.0.0"))
+  .collect(Collectors.toList());
+----
+
+=== Use Cases
+
+Lexicographic indexing is ideal for:
+
+* **ID ranges**: Finding entities within specific ID ranges
+* **SKU/Product codes**: Filtering products by code ranges
+* **Version strings**: Comparing semantic versions
+* **Alphabetical filtering**: Finding names in alphabetical ranges
+* **Sequential identifiers**: Any field with ordered string values
+
+=== Performance Impact
+
+* Creates an additional Redis sorted set per indexed field
+* Minimal memory overhead (one entry per unique field value)
+* Very fast range queries using Redis ZRANGEBYLEX command
+* Only enable for fields where range queries are needed
+
 == Performance Considerations
 
 * Use `@Searchable` selectively on fields that need text search
@@ -192,6 +275,7 @@ List<Game> results = entityStream
 * For large result sets, use pagination
 * For complex queries, use the `@Query` annotation with the native query syntax
 * Consider using `weight` to adjust the importance of different fields
+* Enable `lexicographic=true` only for fields requiring string range queries
 
 == Next Steps
 

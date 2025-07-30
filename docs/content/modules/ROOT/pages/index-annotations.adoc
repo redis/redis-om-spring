@@ -37,6 +37,42 @@ public class Company {
 }
 ----
 
+==== Configuration Options:
+
+* `sortable` - Whether the field can be used for sorting (default: false)
+* `fieldName` - Custom field name in the index
+* `alias` - Field alias for queries
+* `indexMissing` - Index missing/null values (default: false)
+* `indexEmpty` - Index empty string values (default: false)
+* `lexicographic` - Enable lexicographic string comparisons for TAG fields (default: false)
+
+==== Lexicographic String Comparisons
+
+The `lexicographic` parameter enables string range queries (>, <, >=, <=, between) on TAG-indexed string fields by creating an additional Redis sorted set index:
+
+[source,java]
+----
+@Document
+public class Product {
+    @Id
+    private String id;
+    
+    @Indexed(lexicographic = true)
+    private String sku;  // Enables findBySkuGreaterThan("ABC123")
+    
+    @Indexed(lexicographic = true)
+    private String productCode;  // Enables range queries on product codes
+}
+----
+
+When `lexicographic = true`:
+- An additional Redis sorted set is created for the field (e.g., `Product:sku:lex`)
+- Repository methods like `findBySkuGreaterThan`, `findBySkuLessThan`, and `findBySkuBetween` are supported
+- EntityStream operations like `Product$.SKU.gt("ABC")` and `Product$.SKU.between("A", "Z")` work
+- Useful for ID ranges, SKU comparisons, alphabetical ordering, and version strings
+
+NOTE: Lexicographic indexing requires additional storage for the sorted set. Only enable it for fields where you need string range queries.
+
 === @Searchable
 
 For full-text search on string fields, use `@Searchable` which provides rich text search capabilities:
@@ -67,6 +103,37 @@ public class Game {
 * `phonetic` - Enable phonetic matching using Double Metaphone algorithm (default: "")
 * `indexMissing` - Index missing/null values (default: false)
 * `indexEmpty` - Index empty string values (default: false)
+* `lexicographic` - Enable lexicographic string comparisons (default: false)
+
+==== Lexicographic String Comparisons with @Searchable
+
+The `lexicographic` parameter also works with `@Searchable` fields to enable string range queries:
+
+[source,java]
+----
+@Document
+public class Article {
+    @Id
+    private String id;
+    
+    @Searchable(lexicographic = true)
+    private String title;  // Enables alphabetical range queries
+    
+    @Searchable(lexicographic = true, sortable = true)
+    private String category;  // Range queries with sorting
+}
+
+// Repository methods
+public interface ArticleRepository extends RedisDocumentRepository<Article, String> {
+    // Find articles with titles alphabetically after "M"
+    List<Article> findByTitleGreaterThan(String title);
+    
+    // Find articles in category range
+    List<Article> findByCategoryBetween(String start, String end);
+}
+----
+
+NOTE: When using `lexicographic = true` on `@Searchable` fields, Redis OM Spring creates both a full-text index and a sorted set for range queries. This allows you to use both text search methods (like `findByTitleContaining`) and range queries (like `findByTitleGreaterThan`) on the same field.
 
 == Specialized Indexing Annotations
 

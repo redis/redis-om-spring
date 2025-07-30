@@ -6,6 +6,9 @@ import java.util.function.ToLongFunction;
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.actions.StrLengthAction;
 import com.redis.om.spring.search.stream.actions.StringAppendAction;
+import com.redis.om.spring.search.stream.predicates.lexicographic.LexicographicBetweenMarker;
+import com.redis.om.spring.search.stream.predicates.lexicographic.LexicographicGreaterThanMarker;
+import com.redis.om.spring.search.stream.predicates.lexicographic.LexicographicLessThanMarker;
 import com.redis.om.spring.search.stream.predicates.tag.EndsWithPredicate;
 import com.redis.om.spring.search.stream.predicates.tag.StartsWithPredicate;
 
@@ -96,5 +99,56 @@ public class TextTagField<E, T> extends TagField<E, T> {
   @Override
   public ToLongFunction<E> length() {
     return new StrLengthAction<>(searchFieldAccessor);
+  }
+
+  /**
+   * Creates a lexicographic greater-than predicate for this text-tag field.
+   * <p>
+   * This predicate requires the field to be indexed with {@code lexicographic=true}
+   * in its {@code @Indexed} annotation. It matches fields that are
+   * lexicographically greater than the specified value.
+   * </p>
+   *
+   * @param value the value to compare against
+   * @return a LexicographicGreaterThanMarker that matches entities where this field is lexicographically greater than
+   *         the specified value
+   * @since 1.0
+   */
+  public LexicographicGreaterThanMarker<E, T> gt(T value) {
+    return new LexicographicGreaterThanMarker<>(searchFieldAccessor, value);
+  }
+
+  /**
+   * Creates a lexicographic less-than predicate for this text-tag field.
+   * <p>
+   * This predicate requires the field to be indexed with {@code lexicographic=true}
+   * in its {@code @Indexed} annotation. It matches fields that are
+   * lexicographically less than the specified value.
+   * </p>
+   *
+   * @param value the value to compare against
+   * @return a LexicographicLessThanMarker that matches entities where this field is lexicographically less than the
+   *         specified value
+   * @since 1.0
+   */
+  public LexicographicLessThanMarker<E, T> lt(T value) {
+    return new LexicographicLessThanMarker<>(searchFieldAccessor, value);
+  }
+
+  /**
+   * Creates a lexicographic between predicate for this text-tag field.
+   * <p>
+   * This predicate requires the field to be indexed with {@code lexicographic=true}
+   * in its {@code @Indexed} annotation. It matches fields that are
+   * lexicographically between the specified min and max values (inclusive).
+   * </p>
+   *
+   * @param min the minimum value (inclusive)
+   * @param max the maximum value (inclusive)
+   * @return a LexicographicBetweenMarker that matches entities where this field is between min and max
+   * @since 1.0
+   */
+  public LexicographicBetweenMarker<E, T> between(T min, T max) {
+    return new LexicographicBetweenMarker<>(searchFieldAccessor, min, max);
   }
 }

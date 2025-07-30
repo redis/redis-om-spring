@@ -58,6 +58,7 @@ import com.redis.om.spring.audit.EntityAuditor;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.id.IdentifierFilter;
 import com.redis.om.spring.id.ULIDIdentifierGenerator;
+import com.redis.om.spring.indexing.LexicographicIndexer;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.mapping.RedisEnhancedPersistentEntity;
 import com.redis.om.spring.metamodel.MetamodelField;
@@ -134,6 +135,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   private final RedisOMProperties properties;
   private final RedisMappingContext mappingContext;
   private final EntityStream entityStream;
+  private final LexicographicIndexer lexicographicIndexer;
 
   /**
    * Constructs a new {@code SimpleRedisDocumentRepository} with the required dependencies.
@@ -177,6 +179,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     this.embedder = embedder;
     this.properties = properties;
     this.entityStream = new EntityStreamImpl(modulesOperations, modulesOperations.gsonBuilder(), indexer);
+    this.lexicographicIndexer = new LexicographicIndexer(modulesOperations.template(), indexer);
   }
 
   @Override
@@ -238,6 +241,22 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   }
 
   @Override
+  public <S extends T> S save(S entity) {
+    Assert.notNull(entity, "Entity must not be null");
+
+    // Check if this entity class has lexicographic fields
+    Set<String> lexicographicFields = indexer.getLexicographicFields(entity.getClass());
+    if (lexicographicFields != null && !lexicographicFields.isEmpty()) {
+      // Use saveAll to handle lexicographic indexing
+      List<S> result = saveAll(Collections.singletonList(entity));
+      return result.isEmpty() ? null : result.get(0);
+    } else {
+      // No lexicographic fields, just call parent save method
+      return super.save(entity);
+    }
+  }
+
+  @Override
   public <S extends T> List<S> saveAll(Iterable<S> entities) {
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
     List<S> saved = new ArrayList<>();
@@ -284,6 +303,10 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
         processReferenceAnnotations(objectKey, entity, pipeline);
 
+        // Process lexicographic indexing
+        String keyspaceWithColon = keyspace.endsWith(":") ? keyspace : keyspace + ":";
+        lexicographicIndexer.processEntity(entity, idAsString, isNew, keyspaceWithColon);
+
         maybeTtl.ifPresent(ttl -> {
           if (ttl > 0)
             pipeline.expire(objectKey, ttl);
@@ -324,10 +347,50 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     return this.operations.update(this.metadata.getRequiredId(entity), entity);
   }
 
+  @Override
   public void delete(T entity) {
     Assert.notNull(entity, "The given entity must not be null");
     checkVersion(entity);
+
+    // Check if this entity class has lexicographic fields
+    Set<String> lexicographicFields = indexer.getLexicographicFields(entity.getClass());
+    if (lexicographicFields != null && !lexicographicFields.isEmpty()) {
+      // Process lexicographic deletion before deleting the entity
+      Object id = metadata.getRequiredId(entity);
+      String idAsString = validateKeyForWriting(id, entity);
+      KeyValuePersistentEntity<?, ?> keyValueEntity = mappingConverter.getMappingContext().getRequiredPersistentEntity(
+          ClassUtils.getUserClass(entity));
+      String keyspace = keyValueEntity.getKeySpace();
+      String keyspaceWithColon = keyspace.endsWith(":") ? keyspace : keyspace + ":";
+      lexicographicIndexer.processEntityDeletion(entity, idAsString, keyspaceWithColon);
+    }
+
     this.operations.delete(entity);
+  }
+
+  @Override
+  public void deleteById(ID id) {
+    Assert.notNull(id, "The given id must not be null");
+
+    // Check if this entity class has lexicographic fields
+    Set<String> lexicographicFields = indexer.getLexicographicFields(metadata.getJavaType());
+    if (lexicographicFields != null && !lexicographicFields.isEmpty()) {
+      // Try to load the entity to process lexicographic deletion
+      Optional<T> entity = findById(id);
+      if (entity.isPresent()) {
+        delete(entity.get());
+        return;
+      }
+    }
+
+    // For entities without lexicographic fields or when entity not found, just call parent
+    super.deleteById(id);
+  }
+
+  @Override
+  public void deleteAll(Iterable<? extends T> entities) {
+    Assert.notNull(entities, "The given Iterable of entities not be null!");
+    entities.forEach(this::delete);
   }
 
   @Override

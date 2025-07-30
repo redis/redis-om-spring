@@ -230,4 +230,22 @@ public @interface Indexed {
    */
   boolean indexEmpty() default false;
 
+  /**
+   * Indicates whether this field should maintain a sorted set index for
+   * lexicographic range queries (greater than, less than, between).
+   * When enabled, creates and maintains a Redis sorted set alongside the
+   * regular RediSearch index, enabling efficient string range queries.
+   *
+   * <p>Note: This feature requires additional storage and maintenance overhead
+   * as it creates a secondary index structure. Use only when lexicographic
+   * range queries are needed.</p>
+   *
+   * <p>The sorted set key pattern will be: {entityPrefix}{fieldName}:lex
+   * where entityPrefix follows the same pattern as the main entity keys.</p>
+   *
+   * @return {@code true} if lexicographic indexing should be enabled, {@code false} otherwise
+   * @since 1.0.0
+   */
+  boolean lexicographic() default false;
+
 }

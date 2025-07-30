@@ -107,6 +107,47 @@ public enum QueryClause {
   TEXT_IN( //
       QueryClauseTemplate.of(FieldType.TEXT, Part.Type.IN, QueryClause.FIELD_EQUAL, 1) //
   ),
+  /**
+   * Text field query clause for lexicographic "greater than" comparisons.
+   * Matches text fields whose values are lexicographically greater than the specified value.
+   * Only applicable to fields marked with lexicographic=true.
+   */
+  TEXT_GREATER_THAN( //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.GREATER_THAN, QueryClause.FIELD_LEXICOGRAPHIC, 1) //
+  ),
+  /**
+   * Text field query clause for lexicographic "less than" comparisons.
+   * Matches text fields whose values are lexicographically less than the specified value.
+   * Only applicable to fields marked with lexicographic=true.
+   */
+  TEXT_LESS_THAN( //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.LESS_THAN, QueryClause.FIELD_LEXICOGRAPHIC, 1) //
+  ),
+  /**
+   * Text field query clause for lexicographic "greater than or equal" comparisons.
+   * Matches text fields whose values are lexicographically greater than or equal to the specified value.
+   * Only applicable to fields marked with lexicographic=true.
+   */
+  TEXT_GREATER_THAN_EQUAL( //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.GREATER_THAN_EQUAL, QueryClause.FIELD_LEXICOGRAPHIC, 1) //
+  ),
+  /**
+   * Text field query clause for lexicographic "less than or equal" comparisons.
+   * Matches text fields whose values are lexicographically less than or equal to the specified value.
+   * Only applicable to fields marked with lexicographic=true.
+   */
+  TEXT_LESS_THAN_EQUAL( //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.LESS_THAN_EQUAL, QueryClause.FIELD_LEXICOGRAPHIC, 1) //
+  ),
+  /**
+   * Text field query clause for lexicographic range matching.
+   * Matches text fields whose values fall lexicographically between the specified minimum and maximum values
+   * (inclusive).
+   * Only applicable to fields marked with lexicographic=true.
+   */
+  TEXT_BETWEEN( //
+      QueryClauseTemplate.of(FieldType.TEXT, Part.Type.BETWEEN, QueryClause.FIELD_LEXICOGRAPHIC, 2) //
+  ),
   // NUMERIC
   /**
    * Numeric field query clause for exact value matching.
@@ -219,6 +260,47 @@ public enum QueryClause {
       QueryClauseTemplate.of(FieldType.TAG, Part.Type.SIMPLE_PROPERTY, QueryClause.FIELD_TAG_EQUAL, 1) //
   ),
   /**
+   * Tag field query clause for lexicographic "greater than" comparisons.
+   * Matches tag fields whose values are lexicographically greater than the specified value.
+   * Only applicable to fields marked with lexicographic=true.
+   */
+  TAG_GREATER_THAN( //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.GREATER_THAN, QueryClause.FIELD_LEXICOGRAPHIC, 1) //
+  ),
+  /**
+   * Tag field query clause for lexicographic "less than" comparisons.
+   * Matches tag fields whose values are lexicographically less than the specified value.
+   * Only applicable to fields marked with lexicographic=true.
+   */
+  TAG_LESS_THAN( //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.LESS_THAN, QueryClause.FIELD_LEXICOGRAPHIC, 1) //
+  ),
+  /**
+   * Tag field query clause for lexicographic "greater than or equal" comparisons.
+   * Matches tag fields whose values are lexicographically greater than or equal to the specified value.
+   * Only applicable to fields marked with lexicographic=true.
+   */
+  TAG_GREATER_THAN_EQUAL( //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.GREATER_THAN_EQUAL, QueryClause.FIELD_LEXICOGRAPHIC, 1) //
+  ),
+  /**
+   * Tag field query clause for lexicographic "less than or equal" comparisons.
+   * Matches tag fields whose values are lexicographically less than or equal to the specified value.
+   * Only applicable to fields marked with lexicographic=true.
+   */
+  TAG_LESS_THAN_EQUAL( //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.LESS_THAN_EQUAL, QueryClause.FIELD_LEXICOGRAPHIC, 1) //
+  ),
+  /**
+   * Tag field query clause for lexicographic range matching.
+   * Matches tag fields whose values fall lexicographically between the specified minimum and maximum values
+   * (inclusive).
+   * Only applicable to fields marked with lexicographic=true.
+   */
+  TAG_BETWEEN( //
+      QueryClauseTemplate.of(FieldType.TAG, Part.Type.BETWEEN, QueryClause.FIELD_LEXICOGRAPHIC, 2) //
+  ),
+  /**
    * Tag field query clause for exclusion testing.
    * Matches tag fields whose values are not in the specified collection of values.
    */
@@ -310,6 +392,7 @@ public enum QueryClause {
   private static final String FIELD_GEO_NEAR = "@$field:[$param_0 $param_1 $param_2]";
   private static final String FIELD_IS_NULL = "!exists(@$field)";
   private static final String FIELD_IS_NOT_NULL = "exists(@$field)";
+  private static final String FIELD_LEXICOGRAPHIC = "__LEXICOGRAPHIC__";
   private final QueryClauseTemplate clauseTemplate;
   private final MappingRedisOMConverter converter = new MappingRedisOMConverter();
 

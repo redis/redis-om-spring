@@ -37,6 +37,7 @@ import com.redis.om.spring.audit.EntityAuditor;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.id.IdentifierFilter;
 import com.redis.om.spring.id.ULIDIdentifierGenerator;
+import com.redis.om.spring.indexing.LexicographicIndexer;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.mapping.RedisEnhancedPersistentEntity;
 import com.redis.om.spring.metamodel.MetamodelField;
@@ -88,6 +89,10 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   protected final EntityAuditor auditor;
   /** Handles vector embedding generation for AI/ML features */
   protected final Embedder embedder;
+  /**
+   * Handles lexicographic sorted set maintenance
+   */
+  protected final LexicographicIndexer lexicographicIndexer;
 
   private final ULIDIdentifierGenerator generator;
   private final RedisOMProperties properties;
@@ -128,6 +133,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     this.auditor = new EntityAuditor(modulesOperations.template());
     this.embedder = embedder;
     this.properties = properties;
+    this.lexicographicIndexer = new LexicographicIndexer(modulesOperations.template(), indexer);
     this.entityStream = new EntityStreamImpl(modulesOperations, modulesOperations.gsonBuilder(), indexer);
   }
 
@@ -427,6 +433,10 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
         // process entity pre-save mutation
         auditor.processEntity(entity, isNew);
 
+        // Process lexicographic indexing
+        String keyspaceWithColon = keyspace.endsWith(":") ? keyspace : keyspace + ":";
+        lexicographicIndexer.processEntity(entity, idAsString, isNew, keyspaceWithColon);
+
         RedisData rdo = new RedisData();
         mappingConverter.write(entity, rdo);
 
@@ -442,6 +452,51 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     }
 
     return saved;
+  }
+
+  @Override
+  public void delete(T entity) {
+    Assert.notNull(entity, "The given entity must not be null");
+
+    // Check if this entity class has lexicographic fields
+    Set<String> lexicographicFields = indexer.getLexicographicFields(entity.getClass());
+    if (lexicographicFields != null && !lexicographicFields.isEmpty()) {
+      // Process lexicographic deletion before deleting the entity
+      Object id = metadata.getRequiredId(entity);
+      String idAsString = validateKeyForWriting(id, entity);
+      KeyValuePersistentEntity<?, ?> keyValueEntity = mappingConverter.getMappingContext().getRequiredPersistentEntity(
+          ClassUtils.getUserClass(entity));
+      String keyspace = keyValueEntity.getKeySpace();
+      String keyspaceWithColon = keyspace.endsWith(":") ? keyspace : keyspace + ":";
+      lexicographicIndexer.processEntityDeletion(entity, idAsString, keyspaceWithColon);
+    }
+
+    super.delete(entity);
+  }
+
+  @Override
+  public void deleteById(ID id) {
+    Assert.notNull(id, "The given id must not be null");
+
+    // Check if this entity class has lexicographic fields
+    Set<String> lexicographicFields = indexer.getLexicographicFields(metadata.getJavaType());
+    if (lexicographicFields != null && !lexicographicFields.isEmpty()) {
+      // Try to load the entity to process lexicographic deletion
+      Optional<T> entity = findById(id);
+      if (entity.isPresent()) {
+        delete(entity.get());
+        return;
+      }
+    }
+
+    // For entities without lexicographic fields or when entity not found, just call parent
+    super.deleteById(id);
+  }
+
+  @Override
+  public void deleteAll(Iterable<? extends T> entities) {
+    Assert.notNull(entities, "The given Iterable of entities not be null!");
+    entities.forEach(this::delete);
   }
 
   /**
