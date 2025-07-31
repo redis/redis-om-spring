@@ -591,7 +591,7 @@ public class RediSearchIndexer {
                   field.getName() :
                   String.join(".", prefix, field.getName());
 
-              // For nested fields, automatically create index fields even without explicit annotations
+              // For nested fields, automatically create index fields when the parent field is annotated with @Indexed(schemaFieldType = SchemaFieldType.NESTED)
               fields.addAll(createNestedIndexFields(field, subfield, subfieldPrefix, isDocument));
             }
           }
@@ -888,6 +888,32 @@ public class RediSearchIndexer {
   }
 
   /**
+   * Determines the appropriate FieldType for a given Java class.
+   * This utility method centralizes the logic for mapping Java types to Redis field types.
+   */
+  private enum FieldTypeMapper {
+    TAG,
+    NUMERIC,
+    GEO,
+    UNSUPPORTED;
+
+    static FieldTypeMapper getFieldType(Class<?> fieldType) {
+      if (CharSequence.class.isAssignableFrom(
+          fieldType) || fieldType == Boolean.class || fieldType == UUID.class || fieldType == Ulid.class || fieldType
+              .isEnum()) {
+        return TAG;
+      } else if (Number.class.isAssignableFrom(
+          fieldType) || fieldType == LocalDateTime.class || fieldType == LocalDate.class || fieldType == Date.class || fieldType == Instant.class || fieldType == OffsetDateTime.class) {
+        return NUMERIC;
+      } else if (fieldType == Point.class) {
+        return GEO;
+      } else {
+        return UNSUPPORTED;
+      }
+    }
+  }
+
+  /**
    * Creates index fields for nested array elements automatically.
    * This method handles automatic indexing of all fields within nested objects
    * when @Indexed(schemaFieldType = SchemaFieldType.NESTED) is used.
@@ -900,6 +926,9 @@ public class RediSearchIndexer {
 
     // For nested arrays, the path should be: $.arrayField[*].nestedField
     // The prefix already contains the array field name, so we just need [*].nestedField
+    // JSON documents use a "$" prefix to denote the root of the document, while hash structures do not.
+    // The `isDocument` flag determines whether the entity is stored as a JSON document or a hash structure in Redis.
+    // This affects the field path format: JSON documents require "$." as the prefix, while hash structures do not.
     String fullFieldPath = isDocument ?
         "$." + arrayField.getName() + "[*]." + nestedField.getName() :
         arrayField.getName() + "[*]." + nestedField.getName();
@@ -907,55 +936,38 @@ public class RediSearchIndexer {
     logger.info(String.format("Creating automatic nested field index: %s -> %s", arrayField.getName(), fullFieldPath));
 
     // Determine field type and create appropriate index field
-    if (CharSequence.class.isAssignableFrom(
-        nestedFieldType) || nestedFieldType == Boolean.class || nestedFieldType == UUID.class || nestedFieldType == Ulid.class) {
+    FieldTypeMapper fieldTypeMapper = FieldTypeMapper.getFieldType(nestedFieldType);
 
-      // Create TAG field for strings, booleans, UUIDs, and ULIDs
-      FieldName fieldName = FieldName.of(fullFieldPath);
-      String alias = QueryUtils.searchIndexFieldAliasFor(nestedField, prefix);
-      if (alias != null && !alias.isEmpty()) {
-        fieldName = fieldName.as(alias);
+    switch (fieldTypeMapper) {
+      case TAG -> {
+        // Create TAG field for strings, booleans, UUIDs, ULIDs, and enums
+        FieldName fieldName = FieldName.of(fullFieldPath);
+        String alias = QueryUtils.searchIndexFieldAliasFor(nestedField, prefix);
+        if (alias != null && !alias.isEmpty()) {
+          fieldName = fieldName.as(alias);
+        }
+        fields.add(SearchField.of(arrayField, getTagField(fieldName, "|", false)));
       }
-
-      fields.add(SearchField.of(arrayField, getTagField(fieldName, "|", false)));
-
-    } else if (Number.class.isAssignableFrom(
-        nestedFieldType) || nestedFieldType == LocalDateTime.class || nestedFieldType == LocalDate.class || nestedFieldType == Date.class || nestedFieldType == Instant.class || nestedFieldType == OffsetDateTime.class) {
-
-      // Create NUMERIC field for numbers and dates
-      FieldName fieldName = FieldName.of(fullFieldPath);
-      String alias = QueryUtils.searchIndexFieldAliasFor(nestedField, prefix);
-      if (alias != null && !alias.isEmpty()) {
-        fieldName = fieldName.as(alias);
+      case NUMERIC -> {
+        // Create NUMERIC field for numbers and dates
+        FieldName fieldName = FieldName.of(fullFieldPath);
+        String alias = QueryUtils.searchIndexFieldAliasFor(nestedField, prefix);
+        if (alias != null && !alias.isEmpty()) {
+          fieldName = fieldName.as(alias);
+        }
+        fields.add(SearchField.of(arrayField, NumericField.of(fieldName)));
       }
-
-      fields.add(SearchField.of(arrayField, NumericField.of(fieldName)));
-
-    } else if (nestedFieldType == Point.class) {
-
-      // Create GEO field for Point objects
-      FieldName fieldName = FieldName.of(fullFieldPath);
-      String alias = QueryUtils.searchIndexFieldAliasFor(nestedField, prefix);
-      if (alias != null && !alias.isEmpty()) {
-        fieldName = fieldName.as(alias);
+      case GEO -> {
+        // Create GEO field for Point objects
+        FieldName fieldName = FieldName.of(fullFieldPath);
+        String alias = QueryUtils.searchIndexFieldAliasFor(nestedField, prefix);
+        if (alias != null && !alias.isEmpty()) {
+          fieldName = fieldName.as(alias);
+        }
+        fields.add(SearchField.of(arrayField, GeoField.of(fieldName)));
       }
-
-      fields.add(SearchField.of(arrayField, GeoField.of(fieldName)));
-
-    } else if (nestedFieldType.isEnum()) {
-
-      // Create TAG field for enums
-      FieldName fieldName = FieldName.of(fullFieldPath);
-      String alias = QueryUtils.searchIndexFieldAliasFor(nestedField, prefix);
-      if (alias != null && !alias.isEmpty()) {
-        fieldName = fieldName.as(alias);
-      }
-
-      fields.add(SearchField.of(arrayField, getTagField(fieldName, "|", false)));
-
-    } else {
-      logger.debug(String.format("Skipping nested field %s of unsupported type %s", nestedField.getName(),
-          nestedFieldType.getSimpleName()));
+      case UNSUPPORTED -> logger.debug(String.format("Skipping nested field %s of unsupported type %s", nestedField
+          .getName(), nestedFieldType.getSimpleName()));
     }
 
     return fields;

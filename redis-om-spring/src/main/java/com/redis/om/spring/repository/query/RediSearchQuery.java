@@ -1,8 +1,10 @@
 package com.redis.om.spring.repository.query;
 
 import java.lang.reflect.Field;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map.Entry;
@@ -102,6 +104,25 @@ public class RediSearchQuery implements RepositoryQuery {
    */
   private static final Set<Part.Type> LEXICOGRAPHIC_PART_TYPES = Set.of(Part.Type.GREATER_THAN, Part.Type.LESS_THAN,
       Part.Type.GREATER_THAN_EQUAL, Part.Type.LESS_THAN_EQUAL, Part.Type.BETWEEN);
+
+  /**
+   * Determines the Redis field type for a given Java class.
+   * This utility method centralizes the logic for mapping Java types to Redis field types.
+   */
+  private static FieldType getRedisFieldType(Class<?> fieldType) {
+    if (CharSequence.class.isAssignableFrom(
+        fieldType) || fieldType == Boolean.class || fieldType == UUID.class || fieldType == Ulid.class || fieldType
+            .isEnum()) {
+      return FieldType.TAG;
+    } else if (Number.class.isAssignableFrom(
+        fieldType) || fieldType == LocalDateTime.class || fieldType == LocalDate.class || fieldType == Date.class || fieldType == Instant.class || fieldType == OffsetDateTime.class) {
+      return FieldType.NUMERIC;
+    } else if (fieldType == Point.class) {
+      return FieldType.GEO;
+    } else {
+      return null; // Unsupported type
+    }
+  }
 
   private final QueryMethod queryMethod;
   private final RedisOMProperties redisOMProperties;
@@ -411,9 +432,9 @@ public class RediSearchQuery implements RepositoryQuery {
       //
       // Any Character class, Enums or Boolean -> Tag Search Field
       //
-      if (CharSequence.class.isAssignableFrom(
-          fieldType) || (fieldType == Boolean.class) || (fieldType == UUID.class) || (fieldType == Ulid.class) || (fieldType
-              .isEnum())) {
+      FieldType redisFieldType = getRedisFieldType(fieldType);
+
+      if (redisFieldType == FieldType.TAG) {
         QueryClause clause;
         if (indexAnnotation.lexicographic() && isLexicographicPartType(part.getType())) {
           clause = getLexicographicQueryClause(FieldType.TAG, part.getType());
@@ -427,8 +448,7 @@ public class RediSearchQuery implements RepositoryQuery {
       //
       // Any Numeric class -> Numeric Search Field
       //
-      else if (Number.class.isAssignableFrom(fieldType) || (fieldType == LocalDateTime.class) || (field
-          .getType() == LocalDate.class) || (field.getType() == Date.class)) {
+      else if (redisFieldType == FieldType.NUMERIC) {
         qf.add(Pair.of(actualKey, QueryClause.get(FieldType.NUMERIC, part.getType())));
       }
       //
@@ -457,15 +477,9 @@ public class RediSearchQuery implements RepositoryQuery {
                 String actualNestedKey = (alias != null && !alias.isEmpty()) ? alias : nestedKey;
                 Class<?> nestedFieldType = ClassUtils.resolvePrimitiveIfNecessary(nestedField.getType());
 
-                if (CharSequence.class.isAssignableFrom(
-                    nestedFieldType) || nestedFieldType == Boolean.class || nestedFieldType == UUID.class || nestedFieldType == Ulid.class || nestedFieldType
-                        .isEnum()) {
-                  qf.add(Pair.of(actualNestedKey, QueryClause.get(FieldType.TAG, part.getType())));
-                } else if (Number.class.isAssignableFrom(
-                    nestedFieldType) || nestedFieldType == LocalDateTime.class || nestedFieldType == LocalDate.class || nestedFieldType == Date.class) {
-                  qf.add(Pair.of(actualNestedKey, QueryClause.get(FieldType.NUMERIC, part.getType())));
-                } else if (nestedFieldType == Point.class) {
-                  qf.add(Pair.of(actualNestedKey, QueryClause.get(FieldType.GEO, part.getType())));
+                FieldType nestedRedisFieldType = getRedisFieldType(nestedFieldType);
+                if (nestedRedisFieldType != null) {
+                  qf.add(Pair.of(actualNestedKey, QueryClause.get(nestedRedisFieldType, part.getType())));
                 }
               }
             }
@@ -481,7 +495,7 @@ public class RediSearchQuery implements RepositoryQuery {
             } else {
               qf.add(Pair.of(actualKey, QueryClause.get(FieldType.GEO, part.getType())));
             }
-          } else if (CharSequence.class.isAssignableFrom(collectionType) || (collectionType == Boolean.class)) {
+          } else if (getRedisFieldType(collectionType) == FieldType.TAG) {
             if (isANDQuery) {
               qf.add(Pair.of(actualKey, QueryClause.TAG_CONTAINING_ALL));
             } else {
@@ -495,7 +509,7 @@ public class RediSearchQuery implements RepositoryQuery {
       //
       // Point
       //
-      else if (fieldType == Point.class) {
+      else if (redisFieldType == FieldType.GEO) {
         qf.add(Pair.of(actualKey, QueryClause.get(FieldType.GEO, part.getType())));
       }
       //
