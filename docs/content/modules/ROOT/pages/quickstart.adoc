@@ -9,9 +9,10 @@ This quick start guide will walk you through building a Spring Boot application 
 
 Before you begin, make sure you have:
 
-* Java 17 or higher
-* Maven 3.6+
+* Java 17 or higher (Spring Boot 3.x requirement)
+* Maven 3.6+ or Gradle 7.5+
 * Docker (for running Redis)
+* Spring Boot 3.3.x or higher (see <<version-requirements>> below)
 
 == Setting Up Redis
 

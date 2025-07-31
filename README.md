@@ -85,7 +85,32 @@ This **preview** release provides all Spring Data Redis, plus:
 * `@Vectorize` annotation to generate embeddings for text and images for use in Vector Similarity Searches
 * Vector Similarity Search API (See [Redis Stack Vectors](https://redis.io/docs/stack/search/reference/vectors/))
 
-**Note:** Redis OM Spring requires Jedis version 5.2.0 or later, as well as Spring Data Redis version 3.4.1 or later, which is built on top of Spring Framework 6.2.+.
+### 📋 Version Requirements
+
+Redis OM Spring has the following version requirements:
+
+| Dependency | Minimum Version | Recommended Version | Notes |
+|------------|----------------|-------------------|--------|
+| **Spring Boot** | 3.3.x | 3.4.x or 3.5.x | Built with Spring Boot 3.4.5 |
+| **Spring Data Redis** | 3.4.1 | 3.4.5 or later | Aligned with Spring Boot version |
+| **Spring Framework** | 6.2.x | Latest 6.x | Transitive via Spring Boot |
+| **Jedis** | 5.2.0 | 5.2.0 or later | Redis Java client |
+| **Java** | 17 | 17 or 21 | Spring Boot 3.x requires Java 17+ |
+| **Redis Stack** | 6.2.x | 7.2.x or later | For JSON and Search modules |
+
+#### Spring Boot Version Compatibility Policy
+
+Redis OM Spring follows an **N-2 support policy** for Spring Boot versions:
+- We build with the latest stable Spring Boot version
+- We support the current version and two previous minor versions that are still receiving OSS updates
+- We upgrade Spring Boot with each Redis OM Spring release
+
+For example, as of Redis OM Spring 1.0.0-RC3 (July 2025):
+- **Built with**: Spring Boot 3.4.5
+- **Minimum supported**: Spring Boot 3.3.x
+- **Recommended**: Spring Boot 3.4.x or 3.5.x
+
+⚠️ **Note**: Using older Spring Boot versions may work but is not officially tested or supported. For production use, we recommend staying within the supported version range.
 
 ## 🏁 Getting Started
 
