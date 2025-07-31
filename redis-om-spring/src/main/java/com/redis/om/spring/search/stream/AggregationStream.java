@@ -2,6 +2,7 @@ package com.redis.om.spring.search.stream;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -237,6 +238,38 @@ public interface AggregationStream<T> {
    * @throws RuntimeException if the aggregation execution or conversion fails
    */
   <R extends T> List<R> toList(Class<?>... contentTypes);
+
+  /**
+   * Executes the aggregation and converts the results to a list of projection objects.
+   * The projection interface should define getter methods for the fields to include.
+   * IDs are not automatically included - add getId() to the projection interface if needed.
+   * 
+   * @param <P>             the projection type
+   * @param projectionClass the projection interface class
+   * @return a list of projection instances with the aggregated data
+   * @throws RuntimeException if the aggregation execution or projection creation fails
+   */
+  <P> List<P> toProjection(Class<P> projectionClass);
+
+  /**
+   * Executes the aggregation and converts the results to a list of maps.
+   * Each map contains field names as keys and field values as values.
+   * By default, entity IDs are included in the results.
+   * 
+   * @return a list of maps containing the aggregated data with IDs included
+   * @throws RuntimeException if the aggregation execution fails
+   */
+  List<Map<String, Object>> toMaps();
+
+  /**
+   * Executes the aggregation and converts the results to a list of maps.
+   * Each map contains field names as keys and field values as values.
+   * 
+   * @param includeId whether to include entity IDs in the results
+   * @return a list of maps containing the aggregated data
+   * @throws RuntimeException if the aggregation execution fails
+   */
+  List<Map<String, Object>> toMaps(boolean includeId);
 
   /**
    * Returns the underlying RediSearch query that would be executed.

@@ -192,6 +192,8 @@ SearchResult getFirstTag();
 SearchResult customFindAllByTitleStartingWithReturnFieldsAndLimit(@Param("prefix") String prefix);
 ----
 
+NOTE: For more advanced projection capabilities, including interface-based projections with type safety, see xref:entity-streams-aggregations.adoc#_projections_and_maps[Projections and Maps in Aggregations].
+
 === Pagination
 
 Control the number of results with Spring Data Pageable or annotation attributes:

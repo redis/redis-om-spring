@@ -271,6 +271,8 @@ List<Integer> foundingYears = entityStream.of(Company.class)
     .collect(Collectors.toList());
 ----
 
+NOTE: For more advanced projection capabilities, including interface-based projections and map results, see xref:entity-streams-aggregations.adoc#_projections_and_maps[Projections and Maps in Aggregations].
+
 === Multiple Field Projections
 
 Create tuples for multiple field projections:
