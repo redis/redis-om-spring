@@ -380,6 +380,11 @@ public class RediSearchQuery implements RepositoryQuery {
       sortBy = order.getProperty();
       sortAscending = order.isAscending();
     }
+
+    // Handle limiting queries (findTop, findFirst, etc.)
+    if (pt.isLimiting()) {
+      this.limit = pt.getMaxResults();
+    }
   }
 
   private List<Pair<String, QueryClause>> extractQueryFields(Class<?> type, Part part, List<PropertyPath> path) {
