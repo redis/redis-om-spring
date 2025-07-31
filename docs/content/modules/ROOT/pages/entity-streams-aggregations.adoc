@@ -299,6 +299,154 @@ entityStream.of(Person.class)
     });
 ----
 
+== Projections and Maps
+
+Redis OM Spring supports projections and map-based results for aggregations, providing flexible ways to work with aggregated data.
+
+=== Interface-Based Projections
+
+You can define projection interfaces to shape your aggregation results. IDs are not automatically included - add `getId()` to your projection if needed.
+
+[source,java]
+----
+import static com.redis.om.spring.annotations.ReducerFunction.*;
+
+// Define projection interface
+public interface DepartmentStatsProjection {
+    Integer getDepartmentNumber();
+    Long getHeadcount();
+    Double getTotalSales();
+    // String getId();  // Uncomment only if ID is needed
+}
+
+// Use projection with aggregation
+List<DepartmentStatsProjection> stats = entityStream.of(Person.class)
+    .groupBy(Person$.DEPARTMENT_NUMBER)
+    .reduce(COUNT).as("headcount")
+    .reduce(SUM, Person$.SALES).as("totalSales")
+    .sorted(Order.desc("@totalSales"))
+    .toProjection(DepartmentStatsProjection.class);
+
+// Access data through interface methods
+stats.forEach(stat -> {
+    System.out.printf("Dept %d: %d employees, $%.2f total sales%n",
+        stat.getDepartmentNumber(), 
+        stat.getHeadcount(), 
+        stat.getTotalSales());
+});
+----
+
+=== Simple Field Projections
+
+For simpler use cases, create projections for specific fields:
+
+[source,java]
+----
+import static com.redis.om.spring.annotations.ReducerFunction.*;
+
+public interface NameProjection {
+    String getName();
+    Long getCount();
+}
+
+// Get just names from aggregation with count
+List<NameProjection> names = entityStream.of(Person.class)
+    .groupBy(Person$.NAME)
+    .reduce(COUNT).as("count")
+    .toProjection(NameProjection.class);
+----
+
+=== Map-Based Results
+
+For maximum flexibility, convert aggregation results to Maps. By default, IDs are included.
+
+[source,java]
+----
+import static com.redis.om.spring.annotations.ReducerFunction.*;
+import java.util.Map;
+
+// Get results as maps with IDs included
+List<Map<String, Object>> results = entityStream.of(Person.class)
+    .groupBy(Person$.DEPARTMENT_NUMBER)
+    .reduce(COUNT).as("count")
+    .reduce(AVG, Person$.SALES).as("avgSales")
+    .toMaps();
+
+// Each map contains the aggregated data
+results.forEach(map -> {
+    System.out.printf("Dept %s: %d employees, avg sales $%.2f%n",
+        map.get("departmentNumber"),
+        map.get("count"),
+        map.get("avgSales"));
+});
+
+// Exclude IDs if not needed
+List<Map<String, Object>> resultsNoId = entityStream.of(Person.class)
+    .groupBy(Person$.NAME)
+    .reduce(SUM, Person$.SALES)
+    .toMaps(false);  // IDs excluded
+----
+
+=== Projection vs Maps vs Tuples
+
+Choose the right approach for your use case:
+
+[source,java]
+----
+import static com.redis.om.spring.annotations.ReducerFunction.*;
+import java.util.Map;
+
+// 1. Projections - Type-safe, IDE support, best for defined structures
+public interface SalesProjection {
+    String getName();
+    Double getTotalSales();
+}
+
+List<SalesProjection> projections = entityStream.of(Person.class)
+    .groupBy(Person$.NAME)
+    .reduce(SUM, Person$.SALES).as("totalSales")
+    .toProjection(SalesProjection.class);
+
+// 2. Maps - Flexible, dynamic fields, good for variable structures
+List<Map<String, Object>> maps = entityStream.of(Person.class)
+    .groupBy(Person$.NAME)
+    .reduce(SUM, Person$.SALES).as("totalSales")
+    .toMaps();
+
+// 3. Tuples - Lightweight, positional access, existing approach
+List<Pair<String, Double>> tuples = entityStream.of(Person.class)
+    .groupBy(Person$.NAME)
+    .reduce(SUM, Person$.SALES)
+    .toList(String.class, Double.class);
+----
+
+=== Complex Projections
+
+Projections can handle complex aggregation results:
+
+[source,java]
+----
+import static com.redis.om.spring.annotations.ReducerFunction.*;
+
+public interface ComprehensiveStats {
+    Integer getDepartmentNumber();
+    Long getEmployeeCount();
+    Double getMinSales();
+    Double getMaxSales();
+    Double getAvgSales();
+    Double getTotalSales();
+}
+
+List<ComprehensiveStats> stats = entityStream.of(Person.class)
+    .groupBy(Person$.DEPARTMENT_NUMBER)
+    .reduce(COUNT).as("employeeCount")
+    .reduce(MIN, Person$.SALES).as("minSales")
+    .reduce(MAX, Person$.SALES).as("maxSales")
+    .reduce(AVG, Person$.SALES).as("avgSales")
+    .reduce(SUM, Person$.SALES).as("totalSales")
+    .toProjection(ComprehensiveStats.class);
+----
+
 == Performance Considerations
 
 === Efficient Aggregations

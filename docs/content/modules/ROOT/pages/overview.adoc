@@ -2,11 +2,11 @@
 :page-toclevels: 3
 :page-pagination:
 
-Redis OM Spring is a comprehensive advanced object-mapping, querying and repositories framework for Spring applications using Redis, it extends and enhances Spring Data Redis. While Spring Data Redis provides basic Redis functionality, Redis OM Spring delivers a complete solution designed specifically to leverage the advanced features of Redis 8+, Redis Enterprise, and Redis Cloud.
+Redis OM Spring is a comprehensive advanced object-mapping, querying and repositories framework for Spring applications using Redis, it extends and enhances Spring Data Redis. While Spring Data Redis provides basic Redis functionality, Redis OM Spring delivers a complete solution designed specifically to leverage the advanced features of Redis 8+ (and a few older Redis Stack distros), Redis Enterprise, and Redis Cloud.
 
 == What is Redis OM Spring?
 
-Redis OM Spring is an Object Mapping framework designed specifically for Redis, allowing Java developers to work with Redis data using familiar annotations and repository patterns. Redis OM Spring reimagines how Redis should integrate with Spring applications to provide a more intuitive and powerful developer experience.
+Redis OM Spring is an Object Mapping framework designed specifically for Redis, allowing Java developers to work with Redis data using  annotations, repository patterns, fluid Streams-like APIs and more. Redis OM Spring reimagines how Redis should integrate with Spring applications to provide a more intuitive and powerful developer experience.
 
 image::redis-om-spring-architecture.png[Redis OM Spring Architecture,width=100%]
 
@@ -14,13 +14,13 @@ image::redis-om-spring-architecture.png[Redis OM Spring Architecture,width=100%]
 Redis OM Spring consists of two modules:
 
 * *redis-om-spring* - Core module providing modeling, indexing, search, and repository capabilities
-* *redis-om-spring-ai* - AI module offering vector embedding generation through Spring AI integration
+* *redis-om-spring-ai* - AI module offering AI-focused features like vector embedding generation - it leverages Spring AI
 
 == Redis Integration
 
 Redis OM Spring is built to work with Redis 8.0.0+, which includes these essential capabilities:
 
-* *Query Engine* - Powerful search and query engine (formerly RediSearch)
+* *Query Engine* - Powerful search / query engine with Full-text and Vector capabilities (formerly RediSearch)
 * *JSON* - Native JSON document storage 
 * *Probabilistic Data Structures* - Bloom filters, Cuckoo filters, and more
 * *Auto-Complete* - Fast auto-complete server-side functionality
@@ -153,9 +153,12 @@ public class MyDoc {
 * Type-safe query construction with generated metamodels
 * Fluent filtering, sorting, and projection
 * Powerful aggregation capabilities with grouping and reduction
+* Interface-based projections and map results for aggregations
 
 [source,java]
 ----
+import static com.redis.om.spring.annotations.ReducerFunction.*;
+
 // Find companies founded between 1980 and 2020, sorted by name
 List<Company> companies = entityStream
     .of(Company.class)
@@ -167,7 +170,7 @@ List<Company> companies = entityStream
 List<Pair<String, Long>> topBrands = entityStream
     .of(Game.class)
     .groupBy(Game$.BRAND)
-    .reduce(ReducerFunction.COUNT).as("count")
+    .reduce(COUNT).as("count")
     .sorted(Order.desc("@count"))
     .limit(5)
     .toList(String.class, Long.class);
@@ -176,12 +179,26 @@ List<Pair<String, Long>> topBrands = entityStream
 List<Quintuple<String, Double, Double, Double, Long>> priceStats = entityStream
     .of(Game.class)
     .groupBy(Game$.BRAND)
-    .reduce(ReducerFunction.AVG, Game$.PRICE).as("avgPrice")
-    .reduce(ReducerFunction.MIN, Game$.PRICE).as("minPrice")
-    .reduce(ReducerFunction.MAX, Game$.PRICE).as("maxPrice")
-    .reduce(ReducerFunction.COUNT).as("count")
+    .reduce(AVG, Game$.PRICE).as("avgPrice")
+    .reduce(MIN, Game$.PRICE).as("minPrice")
+    .reduce(MAX, Game$.PRICE).as("maxPrice")
+    .reduce(COUNT).as("count")
     .sorted(Order.desc("@count"))
     .toList(String.class, Double.class, Double.class, Double.class, Long.class);
+
+// Interface-based projections for aggregations
+public interface BrandStats {
+    String getBrand();
+    Double getAvgPrice();
+    Long getCount();
+}
+
+List<BrandStats> brandStatistics = entityStream
+    .of(Game.class)
+    .groupBy(Game$.BRAND)
+    .reduce(AVG, Game$.PRICE).as("avgPrice")
+    .reduce(COUNT).as("count")
+    .toProjection(BrandStats.class);
 ----
 
 === Aggregation Support

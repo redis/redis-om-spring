@@ -1,5 +1,8 @@
 package com.redis.om.spring.search.stream;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.time.Duration;
 import java.util.*;
 
@@ -489,6 +492,220 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
     } else {
       return aggregationResult.getResults().stream().map(h -> (E) ObjectUtils.mapToObject(h, entityClass,
           mappingConverter)).toList();
+    }
+  }
+
+  @Override
+  public <P> List<P> toProjection(Class<P> projectionClass) {
+    applyCurrentGroupBy();
+
+    if (!limitSet) {
+      aggregation.limit(MAX_LIMIT);
+    }
+
+    // Execute the aggregation
+    AggregationResult aggregationResult = search.aggregate(aggregation);
+
+    // Convert results to projections
+    return aggregationResult.getResults().stream().map(result -> createProjection(projectionClass, result)).toList();
+  }
+
+  @Override
+  public List<Map<String, Object>> toMaps() {
+    return toMaps(true);
+  }
+
+  @Override
+  public List<Map<String, Object>> toMaps(boolean includeId) {
+    applyCurrentGroupBy();
+
+    if (!limitSet) {
+      aggregation.limit(MAX_LIMIT);
+    }
+
+    // Execute the aggregation
+    AggregationResult aggregationResult = search.aggregate(aggregation);
+
+    // Convert results to maps
+    return aggregationResult.getResults().stream().map(result -> {
+      Map<String, Object> map = new LinkedHashMap<>();
+
+      // Add ID if requested and available
+      if (includeId) {
+        // Try common ID field names
+        if (result.containsKey("id")) {
+          map.put("id", result.get("id"));
+        } else if (result.containsKey("_id")) {
+          map.put("id", result.get("_id"));
+        } else if (result.containsKey("@id")) {
+          map.put("id", result.get("@id"));
+        }
+      }
+
+      // Add all requested fields or all available fields if no specific fields were requested
+      if (!returnFields.isEmpty()) {
+        for (String field : returnFields) {
+          String redisField = field.startsWith("@") ? field : "@" + field;
+          String simpleField = field.startsWith("@") ? field.substring(1) : field;
+
+          if (result.containsKey(redisField)) {
+            map.put(simpleField, result.get(redisField));
+          } else if (result.containsKey(field)) {
+            map.put(simpleField, result.get(field));
+          }
+        }
+      } else {
+        // If no specific fields were requested, include all non-ID fields from the result
+        for (Map.Entry<String, Object> entry : result.entrySet()) {
+          String key = entry.getKey();
+          String simpleField = key.startsWith("@") ? key.substring(1) : key;
+
+          // Skip ID fields if includeId is false or if they were already processed
+          if (!includeId && (key.equals("id") || key.equals("_id") || key.equals("@id"))) {
+            continue;
+          }
+
+          map.put(simpleField, entry.getValue());
+        }
+      }
+
+      return map;
+    }).toList();
+  }
+
+  @SuppressWarnings(
+    "unchecked"
+  )
+  private <P> P createProjection(Class<P> projectionClass, Map<String, Object> data) {
+    if (!projectionClass.isInterface()) {
+      throw new IllegalArgumentException("Projection class must be an interface");
+    }
+
+    InvocationHandler handler = new ProjectionInvocationHandler(data, projectionClass);
+
+    return (P) Proxy.newProxyInstance(projectionClass.getClassLoader(), new Class<?>[] { projectionClass }, handler);
+  }
+
+  /**
+   * InvocationHandler for dynamic projection proxies.
+   */
+  private class ProjectionInvocationHandler implements InvocationHandler {
+    private final Map<String, Object> data;
+    private final Class<?> projectionClass;
+
+    public ProjectionInvocationHandler(Map<String, Object> data, Class<?> projectionClass) {
+      this.data = data;
+      this.projectionClass = projectionClass;
+    }
+
+    // Package-private getter for testing and comparison
+    Map<String, Object> getData() {
+      return this.data;
+    }
+
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+      // Handle Object methods
+      if (method.getDeclaringClass() == Object.class) {
+        switch (method.getName()) {
+          case "toString":
+            return projectionClass.getSimpleName() + data;
+          case "hashCode":
+            return data.hashCode();
+          case "equals":
+            if (args[0] == null)
+              return false;
+            if (args[0] == proxy)
+              return true;
+            if (!projectionClass.isInstance(args[0]))
+              return false;
+            // Compare the underlying data
+            try {
+              InvocationHandler otherHandler = Proxy.getInvocationHandler(args[0]);
+              // Check if it's the same type of handler by checking the class
+              if (otherHandler.getClass() == this.getClass()) {
+                // Since it's the same class and in the same enclosing instance,
+                // we can safely cast and access the data
+                ProjectionInvocationHandler otherProjectionHandler = (ProjectionInvocationHandler) otherHandler;
+                return data.equals(otherProjectionHandler.getData());
+              }
+            } catch (Exception e) {
+              return false;
+            }
+            return false;
+          default:
+            return method.invoke(this, args);
+        }
+      }
+
+      // Handle getter methods
+      String methodName = method.getName();
+      if (methodName.startsWith("get") && methodName.length() > 3 && method.getParameterCount() == 0) {
+        String propertyName = Character.toLowerCase(methodName.charAt(3)) + methodName.substring(4);
+
+        // Check various field name formats
+        Object value = null;
+        if (data.containsKey(propertyName)) {
+          value = data.get(propertyName);
+        } else if (data.containsKey("@" + propertyName)) {
+          value = data.get("@" + propertyName);
+        } else {
+          // Try to find a matching field ignoring case
+          for (Map.Entry<String, Object> entry : data.entrySet()) {
+            String key = entry.getKey();
+            String normalizedKey = key.startsWith("@") ? key.substring(1) : key;
+            if (normalizedKey.equalsIgnoreCase(propertyName)) {
+              value = entry.getValue();
+              break;
+            }
+          }
+        }
+
+        // Type conversion if needed
+        if (value != null) {
+          Class<?> returnType = method.getReturnType();
+          return convertValue(value, returnType);
+        }
+
+        return null;
+      }
+
+      // For non-getter methods, throw exception
+      throw new UnsupportedOperationException("Method " + method.getName() + " is not supported on projections");
+    }
+
+    private Object convertValue(Object value, Class<?> targetType) {
+      if (value == null || targetType.isAssignableFrom(value.getClass())) {
+        return value;
+      }
+
+      String stringValue = value.toString();
+
+      // Handle common type conversions
+      if (targetType == String.class) {
+        return stringValue;
+      } else if (targetType == Long.class || targetType == long.class) {
+        return Long.parseLong(stringValue);
+      } else if (targetType == Integer.class || targetType == int.class) {
+        return Integer.parseInt(stringValue);
+      } else if (targetType == Double.class || targetType == double.class) {
+        return Double.parseDouble(stringValue);
+      } else if (targetType == Float.class || targetType == float.class) {
+        return Float.parseFloat(stringValue);
+      } else if (targetType == Boolean.class || targetType == boolean.class) {
+        return Boolean.parseBoolean(stringValue);
+      }
+
+      // For complex types, try to use gson if it's a JSON string
+      if (isDocument && value instanceof String) {
+        try {
+          return gson.fromJson((String) value, targetType);
+        } catch (Exception e) {
+          // Fall back to returning the original value
+        }
+      }
+
+      return value;
     }
   }
 

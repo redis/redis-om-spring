@@ -217,6 +217,31 @@ public interface CompanyRepository extends RedisDocumentRepository<Company, Stri
 }
 ----
 
+== Working with Projections
+
+Redis OM Spring supports Spring Data projections for efficient data retrieval:
+
+=== Interface-Based Projections
+
+Define an interface with getter methods for the fields you need:
+
+[source,java]
+----
+// Define projection interface
+public interface CompanyProjection {
+    String getName();
+    Integer getYearFounded();
+    // Note: ID is not automatically included
+}
+
+// Use in repository - requires custom implementation
+public interface CompanyRepository extends RedisDocumentRepository<Company, String> {
+    List<CompanyProjection> findByPubliclyListed(boolean publiclyListed);
+}
+----
+
+NOTE: Projection support in repositories requires custom implementation. For built-in projection support, use Entity Streams with aggregations. See xref:entity-streams-aggregations.adoc#_projections_and_maps[Projections and Maps in Aggregations].
+
 == Best Practices
 
 * Use the appropriate query method for your needs
@@ -229,4 +254,5 @@ public interface CompanyRepository extends RedisDocumentRepository<Company, Stri
 
 * xref:query-annotation.adoc[Query Annotation]
 * xref:entity-streams.adoc[Entity Streams]
+* xref:entity-streams-aggregations.adoc[Entity Streams Aggregations]
 * xref:qbe.adoc[Query By Example]
