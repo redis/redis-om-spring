@@ -1,0 +1,166 @@
+= Version Requirements
+:page-toclevels: 3
+:page-pagination:
+:source-highlighter: highlight.js
+
+This page documents the version requirements and compatibility policy for Redis OM Spring.
+
+[[version-requirements]]
+== Current Version Requirements
+
+Redis OM Spring has the following version requirements:
+
+[cols="30,20,20,30", options="header"]
+|===
+|Dependency
+|Minimum Version
+|Recommended Version
+|Notes
+
+|Spring Boot
+|3.3.x
+|3.4.x or 3.5.x
+|Built with Spring Boot 3.4.5
+
+|Spring Data Redis
+|3.4.1
+|3.4.5 or later
+|Aligned with Spring Boot version
+
+|Spring Framework
+|6.2.x
+|Latest 6.x
+|Transitive via Spring Boot
+
+|Jedis
+|5.2.0
+|5.2.0 or later
+|Redis Java client
+
+|Java
+|17
+|17 or 21
+|Spring Boot 3.x requires Java 17+
+
+|Redis Stack
+|6.2.x
+|7.2.x or later
+|For JSON and Search modules
+|===
+
+== Spring Boot Version Compatibility Policy
+
+Redis OM Spring follows an **N-2 support policy** for Spring Boot versions:
+
+* We build with the latest stable Spring Boot version
+* We support the current version and two previous minor versions that are still receiving OSS updates
+* We upgrade Spring Boot with each Redis OM Spring release
+
+=== Example
+
+As of Redis OM Spring 1.0.0-RC3 (July 2025):
+
+* **Built with**: Spring Boot 3.4.5
+* **Minimum supported**: Spring Boot 3.3.x (OSS support until June 2025)
+* **Recommended**: Spring Boot 3.4.x or 3.5.x
+
+[WARNING]
+====
+Using older Spring Boot versions may work but is not officially tested or supported. For production use, we recommend staying within the supported version range.
+====
+
+== How the Support Policy Works
+
+=== Release Schedule
+
+Spring Boot releases follow a predictable schedule:
+
+* New major or minor versions every 6 months (May and November)
+* OSS support for 12 months per minor version
+* Commercial support available for extended periods
+
+=== Our Approach
+
+1. **On each Redis OM Spring release**: We update to the latest stable Spring Boot version
+2. **Minimum version**: We support versions that are still receiving OSS updates
+3. **Testing**: We test against all supported Spring Boot versions in our CI pipeline
+
+=== Determining Supported Versions
+
+To determine which Spring Boot versions Redis OM Spring supports:
+
+1. Check the `springBootVersion` in `gradle.properties` - this is what we build with
+2. Check the https://spring.io/projects/spring-boot#support[Spring Boot support timeline]
+3. We support the build version and any previous minor versions still receiving OSS updates
+
+== Upgrading Spring Boot
+
+If you need to upgrade your Spring Boot version:
+
+1. Check the https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-3.x-Release-Notes[Spring Boot release notes] for breaking changes
+2. Update your `pom.xml` or `build.gradle` to use the new version
+3. Run your tests to ensure compatibility
+4. Pay special attention to:
+   * Spring Data Redis changes
+   * Spring Framework changes
+   * Java version requirements
+
+== Java Version Requirements
+
+Redis OM Spring requires Java 17 or higher because:
+
+* Spring Boot 3.x requires Java 17 as a minimum
+* We use Java 17 language features in our codebase
+* Java 17 is an LTS (Long Term Support) release
+
+We recommend using Java 17 or Java 21 (the next LTS) for production deployments.
+
+== Redis Requirements
+
+Redis OM Spring requires Redis Stack or Redis with specific modules:
+
+* **Minimum Redis version**: 6.2.x
+* **Recommended**: Redis Stack 7.2.x or later
+* **Required modules**:
+  ** RedisJSON for document storage
+  ** RediSearch for indexing and querying
+
+You can run Redis Stack using Docker:
+
+[source,bash]
+----
+docker run -p 6379:6379 redis/redis-stack:latest
+----
+
+Or Redis 8.0+ which includes these capabilities:
+
+[source,bash]
+----
+docker run -p 6379:6379 redis:8.0.0
+----
+
+== Dependency Version Alignment
+
+When using Redis OM Spring, ensure your dependencies are aligned:
+
+[source,xml]
+----
+<properties>
+    <spring-boot.version>3.4.5</spring-boot.version>
+    <redis-om-spring.version>1.0.0-RC3</redis-om-spring.version>
+</properties>
+
+<dependencies>
+    <dependency>
+        <groupId>com.redis.om</groupId>
+        <artifactId>redis-om-spring</artifactId>
+        <version>${redis-om-spring.version}</version>
+    </dependency>
+    <!-- Spring Boot dependencies will be managed by the parent POM -->
+</dependencies>
+----
+
+[TIP]
+====
+Use Spring Boot's dependency management to ensure all Spring-related dependencies are aligned with your Spring Boot version.
+====

@@ -4,6 +4,7 @@
 
 .Getting Started
 * xref:setup.adoc[Installation & Setup]
+* xref:version-requirements.adoc[Version Requirements]
 * xref:configuration.adoc[Configuration]
 * xref:quickstart.adoc[Quick Start Example]
 
