@@ -61,4 +61,15 @@ public interface CompanyRepository extends RedisDocumentRepository<Company, Stri
   List<Company> findByYearFoundedGreaterThanOrderByNameDesc(int year);
 
   List<Company> findByYearFoundedBetweenOrderByNameAsc(int start, int end);
+  
+  // Methods for testing findTop/findFirst limiting functionality
+  Optional<Company> findTopByOrderByYearFoundedAsc();
+  
+  List<Company> findTop2ByOrderByYearFoundedAsc();
+  
+  List<Company> findTop3ByPubliclyListedOrderByYearFoundedDesc(boolean publiclyListed);
+  
+  Optional<Company> findFirstByOrderByNameAsc();
+  
+  List<Company> findFirst5ByPubliclyListedOrderByNameDesc(boolean publiclyListed);
 }
