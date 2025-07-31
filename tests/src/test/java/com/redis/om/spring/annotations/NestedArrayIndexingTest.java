@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests for nested array indexing feature (GitHub issue #519).
  * This feature enables indexing of nested fields within List<Model> properties
- * using @Indexed(schemaFieldType = SchemaField.FieldType.NESTED).
+ * using @Indexed(schemaFieldType = SchemaFieldType.NESTED).
  */
 class NestedArrayIndexingTest extends AbstractBaseDocumentTest {
   private static final Logger logger = LoggerFactory.getLogger(NestedArrayIndexingTest.class);
