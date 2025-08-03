@@ -6,6 +6,8 @@ project:
     homepage: https://github.com/redis/redis-om-spring
   authors:
     - Brian Sam-Bodden
+    - Raphael De Lio
+    - Luigi Fugaro
   license: MIT
   languages:
     java:

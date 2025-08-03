@@ -105,7 +105,7 @@ Redis OM Spring follows an **N-2 support policy** for Spring Boot versions:
 - We support the current version and two previous minor versions that are still receiving OSS updates
 - We upgrade Spring Boot with each Redis OM Spring release
 
-For example, as of Redis OM Spring 1.0.0-RC3 (July 2025):
+For example, as of Redis OM Spring 1.0.0-RC4:
 - **Built with**: Spring Boot 3.4.5
 - **Minimum supported**: Spring Boot 3.3.x
 - **Recommended**: Spring Boot 3.4.x or 3.5.x
@@ -441,18 +441,7 @@ Iterable<MyDoc> allMatches = repository.findAll(example);
 
 #### Release Process
 
-To release a new version of Redis OM Spring:
-
-1. Ensure all changes are committed and pushed to the main branch
-2. Run the release preparation script: `./scripts/prepare-release.sh <version>`
-3. Create a new GitHub release with the tag `v<version>`
-   (e.g., `v0.6.0`)
-4. The GitHub workflow will automatically:
-   - Build the project
-   - Generate artifacts
-   - Sign the artifacts with GPG
-   - Publish to Maven Central
-
+To release a new version of Redis OM Spring follow `docs/release_process.md`.
 This process publishes both `redis-om-spring` and `redis-om-spring-ai` modules to Maven Central.
 
 > ⚠️ Starting from version `v1.0.0-RC.1`, Redis OM Spring has been divided into two separate modules:
