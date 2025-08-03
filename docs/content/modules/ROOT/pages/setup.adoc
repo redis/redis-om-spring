@@ -146,7 +146,7 @@ To use SNAPSHOT releases, add the snapshots repository to your `pom.xml`:
 <dependency>
   <groupId>com.redis.om</groupId>
   <artifactId>redis-om-spring</artifactId>
-  <version>1.0.0-RC3-SNAPSHOT</version>
+  <version>1.0.0-RC4-SNAPSHOT</version>
 </dependency>
 ----
 
@@ -164,7 +164,7 @@ dependencies {
   // Core Redis OM Spring
   implementation "com.redis.om:redis-om-spring:${redisOmVersion}"
   annotationProcessor "com.redis.om:redis-om-spring:${redisOmVersion}"
-  
+
   // Optional: AI module for vector embeddings
   implementation "com.redis.om:redis-om-spring-ai:${redisOmVersion}"
 }
@@ -217,7 +217,7 @@ repositories {
 }
 
 ext {
-  redisOmVersion = '1.0.0-RC3-SNAPSHOT'
+  redisOmVersion = '1.0.0-RC4-SNAPSHOT'
 }
 ----
 
@@ -324,7 +324,7 @@ public class MyApplication {
 
 *Symptom*: Compilation errors referring to missing classes with `$` suffix (e.g., `Person$`).
 
-*Solution*: 
+*Solution*:
 
 For Maven:
 1. Ensure the `maven-compiler-plugin` is configured with the Redis OM Spring annotation processor
@@ -340,7 +340,7 @@ For Gradle:
 
 *Symptom*: `Connection refused` errors when starting the application.
 
-*Solution*: 
+*Solution*:
 1. Verify Redis is running: `docker ps` or `redis-cli ping`
 2. Check connection properties in `application.properties` or `application.yaml`
 3. Ensure firewalls allow connections to Redis port (default: 6379)

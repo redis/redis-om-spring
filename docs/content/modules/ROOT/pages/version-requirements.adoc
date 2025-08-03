@@ -58,9 +58,9 @@ Redis OM Spring follows an **N-2 support policy** for Spring Boot versions:
 
 === Example
 
-As of Redis OM Spring 1.0.0-RC3 (July 2025):
+As of Redis OM Spring 1.0.0-RC4 (August 2025):
 
-* **Built with**: Spring Boot 3.4.5
+* **Built with**: Spring Boot 3.4.8
 * **Minimum supported**: Spring Boot 3.3.x (OSS support until June 2025)
 * **Recommended**: Spring Boot 3.4.x or 3.5.x
 
@@ -147,7 +147,7 @@ When using Redis OM Spring, ensure your dependencies are aligned:
 ----
 <properties>
     <spring-boot.version>3.4.5</spring-boot.version>
-    <redis-om-spring.version>1.0.0-RC3</redis-om-spring.version>
+    <redis-om-spring.version>1.0.0-RC4</redis-om-spring.version>
 </properties>
 
 <dependencies>
