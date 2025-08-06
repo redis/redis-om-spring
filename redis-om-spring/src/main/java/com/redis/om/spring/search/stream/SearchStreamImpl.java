@@ -496,7 +496,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       return searchResult.getTotalResults();
     } else {
       var info = search.getInfo();
-      return (long) info.get("num_docs");
+      //return (long) info.get("num_docs");
+      return Long.parseLong(info.get("num_docs").toString());
     }
   }
 
