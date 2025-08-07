@@ -5,6 +5,9 @@ import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Range;
+import org.springframework.data.redis.connection.Limit;
+
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.ops.RedisModulesOperations;
@@ -121,9 +124,8 @@ public class LexicographicBetweenPredicate<E, T> extends BaseAbstractPredicate<E
     // Start from exactly "minValue#" (inclusive) to "maxValue\uffff" (inclusive of all with maxValue)
     String minParam = min.toString() + "#";
     String maxParam = max.toString() + "\uffff";
-    Set<String> matches = rmo.template().opsForZSet().rangeByLex(sortedSetKey,
-        org.springframework.data.redis.connection.RedisZSetCommands.Range.range().gte(minParam).lte(maxParam),
-        org.springframework.data.redis.connection.RedisZSetCommands.Limit.unlimited());
+    Set<String> matches = rmo.template().opsForZSet().rangeByLex(sortedSetKey, Range.closed(minParam, maxParam), Limit
+        .unlimited());
 
     if (matches == null || matches.isEmpty()) {
       // No matches, return a query that matches nothing by using an impossible ID

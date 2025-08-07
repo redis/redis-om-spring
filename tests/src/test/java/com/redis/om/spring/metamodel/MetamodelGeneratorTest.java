@@ -429,7 +429,7 @@ class MetamodelGeneratorTest {
              _THIS = new MetamodelField<IdOnly, IdOnly>("__this", IdOnly.class, true);
            }
          }
-         """;
+        """;
 
     assertThat(fileContents).containsIgnoringWhitespaces(expected);
   }

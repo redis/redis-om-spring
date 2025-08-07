@@ -6,6 +6,8 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.data.domain.Range;
+import org.springframework.data.redis.connection.Limit;
 import org.springframework.data.util.Pair;
 import org.springframework.util.ReflectionUtils;
 
@@ -176,9 +178,8 @@ public class LexicographicQueryExecutor {
         // When doing greater than, we need to exclude exact matches with the same prefix
         // Since our format is "value#id", we append a high character to ensure we skip all entries with this prefix
         String gtParam = params[0].toString() + "\uffff"; // Unicode max character
-        Set<String> results = modulesOperations.template().opsForZSet().rangeByLex(sortedSetKey,
-            org.springframework.data.redis.connection.RedisZSetCommands.Range.range().gt(gtParam),
-            org.springframework.data.redis.connection.RedisZSetCommands.Limit.unlimited());
+        Set<String> results = modulesOperations.template().opsForZSet().rangeByLex(sortedSetKey, Range.rightUnbounded(
+            Range.Bound.exclusive(gtParam)), Limit.unlimited());
         logger.debug(String.format("ZRANGEBYLEX %s (%s +inf returned: %s", sortedSetKey, gtParam, results));
         return results;
 
@@ -187,27 +188,24 @@ public class LexicographicQueryExecutor {
         // For less than, we need to ensure we don't include the value itself
         // Since format is "value#id", we need to get everything before "value#" (excluded)
         String ltParam = params[0].toString() + "#"; // Exclude exact matches with this prefix
-        return modulesOperations.template().opsForZSet().rangeByLex(sortedSetKey,
-            org.springframework.data.redis.connection.RedisZSetCommands.Range.range().lt(ltParam),
-            org.springframework.data.redis.connection.RedisZSetCommands.Limit.unlimited());
+        return modulesOperations.template().opsForZSet().rangeByLex(sortedSetKey, Range.leftUnbounded(Range.Bound
+            .exclusive(ltParam)), Limit.unlimited());
 
       case TEXT_GREATER_THAN_EQUAL:
       case TAG_GREATER_THAN_EQUAL:
         // For greater than or equal, we include the value itself
         // Since format is "value#id", we start from exactly "value#"
         String gteParam = params[0].toString() + "#"; // Include exact matches with this prefix
-        return modulesOperations.template().opsForZSet().rangeByLex(sortedSetKey,
-            org.springframework.data.redis.connection.RedisZSetCommands.Range.range().gte(gteParam),
-            org.springframework.data.redis.connection.RedisZSetCommands.Limit.unlimited());
+        return modulesOperations.template().opsForZSet().rangeByLex(sortedSetKey, Range.rightUnbounded(Range.Bound
+            .inclusive(gteParam)), Limit.unlimited());
 
       case TEXT_LESS_THAN_EQUAL:
       case TAG_LESS_THAN_EQUAL:
         // For less than or equal, we include all values with this prefix
         // Since format is "value#id", we use high unicode char to include all IDs with this value
         String lteParam = params[0].toString() + "\uffff"; // Include all exact matches with this prefix
-        return modulesOperations.template().opsForZSet().rangeByLex(sortedSetKey,
-            org.springframework.data.redis.connection.RedisZSetCommands.Range.range().lte(lteParam),
-            org.springframework.data.redis.connection.RedisZSetCommands.Limit.unlimited());
+        return modulesOperations.template().opsForZSet().rangeByLex(sortedSetKey, Range.leftUnbounded(Range.Bound
+            .inclusive(lteParam)), Limit.unlimited());
 
       case TEXT_BETWEEN:
       case TAG_BETWEEN:
@@ -215,9 +213,8 @@ public class LexicographicQueryExecutor {
         // Start from exactly "minValue#" (inclusive) to "maxValue\uffff" (inclusive of all with maxValue)
         String minParam = params[0].toString() + "#";
         String maxParam = params[1].toString() + "\uffff";
-        return modulesOperations.template().opsForZSet().rangeByLex(sortedSetKey,
-            org.springframework.data.redis.connection.RedisZSetCommands.Range.range().gte(minParam).lte(maxParam),
-            org.springframework.data.redis.connection.RedisZSetCommands.Limit.unlimited());
+        return modulesOperations.template().opsForZSet().rangeByLex(sortedSetKey, Range.closed(minParam, maxParam),
+            Limit.unlimited());
 
       default:
         return Collections.emptySet();

@@ -9,6 +9,7 @@ import com.redis.om.spring.repository.query.RediSearchQuery;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Range;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.Arrays;
@@ -78,7 +79,7 @@ class LexicographicQueryDebugTest extends AbstractBaseDocumentTest {
     
     // Test direct sorted set query
     Set<String> directQuery = redisTemplate.opsForZSet().rangeByLex(skuLexKey,
-        org.springframework.data.redis.connection.RedisZSetCommands.Range.range().gt("product002"));
+        Range.rightUnbounded(Range.Bound.exclusive("product002")));
     System.out.println("Direct ZRANGEBYLEX result: " + directQuery);
   }
 
