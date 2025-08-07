@@ -18,11 +18,22 @@ import redis.clients.jedis.search.querybuilder.Node;
 public class LexicographicLessThanMarker<E, T> extends BaseAbstractPredicate<E, T> implements LexicographicPredicate {
   private final T value;
 
+  /**
+   * Creates a new LexicographicLessThanMarker for the specified field and threshold.
+   * 
+   * @param field the field accessor for the target string field
+   * @param value the threshold value (field must be lexicographically less than this)
+   */
   public LexicographicLessThanMarker(SearchFieldAccessor field, T value) {
     super(field);
     this.value = value;
   }
 
+  /**
+   * Returns the threshold value for comparison.
+   * 
+   * @return the threshold value
+   */
   public T getValue() {
     return value;
   }

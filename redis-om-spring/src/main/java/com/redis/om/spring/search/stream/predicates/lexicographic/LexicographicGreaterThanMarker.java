@@ -19,11 +19,22 @@ public class LexicographicGreaterThanMarker<E, T> extends BaseAbstractPredicate<
     LexicographicPredicate {
   private final T value;
 
+  /**
+   * Creates a new LexicographicGreaterThanMarker for the specified field and threshold.
+   * 
+   * @param field the field accessor for the target string field
+   * @param value the threshold value (field must be lexicographically greater than this)
+   */
   public LexicographicGreaterThanMarker(SearchFieldAccessor field, T value) {
     super(field);
     this.value = value;
   }
 
+  /**
+   * Returns the threshold value for comparison.
+   * 
+   * @return the threshold value
+   */
   public T getValue() {
     return value;
   }
