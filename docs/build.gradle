@@ -12,9 +12,9 @@ description = 'Redis OM Spring Documents Site'
 
 // Define properties similar to Maven pom.xml
 ext {
-	nodeVersion = '20.5.0' // Note: no 'v' prefix for node-gradle plugin
-	npmVersion = '9.8.0'
-	antoraVersion = '3.1.4'
+	nodeVersion = '20.17.0' // LTS version
+	npmVersion = '10.9.2'
+	antoraVersion = '3.1.12'
 }
 
 // Configure Node.js plugin

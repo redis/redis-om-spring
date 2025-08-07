@@ -29,7 +29,8 @@ asciidoc:
     toc: ~
     xrefstyle: short
     # Javadoc-specific attributes
-    javadoc-base-url: '{attachmentsdir}/javadoc'
+    # Using relative paths from the page location
+    javadoc-base-url: '_attachments/javadoc'
     javadoc-core-url: '{javadoc-base-url}/modules/redis-om-spring'
     javadoc-ai-url: '{javadoc-base-url}/modules/redis-om-spring-ai'
     javadoc-aggregate-url: '{javadoc-base-url}/aggregate'
