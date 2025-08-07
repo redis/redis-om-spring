@@ -38,6 +38,13 @@ public class LexicographicQueryExecutor {
   private final RedisModulesOperations<String> modulesOperations;
   private final RediSearchIndexer indexer;
 
+  /**
+   * Creates a new LexicographicQueryExecutor with the specified dependencies.
+   * 
+   * @param rediSearchQuery   the RediSearch query being executed
+   * @param modulesOperations the Redis modules operations for executing commands
+   * @param indexer           the RediSearch indexer for accessing field metadata
+   */
   public LexicographicQueryExecutor(RediSearchQuery rediSearchQuery, RedisModulesOperations<String> modulesOperations,
       RediSearchIndexer indexer) {
     this.rediSearchQuery = rediSearchQuery;

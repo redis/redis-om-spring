@@ -19,16 +19,33 @@ public class LexicographicBetweenMarker<E, T> extends BaseAbstractPredicate<E, T
   private final T min;
   private final T max;
 
+  /**
+   * Creates a new LexicographicBetweenMarker for the specified field and range.
+   * 
+   * @param field the field accessor for the target string field
+   * @param min   the minimum value (inclusive)
+   * @param max   the maximum value (inclusive)
+   */
   public LexicographicBetweenMarker(SearchFieldAccessor field, T min, T max) {
     super(field);
     this.min = min;
     this.max = max;
   }
 
+  /**
+   * Returns the minimum value for the range.
+   * 
+   * @return the minimum value
+   */
   public T getMin() {
     return min;
   }
 
+  /**
+   * Returns the maximum value for the range.
+   * 
+   * @return the maximum value
+   */
   public T getMax() {
     return max;
   }

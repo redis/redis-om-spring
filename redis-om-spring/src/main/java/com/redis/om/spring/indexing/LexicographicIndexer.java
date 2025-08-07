@@ -23,6 +23,12 @@ public class LexicographicIndexer {
   private final RedisTemplate<String, String> redisTemplate;
   private final RediSearchIndexer indexer;
 
+  /**
+   * Creates a new LexicographicIndexer with the specified dependencies.
+   * 
+   * @param redisTemplate the Redis template for executing Redis operations
+   * @param indexer       the RediSearch indexer for accessing field metadata
+   */
   public LexicographicIndexer(RedisTemplate<String, String> redisTemplate, RediSearchIndexer indexer) {
     this.redisTemplate = redisTemplate;
     this.indexer = indexer;
