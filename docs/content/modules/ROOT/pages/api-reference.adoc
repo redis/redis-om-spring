@@ -23,7 +23,7 @@ The API documentation is automatically generated from the latest release and inc
 
 The core Redis OM Spring module provides the fundamental functionality for object mapping, repositories, and search capabilities.
 
-link:{attachmentsdir}/javadoc/modules/redis-om-spring/index.html[Redis OM Spring Core API^, role="external"]
+xref:attachment$javadoc/modules/redis-om-spring/index.html[Redis OM Spring Core API^, role="external", window="_blank"]
 
 === Key Packages
 
@@ -39,7 +39,7 @@ link:{attachmentsdir}/javadoc/modules/redis-om-spring/index.html[Redis OM Spring
 
 The AI extension module provides vector embedding and similarity search capabilities with multiple AI provider integrations.
 
-link:{attachmentsdir}/javadoc/modules/redis-om-spring-ai/index.html[Redis OM Spring AI API^, role="external"]
+xref:attachment$javadoc/modules/redis-om-spring-ai/index.html[Redis OM Spring AI API^, role="external", window="_blank"]
 
 === Key Packages
 
@@ -51,7 +51,7 @@ link:{attachmentsdir}/javadoc/modules/redis-om-spring-ai/index.html[Redis OM Spr
 
 For a unified view of all modules and their interactions:
 
-link:{attachmentsdir}/javadoc/aggregate/index.html[Complete API Reference^, role="external"]
+xref:attachment$javadoc/aggregate/index.html[Complete API Reference^, role="external", window="_blank"]
 
 This aggregated documentation provides:
 
