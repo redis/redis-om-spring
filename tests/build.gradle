@@ -39,6 +39,7 @@ dependencies {
 	// Important for RedisOM annotation processing!
 	annotationProcessor project(':redis-om-spring')
 	testAnnotationProcessor project(':redis-om-spring')
+	testAnnotationProcessor "com.google.auto.service:auto-service:${autoServiceVersion}"
 
 	// Lombok
 	compileOnly 'org.projectlombok:lombok'

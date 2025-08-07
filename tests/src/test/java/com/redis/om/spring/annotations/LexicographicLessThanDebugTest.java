@@ -7,6 +7,7 @@ import com.redis.om.spring.indexing.RediSearchIndexer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Range;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.util.Arrays;
@@ -56,7 +57,7 @@ class LexicographicLessThanDebugTest extends AbstractBaseDocumentTest {
     
     // Test direct ZRANGEBYLEX
     Set<String> directQuery = redisTemplate.opsForZSet().rangeByLex(nameLexKey,
-        org.springframework.data.redis.connection.RedisZSetCommands.Range.range().lt("Product Delta#"));
+        Range.leftUnbounded(Range.Bound.exclusive("Product Delta#")));
     System.out.println("Direct ZRANGEBYLEX LT 'Product Delta#': " + directQuery);
   }
 

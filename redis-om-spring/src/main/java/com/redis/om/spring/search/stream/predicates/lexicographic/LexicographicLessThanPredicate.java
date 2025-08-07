@@ -5,6 +5,9 @@ import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Range;
+import org.springframework.data.redis.connection.Limit;
+
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.ops.RedisModulesOperations;
@@ -107,9 +110,8 @@ public class LexicographicLessThanPredicate<E, T> extends BaseAbstractPredicate<
     // For less than, we need to ensure we don't include the value itself
     // Since format is "value#id", we need to get everything before "value#" (excluded)
     String ltParam = value.toString() + "#"; // Exclude exact matches with this prefix
-    Set<String> matches = rmo.template().opsForZSet().rangeByLex(sortedSetKey,
-        org.springframework.data.redis.connection.RedisZSetCommands.Range.range().lt(ltParam),
-        org.springframework.data.redis.connection.RedisZSetCommands.Limit.unlimited());
+    Set<String> matches = rmo.template().opsForZSet().rangeByLex(sortedSetKey, Range.leftUnbounded(Range.Bound
+        .exclusive(ltParam)), Limit.unlimited());
 
     if (matches == null || matches.isEmpty()) {
       // No matches, return a query that matches nothing by using an impossible ID

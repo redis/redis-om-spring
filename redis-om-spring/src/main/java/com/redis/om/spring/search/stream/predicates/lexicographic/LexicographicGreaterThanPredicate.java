@@ -5,6 +5,9 @@ import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Range;
+import org.springframework.data.redis.connection.Limit;
+
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.ops.RedisModulesOperations;
@@ -107,9 +110,8 @@ public class LexicographicGreaterThanPredicate<E, T> extends BaseAbstractPredica
     // For greater than, we need to exclude exact matches with the same prefix
     // Since our format is "value#id", we append a high character to ensure we skip all entries with this prefix
     String gtParam = value.toString() + "\uffff"; // Unicode max character
-    Set<String> matches = rmo.template().opsForZSet().rangeByLex(sortedSetKey,
-        org.springframework.data.redis.connection.RedisZSetCommands.Range.range().gt(gtParam),
-        org.springframework.data.redis.connection.RedisZSetCommands.Limit.unlimited());
+    Set<String> matches = rmo.template().opsForZSet().rangeByLex(sortedSetKey, Range.rightUnbounded(Range.Bound
+        .exclusive(gtParam)), Limit.unlimited());
 
     if (matches == null || matches.isEmpty()) {
       // No matches, return a query that matches nothing by using an impossible ID
