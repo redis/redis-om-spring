@@ -22,7 +22,7 @@ node {
 	version = nodeVersion
 	npmVersion = project.ext.npmVersion
 	download = true
-	nodeProjectDir = file("${project.projectDir}")
+	nodeProjectDir = layout.projectDirectory.asFile
 }
 
 // Install Antora CLI and generator
@@ -42,11 +42,11 @@ task copyJavadocs(type: Copy) {
 	dependsOn ':aggregateJavadoc', ':generateModuleJavadocs'
 
 	from rootProject.layout.buildDirectory.dir('docs/javadoc')
-	into "${project.projectDir}/content/modules/ROOT/attachments/javadoc"
+	into layout.projectDirectory.dir("content/modules/ROOT/attachments/javadoc")
 
 	doFirst {
-		mkdir "${project.projectDir}/content/modules/ROOT/attachments"
-		mkdir "${project.projectDir}/content/modules/ROOT/attachments/javadoc"
+		mkdir layout.projectDirectory.dir("content/modules/ROOT/attachments").asFile
+		mkdir layout.projectDirectory.dir("content/modules/ROOT/attachments/javadoc").asFile
 		logger.lifecycle("Copying Javadoc documentation to Antora attachments...")
 	}
 }
@@ -65,12 +65,10 @@ task generateSite(type: NodeTask) {
 		'--to-dir=build/site'
 	]
 
-	// Capture buildDir at configuration time to avoid execution-time project access
-	def buildDirectory = project.buildDir
-	outputs.dir("${buildDirectory}/site")
+	outputs.dir(layout.buildDirectory.dir("site"))
 
 	doFirst {
-		mkdir "${buildDirectory}/site"
+		mkdir layout.buildDirectory.dir("site").get().asFile
 		logger.lifecycle("Building multi-version documentation with Antora...")
 	}
 }
@@ -82,7 +80,7 @@ assemble.dependsOn generateSite
 // Clean up Antora-related directories when cleaning the project
 clean {
 	delete 'node_modules'
-	delete project.buildDir
-	delete "${project.projectDir}/content/modules/ROOT/assets/javadoc"
-	delete "${project.projectDir}/content/modules/ROOT/attachments/javadoc"
+	delete layout.buildDirectory
+	delete layout.projectDirectory.dir("content/modules/ROOT/assets/javadoc")
+	delete layout.projectDirectory.dir("content/modules/ROOT/attachments/javadoc")
 }
