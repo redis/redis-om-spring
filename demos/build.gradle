@@ -18,6 +18,8 @@ tasks.matching { it.name.startsWith('publish') }.configureEach {
 	enabled = false
 }
 
+// Javadoc generation is disabled for demo modules in the root build.gradle
+
 repositories {
 	mavenLocal()
 	mavenCentral()
