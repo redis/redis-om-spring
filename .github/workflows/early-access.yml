@@ -56,17 +56,29 @@ jobs:
         id: vars
         shell: bash
         run: |
-          VERSION=$(grep '^version\s*=\s*' gradle.properties | cut -d'=' -f2 | xargs)
-          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
-          # Check if version is a SNAPSHOT or Release Candidate (early access)
-          if [[ "$VERSION" == *-SNAPSHOT ]] || [[ "$VERSION" == *-RC* ]]; then
-            echo "EARLY_ACCESS=true" >> "$GITHUB_OUTPUT"
+          BASE_VERSION=$(grep '^version\s*=\s*' gradle.properties | cut -d'=' -f2 | xargs)
+          echo "BASE_VERSION=$BASE_VERSION" >> "$GITHUB_OUTPUT"
+          
+          # Check if current version is already a release (RC, SNAPSHOT, or tagged release)
+          if [[ "$BASE_VERSION" == *-SNAPSHOT ]] || [[ "$BASE_VERSION" == *-RC* ]]; then
+            echo "SHOULD_RELEASE_SNAPSHOT=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping snapshot release: version is already a pre-release ($BASE_VERSION)"
           else
-            echo "EARLY_ACCESS=false" >> "$GITHUB_OUTPUT"
+            # Check if this exact version has been released as a tag
+            if git tag --list | grep -q "^v${BASE_VERSION}$"; then
+              echo "SHOULD_RELEASE_SNAPSHOT=false" >> "$GITHUB_OUTPUT"
+              echo "Skipping snapshot release: version $BASE_VERSION has already been released"
+            else
+              # Create snapshot version
+              SNAPSHOT_VERSION="${BASE_VERSION}-SNAPSHOT"
+              echo "VERSION=$SNAPSHOT_VERSION" >> "$GITHUB_OUTPUT"
+              echo "SHOULD_RELEASE_SNAPSHOT=true" >> "$GITHUB_OUTPUT"
+              echo "Will release snapshot version: $SNAPSHOT_VERSION"
+            fi
           fi
 
-      - name: Release
-        if: ${{ steps.vars.outputs.EARLY_ACCESS == 'true' }}
+      - name: Release Snapshot
+        if: ${{ steps.vars.outputs.SHOULD_RELEASE_SNAPSHOT == 'true' }}
         uses: jreleaser/release-action@v2
         with:
           arguments: release

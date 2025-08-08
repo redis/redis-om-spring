@@ -25,7 +25,8 @@ release:
     sign: true
     prerelease:
       enabled: auto
-      pattern: .*-(?:SNAPSHOT|RC\d+).*
+      pattern: .*-SNAPSHOT.*
+    draft: false
     changelog:
       formatted: ALWAYS
       preset: conventional-commits
