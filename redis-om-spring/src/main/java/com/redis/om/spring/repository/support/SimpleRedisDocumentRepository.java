@@ -319,13 +319,21 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
       // Process responses using streams to avoid iterator issues
       if (responses != null && !responses.isEmpty()) {
+        List<String> failedIds = new ArrayList<>();
         long failedCount = IntStream.range(0, Math.min(responses.size(), entityIds.size())).filter(i -> responses.get(
-            i) instanceof JedisDataException).peek(i -> logger.warn(
-                "Failed JSON.SET command for entity with id: {} Error: {}", entityIds.get(i),
-                ((JedisDataException) responses.get(i)).getMessage())).count();
+            i) instanceof JedisDataException).peek(i -> {
+              failedIds.add(entityIds.get(i).toString());
+              logger.warn("Failed JSON.SET command for entity with id: {} Error: {}", entityIds.get(i),
+                  ((JedisDataException) responses.get(i)).getMessage());
+            }).count();
 
         if (failedCount > 0) {
-          logger.warn("Total failed JSON.SET commands: {}", failedCount);
+          String errorMsg = String.format("Failed to save %d entities with IDs: %s", failedCount, failedIds);
+          if (properties.getRepository().isThrowOnSaveAllFailure()) {
+            throw new RuntimeException(errorMsg);
+          } else {
+            logger.warn("Total failed JSON.SET commands: {}", failedCount);
+          }
         }
       }
     }

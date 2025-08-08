@@ -7,8 +7,11 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.IncorrectResultSizeDataAccessException;
@@ -54,6 +57,7 @@ import com.redis.om.spring.vectorize.Embedder;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
+import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.util.SafeEncoder;
@@ -72,6 +76,8 @@ import redis.clients.jedis.util.SafeEncoder;
  */
 public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueRepository<T, ID> implements
     RedisEnhancedRepository<T, ID> {
+
+  private static final Logger logger = LoggerFactory.getLogger(SimpleRedisEnhancedRepository.class);
 
   /** Operations for Redis modules (Search, JSON, etc.) */
   protected final RedisModulesOperations<String> modulesOperations;
@@ -409,6 +415,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   public <S extends T> List<S> saveAll(Iterable<S> entities) {
     Assert.notNull(entities, "The given Iterable of entities must not be null!");
     List<S> saved = new ArrayList<>();
+    List<String> entityIds = new ArrayList<>();
 
     embedder.processEntities(entities);
 
@@ -426,6 +433,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
         keyValueEntity.getPropertyAccessor(entity).setProperty(keyValueEntity.getIdProperty(), id);
 
         String idAsString = validateKeyForWriting(id, entity);
+        entityIds.add(idAsString);
 
         String keyspace = keyValueEntity.getKeySpace();
         byte[] objectKey = createKey(keyspace, idAsString);
@@ -448,7 +456,28 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
 
         saved.add(entity);
       }
-      pipeline.sync();
+
+      List<Object> responses = pipeline.syncAndReturnAll();
+
+      // Process responses to check for errors
+      if (responses != null && !responses.isEmpty()) {
+        List<String> failedIds = new ArrayList<>();
+        long failedCount = IntStream.range(0, Math.min(responses.size(), entityIds.size())).filter(i -> responses.get(
+            i) instanceof JedisDataException).peek(i -> {
+              failedIds.add(entityIds.get(i));
+              logger.warn("Failed HMSET command for entity with id: {} Error: {}", entityIds.get(i),
+                  ((JedisDataException) responses.get(i)).getMessage());
+            }).count();
+
+        if (failedCount > 0) {
+          String errorMsg = String.format("Failed to save %d entities with IDs: %s", failedCount, failedIds);
+          if (properties.getRepository().isThrowOnSaveAllFailure()) {
+            throw new RuntimeException(errorMsg);
+          } else {
+            logger.warn("Total failed HMSET commands: {}", failedCount);
+          }
+        }
+      }
     }
 
     return saved;
