@@ -251,6 +251,112 @@ public interface CompanyRepository extends RedisDocumentRepository<Company, Stri
 }
 ----
 
+== Partial Updates
+
+Redis OM Spring supports partial updates on JSON documents using the Query by Example (QBE) pattern. This feature allows you to update specific fields without affecting other parts of the document, leveraging RedisJSON's JSON.SET command with path specifications.
+
+=== Update Single Entity
+
+Update specific fields of an existing entity:
+
+[source,java]
+----
+@Service
+public class CompanyService {
+    @Autowired
+    private CompanyRepository repository;
+    
+    public void partialUpdate() {
+        // Create an update probe with only the fields to update
+        Company updateProbe = new Company();
+        updateProbe.setId("company:1");  // ID is required
+        updateProbe.setEmail("newemail@redis.com");  // Update only email
+        
+        // Execute partial update - only non-null fields are updated
+        Company updated = repository.update(Example.of(updateProbe));
+        
+        // The returned entity has all fields, with only email changed
+        System.out.println(updated.getName());  // Original name preserved
+        System.out.println(updated.getEmail()); // New email value
+    }
+}
+----
+
+=== Update with ExampleMatcher
+
+Use ExampleMatcher for fine-grained control:
+
+[source,java]
+----
+public void updateWithMatcher() {
+    Company updateProbe = new Company();
+    updateProbe.setId("company:1");
+    updateProbe.setName("Redis Labs");
+    updateProbe.setEmail("contact@redis.com");
+    
+    // Ignore specific fields during update
+    ExampleMatcher matcher = ExampleMatcher.matching()
+        .withIgnorePaths("email");  // Don't update email even if set
+    
+    repository.update(Example.of(updateProbe, matcher));
+    // Only name is updated, email remains unchanged
+}
+----
+
+=== Bulk Partial Updates
+
+Update multiple entities efficiently:
+
+[source,java]
+----
+public void bulkPartialUpdate() {
+    List<Example<Company>> updates = new ArrayList<>();
+    
+    // Prepare multiple updates
+    Company update1 = new Company();
+    update1.setId("company:1");
+    update1.setPubliclyListed(true);
+    updates.add(Example.of(update1));
+    
+    Company update2 = new Company();
+    update2.setId("company:2");
+    update2.setYearFounded(2012);
+    updates.add(Example.of(update2));
+    
+    // Execute all updates in a single pipelined operation
+    repository.updateAll(updates);
+}
+----
+
+=== Update Nested Objects
+
+Partial updates work with nested structures:
+
+[source,java]
+----
+public void updateNestedObject() {
+    Company updateProbe = new Company();
+    updateProbe.setId("company:1");
+    
+    // Update nested address object
+    Address newAddress = new Address();
+    newAddress.setCity("Mountain View");
+    newAddress.setCountry("USA");
+    updateProbe.setAddress(newAddress);
+    
+    repository.update(Example.of(updateProbe));
+    // Only the address field is updated
+}
+----
+
+=== Important Notes
+
+* **ID Required**: The update probe must have a non-null ID
+* **Non-null Fields**: Only non-null fields in the probe are updated
+* **Atomic Updates**: Each field is updated atomically using JSON.SET
+* **Existing Documents**: Updates only affect existing documents (uses XX flag)
+* **Performance**: Bulk updates use pipelining for better performance
+
 == Example Usage
 
 Here's a complete example showing repository usage:
