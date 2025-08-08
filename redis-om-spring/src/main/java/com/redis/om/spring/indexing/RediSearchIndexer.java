@@ -411,22 +411,33 @@ public class RediSearchIndexer {
    * 
    * @param entityClass the entity class to check for index existence in Redis
    * @return true if the search index exists in Redis, false otherwise
-   * @throws JedisDataException if a Redis error occurs other than "Unknown index name"
+   * @throws JedisDataException if a Redis error occurs other than index not found errors
    */
   public boolean indexExistsFor(Class<?> entityClass) {
     try {
       return getIndexInfo(entityClass) != null;
     } catch (JedisDataException jde) {
-      if (jde.getMessage().contains("Unknown index name")) {
-        return false;
-      } else {
-        throw jde;
+      String errorMessage = jde.getMessage();
+      if (errorMessage != null) {
+        String lowerCaseMessage = errorMessage.toLowerCase();
+        // Handle various error messages for missing index across different Redis versions
+        // - "Unknown index name" or "Unknown Index name" - Redis Stack / Redis 7.x  
+        // - Potentially other variations in Redis 8.0+
+        if (lowerCaseMessage.contains("unknown index") || lowerCaseMessage.contains("no such index") || lowerCaseMessage
+            .contains("index does not exist") || lowerCaseMessage.contains("not found")) {
+          return false;
+        }
       }
+      throw jde;
     }
   }
 
   Map<String, Object> getIndexInfo(Class<?> entityClass) {
     String indexName = entityClassToIndexName.get(entityClass);
+    if (indexName == null) {
+      // No index mapping exists for this entity class
+      return null;
+    }
     SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
     return opsForSearch.getInfo();
   }

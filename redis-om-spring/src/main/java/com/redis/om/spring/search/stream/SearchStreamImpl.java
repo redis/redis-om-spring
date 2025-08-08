@@ -497,7 +497,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     } else {
       var info = search.getInfo();
       Object numDocsValue = info.get("num_docs");
-      
+
       // Handle different return types from Redis (fixes issue #639)
       if (numDocsValue instanceof String) {
         return Long.parseLong((String) numDocsValue);
