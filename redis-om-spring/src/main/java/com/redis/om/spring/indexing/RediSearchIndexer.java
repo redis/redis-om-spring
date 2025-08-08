@@ -1187,7 +1187,13 @@ public class RediSearchIndexer {
       allClassFields.stream().filter(field -> field.isAnnotationPresent(TimeToLive.class)).findFirst().ifPresent(
           field -> setting.setTimeToLivePropertyName(field.getName()));
 
-      mappingContext.getMappingConfiguration().getKeyspaceConfiguration().addKeyspaceSettings(setting);
+      // Use the resolver if the mapping context is enhanced
+      if (mappingContext instanceof com.redis.om.spring.mapping.RedisEnhancedMappingContext) {
+        ((com.redis.om.spring.mapping.RedisEnhancedMappingContext) mappingContext).getKeyspaceResolver()
+            .addKeyspaceSettings(cl, setting);
+      } else {
+        mappingContext.getMappingConfiguration().getKeyspaceConfiguration().addKeyspaceSettings(setting);
+      }
     }
   }
 
