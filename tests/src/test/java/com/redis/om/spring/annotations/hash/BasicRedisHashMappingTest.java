@@ -756,4 +756,35 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
     assertThat(redisKey).isEqualTo(getKey(Company.class.getName(), redis.getId()));
     assertThat(microsoftKey).isEqualTo(getKey(Company.class.getName(), microsoft.getId()));
   }
+
+  @Test
+  void testIssue622_HashExistsByQueryReturnsBoolean() {
+    // Test for issue #622: existsBy* queries should return boolean for hash entities
+    Person john = new Person();
+    john.setName("John Doe");
+    john.setEmail("john@example.com");
+    john.setNickname("johnd");
+    john.setRoles(Set.of("admin"));
+    john.setFavoriteFoods(Set.of("pizza"));
+    personRepo.save(john);
+    
+    // Test exists query returns true for existing email
+    boolean existsByEmail = personRepo.existsByEmail("john@example.com");
+    assertTrue(existsByEmail, "Should return true for existing email");
+    
+    // Test exists query returns true for existing nickname
+    boolean existsByNickname = personRepo.existsByNickname("johnd");
+    assertTrue(existsByNickname, "Should return true for existing nickname");
+    
+    // Test exists query returns false for non-existing email
+    boolean notExistsByEmail = personRepo.existsByEmail("nonexisting@example.com");
+    assertFalse(notExistsByEmail, "Should return false for non-existing email");
+    
+    // Test exists query returns false for non-existing nickname
+    boolean notExistsByNickname = personRepo.existsByNickname("nonexisting");
+    assertFalse(notExistsByNickname, "Should return false for non-existing nickname");
+    
+    // Clean up
+    personRepo.delete(john);
+  }
 }

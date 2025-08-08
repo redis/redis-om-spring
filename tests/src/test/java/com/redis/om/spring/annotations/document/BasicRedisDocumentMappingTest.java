@@ -916,4 +916,23 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
     assertThat(fields).hasSize(1);
     assertThat(fields).first().isEqualTo("001");
   }
+
+  @Test
+  void testIssue622_ExistsByQueryReturnsBoolean() {
+    // Test for issue #622: existsBy* queries should return boolean instead of throwing ClassCastException
+    Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), 
+        new Point(-122.066540, 37.377690), "stack@redis.com");
+    repository.save(redis);
+    
+    // Test exists query returns true for existing email
+    boolean exists = repository.existsByEmail("stack@redis.com");
+    assertTrue(exists, "Should return true for existing email");
+    
+    // Test exists query returns false for non-existing email
+    boolean notExists = repository.existsByEmail("nonexisting@redis.com");
+    assertFalse(notExists, "Should return false for non-existing email");
+    
+    // Clean up
+    repository.delete(redis);
+  }
 }
