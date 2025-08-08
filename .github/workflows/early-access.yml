@@ -58,14 +58,15 @@ jobs:
         run: |
           VERSION=$(grep '^version\s*=\s*' gradle.properties | cut -d'=' -f2 | xargs)
           echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
-          if [[ "$VERSION" == *-SNAPSHOT ]]; then
-            echo "SNAPSHOT=true" >> "$GITHUB_OUTPUT"
+          # Check if version is a SNAPSHOT or Release Candidate (early access)
+          if [[ "$VERSION" == *-SNAPSHOT ]] || [[ "$VERSION" == *-RC* ]]; then
+            echo "EARLY_ACCESS=true" >> "$GITHUB_OUTPUT"
           else
-            echo "SNAPSHOT=false" >> "$GITHUB_OUTPUT"
+            echo "EARLY_ACCESS=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Release
-        if: ${{ steps.vars.outputs.SNAPSHOT }}
+        if: ${{ steps.vars.outputs.EARLY_ACCESS == 'true' }}
         uses: jreleaser/release-action@v2
         with:
           arguments: release
