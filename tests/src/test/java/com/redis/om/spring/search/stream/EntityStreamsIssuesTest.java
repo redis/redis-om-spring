@@ -609,4 +609,37 @@ class EntityStreamsIssuesTest extends AbstractBaseDocumentTest {
     doc2Repository.deleteAll(List.of(doc1, doc2));
   }
 
+  @Test
+  void testIssue639_CountMethodHandlesStringNumDocs() {
+    // Issue #639: ClassCastException in count() when num_docs is returned as String
+    // This test ensures that count() properly handles String values from Redis FT.INFO
+    
+    // Clear existing data
+    docRepository.deleteAll();
+    
+    // Create exactly 21 documents (matching the issue report)
+    List<Doc> docs = new ArrayList<>();
+    for (int i = 1; i <= 21; i++) {
+      Doc doc = Doc.of("first" + i, "second" + i);
+      doc.setId("doc" + i);
+      docs.add(doc);
+    }
+    docRepository.saveAll(docs);
+    
+    // Test count with no filter - this triggers the info.get("num_docs") path
+    long count = entityStream.of(Doc.class).count();
+    assertThat(count).isEqualTo(21);
+    
+    // Test count with filter - uses query-based count
+    long filteredCount = entityStream.of(Doc.class)
+        .filter(Doc$.FIRST.startsWith("first"))
+        .count();
+    assertThat(filteredCount).isEqualTo(21);
+    
+    // Clean up
+    docRepository.deleteAll();
+    long finalCount = entityStream.of(Doc.class).count();
+    assertThat(finalCount).isEqualTo(0);
+  }
+
 }
