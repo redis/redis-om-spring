@@ -111,10 +111,14 @@ public class RedisModulesConfiguration {
   private static final Log logger = LogFactory.getLog(RedisModulesConfiguration.class);
 
   /**
-   * Creates the primary Redis mapping context for enhanced entity mapping.
+   * Creates the default Redis mapping context for enhanced entity mapping.
    * <p>
    * This mapping context provides metadata about Redis-mapped entities including
    * field information, type conversions, and persistence properties.
+   * <p>
+   * Users can override this by providing their own bean named "redisEnhancedMappingContext"
+   * with @Primary annotation. The @ConditionalOnMissingBean ensures this default
+   * bean is only created if users haven't provided their own.
    *
    * @return the enhanced mapping context instance
    */
@@ -122,6 +126,9 @@ public class RedisModulesConfiguration {
       name = "redisEnhancedMappingContext"
   )
   @Primary
+  @ConditionalOnMissingBean(
+      name = "redisEnhancedMappingContext"
+  )
   public RedisEnhancedMappingContext redisMappingContext() {
     return new RedisEnhancedMappingContext();
   }
