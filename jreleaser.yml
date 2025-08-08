@@ -23,6 +23,9 @@ release:
     name: redis-om-spring
     overwrite: true
     sign: true
+    prerelease:
+      enabled: auto
+      pattern: .*-(?:SNAPSHOT|RC\d+).*
     changelog:
       formatted: ALWAYS
       preset: conventional-commits
