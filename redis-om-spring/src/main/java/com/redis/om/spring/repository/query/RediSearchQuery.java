@@ -677,7 +677,12 @@ public class RediSearchQuery implements RepositoryQuery {
     // what to return
     Object result = null;
 
-    if (queryMethod.getReturnedObjectType() == SearchResult.class) {
+    // Check if this is an exists query
+    if (processor.getReturnedType().getReturnedType() == boolean.class || processor.getReturnedType()
+        .getReturnedType() == Boolean.class) {
+      // For exists queries, return true if we have any results, false otherwise
+      result = searchResult.getTotalResults() > 0;
+    } else if (queryMethod.getReturnedObjectType() == SearchResult.class) {
       result = searchResult;
     } else if (queryMethod.isPageQuery()) {
       List<Object> content = searchResult.getDocuments().stream().map(this::parseDocumentResult).toList();
