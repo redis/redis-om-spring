@@ -439,9 +439,21 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       entityClassKey = entity.getClass();
     }
 
-    KeyspaceConfiguration keyspaceConfig = mappingContext.getMappingConfiguration().getKeyspaceConfiguration();
-    if (keyspaceConfig.hasSettingsFor(entityClassKey)) {
-      var settings = keyspaceConfig.getKeyspaceSettings(entityClassKey);
+    // Use the resolver if available for cross-class-loader compatibility
+    KeyspaceConfiguration.KeyspaceSettings settings = null;
+    if (mappingContext instanceof com.redis.om.spring.mapping.RedisEnhancedMappingContext) {
+      var resolver = ((com.redis.om.spring.mapping.RedisEnhancedMappingContext) mappingContext).getKeyspaceResolver();
+      if (resolver.hasSettingsFor(entityClassKey)) {
+        settings = resolver.getKeyspaceSettings(entityClassKey);
+      }
+    } else {
+      KeyspaceConfiguration keyspaceConfig = mappingContext.getMappingConfiguration().getKeyspaceConfiguration();
+      if (keyspaceConfig.hasSettingsFor(entityClassKey)) {
+        settings = keyspaceConfig.getKeyspaceSettings(entityClassKey);
+      }
+    }
+
+    if (settings != null) {
       if (StringUtils.hasText(settings.getTimeToLivePropertyName())) {
         Method ttlGetter;
         try {

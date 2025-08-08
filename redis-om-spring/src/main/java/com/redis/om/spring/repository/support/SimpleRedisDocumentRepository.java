@@ -521,9 +521,21 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
    * @return an {@link Optional} containing the TTL in seconds, or empty if no TTL is configured
    */
   private Optional<Long> getTTLForEntity(Object entity) {
-    KeyspaceConfiguration keyspaceConfig = mappingContext.getMappingConfiguration().getKeyspaceConfiguration();
-    if (keyspaceConfig.hasSettingsFor(entity.getClass())) {
-      var settings = keyspaceConfig.getKeyspaceSettings(entity.getClass());
+    // Use the resolver if available for cross-class-loader compatibility
+    KeyspaceConfiguration.KeyspaceSettings settings = null;
+    if (mappingContext instanceof com.redis.om.spring.mapping.RedisEnhancedMappingContext) {
+      var resolver = ((com.redis.om.spring.mapping.RedisEnhancedMappingContext) mappingContext).getKeyspaceResolver();
+      if (resolver.hasSettingsFor(entity.getClass())) {
+        settings = resolver.getKeyspaceSettings(entity.getClass());
+      }
+    } else {
+      KeyspaceConfiguration keyspaceConfig = mappingContext.getMappingConfiguration().getKeyspaceConfiguration();
+      if (keyspaceConfig.hasSettingsFor(entity.getClass())) {
+        settings = keyspaceConfig.getKeyspaceSettings(entity.getClass());
+      }
+    }
+
+    if (settings != null) {
 
       if (org.springframework.util.StringUtils.hasText(settings.getTimeToLivePropertyName())) {
         Method ttlGetter;

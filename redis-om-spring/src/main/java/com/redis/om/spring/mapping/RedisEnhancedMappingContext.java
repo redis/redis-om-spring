@@ -38,6 +38,7 @@ public class RedisEnhancedMappingContext extends RedisMappingContext {
   private static final Log logger = LogFactory.getLog(RedisEnhancedMappingContext.class);
   private final MappingConfiguration mappingConfiguration;
   private final TimeToLiveAccessor timeToLiveAccessor;
+  private final ClassLoaderAwareKeyspaceResolver keyspaceResolver;
 
   /**
    * Creates a new {@code RedisEnhancedMappingContext} with the specified mapping configuration.
@@ -51,6 +52,7 @@ public class RedisEnhancedMappingContext extends RedisMappingContext {
   public RedisEnhancedMappingContext(MappingConfiguration mappingConfiguration) {
     super(mappingConfiguration);
     this.mappingConfiguration = mappingConfiguration;
+    this.keyspaceResolver = new ClassLoaderAwareKeyspaceResolver(mappingConfiguration.getKeyspaceConfiguration());
     this.timeToLiveAccessor = new RedisEnhancedTimeToLiveAccessor(mappingConfiguration.getKeyspaceConfiguration(),
         this);
   }
@@ -70,5 +72,14 @@ public class RedisEnhancedMappingContext extends RedisMappingContext {
   @Override
   protected <T> RedisPersistentEntity<T> createPersistentEntity(TypeInformation<T> typeInformation) {
     return new RedisEnhancedPersistentEntity<>(typeInformation, getKeySpaceResolver(), timeToLiveAccessor);
+  }
+
+  /**
+   * Gets the class loader aware keyspace resolver.
+   * 
+   * @return the keyspace resolver that handles cross-class-loader lookups
+   */
+  public ClassLoaderAwareKeyspaceResolver getKeyspaceResolver() {
+    return keyspaceResolver;
   }
 }
