@@ -90,13 +90,15 @@ spring:
       ssl: false
       timeout: 60000  # Connection timeout in milliseconds
       
-      # Connection pool settings (optional)
-      lettuce:
+      # Jedis connection pool settings (Redis OM Spring uses Jedis by default)
+      jedis:
         pool:
-          max-active: 8
-          max-idle: 8
-          min-idle: 0
-          max-wait: -1ms
+          enabled: true
+          max-active: 8      # Maximum connections in the pool
+          max-idle: 8        # Maximum idle connections
+          min-idle: 0        # Minimum idle connections
+          max-wait: -1ms     # Maximum wait time for connection (-1 = indefinite)
+          time-between-eviction-runs: 30s  # How often to evict idle connections
 ----
 
 === Cluster Configuration
@@ -136,6 +138,202 @@ spring:
 ----
 
 For more details on Redis Sentinel configuration, see the xref:sentinel.adoc[Redis Sentinel Support] page.
+
+=== Connection Pool Configuration
+
+Redis OM Spring uses Jedis as its Redis client, which provides robust connection pooling capabilities. The pool configuration can be customized through Spring Boot properties:
+
+==== Basic Pool Configuration
+
+[source,yaml]
+----
+spring:
+  data:
+    redis:
+      jedis:
+        pool:
+          enabled: true               # Enable connection pooling
+          max-active: 8              # Maximum number of connections in the pool
+          max-idle: 8                # Maximum number of idle connections
+          min-idle: 0                # Minimum number of idle connections
+          max-wait: -1ms             # Maximum wait time for a connection (-1 = indefinite)
+          
+          # Eviction configuration
+          time-between-eviction-runs: 30s  # How often to run the eviction thread
+          min-evictable-idle-time: 60s     # Minimum time before idle connections can be evicted
+          num-tests-per-eviction-run: -1   # Number of connections to test per eviction run (-1 = test all)
+          
+          # Connection validation
+          test-on-borrow: false      # Test connection before borrowing from pool
+          test-on-return: false      # Test connection when returning to pool
+          test-while-idle: true      # Test connections while idle
+----
+
+==== Advanced Pool Configuration with Java Config
+
+For more advanced configuration scenarios, you can create a custom `JedisConnectionFactory` bean:
+
+[source,java]
+----
+import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import redis.clients.jedis.JedisPoolConfig;
+import java.time.Duration;
+
+@Configuration
+public class RedisPoolConfiguration {
+    
+    @Bean
+    public JedisConnectionFactory jedisConnectionFactory(RedisProperties redisProperties) {
+        // Create pool configuration
+        JedisPoolConfig poolConfig = new JedisPoolConfig();
+        
+        // Connection pool size
+        poolConfig.setMaxTotal(16);           // Max total connections
+        poolConfig.setMaxIdle(8);             // Max idle connections
+        poolConfig.setMinIdle(4);             // Min idle connections
+        poolConfig.setMaxWait(Duration.ofSeconds(5));  // Max wait time
+        
+        // Eviction settings
+        poolConfig.setTimeBetweenEvictionRuns(Duration.ofSeconds(30));
+        poolConfig.setMinEvictableIdleTime(Duration.ofMinutes(1));
+        poolConfig.setNumTestsPerEvictionRun(3);
+        
+        // Connection validation
+        poolConfig.setTestOnBorrow(true);     // Validate before borrowing
+        poolConfig.setTestOnReturn(false);    // Don't validate on return
+        poolConfig.setTestWhileIdle(true);    // Validate idle connections
+        poolConfig.setTestOnCreate(true);     // Validate newly created connections
+        
+        // LIFO behavior (Last In First Out)
+        poolConfig.setLifo(true);
+        
+        // Block when pool exhausted
+        poolConfig.setBlockWhenExhausted(true);
+        
+        // Build Jedis client configuration
+        JedisClientConfiguration clientConfig = JedisClientConfiguration.builder()
+            .connectTimeout(Duration.ofSeconds(2))
+            .readTimeout(Duration.ofSeconds(2))
+            .usePooling()
+            .poolConfig(poolConfig)
+            .build();
+        
+        // Create connection factory
+        RedisStandaloneConfiguration redisConfig = new RedisStandaloneConfiguration();
+        redisConfig.setHostName(redisProperties.getHost());
+        redisConfig.setPort(redisProperties.getPort());
+        redisConfig.setPassword(redisProperties.getPassword());
+        
+        return new JedisConnectionFactory(redisConfig, clientConfig);
+    }
+}
+----
+
+==== Using JedisClientConfigurationBuilderCustomizer
+
+Spring Boot provides a customizer interface for fine-tuning the Jedis client configuration:
+
+[source,java]
+----
+import org.springframework.boot.autoconfigure.data.redis.JedisClientConfigurationBuilderCustomizer;
+import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
+import org.springframework.stereotype.Component;
+import redis.clients.jedis.JedisPoolConfig;
+import java.time.Duration;
+
+@Component
+public class JedisPoolCustomizer implements JedisClientConfigurationBuilderCustomizer {
+    
+    @Override
+    public void customize(JedisClientConfiguration.JedisClientConfigurationBuilder clientConfigurationBuilder) {
+        // Create custom pool configuration
+        JedisPoolConfig poolConfig = new JedisPoolConfig();
+        poolConfig.setMaxTotal(20);
+        poolConfig.setMaxIdle(10);
+        poolConfig.setMinIdle(5);
+        poolConfig.setMaxWait(Duration.ofSeconds(3));
+        poolConfig.setTestOnBorrow(true);
+        
+        // Apply the custom pool configuration
+        clientConfigurationBuilder.usePooling().poolConfig(poolConfig);
+        
+        // Set timeouts
+        clientConfigurationBuilder
+            .connectTimeout(Duration.ofSeconds(2))
+            .readTimeout(Duration.ofSeconds(2));
+    }
+}
+----
+
+==== Pool Monitoring and Metrics
+
+To monitor your connection pool usage, you can access pool statistics:
+
+[source,java]
+----
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.stereotype.Component;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.util.Pool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+@Component
+public class PoolMonitor {
+    
+    private static final Logger logger = LoggerFactory.getLogger(PoolMonitor.class);
+    
+    @Autowired
+    private JedisConnectionFactory connectionFactory;
+    
+    public void logPoolStats() {
+        Pool<Jedis> pool = connectionFactory.getPool();
+        if (pool != null) {
+            logger.info("Active connections: {}", pool.getNumActive());
+            logger.info("Idle connections: {}", pool.getNumIdle());
+            logger.info("Waiting threads: {}", pool.getNumWaiters());
+        }
+    }
+}
+----
+
+==== Common Pool Configuration Scenarios
+
+.High-traffic applications
+[source,yaml]
+----
+spring:
+  data:
+    redis:
+      jedis:
+        pool:
+          max-active: 50            # Higher connection limit
+          max-idle: 25               # Keep more idle connections
+          min-idle: 10               # Maintain minimum pool size
+          max-wait: 2000ms           # Fail fast if pool exhausted
+          test-on-borrow: true       # Ensure connection validity
+----
+
+.Resource-constrained environments
+[source,yaml]
+----
+spring:
+  data:
+    redis:
+      jedis:
+        pool:
+          max-active: 5              # Limited connections
+          max-idle: 2                # Minimal idle connections
+          min-idle: 0                # No minimum required
+          max-wait: 5000ms           # Wait longer for connections
+          time-between-eviction-runs: 60s  # Less frequent eviction
+----
 
 == Redis OM Spring Configuration Properties
 
