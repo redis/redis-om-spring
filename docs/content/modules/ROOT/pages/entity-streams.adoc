@@ -48,6 +48,13 @@ List<Company> redisInc = entityStream.of(Company.class)
 List<Company> companies = entityStream.of(Company.class)
     .filter(Company$.NAME.eq("RedisInc").and(Company$.YEAR_FOUNDED.eq(2011)))
     .collect(Collectors.toList());
+
+// Combining predicates with different field types (new in 1.0.0)
+// Use andAny() or orAny() when combining different field types
+List<Company> filtered = entityStream.of(Company.class)
+    .filter(Company$.NAME.eq("RedisInc")
+        .andAny(Company$.EMPLOYEE_COUNT.gt(100L)))
+    .collect(Collectors.toList());
 ----
 
 === OR Conditions

@@ -147,7 +147,7 @@ The following table lists the methods implemented from https://docs.spring.io/sp
 |Returns all instances of the type T with the given IDs.
 
 |<S extends T> List<S> saveAll(Iterable<S> entities)
-|Saves all given entities.
+|Saves all given entities. By default, errors are logged as warnings. Set `redis.om.repository.throw-on-save-all-failure=true` to throw exceptions on failures (new in 1.0.0).
 |===
 
 === PagingSortingRepository
