@@ -75,6 +75,48 @@ public interface SearchFieldPredicate<E, T> extends Predicate<T> {
   }
 
   /**
+   * Combines this predicate with another predicate of a potentially different field type
+   * using a logical OR operation.
+   * 
+   * <p>This method allows combining predicates with different field types, which is useful
+   * when building complex queries across multiple fields of different types.</p>
+   * 
+   * @param <U>   the field type of the other predicate
+   * @param other the predicate to combine with this one
+   * @return a new OR predicate combining both predicates
+   */
+  @SuppressWarnings(
+    { "unchecked", "rawtypes" }
+  )
+  default <U> SearchFieldPredicate<E, ?> orAny(SearchFieldPredicate<E, U> other) {
+    Objects.requireNonNull(other);
+    OrPredicate orPredicate = new OrPredicate(this);
+    orPredicate.addPredicate(other);
+    return orPredicate;
+  }
+
+  /**
+   * Combines this predicate with another predicate of a potentially different field type
+   * using a logical AND operation.
+   * 
+   * <p>This method allows combining predicates with different field types, which is useful
+   * when building complex queries across multiple fields of different types.</p>
+   * 
+   * @param <U>   the field type of the other predicate
+   * @param other the predicate to combine with this one
+   * @return a new AND predicate combining both predicates
+   */
+  @SuppressWarnings(
+    { "unchecked", "rawtypes" }
+  )
+  default <U> SearchFieldPredicate<E, ?> andAny(SearchFieldPredicate<E, U> other) {
+    Objects.requireNonNull(other);
+    AndPredicate andPredicate = new AndPredicate(this);
+    andPredicate.addPredicate(other);
+    return andPredicate;
+  }
+
+  /**
    * Applies this predicate to a RediSearch query node.
    * This method transforms the predicate into a RediSearch query node
    * that can be used to build the final search query.
