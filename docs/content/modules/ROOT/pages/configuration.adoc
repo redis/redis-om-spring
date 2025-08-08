@@ -159,6 +159,10 @@ Redis OM Spring adds specific configuration properties to customize its behavior
 |`true`
 |Enable wildcard pattern support for repository find operations
 
+|`redis.om.repository.throw-on-save-all-failure`
+|`false`
+|Throw exceptions on `saveAll()` failures instead of logging warnings (new in 1.0.0)
+
 |`redis.om.index-creation-mode.create-and-replace`
 |`true`
 |Create and replace indexes on startup
@@ -181,6 +185,7 @@ redis:
     # Repository Configuration
     repository:
       support-wildcard-scan: true
+      throw-on-save-all-failure: false # Set to true to throw exceptions on bulk save failures
     
     # Index Creation
     index-creation-mode:
