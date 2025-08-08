@@ -918,6 +918,27 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
   }
 
   @Test
+  void testIssue517_SaveAllErrorHandlingConfiguration() {
+    // Test for issue #517: saveAll error handling configuration
+    // This verifies that the configuration property is available and doesn't break normal operations
+    // In a real scenario with memory limits, the throwOnSaveAllFailure property would cause exceptions
+    
+    Company company1 = Company.of("TestCompany1", 2023, LocalDate.now(), 
+        new Point(-122.066540, 37.377690), "test1@company.com");
+    Company company2 = Company.of("TestCompany2", 2023, LocalDate.now(),
+        new Point(-122.066540, 37.377690), "test2@company.com");
+    
+    List<Company> companies = List.of(company1, company2);
+    List<Company> saved = repository.saveAll(companies);
+    
+    assertThat(saved).hasSize(2);
+    assertThat(repository.count()).isGreaterThanOrEqualTo(2);
+    
+    // Clean up
+    repository.deleteAll(saved);
+  }
+
+  @Test
   void testIssue622_ExistsByQueryReturnsBoolean() {
     // Test for issue #622: existsBy* queries should return boolean instead of throwing ClassCastException
     Company redis = Company.of("RedisInc", 2011, LocalDate.of(2021, 5, 1), 

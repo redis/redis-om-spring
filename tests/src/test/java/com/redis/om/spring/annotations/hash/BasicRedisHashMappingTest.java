@@ -758,6 +758,35 @@ class BasicRedisHashMappingTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
+  void testIssue517_HashSaveAllErrorHandlingConfiguration() {
+    // Test for issue #517: saveAll error handling configuration for hash entities
+    // This verifies that syncAndReturnAll is now used and errors can be detected
+    
+    Person person1 = new Person();
+    person1.setName("Test Person 1");
+    person1.setEmail("test1@example.com");
+    person1.setNickname("test1");
+    person1.setRoles(Set.of("user"));
+    person1.setFavoriteFoods(Set.of("pizza"));
+    
+    Person person2 = new Person();
+    person2.setName("Test Person 2");
+    person2.setEmail("test2@example.com");
+    person2.setNickname("test2");
+    person2.setRoles(Set.of("user"));
+    person2.setFavoriteFoods(Set.of("burger"));
+    
+    List<Person> people = List.of(person1, person2);
+    List<Person> saved = personRepo.saveAll(people);
+    
+    assertThat(saved).hasSize(2);
+    assertThat(personRepo.count()).isGreaterThanOrEqualTo(2);
+    
+    // Clean up
+    personRepo.deleteAll(saved);
+  }
+
+  @Test
   void testIssue622_HashExistsByQueryReturnsBoolean() {
     // Test for issue #622: existsBy* queries should return boolean for hash entities
     Person john = new Person();

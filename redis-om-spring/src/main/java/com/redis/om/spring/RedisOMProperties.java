@@ -244,6 +244,13 @@ public class RedisOMProperties {
     private int deleteBatchSize = 500;
 
     /**
+     * Whether to throw exceptions when saveAll operations fail.
+     * When false (default), failures are logged as warnings.
+     * When true, failures throw an exception.
+     */
+    private boolean throwOnSaveAllFailure = false;
+
+    /**
      * Default constructor for Repository configuration.
      */
     public Repository() {
@@ -294,6 +301,25 @@ public class RedisOMProperties {
      */
     public void setDeleteBatchSize(int deleteBatchSize) {
       this.deleteBatchSize = deleteBatchSize;
+    }
+
+    /**
+     * Checks if exceptions should be thrown when saveAll operations fail.
+     *
+     * @return {@code true} if exceptions should be thrown on failures, {@code false} otherwise
+     */
+    public boolean isThrowOnSaveAllFailure() {
+      return throwOnSaveAllFailure;
+    }
+
+    /**
+     * Sets whether exceptions should be thrown when saveAll operations fail.
+     *
+     * @param throwOnSaveAllFailure {@code true} to throw exceptions on failures,
+     *                              {@code false} to log warnings only
+     */
+    public void setThrowOnSaveAllFailure(boolean throwOnSaveAllFailure) {
+      this.throwOnSaveAllFailure = throwOnSaveAllFailure;
     }
 
     /**
