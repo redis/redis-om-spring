@@ -271,7 +271,17 @@ public class RedisFluentQueryByExample<T, S extends T, R> implements FetchableFl
       count = searchResult.getTotalResults();
     } else {
       var info = searchOps.getInfo();
-      count = (long) info.get("num_docs");
+      Object numDocsValue = info.get("num_docs");
+
+      // Handle different return types from Redis
+      if (numDocsValue instanceof String) {
+        count = Long.parseLong((String) numDocsValue);
+      } else if (numDocsValue instanceof Number) {
+        count = ((Number) numDocsValue).longValue();
+      } else {
+        // Fallback to 0 if the value is null or unexpected type
+        count = 0L;
+      }
     }
 
     var pageContents = searchStream.limit(pageable.getPageSize()).skip(pageable.getOffset()).collect(Collectors

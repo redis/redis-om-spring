@@ -392,7 +392,21 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     String indexName = indexer.getIndexName(keyspace);
     SearchOperations<String> search = modulesOperations.opsForSearch(indexName);
     var info = search.getInfo();
-    return (long) info.get("num_docs");
+    return extractNumDocs(info);
+  }
+
+  private long extractNumDocs(Map<String, Object> info) {
+    Object numDocsValue = info.get("num_docs");
+
+    // Handle different return types from Redis
+    if (numDocsValue instanceof String) {
+      return Long.parseLong((String) numDocsValue);
+    } else if (numDocsValue instanceof Number) {
+      return ((Number) numDocsValue).longValue();
+    } else {
+      // Fallback to 0 if the value is null or unexpected type
+      return 0L;
+    }
   }
 
   /*
