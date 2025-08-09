@@ -24,8 +24,7 @@ release:
     overwrite: true
     sign: true
     prerelease:
-      enabled: auto
-      pattern: .*-SNAPSHOT.*
+      pattern: .*-(RC|SNAPSHOT|M|alpha|beta).*
     draft: false
     changelog:
       formatted: ALWAYS
