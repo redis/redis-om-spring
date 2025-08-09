@@ -163,6 +163,9 @@ public class RedisModulesConfiguration {
 
     builder.addSerializationExclusionStrategy(GsonReferencesSerializationExclusionStrategy.INSTANCE);
 
+    // Register factory for handling Boolean values in Maps (must be after type adapters)
+    builder.registerTypeAdapterFactory(MapBooleanTypeAdapterFactory.getInstance());
+
     return builder;
   }
 

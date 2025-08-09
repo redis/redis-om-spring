@@ -12,6 +12,7 @@ import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 import com.redis.om.spring.search.stream.predicates.jedis.JedisValues;
 
+import redis.clients.jedis.search.Schema.FieldType;
 import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import redis.clients.jedis.search.querybuilder.Values;
@@ -56,6 +57,20 @@ public class GreaterThanPredicate<E, T> extends BaseAbstractPredicate<E, T> {
    */
   public GreaterThanPredicate(SearchFieldAccessor field, T value) {
     super(field);
+    this.value = value;
+  }
+
+  /**
+   * Creates a new GreaterThanPredicate for the specified field and threshold with explicit field type.
+   * This constructor is used for synthetic fields (like Map VALUES) where the field type
+   * cannot be determined from annotations.
+   * 
+   * @param field     the field accessor for the target numeric field
+   * @param value     the threshold value (field must be greater than this)
+   * @param fieldType the explicit Redis field type for this predicate
+   */
+  public GreaterThanPredicate(SearchFieldAccessor field, T value, FieldType fieldType) {
+    super(field, fieldType);
     this.value = value;
   }
 

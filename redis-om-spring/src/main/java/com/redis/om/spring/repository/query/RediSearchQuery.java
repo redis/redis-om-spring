@@ -124,6 +124,25 @@ public class RediSearchQuery implements RepositoryQuery {
     }
   }
 
+  /**
+   * Gets the Redis field type for Map value types.
+   * This differs from getRedisFieldType() for Boolean values - Map Boolean values
+   * are indexed as NUMERIC fields (serialized as 1/0) rather than TAG fields.
+   */
+  private static FieldType getRedisFieldTypeForMapValue(Class<?> fieldType) {
+    if (CharSequence.class.isAssignableFrom(
+        fieldType) || fieldType == UUID.class || fieldType == Ulid.class || fieldType.isEnum()) {
+      return FieldType.TAG;
+    } else if (Number.class.isAssignableFrom(
+        fieldType) || fieldType == Boolean.class || fieldType == LocalDateTime.class || fieldType == LocalDate.class || fieldType == Date.class || fieldType == Instant.class || fieldType == OffsetDateTime.class) {
+      return FieldType.NUMERIC;
+    } else if (fieldType == Point.class || "org.springframework.data.geo.Point".equals(fieldType.getName())) {
+      return FieldType.GEO;
+    } else {
+      return null; // Unsupported type
+    }
+  }
+
   private final QueryMethod queryMethod;
   private final RedisOMProperties redisOMProperties;
   private final boolean hasLanguageParameter;
@@ -159,6 +178,7 @@ public class RediSearchQuery implements RepositoryQuery {
   private Boolean aggregationVerbatim;
   private Gson gson;
   private boolean isNullParamQuery;
+  private boolean isMapContainsQuery;
   private Dialect dialect = Dialect.TWO;
 
   /**
@@ -226,10 +246,15 @@ public class RediSearchQuery implements RepositoryQuery {
     ) Class[] params = queryMethod.getParameters().stream().map(Parameter::getType).toArray(Class[]::new);
     hasLanguageParameter = Arrays.stream(params).anyMatch(c -> c.isAssignableFrom(SearchLanguage.class));
     isANDQuery = QueryClause.hasContainingAllClause(queryMethod.getName());
+    this.isMapContainsQuery = QueryClause.hasMapContainsClause(queryMethod.getName());
 
-    String methodName = isANDQuery ?
-        QueryClause.getPostProcessMethodName(queryMethod.getName()) :
-        queryMethod.getName();
+    String methodName = queryMethod.getName();
+    if (isANDQuery) {
+      methodName = QueryClause.getPostProcessMethodName(methodName);
+    }
+    if (this.isMapContainsQuery) {
+      methodName = QueryClause.processMapContainsMethodName(methodName);
+    }
 
     try {
       java.lang.reflect.Method method = repoClass.getMethod(queryMethod.getName(), params);
@@ -508,6 +533,24 @@ public class RediSearchQuery implements RepositoryQuery {
             }
           } else {
             qf.addAll(extractQueryFields(collectionType, part, path, level + 1));
+          }
+        }
+      }
+      //
+      // Map fields
+      //
+      else if (Map.class.isAssignableFrom(fieldType)) {
+        // For Map fields, queries on the field actually query the indexed values
+        // The indexed field has a "_values" suffix in the search index
+        String mapValueKey = key + "_values";
+
+        Optional<Class<?>> maybeValueType = ObjectUtils.getMapValueClass(field);
+        if (maybeValueType.isPresent()) {
+          Class<?> valueType = maybeValueType.get();
+          FieldType valueFieldType = getRedisFieldTypeForMapValue(valueType);
+
+          if (valueFieldType != null) {
+            qf.add(Pair.of(mapValueKey, QueryClause.get(valueFieldType, part.getType())));
           }
         }
       }
@@ -914,10 +957,13 @@ public class RediSearchQuery implements RepositoryQuery {
 
   private String prepareQuery(final Object[] parameters, boolean excludeNullParams) {
     logger.debug(String.format("parameters: %s", Arrays.toString(parameters)));
+    logger.info(String.format("Preparing query for method: %s, isMapContainsQuery: %s", queryMethod.getName(),
+        isMapContainsQuery));
     List<Object> params = new ArrayList<>(Arrays.asList(parameters));
     StringBuilder preparedQuery = new StringBuilder();
     boolean multipleOrParts = queryOrParts.size() > 1;
     logger.debug(String.format("queryOrParts: %s", queryOrParts.size()));
+    logger.info(String.format("queryOrParts details: %s", queryOrParts));
     if (!queryOrParts.isEmpty()) {
       preparedQuery.append(queryOrParts.stream().map(qop -> {
         String orPart = multipleOrParts ? "(" : "";
@@ -928,6 +974,7 @@ public class RediSearchQuery implements RepositoryQuery {
           }
           String fieldName = QueryUtils.escape(fieldClauses.getFirst());
           QueryClause queryClause = fieldClauses.getSecond();
+          logger.info(String.format("Processing field: %s with queryClause: %s", fieldName, queryClause));
           int paramsCnt = queryClause.getClauseTemplate().getNumberOfArguments();
 
           Object[] ps = params.subList(0, paramsCnt).toArray();
@@ -979,6 +1026,7 @@ public class RediSearchQuery implements RepositoryQuery {
       preparedQuery.append("*");
     }
 
+    logger.info(String.format("Final query string: %s", preparedQuery));
     logger.debug(String.format("query: %s", preparedQuery));
 
     return preparedQuery.toString();

@@ -74,6 +74,11 @@ public class NumericField<E, T> extends MetamodelField<E, T> {
    * @return a GreaterThanPredicate that matches entities where this field is greater than the specified value
    */
   public GreaterThanPredicate<E, T> gt(T value) {
+    // For synthetic fields (like Map VALUES), use explicit NUMERIC field type
+    if (searchFieldAccessor.getField() == null) {
+      return new GreaterThanPredicate<>(searchFieldAccessor, value,
+          redis.clients.jedis.search.Schema.FieldType.NUMERIC);
+    }
     return new GreaterThanPredicate<>(searchFieldAccessor, value);
   }
 

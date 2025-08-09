@@ -5,6 +5,7 @@ import static org.apache.commons.lang3.ObjectUtils.isEmpty;
 import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 
+import redis.clients.jedis.search.Schema.FieldType;
 import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import redis.clients.jedis.search.querybuilder.QueryNode;
@@ -54,6 +55,20 @@ public class EqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
    */
   public EqualPredicate(SearchFieldAccessor field, T value) {
     super(field);
+    this.value = value;
+  }
+
+  /**
+   * Creates a new EqualPredicate for the specified field and value(s) with explicit field type.
+   * This constructor is used for synthetic fields (like Map VALUES) where the field type
+   * cannot be determined from annotations.
+   * 
+   * @param field     the field accessor for the target tag field
+   * @param value     the value to match, or collection of values for AND matching
+   * @param fieldType the explicit Redis field type for this predicate
+   */
+  public EqualPredicate(SearchFieldAccessor field, T value, FieldType fieldType) {
+    super(field, fieldType);
     this.value = value;
   }
 

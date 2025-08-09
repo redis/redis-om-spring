@@ -1,5 +1,7 @@
 package com.redis.om.spring.repository.query.clause;
 
+import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -251,6 +253,13 @@ public enum QueryClause {
   GEO_CONTAINING_ALL( //
       QueryClauseTemplate.of(FieldType.GEO, Part.Type.CONTAINING, QueryClause.FIRST_PARAM, 1) //
   ),
+  /**
+   * Geo field query clause for point equality checks.
+   * Matches geographic fields that are equal to the specified point using a very small radius.
+   */
+  GEO_SIMPLE_PROPERTY( //
+      QueryClauseTemplate.of(FieldType.GEO, Part.Type.SIMPLE_PROPERTY, QueryClause.FIELD_GEO_POINT_EQUAL, 1) //
+  ),
   // TAG
   /**
    * Tag field query clause for exact value matching.
@@ -369,6 +378,13 @@ public enum QueryClause {
    * Used to distinguish between OR logic (Containing) and AND logic (ContainingAll) operations.
    */
   public static final Pattern CONTAINING_ALL_PATTERN = Pattern.compile("(IsContainingAll|ContainingAll|ContainsAll)");
+
+  /**
+   * Pattern for matching Map value queries in method names.
+   * Used to identify queries on Map field values (e.g., findByFieldMapContains).
+   */
+  public static final Pattern MAP_CONTAINS_PATTERN = Pattern.compile("([A-Za-z]+)MapContains");
+
   private static final String PARAM_PREFIX = "$param_";
   private static final String FIRST_PARAM = "$param_0";
   private static final String FIELD_EQUAL = "@$field:$param_0";
@@ -390,6 +406,7 @@ public enum QueryClause {
   private static final String FIELD_NUMERIC_BEFORE = "@$field:[-inf ($param_0]";
   private static final String FIELD_NUMERIC_AFTER = "@$field:[($param_0 inf]";
   private static final String FIELD_GEO_NEAR = "@$field:[$param_0 $param_1 $param_2]";
+  private static final String FIELD_GEO_POINT_EQUAL = "@$field:[$param_0 $param_1 .000001 ft]";
   private static final String FIELD_IS_NULL = "!exists(@$field)";
   private static final String FIELD_IS_NOT_NULL = "exists(@$field)";
   private static final String FIELD_LEXICOGRAPHIC = "__LEXICOGRAPHIC__";
@@ -435,6 +452,20 @@ public enum QueryClause {
   }
 
   /**
+   * Checks if the given method name contains a Map value query pattern.
+   * <p>
+   * This method searches for patterns like "MapContains" or "MapContainsGreaterThan"
+   * in the method name to determine if it represents a query on Map field values.
+   * </p>
+   *
+   * @param methodName the Spring Data repository method name to check
+   * @return true if the method name contains a Map value query pattern, false otherwise
+   */
+  public static boolean hasMapContainsClause(String methodName) {
+    return MAP_CONTAINS_PATTERN.matcher(methodName).find();
+  }
+
+  /**
    * Post-processes a method name by replacing "containing all" patterns with their simpler equivalents.
    * <p>
    * This method transforms method names containing "IsContainingAll", "ContainingAll", or "ContainsAll"
@@ -457,6 +488,25 @@ public enum QueryClause {
         return methodName;
       }
 
+    }
+    return methodName;
+  }
+
+  /**
+   * Processes a method name to handle Map value queries by removing the MapContains pattern.
+   * <p>
+   * This method transforms method names containing "MapContains" patterns into standard
+   * query forms that PartTree can parse. For example, "findByFieldMapContains" becomes "findByField".
+   * The actual field mapping to the indexed values field is handled in the query extraction logic.
+   * </p>
+   *
+   * @param methodName the original Spring Data repository method name
+   * @return the processed method name with MapContains patterns removed, or the original name if no patterns are found
+   */
+  public static String processMapContainsMethodName(String methodName) {
+    if (hasMapContainsClause(methodName)) {
+      // Replace MapContains and its variations with empty string to get standard method name
+      return methodName.replaceAll("MapContains(GreaterThan|LessThan|After|Before)?", "$1");
     }
     return methodName;
   }
@@ -547,6 +597,26 @@ public enum QueryClause {
           } else {
             if (clauseTemplate.getIndexType() == FieldType.TEXT) {
               prepared = prepared.replace(PARAM_PREFIX + i++, param.toString());
+            } else if (clauseTemplate.getIndexType() == FieldType.NUMERIC && param instanceof Boolean) {
+              // Special handling for Boolean values in NUMERIC fields (Map Boolean values)
+              // Convert true -> "1" and false -> "0" for RediSearch NUMERIC queries
+              String boolValue = ((Boolean) param) ? "1" : "0";
+              prepared = prepared.replace(PARAM_PREFIX + i++, boolValue);
+            } else if (clauseTemplate.getIndexType() == FieldType.NUMERIC && param instanceof Date) {
+              // Special handling for Date values in NUMERIC fields
+              // Convert to epoch milliseconds for RediSearch NUMERIC queries
+              long timestamp = ((Date) param).getTime();
+              prepared = prepared.replace(PARAM_PREFIX + i++, Long.toString(timestamp));
+            } else if (clauseTemplate.getIndexType() == FieldType.NUMERIC && param instanceof Instant) {
+              // Special handling for Instant values in NUMERIC fields
+              // Convert to epoch milliseconds for RediSearch NUMERIC queries
+              long timestamp = ((Instant) param).toEpochMilli();
+              prepared = prepared.replace(PARAM_PREFIX + i++, Long.toString(timestamp));
+            } else if (clauseTemplate.getIndexType() == FieldType.NUMERIC && param instanceof OffsetDateTime) {
+              // Special handling for OffsetDateTime values in NUMERIC fields
+              // Convert to epoch milliseconds for RediSearch NUMERIC queries
+              long timestamp = ((OffsetDateTime) param).toInstant().toEpochMilli();
+              prepared = prepared.replace(PARAM_PREFIX + i++, Long.toString(timestamp));
             } else if (clauseTemplate.getIndexType() == FieldType.NUMERIC && !paramClass.equalsIgnoreCase(
                 "java.time.LocalDateTime") && !paramClass.equalsIgnoreCase("java.time.LocalDate")) {
               prepared = prepared.replace(PARAM_PREFIX + i++, param.toString());
