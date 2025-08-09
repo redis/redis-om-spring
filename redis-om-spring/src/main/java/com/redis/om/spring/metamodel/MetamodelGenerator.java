@@ -441,6 +441,72 @@ public final class MetamodelGenerator extends AbstractProcessor {
           }
         }
         //
+        // Map fields
+        //
+        else if (Map.class.isAssignableFrom(targetCls)) {
+          // For Map fields, generate both the map field and special VALUES field for queries
+          String mapValueTypeName = ObjectUtils.getMapValueClassName(fullTypeClassName);
+
+          try {
+            // Handle inner classes by replacing dot with $ for the last component
+            String classNameForLoader = mapValueTypeName;
+            if (mapValueTypeName.contains(".") && !mapValueTypeName.startsWith("java.")) {
+              // Try to detect inner class pattern: package.OuterClass.InnerClass
+              int lastDotIndex = mapValueTypeName.lastIndexOf('.');
+              if (lastDotIndex > 0) {
+                String beforeLastDot = mapValueTypeName.substring(0, lastDotIndex);
+                String afterLastDot = mapValueTypeName.substring(lastDotIndex + 1);
+                int secondLastDotIndex = beforeLastDot.lastIndexOf('.');
+                if (secondLastDotIndex > 0) {
+                  String potentialOuterClass = beforeLastDot.substring(secondLastDotIndex + 1);
+                  // If the part before the last dot looks like a class name (starts with uppercase)
+                  // then this might be an inner class
+                  if (Character.isUpperCase(potentialOuterClass.charAt(0)) && Character.isUpperCase(afterLastDot.charAt(
+                      0))) {
+                    // Convert Outer.Inner to Outer$Inner for class loader
+                    classNameForLoader = beforeLastDot + "$" + afterLastDot;
+                  }
+                }
+              }
+            }
+            Class<?> valueClass = ClassUtils.forName(classNameForLoader, MetamodelGenerator.class.getClassLoader());
+
+            // Determine the field type based on the value type
+            Class<?> valuesInterceptor = null;
+            if (CharSequence.class.isAssignableFrom(
+                valueClass) || valueClass == Boolean.class || valueClass == UUID.class || valueClass == Ulid.class || valueClass
+                    .isEnum()) {
+              targetInterceptor = TextTagField.class;
+              valuesInterceptor = TextTagField.class;
+            } else if (Number.class.isAssignableFrom(
+                valueClass) || valueClass == LocalDateTime.class || valueClass == LocalDate.class || valueClass == Date.class || valueClass == Instant.class || valueClass == OffsetDateTime.class) {
+              targetInterceptor = NumericField.class;
+              valuesInterceptor = NumericField.class;
+            } else if (valueClass == Point.class) {
+              targetInterceptor = GeoField.class;
+              valuesInterceptor = GeoField.class;
+            }
+
+            // Generate the special VALUES field for querying map values
+            if (valuesInterceptor != null) {
+              String mapFieldName = field.getSimpleName().toString();
+              String mapValuesFieldName = mapFieldName.toUpperCase().replace("_", "") + "_VALUES";
+
+              // Add the VALUES field as a special metamodel field
+              Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> valuesField = generateMapValuesFieldMetamodel(entity,
+                  chain, chainedFieldName, mapValuesFieldName, valuesInterceptor, mapValueTypeName);
+              fieldMetamodelSpec.add(valuesField);
+            }
+
+            // We still want the regular Map field for direct access
+            // targetInterceptor remains set for the Map field itself
+          } catch (ClassNotFoundException cnfe) {
+            messager.printMessage(Diagnostic.Kind.WARNING,
+                "Processing class " + entityName + " could not resolve map value type " + mapValueTypeName);
+            targetInterceptor = null; // Don't generate field if we can't resolve the type
+          }
+        }
+        //
         // Point
         //
         else if (targetCls == Point.class) {
@@ -508,6 +574,41 @@ public final class MetamodelGenerator extends AbstractProcessor {
     return fieldMetamodelSpec;
   }
 
+  private Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> generateMapValuesFieldMetamodel( //
+      TypeName parentEntity, //
+      List<Element> chain, //
+      String chainedFieldName, //
+      String mapValuesFieldName, //
+      Class<?> targetInterceptor, //
+      String valueTypeName //
+  ) {
+    Element field = chain.get(chain.size() - 1);
+    String fieldName = field.getSimpleName().toString();
+
+    // Create field spec for map values - the type parameter should be the value type, not the Map
+    TypeName interceptorType = ParameterizedTypeName.get(ClassName.get(targetInterceptor), parentEntity, ClassName
+        .bestGuess(valueTypeName));
+
+    FieldSpec valuesFieldSpec = FieldSpec.builder(interceptorType, mapValuesFieldName).addModifiers(Modifier.PUBLIC,
+        Modifier.STATIC).build();
+
+    // Create initialization code
+    // The search path matches what we index in RediSearchIndexer: $.fieldName.*
+    // The accessor name matches what RediSearchQuery expects: fieldName_values
+    String searchPath = "$." + fieldName + ".*";
+    String accessorName = fieldName + "_values";
+
+    CodeBlock initCode = CodeBlock.builder().addStatement(
+        "$L = new $T<$T, $T>(new SearchFieldAccessor($S, $S, $T.class, $T.class), true)", mapValuesFieldName,
+        targetInterceptor, parentEntity, ClassName.bestGuess(valueTypeName), accessorName, searchPath, ClassName
+            .bestGuess(valueTypeName), parentEntity).build();
+
+    // Don't create an ObjectGraphFieldSpec for synthetic VALUES fields
+    // We only need the FieldSpec in the interceptors list
+    // Return null for the ObjectGraphFieldSpec to avoid duplication
+    return Tuples.of((ObjectGraphFieldSpec) null, valuesFieldSpec, initCode);
+  }
+
   private Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> generateCollectionFieldMetamodel( //
       TypeName parentEntity, //
       List<Element> chain, //
@@ -572,12 +673,15 @@ public final class MetamodelGenerator extends AbstractProcessor {
       List<CodeBlock> initCodeBlocks, List<Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock>> fieldMetamodels) {
     for (Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> fieldMetamodel : fieldMetamodels) {
       FieldSpec fieldSpec = fieldMetamodel.getSecond();
-      fields.add(fieldMetamodel.getFirst());
+      // Only add to fields if not null (synthetic fields like Map VALUES don't have ObjectGraphFieldSpec)
+      if (fieldMetamodel.getFirst() != null) {
+        fields.add(fieldMetamodel.getFirst());
+      }
       interceptors.add(fieldMetamodel.getSecond());
       initCodeBlocks.add(fieldMetamodel.getThird());
 
       // Add _SCORE field to Vector
-      if (fieldSpec.type.toString().startsWith(VectorField.class.getName())) {
+      if (fieldSpec.type.toString().startsWith(VectorField.class.getName()) && fieldMetamodel.getFirst() != null) {
         String fieldName = fieldMetamodel.getFirst().fieldSpec().name;
         Pair<FieldSpec, CodeBlock> vectorFieldScore = generateUnboundMetamodelField(entity,
             "_" + fieldSpec.name + "_SCORE", "__" + fieldName + "_score", Double.class);

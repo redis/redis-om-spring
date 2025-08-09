@@ -1,0 +1,373 @@
+= Map Field Mappings
+:page-toclevels: 3
+:experimental:
+:source-highlighter: highlight.js
+
+== Introduction
+
+Redis OM Spring provides comprehensive support for `Map<String, T>` fields in JSON documents, allowing you to store dynamic key-value pairs where keys are strings and values can be of various types. This feature is particularly useful for storing flexible, schema-less data within your entities.
+
+Map fields are automatically indexed using Redis JSON path expressions, enabling powerful query capabilities on map values regardless of their keys.
+
+== Supported Value Types
+
+Redis OM Spring supports Maps with the following value types:
+
+=== Basic Types
+* `String` - Indexed as TAG fields
+* `Boolean` - Indexed as NUMERIC fields (stored as 1/0)
+* `Integer`, `Long`, `Double`, `Float`, `BigDecimal` - Indexed as NUMERIC fields
+* `UUID`, `Ulid` - Indexed as TAG fields
+* Enum types - Indexed as TAG fields
+
+=== Temporal Types
+* `LocalDateTime`, `LocalDate` - Indexed as NUMERIC fields
+* `Date`, `Instant`, `OffsetDateTime` - Indexed as NUMERIC fields (epoch milliseconds)
+
+=== Spatial Types
+* `Point` - Indexed as GEO fields for spatial queries
+
+== Basic Usage
+
+=== Entity Definition with Map Fields
+
+[source,java]
+----
+@Data
+@Document
+public class Product {
+    @Id
+    private String id;
+    
+    @Indexed
+    private String name;
+    
+    // Map of string attributes
+    @Indexed
+    private Map<String, String> attributes = new HashMap<>();
+    
+    // Map of numeric specifications
+    @Indexed
+    private Map<String, Double> specifications = new HashMap<>();
+    
+    // Map of boolean features
+    @Indexed
+    private Map<String, Boolean> features = new HashMap<>();
+    
+    // Map of temporal data
+    @Indexed
+    private Map<String, LocalDateTime> timestamps = new HashMap<>();
+}
+----
+
+=== Populating Map Fields
+
+[source,java]
+----
+Product product = new Product();
+product.setName("Smartphone");
+
+// Add string attributes
+product.getAttributes().put("brand", "TechCorp");
+product.getAttributes().put("model", "X2000");
+product.getAttributes().put("color", "Black");
+
+// Add numeric specifications
+product.getSpecifications().put("screenSize", 6.5);
+product.getSpecifications().put("weight", 175.5);
+product.getSpecifications().put("batteryCapacity", 4500.0);
+
+// Add boolean features
+product.getFeatures().put("hasNFC", true);
+product.getFeatures().put("hasWirelessCharging", true);
+product.getFeatures().put("has5G", false);
+
+// Add temporal data
+product.getTimestamps().put("manufactured", LocalDateTime.now());
+product.getTimestamps().put("lastUpdated", LocalDateTime.now());
+
+productRepository.save(product);
+----
+
+== Querying Map Fields
+
+=== Repository Query Methods
+
+Redis OM Spring provides special query method naming conventions for Map fields using the `MapContains` suffix:
+
+[source,java]
+----
+public interface ProductRepository extends RedisDocumentRepository<Product, String> {
+    
+    // Find by string value in map
+    List<Product> findByAttributesMapContains(String value);
+    
+    // Find by numeric value in map
+    List<Product> findBySpecificationsMapContains(Double value);
+    
+    // Find by boolean value in map
+    List<Product> findByFeaturesMapContains(Boolean value);
+    
+    // Numeric comparisons on map values
+    List<Product> findBySpecificationsMapContainsGreaterThan(Double value);
+    List<Product> findBySpecificationsMapContainsLessThan(Double value);
+    
+    // Temporal queries on map values
+    List<Product> findByTimestampsMapContainsAfter(LocalDateTime date);
+    List<Product> findByTimestampsMapContainsBefore(LocalDateTime date);
+}
+----
+
+=== Query Examples
+
+[source,java]
+----
+// Find products with "TechCorp" as any attribute value
+List<Product> techCorpProducts = repository.findByAttributesMapContains("TechCorp");
+
+// Find products with any specification value greater than 1000
+List<Product> highSpecProducts = repository.findBySpecificationsMapContainsGreaterThan(1000.0);
+
+// Find products with NFC feature enabled
+List<Product> nfcProducts = repository.findByFeaturesMapContains(true);
+
+// Find products updated after a specific date
+LocalDateTime lastWeek = LocalDateTime.now().minusWeeks(1);
+List<Product> recentlyUpdated = repository.findByTimestampsMapContainsAfter(lastWeek);
+----
+
+== Advanced Examples
+
+=== Working with Complex Value Types
+
+[source,java]
+----
+@Data
+@Document
+public class UserProfile {
+    @Id
+    private String id;
+    
+    @Indexed
+    private String username;
+    
+    // UUIDs for external system references
+    @Indexed
+    private Map<String, UUID> externalIds = new HashMap<>();
+    
+    // Enum values for various statuses
+    @Indexed
+    private Map<String, Status> statuses = new HashMap<>();
+    
+    // Geographic locations
+    @Indexed
+    private Map<String, Point> locations = new HashMap<>();
+    
+    // Monetary values with high precision
+    @Indexed
+    private Map<String, BigDecimal> balances = new HashMap<>();
+    
+    public enum Status {
+        ACTIVE, INACTIVE, PENDING, SUSPENDED
+    }
+}
+----
+
+[source,java]
+----
+// Repository interface
+public interface UserProfileRepository extends RedisDocumentRepository<UserProfile, String> {
+    List<UserProfile> findByExternalIdsMapContains(UUID uuid);
+    List<UserProfile> findByStatusesMapContains(UserProfile.Status status);
+    List<UserProfile> findByBalancesMapContainsGreaterThan(BigDecimal amount);
+}
+
+// Usage example
+UserProfile profile = new UserProfile();
+profile.setUsername("john_doe");
+
+// Add external IDs
+UUID googleId = UUID.randomUUID();
+profile.getExternalIds().put("google", googleId);
+profile.getExternalIds().put("facebook", UUID.randomUUID());
+
+// Set statuses
+profile.getStatuses().put("account", UserProfile.Status.ACTIVE);
+profile.getStatuses().put("subscription", UserProfile.Status.PENDING);
+
+// Add locations
+profile.getLocations().put("home", new Point(-122.4194, 37.7749)); // San Francisco
+profile.getLocations().put("work", new Point(-74.0059, 40.7128));  // New York
+
+// Set balances
+profile.getBalances().put("usd", new BigDecimal("1234.56"));
+profile.getBalances().put("eur", new BigDecimal("987.65"));
+
+repository.save(profile);
+
+// Query examples
+List<UserProfile> googleUsers = repository.findByExternalIdsMapContains(googleId);
+List<UserProfile> activeUsers = repository.findByStatusesMapContains(UserProfile.Status.ACTIVE);
+List<UserProfile> highBalanceUsers = repository.findByBalancesMapContainsGreaterThan(
+    new BigDecimal("1000.00")
+);
+----
+
+=== Combining Multiple Map Queries
+
+[source,java]
+----
+@Data
+@Document
+public class Event {
+    @Id
+    private String id;
+    
+    @Indexed
+    private String name;
+    
+    @Indexed
+    private Map<String, String> metadata = new HashMap<>();
+    
+    @Indexed
+    private Map<String, Integer> metrics = new HashMap<>();
+    
+    @Indexed
+    private Map<String, LocalDateTime> timeline = new HashMap<>();
+}
+
+public interface EventRepository extends RedisDocumentRepository<Event, String> {
+    // Combine multiple map queries
+    List<Event> findByMetadataMapContainsAndMetricsMapContainsGreaterThan(
+        String metadataValue, Integer metricThreshold
+    );
+    
+    List<Event> findByNameAndTimelineMapContainsAfter(
+        String name, LocalDateTime after
+    );
+}
+----
+
+== Important Considerations
+
+=== Indexing
+
+* Map fields must be annotated with `@Indexed` to be searchable
+* Each Map field creates a single index for all its values, regardless of keys
+* The index uses JSONPath expressions (e.g., `$.fieldName.*`) to capture all values
+
+=== Performance
+
+* Map value queries search across all values in the map, not specific keys
+* For large maps, consider the performance implications of indexing all values
+* Numeric and temporal comparisons are efficient due to NUMERIC indexing
+
+=== Type Consistency
+
+* All values in a Map must be of the same declared type
+* Mixed-type maps are not supported for indexed fields
+* Type conversion follows standard Redis OM Spring serialization rules
+
+=== Temporal Precision
+
+* Date/time values may experience precision loss during serialization
+* Millisecond precision is preserved for most temporal types
+* Consider using tolerance when comparing temporal values in tests
+
+=== Boolean Values
+
+* Boolean values in Maps are indexed as NUMERIC fields (1 for true, 0 for false)
+* This differs from regular Boolean entity fields, which are indexed as TAG fields
+* Queries work transparently with both `true`/`false` parameters
+
+== Query Patterns
+
+=== Equality Queries
+
+For exact value matching across all map entries:
+
+[source,java]
+----
+// Find entities where any map value equals the parameter
+List<Entity> findByMapFieldMapContains(ValueType value);
+----
+
+=== Range Queries (Numeric/Temporal)
+
+For numeric and temporal value types:
+
+[source,java]
+----
+// Greater than
+List<Entity> findByMapFieldMapContainsGreaterThan(ValueType value);
+
+// Less than
+List<Entity> findByMapFieldMapContainsLessThan(ValueType value);
+
+// Temporal queries
+List<Entity> findByMapFieldMapContainsAfter(TemporalType value);
+List<Entity> findByMapFieldMapContainsBefore(TemporalType value);
+----
+
+=== Combining with Other Fields
+
+Map queries can be combined with regular field queries:
+
+[source,java]
+----
+List<Entity> findByRegularFieldAndMapFieldMapContains(
+    String regularValue, MapValueType mapValue
+);
+----
+
+== Limitations
+
+* **No key-based queries**: You cannot query for specific keys, only values
+* **No partial matching**: String values in maps use TAG indexing (exact match only)
+* **GEO queries**: Point values support equality through proximity search with minimal radius
+* **Collection values**: Maps with collection-type values are not supported
+
+== Best Practices
+
+1. **Use meaningful value types**: Choose value types that match your query requirements
+2. **Consider index size**: Large maps with many entries will create larger indexes
+3. **Consistent naming**: Use clear, descriptive names for Map fields
+4. **Initialize maps**: Always initialize Map fields to avoid null pointer exceptions
+5. **Document value semantics**: Document what each potential key represents in your maps
+
+== Migration Guide
+
+If you're migrating from a schema with fixed fields to using Maps:
+
+1. Create the Map field with appropriate value type
+2. Add `@Indexed` annotation
+3. Migrate data by populating the Map with key-value pairs
+4. Update repository methods to use `MapContains` pattern
+5. Test queries thoroughly, especially for numeric and temporal types
+
+[source,java]
+----
+// Before: Fixed fields
+@Document
+public class OldProduct {
+    private String color;
+    private String size;
+    private String material;
+}
+
+// After: Flexible Map
+@Document
+public class NewProduct {
+    @Indexed
+    private Map<String, String> attributes = new HashMap<>();
+}
+
+// Migration code
+oldProduct.getColor() -> newProduct.getAttributes().put("color", oldProduct.getColor());
+oldProduct.getSize() -> newProduct.getAttributes().put("size", oldProduct.getSize());
+oldProduct.getMaterial() -> newProduct.getAttributes().put("material", oldProduct.getMaterial());
+----
+
+== Conclusion
+
+Map field support in Redis OM Spring provides a powerful way to handle dynamic, schema-less data within your Redis JSON documents. With comprehensive type support and intuitive query methods, you can build flexible data models while maintaining full search capabilities.

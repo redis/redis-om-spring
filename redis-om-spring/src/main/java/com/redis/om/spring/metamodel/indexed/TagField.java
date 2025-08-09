@@ -71,6 +71,10 @@ public class TagField<E, T> extends MetamodelField<E, T> {
    * @return an equality predicate for query building
    */
   public EqualPredicate<E, T> eq(T value) {
+    // For synthetic fields (like Map VALUES), use explicit TAG field type
+    if (searchFieldAccessor.getField() == null) {
+      return new EqualPredicate<>(searchFieldAccessor, value, redis.clients.jedis.search.Schema.FieldType.TAG);
+    }
     return new EqualPredicate<>(searchFieldAccessor, value);
   }
 

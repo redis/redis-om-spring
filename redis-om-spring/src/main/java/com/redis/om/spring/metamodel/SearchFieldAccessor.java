@@ -34,18 +34,39 @@ public class SearchFieldAccessor {
   public SearchFieldAccessor(String searchAlias, String jsonPath, Field... fields) {
     this.searchAlias = searchAlias;
     this.jsonPath = jsonPath;
-    this.fields.addAll(Arrays.asList(fields));
-    this.targetClass = this.fields.get(0).getType();
-    this.declaringClass = this.fields.get(0).getDeclaringClass();
+    if (fields != null) {
+      this.fields.addAll(Arrays.asList(fields));
+      this.targetClass = this.fields.get(0).getType();
+      this.declaringClass = this.fields.get(0).getDeclaringClass();
+    } else {
+      this.targetClass = null;
+      this.declaringClass = null;
+    }
+  }
+
+  /**
+   * Creates a new SearchFieldAccessor for synthetic fields (like Map VALUES) with explicit type information.
+   * 
+   * @param searchAlias    the alias used for search operations
+   * @param jsonPath       the JSON path for accessing the field value
+   * @param targetClass    the target class type for this accessor
+   * @param declaringClass the class that declares the related field
+   */
+  public SearchFieldAccessor(String searchAlias, String jsonPath, Class<?> targetClass, Class<?> declaringClass) {
+    this.searchAlias = searchAlias;
+    this.jsonPath = jsonPath;
+    this.targetClass = targetClass;
+    this.declaringClass = declaringClass;
   }
 
   /**
    * Returns the primary Java reflection field associated with this accessor.
+   * For synthetic fields (like Map VALUES), this may return null.
    * 
-   * @return the primary field
+   * @return the primary field, or null for synthetic fields
    */
   public Field getField() {
-    return fields.get(0);
+    return fields.isEmpty() ? null : fields.get(0);
   }
 
   /**

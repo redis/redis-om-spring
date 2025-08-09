@@ -62,8 +62,27 @@ public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicat
     this.fieldType = getFieldTypeFor(field.getField());
   }
 
+  /**
+   * Creates a new BaseAbstractPredicate for the specified field with explicit field type.
+   * This constructor is used for synthetic fields (like Map VALUES) where the field type
+   * cannot be determined from annotations.
+   * 
+   * @param field     the field accessor for the target field
+   * @param fieldType the explicit Redis field type for this predicate
+   */
+  protected BaseAbstractPredicate(SearchFieldAccessor field, FieldType fieldType) {
+    this.field = field;
+    this.fieldType = fieldType;
+  }
+
   private static FieldType getFieldTypeFor(java.lang.reflect.Field field) {
     FieldType result = null;
+
+    // Handle null fields (synthetic fields like Map VALUES)
+    if (field == null) {
+      return null; // Will be determined by the field type in constructor
+    }
+
     // Searchable - behaves like Text indexed
     if (field.isAnnotationPresent(Searchable.class)) {
       result = FieldType.GEO;

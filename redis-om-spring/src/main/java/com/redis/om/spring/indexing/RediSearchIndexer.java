@@ -554,6 +554,59 @@ public class RediSearchIndexer {
           }
         }
         //
+        // Map fields (only for JSON documents)
+        //
+        else if (Map.class.isAssignableFrom(fieldType) && isDocument) {
+          logger.info(String.format("Processing Map field: %s of type %s", field.getName(), fieldType));
+          Optional<Class<?>> maybeValueType = getMapValueClass(field);
+          if (maybeValueType.isPresent()) {
+            Class<?> valueType = maybeValueType.get();
+            logger.info(String.format("Map field %s has value type: %s", field.getName(), valueType));
+            String mapJsonPath = (prefix == null || prefix.isBlank()) ?
+                "$." + field.getName() + ".*" :
+                "$." + prefix + "." + field.getName() + ".*";
+            String mapFieldAlias = field.getName() + "_values";
+
+            // Support all value types that we support for regular fields
+            if (CharSequence.class.isAssignableFrom(
+                valueType) || valueType == UUID.class || valueType == Ulid.class || valueType.isEnum()) {
+              // Index as TAG field
+              TagField tagField = TagField.of(FieldName.of(mapJsonPath).as(mapFieldAlias));
+              if (indexed.sortable())
+                tagField.sortable();
+              if (indexed.indexMissing())
+                tagField.indexMissing();
+              if (indexed.indexEmpty())
+                tagField.indexEmpty();
+              if (!indexed.separator().isEmpty()) {
+                tagField.separator(indexed.separator().charAt(0));
+              }
+              fields.add(SearchField.of(field, tagField));
+              logger.info(String.format("Added TAG field for Map: %s as %s", field.getName(), mapFieldAlias));
+            } else if (Number.class.isAssignableFrom(
+                valueType) || valueType == Boolean.class || valueType == LocalDateTime.class || valueType == LocalDate.class || valueType == Date.class || valueType == Instant.class || valueType == OffsetDateTime.class) {
+              // Index as NUMERIC field
+              NumericField numField = NumericField.of(FieldName.of(mapJsonPath).as(mapFieldAlias));
+              if (indexed.sortable())
+                numField.sortable();
+              if (indexed.noindex())
+                numField.noIndex();
+              if (indexed.indexMissing())
+                numField.indexMissing();
+              // NumericField doesn't have indexEmpty() method
+              fields.add(SearchField.of(field, numField));
+              logger.info(String.format("Added NUMERIC field for Map: %s as %s", field.getName(), mapFieldAlias));
+            } else if (valueType == Point.class) {
+              // Index as GEO field
+              GeoField geoField = GeoField.of(FieldName.of(mapJsonPath).as(mapFieldAlias));
+              fields.add(SearchField.of(field, geoField));
+              logger.info(String.format("Added GEO field for Map: %s as %s", field.getName(), mapFieldAlias));
+            }
+            // For complex object values, we could recursively index their fields
+            // but that would require more complex implementation
+          }
+        }
+        //
         // Point
         //
         else if (fieldType == Point.class) {

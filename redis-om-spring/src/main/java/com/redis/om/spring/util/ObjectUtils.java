@@ -189,6 +189,40 @@ public class ObjectUtils {
   }
 
   /**
+   * Retrieves the value type from a Map field.
+   *
+   * @param field the Map field to analyze
+   * @return an Optional containing the value class if the field is a Map, empty otherwise
+   */
+  public static Optional<Class<?>> getMapValueClass(Field field) {
+    if (Map.class.isAssignableFrom(field.getType())) {
+      ResolvableType mapType = ResolvableType.forField(field);
+      Class<?> valueType = mapType.getGeneric(1).getRawClass();
+      return valueType != null ? Optional.of(valueType) : Optional.empty();
+    }
+    return Optional.empty();
+  }
+
+  /**
+   * Extracts the Map value class name from a Map type string.
+   *
+   * @param fullTypeClassName the full type name string like "java.util.Map&lt;java.lang.String, java.lang.Integer&gt;"
+   * @return the value type class name
+   */
+  public static String getMapValueClassName(String fullTypeClassName) {
+    int openBracketPos = fullTypeClassName.indexOf('<');
+    int closeBracketPos = fullTypeClassName.lastIndexOf('>');
+    if (openBracketPos != -1 && closeBracketPos != -1) {
+      String genericTypes = fullTypeClassName.substring(openBracketPos + 1, closeBracketPos);
+      String[] types = genericTypes.split(",");
+      if (types.length == 2) {
+        return types[1].trim();
+      }
+    }
+    return "java.lang.Object";
+  }
+
+  /**
    * Retrieves the generic element type from a collection field.
    *
    * @param field the collection field to analyze

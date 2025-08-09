@@ -20,6 +20,7 @@
 * xref:json_mappings.adoc[Redis JSON Basics]
 * xref:document-annotation.adoc[Document Annotation]
 * xref:json-repositories.adoc[Document Repositories]
+* xref:json-map-fields.adoc[Map Field Mappings]
 
 .Indexing and Search
 * xref:search.adoc[Redis Query Engine Integration]
