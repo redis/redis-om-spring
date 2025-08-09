@@ -1,21 +1,61 @@
 [[hash.mappings]]
-= Redis Hash Mappings
+= Redis Hash Mappings with RediSearch
 :page-toclevels: 3
 :experimental:
 :source-highlighter: highlight.js
 
 == Introduction
 
-Spring Data Redis (SDR), the library that Redis OM Spring extends, provides mapping of Spring Entities to Redis Hashes. Redis OM Spring enhances this capability by integrating with the Query Engine available in Redis 8.0.0+ (or via Redis Stack for older versions).
+Redis OM Spring fundamentally transforms how Redis Hashes work by adding RediSearch indexing capabilities on top of the standard hash storage. This is a key distinction from Spring Data Redis, which only provides basic hash operations.
 
-This integration brings powerful search and indexing capabilities to Redis Hashes, while maintaining compatibility with existing Spring Data Redis code.
+=== The Core Difference
 
-== Key Benefits of Redis OM Spring Hash Mapping
+**Spring Data Redis**: Stores entities as Redis Hashes with basic secondary indexing using Redis Sets
+**Redis OM Spring**: Stores entities as Redis Hashes PLUS creates RediSearch indexes for powerful querying
 
-* **Enhanced Query Capabilities**: Full text search, numeric ranges, geo-spatial queries
-* **Backward Compatibility**: Works with existing Spring Data Redis code
-* **Simple Annotations**: Easy to add indexing without changing your data model
-* **Performance**: Efficient storage format for simple objects
+[source,bash]
+----
+# Spring Data Redis approach (basic)
+HSET person:123 name "John" email "john@example.com"  # Store hash
+SADD person:name:John person:123                      # Basic index
+
+# Redis OM Spring approach (enhanced)
+HSET person:123 name "John" email "john@example.com"  # Store hash (same)
+FT.CREATE PersonIdx ON HASH ...                       # RediSearch index (NEW!)
+----
+
+Redis OM Spring creates full RediSearch indexes using `FT.CREATE` commands, providing:
+
+== Key Differences from Spring Data Redis
+
+[cols="1,2,2"]
+|===
+|Feature |Spring Data Redis |Redis OM Spring
+
+|Indexing Mechanism
+|Redis Sets for @Indexed fields
+|RediSearch indexes via FT.CREATE
+
+|Query Performance
+|O(N) scans for complex queries
+|O(log N) index-based queries
+
+|Search Capabilities
+|Basic equality checks only
+|Full-text search, ranges, aggregations
+
+|Field Types
+|Simple hash fields
+|TEXT, TAG, NUMERIC, GEO, VECTOR fields
+
+|Repository Type
+|CrudRepository/RedisRepository
+|RedisEnhancedRepository
+
+|Query Methods
+|Limited to findBy patterns
+|Complex queries, @Query, Entity Streams
+|===
 
 == Basic Usage
 
@@ -167,9 +207,9 @@ found.ifPresent(person -> {
 repository.deleteById(newPerson.getId());
 ----
 
-== How Redis OM Spring Stores Redis Hashes
+== How Data is Stored and Indexed
 
-Redis Hashes are flat key-value structures. When storing Java objects, Redis OM Spring follows these mapping rules:
+Redis OM Spring stores data in standard Redis Hashes (just like Spring Data Redis) but additionally creates RediSearch indexes for querying:
 
 === Object-to-Hash Mapping
 
@@ -207,25 +247,39 @@ Redis Hashes are flat key-value structures. When storing Java objects, Redis OM 
 |`addresses.[0].city = "Tear"`
 |===
 
-Additionally, Redis OM Spring adds a `_class` attribute to store type information:
+The data is stored in a standard Redis Hash:
 
 [source,text]
 ----
-_class = com.example.Person
-id = 01HXYZ123ABC
-name = Mat Cauthon
-email = mat@bandoftheredhand.com
-roles.[0] = general
-roles.[1] = gambler
-address.city = Tear
-address.street = High Street
+# Standard Redis Hash (same as Spring Data Redis)
+HSET people:01HXYZ123ABC
+  _class "com.example.Person"
+  id "01HXYZ123ABC"
+  name "Mat Cauthon"
+  email "mat@bandoftheredhand.com"
+  roles.[0] "general"
+  roles.[1] "gambler"
+  address.city "Tear"
+  address.street "High Street"
+
+# But Redis OM Spring ALSO creates a RediSearch index
+FT.CREATE PersonIdx ON HASH PREFIX 1 people: SCHEMA
+  name TAG SORTABLE
+  email TEXT
+  roles TAG SEPARATOR |
+  address.city TAG
 ----
+
+This dual approach means:
+- Your data remains compatible with Spring Data Redis
+- You get powerful search capabilities through RediSearch
+- Queries use the index for performance, not scanning
 
 == Indexing and Searching
 
-=== Simple Property Indexes
+=== How Redis OM Spring Creates Indexes
 
-Use the `@Indexed` annotation to create secondary indexes for fields:
+When you annotate fields with `@Indexed`, Redis OM Spring creates a RediSearch index:
 
 [source,java]
 ----
@@ -234,25 +288,32 @@ public class Person {
   @Id
   private String id;
   
-  @Indexed
+  @Indexed  // Creates a TAG field in RediSearch
   private String name;
   
-  @Indexed
+  @Searchable  // Creates a TEXT field for full-text search
   private String email;
+  
+  @Indexed  // Creates a TAG field for set values
+  private Set<String> roles;
 }
 ----
 
-This creates Redis Sets for each value:
+This generates a RediSearch index creation command:
 
 [source,text]
 ----
-SADD people:name:Mat people:01HXYZ123ABC
-SADD people:email:mat@example.com people:01HXYZ123ABC
+FT.CREATE PersonIdx ON HASH PREFIX 1 people: SCHEMA
+  name TAG SORTABLE
+  email TEXT
+  roles TAG SEPARATOR |
 ----
 
-=== Geospatial Indexes
+NOTE: This is fundamentally different from Spring Data Redis, which would only create Redis Sets for indexed fields.
 
-For location-based queries, use the `@Indexed` annotation on Point fields:
+=== Advanced Field Types
+
+Redis OM Spring supports specialized field types through RediSearch:
 
 [source,java]
 ----
@@ -261,19 +322,33 @@ public class Company {
   @Id
   private String id;
   
-  @Indexed
+  @Indexed  // Creates a GEO field in RediSearch
   private Point location;
   
-  @Searchable(sortable = true)
+  @Searchable(sortable = true)  // Creates a TEXT field with SORTABLE
   private String name;
+  
+  @NumericIndexed  // Creates a NUMERIC field for range queries
+  private Integer yearFounded;
+  
+  @TagIndexed  // Creates a TAG field for exact matches
+  private Set<String> categories;
+  
+  @VectorIndexed(algorithm = VectorAlgorithm.HNSW)  // Vector similarity search
+  private byte[] embedding;
 }
 ----
 
-This enables geo-spatial queries:
+The RediSearch index supports complex queries on these fields:
 
 [source,text]
 ----
-GEOADD CompanyIdx:location 13.361389 38.115556 Company:01HXYZ123ABC
+FT.CREATE CompanyIdx ON HASH PREFIX 1 Company: SCHEMA
+  location GEO
+  name TEXT SORTABLE
+  yearFounded NUMERIC SORTABLE
+  categories TAG SEPARATOR |
+  embedding VECTOR HNSW 6 DIM 768 DISTANCE_METRIC COSINE
 ----
 
 === Query Methods
@@ -305,6 +380,50 @@ public interface PersonRepository extends RedisEnhancedRepository<Person, String
 ----
 
 For detailed query capabilities, see the xref:repository-queries.adoc[Repository Query Methods] section.
+
+== RediSearch Integration
+
+Redis OM Spring automatically manages RediSearch indexes for your hash entities:
+
+=== Index Creation
+
+When your application starts, Redis OM Spring:
+
+1. Scans for `@RedisHash` annotated classes
+2. Identifies fields with indexing annotations (`@Indexed`, `@Searchable`, etc.)
+3. Creates RediSearch indexes using `FT.CREATE` commands
+4. Maintains index synchronization as entities are saved/deleted
+
+=== Query Execution
+
+Repository queries are translated to RediSearch queries:
+
+[source,java]
+----
+// Repository method
+List<Person> findByNameAndRolesContaining(String name, String role);
+
+// Translates to RediSearch query
+FT.SEARCH PersonIdx "@name:{John} @roles:{admin}"
+----
+
+=== Entity Streams
+
+Redis OM Spring provides a fluent API for complex queries:
+
+[source,java]
+----
+@Autowired
+EntityStream entityStream;
+
+// Complex query using Entity Streams
+List<Person> admins = entityStream
+  .of(Person.class)
+  .filter(Person$.ROLES.contains("admin"))
+  .filter(Person$.NAME.startsWith("J"))
+  .sorted(Person$.EMAIL, SortOrder.ASC)
+  .collect(Collectors.toList());
+----
 
 == Time To Live (TTL)
 
@@ -393,11 +512,40 @@ public class RedisConfig {
 }
 ----
 
+== Migration from Spring Data Redis
+
+Migrating from Spring Data Redis to Redis OM Spring is straightforward:
+
+1. **Change the repository interface**:
+   ```java
+   // Before: Spring Data Redis
+   public interface PersonRepository extends CrudRepository<Person, String> { }
+   
+   // After: Redis OM Spring
+   public interface PersonRepository extends RedisEnhancedRepository<Person, String> { }
+   ```
+
+2. **Enable enhanced repositories**:
+   ```java
+   // Before
+   @EnableRedisRepositories
+   
+   // After
+   @EnableRedisEnhancedRepositories
+   ```
+
+3. **Add indexing annotations** (optional but recommended):
+   ```java
+   @Indexed     // For exact matches
+   @Searchable  // For full-text search
+   @NumericIndexed  // For numeric ranges
+   ```
+
+Your existing data remains compatible, and you immediately gain access to powerful search capabilities.
+
 == Redis Cluster Considerations
 
-When using Redis Cluster, it's important to ensure that related data is stored in the same hash slot to enable atomic operations and efficient queries.
-
-Use the `@IdAsHashTag` annotation to ensure that keys for an entity and its indexes are stored in the same hash slot:
+When using Redis Cluster with RediSearch indexes, use the `@IdAsHashTag` annotation to ensure proper data locality:
 
 [source,java]
 ----
@@ -415,10 +563,23 @@ public class HashWithHashTagId {
 
 == Performance Considerations
 
-* Redis Hashes are very efficient for simple data structures
-* Each query operation requires multiple Redis commands (index lookup + hash retrieval)
-* For complex nested objects, consider using xref:json_mappings.adoc[Redis JSON] instead
-* Writing objects to a Redis hash deletes and re-creates the whole hash, so data not mapped is lost
+* **Index-based queries**: Redis OM Spring uses RediSearch indexes, providing O(log N) query performance vs O(N) scans in Spring Data Redis
+* **Storage efficiency**: Data is still stored as standard Redis Hashes, maintaining the same memory efficiency
+* **Index overhead**: RediSearch indexes add some memory overhead but enable dramatic query performance improvements
+* **Complex objects**: For deeply nested structures, consider xref:json_mappings.adoc[Redis JSON] documents
+* **Write behavior**: Updates replace the entire hash (same as Spring Data Redis), unmapped data is lost
+
+== Summary
+
+Redis OM Spring enhances Redis Hash entities with RediSearch indexing, providing:
+
+* **Full compatibility** with Spring Data Redis hash storage
+* **Powerful search capabilities** through RediSearch indexes
+* **O(log N) query performance** instead of O(N) scans
+* **Rich query methods** including full-text search, ranges, and aggregations
+* **Advanced field types** like vectors, geo-spatial, and more
+
+The key takeaway: Redis OM Spring doesn't change how hashes are stored, it adds a powerful search layer on top.
 
 == Next Steps
 
@@ -426,3 +587,4 @@ public class HashWithHashTagId {
 * xref:repository-queries.adoc[Repository Query Methods] - Learn about query capabilities
 * xref:entity-streams.adoc[Entity Streams] - Explore fluent query API
 * xref:search.adoc[Redis Query Engine Integration] - Understand the search capabilities
+* xref:index-annotations.adoc[Index Annotations] - Deep dive into indexing options
