@@ -30,8 +30,32 @@ release:
     changelog:
       formatted: ALWAYS
       preset: conventional-commits
+      includeLabels:
+        - 'feat'
+        - 'feature'
+        - 'fix'
+        - 'docs'
+        - 'chore'
+        - 'perf'
+        - 'refactor'
+        - 'test'
+        - 'build'
+        - 'ci'
       contributors:
-        enabled: false
+        enabled: true
+        format: '- {{contributorName}} ({{contributorUsernameAsLink}})'
+      extraProperties:
+        categorizeScopes: false
+      replacers:
+        # Escape Java annotations to prevent GitHub from treating them as user mentions
+        - search: '\s@([A-Z][a-zA-Z]+)'
+          replace: ' `@$1`'
+      hide:
+        contributors:
+          - 'GitHub Actions'
+          - 'actions'
+          - 'github-actions'
+          - 'github-actions[bot]'
 
 signing:
   active: ALWAYS
