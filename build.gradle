@@ -21,16 +21,6 @@ apply from: "spotless.gradle"
 
 subprojects {
 	apply from: "$rootDir/gradle/build-conventions.gradle"
-
-	// Skip Javadoc for demo modules
-	if (project.path.startsWith(':demos:')) {
-		tasks.withType(Javadoc) {
-			onlyIf { false }
-		}
-		tasks.matching { it.name == 'javadocJar' }.configureEach {
-			onlyIf { false }
-		}
-	}
 }
 
 tasks.register('aggregateTestReport', TestReport) {

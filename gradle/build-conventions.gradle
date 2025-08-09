@@ -8,8 +8,12 @@ java {
 	}
 	sourceCompatibility = JavaVersion.VERSION_17
 	targetCompatibility = JavaVersion.VERSION_17
-	withJavadocJar()
-	withSourcesJar()
+
+	// Only generate javadoc and sources JARs for non-demo modules
+	if (!project.path.startsWith(':demos:')) {
+		withJavadocJar()
+		withSourcesJar()
+	}
 }
 
 test {
@@ -36,58 +40,61 @@ dependencies {
 	testImplementation "com.redis:testcontainers-redis:${testcontainersRedisVersion}"
 }
 
-publishing {
-	publications {
-		mavenJava(MavenPublication) {
-			from components.java
-			groupId = project.group
-			artifactId = project.name
-			version = project.version
-			description = project.description
-
-			versionMapping {
-				usage('java-api') {
-					fromResolutionOf('runtimeClasspath')
-				}
-				usage('java-runtime') {
-					fromResolutionResult()
-				}
-			}
-
-			pom {
-				packaging = 'jar'
-				name = project.name
+// Only configure publishing for non-demo modules
+if (!project.path.startsWith(':demos:')) {
+	publishing {
+		publications {
+			mavenJava(MavenPublication) {
+				from components.java
+				groupId = project.group
+				artifactId = project.name
+				version = project.version
 				description = project.description
-				url = "https://github.com/redis/redis-om-spring"
-				inceptionYear = '2021'
 
-				licenses {
-					license {
-						name = "MIT License"
-						url = "https://opensource.org/licenses/MIT"
+				versionMapping {
+					usage('java-api') {
+						fromResolutionOf('runtimeClasspath')
+					}
+					usage('java-runtime') {
+						fromResolutionResult()
 					}
 				}
 
-				developers {
-					developer {
-						id = "bsbodden"
-						name = "Brian Sam-Bodden"
-						email = "bsb at redis.com"
-					}
-				}
-
-				scm {
-					connection = "scm:git:git://github.com/redis/redis-om-spring.git"
-					developerConnection = "scm:git:ssh://github.com/redis/redis-om-spring.git"
+				pom {
+					packaging = 'jar'
+					name = project.name
+					description = project.description
 					url = "https://github.com/redis/redis-om-spring"
+					inceptionYear = '2021'
+
+					licenses {
+						license {
+							name = "MIT License"
+							url = "https://opensource.org/licenses/MIT"
+						}
+					}
+
+					developers {
+						developer {
+							id = "bsbodden"
+							name = "Brian Sam-Bodden"
+							email = "bsb at redis.com"
+						}
+					}
+
+					scm {
+						connection = "scm:git:git://github.com/redis/redis-om-spring.git"
+						developerConnection = "scm:git:ssh://github.com/redis/redis-om-spring.git"
+						url = "https://github.com/redis/redis-om-spring"
+					}
 				}
 			}
 		}
-	}
 
-	repositories {
-		maven {
-			url = rootProject.layout.buildDirectory.dir('staging-deploy')
+		repositories {
+			maven {
+				url = rootProject.layout.buildDirectory.dir('staging-deploy')
+			}
 		}
 	}
 }
