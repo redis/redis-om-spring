@@ -1148,8 +1148,9 @@ public class RediSearchIndexer {
 
   private boolean isAnnotationPreset(java.lang.reflect.Field idField, List<SchemaField> fields) {
     return (!idField.isAnnotationPresent(Indexed.class) && !idField.isAnnotationPresent(Searchable.class) && !idField
-        .isAnnotationPresent(TagIndexed.class) && !idField.isAnnotationPresent(TextIndexed.class) && (fields.stream()
-            .noneMatch(f -> f.getName().equals(idField.getName()))));
+        .isAnnotationPresent(TagIndexed.class) && !idField.isAnnotationPresent(TextIndexed.class) && !idField
+            .isAnnotationPresent(NumericIndexed.class) && (fields.stream().noneMatch(f -> f.getName().equals(idField
+                .getName()))));
   }
 
   private List<SearchField> createIndexedFieldsForIdFields(Class<?> cl, List<SchemaField> fields, boolean isDocument) {
