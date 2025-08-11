@@ -174,6 +174,20 @@ public enum QueryClause {
       QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.BETWEEN, QueryClause.FIELD_NUMERIC_BETWEEN, 2) //
   ),
   /**
+   * Numeric field query clause for range matching.
+   * Matches numeric fields that are equal to any of the specified values.
+   */
+  NUMERIC_IN( //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.IN, QueryClause.FIELD_EQUAL, 1) //
+  ),
+  /**
+   * Numeric field query clause for negated membership testing.
+   * Matches numeric fields that are not equal to any of the specified values.
+   */
+  NUMERIC_NOT_IN( //
+      QueryClauseTemplate.of(FieldType.NUMERIC, Part.Type.NOT_IN, QueryClause.FIELD_EQUAL, 1) //
+  ),
+  /**
    * Numeric field query clause for "less than" comparisons.
    * Matches numeric fields whose values are less than the specified value.
    */
@@ -569,31 +583,40 @@ public enum QueryClause {
             if (this == QueryClause.TAG_CONTAINING_ALL) {
               value = c.stream().map(n -> "@" + field + ":{" + QueryUtils.escape(ObjectUtils.asString(n,
                   converter)) + "}").collect(Collectors.joining(" "));
+              prepared = prepared.replace(PARAM_PREFIX + i++, value);
             } else if (this == QueryClause.NUMERIC_CONTAINING) {
               value = c.stream().map(n -> "@" + field + ":[" + QueryUtils.escape(ObjectUtils.asString(n,
                   converter)) + " " + QueryUtils.escape(ObjectUtils.asString(n, converter)) + "]").collect(Collectors
                       .joining("|"));
+              prepared = prepared.replace(PARAM_PREFIX + i++, value);
+            } else if (this == QueryClause.NUMERIC_IN) {
+              value = c.stream().map(n -> "@" + field + ":[" + QueryUtils.escape(ObjectUtils.asString(n,
+                  converter)) + " " + QueryUtils.escape(ObjectUtils.asString(n, converter)) + "]").collect(Collectors
+                      .joining("|"));
+              prepared = value;
             } else if (this == QueryClause.NUMERIC_CONTAINING_ALL) {
               value = c.stream().map(n -> "@" + field + ":[" + QueryUtils.escape(ObjectUtils.asString(n,
                   converter)) + " " + QueryUtils.escape(ObjectUtils.asString(n, converter)) + "]").collect(Collectors
                       .joining(" "));
+              prepared = prepared.replace(PARAM_PREFIX + i++, value);
             } else if (this == QueryClause.GEO_CONTAINING) {
               value = c.stream().map(n -> {
                 Point p = (Point) n;
                 return "@" + field + ":[" + p.getX() + " " + p.getY() + " .000001 ft]";
               }).collect(Collectors.joining("|"));
+              prepared = prepared.replace(PARAM_PREFIX + i++, value);
             } else if (this == QueryClause.GEO_CONTAINING_ALL) {
               value = c.stream().map(n -> {
                 Point p = (Point) n;
                 return "@" + field + ":[" + p.getX() + " " + p.getY() + " .000001 ft]";
               }).collect(Collectors.joining(" "));
+              prepared = prepared.replace(PARAM_PREFIX + i++, value);
             } else {
               value = c.stream()//
                   .map(n -> QueryUtils.escape(ObjectUtils.asString(n, converter), false)).collect(Collectors.joining(
                       "|"));
+              prepared = prepared.replace(PARAM_PREFIX + i++, value);
             }
-
-            prepared = prepared.replace(PARAM_PREFIX + i++, value);
           } else {
             if (clauseTemplate.getIndexType() == FieldType.TEXT) {
               prepared = prepared.replace(PARAM_PREFIX + i++, param.toString());
