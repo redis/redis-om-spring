@@ -492,6 +492,40 @@ class MetamodelGeneratorTest {
 
   @Test
   @Classpath(
+    "data.metamodel.ValidDocumentNumericIndexedId"
+  )
+  void testValidDocumentNumericIndexedId(Results results) throws IOException {
+    List<String> warnings = getWarningStrings(results);
+    assertThat(warnings).isEmpty();
+
+    List<String> errors = getErrorStrings(results);
+    assertThat(errors).isEmpty();
+
+    assertThat(results.generated).hasSize(1);
+    JavaFileObject metamodel = results.generated.get(0);
+    assertThat(metamodel.getName()).isEqualTo("/SOURCE_OUTPUT/valid/ValidDocumentNumericIndexedId$.java");
+
+    var fileContents = metamodel.getCharContent(true);
+
+    assertAll( //
+        // Test that @NumericIndexed on @Id field generates proper metamodel
+        // Note: ID field with @NumericIndexed is generated as TextTagField (this is the current behavior)
+        () -> assertThat(fileContents).contains("public static TextTagField<ValidDocumentNumericIndexedId, Long> ID;"),
+        () -> assertThat(fileContents).contains("public static TextTagField<ValidDocumentNumericIndexedId, String> NAME;"),
+        () -> assertThat(fileContents).contains("public static NumericField<ValidDocumentNumericIndexedId, Integer> VALUE;"),
+        
+        // Test proper field initialization with SearchFieldAccessor
+        () -> assertThat(fileContents).contains(
+            "ID = new TextTagField<ValidDocumentNumericIndexedId, Long>(new SearchFieldAccessor(\"id\", \"$.id\", id),true);"),
+        () -> assertThat(fileContents).contains(
+            "NAME = new TextTagField<ValidDocumentNumericIndexedId, String>(new SearchFieldAccessor(\"name\", \"$.name\", name),true);"),
+        () -> assertThat(fileContents).contains(
+            "VALUE = new NumericField<ValidDocumentNumericIndexedId, Integer>(new SearchFieldAccessor(\"value\", \"$.value\", value),true);")
+    );
+  }
+
+  @Test
+  @Classpath(
     "data.metamodel.ValidDocumentNumericIndexed"
   )
   void testValidDocumentNumericIndexed(Results results) throws IOException {

@@ -577,8 +577,26 @@ public enum QueryClause {
           prepared = prepared.replace(PARAM_PREFIX + i++, ObjectUtils.getDistanceAsRedisString(distance));
           break;
         default:
-          // unfold collections
-          if (param instanceof Collection<?> c) {
+          // unfold collections and arrays
+          Collection<?> c = null;
+          if (param instanceof Collection<?>) {
+            c = (Collection<?>) param;
+          } else if (param != null && param.getClass().isArray()) {
+            // Convert array to collection
+            if (param instanceof Object[]) {
+              c = Arrays.asList((Object[]) param);
+            } else {
+              // Handle primitive arrays
+              int length = java.lang.reflect.Array.getLength(param);
+              List<Object> list = new ArrayList<>(length);
+              for (int j = 0; j < length; j++) {
+                list.add(java.lang.reflect.Array.get(param, j));
+              }
+              c = list;
+            }
+          }
+
+          if (c != null) {
             String value;
             if (this == QueryClause.TAG_CONTAINING_ALL) {
               value = c.stream().map(n -> "@" + field + ":{" + QueryUtils.escape(ObjectUtils.asString(n,
@@ -590,10 +608,35 @@ public enum QueryClause {
                       .joining("|"));
               prepared = prepared.replace(PARAM_PREFIX + i++, value);
             } else if (this == QueryClause.NUMERIC_IN) {
-              value = c.stream().map(n -> "@" + field + ":[" + QueryUtils.escape(ObjectUtils.asString(n,
-                  converter)) + " " + QueryUtils.escape(ObjectUtils.asString(n, converter)) + "]").collect(Collectors
-                      .joining("|"));
-              prepared = value;
+              // For numeric values, don't escape - use toString() directly
+              if (c.isEmpty()) {
+                // Empty collection means no matches - return impossible query
+                prepared = prepared.replace(PARAM_PREFIX + i++, "[-1 -2]"); // Impossible range
+              } else if (c.size() == 1) {
+                // Single value - simple range query
+                Object val = c.iterator().next();
+                prepared = prepared.replace(PARAM_PREFIX + i++, "[" + val.toString() + " " + val.toString() + "]");
+              } else {
+                // Multiple values - need OR query with parentheses
+                value = "(" + c.stream().map(n -> "@" + field + ":[" + n.toString() + " " + n.toString() + "]").collect(
+                    Collectors.joining("|")) + ")";
+                // Replace the entire prepared string with the OR query
+                prepared = value;
+              }
+            } else if (this == QueryClause.NUMERIC_NOT_IN) {
+              // For NUMERIC_NOT_IN, we need to exclude the values
+              // RediSearch doesn't have a direct NOT IN, so we use a negation pattern
+              if (c.isEmpty()) {
+                // Empty collection means match everything with this field
+                // Use the full numeric range query
+                prepared = "@" + field + ":[-inf inf]";
+              } else {
+                // Create a query that excludes specific values
+                // Replace the entire query with a combination of field existence and exclusions
+                value = "@" + field + ":[-inf inf] " + c.stream().map(n -> "-@" + field + ":[" + n.toString() + " " + n
+                    .toString() + "]").collect(Collectors.joining(" "));
+                prepared = value;
+              }
             } else if (this == QueryClause.NUMERIC_CONTAINING_ALL) {
               value = c.stream().map(n -> "@" + field + ":[" + QueryUtils.escape(ObjectUtils.asString(n,
                   converter)) + " " + QueryUtils.escape(ObjectUtils.asString(n, converter)) + "]").collect(Collectors
