@@ -28,7 +28,7 @@ http://localhost:8080/swagger-ui/index.html
 To run this demo:
 
 ```bash
-./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-documents
+./gradlew :demos:roms-documents:bootRun
 ```
 
 ## Testing

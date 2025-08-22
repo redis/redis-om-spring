@@ -574,36 +574,36 @@ These can be found in the `/demos` folder:
 
 - **roms-documents**:
   - Simple API example of `@Document` mapping, Spring Repositories and Querying.
-  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-documents`
+  - Run with  `./gradlew :demos:roms-documents:bootRun`
 
 - **roms-hashes**:
   - Simple API example of `@RedisHash`, enhanced secondary indices and querying.
-  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-hashes`
+  - Run with  `./gradlew :demos:roms-hashes:bootRun`
 
 - **roms-permits**:
   - Port of [Elena Kolevska's](https://github.com/elena-kolevska) Quick Start: Using RediSearch with
     JSON [Demo][redisearch-json] to Redis OM Spring.
-  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-permits`
+  - Run with  `./gradlew :demos:roms-permits:bootRun`
 
 - **roms-vss**:
   - Port of [Redis Vector Search Demo](https://github.com/redis-developer/redis-product-search) for fashion product recommendations using vector similarity search.
-  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-vss`
+  - Run with  `./gradlew :demos:roms-vss:bootRun`
 
 - **roms-vss-movies**:
   - Movie recommendation system showcasing Redis 8's vector similarity search capabilities.
-  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-vss-movies`
+  - Run with  `./gradlew :demos:roms-vss-movies:bootRun`
 
 - **roms-modeling**:
   - Simple API example of modeling, Spring Repositories and Querying.
-  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-modeling`
+  - Run with  `./gradlew :demos:roms-modeling:bootRun`
 
 - **roms-vectorizers**:
   - Simple API example of vectorizing, Spring Repositories and Querying.
-  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-vectorizers`
+  - Run with  `./gradlew :demos:roms-vectorizer:bootRun`
 
 - **roms-amr-entraid**:
   - Demo showing how to connect to Azure Managed Redis (AMR) using Microsoft Entra ID authentication.
-  - Run with  `./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-amr-entraid`
+  - Run with  `./gradlew :demos:roms-amr-entraid:bootRun`
 
 ### External Demos
 
