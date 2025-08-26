@@ -601,9 +601,63 @@ public class RediSearchIndexer {
               GeoField geoField = GeoField.of(FieldName.of(mapJsonPath).as(mapFieldAlias));
               fields.add(SearchField.of(field, geoField));
               logger.info(String.format("Added GEO field for Map: %s as %s", field.getName(), mapFieldAlias));
+            } else {
+              // Handle complex object values in Map by recursively indexing their @Indexed fields
+              logger.info(String.format("Processing complex object Map field: %s with value type %s", field.getName(),
+                  valueType.getName()));
+
+              // Recursively process @Indexed fields within the Map value type
+              for (java.lang.reflect.Field subfield : getDeclaredFieldsTransitively(valueType)) {
+                if (subfield.isAnnotationPresent(Indexed.class)) {
+                  Indexed subfieldIndexed = subfield.getAnnotation(Indexed.class);
+                  String nestedJsonPath = (prefix == null || prefix.isBlank()) ?
+                      "$." + field.getName() + ".*." + subfield.getName() :
+                      "$." + prefix + "." + field.getName() + ".*." + subfield.getName();
+                  String nestedFieldAlias = field.getName() + "_" + subfield.getName();
+
+                  logger.info(String.format("Processing nested field %s in Map value type, path: %s, alias: %s",
+                      subfield.getName(), nestedJsonPath, nestedFieldAlias));
+
+                  Class<?> subfieldType = subfield.getType();
+
+                  // Create appropriate index field based on subfield type
+                  if (CharSequence.class.isAssignableFrom(
+                      subfieldType) || subfieldType == UUID.class || subfieldType == Ulid.class || subfieldType
+                          .isEnum()) {
+                    // Index as TAG field
+                    TagField tagField = TagField.of(FieldName.of(nestedJsonPath).as(nestedFieldAlias));
+                    if (subfieldIndexed.sortable())
+                      tagField.sortable();
+                    if (subfieldIndexed.indexMissing())
+                      tagField.indexMissing();
+                    if (subfieldIndexed.indexEmpty())
+                      tagField.indexEmpty();
+                    if (!subfieldIndexed.separator().isEmpty()) {
+                      tagField.separator(subfieldIndexed.separator().charAt(0));
+                    }
+                    fields.add(SearchField.of(subfield, tagField));
+                    logger.info(String.format("Added nested TAG field for Map value: %s", nestedFieldAlias));
+                  } else if (Number.class.isAssignableFrom(
+                      subfieldType) || subfieldType == Boolean.class || subfieldType == LocalDateTime.class || subfieldType == LocalDate.class || subfieldType == Date.class || subfieldType == Instant.class || subfieldType == OffsetDateTime.class) {
+                    // Index as NUMERIC field
+                    NumericField numField = NumericField.of(FieldName.of(nestedJsonPath).as(nestedFieldAlias));
+                    if (subfieldIndexed.sortable())
+                      numField.sortable();
+                    if (subfieldIndexed.noindex())
+                      numField.noIndex();
+                    if (subfieldIndexed.indexMissing())
+                      numField.indexMissing();
+                    fields.add(SearchField.of(subfield, numField));
+                    logger.info(String.format("Added nested NUMERIC field for Map value: %s", nestedFieldAlias));
+                  } else if (subfieldType == Point.class) {
+                    // Index as GEO field
+                    GeoField geoField = GeoField.of(FieldName.of(nestedJsonPath).as(nestedFieldAlias));
+                    fields.add(SearchField.of(subfield, geoField));
+                    logger.info(String.format("Added nested GEO field for Map value: %s", nestedFieldAlias));
+                  }
+                }
+              }
             }
-            // For complex object values, we could recursively index their fields
-            // but that would require more complex implementation
           }
         }
         //

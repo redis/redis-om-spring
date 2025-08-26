@@ -8,6 +8,7 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map.Entry;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -246,15 +247,23 @@ public class RediSearchQuery implements RepositoryQuery {
     ) Class[] params = queryMethod.getParameters().stream().map(Parameter::getType).toArray(Class[]::new);
     hasLanguageParameter = Arrays.stream(params).anyMatch(c -> c.isAssignableFrom(SearchLanguage.class));
     isANDQuery = QueryClause.hasContainingAllClause(queryMethod.getName());
-    this.isMapContainsQuery = QueryClause.hasMapContainsClause(queryMethod.getName());
+    // Only detect nested MapContains patterns (e.g., positionsMapContainsCusip)
+    // Simple MapContains (e.g., stringValuesMapContains) should use normal processing
+    this.isMapContainsQuery = QueryClause.hasMapContainsNestedClause(queryMethod.getName());
 
     String methodName = queryMethod.getName();
     if (isANDQuery) {
       methodName = QueryClause.getPostProcessMethodName(methodName);
     }
-    if (this.isMapContainsQuery) {
+
+    // Process simple MapContains patterns (e.g., stringValuesMapContains -> stringValues)
+    // for PartTree parsing, but not nested patterns (those are handled by processMapContainsQuery)
+    if (QueryClause.hasMapContainsClause(methodName) && !QueryClause.hasMapContainsNestedClause(methodName)) {
       methodName = QueryClause.processMapContainsMethodName(methodName);
     }
+
+    // MapContains queries need special handling due to Spring Data's PartTree limitations
+    // Don't transform the method name - instead handle it specially later
 
     try {
       java.lang.reflect.Method method = repoClass.getMethod(queryMethod.getName(), params);
@@ -351,6 +360,13 @@ public class RediSearchQuery implements RepositoryQuery {
         this.value = ObjectUtils.toLowercaseFirstCharacter(queryMethod.getName().substring(6));
       } else if (queryMethod.getName().startsWith(AutoCompleteQueryExecutor.AUTOCOMPLETE_PREFIX)) {
         this.type = RediSearchQueryType.AUTOCOMPLETE;
+      } else if (this.isMapContainsQuery) {
+        // Special handling for MapContains queries
+        this.type = queryMethod.getName().matches("(?:remove|delete).*") ?
+            RediSearchQueryType.DELETE :
+            RediSearchQueryType.QUERY;
+        this.returnFields = new String[] {};
+        processMapContainsQuery(methodName);
       } else {
         PartTree pt = new PartTree(methodName, metadata.getDomainType());
 
@@ -376,6 +392,117 @@ public class RediSearchQuery implements RepositoryQuery {
     } catch (NoSuchMethodException | SecurityException e) {
       logger.debug(String.format("Could not resolved query method %s(%s): %s", queryMethod.getName(), Arrays.toString(
           params), e.getMessage()));
+    }
+  }
+
+  private void processMapContainsQuery(String methodName) {
+    // Parse MapContains patterns manually without using PartTree
+    // Pattern: findBy<Field>MapContains<NestedField>[Operator]...
+
+    // Remove the "findBy" or "deleteBy" prefix
+    String queryPart = methodName.replaceFirst("^(find|delete|remove)By", "");
+
+    // Split by "And" or "Or" to get individual clauses
+    String[] clauses = queryPart.split("(?=And)|(?=Or)");
+    boolean isOr = queryPart.contains("Or");
+
+    List<Pair<String, QueryClause>> currentOrPart = new ArrayList<>();
+
+    for (String clause : clauses) {
+      // Check if this clause contains MapContains pattern
+      if (clause.contains("MapContains")) {
+        // Extract the Map field and nested field
+        Pattern pattern = Pattern.compile(
+            "([A-Za-z]+)MapContains([A-Za-z]+)(GreaterThan|LessThan|After|Before|Between|NotEqual|In)?");
+        Matcher matcher = pattern.matcher(clause);
+
+        if (matcher.find()) {
+          String mapFieldName = matcher.group(1);
+          String nestedFieldName = matcher.group(2);
+          String operator = matcher.group(3);
+
+          // Convert to lowercase first character
+          mapFieldName = Character.toLowerCase(mapFieldName.charAt(0)) + mapFieldName.substring(1);
+          nestedFieldName = Character.toLowerCase(nestedFieldName.charAt(0)) + nestedFieldName.substring(1);
+
+          // Find the Map field
+          Field mapField = ReflectionUtils.findField(domainType, mapFieldName);
+          if (mapField != null && Map.class.isAssignableFrom(mapField.getType())) {
+            // Get the Map's value type
+            Optional<Class<?>> maybeValueType = ObjectUtils.getMapValueClass(mapField);
+            if (maybeValueType.isPresent()) {
+              Class<?> valueType = maybeValueType.get();
+
+              // Find the nested field in the value type
+              Field nestedField = ReflectionUtils.findField(valueType, nestedFieldName);
+              if (nestedField != null) {
+                // Build the index field name: mapField_nestedField
+                String indexFieldName = mapFieldName + "_" + nestedFieldName;
+
+                // Determine the field type and part type
+                Class<?> nestedFieldType = ClassUtils.resolvePrimitiveIfNecessary(nestedField.getType());
+                FieldType redisFieldType = getRedisFieldType(nestedFieldType);
+
+                // Determine the Part.Type from the operator
+                Part.Type partType = Part.Type.SIMPLE_PROPERTY;
+                if ("GreaterThan".equals(operator)) {
+                  partType = Part.Type.GREATER_THAN;
+                } else if ("LessThan".equals(operator)) {
+                  partType = Part.Type.LESS_THAN;
+                } else if ("Between".equals(operator)) {
+                  partType = Part.Type.BETWEEN;
+                } else if ("NotEqual".equals(operator)) {
+                  partType = Part.Type.NOT_IN;
+                } else if ("In".equals(operator)) {
+                  partType = Part.Type.IN;
+                }
+
+                if (redisFieldType != null) {
+                  QueryClause queryClause = QueryClause.get(redisFieldType, partType);
+                  currentOrPart.add(Pair.of(indexFieldName, queryClause));
+                  logger.debug(String.format("Added MapContains field: %s with clause: %s", indexFieldName,
+                      queryClause));
+                }
+              }
+            }
+          }
+        }
+      } else {
+        // Handle regular field patterns - delegate to standard parsing
+        // This is a simplified version - in production would need full parsing
+        String fieldName = clause.replaceAll("(GreaterThan|LessThan|Between|NotEqual|In).*", "");
+        fieldName = Character.toLowerCase(fieldName.charAt(0)) + fieldName.substring(1);
+
+        Field field = ReflectionUtils.findField(domainType, fieldName);
+        if (field != null) {
+          Part.Type partType = Part.Type.SIMPLE_PROPERTY;
+          if (clause.contains("GreaterThan")) {
+            partType = Part.Type.GREATER_THAN;
+          } else if (clause.contains("LessThan")) {
+            partType = Part.Type.LESS_THAN;
+          }
+
+          Class<?> fieldType = ClassUtils.resolvePrimitiveIfNecessary(field.getType());
+          FieldType redisFieldType = getRedisFieldType(fieldType);
+          if (redisFieldType != null) {
+            QueryClause queryClause = QueryClause.get(redisFieldType, partType);
+            currentOrPart.add(Pair.of(fieldName, queryClause));
+          }
+        }
+      }
+
+      // Handle And/Or logic
+      if (clause.startsWith("And") || clause.startsWith("Or")) {
+        if (clause.startsWith("Or") && !currentOrPart.isEmpty()) {
+          queryOrParts.add(new ArrayList<>(currentOrPart));
+          currentOrPart.clear();
+        }
+      }
+    }
+
+    // Add the last part
+    if (!currentOrPart.isEmpty()) {
+      queryOrParts.add(currentOrPart);
     }
   }
 
@@ -421,8 +548,8 @@ public class RediSearchQuery implements RepositoryQuery {
     List<Pair<String, QueryClause>> qf = new ArrayList<>();
     String property = path.get(level).getSegment();
     String key = part.getProperty().toDotPath().replace(".", "_");
-
     Field field = ReflectionUtils.findField(type, property);
+
     if (field == null) {
       logger.info(String.format("Did not find a field named %s", key));
       return qf;
