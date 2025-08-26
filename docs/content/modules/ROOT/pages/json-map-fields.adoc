@@ -27,6 +27,9 @@ Redis OM Spring supports Maps with the following value types:
 === Spatial Types
 * `Point` - Indexed as GEO fields for spatial queries
 
+=== Complex Object Types (New in 1.0.0)
+* Any custom class with `@Indexed` fields - Enables querying nested properties within map values
+
 == Basic Usage
 
 === Entity Definition with Map Fields
@@ -136,9 +139,159 @@ LocalDateTime lastWeek = LocalDateTime.now().minusWeeks(1);
 List<Product> recentlyUpdated = repository.findByTimestampsMapContainsAfter(lastWeek);
 ----
 
+== Complex Object Values in Maps
+
+=== Defining Complex Objects as Map Values
+
+Redis OM Spring now supports Maps with complex object values, enabling you to query nested fields within those objects. This is particularly useful for scenarios like financial portfolios, inventory systems, or any domain requiring dynamic collections of structured data.
+
+[source,java]
+----
+// Define the complex object
+@Data
+public class Position {
+    @Indexed
+    private String cusip;           // Security identifier
+    
+    @Indexed  
+    private String description;
+    
+    @Indexed
+    private String manager;
+    
+    @Indexed
+    private Integer quantity;
+    
+    @Indexed
+    private BigDecimal price;
+    
+    @Indexed
+    private LocalDate asOfDate;
+}
+
+// Use it in a Map field
+@Data
+@Document
+public class Account {
+    @Id
+    private String id;
+    
+    @Indexed
+    private String accountNumber;
+    
+    @Indexed
+    private String accountHolder;
+    
+    // Map with complex object values
+    @Indexed(schemaFieldType = SchemaFieldType.NESTED)
+    private Map<String, Position> positions = new HashMap<>();
+    
+    @Indexed
+    private BigDecimal totalValue;
+}
+----
+
+=== Querying Nested Fields in Complex Map Values
+
+Redis OM Spring provides a special query pattern `MapContains<NestedField>` for querying nested properties within map values:
+
+[source,java]
+----
+public interface AccountRepository extends RedisDocumentRepository<Account, String> {
+    
+    // Query by nested CUSIP field
+    List<Account> findByPositionsMapContainsCusip(String cusip);
+    
+    // Query by nested Manager field
+    List<Account> findByPositionsMapContainsManager(String manager);
+    
+    // Numeric comparisons on nested fields
+    List<Account> findByPositionsMapContainsQuantityGreaterThan(Integer quantity);
+    List<Account> findByPositionsMapContainsPriceLessThan(BigDecimal price);
+    
+    // Temporal queries on nested fields
+    List<Account> findByPositionsMapContainsAsOfDateAfter(LocalDate date);
+    List<Account> findByPositionsMapContainsAsOfDateBetween(LocalDate start, LocalDate end);
+    
+    // Combine with regular field queries
+    List<Account> findByAccountHolderAndPositionsMapContainsManager(
+        String accountHolder, String manager
+    );
+    
+    // Multiple nested field conditions
+    List<Account> findByPositionsMapContainsCusipAndPositionsMapContainsQuantityGreaterThan(
+        String cusip, Integer minQuantity
+    );
+}
+----
+
+=== Usage Example
+
+[source,java]
+----
+// Create account with positions
+Account account = new Account();
+account.setAccountNumber("10190001");
+account.setAccountHolder("John Doe");
+account.setTotalValue(new BigDecimal("100000.00"));
+
+// Add positions
+Position applePosition = new Position();
+applePosition.setCusip("AAPL");
+applePosition.setDescription("Apple Inc.");
+applePosition.setManager("Jane Smith");
+applePosition.setQuantity(100);
+applePosition.setPrice(new BigDecimal("150.00"));
+applePosition.setAsOfDate(LocalDate.now());
+account.getPositions().put("AAPL", applePosition);
+
+Position googlePosition = new Position();
+googlePosition.setCusip("GOOGL");
+googlePosition.setDescription("Alphabet Inc.");
+googlePosition.setManager("Bob Johnson");
+googlePosition.setQuantity(50);
+googlePosition.setPrice(new BigDecimal("2800.00"));
+googlePosition.setAsOfDate(LocalDate.now());
+account.getPositions().put("GOOGL", googlePosition);
+
+accountRepository.save(account);
+
+// Query examples
+// Find all accounts holding Apple stock
+List<Account> appleHolders = repository.findByPositionsMapContainsCusip("AAPL");
+
+// Find accounts with positions managed by Jane Smith
+List<Account> janesManagedAccounts = repository.findByPositionsMapContainsManager("Jane Smith");
+
+// Find accounts with any position having quantity > 75
+List<Account> largePositions = repository.findByPositionsMapContainsQuantityGreaterThan(75);
+
+// Find accounts with positions priced below $200
+List<Account> affordablePositions = repository.findByPositionsMapContainsPriceLessThan(
+    new BigDecimal("200.00")
+);
+----
+
+=== Index Structure
+
+When you use complex objects in Maps, Redis OM Spring creates indexes for each nested field using JSONPath expressions:
+
+[source,text]
+----
+// Generated index fields for Map<String, Position>
+$.positions.*.cusip         -> TAG field (positions_cusip)
+$.positions.*.manager       -> TAG field (positions_manager)  
+$.positions.*.quantity      -> NUMERIC field (positions_quantity)
+$.positions.*.price         -> NUMERIC field (positions_price)
+$.positions.*.asOfDate      -> NUMERIC field (positions_asOfDate)
+$.positions.*.description   -> TAG field (positions_description)
+----
+
+This structure enables efficient queries across all map values, regardless of their keys.
+
 == Advanced Examples
 
-=== Working with Complex Value Types
+=== Working with Other Complex Value Types
 
 [source,java]
 ----
@@ -326,6 +479,7 @@ List<Entity> findByRegularFieldAndMapFieldMapContains(
 * **No partial matching**: String values in maps use TAG indexing (exact match only)
 * **GEO queries**: Point values support equality through proximity search with minimal radius
 * **Collection values**: Maps with collection-type values are not supported
+* **Complex object nesting depth**: While you can query nested fields in complex Map values, deeply nested objects (object within object within map) may have limited query support
 
 == Best Practices
 

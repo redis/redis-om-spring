@@ -501,9 +501,67 @@ public final class MetamodelGenerator extends AbstractProcessor {
             // We still want the regular Map field for direct access
             // targetInterceptor remains set for the Map field itself
           } catch (ClassNotFoundException cnfe) {
-            messager.printMessage(Diagnostic.Kind.WARNING,
-                "Processing class " + entityName + " could not resolve map value type " + mapValueTypeName);
-            targetInterceptor = null; // Don't generate field if we can't resolve the type
+            // Try to find the Map value type using annotation processing API
+            TypeElement valueTypeElement = processingEnvironment.getElementUtils().getTypeElement(mapValueTypeName);
+            if (valueTypeElement != null) {
+              messager.printMessage(Diagnostic.Kind.NOTE,
+                  "Processing complex Map value type: " + mapValueTypeName + " for field: " + field.getSimpleName());
+
+              // Process all field elements in the Map value type
+              for (Element enclosedElement : valueTypeElement.getEnclosedElements()) {
+                if (enclosedElement.getKind() == ElementKind.FIELD) {
+                  Element subfieldElement = enclosedElement;
+                  if (subfieldElement.getAnnotation(com.redis.om.spring.annotations.Indexed.class) != null) {
+                    String subfieldName = subfieldElement.getSimpleName().toString();
+                    String nestedFieldName = field.getSimpleName().toString().toUpperCase().replace("_",
+                        "") + "_" + subfieldName.toUpperCase().replace("_", "");
+
+                    TypeMirror subfieldTypeMirror = subfieldElement.asType();
+                    String subfieldTypeName = subfieldTypeMirror.toString();
+                    Class<?> nestedInterceptor = null;
+
+                    // Determine interceptor type based on type name
+                    if (subfieldTypeName.equals("java.lang.String") || subfieldTypeName.equals(
+                        "java.util.UUID") || subfieldTypeName.contains("Ulid") || isEnum(processingEnvironment,
+                            subfieldTypeMirror)) {
+                      nestedInterceptor = TextTagField.class;
+                    } else if (subfieldTypeName.equals("java.lang.Integer") || subfieldTypeName.equals(
+                        "java.lang.Long") || subfieldTypeName.equals("java.lang.Double") || subfieldTypeName.equals(
+                            "java.lang.Float") || subfieldTypeName.equals("java.math.BigDecimal") || subfieldTypeName
+                                .equals("java.lang.Boolean") || subfieldTypeName.equals(
+                                    "java.time.LocalDateTime") || subfieldTypeName.equals(
+                                        "java.time.LocalDate") || subfieldTypeName.equals(
+                                            "java.util.Date") || subfieldTypeName.equals(
+                                                "java.time.Instant") || subfieldTypeName.equals(
+                                                    "java.time.OffsetDateTime") || subfieldTypeName.equals(
+                                                        "int") || subfieldTypeName.equals("long") || subfieldTypeName
+                                                            .equals("double") || subfieldTypeName.equals(
+                                                                "float") || subfieldTypeName.equals("boolean")) {
+                      nestedInterceptor = NumericField.class;
+                    } else if (subfieldTypeName.equals("org.springframework.data.geo.Point")) {
+                      nestedInterceptor = GeoField.class;
+                    }
+
+                    if (nestedInterceptor != null) {
+                      // Generate a synthetic field for this nested indexed field
+                      // Use unique field name: positions_cusip, positions_manager, etc.
+                      String uniqueFieldName = chainedFieldName + "_" + subfieldName;
+                      Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> nestedField = generateMapNestedFieldMetamodel(
+                          entity, chain, uniqueFieldName, nestedFieldName, nestedInterceptor, subfieldTypeName, field
+                              .getSimpleName().toString(), subfieldName);
+                      fieldMetamodelSpec.add(nestedField);
+
+                      messager.printMessage(Diagnostic.Kind.NOTE,
+                          "Generated nested Map field: " + nestedFieldName + " for " + subfieldName + " (" + subfieldTypeName + ")");
+                    }
+                  }
+                }
+              }
+            } else {
+              messager.printMessage(Diagnostic.Kind.WARNING,
+                  "Processing class " + entityName + " could not resolve map value type " + mapValueTypeName);
+              targetInterceptor = null; // Don't generate field if we can't resolve the type
+            }
           }
         }
         //
@@ -984,6 +1042,41 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
     CodeBlock aFieldInit = CodeBlock.builder().addStatement("$L = new $T(new $T(\"$L\", \"$L\", $L),$L)", fieldAccessor,
         interceptor, SearchFieldAccessor.class, searchSchemaAlias, jsonPath, chainFieldName, true).build();
+
+    return Tuples.of(ogf, aField, aFieldInit);
+  }
+
+  private Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> generateMapNestedFieldMetamodel(TypeName entity,
+      List<Element> chain, String chainFieldName, String nestedFieldName, Class<?> interceptorClass,
+      String subfieldTypeName, String mapFieldName, String subfieldName) {
+    String fieldAccessor = ObjectUtils.staticField(nestedFieldName);
+
+    FieldSpec objectField = FieldSpec.builder(Field.class, chainFieldName).addModifiers(Modifier.PUBLIC,
+        Modifier.STATIC).build();
+
+    ObjectGraphFieldSpec ogf = new ObjectGraphFieldSpec(objectField, chain);
+
+    // Get the subfield type for the parametrized type
+    TypeName subfieldType;
+    try {
+      subfieldType = TypeName.get(ClassUtils.forName(subfieldTypeName, MetamodelGenerator.class.getClassLoader()));
+    } catch (Exception e) {
+      // Fallback to String if we can't resolve the type
+      subfieldType = ClassName.get(String.class);
+    }
+
+    TypeName interceptor = ParameterizedTypeName.get(ClassName.get(interceptorClass), entity, subfieldType);
+
+    FieldSpec aField = FieldSpec.builder(interceptor, fieldAccessor).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+        .build();
+
+    // Create the JSONPath for nested Map field: $.mapField.*.subfieldName
+    String alias = mapFieldName + "_" + subfieldName;
+    String jsonPath = "$." + mapFieldName + ".*." + subfieldName;
+
+    CodeBlock aFieldInit = CodeBlock.builder().addStatement(
+        "$L = new $T(new $T(\"$L\", \"$L\", $T.class, $T.class), true)", fieldAccessor, interceptor,
+        SearchFieldAccessor.class, alias, jsonPath, subfieldType, entity).build();
 
     return Tuples.of(ogf, aField, aFieldInit);
   }
