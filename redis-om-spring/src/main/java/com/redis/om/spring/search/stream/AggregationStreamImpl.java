@@ -252,7 +252,7 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
   }
 
   @Override
-  public AggregationStream<T> limit(int limit, int offset) {
+  public AggregationStream<T> limit(int offset, int limit) {
     applyCurrentGroupBy();
     aggregation.limit(offset, limit);
     limitSet = true;

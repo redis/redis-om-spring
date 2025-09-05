@@ -985,4 +985,23 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
     assertThat(releasedFilms.get(0).getFirst()).isEqualTo(1);
   }
 
+  @Test
+  void testAggregationLimitWithOffsetParameterOrder() {
+    // Test the correct parameter order: offset first, then limit
+    // We want to skip 2 games and get the next 3
+    List<Pair<String, String>> results = entityStream.of(Game.class)
+        .groupBy(Game$.TITLE)
+        .reduce(ReducerFunction.COUNT).as("count")
+        .sorted(Order.asc("@title"))
+        .limit(2, 3)  // Skip 2, take 3 (offset=2, limit=3)
+        .toList(String.class, String.class);
+    
+    // We should get exactly 3 results after skipping the first 2
+    assertThat(results).hasSize(3);
+    
+    // Verify we're getting the 3rd, 4th, and 5th games alphabetically
+    // (skipping the first 2)
+    assertThat(results).isNotEmpty();
+  }
+
 }

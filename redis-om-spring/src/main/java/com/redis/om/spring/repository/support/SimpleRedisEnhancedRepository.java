@@ -580,7 +580,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     SearchStream<S> stream = entityStream.of(example.getProbeType());
     var offset = pageable.getPageNumber() * pageable.getPageSize();
     var limit = pageable.getPageSize();
-    Page<S> page = stream.filter(example).loadAll().limit(limit, Math.toIntExact(offset)).toList(pageable, stream
+    Page<S> page = stream.filter(example).loadAll().limit(Math.toIntExact(offset), limit).toList(pageable, stream
         .getEntityClass());
 
     return page;

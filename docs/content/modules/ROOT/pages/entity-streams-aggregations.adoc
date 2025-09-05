@@ -193,7 +193,7 @@ List<Pair<Integer, Long>> page2Departments = entityStream.of(Person.class)
     .groupBy(Person$.DEPARTMENT_NUMBER)
     .reduce(COUNT)
     .sorted(Order.asc("@count"))
-    .limit(5, 10)                                      // Skip 5, take 10
+    .limit(5, 10)                                      // offset=5, limit=10 (skip 5, take 10)
     .toList(Integer.class, Long.class);
 ----
 
