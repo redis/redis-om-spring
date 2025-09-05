@@ -399,6 +399,15 @@ public enum QueryClause {
    */
   public static final Pattern MAP_CONTAINS_PATTERN = Pattern.compile("([A-Za-z]+)MapContains");
 
+  /**
+   * Pattern for matching Map nested field queries in method names.
+   * Used to identify queries on nested fields within Map complex object values
+   * (e.g., findByPositionsMapContainsCusip).
+   * Captures: field name (positions) + nested field name (cusip) + optional comparison (GreaterThan)
+   */
+  public static final Pattern MAP_CONTAINS_NESTED_PATTERN = Pattern.compile(
+      "([A-Za-z]+)MapContains([A-Za-z]+)(GreaterThan|LessThan|After|Before|Between|NotEqual)?");
+
   private static final String PARAM_PREFIX = "$param_";
   private static final String FIRST_PARAM = "$param_0";
   private static final String FIELD_EQUAL = "@$field:$param_0";
@@ -470,13 +479,28 @@ public enum QueryClause {
    * <p>
    * This method searches for patterns like "MapContains" or "MapContainsGreaterThan"
    * in the method name to determine if it represents a query on Map field values.
+   * Also detects nested field patterns like "MapContainsCusip" for complex Map objects.
    * </p>
    *
    * @param methodName the Spring Data repository method name to check
    * @return true if the method name contains a Map value query pattern, false otherwise
    */
   public static boolean hasMapContainsClause(String methodName) {
-    return MAP_CONTAINS_PATTERN.matcher(methodName).find();
+    return MAP_CONTAINS_PATTERN.matcher(methodName).find() || MAP_CONTAINS_NESTED_PATTERN.matcher(methodName).find();
+  }
+
+  /**
+   * Determines if a method name contains a Map nested field query pattern.
+   * <p>
+   * This method searches for patterns like "MapContainsCusip" or "MapContainsQuantityGreaterThan"
+   * in the method name to determine if it represents a query on nested fields within Map complex object values.
+   * </p>
+   *
+   * @param methodName the Spring Data repository method name to check
+   * @return true if the method name contains a Map nested field query pattern, false otherwise
+   */
+  public static boolean hasMapContainsNestedClause(String methodName) {
+    return MAP_CONTAINS_NESTED_PATTERN.matcher(methodName).find();
   }
 
   /**
@@ -510,7 +534,9 @@ public enum QueryClause {
    * Processes a method name to handle Map value queries by removing the MapContains pattern.
    * <p>
    * This method transforms method names containing "MapContains" patterns into standard
-   * query forms that PartTree can parse. For example, "findByFieldMapContains" becomes "findByField".
+   * query forms that PartTree can parse. For example:
+   * - "findByFieldMapContains" becomes "findByField"
+   * - "findByPositionsMapContainsCusip" becomes "findByPositionsCusip"
    * The actual field mapping to the indexed values field is handled in the query extraction logic.
    * </p>
    *
@@ -518,8 +544,12 @@ public enum QueryClause {
    * @return the processed method name with MapContains patterns removed, or the original name if no patterns are found
    */
   public static String processMapContainsMethodName(String methodName) {
-    if (hasMapContainsClause(methodName)) {
-      // Replace MapContains and its variations with empty string to get standard method name
+    if (hasMapContainsNestedClause(methodName)) {
+      // Handle nested field patterns: PositionsMapContainsCusip -> PositionsCusip
+      return methodName.replaceAll("MapContains([A-Za-z]+)(GreaterThan|LessThan|After|Before|Between|NotEqual)?",
+          "$1$2");
+    } else if (hasMapContainsClause(methodName)) {
+      // Handle simple Map patterns: FieldMapContains -> Field
       return methodName.replaceAll("MapContains(GreaterThan|LessThan|After|Before)?", "$1");
     }
     return methodName;

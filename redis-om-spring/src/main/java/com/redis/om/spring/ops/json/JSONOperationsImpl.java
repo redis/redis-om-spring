@@ -5,6 +5,10 @@ import java.util.List;
 import java.util.Objects;
 
 import org.json.JSONArray;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisConnectionUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.lang.Nullable;
 
 import com.google.gson.Gson;
@@ -26,17 +30,33 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
 
   private final GsonBuilder builder;
   private final RedisModulesClient client;
+  private final StringRedisTemplate template;
+  private final RedisConnectionFactory connectionFactory;
   private Gson gson;
 
   /**
    * Constructs a new JSONOperationsImpl with the specified client and JSON builder.
+   * This constructor is for backward compatibility when no template is provided.
    *
    * @param client  the Redis modules client for JSON operations
    * @param builder the Gson builder for JSON serialization/deserialization
    */
   public JSONOperationsImpl(RedisModulesClient client, GsonBuilder builder) {
+    this(client, builder, null);
+  }
+
+  /**
+   * Constructs a new JSONOperationsImpl with full transaction support.
+   *
+   * @param client   the Redis modules client for JSON operations
+   * @param builder  the Gson builder for JSON serialization/deserialization
+   * @param template the Spring Redis template for transaction management (optional)
+   */
+  public JSONOperationsImpl(RedisModulesClient client, GsonBuilder builder, StringRedisTemplate template) {
     this.client = client;
     this.builder = builder;
+    this.template = template;
+    this.connectionFactory = template != null ? template.getConnectionFactory() : null;
   }
 
   /**
@@ -163,17 +183,35 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
 
   /**
    * Sets a JSON document for the given key.
+   * Automatically participates in Redis transactions when executed within a transaction context.
    *
    * @param key    the key to store the JSON document under
    * @param object the object to serialize and store as JSON
    */
   @Override
   public void set(K key, Object object) {
+    // Check for transaction context if template is available
+    if (connectionFactory != null) {
+      RedisConnection connection = RedisConnectionUtils.getConnection(connectionFactory);
+      try {
+        if (connection.isQueueing()) {
+          // We're in a transaction - use execute to properly queue the command
+          connection.execute("JSON.SET", key.toString().getBytes(), ".".getBytes(), getGson().toJson(object)
+              .getBytes());
+          return;
+        }
+      } finally {
+        RedisConnectionUtils.releaseConnection(connection, connectionFactory);
+      }
+    }
+
+    // Not in a transaction or no template available - execute normally
     client.clientForJSON().jsonSet(key.toString(), Path2.ROOT_PATH, getGson().toJson(object));
   }
 
   /**
    * Sets JSON data at the specified path for the given key.
+   * Automatically participates in Redis transactions when executed within a transaction context.
    *
    * @param key    the key identifying the JSON document
    * @param object the object to serialize and store as JSON
@@ -181,6 +219,22 @@ public class JSONOperationsImpl<K> implements JSONOperations<K> {
    */
   @Override
   public void set(K key, Object object, Path2 path) {
+    // Check for transaction context if template is available
+    if (connectionFactory != null) {
+      RedisConnection connection = RedisConnectionUtils.getConnection(connectionFactory);
+      try {
+        if (connection.isQueueing()) {
+          // We're in a transaction - use execute to properly queue the command
+          connection.execute("JSON.SET", key.toString().getBytes(), path.toString().getBytes(), getGson().toJson(object)
+              .getBytes());
+          return;
+        }
+      } finally {
+        RedisConnectionUtils.releaseConnection(connection, connectionFactory);
+      }
+    }
+
+    // Not in a transaction or no template available - execute normally
     client.clientForJSON().jsonSet(key.toString(), path, getGson().toJson(object));
   }
 

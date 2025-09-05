@@ -207,7 +207,7 @@ public class Company {
 
 === Map Field Support
 
-Redis OM Spring provides comprehensive support for `Map<String, T>` fields, enabling dynamic key-value pairs with full indexing and query capabilities:
+Redis OM Spring provides comprehensive support for `Map<String, T>` fields, enabling dynamic key-value pairs with full indexing and query capabilities. Starting with version 1.0.0, this includes support for complex object values with queryable nested fields:
 
 [source,java]
 ----
@@ -227,6 +227,9 @@ public class Product {
     
     @Indexed
     private Map<String, LocalDateTime> events;   // Temporal data
+    
+    @Indexed(schemaFieldType = SchemaFieldType.NESTED)
+    private Map<String, ComplexObject> items;    // Complex objects (v1.0.0+)
 }
 ----
 
@@ -239,6 +242,9 @@ public interface ProductRepository extends RedisDocumentRepository<Product, Stri
     List<Product> findByAttributesMapContains(String value);
     List<Product> findBySpecificationsMapContainsGreaterThan(Double value);
     List<Product> findByFeaturesMapContains(Boolean hasFeature);
+    
+    // Query nested fields in complex map values (v1.0.0+)
+    List<Product> findByItemsMapContainsPropertyName(String propertyValue);
 }
 ----
 

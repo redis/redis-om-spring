@@ -45,3 +45,4 @@ build/
 .gradle/
 compile_debug.log
 docs/.cache/*
+/test_output.log
