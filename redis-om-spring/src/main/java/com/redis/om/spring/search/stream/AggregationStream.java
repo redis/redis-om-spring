@@ -167,13 +167,23 @@ public interface AggregationStream<T> {
 
   /**
    * Limits the number of results and applies an offset for pagination.
+   * <p>
+   * This method controls the pagination of aggregation results by specifying
+   * how many results to skip (offset) and how many to return (limit).
+   * </p>
+   * <p>
+   * Example usage:
+   * <pre>{@code
+   * // Skip the first 10 results and return the next 5
+   * stream.limit(10, 5)  // offset=10, limit=5
+   * }</pre>
    * 
+   * @param offset the number of results to skip before starting to return results (0-based)
    * @param limit  the maximum number of results to return
-   * @param offset the number of results to skip
    * @return a new AggregationStream with the limit and offset applied
    * @throws IllegalArgumentException if limit or offset is negative
    */
-  AggregationStream<T> limit(int limit, int offset);
+  AggregationStream<T> limit(int offset, int limit);
 
   /**
    * Applies filter expressions to the aggregation pipeline.
