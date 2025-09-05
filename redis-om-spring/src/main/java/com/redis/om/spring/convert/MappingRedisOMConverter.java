@@ -198,17 +198,42 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     if (type.isInterface()) {
       Map<String, Object> map = new HashMap<>();
       RedisPersistentEntity<?> persistentEntity = mappingContext.getRequiredPersistentEntity(readType);
+
+      // Build a map of property names to their types from the projection interface
+      Map<String, Class<?>> projectionPropertyTypes = new HashMap<>();
+      for (java.lang.reflect.Method method : type.getMethods()) {
+        if (method.getParameterCount() == 0 && !method.getReturnType().equals(void.class)) {
+          String propertyName = null;
+          if (method.getName().startsWith("get") && method.getName().length() > 3) {
+            propertyName = StringUtils.uncapitalize(method.getName().substring(3));
+          } else if (method.getName().startsWith("is") && method.getName().length() > 2) {
+            propertyName = StringUtils.uncapitalize(method.getName().substring(2));
+          }
+          if (propertyName != null) {
+            projectionPropertyTypes.put(propertyName, method.getReturnType());
+          }
+        }
+      }
+
       for (Entry<String, byte[]> entry : source.getBucket().asMap().entrySet()) {
         String key = entry.getKey();
         byte[] value = entry.getValue();
-        RedisPersistentProperty persistentProperty = persistentEntity.getPersistentProperty(key);
         Object convertedValue;
-        if (persistentProperty != null) {
-          // Convert the byte[] value to the appropriate type
-          convertedValue = conversionService.convert(value, persistentProperty.getType());
+
+        // First try to get the type from the projection interface
+        Class<?> targetType = projectionPropertyTypes.get(key);
+        if (targetType != null) {
+          // Use the type from the projection interface
+          convertedValue = conversionService.convert(value, targetType);
         } else {
-          // If the property is not found, treat the value as a String
-          convertedValue = new String(value);
+          // Fall back to entity property type if available
+          RedisPersistentProperty persistentProperty = persistentEntity.getPersistentProperty(key);
+          if (persistentProperty != null) {
+            convertedValue = conversionService.convert(value, persistentProperty.getType());
+          } else {
+            // Last resort: treat as String
+            convertedValue = new String(value);
+          }
         }
         map.put(key, convertedValue);
       }

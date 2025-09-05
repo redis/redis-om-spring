@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -43,9 +44,9 @@ class DocumentProjectionMixedTypesTest extends AbstractBaseDocumentTest {
   @Test
   void testEntityFetch_VerifyDataExists() {
     // First verify the entity exists with proper data
-    Optional<DocumentWithMixedTypes> entity = repository.findByName("John Doe");
+    Optional<DocumentWithMixedTypes> entity = repository.findById(testEntity.getId());
     
-    assertTrue(entity.isPresent(), "Entity should be found by name");
+    assertTrue(entity.isPresent(), "Entity should be found by id");
     assertEquals("John Doe", entity.get().getName());
     assertEquals(30, entity.get().getAge());
     assertEquals(75000.50, entity.get().getSalary());
@@ -54,39 +55,35 @@ class DocumentProjectionMixedTypesTest extends AbstractBaseDocumentTest {
   }
 
   @Test
-  void testProjectionWithoutValueAnnotation_NonStringFieldsReturnNull() {
-    // This test demonstrates the issue - non-String fields return null without @Value
-    Optional<DocumentMixedTypesProjection> projection = repository.findFirstByName("John Doe");
+  void testProjectionWithoutValueAnnotation_AllFieldsShouldWork() {
+    // After the fix, non-String fields should work without @Value annotation
+    Optional<DocumentMixedTypesProjection> projection = repository.findByName("John Doe");
     
     assertTrue(projection.isPresent(), "Projection should be present");
     
-    // String field should work
-    assertEquals("John Doe", projection.get().getName(), "String field should work without @Value");
-    
-    // These assertions demonstrate the issue - all non-String fields return null
-    assertNull(projection.get().getAge(), 
-        "Integer field returns null without @Value annotation - this is the issue!");
-    assertNull(projection.get().getSalary(), 
-        "Double field returns null without @Value annotation - this is the issue!");
-    assertNull(projection.get().getActive(), 
-        "Boolean field returns null without @Value annotation - this is the issue!");
-    assertNull(projection.get().getBirthDate(), 
-        "LocalDate field returns null without @Value annotation - this is the issue!");
+    // All fields should now work without @Value annotation
+    assertEquals("John Doe", projection.get().getName(), "String field should work");
+    assertEquals(30, projection.get().getAge(), "Integer field should work WITHOUT @Value annotation");
+    assertEquals(75000.50, projection.get().getSalary(), "Double field should work WITHOUT @Value annotation");
+    assertTrue(projection.get().getActive(), "Boolean field should work WITHOUT @Value annotation");
+    assertEquals(LocalDate.of(1993, 5, 15), projection.get().getBirthDate(), 
+        "LocalDate field should work WITHOUT @Value annotation");
   }
 
   @Test
   void testProjectionWithValueAnnotation_AllFieldsWork() {
     // Test that all fields work correctly with @Value annotation (the workaround)
-    Optional<DocumentMixedTypesProjectionFixed> projection = repository.findOneByName("John Doe");
+    Collection<DocumentMixedTypesProjectionFixed> projections = repository.findAllByName("John Doe");
     
-    assertTrue(projection.isPresent(), "Projection should be present");
+    assertFalse(projections.isEmpty(), "Projections should be present");
+    DocumentMixedTypesProjectionFixed projection = projections.iterator().next();
     
     // All fields should work with @Value annotation
-    assertEquals("John Doe", projection.get().getName(), "String field should work");
-    assertEquals(30, projection.get().getAge(), "Integer field should work with @Value");
-    assertEquals(75000.50, projection.get().getSalary(), "Double field should work with @Value");
-    assertTrue(projection.get().getActive(), "Boolean field should work with @Value");
-    assertEquals(LocalDate.of(1993, 5, 15), projection.get().getBirthDate(), 
+    assertEquals("John Doe", projection.getName(), "String field should work");
+    assertEquals(30, projection.getAge(), "Integer field should work with @Value");
+    assertEquals(75000.50, projection.getSalary(), "Double field should work with @Value");
+    assertTrue(projection.getActive(), "Boolean field should work with @Value");
+    assertEquals(LocalDate.of(1993, 5, 15), projection.getBirthDate(), 
         "LocalDate field should work with @Value");
   }
 
