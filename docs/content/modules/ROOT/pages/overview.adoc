@@ -477,6 +477,7 @@ These features are designed for power users, customization, and advanced integra
 * JSON operations via `JSONOperations` for low-level JSON document manipulation
 * Search operations via `SearchOperations` for direct RediSearch functionality
 * Probabilistic data structure operations: `BloomOperations`, `CuckooFilterOperations`, `CountMinSketchOperations`, `TopKOperations`, `TDigestOperations`
+* **Transaction Support**: JSON operations automatically participate in Redis transactions when executed within a transaction context
 
 [source,java]
 ----
@@ -487,6 +488,30 @@ private RedisModulesOperations<String> modulesOperations;
 JSONOperations<String> jsonOps = modulesOperations.opsForJSON();
 jsonOps.set("obj", myObject);
 MyObject retrieved = jsonOps.get("obj", MyObject.class);
+
+// JSON operations with transactions (automatically participates)
+@Autowired
+private StringRedisTemplate stringRedisTemplate;
+
+List<Object> results = stringRedisTemplate.execute(new SessionCallback<List<Object>>() {
+    @Override
+    public List<Object> execute(RedisOperations operations) throws DataAccessException {
+        operations.watch("obj");  // Watch for concurrent modifications
+        
+        // Read current value
+        MyObject current = jsonOps.get("obj", MyObject.class);
+        
+        // Start transaction
+        operations.multi();
+        
+        // JSON operations are automatically queued in the transaction
+        jsonOps.set("obj", updatedObject);
+        jsonOps.set("backup", current);
+        
+        // Execute transaction (returns empty list if watched key was modified)
+        return operations.exec();
+    }
+});
 
 // Direct search operations  
 SearchOperations<String> searchOps = modulesOperations.opsForSearch("myIndex");

@@ -43,13 +43,15 @@ public record RedisModulesOperations<K>(RedisModulesClient client, StringRedisTe
    * Creates and returns operations for interacting with RedisJSON module.
    * <p>
    * RedisJSON operations allow storing, retrieving, and manipulating JSON documents
-   * directly in Redis with path-based access to JSON elements.
+   * directly in Redis with path-based access to JSON elements. The operations
+   * automatically participate in Redis transactions when executed within a transaction context.
    * </p>
    *
    * @return a {@link JSONOperations} instance for JSON document operations
    */
   public JSONOperations<K> opsForJSON() {
-    return new JSONOperationsImpl<>(client, gsonBuilder);
+    // Pass the template to enable transaction support
+    return new JSONOperationsImpl<>(client, gsonBuilder, template);
   }
 
   /**
