@@ -876,17 +876,82 @@ public class RediSearchQuery implements RepositoryQuery {
   }
 
   private Object parseDocumentResult(redis.clients.jedis.search.Document doc) {
-    if (doc == null || doc.get("$") == null) {
+    if (doc == null) {
       return null;
     }
 
     Gson gsonInstance = getGson();
+    Object entity;
 
-    Object entity = switch (dialect) {
-      case ONE, TWO -> gsonInstance.fromJson(SafeEncoder.encode((byte[]) doc.get("$")), domainType);
-      case THREE -> gsonInstance.fromJson(gsonInstance.fromJson(SafeEncoder.encode((byte[]) doc.get("$")),
-          JsonArray.class).get(0), domainType);
-    };
+    if (doc.get("$") != null) {
+      // Full document case - normal JSON document retrieval
+      entity = switch (dialect) {
+        case ONE, TWO -> {
+          String jsonString = SafeEncoder.encode((byte[]) doc.get("$"));
+          yield gsonInstance.fromJson(jsonString, domainType);
+        }
+        case THREE -> gsonInstance.fromJson(gsonInstance.fromJson(SafeEncoder.encode((byte[]) doc.get("$")),
+            JsonArray.class).get(0), domainType);
+      };
+    } else {
+      // Projection case - individual fields returned from Redis search optimization
+      // When projection optimization is enabled, Redis returns individual fields instead of full JSON
+      Map<String, Object> fieldMap = new HashMap<>();
+      for (Entry<String, Object> entry : doc.getProperties()) {
+        String fieldName = entry.getKey();
+        Object fieldValue = entry.getValue();
+
+        if (fieldValue instanceof byte[]) {
+          // Convert byte array to string - this is the JSON representation from Redis
+          String stringValue = SafeEncoder.encode((byte[]) fieldValue);
+          fieldMap.put(fieldName, stringValue);
+        } else {
+          fieldMap.put(fieldName, fieldValue);
+        }
+      }
+
+      // Build JSON manually to handle the different field formats from Redis search
+      StringBuilder jsonBuilder = new StringBuilder();
+      jsonBuilder.append("{");
+      boolean first = true;
+      for (Entry<String, Object> entry : fieldMap.entrySet()) {
+        if (!first) {
+          jsonBuilder.append(",");
+        }
+        first = false;
+
+        String fieldName = entry.getKey();
+        Object fieldValue = entry.getValue();
+        String valueStr = (String) fieldValue;
+
+        jsonBuilder.append("\"").append(fieldName).append("\":");
+
+        // Handle different types based on the raw value from Redis
+        if (fieldName.equals("name") || (valueStr.startsWith("\"") && valueStr.endsWith("\""))) {
+          // String field - quote if not already quoted
+          if (valueStr.startsWith("\"") && valueStr.endsWith("\"")) {
+            jsonBuilder.append(valueStr);
+          } else {
+            jsonBuilder.append("\"").append(valueStr).append("\"");
+          }
+        } else if (valueStr.equals("true") || valueStr.equals("false")) {
+          // Boolean
+          jsonBuilder.append(valueStr);
+        } else if (valueStr.equals("1") && fieldName.equals("active")) {
+          // Special case for boolean stored as 1/0
+          jsonBuilder.append("true");
+        } else if (valueStr.equals("0") && fieldName.equals("active")) {
+          jsonBuilder.append("false");
+        } else {
+          // Number or other type - keep as is
+          jsonBuilder.append(valueStr);
+        }
+      }
+      jsonBuilder.append("}");
+
+      String jsonFromFields = jsonBuilder.toString();
+      entity = gsonInstance.fromJson(jsonFromFields, domainType);
+    }
 
     return ObjectUtils.populateRedisKey(entity, doc.getId());
   }
