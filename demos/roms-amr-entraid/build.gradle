@@ -31,6 +31,10 @@ repositories {
 dependencies {
 	implementation project(':redis-om-spring')
 
+	// Azure Identity for Entra ID authentication
+	implementation "com.azure:azure-identity:${azureIdentityVersion}"
+	implementation "com.google.code.gson:gson"
+
 	// Important for RedisOM annotation processing!
 	annotationProcessor project(':redis-om-spring')
 	testAnnotationProcessor project(':redis-om-spring')
