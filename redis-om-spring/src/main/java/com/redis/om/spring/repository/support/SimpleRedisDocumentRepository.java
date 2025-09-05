@@ -32,6 +32,7 @@ import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.keyvalue.core.mapping.KeyValuePersistentEntity;
 import org.springframework.data.keyvalue.repository.support.SimpleKeyValueRepository;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.TimeToLive;
 import org.springframework.data.redis.core.convert.KeyspaceConfiguration;
@@ -720,6 +721,50 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   @Override
   public <S extends T> boolean exists(Example<S> example) {
     return count(example) > 0;
+  }
+
+  @Override
+  public boolean existsById(ID id) {
+    Assert.notNull(id, "The given id must not be null");
+
+    // Use direct Jedis EXISTS command for optimal performance
+    // Construct key properly for composite IDs
+    String fullKey = getKeyForId(id);
+
+    return Boolean.TRUE.equals(modulesOperations.template().execute((RedisCallback<Boolean>) connection -> connection
+        .keyCommands().exists(fullKey.getBytes())));
+  }
+
+  private String getKeyForId(Object id) {
+    // Get the mapping context's entity info
+    RedisEnhancedPersistentEntity<?> persistentEntity = (RedisEnhancedPersistentEntity<?>) mappingContext
+        .getRequiredPersistentEntity(metadata.getJavaType());
+
+    String stringId;
+
+    // Handle composite IDs
+    if (persistentEntity.isIdClassComposite()) {
+      BeanWrapper wrapper = new DirectFieldAccessFallbackBeanWrapper(id);
+      List<String> idParts = new ArrayList<>();
+      for (RedisPersistentProperty idProperty : persistentEntity.getIdProperties()) {
+        Object propertyValue = wrapper.getPropertyValue(idProperty.getName());
+        if (propertyValue != null) {
+          idParts.add(propertyValue.toString());
+        }
+      }
+      stringId = String.join(":", idParts);
+    } else {
+      stringId = mappingConverter.getConversionService().convert(id, String.class);
+    }
+
+    // Apply ID filters if they exist
+    var maybeIdentifierFilter = indexer.getIdentifierFilterFor(metadata.getJavaType());
+    if (maybeIdentifierFilter.isPresent()) {
+      IdentifierFilter<String> filter = (IdentifierFilter<String>) maybeIdentifierFilter.get();
+      stringId = filter.filter(stringId);
+    }
+
+    return getKeyspace() + stringId;
   }
 
   // -------------------------------------------------------------------------
