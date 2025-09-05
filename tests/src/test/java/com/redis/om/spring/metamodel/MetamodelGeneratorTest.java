@@ -8,10 +8,12 @@ import com.karuslabs.elementary.junit.annotations.Processors;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import javax.annotation.processing.Processor;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
+import java.util.ServiceLoader;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,6 +32,26 @@ import static org.junit.jupiter.api.Assertions.assertAll;
   { MetamodelGenerator.class }
 )
 class MetamodelGeneratorTest {
+  
+  @Test
+  void testAnnotationProcessorServiceRegistration() {
+    // Verify that MetamodelGenerator is properly registered as a service
+    // This ensures that the @AutoService annotation is working correctly
+    ServiceLoader<Processor> loader = ServiceLoader.load(Processor.class);
+    boolean foundMetamodelGenerator = false;
+    
+    for (Processor processor : loader) {
+      if (processor instanceof MetamodelGenerator) {
+        foundMetamodelGenerator = true;
+        break;
+      }
+    }
+    
+    assertThat(foundMetamodelGenerator)
+        .as("MetamodelGenerator should be discoverable via ServiceLoader")
+        .isTrue();
+  }
+  
   @Test
   @Classpath(
     "data.metamodel.ValidDocumentIndexed"
