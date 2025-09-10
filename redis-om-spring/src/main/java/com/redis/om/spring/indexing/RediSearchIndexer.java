@@ -613,7 +613,11 @@ public class RediSearchIndexer {
                   String nestedJsonPath = (prefix == null || prefix.isBlank()) ?
                       "$." + field.getName() + ".*." + subfield.getName() :
                       "$." + prefix + "." + field.getName() + ".*." + subfield.getName();
-                  String nestedFieldAlias = field.getName() + "_" + subfield.getName();
+                  // Respect the alias annotation on the nested field
+                  String subfieldAlias = (subfieldIndexed.alias() != null && !subfieldIndexed.alias().isEmpty()) ?
+                      subfieldIndexed.alias() :
+                      subfield.getName();
+                  String nestedFieldAlias = field.getName() + "_" + subfieldAlias;
 
                   logger.info(String.format("Processing nested field %s in Map value type, path: %s, alias: %s",
                       subfield.getName(), nestedJsonPath, nestedFieldAlias));
