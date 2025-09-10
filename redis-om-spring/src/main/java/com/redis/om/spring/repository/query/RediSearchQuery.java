@@ -424,12 +424,25 @@ public class RediSearchQuery implements RepositoryQuery {
           String nestedFieldName = matcher.group(2);
           String operator = matcher.group(3);
 
-          // Convert to lowercase first character
+          // Store original field name before converting
+          String originalMapFieldName = mapFieldName;
+
+          // Convert to lowercase first character for standard Java naming
           mapFieldName = Character.toLowerCase(mapFieldName.charAt(0)) + mapFieldName.substring(1);
           nestedFieldName = Character.toLowerCase(nestedFieldName.charAt(0)) + nestedFieldName.substring(1);
 
-          // Find the Map field
+          // Find the Map field - try both lowercase and original casing
           Field mapField = ReflectionUtils.findField(domainType, mapFieldName);
+          if (mapField == null) {
+            // Try with original casing (e.g., "Positions" instead of "positions")
+            mapField = ReflectionUtils.findField(domainType, originalMapFieldName);
+            if (mapField != null) {
+              // Use the actual field name for building the query
+              mapFieldName = originalMapFieldName;
+            }
+          }
+          logger.debug(String.format("Looking for Map field '%s' (or '%s') in %s: %s", mapFieldName,
+              originalMapFieldName, domainType.getSimpleName(), mapField != null ? "FOUND" : "NOT FOUND"));
           if (mapField != null && Map.class.isAssignableFrom(mapField.getType())) {
             // Get the Map's value type
             Optional<Class<?>> maybeValueType = ObjectUtils.getMapValueClass(mapField);
