@@ -62,9 +62,10 @@ public class AccountUC {
   
   // Map with complex object values containing indexed fields
   // Note: The field name is "Positions" with capital P to match VOYA JSON
+  // WITHOUT the alias, the repository method findByPositionsMapContainsCusip SHOULD FAIL
   @Indexed
   @JsonProperty("Positions")
-  private Map<String, PositionUC> positions = new HashMap<>();
+  private Map<String, PositionUC> Positions = new HashMap<>();
   
   // Alternative for testing: lowercase field name with uppercase JSON property
   // This would be used if we want to keep Java conventions but map to uppercase JSON
