@@ -945,8 +945,22 @@ public class RediSearchQuery implements RepositoryQuery {
 
         jsonBuilder.append("\"").append(fieldName).append("\":");
 
+        // Check if this field is a Point type in the domain class
+        boolean isPointField = false;
+        try {
+          Field domainField = ReflectionUtils.findField(domainType, fieldName);
+          if (domainField != null && domainField.getType() == Point.class) {
+            isPointField = true;
+          }
+        } catch (Exception e) {
+          // Ignore - field might not exist in projection
+        }
+
         // Handle different types based on the raw value from Redis
-        if (fieldName.equals("name") || (valueStr.startsWith("\"") && valueStr.endsWith("\""))) {
+        if (isPointField && valueStr.contains(",") && !valueStr.startsWith("\"")) {
+          // Point field - stored as "lon,lat" in Redis, needs to be quoted for PointTypeAdapter
+          jsonBuilder.append("\"").append(valueStr).append("\"");
+        } else if (fieldName.equals("name") || (valueStr.startsWith("\"") && valueStr.endsWith("\""))) {
           // String field - quote if not already quoted
           if (valueStr.startsWith("\"") && valueStr.endsWith("\"")) {
             jsonBuilder.append(valueStr);
