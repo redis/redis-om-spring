@@ -289,6 +289,66 @@ $.positions.*.description   -> TAG field (positions_description)
 
 This structure enables efficient queries across all map values, regardless of their keys.
 
+=== Handling Uppercase JSON Fields in Complex Map Values
+
+When working with external JSON data that uses uppercase field names, you can use the `@Indexed(alias)` annotation on nested object fields within Map values to maintain proper Java naming conventions while preserving the original JSON structure:
+
+[source,java]
+----
+// Complex object with uppercase JSON fields
+@Data
+public class Position {
+    @Indexed(alias = "CUSIP")
+    @JsonProperty("CUSIP")
+    private String cusip;
+    
+    @Indexed(alias = "QUANTITY")  
+    @JsonProperty("QUANTITY")
+    private Integer quantity;
+    
+    @Indexed(alias = "PRICE")
+    @JsonProperty("PRICE")
+    private BigDecimal price;
+    
+    @Indexed
+    private String manager; // Standard field naming
+}
+
+// Entity using the complex object in a Map
+@Document
+public class Account {
+    @Id
+    private String id;
+    
+    @Indexed(alias = "ACCOUNTID")
+    @JsonProperty("ACCOUNTID")
+    private String accountId;
+    
+    @Indexed(schemaFieldType = SchemaFieldType.NESTED)
+    private Map<String, Position> positions;
+}
+
+// Repository queries work with the alias
+public interface AccountRepository extends RedisDocumentRepository<Account, String> {
+    // Queries the uppercase CUSIP field via alias
+    List<Account> findByPositionsMapContainsCusip(String cusip);
+    
+    // Queries the uppercase QUANTITY field via alias
+    List<Account> findByPositionsMapContainsQuantityGreaterThan(Integer quantity);
+    
+    // Queries the uppercase PRICE field via alias
+    List<Account> findByPositionsMapContainsPriceLessThan(BigDecimal price);
+}
+----
+
+This approach allows you to:
+* Maintain clean Java code with standard camelCase naming conventions
+* Work seamlessly with JSON data that uses uppercase field names
+* Query nested fields using their aliased names in repository methods
+* Preserve the original JSON structure for compatibility with external systems
+
+NOTE: The `@Indexed(alias)` annotation must match the `@JsonProperty` value for proper indexing and querying to work.
+
 == Advanced Examples
 
 === Working with Other Complex Value Types
