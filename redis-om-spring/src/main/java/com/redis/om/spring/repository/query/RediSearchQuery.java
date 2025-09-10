@@ -409,12 +409,15 @@ public class RediSearchQuery implements RepositoryQuery {
     List<Pair<String, QueryClause>> currentOrPart = new ArrayList<>();
 
     for (String clause : clauses) {
+      // Remove leading And/Or if present
+      String cleanClause = clause.replaceFirst("^(And|Or)", "");
+
       // Check if this clause contains MapContains pattern
-      if (clause.contains("MapContains")) {
+      if (cleanClause.contains("MapContains")) {
         // Extract the Map field and nested field
         Pattern pattern = Pattern.compile(
             "([A-Za-z]+)MapContains([A-Za-z]+)(GreaterThan|LessThan|After|Before|Between|NotEqual|In)?");
-        Matcher matcher = pattern.matcher(clause);
+        Matcher matcher = pattern.matcher(cleanClause);
 
         if (matcher.find()) {
           String mapFieldName = matcher.group(1);
@@ -436,8 +439,15 @@ public class RediSearchQuery implements RepositoryQuery {
               // Find the nested field in the value type
               Field nestedField = ReflectionUtils.findField(valueType, nestedFieldName);
               if (nestedField != null) {
-                // Build the index field name: mapField_nestedField
-                String indexFieldName = mapFieldName + "_" + nestedFieldName;
+                // Build the index field name: mapField_nestedField (respecting alias if present)
+                String actualNestedFieldName = nestedFieldName;
+                if (nestedField.isAnnotationPresent(Indexed.class)) {
+                  Indexed indexed = nestedField.getAnnotation(Indexed.class);
+                  if (indexed.alias() != null && !indexed.alias().isEmpty()) {
+                    actualNestedFieldName = indexed.alias();
+                  }
+                }
+                String indexFieldName = mapFieldName + "_" + actualNestedFieldName;
 
                 // Determine the field type and part type
                 Class<?> nestedFieldType = ClassUtils.resolvePrimitiveIfNecessary(nestedField.getType());
@@ -470,7 +480,7 @@ public class RediSearchQuery implements RepositoryQuery {
       } else {
         // Handle regular field patterns - delegate to standard parsing
         // This is a simplified version - in production would need full parsing
-        String fieldName = clause.replaceAll("(GreaterThan|LessThan|Between|NotEqual|In).*", "");
+        String fieldName = cleanClause.replaceAll("(GreaterThan|LessThan|Between|NotEqual|In).*", "");
         fieldName = Character.toLowerCase(fieldName.charAt(0)) + fieldName.substring(1);
 
         Field field = ReflectionUtils.findField(domainType, fieldName);
@@ -482,11 +492,20 @@ public class RediSearchQuery implements RepositoryQuery {
             partType = Part.Type.LESS_THAN;
           }
 
+          // Check for @Indexed alias on regular fields
+          String actualFieldName = fieldName;
+          if (field.isAnnotationPresent(Indexed.class)) {
+            Indexed indexed = field.getAnnotation(Indexed.class);
+            if (indexed.alias() != null && !indexed.alias().isEmpty()) {
+              actualFieldName = indexed.alias();
+            }
+          }
+
           Class<?> fieldType = ClassUtils.resolvePrimitiveIfNecessary(field.getType());
           FieldType redisFieldType = getRedisFieldType(fieldType);
           if (redisFieldType != null) {
             QueryClause queryClause = QueryClause.get(redisFieldType, partType);
-            currentOrPart.add(Pair.of(fieldName, queryClause));
+            currentOrPart.add(Pair.of(actualFieldName, queryClause));
           }
         }
       }
