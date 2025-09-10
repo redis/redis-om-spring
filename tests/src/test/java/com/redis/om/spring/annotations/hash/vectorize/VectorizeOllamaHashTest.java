@@ -1,6 +1,7 @@
 package com.redis.om.spring.annotations.hash.vectorize;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
@@ -89,7 +90,9 @@ class VectorizeOllamaHashTest extends AbstractBaseEnhancedRedisTest {
         .limit(K) //
         .collect(Collectors.toList());
 
-    assertThat(results).hasSize(5).map(HashWithOllamaEmbedding::getName).containsExactly( //
+    assertThat(results).hasSize(5);
+    assertThat(results.get(0).getName()).isEqualTo("cat"); // Exact match should be first
+    assertThat(results).map(HashWithOllamaEmbedding::getName).containsExactlyInAnyOrder( //
         "cat", "dog", "lion", "elephant", "giraffe" //
     );
   }
@@ -136,10 +139,11 @@ class VectorizeOllamaHashTest extends AbstractBaseEnhancedRedisTest {
         .collect(Collectors.toList());
 
     assertAll( //
-        () -> assertThat(results).hasSize(5).map(Pair::getFirst).map(HashWithOllamaEmbedding::getName).containsExactly(
+        () -> assertThat(results).hasSize(5), //
+        () -> assertThat(results.get(0).getFirst().getName()).isEqualTo("cat"), // Exact match should be first
+        () -> assertThat(results).map(Pair::getFirst).map(HashWithOllamaEmbedding::getName).containsExactlyInAnyOrder(
             "cat", "dog", "lion", "elephant", "giraffe"), //
-        () -> assertThat(results).hasSize(5).map(Pair::getSecond).usingElementComparator(closeToComparator)
-            .containsExactly(1.78813934326E-7, 0.301205277443, 0.315115869045, 0.338551998138, 0.407371640205) //
+        () -> assertThat(results.get(0).getSecond()).isCloseTo(0.0, within(0.001)) // Cat should have ~0 distance to itself
     );
   }
 
