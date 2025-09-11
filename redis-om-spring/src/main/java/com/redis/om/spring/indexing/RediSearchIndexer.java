@@ -562,10 +562,16 @@ public class RediSearchIndexer {
           if (maybeValueType.isPresent()) {
             Class<?> valueType = maybeValueType.get();
             logger.info(String.format("Map field %s has value type: %s", field.getName(), valueType));
+
+            // Use the Map field's alias if specified, otherwise use the field name
+            String mapFieldNameForIndex = (indexed.alias() != null && !indexed.alias().isEmpty()) ?
+                indexed.alias() :
+                field.getName();
+
             String mapJsonPath = (prefix == null || prefix.isBlank()) ?
                 "$." + field.getName() + ".*" :
                 "$." + prefix + "." + field.getName() + ".*";
-            String mapFieldAlias = field.getName() + "_values";
+            String mapFieldAlias = mapFieldNameForIndex + "_values";
 
             // Support all value types that we support for regular fields
             if (CharSequence.class.isAssignableFrom(
@@ -610,14 +616,17 @@ public class RediSearchIndexer {
               for (java.lang.reflect.Field subfield : getDeclaredFieldsTransitively(valueType)) {
                 if (subfield.isAnnotationPresent(Indexed.class)) {
                   Indexed subfieldIndexed = subfield.getAnnotation(Indexed.class);
+                  // Get the actual JSON field name (check for @JsonProperty or @SerializedName)
+                  String jsonFieldName = getJsonFieldName(subfield);
                   String nestedJsonPath = (prefix == null || prefix.isBlank()) ?
-                      "$." + field.getName() + ".*." + subfield.getName() :
-                      "$." + prefix + "." + field.getName() + ".*." + subfield.getName();
+                      "$." + field.getName() + ".*." + jsonFieldName :
+                      "$." + prefix + "." + field.getName() + ".*." + jsonFieldName;
                   // Respect the alias annotation on the nested field
                   String subfieldAlias = (subfieldIndexed.alias() != null && !subfieldIndexed.alias().isEmpty()) ?
                       subfieldIndexed.alias() :
                       subfield.getName();
-                  String nestedFieldAlias = field.getName() + "_" + subfieldAlias;
+                  // Use the Map field's alias (if present) for the nested field alias prefix
+                  String nestedFieldAlias = mapFieldNameForIndex + "_" + subfieldAlias;
 
                   logger.info(String.format("Processing nested field %s in Map value type, path: %s, alias: %s",
                       subfield.getName(), nestedJsonPath, nestedFieldAlias));
@@ -1316,6 +1325,29 @@ public class RediSearchIndexer {
   private String getFieldPrefix(String prefix, boolean isDocument) {
     String chain = (prefix == null || prefix.isBlank()) ? "" : prefix + ".";
     return isDocument ? "$." + chain : chain;
+  }
+
+  private String getJsonFieldName(java.lang.reflect.Field field) {
+    // Check for @JsonProperty annotation first
+    if (field.isAnnotationPresent(com.fasterxml.jackson.annotation.JsonProperty.class)) {
+      com.fasterxml.jackson.annotation.JsonProperty jsonProperty = field.getAnnotation(
+          com.fasterxml.jackson.annotation.JsonProperty.class);
+      if (jsonProperty.value() != null && !jsonProperty.value().isEmpty()) {
+        return jsonProperty.value();
+      }
+    }
+
+    // Check for @SerializedName annotation (Gson)
+    if (field.isAnnotationPresent(com.google.gson.annotations.SerializedName.class)) {
+      com.google.gson.annotations.SerializedName serializedName = field.getAnnotation(
+          com.google.gson.annotations.SerializedName.class);
+      if (serializedName.value() != null && !serializedName.value().isEmpty()) {
+        return serializedName.value();
+      }
+    }
+
+    // Default to field name
+    return field.getName();
   }
 
   private void registerAlias(Class<?> cl, String fieldName, String alias) {

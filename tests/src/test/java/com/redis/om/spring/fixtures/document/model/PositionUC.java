@@ -1,12 +1,12 @@
 package com.redis.om.spring.fixtures.document.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.annotations.SerializedName;
 import com.redis.om.spring.annotations.Indexed;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 /**
  * Position model for testing Map complex object queries with uppercase JSON fields.
@@ -19,18 +19,22 @@ public class PositionUC {
   
   @Indexed(alias = "POSITIONID")
   @JsonProperty("POSITIONID")
+  @SerializedName("POSITIONID")
   private String positionId;
   
   @Indexed(alias = "CUSIP")
   @JsonProperty("CUSIP")
+  @SerializedName("CUSIP")
   private String cusip;
   
   @Indexed(alias = "QUANTITY")
   @JsonProperty("QUANTITY")
+  @SerializedName("QUANTITY")
   private Integer quantity;
   
   // Additional fields that might be in the Position object
   @JsonProperty("ACCOUNTID")
+  @SerializedName("ACCOUNTID")
   private String accountId;
   
   // Optional fields for more complete testing
@@ -46,7 +50,4 @@ public class PositionUC {
   @JsonProperty("PRICE")
   private BigDecimal price;
   
-  @Indexed
-  @JsonProperty("AS_OF_DATE")
-  private LocalDate asOfDate;
 }

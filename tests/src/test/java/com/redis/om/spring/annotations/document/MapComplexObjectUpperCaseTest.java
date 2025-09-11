@@ -98,7 +98,6 @@ class MapComplexObjectUpperCaseTest extends AbstractBaseDocumentTest {
             position.setManager("DEFAULT_MANAGER");
             position.setDescription("DEFAULT_DESCRIPTION");
             position.setPrice(new BigDecimal("100.00"));
-            position.setAsOfDate(LocalDate.now());
             
             positions.put(posEntry.getKey(), position);
           }
@@ -115,9 +114,9 @@ class MapComplexObjectUpperCaseTest extends AbstractBaseDocumentTest {
   @Test
   void testFindByManager() {
     // This should work because manager field uses @Indexed(alias = "MANAGER")
-    List<AccountUC> accounts = repository.findByManager("Emma Jones");
+    List<AccountUC> accounts = repository.findByManager("Manager Gamma");
     assertThat(accounts).isNotEmpty();
-    assertThat(accounts.get(0).getManager()).isEqualTo("Emma Jones");
+    assertThat(accounts.get(0).getManager()).isEqualTo("Manager Gamma");
   }
 
   @Test

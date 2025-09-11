@@ -1,0 +1,256 @@
+[
+  {
+    "ACCOUNTID": "ACC-001",
+    "ACC_NAME": "Test Company A",
+    "MANAGER": "Manager One",
+    "COMMISSION_RATE": 2,
+    "CASH_BALANCE": 389094,
+    "ACC_VALUE": 6916995,
+    "DAY_CHANGE": 103277,
+    "UNREALIZED_GAIN_LOSS": 4764614,
+    "MANAGER_FNAME": "Manager",
+    "MANAGER_LNAME": "One",
+    "Positions": {
+      "P-11368": {
+        "POSITIONID": "P-11368",
+        "ACCOUNTID": "ACC-001",
+        "CUSIP": "JNJ",
+        "QUANTITY": 69075
+      },
+      "P-11367": {
+        "POSITIONID": "P-11367",
+        "ACCOUNTID": "ACC-001",
+        "CUSIP": "TSLA",
+        "QUANTITY": 29332
+      },
+      "P-11366": {
+        "POSITIONID": "P-11366",
+        "ACCOUNTID": "ACC-001",
+        "CUSIP": "JNJ",
+        "QUANTITY": 35960
+      },
+      "P-11369": {
+        "POSITIONID": "P-11369",
+        "ACCOUNTID": "ACC-001",
+        "CUSIP": "AAPL",
+        "QUANTITY": 9322
+      }
+    }
+  },
+  {
+    "ACCOUNTID": "ACC-002",
+    "ACC_NAME": "Test Company B",
+    "MANAGER": "Manager Two",
+    "COMMISSION_RATE": 3,
+    "CASH_BALANCE": 79285,
+    "ACC_VALUE": 9121820,
+    "DAY_CHANGE": -4708,
+    "UNREALIZED_GAIN_LOSS": 1719106,
+    "MANAGER_FNAME": "Manager",
+    "MANAGER_LNAME": "Two",
+    "Positions": {
+      "P-4866": {
+        "POSITIONID": "P-4866",
+        "ACCOUNTID": "ACC-002",
+        "CUSIP": "BRK",
+        "QUANTITY": 63377
+      },
+      "P-4865": {
+        "POSITIONID": "P-4865",
+        "ACCOUNTID": "ACC-002",
+        "CUSIP": "AAPL",
+        "QUANTITY": 31767
+      },
+      "P-4867": {
+        "POSITIONID": "P-4867",
+        "ACCOUNTID": "ACC-002",
+        "CUSIP": "UNH",
+        "QUANTITY": 2991
+      },
+      "P-4864": {
+        "POSITIONID": "P-4864",
+        "ACCOUNTID": "ACC-002",
+        "CUSIP": "META",
+        "QUANTITY": 66482
+      },
+      "P-4868": {
+        "POSITIONID": "P-4868",
+        "ACCOUNTID": "ACC-002",
+        "CUSIP": "TSLA",
+        "QUANTITY": 67824
+      }
+    }
+  },
+  {
+    "ACCOUNTID": "ACC-003",
+    "ACC_NAME": "Test Company C",
+    "MANAGER": "Manager Three",
+    "COMMISSION_RATE": 2,
+    "CASH_BALANCE": 86322,
+    "ACC_VALUE": 1196061,
+    "DAY_CHANGE": 104617,
+    "UNREALIZED_GAIN_LOSS": -697716,
+    "MANAGER_FNAME": "Manager",
+    "MANAGER_LNAME": "Three",
+    "Positions": {
+      "P-33480": {
+        "POSITIONID": "P-33480",
+        "ACCOUNTID": "ACC-003",
+        "CUSIP": "TSLA",
+        "QUANTITY": 45029
+      },
+      "P-33479": {
+        "POSITIONID": "P-33479",
+        "ACCOUNTID": "ACC-003",
+        "CUSIP": "CVS",
+        "QUANTITY": 29507
+      },
+      "P-33481": {
+        "POSITIONID": "P-33481",
+        "ACCOUNTID": "ACC-003",
+        "CUSIP": "META",
+        "QUANTITY": 49114
+      }
+    }
+  },
+  {
+    "ACCOUNTID": "ACC-004",
+    "ACC_NAME": "Test Company D",
+    "MANAGER": "Manager Four",
+    "COMMISSION_RATE": 3,
+    "CASH_BALANCE": 87388,
+    "ACC_VALUE": 4369229,
+    "DAY_CHANGE": 21873,
+    "UNREALIZED_GAIN_LOSS": 1761910,
+    "MANAGER_FNAME": "Manager",
+    "MANAGER_LNAME": "Four",
+    "Positions": {
+      "P-22011": {
+        "POSITIONID": "P-22011",
+        "ACCOUNTID": "ACC-004",
+        "CUSIP": "META",
+        "QUANTITY": 87761
+      },
+      "P-22010": {
+        "POSITIONID": "P-22010",
+        "ACCOUNTID": "ACC-004",
+        "CUSIP": "AAPL",
+        "QUANTITY": 33857
+      },
+      "P-22012": {
+        "POSITIONID": "P-22012",
+        "ACCOUNTID": "ACC-004",
+        "CUSIP": "TSLA",
+        "QUANTITY": 14812
+      }
+    }
+  },
+  {
+    "ACCOUNTID": "ACC-005",
+    "ACC_NAME": "Test Company E",
+    "MANAGER": "Manager Five",
+    "COMMISSION_RATE": 4,
+    "CASH_BALANCE": 442661,
+    "ACC_VALUE": 9866591,
+    "DAY_CHANGE": 126225,
+    "UNREALIZED_GAIN_LOSS": 480071,
+    "MANAGER_FNAME": "Manager",
+    "MANAGER_LNAME": "Five",
+    "Positions": {
+      "P-15917": {
+        "POSITIONID": "P-15917",
+        "ACCOUNTID": "ACC-005",
+        "CUSIP": "META",
+        "QUANTITY": 70909
+      },
+      "P-15921": {
+        "POSITIONID": "P-15921",
+        "ACCOUNTID": "ACC-005",
+        "CUSIP": "JNJ",
+        "QUANTITY": 4490
+      },
+      "P-15920": {
+        "POSITIONID": "P-15920",
+        "ACCOUNTID": "ACC-005",
+        "CUSIP": "AMZN",
+        "QUANTITY": 34975
+      },
+      "P-15918": {
+        "POSITIONID": "P-15918",
+        "ACCOUNTID": "ACC-005",
+        "CUSIP": "AAPL",
+        "QUANTITY": 9538
+      },
+      "P-15919": {
+        "POSITIONID": "P-15919",
+        "ACCOUNTID": "ACC-005",
+        "CUSIP": "TSLA",
+        "QUANTITY": 33318
+      }
+    }
+  },
+  {
+    "ACCOUNTID": "ACC-006",
+    "ACC_NAME": "Test Company F",
+    "MANAGER": "Manager Six",
+    "COMMISSION_RATE": 3,
+    "CASH_BALANCE": 372838,
+    "ACC_VALUE": 6129882,
+    "DAY_CHANGE": 143574,
+    "UNREALIZED_GAIN_LOSS": 738082,
+    "MANAGER_FNAME": "Manager",
+    "MANAGER_LNAME": "Six",
+    "Positions": {
+      "P-8846": {
+        "POSITIONID": "P-8846",
+        "ACCOUNTID": "ACC-006",
+        "CUSIP": "AAPL",
+        "QUANTITY": 18915
+      },
+      "P-8844": {
+        "POSITIONID": "P-8844",
+        "ACCOUNTID": "ACC-006",
+        "CUSIP": "AAPL",
+        "QUANTITY": 19720
+      },
+      "P-8845": {
+        "POSITIONID": "P-8845",
+        "ACCOUNTID": "ACC-006",
+        "CUSIP": "AAPL",
+        "QUANTITY": 34768
+      }
+    }
+  },
+  {
+    "ACCOUNTID": "ACC-007",
+    "ACC_NAME": "Test Company G",
+    "MANAGER": "Manager Seven",
+    "COMMISSION_RATE": 2,
+    "CASH_BALANCE": 423005,
+    "ACC_VALUE": 8573393,
+    "DAY_CHANGE": -165548,
+    "UNREALIZED_GAIN_LOSS": 4064817,
+    "MANAGER_FNAME": "Manager",
+    "MANAGER_LNAME": "Seven",
+    "Positions": {
+      "P-8604": {
+        "POSITIONID": "P-8604",
+        "ACCOUNTID": "ACC-007",
+        "CUSIP": "AAPL",
+        "QUANTITY": 28547
+      },
+      "P-8605": {
+        "POSITIONID": "P-8605",
+        "ACCOUNTID": "ACC-007",
+        "CUSIP": "CVS",
+        "QUANTITY": 71734
+      },
+      "P-8606": {
+        "POSITIONID": "P-8606",
+        "ACCOUNTID": "ACC-007",
+        "CUSIP": "AAPL",
+        "QUANTITY": 18220
+      }
+    }
+  }
+]

@@ -444,6 +444,14 @@ public class RediSearchQuery implements RepositoryQuery {
           logger.debug(String.format("Looking for Map field '%s' (or '%s') in %s: %s", mapFieldName,
               originalMapFieldName, domainType.getSimpleName(), mapField != null ? "FOUND" : "NOT FOUND"));
           if (mapField != null && Map.class.isAssignableFrom(mapField.getType())) {
+            // Check if the Map field has an @Indexed alias
+            String mapFieldNameForIndex = mapFieldName;
+            if (mapField.isAnnotationPresent(Indexed.class)) {
+              Indexed mapIndexed = mapField.getAnnotation(Indexed.class);
+              if (mapIndexed.alias() != null && !mapIndexed.alias().isEmpty()) {
+                mapFieldNameForIndex = mapIndexed.alias();
+              }
+            }
             // Get the Map's value type
             Optional<Class<?>> maybeValueType = ObjectUtils.getMapValueClass(mapField);
             if (maybeValueType.isPresent()) {
@@ -460,7 +468,7 @@ public class RediSearchQuery implements RepositoryQuery {
                     actualNestedFieldName = indexed.alias();
                   }
                 }
-                String indexFieldName = mapFieldName + "_" + actualNestedFieldName;
+                String indexFieldName = mapFieldNameForIndex + "_" + actualNestedFieldName;
 
                 // Determine the field type and part type
                 Class<?> nestedFieldType = ClassUtils.resolvePrimitiveIfNecessary(nestedField.getType());
