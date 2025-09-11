@@ -513,6 +513,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
                   Element subfieldElement = enclosedElement;
                   if (subfieldElement.getAnnotation(com.redis.om.spring.annotations.Indexed.class) != null) {
                     String subfieldName = subfieldElement.getSimpleName().toString();
+                    String jsonFieldName = getJsonFieldName(subfieldElement);
                     String nestedFieldName = field.getSimpleName().toString().toUpperCase().replace("_",
                         "") + "_" + subfieldName.toUpperCase().replace("_", "");
 
@@ -548,7 +549,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
                       String uniqueFieldName = chainedFieldName + "_" + subfieldName;
                       Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> nestedField = generateMapNestedFieldMetamodel(
                           entity, chain, uniqueFieldName, nestedFieldName, nestedInterceptor, subfieldTypeName, field
-                              .getSimpleName().toString(), subfieldName);
+                              .getSimpleName().toString(), subfieldName, jsonFieldName);
                       fieldMetamodelSpec.add(nestedField);
 
                       messager.printMessage(Diagnostic.Kind.NOTE,
@@ -1048,7 +1049,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
 
   private Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> generateMapNestedFieldMetamodel(TypeName entity,
       List<Element> chain, String chainFieldName, String nestedFieldName, Class<?> interceptorClass,
-      String subfieldTypeName, String mapFieldName, String subfieldName) {
+      String subfieldTypeName, String mapFieldName, String subfieldName, String jsonFieldName) {
     String fieldAccessor = ObjectUtils.staticField(nestedFieldName);
 
     FieldSpec objectField = FieldSpec.builder(Field.class, chainFieldName).addModifiers(Modifier.PUBLIC,
@@ -1070,9 +1071,10 @@ public final class MetamodelGenerator extends AbstractProcessor {
     FieldSpec aField = FieldSpec.builder(interceptor, fieldAccessor).addModifiers(Modifier.PUBLIC, Modifier.STATIC)
         .build();
 
-    // Create the JSONPath for nested Map field: $.mapField.*.subfieldName
-    String alias = mapFieldName + "_" + subfieldName;
-    String jsonPath = "$." + mapFieldName + ".*." + subfieldName;
+    // Create the JSONPath for nested Map field: $.mapField.*.jsonFieldName
+    // Use JSON field name for both alias and path to match what the indexer creates
+    String alias = mapFieldName + "_" + jsonFieldName;
+    String jsonPath = "$." + mapFieldName + ".*." + jsonFieldName;
 
     CodeBlock aFieldInit = CodeBlock.builder().addStatement(
         "$L = new $T(new $T(\"$L\", \"$L\", $T.class, $T.class), true)", fieldAccessor, interceptor,
@@ -1091,6 +1093,45 @@ public final class MetamodelGenerator extends AbstractProcessor {
         alias, type, true).build();
 
     return Tuples.of(aField, aFieldInit);
+  }
+
+  /**
+   * Get the JSON field name for a field element, checking for @JsonProperty and @SerializedName annotations.
+   * Falls back to the Java field name if no JSON annotation is found.
+   */
+  private String getJsonFieldName(Element fieldElement) {
+    // Check for @JsonProperty annotation first
+    for (AnnotationMirror mirror : fieldElement.getAnnotationMirrors()) {
+      String annotationType = mirror.getAnnotationType().toString();
+      if ("com.fasterxml.jackson.annotation.JsonProperty".equals(annotationType)) {
+        for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : mirror.getElementValues()
+            .entrySet()) {
+          if ("value".equals(entry.getKey().getSimpleName().toString())) {
+            String value = entry.getValue().getValue().toString();
+            if (value != null && !value.isEmpty() && !value.equals("\"\"")) {
+              // Remove quotes from the annotation value
+              return value.replaceAll("^\"|\"$", "");
+            }
+          }
+        }
+      }
+      // Check for @SerializedName annotation (Gson)
+      else if ("com.google.gson.annotations.SerializedName".equals(annotationType)) {
+        for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : mirror.getElementValues()
+            .entrySet()) {
+          if ("value".equals(entry.getKey().getSimpleName().toString())) {
+            String value = entry.getValue().getValue().toString();
+            if (value != null && !value.isEmpty() && !value.equals("\"\"")) {
+              // Remove quotes from the annotation value
+              return value.replaceAll("^\"|\"$", "");
+            }
+          }
+        }
+      }
+    }
+
+    // Default to field name
+    return fieldElement.getSimpleName().toString();
   }
 
   private Pair<FieldSpec, CodeBlock> generateThisMetamodelField(TypeName entity) {

@@ -1,9 +1,9 @@
 package com.redis.om.spring.fixtures.document.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.annotations.SerializedName;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.Indexed;
-import com.redis.om.spring.annotations.IndexingOptions;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
@@ -19,45 +19,54 @@ import java.util.Map;
  */
 @Data
 @NoArgsConstructor
-@Document
-@IndexingOptions(indexName = "AccountUCIdx")
+@Document(indexName = "idx:om:accounts", prefixes = {"accounts:ACCOUNTID:"})
 public class AccountUC {
   
   @Id
   @JsonProperty("ACCOUNTID")
+  @SerializedName("ACCOUNTID")
   private String accountId;
   
   @Indexed(alias = "ACC_NAME")
   @JsonProperty("ACC_NAME")
+  @SerializedName("ACC_NAME")
   private String accountName;
   
   @Indexed(alias = "MANAGER")
   @JsonProperty("MANAGER")
+  @SerializedName("MANAGER")
   private String manager;
   
   @Indexed(alias = "ACC_VALUE")
   @JsonProperty("ACC_VALUE")
+  @SerializedName("ACC_VALUE")
   private BigDecimal accountValue;
   
   // Additional fields from VOYA data
   @Indexed
   @JsonProperty("COMMISSION_RATE")
+  @SerializedName("COMMISSION_RATE")
   private Integer commissionRate;
   
   @Indexed
   @JsonProperty("CASH_BALANCE")
+  @SerializedName("CASH_BALANCE")
   private BigDecimal cashBalance;
   
   @JsonProperty("DAY_CHANGE")
+  @SerializedName("DAY_CHANGE")
   private BigDecimal dayChange;
   
   @JsonProperty("UNREALIZED_GAIN_LOSS")
+  @SerializedName("UNREALIZED_GAIN_LOSS")
   private BigDecimal unrealizedGainLoss;
   
   @JsonProperty("MANAGER_FNAME")
+  @SerializedName("MANAGER_FNAME")
   private String managerFirstName;
   
   @JsonProperty("MANAGER_LNAME")
+  @SerializedName("MANAGER_LNAME")
   private String managerLastName;
   
   // Map with complex object values containing indexed fields
@@ -65,6 +74,7 @@ public class AccountUC {
   // WITHOUT the alias, the repository method findByPositionsMapContainsCusip SHOULD FAIL
   @Indexed
   @JsonProperty("Positions")
+  @SerializedName("Positions")
   private Map<String, PositionUC> Positions = new HashMap<>();
   
   // Alternative for testing: lowercase field name with uppercase JSON property
