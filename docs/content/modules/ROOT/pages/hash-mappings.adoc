@@ -54,7 +54,7 @@ Redis OM Spring creates full RediSearch indexes using `FT.CREATE` commands, prov
 
 |Query Methods
 |Limited to findBy patterns
-|Complex queries, @Query, Entity Streams
+|Complex queries, @Query, Entity Streams, SearchStream returns
 |===
 
 == Basic Usage
@@ -424,6 +424,75 @@ List<Person> admins = entityStream
   .sorted(Person$.EMAIL, SortOrder.ASC)
   .collect(Collectors.toList());
 ----
+
+=== Entity Streams Integration with Repositories
+
+Repositories can return `SearchStream` for fluent query operations:
+
+[source,java]
+----
+import com.redis.om.spring.search.stream.SearchStream;
+
+public interface PersonRepository extends RedisEnhancedRepository<Person, String> {
+    // Return SearchStream for advanced operations
+    SearchStream<Person> findByDepartment(String department);
+    
+    SearchStream<Person> findByAgeGreaterThan(int age);
+    
+    SearchStream<Person> findByActive(boolean active);
+    
+    // Usage example:
+    // SearchStream<Person> stream = repository.findByDepartment("Engineering");
+    // List<String> names = stream
+    //     .filter(Person$.ACTIVE.eq(true))
+    //     .map(Person$.NAME)
+    //     .collect(Collectors.toList());
+}
+----
+
+This allows you to combine repository query methods with the power of Entity Streams:
+
+[source,java]
+----
+@Service
+public class PersonService {
+    @Autowired
+    PersonRepository repository;
+    
+    public List<String> getActiveEngineerNames() {
+        return repository.findByDepartment("Engineering")
+            .filter(Person$.ACTIVE.eq(true))
+            .map(Person$.NAME)
+            .sorted()
+            .collect(Collectors.toList());
+    }
+    
+    public long countSeniorEmployees(int minAge) {
+        return repository.findByAgeGreaterThan(minAge)
+            .filter(Person$.DEPARTMENT.in("Engineering", "Management"))
+            .count();
+    }
+    
+    public List<Person> getTopPerformers() {
+        return repository.findByActive(true)
+            .filter(Person$.PERFORMANCE_SCORE.gte(90))
+            .sorted(Person$.PERFORMANCE_SCORE, SortOrder.DESC)
+            .limit(10)
+            .collect(Collectors.toList());
+    }
+}
+----
+
+The `SearchStream` returned by repository methods supports all Entity Stream operations:
+
+* **Filtering**: `filter()` with field predicates
+* **Mapping**: `map()` to transform results
+* **Sorting**: `sorted()` with field and order
+* **Limiting**: `limit()` to restrict results
+* **Aggregation**: `count()`, `findFirst()`, `anyMatch()`, `allMatch()`
+* **Collection**: `collect()` to lists, sets, or custom collectors
+
+NOTE: Fields used in SearchStream operations must be properly indexed with `@Indexed`, `@Searchable`, or other indexing annotations.
 
 == Time To Live (TTL)
 

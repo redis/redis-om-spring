@@ -34,6 +34,7 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
 import com.github.f4b6a3.ulid.Ulid;
+import com.google.gson.GsonBuilder;
 import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.annotations.*;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
@@ -45,6 +46,9 @@ import com.redis.om.spring.repository.query.bloom.BloomQueryExecutor;
 import com.redis.om.spring.repository.query.clause.QueryClause;
 import com.redis.om.spring.repository.query.countmin.CountMinQueryExecutor;
 import com.redis.om.spring.repository.query.cuckoo.CuckooQueryExecutor;
+import com.redis.om.spring.search.stream.EntityStream;
+import com.redis.om.spring.search.stream.EntityStreamImpl;
+import com.redis.om.spring.search.stream.SearchStream;
 import com.redis.om.spring.util.ObjectUtils;
 
 import redis.clients.jedis.search.FieldName;
@@ -115,6 +119,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   private final RedisModulesOperations<String> modulesOperations;
   private final MappingRedisOMConverter mappingConverter;
   private final RediSearchIndexer indexer;
+  private final EntityStream entityStream;
   private final BloomQueryExecutor bloomQueryExecutor;
   private final CuckooQueryExecutor cuckooQueryExecutor;
   private final CountMinQueryExecutor countMinQueryExecutor;
@@ -190,6 +195,8 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     this.redisOMProperties = redisOMProperties;
     this.redisOperations = redisOperations;
     this.mappingConverter = new MappingRedisOMConverter(null, new ReferenceResolverImpl(redisOperations));
+    // Create EntityStream with a default GsonBuilder since we're dealing with hashes
+    this.entityStream = new EntityStreamImpl(modulesOperations, new GsonBuilder(), indexer);
 
     bloomQueryExecutor = new BloomQueryExecutor(this, modulesOperations);
     cuckooQueryExecutor = new CuckooQueryExecutor(this, modulesOperations);
@@ -577,8 +584,29 @@ public class RedisEnhancedQuery implements RepositoryQuery {
     // what to return
     Object result;
 
-    // Check if this is an exists query
-    if (processor.getReturnedType().getReturnedType() == boolean.class || processor.getReturnedType()
+    // Check if this is a SearchStream query
+    if (SearchStream.class.isAssignableFrom(queryMethod.getReturnedObjectType())) {
+      // For SearchStream, create and configure a stream based on the query
+      @SuppressWarnings(
+        "unchecked"
+      ) SearchStream<?> stream = entityStream.of((Class<Object>) domainType);
+
+      // Build the query string using the existing query builder
+      String queryString = prepareQuery(parameters, true);
+
+      // Apply the filter if it's not a wildcard query
+      if (!queryString.equals("*") && !queryString.isEmpty()) {
+        stream = stream.filter(queryString);
+      }
+
+      // Apply limit if configured
+      if (limit != null && limit > 0) {
+        stream = stream.limit(limit);
+      }
+
+      // Return the configured stream
+      return stream;
+    } else if (processor.getReturnedType().getReturnedType() == boolean.class || processor.getReturnedType()
         .getReturnedType() == Boolean.class) {
       // For exists queries, return true if we have any results, false otherwise
       result = searchResult.getTotalResults() > 0;
