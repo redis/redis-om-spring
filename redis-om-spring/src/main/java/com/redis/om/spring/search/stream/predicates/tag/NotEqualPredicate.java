@@ -55,7 +55,16 @@ public class NotEqualPredicate<E, T> extends BaseAbstractPredicate<E, T> {
    * @return the tag values to exclude from matches, either as a single value or collection
    */
   public Iterable<?> getValues() {
-    return value != null ? (Iterable<?>) value : values;
+    if (value != null) {
+      // Check if value is already iterable (e.g., a List or Collection)
+      if (value instanceof Iterable) {
+        return (Iterable<?>) value;
+      } else {
+        // Wrap single values in a List
+        return List.of(value);
+      }
+    }
+    return values;
   }
 
   /**
