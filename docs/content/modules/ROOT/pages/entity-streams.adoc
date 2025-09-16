@@ -227,6 +227,52 @@ List<String> exactLocation = entityStream.of(Company.class)
     .collect(Collectors.toList());
 ----
 
+=== Missing Field Queries
+
+For fields with `indexMissing = true` and `indexEmpty = true` (typically TAG fields), you can filter for missing or present values:
+
+[source,java]
+----
+@Document
+public class RxDocument {
+    @Id
+    private String id;
+
+    @Indexed
+    private String rxNumber;
+
+    @Indexed(indexEmpty = true, indexMissing = true)
+    private String lock;
+
+    @Indexed
+    private String status;
+}
+
+// Find documents where lock field is missing (null or not set)
+List<RxDocument> unlockedDocs = entityStream.of(RxDocument.class)
+    .filter(RxDocument$.LOCK.isMissing())
+    .collect(Collectors.toList());
+
+// Find documents where lock field exists (not null, may be empty string)
+List<RxDocument> lockedDocs = entityStream.of(RxDocument.class)
+    .filter(RxDocument$.LOCK.isMissing().negate())
+    .collect(Collectors.toList());
+
+// Combine with other conditions
+List<RxDocument> activeAndLocked = entityStream.of(RxDocument.class)
+    .filter(RxDocument$.STATUS.eq("ACTIVE"))
+    .filter(RxDocument$.LOCK.isMissing().negate())
+    .collect(Collectors.toList());
+
+// Find non-empty and non-missing values
+List<RxDocument> hasContent = entityStream.of(RxDocument.class)
+    .filter(RxDocument$.LOCK.isMissing().negate())  // Not missing
+    .filter(RxDocument$.LOCK.notEq(""))              // Not empty string
+    .collect(Collectors.toList());
+----
+
+NOTE: The `isMissing()` predicate checks if a field value is null or not set in Redis. The `.negate()` method inverts this check to find documents where the field exists. This is particularly useful for TAG fields with `indexEmpty = true` and `indexMissing = true` settings.
+
 === Tag and Collection Queries
 
 [source,java]

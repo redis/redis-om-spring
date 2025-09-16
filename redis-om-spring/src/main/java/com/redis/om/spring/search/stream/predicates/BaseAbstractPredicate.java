@@ -162,4 +162,9 @@ public abstract class BaseAbstractPredicate<E, T> implements SearchFieldPredicat
     return field;
   }
 
+  @Override
+  public SearchFieldPredicate<E, T> negate() {
+    return new NegatedPredicate<>(this);
+  }
+
 }
