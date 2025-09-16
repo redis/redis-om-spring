@@ -11,11 +11,11 @@
 ---
 
 **Redis OM Spring** extends [Spring Data Redis](https://spring.io/projects/spring-data-redis) to take full advantage of
-Redis and [Redis Stack](https://redis.io/docs/stack/).
+[Redis](https://redis.io/). Read the Official Docs 📕 here 👉🏽 [Redis OM Spring](https://redis.github.io/redis-om-spring/)
 
-| Stage                                             | Release                                      | Snapshot                                        | Coverage                                                                                                                                 | Issues                                                               | Resolution                                                                      | Code QL                                      | License                                  |
-|---------------------------------------------------|----------------------------------------------|-------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|---------------------------------------------------------------------------------|----------------------------------------------|------------------------------------------|
-| [![Project stage][badge-stage]][badge-stage-page] | [![Releases][badge-releases]][link-releases] | [![Snapshots][badge-snapshots]][link-snapshots] | [![codecov](https://codecov.io/gh/redis/redis-om-spring/graph/badge.svg?token=MBI8WSDM37)](https://codecov.io/gh/redis/redis-om-spring)  | [![Percentage of issues still open][badge-open-issues]][open-issues] | [![Average time to resolve an issue][badge-issue-resolution]][issue-resolution] | [![CodeQL][badge-codeql]][badge-codeql-page] | [![License][license-image]][license-url] |
+| Stage                                             | Release                                      | Snapshot                                        | Coverage                                                                                                                                 | Issues                                                               | Resolution                                                                      | License                                  |
+|---------------------------------------------------|----------------------------------------------|-------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|---------------------------------------------------------------------------------|------------------------------------------|
+| [![Project stage][badge-stage]][badge-stage-page] | [![Releases][badge-releases]][link-releases] | [![Snapshots][badge-snapshots]][link-snapshots] | [![codecov](https://codecov.io/gh/redis/redis-om-spring/graph/badge.svg?token=MBI8WSDM37)](https://codecov.io/gh/redis/redis-om-spring)  | [![Percentage of issues still open][badge-open-issues]][open-issues] | [![Average time to resolve an issue][badge-issue-resolution]][issue-resolution] | [![License][license-image]][license-url] |
 
 Learn / Discuss / Collaborate
 
@@ -71,19 +71,19 @@ Redis ([SDR](https://spring.io/projects/spring-data-redis)) framework.
 
 This **preview** release provides all Spring Data Redis, plus:
 
-* `@Document` annotation to map Spring Data models to Redis JSON documents
-* Enhancement to the Spring Data Redis `@RedisHash` via `@EnableRedisEnhancedRepositories`:
+- `@Document` annotation to map Spring Data models to Redis JSON documents
+- Enhancement to the Spring Data Redis `@RedisHash` via `@EnableRedisEnhancedRepositories`:
   - uses Redis' native search engine (RediSearch) for secondary indexing
   - uses [ULID](https://github.com/ulid/spec) for `@Id` annotated fields
-* `RedisDocumentRepository` with automatic implementation of Repository interfaces for complex querying capabilities
+- `RedisDocumentRepository` with automatic implementation of Repository interfaces for complex querying capabilities
   using `@EnableRedisDocumentRepositories`
-* Declarative search indexes via `@Indexed`
-* Full-text search indexes via `@Searchable`
-* `EntityStream`s: Streams-based Query and Aggregations Builder
-* `@Bloom` annotation to determine very fast, with and with high degree of certainty, whether a value is in a
+- Declarative search indexes via `@Indexed`
+- Full-text search indexes via `@Searchable`
+- `EntityStream`s: Streams-based Query and Aggregations Builder
+- `@Bloom` annotation to determine very fast, with and with high degree of certainty, whether a value is in a
   collection.
-* `@Vectorize` annotation to generate embeddings for text and images for use in Vector Similarity Searches
-* Vector Similarity Search API (See [Redis Stack Vectors](https://redis.io/docs/stack/search/reference/vectors/))
+- `@Vectorize` annotation to generate embeddings for text and images for use in Vector Similarity Searches
+- Vector Similarity Search API (See [Redis Stack Vectors](https://redis.io/docs/stack/search/reference/vectors/))
 
 ### 📋 Version Requirements
 
@@ -101,11 +101,13 @@ Redis OM Spring has the following version requirements:
 #### Spring Boot Version Compatibility Policy
 
 Redis OM Spring follows an **N-2 support policy** for Spring Boot versions:
+
 - We build with the latest stable Spring Boot version
 - We support the current version and two previous minor versions that are still receiving OSS updates
 - We upgrade Spring Boot with each Redis OM Spring release
 
 For example, as of Redis OM Spring 1.0.0-RC4:
+
 - **Built with**: Spring Boot 3.4.5
 - **Minimum supported**: Spring Boot 3.3.x
 - **Recommended**: Spring Boot 3.4.x or 3.5.x
@@ -399,19 +401,19 @@ write queries by using store-specific query languages at all.
 
 The Query by Example API consists of four parts:
 
-* **Probe**: The actual example of a domain object with populated fields.
-* **ExampleMatcher**: The `ExampleMatcher` carries details on how to match particular fields. It can be reused across
+- **Probe**: The actual example of a domain object with populated fields.
+- **ExampleMatcher**: The `ExampleMatcher` carries details on how to match particular fields. It can be reused across
   multiple `Examples`.
-* **Example**: An Example consists of the probe and the ExampleMatcher. It is used to create the query.
-* **FetchableFluentQuery**: A `FetchableFluentQuery` offers a fluent API, that allows further customization of a query
+- **Example**: An Example consists of the probe and the ExampleMatcher. It is used to create the query.
+- **FetchableFluentQuery**: A `FetchableFluentQuery` offers a fluent API, that allows further customization of a query
   derived from an `Example`.
   Using the fluent API lets you specify ordering projection and result processing for your query.
 
 Query by Example is well suited for several use cases:
 
-* Querying your data store with a set of static or dynamic constraints.
-* Frequent refactoring of the domain objects without worrying about breaking existing queries.
-* Working independently of the underlying data store API.
+- Querying your data store with a set of static or dynamic constraints.
+- Frequent refactoring of the domain objects without worrying about breaking existing queries.
+- Working independently of the underlying data store API.
 
 For example, if you have an `@Document` or `@RedisHash` annotated entity you can create an instance, partially populate
 its
@@ -446,8 +448,8 @@ This process publishes both `redis-om-spring` and `redis-om-spring-ai` modules t
 
 > ⚠️ Starting from version `v1.0.0-RC.1`, Redis OM Spring has been divided into two separate modules:
 >
-> * **Redis OM Spring** – providing modeling and vector indexing capabilities;
-> * **Redis OM Spring AI** – introducing AI capabilities, powered by Spring AI, to automatically generate vector embeddings using popular providers like OpenAI, Azure, Ollama, VertexAI, and more.
+> - **Redis OM Spring** – providing modeling and vector indexing capabilities;
+> - **Redis OM Spring AI** – introducing AI capabilities, powered by Spring AI, to automatically generate vector embeddings using popular providers like OpenAI, Azure, Ollama, VertexAI, and more.
 
 To use **Redis OM** for modeling your domain objects, indexing them, and enabling both querying and Vector Similarity Search features, simply include the dependency for **Redis OM Spring** as shown below:
 
@@ -563,6 +565,7 @@ dependencies {
 ## 📚 Documentation
 
 The Redis OM Spring documentation is available at:
+
 - [Local Documentation](docs/index.md)
 - [Online Documentation](https://redis.github.io/redis-om-spring/) (Generated from the main branch)
 
@@ -609,16 +612,16 @@ These can be found in the `/demos` folder:
 
 - **redis-om-spring-skeleton-app**:
   - Redis OM Spring Skeleton App
-  - Repo: https://github.com/redis-developer/redis-om-spring-skeleton-app
+  - Repo: <https://github.com/redis-developer/redis-om-spring-skeleton-app>
 
 - **redis-om-spring-react-todomvc**:
   - Redis OM Spring to build a RESTful API that satisfies the simple web API spec set by
     the Todo-Backend project using JSON Documents stored in Redis.
-  - Repo: https://github.com/redis-developer/redis-om-spring-react-todomvc
+  - Repo: <https://github.com/redis-developer/redis-om-spring-react-todomvc>
 
 - **redis-om-autocomplete-demo**:
   - A Spring Boot demo of autocomplete functionality using Redis OM Spring.
-  - Repo: https://github.com/redis-developer/redis-om-autocomplete-demo
+  - Repo: <https://github.com/redis-developer/redis-om-autocomplete-demo>
 
 ## ⛏️ Troubleshooting
 
@@ -661,6 +664,7 @@ This will automatically reformat your code to match the project's style. You can
 ```
 
 The main formatting rules include:
+
 - 2-space indentation (not 4)
 - KNR brace style (braces at end of line)
 - Maximum line length of 120 characters
@@ -678,8 +682,6 @@ Redis OM uses the [MIT license][license-url].
 
 <!-- Badges / Shields -->
 
-[ci-url]: https://github.com/redis-developer/redis-om-spring/actions/workflows/ci.yml
-
 [badge-stage]: https://img.shields.io/badge/Project%20Stage-Development-green.svg
 
 [badge-stage-page]: https://github.com/redis/redis-om-spring/wiki/Project-Stages
@@ -692,15 +694,9 @@ Redis OM uses the [MIT license][license-url].
 
 [badge-issue-resolution]: http://isitmaintained.com/badge/resolution/redis/redis-om-spring.svg
 
-[badge-codeql]: https://github.com/redis/redis-om-spring/actions/workflows/codeql-analysis.yml/badge.svg
-
-[badge-codeql-page]: https://github.com/redis/redis-om-spring/actions/workflows/codeql-analysis.yml
-
 [license-image]: https://img.shields.io/github/license/redis/redis-om-spring
 
 [license-url]: LICENSE
-
-[sdr-badge-releases]: https://img.shields.io/maven-central/v/org.springframework.data/spring-data-redis/3.1.2
 
 [discord-shield]: https://img.shields.io/discord/697882427875393627?style=social&logo=discord
 
@@ -712,19 +708,9 @@ Redis OM uses the [MIT license][license-url].
 
 <!-- Links -->
 
-[redis-om-website]: https://developer.redis.com
-
-[redis-om-python]: https://github.com/redis-om/redis-om-python
-
-[redis-om-js]: https://github.com/redis-om/redis-om-js
-
-[redis-om-dotnet]: https://github.com/redis-om/redis-om-dotnet
-
 [redisearch-url]: https://redis.io/search/
 
 [redis-json-url]: https://redis.io/json/
-
-[ulid-url]: https://github.com/ulid/spec
 
 [redis-enterprise-url]: https://redis.com/try-free/
 
@@ -738,8 +724,6 @@ Redis OM uses the [MIT license][license-url].
 
 [redisearch-json]: https://github.com/redislabs-training/mod-devcap-redisjson-getting-started/blob/master/articles/QuickStart-RediSearchWithJSON.md
 
-[sdr-link-releases]: https://repo1.maven.org/maven2/org/springframework/data/spring-data-redis/3.0.1/
-
 [discord-url]: http://discord.gg/redis
 
 [twitch-url]: https://www.twitch.tv/redisinc
@@ -747,7 +731,3 @@ Redis OM uses the [MIT license][license-url].
 [twitter-url]: https://twitter.com/redisinc
 
 [youtube-url]: https://www.youtube.com/redisinc
-
-
-
-
