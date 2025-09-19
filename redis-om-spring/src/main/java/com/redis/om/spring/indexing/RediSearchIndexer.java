@@ -17,6 +17,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Reference;
 import org.springframework.data.geo.Point;
@@ -26,6 +27,10 @@ import org.springframework.data.redis.core.convert.KeyspaceConfiguration.Keyspac
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.redis.core.mapping.RedisPersistentEntity;
 import org.springframework.data.util.TypeInformation;
+import org.springframework.expression.Expression;
+import org.springframework.expression.ExpressionParser;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 
@@ -100,6 +105,7 @@ public class RediSearchIndexer {
   private final RedisMappingContext mappingContext;
   private final GsonBuilder gsonBuilder;
   private final RedisOMProperties properties;
+  private final ExpressionParser spelParser = new SpelExpressionParser();
 
   /**
    * Constructs a new RediSearchIndexer with the required dependencies.
@@ -118,6 +124,69 @@ public class RediSearchIndexer {
     rmo = (RedisModulesOperations<String>) ac.getBean("redisModulesOperations");
     mappingContext = (RedisMappingContext) ac.getBean("redisEnhancedMappingContext");
     this.gsonBuilder = gsonBuilder;
+  }
+
+  /**
+   * Evaluates a SpEL expression if it's detected, otherwise returns the original value.
+   *
+   * @param expression   the expression to evaluate (may contain SpEL syntax)
+   * @param defaultValue the default value to use if evaluation fails or expression is empty
+   * @return the evaluated expression result or the original value
+   */
+  private String evaluateExpression(String expression, String defaultValue) {
+    if (expression == null || expression.isBlank()) {
+      return defaultValue;
+    }
+
+    // Check if the string contains SpEL expression markers
+    if (!expression.contains("#{") || !expression.contains("}")) {
+      return expression;
+    }
+
+    try {
+      // Create evaluation context with Spring beans
+      StandardEvaluationContext context = new StandardEvaluationContext();
+      context.setBeanResolver(new BeanFactoryResolver(ac));
+      context.setVariable("environment", ac.getEnvironment());
+      context.setVariable("systemProperties", System.getProperties());
+
+      // Process template expressions - replace #{...} with evaluated values
+      String processedExpression = expression;
+      int startIndex = 0;
+      boolean hasFailedExpressions = false;
+
+      while ((startIndex = processedExpression.indexOf("#{", startIndex)) != -1) {
+        int endIndex = processedExpression.indexOf("}", startIndex);
+        if (endIndex == -1) {
+          break;
+        }
+
+        String spelPart = processedExpression.substring(startIndex + 2, endIndex);
+        try {
+          Expression spelExpression = spelParser.parseExpression(spelPart);
+          Object result = spelExpression.getValue(context);
+          String resultStr = result != null ? result.toString() : "";
+          processedExpression = processedExpression.substring(0, startIndex) + resultStr + processedExpression
+              .substring(endIndex + 1);
+        } catch (Exception e) {
+          // If any expression fails to evaluate, we should use the default fallback
+          logger.warn(String.format("Failed to evaluate SpEL expression part '%s': %s", spelPart, e.getMessage()));
+          hasFailedExpressions = true;
+          startIndex = endIndex + 1;
+        }
+      }
+
+      // If any expressions failed, return the default value
+      if (hasFailedExpressions) {
+        return defaultValue;
+      }
+
+      return processedExpression;
+    } catch (Exception e) {
+      logger.warn(String.format("Failed to evaluate SpEL expression '%s': %s. Using default value.", expression, e
+          .getMessage()));
+      return defaultValue;
+    }
   }
 
   /**
@@ -163,21 +232,24 @@ public class RediSearchIndexer {
     Optional<IndexingOptions> maybeIndexingOptions = Optional.ofNullable(cl.getAnnotation(IndexingOptions.class));
 
     String indexName = "";
+    String defaultIndexName = cl.getName() + "Idx";
     Optional<String> maybeScoreField;
     try {
       if (isDocument) {
         // IndexingOptions overrides Document#
         if (maybeIndexingOptions.isPresent()) {
-          indexName = maybeIndexingOptions.get().indexName();
+          String rawIndexName = maybeIndexingOptions.get().indexName();
+          indexName = evaluateExpression(rawIndexName, defaultIndexName);
+        } else {
+          indexName = document.get().indexName();
         }
-        indexName = indexName.isBlank() ? document.get().indexName() : indexName;
-        indexName = indexName.isBlank() ? cl.getName() + "Idx" : indexName;
+        indexName = indexName.isBlank() ? defaultIndexName : indexName;
       } else {
         if (maybeIndexingOptions.isPresent()) {
-          indexName = maybeIndexingOptions.get().indexName();
-          indexName = indexName.isBlank() ? cl.getName() + "Idx" : indexName;
+          String rawIndexName = maybeIndexingOptions.get().indexName();
+          indexName = evaluateExpression(rawIndexName, defaultIndexName);
         } else {
-          indexName = cl.getName() + "Idx";
+          indexName = defaultIndexName;
         }
       }
 
@@ -207,7 +279,15 @@ public class RediSearchIndexer {
         maybeEntityPrefix = hash.map(RedisHash::value).filter(ObjectUtils::isNotEmpty);
       }
 
-      String entityPrefix = maybeEntityPrefix.orElse(getEntityPrefix(cl));
+      // Check for dynamic key prefix in IndexingOptions
+      String entityPrefix;
+      if (maybeIndexingOptions.isPresent() && !maybeIndexingOptions.get().keyPrefix().isBlank()) {
+        String rawKeyPrefix = maybeIndexingOptions.get().keyPrefix();
+        String defaultPrefix = maybeEntityPrefix.orElse(getEntityPrefix(cl));
+        entityPrefix = evaluateExpression(rawKeyPrefix, defaultPrefix);
+      } else {
+        entityPrefix = maybeEntityPrefix.orElse(getEntityPrefix(cl));
+      }
       entityPrefix = entityPrefix.endsWith(":") ? entityPrefix : entityPrefix + ":";
       params.prefix(entityPrefix);
       addKeySpaceMapping(entityPrefix, cl);
@@ -391,6 +471,16 @@ public class RediSearchIndexer {
       }
     }
     return keyspace;
+  }
+
+  /**
+   * Gets the key prefix for a given entity class.
+   *
+   * @param entityClass the entity class
+   * @return the key prefix used for this entity class
+   */
+  public String getKeyspacePrefix(Class<?> entityClass) {
+    return getKeyspaceForEntityClass(entityClass);
   }
 
   /**
