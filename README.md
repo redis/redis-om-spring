@@ -69,7 +69,7 @@ platform of choice. We currently cater to the Node, Python, .NET, and Spring com
 Redis OM Spring provides powerful repository and custom object-mapping abstractions built on top of the Spring Data
 Redis ([SDR](https://spring.io/projects/spring-data-redis)) framework.
 
-This **preview** release provides all Spring Data Redis, plus:
+Redis OM Spring provides all Spring Data Redis capabilities, plus:
 
 - `@Document` annotation to map Spring Data models to Redis JSON documents
 - Enhancement to the Spring Data Redis `@RedisHash` via `@EnableRedisEnhancedRepositories`:
