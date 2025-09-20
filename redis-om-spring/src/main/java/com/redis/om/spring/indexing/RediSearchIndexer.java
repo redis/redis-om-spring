@@ -1773,4 +1773,228 @@ public class RediSearchIndexer {
       }
     }
   }
+
+  // Context-aware indexing methods
+
+  /**
+   * Creates an index for the specified entity class using the provided context and resolver.
+   *
+   * @param entityClass the entity class to create an index for
+   * @param context     the Redis index context containing tenant and environment information
+   * @param resolver    the index resolver for determining index names and key prefixes
+   * @return true if the index was created or already exists, false otherwise
+   */
+  public boolean createIndexFor(Class<?> entityClass, RedisIndexContext context, IndexResolver resolver) {
+    String indexName = resolver.resolveIndexName(entityClass, context);
+    String keyPrefix = resolver.resolveKeyPrefix(entityClass, context);
+
+    if (indexExistsFor(entityClass, indexName)) {
+      return true;
+    }
+
+    return createIndexFor(entityClass, indexName, keyPrefix);
+  }
+
+  /**
+   * Creates an index for the specified entity class using the current thread-local context.
+   *
+   * @param entityClass the entity class to create an index for
+   * @param resolver    the index resolver for determining index names and key prefixes
+   * @return true if the index was created or already exists, false otherwise
+   */
+  public boolean createIndexForContext(Class<?> entityClass, IndexResolver resolver) {
+    RedisIndexContext context = RedisIndexContext.getContext();
+    return createIndexFor(entityClass, context, resolver);
+  }
+
+  /**
+   * Drops an index for the specified entity class using the provided context and resolver.
+   *
+   * @param entityClass the entity class to drop the index for
+   * @param context     the Redis index context containing tenant and environment information
+   * @param resolver    the index resolver for determining index names
+   * @return true if the index was dropped successfully, false otherwise
+   */
+  public boolean dropIndexFor(Class<?> entityClass, RedisIndexContext context, IndexResolver resolver) {
+    String indexName = resolver.resolveIndexName(entityClass, context);
+    return dropIndexFor(entityClass, indexName);
+  }
+
+  /**
+   * Checks if an index exists for the specified entity class using the provided context and resolver.
+   *
+   * @param entityClass the entity class to check
+   * @param context     the Redis index context containing tenant and environment information
+   * @param resolver    the index resolver for determining index names
+   * @return true if the index exists, false otherwise
+   */
+  public boolean indexExistsFor(Class<?> entityClass, RedisIndexContext context, IndexResolver resolver) {
+    String indexName = resolver.resolveIndexName(entityClass, context);
+    return indexExistsFor(entityClass, indexName);
+  }
+
+  /**
+   * Gets the index name for the specified entity class using the provided context and resolver.
+   *
+   * @param entityClass the entity class
+   * @param context     the Redis index context containing tenant and environment information
+   * @param resolver    the index resolver for determining index names
+   * @return the resolved index name
+   */
+  public String getIndexName(Class<?> entityClass, RedisIndexContext context, IndexResolver resolver) {
+    return resolver.resolveIndexName(entityClass, context);
+  }
+
+  /**
+   * Gets the keyspace prefix for the specified entity class using the provided context and resolver.
+   *
+   * @param entityClass the entity class
+   * @param context     the Redis index context containing tenant and environment information
+   * @param resolver    the index resolver for determining key prefixes
+   * @return the resolved keyspace prefix
+   */
+  public String getKeyspacePrefix(Class<?> entityClass, RedisIndexContext context, IndexResolver resolver) {
+    return resolver.resolveKeyPrefix(entityClass, context);
+  }
+
+  /**
+   * Creates an index with the specified name and key prefix.
+   * This is a helper method for context-aware index creation.
+   *
+   * @param entityClass the entity class
+   * @param indexName   the name of the index to create
+   * @param keyPrefix   the key prefix for the index
+   * @return true if successful, false otherwise
+   */
+  public boolean createIndexFor(Class<?> entityClass, String indexName, String keyPrefix) {
+    try {
+      Optional<IndexDataType> maybeType = determineIndexTarget(entityClass);
+      IndexDataType idxType;
+      if (maybeType.isPresent()) {
+        idxType = maybeType.get();
+      } else {
+        return false;
+      }
+
+      boolean isDocument = idxType == IndexDataType.JSON;
+      Optional<IndexingOptions> maybeIndexingOptions = Optional.ofNullable(entityClass.getAnnotation(
+          IndexingOptions.class));
+
+      logger.info(String.format("Found @%s annotated class: %s", idxType, entityClass.getName()));
+
+      final List<java.lang.reflect.Field> allClassFields = getDeclaredFieldsTransitively(entityClass);
+
+      List<SearchField> searchFields = processIndexedFields(allClassFields, isDocument);
+
+      for (SearchField field : searchFields) {
+        registerAlias(entityClass, field.getField().getName(), field.getSchemaField().getFieldName().getAttribute());
+      }
+
+      Optional<String> maybeScoreField = getDocumentScoreField(allClassFields, isDocument);
+      createIndexedFieldsForIdFields(entityClass, searchFields.stream().map(SearchField::getSchemaField).toList(),
+          isDocument).forEach(searchFields::add);
+
+      SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
+
+      FTCreateParams params = createIndexDefinition(entityClass, idxType);
+
+      if (isDocument) {
+        maybeScoreField.ifPresent(params::scoreField);
+      }
+
+      // Ensure keyPrefix ends with colon
+      String entityPrefix = keyPrefix.endsWith(":") ? keyPrefix : keyPrefix + ":";
+      params.prefix(entityPrefix);
+      addKeySpaceMapping(entityPrefix, entityClass);
+
+      // Update TTL settings
+      Optional<Document> document = isDocument ?
+          Optional.of(entityClass.getAnnotation(Document.class)) :
+          Optional.empty();
+      updateTTLSettings(entityClass, entityPrefix, isDocument, document, allClassFields);
+
+      List<SchemaField> fields = searchFields.stream().map(SearchField::getSchemaField).toList();
+
+      // Note: We don't update entityClassToSchema or entityClassToIndexName here
+      // because this method is for creating indexes with custom names/prefixes.
+      // The global mappings should only be updated by the main createIndexFor(Class) method.
+
+      if (maybeIndexingOptions.isPresent()) {
+        IndexingOptions options = maybeIndexingOptions.get();
+        switch (options.creationMode()) {
+          case SKIP_IF_EXIST:
+            opsForSearch.createIndex(params, fields);
+            logger.info(String.format("Created index %s...", indexName));
+            // Create sorted sets for lexicographic fields
+            createSortedSetsForLexicographicFields(entityClass, entityPrefix);
+            break;
+          case DROP_AND_RECREATE:
+            if (indexExistsFor(entityClass, indexName)) {
+              opsForSearch.dropIndex();
+              logger.info(String.format("Dropped index %s", indexName));
+            }
+            opsForSearch.createIndex(params, fields);
+            logger.info(String.format("Created index %s", indexName));
+            // Create sorted sets for lexicographic fields
+            createSortedSetsForLexicographicFields(entityClass, entityPrefix);
+            break;
+          case SKIP_ALWAYS:
+            // do nothing and like it!
+            logger.info(String.format("Skipped index creation for %s", entityClass.getSimpleName()));
+            break;
+        }
+      } else {
+        opsForSearch.createIndex(params, fields);
+        logger.info(String.format("Created index %s", indexName));
+        // Create sorted sets for lexicographic fields
+        createSortedSetsForLexicographicFields(entityClass, entityPrefix);
+      }
+
+      return true;
+    } catch (Exception e) {
+      logger.warn(String.format(SKIPPING_INDEX_CREATION, indexName, e.getMessage()));
+      return false;
+    }
+  }
+
+  /**
+   * Drops an index with the specified name.
+   * This is a helper method for context-aware index dropping.
+   *
+   * @param entityClass the entity class
+   * @param indexName   the name of the index to drop
+   * @return true if successful, false otherwise
+   */
+  public boolean dropIndexFor(Class<?> entityClass, String indexName) {
+    try {
+      if (indexExistsFor(entityClass, indexName)) {
+        SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
+        opsForSearch.dropIndex();
+        return true;
+      }
+      return true; // Already doesn't exist
+    } catch (Exception e) {
+      logger.error("Failed to drop index " + indexName + " for " + entityClass.getSimpleName(), e);
+      return false;
+    }
+  }
+
+  /**
+   * Checks if an index with the specified name exists.
+   * This is a helper method for context-aware index existence checking.
+   *
+   * @param entityClass the entity class
+   * @param indexName   the name of the index to check
+   * @return true if the index exists, false otherwise
+   */
+  public boolean indexExistsFor(Class<?> entityClass, String indexName) {
+    try {
+      SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
+      opsForSearch.getInfo();
+      return true; // If no exception, index exists
+    } catch (Exception e) {
+      logger.debug("Error checking if index exists: " + indexName, e);
+      return false;
+    }
+  }
 }
