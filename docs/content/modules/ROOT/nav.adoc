@@ -27,6 +27,7 @@
 * xref:search.adoc[Redis Query Engine Integration]
 * xref:index-annotations.adoc[Index Annotations]
 * xref:index-creation.adoc[Index Creation and Management]
+* xref:multi-tenant-support.adoc[Multi-Tenant Support]
 * xref:multilanguage.adoc[Multilanguage Support]
 
 .Query Capabilities
