@@ -104,6 +104,211 @@ Configuration options:
 * `maxTextFields` - Whether to index all text fields
 * `temporaryIndex` - Create a temporary index that will be deleted when the connection closes
 
+== Dynamic Index Naming and Multi-Tenant Support
+
+Redis OM Spring provides powerful dynamic indexing capabilities using Spring Expression Language (SpEL) for runtime index name resolution. This enables multi-tenant applications, environment-specific indices, and flexible index naming strategies.
+
+=== SpEL Expressions in Index Names
+
+Use SpEL expressions in the `indexName` attribute to create dynamic index names:
+
+[source,java]
+----
+@Document
+@IndexingOptions(indexName = "#{@environment.getProperty('app.tenant')}_products_idx")
+public class Product {
+    @Id
+    private String id;
+
+    @Indexed
+    private String name;
+}
+----
+
+The SpEL expression `#{@environment.getProperty('app.tenant')}_products_idx` will be evaluated at runtime, allowing different tenants to have separate indices.
+
+=== Environment-Based Index Names
+
+Create environment-specific indices using application properties:
+
+[source,properties]
+----
+# application.properties
+app.environment=production
+app.tenant=acme-corp
+app.version=1.2.3
+----
+
+[source,java]
+----
+@Document
+@IndexingOptions(indexName = "#{@environment.getProperty('app.environment')}_#{@environment.getProperty('app.tenant')}_orders")
+public class Order {
+    @Id
+    private String id;
+
+    @Indexed
+    private String status;
+}
+----
+
+This creates indices like `production_acme-corp_orders` based on your configuration.
+
+=== Bean References in SpEL
+
+Reference Spring beans in your SpEL expressions for complex logic:
+
+[source,java]
+----
+@Service
+public class TenantResolver {
+    public String getCurrentTenant() {
+        // Custom logic to determine current tenant
+        return SecurityContextHolder.getContext().getAuthentication().getName();
+    }
+}
+
+@Document
+@IndexingOptions(indexName = "tenant_#{@tenantResolver.getCurrentTenant()}_users_v#{@versionService.getMajorVersion()}")
+public class User {
+    @Id
+    private String id;
+
+    @Searchable
+    private String username;
+}
+----
+
+=== Multi-Tenant Index Context
+
+Use `RedisIndexContext` for thread-local tenant isolation:
+
+[source,java]
+----
+@Service
+public class MultiTenantService {
+
+    @Autowired
+    private RediSearchIndexer indexer;
+
+    public void setupTenantContext(String tenantId, String environment) {
+        RedisIndexContext context = RedisIndexContext.builder()
+            .tenantId(tenantId)
+            .environment(environment)
+            .setAttribute("region", "us-west")
+            .build();
+
+        RedisIndexContext.setContext(context);
+
+        // All subsequent operations use this context
+        indexer.createIndexFor(Product.class);
+    }
+
+    public void clearContext() {
+        RedisIndexContext.clearContext();
+    }
+}
+----
+
+=== Custom Index Resolvers
+
+Implement custom index resolution logic:
+
+[source,java]
+----
+@Component
+public class CustomIndexResolver implements IndexResolver {
+
+    @Override
+    public String resolveIndexName(Class<?> entityClass, RedisIndexContext context) {
+        if (context != null && context.getTenantId() != null) {
+            return String.format("%s_%s_%s_idx",
+                context.getTenantId(),
+                context.getEnvironment(),
+                entityClass.getSimpleName().toLowerCase());
+        }
+        return entityClass.getSimpleName().toLowerCase() + "_idx";
+    }
+
+    @Override
+    public String resolveKeyPrefix(Class<?> entityClass, RedisIndexContext context) {
+        if (context != null && context.getTenantId() != null) {
+            return context.getTenantId() + ":" + entityClass.getSimpleName().toLowerCase() + ":";
+        }
+        return entityClass.getSimpleName().toLowerCase() + ":";
+    }
+}
+----
+
+=== SpEL Expression Features
+
+Supported SpEL features include:
+
+* **Environment Properties**: `#{@environment.getProperty('key')}`
+* **Bean Method Calls**: `#{@myService.getValue()}`
+* **System Properties**: `#{T(System).getProperty('key')}`
+* **String Operations**: `#{someValue.toUpperCase()}`
+* **Conditional Logic**: `#{condition ? 'value1' : 'value2'}`
+* **Mathematical Operations**: `#{value1 + value2}`
+
+=== Error Handling and Fallbacks
+
+Redis OM Spring provides robust error handling for SpEL expressions:
+
+[source,java]
+----
+@Document
+@IndexingOptions(indexName = "#{@environment.getProperty('missing.property', 'fallback')}_idx")
+public class SafeEntity {
+    // If 'missing.property' doesn't exist, uses 'fallback'
+}
+----
+
+For malformed expressions or evaluation errors, the system falls back to the default index naming pattern based on the entity class name.
+
+=== Index Migration Service
+
+Manage index migrations in multi-tenant environments:
+
+[source,java]
+----
+@Service
+public class TenantMigrationService {
+
+    @Autowired
+    private IndexMigrationService migrationService;
+
+    public void migrateTenantIndices(String tenantId) {
+        RedisIndexContext context = RedisIndexContext.builder()
+            .tenantId(tenantId)
+            .build();
+
+        RedisIndexContext.setContext(context);
+
+        // Migrate all entity indices for this tenant
+        MigrationResult result = migrationService.migrateIndex(
+            Product.class,
+            MigrationStrategy.BLUE_GREEN
+        );
+
+        if (result.isSuccessful()) {
+            log.info("Migration completed for tenant: {}", tenantId);
+        }
+    }
+}
+----
+
+=== Best Practices for Dynamic Indexing
+
+* **Use consistent naming patterns** across your application
+* **Validate SpEL expressions** during development
+* **Implement proper tenant isolation** in multi-tenant applications
+* **Monitor index creation** and memory usage
+* **Use environment-specific configurations** for different deployment stages
+* **Implement graceful fallbacks** for expression evaluation failures
+* **Consider index naming length limits** in Redis
+* **Test with realistic tenant scenarios** during development
+
 === Field-Level Configuration
 
 Configure individual fields with specific indexing options:
