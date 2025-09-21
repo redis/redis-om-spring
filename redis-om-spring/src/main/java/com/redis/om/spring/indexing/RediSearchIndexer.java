@@ -134,13 +134,20 @@ public class RediSearchIndexer {
    * @return the evaluated expression result or the original value
    */
   private String evaluateExpression(String expression, String defaultValue) {
-    if (expression == null || expression.isBlank()) {
+    if (expression == null) {
       return defaultValue;
     }
 
     // Check if the string contains SpEL expression markers
-    if (!expression.contains("#{") || !expression.contains("}")) {
+    if (!expression.contains("#{")) {
       return expression;
+    }
+
+    // Check for malformed expressions (has opening but no closing bracket)
+    if (!expression.contains("}")) {
+      logger.warn(String.format("Malformed SpEL expression '%s': missing closing bracket. Using default value.",
+          expression));
+      return defaultValue;
     }
 
     try {
@@ -165,9 +172,16 @@ public class RediSearchIndexer {
         try {
           Expression spelExpression = spelParser.parseExpression(spelPart);
           Object result = spelExpression.getValue(context);
-          String resultStr = result != null ? result.toString() : "";
-          processedExpression = processedExpression.substring(0, startIndex) + resultStr + processedExpression
-              .substring(endIndex + 1);
+          if (result == null) {
+            // Null results should trigger fallback to default
+            logger.warn(String.format("SpEL expression part '%s' returned null. Using default value.", spelPart));
+            hasFailedExpressions = true;
+            startIndex = endIndex + 1;
+          } else {
+            String resultStr = result.toString();
+            processedExpression = processedExpression.substring(0, startIndex) + resultStr + processedExpression
+                .substring(endIndex + 1);
+          }
         } catch (Exception e) {
           // If any expression fails to evaluate, we should use the default fallback
           logger.warn(String.format("Failed to evaluate SpEL expression part '%s': %s", spelPart, e.getMessage()));
@@ -383,7 +397,17 @@ public class RediSearchIndexer {
     if (entityClass != null && entityClassToIndexName.containsKey(entityClass)) {
       return entityClassToIndexName.get(entityClass);
     } else {
-      return entityClass.getName() + "Idx";
+      // Evaluate SpEL expressions from @IndexingOptions if present
+      Optional<IndexingOptions> maybeIndexingOptions = Optional.ofNullable(entityClass.getAnnotation(
+          IndexingOptions.class));
+      String defaultIndexName = entityClass.getName() + "Idx";
+
+      if (maybeIndexingOptions.isPresent()) {
+        String rawIndexName = maybeIndexingOptions.get().indexName();
+        return evaluateExpression(rawIndexName, defaultIndexName);
+      }
+
+      return defaultIndexName;
     }
   }
 
