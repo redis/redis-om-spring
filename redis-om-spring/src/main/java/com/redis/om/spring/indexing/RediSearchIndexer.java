@@ -2021,4 +2021,64 @@ public class RediSearchIndexer {
       return false;
     }
   }
+
+  /**
+   * Creates an alias for a Redis search index.
+   *
+   * @param indexName the name of the index to create an alias for
+   * @param aliasName the name of the alias to create
+   * @return true if the alias was created successfully, false otherwise
+   */
+  public boolean createAlias(String indexName, String aliasName) {
+    try {
+      SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
+      opsForSearch.addAlias(aliasName);
+      logger.info(String.format("Created alias %s for index %s", aliasName, indexName));
+      return true;
+    } catch (Exception e) {
+      logger.error(String.format("Failed to create alias %s for index %s: %s", aliasName, indexName, e.getMessage()));
+      return false;
+    }
+  }
+
+  /**
+   * Removes an alias from a Redis search index.
+   *
+   * @param indexName the name of the index to remove the alias from (not used by Redis, kept for API consistency)
+   * @param aliasName the name of the alias to remove
+   * @return true if the alias was removed successfully, false otherwise
+   */
+  public boolean removeAlias(String indexName, String aliasName) {
+    try {
+      // Note: deleteAlias doesn't need the index name, it just needs the alias
+      SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
+      opsForSearch.deleteAlias(aliasName);
+      logger.info(String.format("Removed alias %s", aliasName));
+      return true;
+    } catch (Exception e) {
+      // Alias might not exist, which is fine
+      logger.debug(String.format("Failed to remove alias %s: %s", aliasName, e.getMessage()));
+      return false;
+    }
+  }
+
+  /**
+   * Updates an alias to point to a new index.
+   *
+   * @param oldIndexName the current index the alias points to (not used by Redis, kept for API consistency)
+   * @param newIndexName the new index the alias should point to
+   * @param aliasName    the name of the alias to update
+   * @return true if the alias was updated successfully, false otherwise
+   */
+  public boolean updateAlias(String oldIndexName, String newIndexName, String aliasName) {
+    try {
+      SearchOperations<String> opsForSearch = rmo.opsForSearch(newIndexName);
+      opsForSearch.updateAlias(aliasName);
+      logger.info(String.format("Updated alias %s to point to index %s", aliasName, newIndexName));
+      return true;
+    } catch (Exception e) {
+      logger.error(String.format("Failed to update alias %s to %s: %s", aliasName, newIndexName, e.getMessage()));
+      return false;
+    }
+  }
 }
