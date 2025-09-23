@@ -243,9 +243,24 @@ public class IndexMigrationService {
       return false;
     }
 
-    // In a real implementation, this would update Redis aliases
-    // to atomically switch from old to new index
-    return true;
+    String aliasName = entityClass.getSimpleName().toLowerCase() + "_alias";
+    String oldIndexName = indexer.getIndexName(entityClass);
+
+    try {
+      // Remove alias from old index if it exists
+      if (oldIndexName != null) {
+        indexer.removeAlias(oldIndexName, aliasName);
+      }
+
+      // Add alias to new index
+      indexer.createAlias(newIndexName, aliasName);
+
+      logger.info(String.format("Successfully switched alias %s from %s to %s", aliasName, oldIndexName, newIndexName));
+      return true;
+    } catch (Exception e) {
+      logger.error(String.format("Failed to switch alias %s to %s: %s", aliasName, newIndexName, e.getMessage()));
+      return false;
+    }
   }
 
   /**
