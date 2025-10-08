@@ -9,6 +9,7 @@ import com.redis.om.spring.ops.json.JSONOperationsImpl;
 import com.redis.om.spring.ops.pds.*;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.ops.search.SearchOperationsImpl;
+import java.util.Optional;
 
 /**
  * A record that provides centralized access to Redis module operations.
@@ -26,7 +27,8 @@ import com.redis.om.spring.ops.search.SearchOperationsImpl;
  * @param client      the Redis modules client for executing commands
  * @param template    the Spring Data Redis template for additional Redis operations
  * @param gsonBuilder the Gson builder for JSON serialization/deserialization configuration
- * 
+ * @param commandListener An optional command listener for monitoring Redis commands
+ *
  * @author Redis OM Spring Team
  * @see JSONOperations
  * @see SearchOperations
@@ -37,7 +39,7 @@ import com.redis.om.spring.ops.search.SearchOperationsImpl;
  * @see TDigestOperations
  */
 public record RedisModulesOperations<K>(RedisModulesClient client, StringRedisTemplate template,
-                                        GsonBuilder gsonBuilder) {
+                                        GsonBuilder gsonBuilder, Optional<CommandListener> commandListener) {
 
   /**
    * Creates and returns operations for interacting with RedisJSON module.
@@ -65,7 +67,7 @@ public record RedisModulesOperations<K>(RedisModulesClient client, StringRedisTe
    * @return a {@link SearchOperations} instance for search and indexing operations
    */
   public SearchOperations<K> opsForSearch(K index) {
-    return new SearchOperationsImpl<>(index, client, template);
+    return new SearchOperationsImpl<>(index, client, template, commandListener);
   }
 
   /**
