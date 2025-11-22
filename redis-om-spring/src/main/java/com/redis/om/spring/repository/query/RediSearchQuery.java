@@ -202,18 +202,18 @@ public class RediSearchQuery implements RepositoryQuery {
    * <li>Initializes pagination, sorting, and projection capabilities</li>
    * </ul>
    *
-   * @param queryMethod               the repository method metadata containing signature and return type information
-   * @param metadata                  the repository metadata providing domain type and interface details
-   * @param indexer                   the RediSearch indexer for managing search indexes and field mappings
-   * @param evaluationContextProvider Spring Data's context provider for SpEL expression evaluation
-   * @param keyValueOperations        low-level Redis key-value operations template
-   * @param rmo                       Redis modules operations providing access to RediSearch, RedisJSON, and
-   *                                  probabilistic data structures
-   * @param queryCreator              the query creator class for building Redis queries (currently unused but reserved
-   *                                  for future extensibility)
-   * @param gsonBuilder               pre-configured Gson builder for JSON serialization/deserialization of Redis
-   *                                  documents
-   * @param redisOMProperties         configuration properties for Redis OM Spring behavior and defaults
+   * @param queryMethod             the repository method metadata containing signature and return type information
+   * @param metadata                the repository metadata providing domain type and interface details
+   * @param indexer                 the RediSearch indexer for managing search indexes and field mappings
+   * @param valueExpressionDelegate Spring Data's delegate for value expression evaluation in query methods
+   * @param keyValueOperations      low-level Redis key-value operations template
+   * @param rmo                     Redis modules operations providing access to RediSearch, RedisJSON, and
+   *                                probabilistic data structures
+   * @param queryCreator            the query creator class for building Redis queries (currently unused but reserved
+   *                                for future extensibility)
+   * @param gsonBuilder             pre-configured Gson builder for JSON serialization/deserialization of Redis
+   *                                documents
+   * @param redisOMProperties       configuration properties for Redis OM Spring behavior and defaults
    *
    */
   @SuppressWarnings(
@@ -223,7 +223,7 @@ public class RediSearchQuery implements RepositoryQuery {
       QueryMethod queryMethod, //
       RepositoryMetadata metadata, //
       RediSearchIndexer indexer, //
-      QueryMethodEvaluationContextProvider evaluationContextProvider, //
+      org.springframework.data.repository.query.ValueExpressionDelegate valueExpressionDelegate, //
       KeyValueOperations keyValueOperations, //
       RedisModulesOperations<?> rmo, //
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
