@@ -1,0 +1,114 @@
+= Migration Guide
+:navtitle: Migration Guide
+
+This guide helps you migrate between major versions of Redis OM Spring.
+
+== Upgrading to 1.1.0 (Spring Boot 3.5.x)
+
+Redis OM Spring 1.1.0 introduces support for Spring Boot 3.5.x and includes important dependency upgrades.
+
+=== Dependency Changes
+
+[cols="1,1,1"]
+|===
+|Dependency |Previous Version |New Version
+
+|Spring Boot
+|3.4.x
+|3.5.8
+
+|Spring Data Redis
+|3.4.x
+|3.5.6
+
+|Jedis
+|5.2.0
+|6.0.0
+|===
+
+=== Breaking Changes
+
+==== Jedis 6.0.0 Query Escaping
+
+**Impact:** Users writing custom RediSearch queries using Jedis directly.
+
+Jedis 6.0.0 changed how it handles query string escaping for RediSearch queries. Multi-word search terms must now use double quotes (`"`) instead of single quotes (`'`).
+
+**Before (Jedis 5.2.0):**
+[source,java]
+----
+SearchOperations<String> ops = modulesOperations.opsForSearch("myIndex");
+SearchResult result = ops.search(new Query("@title:'hello world'"));
+----
+
+**After (Jedis 6.0.0):**
+[source,java]
+----
+SearchOperations<String> ops = modulesOperations.opsForSearch("myIndex");
+SearchResult result = ops.search(new Query("@title:\"hello world\""));
+----
+
+**Who is affected:**
+
+* Users implementing custom repository methods that construct `Query` objects with Jedis
+* Users directly using `SearchOperations` with string-based queries containing spaces
+
+**Who is NOT affected:**
+
+* Users only using Redis OM Spring's built-in repository query methods
+* Users using Entity Streams API
+* Users using `@Query` annotations (these are handled internally by Redis OM Spring)
+
+=== Migration Steps
+
+. Update your `pom.xml` or `build.gradle` to use Redis OM Spring 1.1.0
+. If you have custom repository implementations using Jedis `Query` objects:
+.. Review all custom query strings
+.. Replace single quotes with double quotes around multi-word search terms
+.. Test your custom queries thoroughly
+
+=== Example Migration
+
+Here's a complete example of migrating a custom repository method:
+
+.Before (1.0.x)
+[source,java]
+----
+@Override
+public Optional<MyEntity> findByTitle(String title) {
+    SearchOperations<String> ops = modulesOperations.opsForSearch(MyEntity.class.getName() + "Idx");
+    SearchResult result = ops.search(new Query("@title:'" + title + "'"));  // <1>
+    if (result.getTotalResults() > 0) {
+        Document doc = result.getDocuments().get(0);
+        return Optional.of(ObjectUtils.documentToEntity(doc, MyEntity.class, converter));
+    }
+    return Optional.empty();
+}
+----
+<1> Single quotes around the title value
+
+.After (1.1.0)
+[source,java]
+----
+@Override
+public Optional<MyEntity> findByTitle(String title) {
+    SearchOperations<String> ops = modulesOperations.opsForSearch(MyEntity.class.getName() + "Idx");
+    SearchResult result = ops.search(new Query("@title:\"" + title + "\""));  // <1>
+    if (result.getTotalResults() > 0) {
+        Document doc = result.getDocuments().get(0);
+        return Optional.of(ObjectUtils.documentToEntity(doc, MyEntity.class, converter));
+    }
+    return Optional.empty();
+}
+----
+<1> Double quotes around the title value
+
+=== Testing Your Migration
+
+After upgrading, ensure you test:
+
+. All custom repository methods that use Jedis `Query` objects
+. Any direct usage of `SearchOperations`
+. Integration tests with multi-word search terms
+
+The Redis OM Spring test suite includes comprehensive tests for query escaping. Refer to the test examples in the repository for best practices.
