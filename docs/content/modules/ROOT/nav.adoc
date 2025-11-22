@@ -7,6 +7,7 @@
 * xref:version-requirements.adoc[Version Requirements]
 * xref:configuration.adoc[Configuration]
 * xref:quickstart.adoc[Quick Start Example]
+* xref:migration-guide.adoc[Migration Guide]
 
 .Core Concepts
 * xref:data-models.adoc[Redis Data Models]
