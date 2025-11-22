@@ -26,7 +26,7 @@ public class MyHashQueriesImpl implements MyHashQueries {
   @Override
   public Optional<MyHash> findByTitle(String title) {
     SearchOperations<String> ops = modulesOperations.opsForSearch(MyHash.class.getName() + "Idx");
-    SearchResult result = ops.search(new Query("@title:'" + title + "'"));
+    SearchResult result = ops.search(new Query("@title:\"" + title + "\""));
     if (result.getTotalResults() > 0) {
       Document doc = result.getDocuments().get(0);
       return Optional.of(ObjectUtils.documentToEntity(doc, MyHash.class, converter));
