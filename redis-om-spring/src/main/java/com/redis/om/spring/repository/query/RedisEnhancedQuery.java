@@ -161,17 +161,17 @@ public class RedisEnhancedQuery implements RepositoryQuery {
    * <li>Set up parameter binding for safe query execution</li>
    * </ul>
    *
-   * @param queryMethod               the Spring Data query method metadata containing method signature,
-   *                                  return type, and parameter information
-   * @param metadata                  the repository metadata providing domain type and interface information
-   * @param indexer                   the RediSearch indexer for index name resolution and field mapping
-   * @param evaluationContextProvider context provider for SpEL expression evaluation
-   * @param keyValueOperations        Spring Data KeyValue operations for basic entity operations
-   * @param redisOperations           low-level Redis operations for direct Redis access
-   * @param rmo                       Redis modules operations providing access to RediSearch, RedisJSON, and other
-   *                                  modules
-   * @param queryCreator              the query creator class for custom query construction (currently unused)
-   * @param redisOMProperties         configuration properties for Redis OM behavior and defaults
+   * @param queryMethod             the Spring Data query method metadata containing method signature,
+   *                                return type, and parameter information
+   * @param metadata                the repository metadata providing domain type and interface information
+   * @param indexer                 the RediSearch indexer for index name resolution and field mapping
+   * @param valueExpressionDelegate Spring Data's delegate for value expression evaluation in query methods
+   * @param keyValueOperations      Spring Data KeyValue operations for basic entity operations
+   * @param redisOperations         low-level Redis operations for direct Redis access
+   * @param rmo                     Redis modules operations providing access to RediSearch, RedisJSON, and other
+   *                                modules
+   * @param queryCreator            the query creator class for custom query construction (currently unused)
+   * @param redisOMProperties       configuration properties for Redis OM behavior and defaults
    *
    */
   @SuppressWarnings(
@@ -180,7 +180,7 @@ public class RedisEnhancedQuery implements RepositoryQuery {
   public RedisEnhancedQuery(QueryMethod queryMethod, //
       RepositoryMetadata metadata, //
       RediSearchIndexer indexer, //
-      QueryMethodEvaluationContextProvider evaluationContextProvider, //
+      org.springframework.data.repository.query.ValueExpressionDelegate valueExpressionDelegate, //
       KeyValueOperations keyValueOperations, //
       RedisOperations<?, ?> redisOperations, //
       RedisModulesOperations<?> rmo, //

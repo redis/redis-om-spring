@@ -20,8 +20,8 @@ import org.springframework.data.repository.core.support.PersistentEntityInformat
 import org.springframework.data.repository.query.QueryLookupStrategy;
 import org.springframework.data.repository.query.QueryLookupStrategy.Key;
 import org.springframework.data.repository.query.QueryMethod;
-import org.springframework.data.repository.query.QueryMethodEvaluationContextProvider;
 import org.springframework.data.repository.query.RepositoryQuery;
+import org.springframework.data.repository.query.ValueExpressionDelegate;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
@@ -222,9 +222,9 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
 
   @Override
   protected Optional<QueryLookupStrategy> getQueryLookupStrategy(@Nullable Key key, //
-      QueryMethodEvaluationContextProvider evaluationContextProvider //
+      ValueExpressionDelegate valueExpressionDelegate //
   ) {
-    return Optional.of(new RediSearchQueryLookupStrategy(evaluationContextProvider, //
+    return Optional.of(new RediSearchQueryLookupStrategy(valueExpressionDelegate, //
         this.keyValueOperations, //
         this.rmo, //
         this.indexer, //
@@ -237,7 +237,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
   }
 
   private record RediSearchQueryLookupStrategy( //
-                                               QueryMethodEvaluationContextProvider evaluationContextProvider, //
+                                               ValueExpressionDelegate valueExpressionDelegate, //
                                                KeyValueOperations keyValueOperations, //
                                                RedisModulesOperations<?> rmo, //
                                                RediSearchIndexer indexer, //
@@ -247,12 +247,12 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
                                                GsonBuilder gsonBuilder) implements QueryLookupStrategy {
 
     /**
-     * @param evaluationContextProvider
+     * @param valueExpressionDelegate
      * @param keyValueOperations
      * @param queryCreator
      */
     private RediSearchQueryLookupStrategy {
-      Assert.notNull(evaluationContextProvider, "EvaluationContextProvider must not be null!");
+      Assert.notNull(valueExpressionDelegate, "ValueExpressionDelegate must not be null!");
       Assert.notNull(keyValueOperations, "KeyValueOperations must not be null!");
       Assert.notNull(rmo, "RedisModulesOperations must not be null!");
       Assert.notNull(indexer, "RediSearchIndexer must not be null!");
@@ -288,7 +288,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
               QueryMethod.class, //
               RepositoryMetadata.class, //
               RediSearchIndexer.class, //
-              QueryMethodEvaluationContextProvider.class, //
+              ValueExpressionDelegate.class, //
               KeyValueOperations.class, //
               RedisModulesOperations.class, //
               Class.class, //
@@ -296,7 +296,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
               RedisOMProperties.class);
 
       Assert.state(constructor != null, String.format(
-          "Constructor %s(QueryMethod, RepositoryMetadata, RediSearchIndexer, EvaluationContextProvider, KeyValueOperations, RedisModulesOperations, Class, GsonBuilder, RedisOMSpringProperties) not available!",
+          "Constructor %s(QueryMethod, RepositoryMetadata, RediSearchIndexer, ValueExpressionDelegate, KeyValueOperations, RedisModulesOperations, Class, GsonBuilder, RedisOMSpringProperties) not available!",
           ClassUtils.getShortName(this.repositoryQueryType)));
 
       return BeanUtils.instantiateClass( //
@@ -304,7 +304,7 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
           queryMethod, //
           metadata, //
           indexer, //
-          evaluationContextProvider, //
+          valueExpressionDelegate, //
           this.keyValueOperations, //
           this.rmo, //
           this.queryCreator, //
