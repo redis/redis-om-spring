@@ -5,13 +5,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.core.TypeInformation;
 import org.springframework.data.keyvalue.core.mapping.KeySpaceResolver;
 import org.springframework.data.mapping.MappingException;
 import org.springframework.data.redis.core.TimeToLiveAccessor;
 import org.springframework.data.redis.core.mapping.BasicRedisPersistentEntity;
 import org.springframework.data.redis.core.mapping.RedisPersistentEntity;
 import org.springframework.data.redis.core.mapping.RedisPersistentProperty;
-import org.springframework.data.util.TypeInformation;
 import org.springframework.lang.Nullable;
 
 import com.redis.om.spring.annotations.RedisKey;

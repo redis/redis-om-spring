@@ -14,6 +14,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 
+import com.redis.om.spring.TestConfig;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
 import com.redis.om.spring.annotations.Indexed;
@@ -32,13 +33,13 @@ import com.redis.om.spring.services.TenantResolver;
     "app.null.value="
 })
 @DirtiesContext
-@SpringBootTest(classes = EntityClassSpelEdgeCasesTest.TestConfig.class)
+@SpringBootTest(classes = EntityClassSpelEdgeCasesTest.Config.class)
 public class EntityClassSpelEdgeCasesTest {
 
     @SpringBootApplication
     @Configuration
     @EnableRedisDocumentRepositories(basePackageClasses = EntityClassSpelEdgeCasesTest.class)
-    static class TestConfig {
+    static class Config extends TestConfig {
         @Bean
         public TenantResolver tenantResolver() {
             return new TenantResolver();

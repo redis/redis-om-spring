@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.redis.om.spring.AbstractBaseOMTest;
+import com.redis.om.spring.TestConfig;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.Indexed;
 import com.redis.om.spring.annotations.IndexingOptions;
@@ -21,13 +22,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 
 @DirtiesContext
-@SpringBootTest(classes = RealIntegrationTest.TestConfig.class)
+@SpringBootTest(classes = RealIntegrationTest.Config.class)
 public class RealIntegrationTest extends AbstractBaseOMTest {
 
     @SpringBootApplication
     @Configuration
     @EnableRedisDocumentRepositories(basePackageClasses = RealIntegrationTest.class)
-    static class TestConfig {
+    static class Config extends TestConfig {
         @Bean
         public IndexMigrationService indexMigrationService(RediSearchIndexer indexer,
                 ApplicationContext ctx) {

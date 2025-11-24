@@ -15,8 +15,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
-import org.springframework.boot.autoconfigure.gson.GsonBuilderCustomizer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
@@ -50,6 +48,7 @@ import com.redis.om.spring.ops.pds.CuckooFilterOperations;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.EntityStreamImpl;
 import com.redis.om.spring.serialization.gson.*;
+import com.redis.om.spring.serialization.gson.GsonBuilderCustomizer;
 import com.redis.om.spring.vectorize.Embedder;
 import com.redis.om.spring.vectorize.NoopEmbedder;
 
@@ -78,7 +77,7 @@ import redis.clients.jedis.bloom.CFReserveParams;
     proxyBeanMethods = false
 )
 @EnableConfigurationProperties(
-  { RedisProperties.class, RedisOMProperties.class }
+  { RedisOMProperties.class }
 )
 @EnableAspectJAutoProxy
 @ComponentScan(
@@ -167,6 +166,23 @@ public class RedisModulesConfiguration {
     builder.registerTypeAdapterFactory(MapBooleanTypeAdapterFactory.getInstance());
 
     return builder;
+  }
+
+  /**
+   * Creates the Gson instance from the configured GsonBuilder.
+   * <p>
+   * This bean provides the Gson instance used by various components for JSON
+   * serialization and deserialization throughout the application.
+   *
+   * @param gsonBuilder the configured Gson builder
+   * @return the Gson instance
+   */
+  @Bean
+  @ConditionalOnMissingBean
+  public com.google.gson.Gson gson(@Qualifier(
+    "omGsonBuilder"
+  ) GsonBuilder gsonBuilder) {
+    return gsonBuilder.create();
   }
 
   /**
