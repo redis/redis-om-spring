@@ -77,7 +77,8 @@ dependencies {
 	testImplementation 'org.mockito:mockito-core'
 	testImplementation "com.redis:testcontainers-redis:${testcontainersRedisVersion}"
 	testImplementation "com.karuslabs:elementary:${elementaryVersion}"
-	testImplementation "org.testcontainers:junit-jupiter"
+	testImplementation "org.testcontainers:junit-jupiter:1.20.4"
+	testImplementation 'org.springframework.boot:spring-boot-jackson2'
 
 	// Other
 	implementation 'com.fasterxml.jackson.core:jackson-databind'

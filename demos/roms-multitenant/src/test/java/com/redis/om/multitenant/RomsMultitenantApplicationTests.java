@@ -21,9 +21,18 @@ import com.redis.om.multitenant.services.TenantService;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.testcontainers.RedisStackContainer;
 
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Configuration;
+
 @Testcontainers
-@SpringBootTest
+@SpringBootTest(classes = RomsMultitenantApplicationTests.Config.class,
+    properties = { "spring.main.allow-bean-definition-overriding=true" })
 class RomsMultitenantApplicationTests {
+
+  @SpringBootApplication
+  @Configuration
+  static class Config extends TestConfig {
+  }
 
   @Container
   static RedisStackContainer redis = new RedisStackContainer(

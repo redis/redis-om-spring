@@ -14,12 +14,12 @@ import java.util.stream.StreamSupport;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.core.PropertyPath;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.geo.Point;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
-import org.springframework.data.mapping.PropertyPath;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.convert.RedisData;
@@ -893,6 +893,13 @@ public class RedisEnhancedQuery implements RepositoryQuery {
 
       while (iterator.hasNext()) {
         Parameter p = iterator.next();
+
+        // Skip special parameters like Pageable, Sort, etc.
+        if (p.isSpecialParameter()) {
+          index++;
+          continue;
+        }
+
         Optional<String> maybeKey = p.getName();
         String key;
         if (maybeKey.isPresent()) {
