@@ -9,11 +9,11 @@ This guide will help you set up Redis OM Spring in your project and configure it
 
 Redis OM Spring has the following requirements:
 
-* *Java 17+*: Redis OM Spring requires JDK 17 or newer
-* *Spring Boot 3.0+*: Built on Spring Framework 6.0.11+
+* *Java 21+*: Redis OM Spring requires JDK 21 or newer
+* *Spring Boot 4.0+*: Built on Spring Framework 7.0.x
 * *Redis 8.0.0+*: Requires Redis with JSON and Query Engine capabilities
-* *Jedis 5.2.0+* (included): Redis OM Spring uses Jedis as its Redis client
-* *Spring Data Redis 3.4.1+* (included): Built on Spring Data Redis
+* *Jedis 7.0.0+* (included): Redis OM Spring uses Jedis as its Redis client
+* *Spring Data Redis 4.0.0+* (included): Built on Spring Data Redis
 
 == Setting up Redis
 
@@ -68,8 +68,8 @@ If you're starting a new project, you can create a basic Spring Boot application
 2. Select:
    * Project: Maven or Gradle
    * Language: Java
-   * Spring Boot: 3.0.0+
-   * Java: 17+
+   * Spring Boot: 4.0.0+
+   * Java: 21+
 
 3. Generate and download the project
 
@@ -85,14 +85,14 @@ Add the dependency to your `pom.xml`:
 <dependency>
   <groupId>com.redis.om</groupId>
   <artifactId>redis-om-spring</artifactId>
-  <version>1.0.0-RC2</version>
+  <version>2.0.0</version>
 </dependency>
 
 <!-- Optional: AI module for vector embeddings -->
 <dependency>
   <groupId>com.redis.om</groupId>
   <artifactId>redis-om-spring-ai</artifactId>
-  <version>1.0.0-RC2</version>
+  <version>2.0.0</version>
 </dependency>
 ----
 
@@ -113,7 +113,7 @@ Redis OM Spring uses code generation to create metamodels. If you encounter issu
       <path>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-configuration-processor</artifactId>
-        <version>3.3.0</version>
+        <version>4.0.0</version>
       </path>
       <path>
         <groupId>org.projectlombok</groupId>
@@ -123,7 +123,7 @@ Redis OM Spring uses code generation to create metamodels. If you encounter issu
       <path>
         <groupId>com.redis.om</groupId>
         <artifactId>redis-om-spring</artifactId>
-        <version>1.0.0-RC2</version>
+        <version>2.0.0</version>
       </path>
     </annotationProcessorPaths>
   </configuration>
@@ -146,7 +146,7 @@ To use SNAPSHOT releases, add the snapshots repository to your `pom.xml`:
 <dependency>
   <groupId>com.redis.om</groupId>
   <artifactId>redis-om-spring</artifactId>
-  <version>1.0.0-RC4-SNAPSHOT</version>
+  <version>2.0.0-SNAPSHOT</version>
 </dependency>
 ----
 
@@ -157,7 +157,7 @@ Add the dependency to your `build.gradle`:
 [source,groovy]
 ----
 ext {
-  redisOmVersion = '1.0.0-RC2'
+  redisOmVersion = '2.0.0'
 }
 
 dependencies {
@@ -217,7 +217,7 @@ repositories {
 }
 
 ext {
-  redisOmVersion = '1.0.0-RC4-SNAPSHOT'
+  redisOmVersion = '2.0.0-SNAPSHOT'
 }
 ----
 

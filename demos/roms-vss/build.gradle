@@ -54,6 +54,8 @@ dependencies {
 
 	// Test dependencies
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation "com.redis:testcontainers-redis:${testcontainersRedisVersion}"
+	testImplementation "org.testcontainers:junit-jupiter:1.20.4"
 }
 
 // Use -parameters flag for Spring

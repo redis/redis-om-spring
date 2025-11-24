@@ -71,7 +71,7 @@ dependencies {
 	testImplementation 'org.assertj:assertj-core'
 	testImplementation 'org.mockito:mockito-core'
 	testImplementation "com.redis:testcontainers-redis:${testcontainersRedisVersion}"
-	testImplementation "org.testcontainers:junit-jupiter"
+	testImplementation "org.testcontainers:junit-jupiter:1.20.4"
 
 	// Optional dependencies used by some demos
 	implementation 'com.github.javafaker:javafaker:1.0.2'

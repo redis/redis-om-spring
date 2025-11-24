@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Disabled;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
+import org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -24,7 +24,7 @@ import jakarta.annotation.PostConstruct;
 
 @TestConfiguration
 @AutoConfigureAfter(
-  RedisAutoConfiguration.class
+  DataRedisAutoConfiguration.class
 )
 @Testcontainers
 @Disabled(
