@@ -853,7 +853,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
       boolean fieldIsIndexed = (field.getAnnotation(Indexed.class) != null) || (field.getAnnotation(
           Searchable.class) != null) || (field.getAnnotation(NumericIndexed.class) != null) || (field.getAnnotation(
               TagIndexed.class) != null) || (field.getAnnotation(TextIndexed.class) != null) || (field.getAnnotation(
-                  GeoIndexed.class) != null);
+                  GeoIndexed.class) != null) || (field.getAnnotation(VectorIndexed.class) != null);
 
       // Skip @Id fields and @Reference fields (to avoid infinite recursion)
       boolean isIdField = field.getAnnotation(Id.class) != null;
