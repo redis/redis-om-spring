@@ -1,5 +1,9 @@
 package com.redis.om.spring.fixtures.document.model;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 import org.springframework.data.annotation.Id;
 
 import com.redis.om.spring.annotations.Document;
@@ -21,6 +25,8 @@ import lombok.*;
  * - @TagIndexed with indexMissing/indexEmpty
  * - @NumericIndexed with sortable
  * - @Indexed on Boolean
+ * - @Indexed on Date/time types (LocalDate, LocalDateTime)
+ * - @Indexed on UUID
  */
 @Data
 @RequiredArgsConstructor(staticName = "of")
@@ -47,4 +53,13 @@ public class Owner {
 
   @Indexed(sortable = true, indexMissing = true, indexEmpty = true)
   private Boolean active;
+
+  @Indexed(sortable = true)
+  private LocalDate birthDate;
+
+  @Indexed(sortable = true)
+  private LocalDateTime createdAt;
+
+  @Indexed
+  private UUID externalId;
 }
