@@ -244,4 +244,75 @@ class ReferenceIndexedSubfieldsTest extends AbstractBaseDocumentTest {
       assertThat(value).as("Field %s should have a non-null value", fieldName).isNotNull();
     }
   }
+
+  // ==================================================================================
+  // Tests for Date/time and UUID types (PR review feedback)
+  // ==================================================================================
+
+  /**
+   * Test that the metamodel generates OWNER_BIRTH_DATE field for @Indexed LocalDate fields.
+   */
+  @Test
+  void testMetamodelGeneratesOwnerBirthDateField() throws Exception {
+    Class<?> metamodelClass = Class.forName("com.redis.om.spring.fixtures.document.model.RefVehicle$");
+
+    // Check that the static field OWNER_BIRTH_DATE exists (from @Indexed LocalDate)
+    Field ownerBirthDateField = metamodelClass.getDeclaredField("OWNER_BIRTH_DATE");
+    assertThat(ownerBirthDateField).isNotNull();
+
+    Object ownerBirthDateValue = ownerBirthDateField.get(null);
+    assertThat(ownerBirthDateValue).isNotNull();
+  }
+
+  /**
+   * Test that the metamodel generates OWNER_CREATED_AT field for @Indexed LocalDateTime fields.
+   */
+  @Test
+  void testMetamodelGeneratesOwnerCreatedAtField() throws Exception {
+    Class<?> metamodelClass = Class.forName("com.redis.om.spring.fixtures.document.model.RefVehicle$");
+
+    // Check that the static field OWNER_CREATED_AT exists (from @Indexed LocalDateTime)
+    Field ownerCreatedAtField = metamodelClass.getDeclaredField("OWNER_CREATED_AT");
+    assertThat(ownerCreatedAtField).isNotNull();
+
+    Object ownerCreatedAtValue = ownerCreatedAtField.get(null);
+    assertThat(ownerCreatedAtValue).isNotNull();
+  }
+
+  /**
+   * Test that the metamodel generates OWNER_EXTERNAL_ID field for @Indexed UUID fields.
+   */
+  @Test
+  void testMetamodelGeneratesOwnerExternalIdField() throws Exception {
+    Class<?> metamodelClass = Class.forName("com.redis.om.spring.fixtures.document.model.RefVehicle$");
+
+    // Check that the static field OWNER_EXTERNAL_ID exists (from @Indexed UUID)
+    Field ownerExternalIdField = metamodelClass.getDeclaredField("OWNER_EXTERNAL_ID");
+    assertThat(ownerExternalIdField).isNotNull();
+
+    Object ownerExternalIdValue = ownerExternalIdField.get(null);
+    assertThat(ownerExternalIdValue).isNotNull();
+  }
+
+  /**
+   * Test that all Date/time and UUID fields from Owner are generated in RefVehicle$.
+   */
+  @Test
+  void testAllDateTimeAndUuidFieldsAreGenerated() throws Exception {
+    Class<?> metamodelClass = Class.forName("com.redis.om.spring.fixtures.document.model.RefVehicle$");
+
+    // Verify Date/time and UUID fields exist
+    String[] expectedFields = {
+        "OWNER_BIRTH_DATE",   // @Indexed LocalDate
+        "OWNER_CREATED_AT",   // @Indexed LocalDateTime
+        "OWNER_EXTERNAL_ID"   // @Indexed UUID
+    };
+
+    for (String fieldName : expectedFields) {
+      Field field = metamodelClass.getDeclaredField(fieldName);
+      assertThat(field).as("Field %s should exist", fieldName).isNotNull();
+      Object value = field.get(null);
+      assertThat(value).as("Field %s should have a non-null value", fieldName).isNotNull();
+    }
+  }
 }
