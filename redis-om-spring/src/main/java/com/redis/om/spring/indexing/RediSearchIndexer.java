@@ -1320,6 +1320,8 @@ public class RediSearchIndexer {
         NumericIndexed.class));
     referencedFields.addAll(com.redis.om.spring.util.ObjectUtils.getFieldsWithAnnotation(referencedType,
         GeoIndexed.class));
+    referencedFields.addAll(com.redis.om.spring.util.ObjectUtils.getFieldsWithAnnotation(referencedType,
+        VectorIndexed.class));
     // Remove duplicates (a field might have multiple annotations)
     referencedFields = referencedFields.stream().distinct().toList();
 
@@ -1415,8 +1417,9 @@ public class RediSearchIndexer {
       NumericIndexed numericIndexed = subField.getAnnotation(NumericIndexed.class);
       GeoIndexed geoIndexed = subField.getAnnotation(GeoIndexed.class);
 
-      if (tagIndexed != null || (indexed != null && CharSequence.class.isAssignableFrom(subFieldType))) {
-        // Tag field for strings
+      if (tagIndexed != null || (indexed != null && (CharSequence.class.isAssignableFrom(
+          subFieldType) || subFieldType == java.util.UUID.class || subFieldType == com.github.f4b6a3.ulid.Ulid.class))) {
+        // Tag field for strings, UUID, and Ulid
         String separatorStr = tagIndexed != null ?
             tagIndexed.separator() :
             (indexed != null ? indexed.separator() : "|");
@@ -1436,7 +1439,8 @@ public class RediSearchIndexer {
           tagField.indexEmpty();
         }
         fields.add(SearchField.of(subField, tagField));
-      } else if (numericIndexed != null || (indexed != null && Number.class.isAssignableFrom(subFieldType))) {
+      } else if (numericIndexed != null || (indexed != null && (Number.class.isAssignableFrom(
+          subFieldType) || subFieldType == java.time.LocalDateTime.class || subFieldType == java.time.LocalDate.class || subFieldType == java.util.Date.class || subFieldType == java.time.Instant.class || subFieldType == java.time.OffsetDateTime.class))) {
         // Numeric field
         NumericField numField = NumericField.of(fieldName);
         if ((numericIndexed != null && numericIndexed.sortable()) || (indexed != null && indexed.sortable())) {
@@ -1482,6 +1486,48 @@ public class RediSearchIndexer {
           tagField.indexEmpty();
         }
         fields.add(SearchField.of(subField, tagField));
+      }
+
+      // Handle @VectorIndexed fields
+      VectorIndexed vectorIndexed = subField.getAnnotation(VectorIndexed.class);
+      if (vectorIndexed != null) {
+        VectorField.VectorAlgorithm algorithm = vectorIndexed.algorithm();
+        VectorType vectorType = vectorIndexed.type();
+        int dimension = vectorIndexed.dimension();
+        DistanceMetric distanceMetric = vectorIndexed.distanceMetric();
+        int initialCap = vectorIndexed.initialCapacity();
+
+        Map<String, Object> vectorAttrs = new HashMap<>();
+        vectorAttrs.put("TYPE", vectorType.toString());
+        vectorAttrs.put("DIM", dimension);
+        vectorAttrs.put("DISTANCE_METRIC", distanceMetric.toString());
+        if (initialCap > 0) {
+          vectorAttrs.put("INITIAL_CAP", initialCap);
+        }
+
+        if (algorithm == VectorField.VectorAlgorithm.HNSW) {
+          int m = vectorIndexed.m();
+          int efConstruction = vectorIndexed.efConstruction();
+          int efRuntime = vectorIndexed.efRuntime();
+          double epsilon = vectorIndexed.epsilon();
+          if (m > 0)
+            vectorAttrs.put("M", m);
+          if (efConstruction > 0)
+            vectorAttrs.put("EF_CONSTRUCTION", efConstruction);
+          if (efRuntime > 0)
+            vectorAttrs.put("EF_RUNTIME", efRuntime);
+          if (epsilon > 0)
+            vectorAttrs.put("EPSILON", epsilon);
+        } else if (algorithm == VectorField.VectorAlgorithm.FLAT) {
+          int blockSize = vectorIndexed.blockSize();
+          if (blockSize > 0)
+            vectorAttrs.put("BLOCK_SIZE", blockSize);
+        }
+
+        VectorField vectorField = VectorField.builder().fieldName(fieldName).algorithm(algorithm).attributes(
+            vectorAttrs).build();
+
+        fields.add(SearchField.of(subField, vectorField));
       }
     }
 
