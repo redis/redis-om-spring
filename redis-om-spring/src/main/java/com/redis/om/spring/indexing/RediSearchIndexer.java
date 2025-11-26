@@ -17,6 +17,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.ApplicationContext;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Reference;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.core.RedisHash;
@@ -481,6 +482,10 @@ public class RediSearchIndexer {
         logger.debug("🪲Found @Reference field " + field.getName() + " in " + field.getDeclaringClass()
             .getSimpleName());
         createIndexedFieldForReferenceIdField(field, isDocument).ifPresent(fields::add);
+
+        // Also create index fields for the referenced entity's indexed/searchable fields
+        // This enables searching like RefVehicle$.OWNER_NAME.eq("John")
+        createIndexedFieldsForReferencedEntity(field, isDocument, prefix).forEach(fields::add);
       } else if (indexed.schemaFieldType() == SchemaFieldType.AUTODETECT) {
         //
         // Any Character class, Boolean or Enum with AUTODETECT -> Tag Search Field
@@ -1279,6 +1284,254 @@ public class RediSearchIndexer {
     return Optional.of(SearchField.of(referenceIdField, isDocument ?
         TagField.of(fieldName).separator('|') :
         TagField.of(fieldName).separator('|').sortable()));
+  }
+
+  /**
+   * Creates index fields for the indexed/searchable fields of a referenced entity.
+   * This enables searching on referenced entity properties, e.g., RefVehicle$.OWNER_NAME.eq("John").
+   *
+   * @param referenceField the @Reference field
+   * @param isDocument     whether this is a JSON document (vs Hash)
+   * @param prefix         the field prefix
+   * @return list of search fields for the referenced entity's indexed properties
+   */
+  private List<SearchField> createIndexedFieldsForReferencedEntity(java.lang.reflect.Field referenceField,
+      boolean isDocument, String prefix) {
+
+    List<SearchField> fields = new ArrayList<>();
+    Class<?> referencedType = referenceField.getType();
+    String referenceFieldName = referenceField.getName();
+
+    logger.debug(
+        "Processing indexed subfields for @Reference field " + referenceFieldName + " of type " + referencedType
+            .getSimpleName());
+
+    // Get all fields from the referenced entity that have indexing annotations
+    List<java.lang.reflect.Field> referencedFields = new ArrayList<>();
+    referencedFields.addAll(com.redis.om.spring.util.ObjectUtils.getFieldsWithAnnotation(referencedType,
+        Indexed.class));
+    referencedFields.addAll(com.redis.om.spring.util.ObjectUtils.getFieldsWithAnnotation(referencedType,
+        Searchable.class));
+    referencedFields.addAll(com.redis.om.spring.util.ObjectUtils.getFieldsWithAnnotation(referencedType,
+        TagIndexed.class));
+    referencedFields.addAll(com.redis.om.spring.util.ObjectUtils.getFieldsWithAnnotation(referencedType,
+        TextIndexed.class));
+    referencedFields.addAll(com.redis.om.spring.util.ObjectUtils.getFieldsWithAnnotation(referencedType,
+        NumericIndexed.class));
+    referencedFields.addAll(com.redis.om.spring.util.ObjectUtils.getFieldsWithAnnotation(referencedType,
+        GeoIndexed.class));
+    referencedFields.addAll(com.redis.om.spring.util.ObjectUtils.getFieldsWithAnnotation(referencedType,
+        VectorIndexed.class));
+    // Remove duplicates (a field might have multiple annotations)
+    referencedFields = referencedFields.stream().distinct().toList();
+
+    for (java.lang.reflect.Field subField : referencedFields) {
+      // Skip @Id fields - they're handled separately by createIndexedFieldForReferenceIdField
+      if (subField.isAnnotationPresent(Id.class)) {
+        continue;
+      }
+      // Skip @Reference fields to avoid infinite recursion
+      if (subField.isAnnotationPresent(Reference.class)) {
+        continue;
+      }
+
+      Class<?> subFieldType = ClassUtils.resolvePrimitiveIfNecessary(subField.getType());
+      String subFieldName = subField.getName();
+
+      // Build the nested field path: referenceField.subField
+      String fieldPath = isDocument ?
+          getFieldPrefix(prefix, true) + referenceFieldName + "." + subFieldName :
+          referenceFieldName + "_" + subFieldName;
+
+      // Build the alias: referenceField_subField
+      String alias = referenceFieldName + "_" + subFieldName;
+
+      FieldName fieldName = FieldName.of(fieldPath).as(alias);
+
+      logger.debug(
+          "Creating index field for " + referenceFieldName + "." + subFieldName + " with path " + fieldPath + " and alias " + alias);
+
+      // Handle @Searchable fields (full-text search)
+      Searchable searchable = subField.getAnnotation(Searchable.class);
+      if (searchable != null) {
+        TextField textField = TextField.of(fieldName);
+        if (searchable.weight() != 1.0) {
+          textField.weight(searchable.weight());
+        }
+        if (searchable.sortable()) {
+          textField.sortable();
+        }
+        if (searchable.nostem()) {
+          textField.noStem();
+        }
+        if (searchable.noindex()) {
+          textField.noIndex();
+        }
+        String phonetic = searchable.phonetic();
+        if (phonetic != null && !phonetic.isEmpty()) {
+          textField.phonetic(phonetic);
+        }
+        if (searchable.indexMissing()) {
+          textField.indexMissing();
+        }
+        if (searchable.indexEmpty()) {
+          textField.indexEmpty();
+        }
+        fields.add(SearchField.of(subField, textField));
+        continue;
+      }
+
+      // Handle @TextIndexed fields
+      TextIndexed textIndexed = subField.getAnnotation(TextIndexed.class);
+      if (textIndexed != null) {
+        TextField textField = TextField.of(fieldName);
+        if (textIndexed.weight() != 1.0) {
+          textField.weight(textIndexed.weight());
+        }
+        if (textIndexed.sortable()) {
+          textField.sortable();
+        }
+        if (textIndexed.nostem()) {
+          textField.noStem();
+        }
+        if (textIndexed.noindex()) {
+          textField.noIndex();
+        }
+        String phonetic = textIndexed.phonetic();
+        if (phonetic != null && !phonetic.isEmpty()) {
+          textField.phonetic(phonetic);
+        }
+        if (textIndexed.indexMissing()) {
+          textField.indexMissing();
+        }
+        if (textIndexed.indexEmpty()) {
+          textField.indexEmpty();
+        }
+        fields.add(SearchField.of(subField, textField));
+        continue;
+      }
+
+      // Handle @Indexed or @TagIndexed fields
+      Indexed indexed = subField.getAnnotation(Indexed.class);
+      TagIndexed tagIndexed = subField.getAnnotation(TagIndexed.class);
+      NumericIndexed numericIndexed = subField.getAnnotation(NumericIndexed.class);
+      GeoIndexed geoIndexed = subField.getAnnotation(GeoIndexed.class);
+
+      if (tagIndexed != null || (indexed != null && (CharSequence.class.isAssignableFrom(
+          subFieldType) || subFieldType == java.util.UUID.class || subFieldType == com.github.f4b6a3.ulid.Ulid.class))) {
+        // Tag field for strings, UUID, and Ulid
+        String separatorStr = tagIndexed != null ?
+            tagIndexed.separator() :
+            (indexed != null ? indexed.separator() : "|");
+        char separator = separatorStr != null && !separatorStr.isEmpty() ? separatorStr.charAt(0) : '|';
+        TagField tagField = TagField.of(fieldName).separator(separator);
+        if (indexed != null && indexed.sortable()) {
+          tagField.sortable();
+        }
+        if (tagIndexed != null && tagIndexed.indexMissing()) {
+          tagField.indexMissing();
+        } else if (indexed != null && indexed.indexMissing()) {
+          tagField.indexMissing();
+        }
+        if (tagIndexed != null && tagIndexed.indexEmpty()) {
+          tagField.indexEmpty();
+        } else if (indexed != null && indexed.indexEmpty()) {
+          tagField.indexEmpty();
+        }
+        fields.add(SearchField.of(subField, tagField));
+      } else if (numericIndexed != null || (indexed != null && (Number.class.isAssignableFrom(
+          subFieldType) || subFieldType == java.time.LocalDateTime.class || subFieldType == java.time.LocalDate.class || subFieldType == java.util.Date.class || subFieldType == java.time.Instant.class || subFieldType == java.time.OffsetDateTime.class))) {
+        // Numeric field
+        NumericField numField = NumericField.of(fieldName);
+        if ((numericIndexed != null && numericIndexed.sortable()) || (indexed != null && indexed.sortable())) {
+          numField.sortable();
+        }
+        if ((numericIndexed != null && numericIndexed.noindex()) || (indexed != null && indexed.noindex())) {
+          numField.noIndex();
+        }
+        if (indexed != null && indexed.indexMissing()) {
+          numField.indexMissing();
+        }
+        // Note: NumericField doesn't support indexEmpty() in current Jedis version
+        fields.add(SearchField.of(subField, numField));
+      } else if (geoIndexed != null || (indexed != null && Point.class.isAssignableFrom(subFieldType))) {
+        // Geo field
+        GeoField geoField = GeoField.of(fieldName);
+        fields.add(SearchField.of(subField, geoField));
+      } else if (indexed != null && subFieldType.isEnum()) {
+        // Enum as tag field
+        String separatorStr = indexed.separator();
+        char separator = separatorStr != null && !separatorStr.isEmpty() ? separatorStr.charAt(0) : '|';
+        TagField tagField = TagField.of(fieldName).separator(separator);
+        if (indexed.sortable()) {
+          tagField.sortable();
+        }
+        if (indexed.indexMissing()) {
+          tagField.indexMissing();
+        }
+        if (indexed.indexEmpty()) {
+          tagField.indexEmpty();
+        }
+        fields.add(SearchField.of(subField, tagField));
+      } else if (indexed != null && (subFieldType == Boolean.class || subFieldType == boolean.class)) {
+        // Boolean as tag field
+        TagField tagField = TagField.of(fieldName);
+        if (indexed.sortable()) {
+          tagField.sortable();
+        }
+        if (indexed.indexMissing()) {
+          tagField.indexMissing();
+        }
+        if (indexed.indexEmpty()) {
+          tagField.indexEmpty();
+        }
+        fields.add(SearchField.of(subField, tagField));
+      }
+
+      // Handle @VectorIndexed fields
+      VectorIndexed vectorIndexed = subField.getAnnotation(VectorIndexed.class);
+      if (vectorIndexed != null) {
+        VectorField.VectorAlgorithm algorithm = vectorIndexed.algorithm();
+        VectorType vectorType = vectorIndexed.type();
+        int dimension = vectorIndexed.dimension();
+        DistanceMetric distanceMetric = vectorIndexed.distanceMetric();
+        int initialCap = vectorIndexed.initialCapacity();
+
+        Map<String, Object> vectorAttrs = new HashMap<>();
+        vectorAttrs.put("TYPE", vectorType.toString());
+        vectorAttrs.put("DIM", dimension);
+        vectorAttrs.put("DISTANCE_METRIC", distanceMetric.toString());
+        if (initialCap > 0) {
+          vectorAttrs.put("INITIAL_CAP", initialCap);
+        }
+
+        if (algorithm == VectorField.VectorAlgorithm.HNSW) {
+          int m = vectorIndexed.m();
+          int efConstruction = vectorIndexed.efConstruction();
+          int efRuntime = vectorIndexed.efRuntime();
+          double epsilon = vectorIndexed.epsilon();
+          if (m > 0)
+            vectorAttrs.put("M", m);
+          if (efConstruction > 0)
+            vectorAttrs.put("EF_CONSTRUCTION", efConstruction);
+          if (efRuntime > 0)
+            vectorAttrs.put("EF_RUNTIME", efRuntime);
+          if (epsilon > 0)
+            vectorAttrs.put("EPSILON", epsilon);
+        } else if (algorithm == VectorField.VectorAlgorithm.FLAT) {
+          int blockSize = vectorIndexed.blockSize();
+          if (blockSize > 0)
+            vectorAttrs.put("BLOCK_SIZE", blockSize);
+        }
+
+        VectorField vectorField = VectorField.builder().fieldName(fieldName).algorithm(algorithm).attributes(
+            vectorAttrs).build();
+
+        fields.add(SearchField.of(subField, vectorField));
+      }
+    }
+
+    return fields;
   }
 
   private FTCreateParams createIndexDefinition(Class<?> cl, IndexDataType idxType) {

@@ -347,6 +347,10 @@ public final class MetamodelGenerator extends AbstractProcessor {
       //
       targetInterceptor = ReferenceField.class;
       searchSchemaAlias = indexed.alias();
+
+      // Also process indexed/searchable fields from the referenced entity
+      // This generates fields like OWNER_NAME, OWNER_EMAIL for a @Reference @Indexed Owner owner field
+      fieldMetamodelSpec.addAll(processReferencedEntityIndexableFields(entity, chain));
     } else if (searchable != null || textIndexed != null) {
       //
       // @Searchable/@TextIndexed: Field is a full-text field
@@ -808,6 +812,60 @@ public final class MetamodelGenerator extends AbstractProcessor {
         List<Element> newChain = new ArrayList<>(chain);
         newChain.add(field);
         fieldMetamodels.addAll(processFieldMetamodel(entity, entityFieldName, newChain));
+      }
+    });
+
+    return fieldMetamodels;
+  }
+
+  /**
+   * Process indexed and searchable fields from a referenced entity.
+   * This generates metamodel fields like OWNER_NAME, OWNER_EMAIL when a field
+   * is annotated with both @Reference and @Indexed.
+   *
+   * @param entity the parent entity type
+   * @param chain  the chain of elements from the root entity to the reference field
+   * @return list of field metamodel specifications for the referenced entity's indexed fields
+   */
+  private List<Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock>> processReferencedEntityIndexableFields(
+      TypeName entity, List<Element> chain) {
+    Element referenceField = chain.get(chain.size() - 1);
+    TypeMirror typeMirror = referenceField.asType();
+
+    // Get the referenced entity type element
+    Element referencedEntity;
+    if (typeMirror instanceof DeclaredType declaredType) {
+      referencedEntity = declaredType.asElement();
+    } else {
+      return Collections.emptyList();
+    }
+
+    List<Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock>> fieldMetamodels = new ArrayList<>();
+
+    messager.printMessage(Diagnostic.Kind.NOTE, "Processing @Reference field " + referenceField
+        .getSimpleName() + " of type " + referencedEntity);
+
+    // Get all instance fields from the referenced entity
+    Map<? extends Element, String> enclosedFields = getInstanceFields(referencedEntity);
+
+    enclosedFields.forEach((field, getter) -> {
+      // Check if the field has any indexing annotation
+      boolean fieldIsIndexed = (field.getAnnotation(Indexed.class) != null) || (field.getAnnotation(
+          Searchable.class) != null) || (field.getAnnotation(NumericIndexed.class) != null) || (field.getAnnotation(
+              TagIndexed.class) != null) || (field.getAnnotation(TextIndexed.class) != null) || (field.getAnnotation(
+                  GeoIndexed.class) != null) || (field.getAnnotation(VectorIndexed.class) != null);
+
+      // Skip @Id fields and @Reference fields (to avoid infinite recursion)
+      boolean isIdField = field.getAnnotation(Id.class) != null;
+      boolean isReferenceField = field.getAnnotation(Reference.class) != null;
+
+      if (fieldIsIndexed && !isIdField && !isReferenceField) {
+        // Create a new chain that includes the reference field and the subfield
+        List<Element> newChain = new ArrayList<>(chain);
+        newChain.add(field);
+
+        // Process the subfield
+        fieldMetamodels.addAll(processFieldMetamodel(entity, entity.toString(), newChain));
       }
     });
 
