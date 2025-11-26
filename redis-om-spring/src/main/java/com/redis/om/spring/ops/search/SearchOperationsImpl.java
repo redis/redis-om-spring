@@ -135,7 +135,7 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
           String[] keyParts = key.split(":");
           String payLoadKey = String.format("sugg:payload:%s:%s", keyParts[keyParts.length - 2],
               keyParts[keyParts.length - 1]);
-          Object payload = template.opsForHash().get(payLoadKey, suggestion);
+          Object payload = template.opsForHash().get(payLoadKey, suggestion.getElement());
           String json = payload != null ? payload.toString() : "{}";
           Map<String, Object> payloadMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
           }.getType());

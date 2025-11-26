@@ -98,4 +98,33 @@ class AutoCompleteTest extends AbstractBaseDocumentTest {
         0.27));
   }
 
+  /**
+   * Test for Issue #673: ClassCastException when using withScore() and withPayload() together.
+   *
+   * When both options are enabled, the code incorrectly passes the Tuple object
+   * (instead of its string element) to the hash lookup for payload retrieval.
+   *
+   * @see <a href="https://github.com/redis/redis-om-spring/issues/673">Issue #673</a>
+   */
+  @Test
+  void testGetAutocompleteSuggestionsWithScoresAndPayload() {
+    Map<String, Object> columbusPayload = Map.of("code", "CMH", "state", "OH");
+    Map<String, Object> columbiaPayload = Map.of("code", "CAE", "state", "SC");
+    Map<String, Object> coloradoSpringsPayload = Map.of("code", "COS", "state", "CO");
+
+    // This combination caused ClassCastException before the fix:
+    // "class redis.clients.jedis.resps.Tuple cannot be cast to class java.lang.String"
+    List<Suggestion> suggestions = repository.autoCompleteName("col",
+        AutoCompleteOptions.get().withScore().withPayload());
+
+    List<String> suggestionsString = suggestions.stream().map(Suggestion::getValue).collect(Collectors.toList());
+    List<Double> scores = suggestions.stream().map(Suggestion::getScore).collect(Collectors.toList());
+    List<Map<String, Object>> payloads = suggestions.stream().map(Suggestion::getPayload).collect(Collectors.toList());
+
+    assertThat(suggestionsString).containsAll(List.of("Columbia", "Columbus", "Colorado Springs"));
+    assertThat(scores).usingComparatorForType(new DoubleComparator(0.1), Double.class).containsAll(List.of(0.41, 0.41,
+        0.27));
+    assertThat(payloads).hasSize(3).contains(columbusPayload, columbiaPayload, coloradoSpringsPayload);
+  }
+
 }
