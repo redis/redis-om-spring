@@ -36,6 +36,7 @@ import com.github.f4b6a3.ulid.Ulid;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.annotations.*;
 import com.redis.om.spring.indexing.RediSearchIndexer;
@@ -962,35 +963,19 @@ public class RediSearchQuery implements RepositoryQuery {
     } else {
       // Projection case - individual fields returned from Redis search optimization
       // When projection optimization is enabled, Redis returns individual fields instead of full JSON
-      Map<String, Object> fieldMap = new HashMap<>();
+      // Use Gson's JsonObject to properly handle JSON serialization including escaping and quoting
+      JsonObject jsonObject = new JsonObject();
+
       for (Entry<String, Object> entry : doc.getProperties()) {
         String fieldName = entry.getKey();
         Object fieldValue = entry.getValue();
 
+        String valueStr;
         if (fieldValue instanceof byte[]) {
-          // Convert byte array to string - this is the JSON representation from Redis
-          String stringValue = SafeEncoder.encode((byte[]) fieldValue);
-          fieldMap.put(fieldName, stringValue);
+          valueStr = SafeEncoder.encode((byte[]) fieldValue);
         } else {
-          fieldMap.put(fieldName, fieldValue);
+          valueStr = String.valueOf(fieldValue);
         }
-      }
-
-      // Build JSON manually to handle the different field formats from Redis search
-      StringBuilder jsonBuilder = new StringBuilder();
-      jsonBuilder.append("{");
-      boolean first = true;
-      for (Entry<String, Object> entry : fieldMap.entrySet()) {
-        if (!first) {
-          jsonBuilder.append(",");
-        }
-        first = false;
-
-        String fieldName = entry.getKey();
-        Object fieldValue = entry.getValue();
-        String valueStr = (String) fieldValue;
-
-        jsonBuilder.append("\"").append(fieldName).append("\":");
 
         // Check if this field is a Point type in the domain class
         boolean isPointField = false;
@@ -1006,31 +991,34 @@ public class RediSearchQuery implements RepositoryQuery {
         // Handle different types based on the raw value from Redis
         if (isPointField && valueStr.contains(",") && !valueStr.startsWith("\"")) {
           // Point field - stored as "lon,lat" in Redis, needs to be quoted for PointTypeAdapter
-          jsonBuilder.append("\"").append(valueStr).append("\"");
-        } else if (fieldName.equals("name") || (valueStr.startsWith("\"") && valueStr.endsWith("\""))) {
-          // String field - quote if not already quoted
-          if (valueStr.startsWith("\"") && valueStr.endsWith("\"")) {
-            jsonBuilder.append(valueStr);
-          } else {
-            jsonBuilder.append("\"").append(valueStr).append("\"");
-          }
+          jsonObject.addProperty(fieldName, valueStr);
+        } else if (valueStr.startsWith("\"") && valueStr.endsWith("\"")) {
+          // Already quoted string - remove quotes and add as property (Gson will re-quote)
+          jsonObject.addProperty(fieldName, valueStr.substring(1, valueStr.length() - 1));
         } else if (valueStr.equals("true") || valueStr.equals("false")) {
           // Boolean
-          jsonBuilder.append(valueStr);
+          jsonObject.addProperty(fieldName, Boolean.parseBoolean(valueStr));
         } else if (valueStr.equals("1") && fieldName.equals("active")) {
           // Special case for boolean stored as 1/0
-          jsonBuilder.append("true");
+          jsonObject.addProperty(fieldName, true);
         } else if (valueStr.equals("0") && fieldName.equals("active")) {
-          jsonBuilder.append("false");
+          jsonObject.addProperty(fieldName, false);
         } else {
-          // Number or other type - keep as is
-          jsonBuilder.append(valueStr);
+          // Try to parse as number, otherwise treat as string
+          try {
+            if (valueStr.contains(".")) {
+              jsonObject.addProperty(fieldName, Double.parseDouble(valueStr));
+            } else {
+              jsonObject.addProperty(fieldName, Long.parseLong(valueStr));
+            }
+          } catch (NumberFormatException e) {
+            // Not a number - treat as string (Gson will handle proper quoting and escaping)
+            jsonObject.addProperty(fieldName, valueStr);
+          }
         }
       }
-      jsonBuilder.append("}");
 
-      String jsonFromFields = jsonBuilder.toString();
-      entity = gsonInstance.fromJson(jsonFromFields, domainType);
+      entity = gsonInstance.fromJson(jsonObject, domainType);
     }
 
     return ObjectUtils.populateRedisKey(entity, doc.getId());
