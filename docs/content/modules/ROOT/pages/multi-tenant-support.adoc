@@ -67,7 +67,7 @@ public class TenantController {
 
 === SpEL-Based Index Names
 
-Use Spring Expression Language for dynamic index naming. Here's a working example from the `roms-multitenant` demo:
+Use Spring Expression Language for dynamic index naming and keyspace (key prefix) resolution. Here's a working example from the `roms-multitenant` demo:
 
 [source,java]
 ----
@@ -79,6 +79,7 @@ Use Spring Expression Language for dynamic index naming. Here's a working exampl
 @Document
 @IndexingOptions(
     indexName = "products_#{@tenantService.getCurrentTenant()}_idx",
+    keyPrefix = "#{@tenantService.getCurrentTenant()}:products:",
     creationMode = IndexCreationMode.SKIP_IF_EXIST
 )
 public class Product {
@@ -148,22 +149,18 @@ public class TenantService {
 }
 ----
 
-This pattern creates tenant-specific indexes dynamically:
+This pattern provides complete tenant isolation with both separate indexes and separate data storage:
 
-* For tenant "acme": Index `products_acme_idx`
-* For tenant "globex": Index `products_globex_idx`
+* For tenant "acme":
+** Index: `products_acme_idx`
+** Keys stored as: `acme:products:<id>`
+* For tenant "globex":
+** Index: `products_globex_idx`
+** Keys stored as: `globex:products:<id>`
 
-[IMPORTANT]
+[NOTE]
 ====
-The `indexName` attribute supports SpEL expressions that are evaluated dynamically at runtime. However, the `keyPrefix` attribute affects only the index configuration (what key prefix the index searches), not the actual key storage by Spring Data Redis.
-
-All documents are stored using Spring Data Redis's static keyspace (typically the fully qualified class name). For true data isolation where each tenant's data is stored with different keys, you would need to implement a custom `KeyspaceResolver` or use a tenant-aware ID strategy.
-
-The dynamic index naming feature is primarily useful for:
-
-* Creating separate search indexes per tenant (all searching the same keyspace)
-* Environment-specific indexes (dev, staging, production)
-* Region-specific or data-center-specific indexes
+Both `indexName` and `keyPrefix` attributes support SpEL expressions that are evaluated dynamically at runtime. The `keyPrefix` attribute controls both the index configuration (what key prefix the index searches) AND the actual key storage location for documents. This provides complete tenant data isolation.
 ====
 
 === Environment-Based Tenant Configuration

@@ -146,7 +146,9 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
 
     String stringId = validateKeyForWriting(id, item);
 
-    String key = createKeyAsString(keyspace, stringId);
+    // Resolve dynamic keyspace from @IndexingOptions if present
+    String resolvedKeyspace = resolveDynamicKeyspace(item.getClass(), keyspace);
+    String key = createKeyAsString(resolvedKeyspace, stringId);
 
     processVersion(key, item);
     auditor.processEntity(key, item);
@@ -178,7 +180,9 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
   @Override
   public <T> T get(Object id, String keyspace, Class<T> type) {
     String stringId = asStringValue(id);
-    String key = createKeyAsString(keyspace, stringId);
+    // Resolve dynamic keyspace from @IndexingOptions if present
+    String resolvedKeyspace = resolveDynamicKeyspace(type, keyspace);
+    String key = createKeyAsString(resolvedKeyspace, stringId);
     return get(key, type);
   }
 
@@ -289,9 +293,11 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       "unchecked"
     ) JSONOperations<String> ops = (JSONOperations<String>) redisJSONOperations;
     String stringId = asStringValue(id);
-    T entity = get(stringId, keyspace, type);
+    // Resolve dynamic keyspace from @IndexingOptions if present
+    String resolvedKeyspace = resolveDynamicKeyspace(type, keyspace);
+    T entity = get(stringId, resolvedKeyspace, type);
     if (entity != null) {
-      String key = createKeyAsString(keyspace, stringId);
+      String key = createKeyAsString(resolvedKeyspace, stringId);
       ops.del(key, Path2.ROOT_PATH);
     }
 
@@ -528,6 +534,27 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       id = filter.filter(id.toString());
     }
     return String.format(format, keyspace, id);
+  }
+
+  /**
+   * Resolves the dynamic keyspace from @IndexingOptions if present.
+   * If the entity class has @IndexingOptions with a SpEL keyPrefix expression,
+   * the expression is evaluated at runtime to determine the actual keyspace.
+   *
+   * @param entityClass     the entity class to check for @IndexingOptions
+   * @param defaultKeyspace the default keyspace to use if no dynamic keyspace is configured
+   * @return the resolved keyspace (either dynamic or default)
+   */
+  private String resolveDynamicKeyspace(Class<?> entityClass, String defaultKeyspace) {
+    if (entityClass == null) {
+      return defaultKeyspace;
+    }
+    // Use RediSearchIndexer to resolve dynamic keyspace from @IndexingOptions
+    String dynamicKeyspace = indexer.getKeyspaceForEntityClass(entityClass);
+    if (dynamicKeyspace != null && !dynamicKeyspace.isBlank()) {
+      return dynamicKeyspace;
+    }
+    return defaultKeyspace;
   }
 
   private String validateKeyForWriting(Object id, Object item) {
