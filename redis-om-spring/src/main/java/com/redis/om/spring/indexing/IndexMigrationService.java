@@ -318,7 +318,12 @@ public class IndexMigrationService {
     Matcher matcher = VERSION_PATTERN.matcher(currentIndexName);
 
     if (matcher.find()) {
-      return Integer.parseInt(matcher.group(1));
+      try {
+        return Integer.parseInt(matcher.group(1));
+      } catch (NumberFormatException e) {
+        logger.warn("Failed to parse index version from name '{}': {}", currentIndexName, matcher.group(1));
+        return 0;
+      }
     }
 
     return 0; // No version found, assume version 0
