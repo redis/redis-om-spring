@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.annotation.DirtiesContext;
 
+import com.google.gson.Gson;
 import com.redis.om.spring.AbstractBaseOMTest;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
@@ -26,6 +27,7 @@ import com.redis.om.spring.ops.search.SearchOperations;
 
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.SearchResult;
+import redis.clients.jedis.util.SafeEncoder;
 
 /**
  * Integration test that demonstrates actual multi-tenant index isolation
@@ -54,6 +56,8 @@ public class MultiTenantIndexIsolationIntegrationTest extends AbstractBaseOMTest
 
     @Autowired
     private RedisModulesOperations<String> modulesOperations;
+
+    private final Gson gson = new Gson();
 
     @BeforeEach
     void cleanup() {
@@ -291,14 +295,18 @@ public class MultiTenantIndexIsolationIntegrationTest extends AbstractBaseOMTest
         // Search for "Apple" in Company A - should find iPhone only
         SearchResult resultA = searchOpsA.search(new Query("Apple"));
         assertThat(resultA.getTotalResults()).isEqualTo(1);
-        String nameA = (String) resultA.getDocuments().get(0).get("$.name");
-        assertThat(nameA).contains("iPhone");
+        MultiTenantProduct productA = gson.fromJson(
+            SafeEncoder.encode((byte[]) resultA.getDocuments().get(0).get("$")),
+            MultiTenantProduct.class);
+        assertThat(productA.getName()).contains("iPhone");
 
         // Search for "Apple" in Company B - should find MacBook only
         SearchResult resultB = searchOpsB.search(new Query("Apple"));
         assertThat(resultB.getTotalResults()).isEqualTo(1);
-        String nameB = (String) resultB.getDocuments().get(0).get("$.name");
-        assertThat(nameB).contains("MacBook");
+        MultiTenantProduct productB = gson.fromJson(
+            SafeEncoder.encode((byte[]) resultB.getDocuments().get(0).get("$")),
+            MultiTenantProduct.class);
+        assertThat(productB.getName()).contains("MacBook");
 
         // Search for "Samsung" in Company B - should find nothing
         SearchResult resultBSamsung = searchOpsB.search(new Query("Samsung"));
