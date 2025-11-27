@@ -36,6 +36,12 @@ public class IndexMigrationService {
     FAILED
   }
 
+  /**
+   * Constructs a new IndexMigrationService.
+   *
+   * @param indexer            the RediSearchIndexer to use for index operations
+   * @param applicationContext the Spring application context
+   */
   public IndexMigrationService(RediSearchIndexer indexer, ApplicationContext applicationContext) {
     this.indexer = indexer;
     this.applicationContext = applicationContext;
