@@ -1,32 +1,27 @@
 package com.redis.om.spring.indexing;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
-import com.redis.om.spring.annotations.Document;
-import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
-import com.redis.om.spring.annotations.IndexCreationMode;
 import com.redis.om.spring.annotations.IndexingOptions;
+import com.redis.om.spring.fixtures.document.model.BeanReferenceIndexEntity;
+import com.redis.om.spring.fixtures.document.model.ComplexSpelEntity;
 import com.redis.om.spring.fixtures.document.model.DynamicIndexEntity;
 import com.redis.om.spring.fixtures.document.model.DynamicPrefixEntity;
 import com.redis.om.spring.fixtures.document.model.EnvironmentBasedIndexEntity;
-import com.redis.om.spring.fixtures.document.model.BeanReferenceIndexEntity;
 import com.redis.om.spring.fixtures.document.model.FallbackIndexEntity;
+import com.redis.om.spring.fixtures.document.model.SystemPropertyEntity;
 import com.redis.om.spring.fixtures.document.model.TenantAwareEntity;
 import com.redis.om.spring.fixtures.document.model.VersionedIndexEntity;
 import com.redis.om.spring.fixtures.document.repository.DynamicIndexEntityRepository;
@@ -241,38 +236,4 @@ public class DynamicIndexingSpelTest extends AbstractBaseDocumentTest {
     }
 
 
-    // Additional test entity classes for complex scenarios
-    @Document
-    @IndexingOptions(
-        indexName = "#{@environment.getProperty('app.environment') == 'production' ? 'prod_complex_idx' : 'dev_complex_idx'}",
-        creationMode = IndexCreationMode.DROP_AND_RECREATE
-    )
-    static class ComplexSpelEntity {
-        @org.springframework.data.annotation.Id
-        private String id;
-        private String data;
-
-        // getters and setters
-        public String getId() { return id; }
-        public void setId(String id) { this.id = id; }
-        public String getData() { return data; }
-        public void setData(String data) { this.data = data; }
-    }
-
-    @Document
-    @IndexingOptions(
-        indexName = "system_idx_#{T(java.lang.System).getProperty('custom.index.suffix')}",
-        creationMode = IndexCreationMode.DROP_AND_RECREATE
-    )
-    static class SystemPropertyEntity {
-        @org.springframework.data.annotation.Id
-        private String id;
-        private String content;
-
-        // getters and setters
-        public String getId() { return id; }
-        public void setId(String id) { this.id = id; }
-        public String getContent() { return content; }
-        public void setContent(String content) { this.content = content; }
-    }
 }
