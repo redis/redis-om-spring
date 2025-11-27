@@ -8,6 +8,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
+import com.redis.om.spring.ops.CommandListener;
+import com.redis.om.spring.ops.NoOpCommandListener;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -202,6 +204,7 @@ public class RedisModulesConfiguration {
    * @param rmc         the Redis modules client for low-level access
    * @param template    the string Redis template for basic operations
    * @param gsonBuilder the Gson builder for JSON serialization
+   * @param commandListener a command listener for monitoring Redis commands
    * @return the Redis modules operations instance
    */
   @Bean(
@@ -215,9 +218,27 @@ public class RedisModulesConfiguration {
       StringRedisTemplate template, //
       @Qualifier(
         "omGsonBuilder"
-      ) GsonBuilder gsonBuilder) {
-    return new RedisModulesOperations<>(rmc, template, gsonBuilder);
+      ) GsonBuilder gsonBuilder, final CommandListener commandListener) {
+    return new RedisModulesOperations<>(rmc, template, gsonBuilder, commandListener);
   }
+
+    /**
+     * Provides a default implementation of the CommandListener bean.
+     * <p>
+     * This method creates a no-operation (NoOp) implementation of the CommandListener interface.
+     * It is used as a fallback when no other CommandListener bean is defined in the application context.
+     * <p>
+     * The {@code @Fallback} annotation ensures that this bean is only used when no other
+     * CommandListener bean is available, allowing developers to override it with a custom implementation if needed.
+     *
+     * @return a NoOpCommandListener instance, which performs no operations.
+     */
+    @Bean
+    @Fallback
+    public CommandListener commandListener() {
+        return new NoOpCommandListener();
+    }
+
 
   /**
    * Creates the JSON operations bean for RedisJSON commands.
