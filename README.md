@@ -87,34 +87,18 @@ Redis OM Spring provides all Spring Data Redis capabilities, plus:
 - `@Vectorize` annotation to generate embeddings for text and images for use in Vector Similarity Searches
 - Vector Similarity Search API (See [Redis Stack Vectors](https://redis.io/docs/stack/search/reference/vectors/))
 
-### 📋 Version Requirements
-
-Redis OM Spring has the following version requirements:
-
-| Dependency | Minimum Version | Recommended Version | Notes |
-|------------|----------------|-------------------|--------|
-| **Spring Boot** | 4.0.0 | 4.0.0 or later | Built with Spring Boot 4.0.0 |
-| **Spring Data Redis** | 4.0.0 | 4.0.0 or later | Aligned with Spring Boot version |
-| **Spring Framework** | 7.0.x | Latest 7.x | Transitive via Spring Boot |
-| **Jedis** | 7.0.0 | 7.0.0 or later | Redis Java client |
-| **Java** | 21 | 21 | Spring Boot 4.x requires Java 21+ |
-| **Redis Stack** | 7.2.x | 7.2.x or later | For JSON and Search modules |
-
-#### Spring Boot Version Compatibility Policy
-
-Redis OM Spring follows an **N-2 support policy** for Spring Boot versions:
-
-- We build with the latest stable Spring Boot version
-- We support the current version and two previous minor versions that are still receiving OSS updates
-- We upgrade Spring Boot with each Redis OM Spring release
-
-For example, as of Redis OM Spring 2.0.0:
-
-- **Built with**: Spring Boot 4.0.0
-- **Minimum supported**: Spring Boot 4.0.0
-- **Recommended**: Spring Boot 4.0.0 or later
-
-⚠️ **Note**: Using older Spring Boot versions may work but is not officially tested or supported. For production use, we recommend staying within the supported version range.
+> [!IMPORTANT]
+> ### 📋 Version Compatibility
+>
+> Choose the correct Redis OM Spring version for your Spring Boot version:
+>
+> | Redis OM Spring | Spring Boot | Java | Status |
+> |-----------------|-------------|------|--------|
+> | **1.0.x** | 3.4.x | 17+ | Maintenance |
+> | **1.1.x** | 3.5.x | 17+ | Current Stable |
+> | **2.0.x** | 4.0.x | 17+ | Latest |
+>
+> **Always use the Redis OM Spring version that matches your Spring Boot version.**
 
 ## 🏁 Getting Started
 
