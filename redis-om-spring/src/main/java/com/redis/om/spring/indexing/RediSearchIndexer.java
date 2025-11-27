@@ -17,6 +17,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Reference;
 import org.springframework.data.geo.Point;
@@ -26,6 +27,10 @@ import org.springframework.data.redis.core.convert.KeyspaceConfiguration.Keyspac
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.redis.core.mapping.RedisPersistentEntity;
 import org.springframework.data.util.TypeInformation;
+import org.springframework.expression.Expression;
+import org.springframework.expression.ExpressionParser;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 
@@ -100,6 +105,7 @@ public class RediSearchIndexer {
   private final RedisMappingContext mappingContext;
   private final GsonBuilder gsonBuilder;
   private final RedisOMProperties properties;
+  private final ExpressionParser spelParser = new SpelExpressionParser();
 
   /**
    * Constructs a new RediSearchIndexer with the required dependencies.
@@ -118,6 +124,95 @@ public class RediSearchIndexer {
     rmo = (RedisModulesOperations<String>) ac.getBean("redisModulesOperations");
     mappingContext = (RedisMappingContext) ac.getBean("redisEnhancedMappingContext");
     this.gsonBuilder = gsonBuilder;
+  }
+
+  /**
+   * Checks if a string contains SpEL expression markers (#{...}).
+   * This is used to determine if an expression needs dynamic re-evaluation
+   * at runtime versus using a cached static value.
+   *
+   * @param expression the expression to check
+   * @return true if the expression contains SpEL markers
+   */
+  private boolean containsSpelExpression(String expression) {
+    return expression != null && expression.contains("#{") && expression.contains("}");
+  }
+
+  /**
+   * Evaluates a SpEL expression if it's detected, otherwise returns the original value.
+   *
+   * @param expression   the expression to evaluate (may contain SpEL syntax)
+   * @param defaultValue the default value to use if evaluation fails or expression is empty
+   * @return the evaluated expression result or the original value
+   */
+  private String evaluateExpression(String expression, String defaultValue) {
+    if (expression == null) {
+      return defaultValue;
+    }
+
+    // Check if the string contains SpEL expression markers
+    if (!expression.contains("#{")) {
+      return expression;
+    }
+
+    // Check for malformed expressions (has opening but no closing bracket)
+    if (!expression.contains("}")) {
+      logger.warn(String.format("Malformed SpEL expression '%s': missing closing bracket. Using default value.",
+          expression));
+      return defaultValue;
+    }
+
+    try {
+      // Create evaluation context with Spring beans
+      StandardEvaluationContext context = new StandardEvaluationContext();
+      context.setBeanResolver(new BeanFactoryResolver(ac));
+      context.setVariable("environment", ac.getEnvironment());
+      context.setVariable("systemProperties", System.getProperties());
+
+      // Process template expressions - replace #{...} with evaluated values
+      String processedExpression = expression;
+      int startIndex = 0;
+      boolean hasFailedExpressions = false;
+
+      while ((startIndex = processedExpression.indexOf("#{", startIndex)) != -1) {
+        int endIndex = processedExpression.indexOf("}", startIndex);
+        if (endIndex == -1) {
+          break;
+        }
+
+        String spelPart = processedExpression.substring(startIndex + 2, endIndex);
+        try {
+          Expression spelExpression = spelParser.parseExpression(spelPart);
+          Object result = spelExpression.getValue(context);
+          if (result == null) {
+            // Null results should trigger fallback to default
+            logger.warn(String.format("SpEL expression part '%s' returned null. Using default value.", spelPart));
+            hasFailedExpressions = true;
+            startIndex = endIndex + 1;
+          } else {
+            String resultStr = result.toString();
+            processedExpression = processedExpression.substring(0, startIndex) + resultStr + processedExpression
+                .substring(endIndex + 1);
+          }
+        } catch (Exception e) {
+          // If any expression fails to evaluate, we should use the default fallback
+          logger.warn(String.format("Failed to evaluate SpEL expression part '%s': %s", spelPart, e.getMessage()));
+          hasFailedExpressions = true;
+          startIndex = endIndex + 1;
+        }
+      }
+
+      // If any expressions failed, return the default value
+      if (hasFailedExpressions) {
+        return defaultValue;
+      }
+
+      return processedExpression;
+    } catch (Exception e) {
+      logger.warn(String.format("Failed to evaluate SpEL expression '%s': %s. Using default value.", expression, e
+          .getMessage()));
+      return defaultValue;
+    }
   }
 
   /**
@@ -163,21 +258,24 @@ public class RediSearchIndexer {
     Optional<IndexingOptions> maybeIndexingOptions = Optional.ofNullable(cl.getAnnotation(IndexingOptions.class));
 
     String indexName = "";
+    String defaultIndexName = cl.getName() + "Idx";
     Optional<String> maybeScoreField;
     try {
       if (isDocument) {
         // IndexingOptions overrides Document#
         if (maybeIndexingOptions.isPresent()) {
-          indexName = maybeIndexingOptions.get().indexName();
+          String rawIndexName = maybeIndexingOptions.get().indexName();
+          indexName = evaluateExpression(rawIndexName, defaultIndexName);
+        } else {
+          indexName = document.get().indexName();
         }
-        indexName = indexName.isBlank() ? document.get().indexName() : indexName;
-        indexName = indexName.isBlank() ? cl.getName() + "Idx" : indexName;
+        indexName = indexName.isBlank() ? defaultIndexName : indexName;
       } else {
         if (maybeIndexingOptions.isPresent()) {
-          indexName = maybeIndexingOptions.get().indexName();
-          indexName = indexName.isBlank() ? cl.getName() + "Idx" : indexName;
+          String rawIndexName = maybeIndexingOptions.get().indexName();
+          indexName = evaluateExpression(rawIndexName, defaultIndexName);
         } else {
-          indexName = cl.getName() + "Idx";
+          indexName = defaultIndexName;
         }
       }
 
@@ -207,7 +305,15 @@ public class RediSearchIndexer {
         maybeEntityPrefix = hash.map(RedisHash::value).filter(ObjectUtils::isNotEmpty);
       }
 
-      String entityPrefix = maybeEntityPrefix.orElse(getEntityPrefix(cl));
+      // Check for dynamic key prefix in IndexingOptions
+      String entityPrefix;
+      if (maybeIndexingOptions.isPresent() && !maybeIndexingOptions.get().keyPrefix().isBlank()) {
+        String rawKeyPrefix = maybeIndexingOptions.get().keyPrefix();
+        String defaultPrefix = maybeEntityPrefix.orElse(getEntityPrefix(cl));
+        entityPrefix = evaluateExpression(rawKeyPrefix, defaultPrefix);
+      } else {
+        entityPrefix = maybeEntityPrefix.orElse(getEntityPrefix(cl));
+      }
       entityPrefix = entityPrefix.endsWith(":") ? entityPrefix : entityPrefix + ":";
       params.prefix(entityPrefix);
       addKeySpaceMapping(entityPrefix, cl);
@@ -296,14 +402,39 @@ public class RediSearchIndexer {
    * Retrieves the index name for the specified entity class.
    * Returns the configured index name or generates a default name if not found.
    *
+   * <p>If the entity's {@code @IndexingOptions} annotation contains a dynamic SpEL expression
+   * (e.g., {@code "products_#{@tenantService.getCurrentTenant()}_idx"}), the expression is
+   * re-evaluated on each call to support runtime context changes like multi-tenancy.
+   * Static index names are cached for performance.
+   *
    * @param entityClass the entity class to get the index name for
    * @return the index name for the entity class, or a default name based on the class name
    */
   public String getIndexName(Class<?> entityClass) {
+    // Check if the entity has @IndexingOptions with a dynamic SpEL expression
+    Optional<IndexingOptions> maybeIndexingOptions = Optional.ofNullable(entityClass != null ?
+        entityClass.getAnnotation(IndexingOptions.class) :
+        null);
+    String defaultIndexName = entityClass != null ? entityClass.getName() + "Idx" : "Idx";
+
+    if (maybeIndexingOptions.isPresent()) {
+      String rawIndexName = maybeIndexingOptions.get().indexName();
+      // If the index name contains SpEL, always re-evaluate it (don't use cache)
+      if (containsSpelExpression(rawIndexName)) {
+        return evaluateExpression(rawIndexName, defaultIndexName);
+      }
+    }
+
+    // For static names, use the cached value if available
     if (entityClass != null && entityClassToIndexName.containsKey(entityClass)) {
       return entityClassToIndexName.get(entityClass);
     } else {
-      return entityClass.getName() + "Idx";
+      // Evaluate the expression (which may be static or SpEL)
+      if (maybeIndexingOptions.isPresent()) {
+        String rawIndexName = maybeIndexingOptions.get().indexName();
+        return evaluateExpression(rawIndexName, defaultIndexName);
+      }
+      return defaultIndexName;
     }
   }
 
@@ -326,7 +457,7 @@ public class RediSearchIndexer {
    * Removes the mapping between a Redis keyspace and an entity class.
    * This method cleans up the internal mappings when an entity class is no longer
    * associated with a particular keyspace, typically during index cleanup operations.
-   * 
+   *
    * @param keyspace    the Redis keyspace (key prefix) to remove from mappings
    * @param entityClass the entity class to disassociate from the keyspace
    */
@@ -334,6 +465,7 @@ public class RediSearchIndexer {
     String key = getKeyspace(keyspace);
     keyspaceToEntityClass.remove(key);
     entityClassToKeySpace.remove(entityClass);
+    entityClassToIndexName.remove(entityClass);
     indexedEntityClasses.remove(entityClass);
   }
 
@@ -375,22 +507,69 @@ public class RediSearchIndexer {
 
   /**
    * Retrieves the Redis keyspace (key prefix) for the specified entity class.
-   * If no explicit mapping exists, derives the keyspace from the entity's persistent configuration
+   *
+   * <p>If the entity's {@code @IndexingOptions} annotation contains a dynamic SpEL expression
+   * in the keyPrefix (e.g., {@code "#{@tenantService.getCurrentTenant()}:products:"}), the expression
+   * is re-evaluated on each call to support runtime context changes like multi-tenancy.
+   * Static keyspaces are cached for performance.
+   *
+   * <p>If no explicit mapping exists, derives the keyspace from the entity's persistent configuration
    * or uses the class name as fallback.
    *
    * @param entityClass the entity class to get the keyspace for
    * @return the Redis keyspace associated with the entity class
    */
   public String getKeyspaceForEntityClass(Class<?> entityClass) {
-    String keyspace = entityClassToKeySpace.get(entityClass);
-    if (keyspace == null) {
-      var persistentEntity = mappingContext.getPersistentEntity(entityClass);
-      if (persistentEntity != null) {
-        String entityKeySpace = persistentEntity.getKeySpace();
-        keyspace = (entityKeySpace != null ? entityKeySpace : entityClass.getName()) + ":";
+    if (entityClass == null) {
+      return null;
+    }
+
+    // Check if the entity has @IndexingOptions with a dynamic SpEL expression for keyPrefix
+    Optional<IndexingOptions> maybeIndexingOptions = Optional.ofNullable(entityClass.getAnnotation(
+        IndexingOptions.class));
+
+    if (maybeIndexingOptions.isPresent()) {
+      String rawKeyPrefix = maybeIndexingOptions.get().keyPrefix();
+      // If the key prefix contains SpEL, always re-evaluate it (don't use cache)
+      if (!rawKeyPrefix.isBlank() && containsSpelExpression(rawKeyPrefix)) {
+        String defaultKeyspace = deriveDefaultKeyspace(entityClass);
+        String keyspace = evaluateExpression(rawKeyPrefix, defaultKeyspace);
+        // Ensure keyspace ends with ":"
+        return keyspace.endsWith(":") ? keyspace : keyspace + ":";
       }
     }
+
+    // For static names, use the cached value if available
+    String keyspace = entityClassToKeySpace.get(entityClass);
+    if (keyspace == null) {
+      keyspace = deriveDefaultKeyspace(entityClass);
+    }
     return keyspace;
+  }
+
+  /**
+   * Derives the default keyspace for an entity class from the mapping context.
+   *
+   * @param entityClass the entity class
+   * @return the derived keyspace with trailing colon
+   */
+  private String deriveDefaultKeyspace(Class<?> entityClass) {
+    var persistentEntity = mappingContext.getPersistentEntity(entityClass);
+    if (persistentEntity != null) {
+      String entityKeySpace = persistentEntity.getKeySpace();
+      return (entityKeySpace != null ? entityKeySpace : entityClass.getName()) + ":";
+    }
+    return entityClass.getName() + ":";
+  }
+
+  /**
+   * Gets the key prefix for a given entity class.
+   *
+   * @param entityClass the entity class
+   * @return the key prefix used for this entity class
+   */
+  public String getKeyspacePrefix(Class<?> entityClass) {
+    return getKeyspaceForEntityClass(entityClass);
   }
 
   /**
@@ -1682,5 +1861,341 @@ public class RediSearchIndexer {
         logger.info(String.format("Tracking lexicographic field %s with sorted set key %s", fieldName, sortedSetKey));
       }
     }
+  }
+
+  // Context-aware indexing methods
+
+  /**
+   * Creates an index for the specified entity class using the provided context and resolver.
+   *
+   * @param entityClass the entity class to create an index for
+   * @param context     the Redis index context containing tenant and environment information
+   * @param resolver    the index resolver for determining index names and key prefixes
+   * @return true if the index was created or already exists, false otherwise
+   */
+  public boolean createIndexFor(Class<?> entityClass, RedisIndexContext context, IndexResolver resolver) {
+    String indexName = resolver.resolveIndexName(entityClass, context);
+    String keyPrefix = resolver.resolveKeyPrefix(entityClass, context);
+
+    if (indexExistsFor(entityClass, indexName)) {
+      return true;
+    }
+
+    return createIndexFor(entityClass, indexName, keyPrefix);
+  }
+
+  /**
+   * Creates an index for the specified entity class using the current thread-local context.
+   *
+   * @param entityClass the entity class to create an index for
+   * @param resolver    the index resolver for determining index names and key prefixes
+   * @return true if the index was created or already exists, false otherwise
+   */
+  public boolean createIndexForContext(Class<?> entityClass, IndexResolver resolver) {
+    RedisIndexContext context = RedisIndexContext.getContext();
+    return createIndexFor(entityClass, context, resolver);
+  }
+
+  /**
+   * Drops an index for the specified entity class using the provided context and resolver.
+   *
+   * @param entityClass the entity class to drop the index for
+   * @param context     the Redis index context containing tenant and environment information
+   * @param resolver    the index resolver for determining index names
+   * @return true if the index was dropped successfully, false otherwise
+   */
+  public boolean dropIndexFor(Class<?> entityClass, RedisIndexContext context, IndexResolver resolver) {
+    String indexName = resolver.resolveIndexName(entityClass, context);
+    return dropIndexFor(entityClass, indexName);
+  }
+
+  /**
+   * Checks if an index exists for the specified entity class using the provided context and resolver.
+   *
+   * @param entityClass the entity class to check
+   * @param context     the Redis index context containing tenant and environment information
+   * @param resolver    the index resolver for determining index names
+   * @return true if the index exists, false otherwise
+   */
+  public boolean indexExistsFor(Class<?> entityClass, RedisIndexContext context, IndexResolver resolver) {
+    String indexName = resolver.resolveIndexName(entityClass, context);
+    return indexExistsFor(entityClass, indexName);
+  }
+
+  /**
+   * Gets the index name for the specified entity class using the provided context and resolver.
+   *
+   * @param entityClass the entity class
+   * @param context     the Redis index context containing tenant and environment information
+   * @param resolver    the index resolver for determining index names
+   * @return the resolved index name
+   */
+  public String getIndexName(Class<?> entityClass, RedisIndexContext context, IndexResolver resolver) {
+    return resolver.resolveIndexName(entityClass, context);
+  }
+
+  /**
+   * Gets the keyspace prefix for the specified entity class using the provided context and resolver.
+   *
+   * @param entityClass the entity class
+   * @param context     the Redis index context containing tenant and environment information
+   * @param resolver    the index resolver for determining key prefixes
+   * @return the resolved keyspace prefix
+   */
+  public String getKeyspacePrefix(Class<?> entityClass, RedisIndexContext context, IndexResolver resolver) {
+    return resolver.resolveKeyPrefix(entityClass, context);
+  }
+
+  /**
+   * Creates an index with the specified name and key prefix.
+   * This is a helper method for context-aware index creation.
+   *
+   * @param entityClass the entity class
+   * @param indexName   the name of the index to create
+   * @param keyPrefix   the key prefix for the index
+   * @return true if successful, false otherwise
+   */
+  public boolean createIndexFor(Class<?> entityClass, String indexName, String keyPrefix) {
+    try {
+      Optional<IndexDataType> maybeType = determineIndexTarget(entityClass);
+      IndexDataType idxType;
+      if (maybeType.isPresent()) {
+        idxType = maybeType.get();
+      } else {
+        return false;
+      }
+
+      boolean isDocument = idxType == IndexDataType.JSON;
+      Optional<IndexingOptions> maybeIndexingOptions = Optional.ofNullable(entityClass.getAnnotation(
+          IndexingOptions.class));
+
+      logger.info(String.format("Found @%s annotated class: %s", idxType, entityClass.getName()));
+
+      final List<java.lang.reflect.Field> allClassFields = getDeclaredFieldsTransitively(entityClass);
+
+      List<SearchField> searchFields = processIndexedFields(allClassFields, isDocument);
+
+      for (SearchField field : searchFields) {
+        registerAlias(entityClass, field.getField().getName(), field.getSchemaField().getFieldName().getAttribute());
+      }
+
+      Optional<String> maybeScoreField = getDocumentScoreField(allClassFields, isDocument);
+      createIndexedFieldsForIdFields(entityClass, searchFields.stream().map(SearchField::getSchemaField).toList(),
+          isDocument).forEach(searchFields::add);
+
+      SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
+
+      FTCreateParams params = createIndexDefinition(entityClass, idxType);
+
+      if (isDocument) {
+        maybeScoreField.ifPresent(params::scoreField);
+      }
+
+      // Ensure keyPrefix ends with colon
+      String entityPrefix = keyPrefix.endsWith(":") ? keyPrefix : keyPrefix + ":";
+      params.prefix(entityPrefix);
+      addKeySpaceMapping(entityPrefix, entityClass);
+
+      // Update TTL settings
+      Optional<Document> document = isDocument ?
+          Optional.of(entityClass.getAnnotation(Document.class)) :
+          Optional.empty();
+      updateTTLSettings(entityClass, entityPrefix, isDocument, document, allClassFields);
+
+      List<SchemaField> fields = searchFields.stream().map(SearchField::getSchemaField).toList();
+
+      // Note: We don't update entityClassToSchema or entityClassToIndexName here
+      // because this method is for creating indexes with custom names/prefixes.
+      // The global mappings should only be updated by the main createIndexFor(Class) method.
+
+      if (maybeIndexingOptions.isPresent()) {
+        IndexingOptions options = maybeIndexingOptions.get();
+        switch (options.creationMode()) {
+          case SKIP_IF_EXIST:
+            opsForSearch.createIndex(params, fields);
+            logger.info(String.format("Created index %s...", indexName));
+            // Create sorted sets for lexicographic fields
+            createSortedSetsForLexicographicFields(entityClass, entityPrefix);
+            break;
+          case DROP_AND_RECREATE:
+            if (indexExistsFor(entityClass, indexName)) {
+              opsForSearch.dropIndex();
+              logger.info(String.format("Dropped index %s", indexName));
+            }
+            opsForSearch.createIndex(params, fields);
+            logger.info(String.format("Created index %s", indexName));
+            // Create sorted sets for lexicographic fields
+            createSortedSetsForLexicographicFields(entityClass, entityPrefix);
+            break;
+          case SKIP_ALWAYS:
+            // do nothing and like it!
+            logger.info(String.format("Skipped index creation for %s", entityClass.getSimpleName()));
+            break;
+        }
+      } else {
+        opsForSearch.createIndex(params, fields);
+        logger.info(String.format("Created index %s", indexName));
+        // Create sorted sets for lexicographic fields
+        createSortedSetsForLexicographicFields(entityClass, entityPrefix);
+      }
+
+      return true;
+    } catch (Exception e) {
+      logger.warn(String.format(SKIPPING_INDEX_CREATION, indexName, e.getMessage()));
+      return false;
+    }
+  }
+
+  /**
+   * Drops an index with the specified name.
+   * This is a helper method for context-aware index dropping.
+   *
+   * @param entityClass the entity class
+   * @param indexName   the name of the index to drop
+   * @return true if successful, false otherwise
+   */
+  public boolean dropIndexFor(Class<?> entityClass, String indexName) {
+    try {
+      if (indexExistsFor(entityClass, indexName)) {
+        SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
+        opsForSearch.dropIndex();
+        return true;
+      }
+      return true; // Already doesn't exist
+    } catch (Exception e) {
+      logger.error("Failed to drop index " + indexName + " for " + entityClass.getSimpleName(), e);
+      return false;
+    }
+  }
+
+  /**
+   * Checks if an index with the specified name exists.
+   * This is a helper method for context-aware index existence checking.
+   *
+   * @param entityClass the entity class
+   * @param indexName   the name of the index to check
+   * @return true if the index exists, false otherwise
+   */
+  public boolean indexExistsFor(Class<?> entityClass, String indexName) {
+    try {
+      SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
+      opsForSearch.getInfo();
+      return true; // If no exception, index exists
+    } catch (Exception e) {
+      logger.debug("Error checking if index exists: " + indexName, e);
+      return false;
+    }
+  }
+
+  /**
+   * Creates an alias for a Redis search index.
+   *
+   * @param indexName the name of the index to create an alias for
+   * @param aliasName the name of the alias to create
+   * @return true if the alias was created successfully, false otherwise
+   */
+  public boolean createAlias(String indexName, String aliasName) {
+    try {
+      SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
+      opsForSearch.addAlias(aliasName);
+      logger.info(String.format("Created alias %s for index %s", aliasName, indexName));
+      return true;
+    } catch (Exception e) {
+      logger.error(String.format("Failed to create alias %s for index %s: %s", aliasName, indexName, e.getMessage()));
+      return false;
+    }
+  }
+
+  /**
+   * Removes an alias from a Redis search index.
+   *
+   * @param indexName the name of the index to remove the alias from (not used by Redis, kept for API consistency)
+   * @param aliasName the name of the alias to remove
+   * @return true if the alias was removed successfully, false otherwise
+   */
+  public boolean removeAlias(String indexName, String aliasName) {
+    try {
+      // Note: deleteAlias doesn't need the index name, it just needs the alias
+      SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
+      opsForSearch.deleteAlias(aliasName);
+      logger.info(String.format("Removed alias %s", aliasName));
+      return true;
+    } catch (Exception e) {
+      // Alias might not exist, which is fine
+      logger.debug(String.format("Failed to remove alias %s: %s", aliasName, e.getMessage()));
+      return false;
+    }
+  }
+
+  /**
+   * Updates an alias to point to a new index.
+   *
+   * @param oldIndexName the current index the alias points to (not used by Redis, kept for API consistency)
+   * @param newIndexName the new index the alias should point to
+   * @param aliasName    the name of the alias to update
+   * @return true if the alias was updated successfully, false otherwise
+   */
+  public boolean updateAlias(String oldIndexName, String newIndexName, String aliasName) {
+    try {
+      SearchOperations<String> opsForSearch = rmo.opsForSearch(newIndexName);
+      opsForSearch.updateAlias(aliasName);
+      logger.info(String.format("Updated alias %s to point to index %s", aliasName, newIndexName));
+      return true;
+    } catch (Exception e) {
+      logger.error(String.format("Failed to update alias %s to %s: %s", aliasName, newIndexName, e.getMessage()));
+      return false;
+    }
+  }
+
+  /**
+   * Creates indexes for all registered entity classes.
+   * This is a bulk operation that iterates through all entity classes
+   * that have been registered with the indexer and creates their indexes.
+   * If an index already exists, it will be skipped based on the entity's
+   * {@link IndexCreationMode} configuration.
+   */
+  public void createIndexes() {
+    // Create a copy to avoid ConcurrentModificationException since createIndexFor may modify the list
+    List<Class<?>> entitiesToProcess = new ArrayList<>(indexedEntityClasses);
+    logger.info(String.format("Creating indexes for %d registered entity classes", entitiesToProcess.size()));
+    for (Class<?> entityClass : entitiesToProcess) {
+      try {
+        createIndexFor(entityClass);
+      } catch (Exception e) {
+        logger.warn(String.format("Failed to create index for %s: %s", entityClass.getName(), e.getMessage()));
+      }
+    }
+    logger.info("Finished creating indexes");
+  }
+
+  /**
+   * Drops all indexes managed by this indexer.
+   * This is a bulk operation that iterates through all registered entity classes
+   * and drops their associated indexes. The underlying documents are preserved,
+   * only the index definitions are removed.
+   */
+  public void dropIndexes() {
+    // Create a copy to avoid ConcurrentModificationException since dropIndexFor modifies the list
+    List<Class<?>> entitiesToProcess = new ArrayList<>(indexedEntityClasses);
+    logger.info(String.format("Dropping indexes for %d registered entity classes", entitiesToProcess.size()));
+    for (Class<?> entityClass : entitiesToProcess) {
+      try {
+        dropIndexFor(entityClass);
+      } catch (Exception e) {
+        logger.warn(String.format("Failed to drop index for %s: %s", entityClass.getName(), e.getMessage()));
+      }
+    }
+    logger.info("Finished dropping indexes");
+  }
+
+  /**
+   * Returns a set of all index names currently managed by this indexer.
+   * The returned set is a snapshot copy and modifications to it will not
+   * affect the internal state of the indexer.
+   *
+   * @return a set of index names for all registered entity classes
+   */
+  public Set<String> listIndexes() {
+    return new HashSet<>(entityClassToIndexName.values());
   }
 }

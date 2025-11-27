@@ -79,6 +79,8 @@ Redis OM Spring provides all Spring Data Redis capabilities, plus:
   using `@EnableRedisDocumentRepositories`
 - Declarative search indexes via `@Indexed`
 - Full-text search indexes via `@Searchable`
+- **Dynamic index naming and multi-tenant support** with SpEL expressions and `RedisIndexContext`
+- **Index migration service** with Blue-Green, Dual-Write, and In-Place migration strategies
 - `EntityStream`s: Streams-based Query and Aggregations Builder
 - `@Bloom` annotation to determine very fast, with and with high degree of certainty, whether a value is in a
   collection.
@@ -262,6 +264,19 @@ public class Company {
   private boolean publiclyListed;
 
   // ...
+}
+```
+
+For **multi-tenant applications**, you can use dynamic index naming with SpEL expressions:
+
+```java
+// Dynamic index naming for multi-tenant support
+@Document
+@IndexingOptions(indexName = "#{@environment.getProperty('app.tenant')}_companies_idx")
+public class Company {
+  @Id private String id;
+  @Searchable private String name;
+  // other fields...
 }
 ```
 
