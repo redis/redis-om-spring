@@ -14,21 +14,22 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Product entity with dynamic tenant-aware indexing.
+ * Product entity with dynamic tenant-aware indexing and storage isolation.
  *
- * <p>The index name is resolved at runtime using SpEL expressions
+ * <p>Both the index name and key prefix are resolved at runtime using SpEL expressions
  * that reference the TenantService bean to get the current tenant context.
- * This allows creating separate indexes per tenant dynamically.
- *
- * <p>Note: The keyPrefix is intentionally left blank to use the default
- * keyspace from Spring Data Redis. All tenants share the same data storage
- * but can have different search indexes. For true data isolation, implement
- * a custom repository or use tenant-aware key generation.
+ * This provides complete tenant isolation for both search indexes and data storage.
  *
  * <p>Example for tenant "acme":
  * <ul>
  * <li>Index name: products_acme_idx
- * <li>Storage keyspace: com.redis.om.multitenant.domain.Product:
+ * <li>Storage keyspace: acme:products:
+ * </ul>
+ *
+ * <p>Example for tenant "globex":
+ * <ul>
+ * <li>Index name: products_globex_idx
+ * <li>Storage keyspace: globex:products:
  * </ul>
  */
 @Data
@@ -37,7 +38,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @Document
 @IndexingOptions(
-    indexName = "products_#{@tenantService.getCurrentTenant()}_idx", creationMode = IndexCreationMode.SKIP_IF_EXIST
+    indexName = "products_#{@tenantService.getCurrentTenant()}_idx",
+    keyPrefix = "#{@tenantService.getCurrentTenant()}:products:", creationMode = IndexCreationMode.SKIP_IF_EXIST
 )
 public class Product {
 

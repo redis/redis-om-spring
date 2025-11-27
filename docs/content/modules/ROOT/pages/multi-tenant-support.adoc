@@ -1,0 +1,683 @@
+= Multi-Tenant Support
+:page-toclevels: 3
+:experimental:
+:source-highlighter: highlight.js
+
+== Introduction to Multi-Tenancy in Redis OM Spring
+
+Redis OM Spring provides comprehensive multi-tenant support through dynamic index naming, thread-local context management, and flexible index resolution strategies. This enables applications to serve multiple tenants with complete data isolation while maintaining high performance.
+
+== Core Multi-Tenant Features
+
+=== RedisIndexContext
+
+The `RedisIndexContext` provides thread-local storage for tenant-specific information:
+
+[source,java]
+----
+// Set up tenant context
+RedisIndexContext context = RedisIndexContext.builder()
+    .tenantId("acme-corp")
+    .environment("production")
+    .setAttribute("region", "us-west")
+    .setAttribute("dataCenter", "aws-us-west-2")
+    .build();
+
+RedisIndexContext.setContext(context);
+
+// All operations now use this tenant context
+// Automatically cleared at end of request/thread
+----
+
+=== Thread-Local Isolation
+
+Each thread maintains its own tenant context, ensuring complete isolation:
+
+[source,java]
+----
+@RestController
+public class TenantController {
+
+    @Autowired
+    private ProductService productService;
+
+    @PostMapping("/api/{tenantId}/products")
+    public ResponseEntity<Product> createProduct(
+            @PathVariable String tenantId,
+            @RequestBody Product product) {
+
+        // Set tenant context for this request
+        RedisIndexContext context = RedisIndexContext.builder()
+            .tenantId(tenantId)
+            .build();
+        RedisIndexContext.setContext(context);
+
+        try {
+            Product saved = productService.save(product);
+            return ResponseEntity.ok(saved);
+        } finally {
+            // Context automatically cleared by framework
+            RedisIndexContext.clearContext();
+        }
+    }
+}
+----
+
+== Dynamic Index Resolution
+
+=== SpEL-Based Index Names
+
+Use Spring Expression Language for dynamic index naming and keyspace (key prefix) resolution. Here's a working example from the `roms-multitenant` demo:
+
+[source,java]
+----
+// From demos/roms-multitenant/src/main/java/com/redis/om/multitenant/domain/Product.java
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Document
+@IndexingOptions(
+    indexName = "products_#{@tenantService.getCurrentTenant()}_idx",
+    keyPrefix = "#{@tenantService.getCurrentTenant()}:products:",
+    creationMode = IndexCreationMode.SKIP_IF_EXIST
+)
+public class Product {
+
+    @Id
+    private String id;
+
+    @Searchable
+    private String name;
+
+    @Searchable
+    private String description;
+
+    @Indexed
+    private String category;
+
+    @Indexed
+    private String sku;
+
+    @Indexed
+    private Double price;
+
+    @Indexed
+    private Integer stockQuantity;
+
+    @Indexed
+    private Boolean active;
+}
+----
+
+The `TenantService` provides the current tenant via ThreadLocal:
+
+[source,java]
+----
+// From demos/roms-multitenant/src/main/java/com/redis/om/multitenant/services/TenantService.java
+@Service
+public class TenantService {
+
+    private static final String DEFAULT_TENANT = "default";
+    private final ThreadLocal<String> currentTenant = ThreadLocal.withInitial(() -> DEFAULT_TENANT);
+
+    public String getCurrentTenant() {
+        return currentTenant.get();
+    }
+
+    public void setCurrentTenant(String tenantId) {
+        currentTenant.set(tenantId);
+    }
+
+    public void clearTenant() {
+        currentTenant.remove();
+    }
+
+    public void executeAsTenant(String tenantId, Runnable runnable) {
+        String previousTenant = currentTenant.get();
+        try {
+            setCurrentTenant(tenantId);
+            runnable.run();
+        } finally {
+            if (previousTenant != null) {
+                setCurrentTenant(previousTenant);
+            } else {
+                clearTenant();
+            }
+        }
+    }
+}
+----
+
+This pattern provides complete tenant isolation with both separate indexes and separate data storage:
+
+* For tenant "acme":
+** Index: `products_acme_idx`
+** Keys stored as: `acme:products:<id>`
+* For tenant "globex":
+** Index: `products_globex_idx`
+** Keys stored as: `globex:products:<id>`
+
+[NOTE]
+====
+Both `indexName` and `keyPrefix` attributes support SpEL expressions that are evaluated dynamically at runtime. The `keyPrefix` attribute controls both the index configuration (what key prefix the index searches) AND the actual key storage location for documents. This provides complete tenant data isolation.
+====
+
+=== Environment-Based Tenant Configuration
+
+Configure tenants through application properties:
+
+[source,properties]
+----
+# Different configurations per environment
+app.tenant.default=global
+app.tenant.prefix=tenant
+
+# Production configuration
+spring.profiles.active=production
+app.environment=prod
+----
+
+[source,java]
+----
+@Document
+@IndexingOptions(
+    indexName = "#{@environment.getProperty('app.environment')}_#{@tenantResolver.getCurrentTenant()}_orders_v#{@environment.getProperty('app.version', '1')}"
+)
+public class Order {
+    @Id
+    private String id;
+
+    @Indexed
+    private String status;
+
+    @Indexed
+    private LocalDateTime createdAt;
+}
+----
+
+== Custom Index Resolvers
+
+=== Implementing IndexResolver
+
+Create custom index resolution logic:
+
+[source,java]
+----
+@Component
+public class TenantAwareIndexResolver implements IndexResolver {
+
+    private final Environment environment;
+
+    public TenantAwareIndexResolver(Environment environment) {
+        this.environment = environment;
+    }
+
+    @Override
+    public String resolveIndexName(Class<?> entityClass, RedisIndexContext context) {
+        StringBuilder indexName = new StringBuilder();
+
+        // Add environment prefix
+        String env = environment.getProperty("spring.profiles.active", "dev");
+        indexName.append(env).append("_");
+
+        // Add tenant ID
+        if (context != null && context.getTenantId() != null) {
+            indexName.append(context.getTenantId()).append("_");
+        } else {
+            indexName.append("global_");
+        }
+
+        // Add entity name
+        indexName.append(entityClass.getSimpleName().toLowerCase());
+
+        // Add region if specified
+        if (context != null && context.getAttribute("region") != null) {
+            indexName.append("_").append(context.getAttribute("region"));
+        }
+
+        indexName.append("_idx");
+
+        return indexName.toString();
+    }
+
+    @Override
+    public String resolveKeyPrefix(Class<?> entityClass, RedisIndexContext context) {
+        StringBuilder prefix = new StringBuilder();
+
+        if (context != null && context.getTenantId() != null) {
+            prefix.append(context.getTenantId()).append(":");
+        }
+
+        prefix.append(entityClass.getSimpleName().toLowerCase()).append(":");
+
+        return prefix.toString();
+    }
+}
+----
+
+=== Registering Custom Resolvers
+
+Configure your custom resolver:
+
+[source,java]
+----
+@Configuration
+public class MultiTenantConfiguration {
+
+    @Bean
+    public IndexResolver tenantAwareIndexResolver(Environment environment) {
+        return new TenantAwareIndexResolver(environment);
+    }
+
+    @Bean
+    public ConfigurableIndexDefinitionProvider indexDefinitionProvider(
+            RediSearchIndexer indexer,
+            ApplicationContext applicationContext) {
+        ConfigurableIndexDefinitionProvider provider =
+            new ConfigurableIndexDefinitionProvider(indexer, applicationContext);
+
+        // Set custom resolver for specific entities
+        provider.setIndexResolver(Product.class, tenantAwareIndexResolver(null));
+        provider.setIndexResolver(Order.class, tenantAwareIndexResolver(null));
+
+        return provider;
+    }
+}
+----
+
+== Tenant Management Service
+
+=== Comprehensive Tenant Service
+
+[source,java]
+----
+@Service
+@Transactional
+public class TenantManagementService {
+
+    @Autowired
+    private RediSearchIndexer indexer;
+
+    @Autowired
+    private IndexMigrationService migrationService;
+
+    @Autowired
+    private ConfigurableIndexDefinitionProvider indexProvider;
+
+    private final List<Class<?>> entityClasses = Arrays.asList(
+        Product.class, Order.class, Customer.class
+    );
+
+    public void createTenant(String tenantId, String environment) {
+        RedisIndexContext context = RedisIndexContext.builder()
+            .tenantId(tenantId)
+            .environment(environment)
+            .build();
+
+        RedisIndexContext.setContext(context);
+
+        try {
+            // Create all indices for the new tenant
+            for (Class<?> entityClass : entityClasses) {
+                boolean created = indexer.createIndexFor(entityClass);
+                if (created) {
+                    log.info("Created index for {} in tenant {}",
+                        entityClass.getSimpleName(), tenantId);
+                } else {
+                    log.warn("Index already exists for {} in tenant {}",
+                        entityClass.getSimpleName(), tenantId);
+                }
+            }
+
+            log.info("Successfully created tenant: {}", tenantId);
+        } finally {
+            RedisIndexContext.clearContext();
+        }
+    }
+
+    public void deleteTenant(String tenantId) {
+        RedisIndexContext context = RedisIndexContext.builder()
+            .tenantId(tenantId)
+            .build();
+
+        RedisIndexContext.setContext(context);
+
+        try {
+            // Drop all indices and data for the tenant
+            for (Class<?> entityClass : entityClasses) {
+                indexer.dropIndexAndDocumentsFor(entityClass);
+                log.info("Deleted index and data for {} in tenant {}",
+                    entityClass.getSimpleName(), tenantId);
+            }
+
+            log.info("Successfully deleted tenant: {}", tenantId);
+        } finally {
+            RedisIndexContext.clearContext();
+        }
+    }
+
+    public void migrateTenant(String tenantId, MigrationStrategy strategy) {
+        RedisIndexContext context = RedisIndexContext.builder()
+            .tenantId(tenantId)
+            .build();
+
+        RedisIndexContext.setContext(context);
+
+        try {
+            for (Class<?> entityClass : entityClasses) {
+                MigrationResult result = migrationService.migrateIndex(
+                    entityClass, strategy
+                );
+
+                if (result.isSuccessful()) {
+                    log.info("Successfully migrated {} for tenant {} using {}",
+                        entityClass.getSimpleName(), tenantId, strategy);
+                } else {
+                    log.error("Failed to migrate {} for tenant {}: {}",
+                        entityClass.getSimpleName(), tenantId, result.getErrorMessage());
+                }
+            }
+        } finally {
+            RedisIndexContext.clearContext();
+        }
+    }
+
+    public List<String> listTenantIndices(String tenantId) {
+        RedisIndexContext context = RedisIndexContext.builder()
+            .tenantId(tenantId)
+            .build();
+
+        RedisIndexContext.setContext(context);
+
+        try {
+            return entityClasses.stream()
+                .map(indexer::getIndexName)
+                .collect(Collectors.toList());
+        } finally {
+            RedisIndexContext.clearContext();
+        }
+    }
+}
+----
+
+== Request-Scoped Tenant Context
+
+=== Automatic Tenant Detection
+
+Use Spring's request interceptors for automatic tenant context setup:
+
+[source,java]
+----
+@Component
+public class TenantInterceptor implements HandlerInterceptor {
+
+    @Override
+    public boolean preHandle(HttpServletRequest request,
+                           HttpServletResponse response,
+                           Object handler) throws Exception {
+
+        String tenantId = extractTenantId(request);
+
+        if (tenantId != null) {
+            RedisIndexContext context = RedisIndexContext.builder()
+                .tenantId(tenantId)
+                .setAttribute("requestId", request.getHeader("X-Request-ID"))
+                .build();
+
+            RedisIndexContext.setContext(context);
+        }
+
+        return true;
+    }
+
+    @Override
+    public void afterCompletion(HttpServletRequest request,
+                              HttpServletResponse response,
+                              Object handler,
+                              Exception ex) throws Exception {
+        RedisIndexContext.clearContext();
+    }
+
+    private String extractTenantId(HttpServletRequest request) {
+        // Method 1: From header
+        String tenantId = request.getHeader("X-Tenant-ID");
+        if (tenantId != null) return tenantId;
+
+        // Method 2: From subdomain
+        String serverName = request.getServerName();
+        if (serverName.contains(".")) {
+            String subdomain = serverName.split("\\.")[0];
+            if (!"www".equals(subdomain) && !"api".equals(subdomain)) {
+                return subdomain;
+            }
+        }
+
+        // Method 3: From path
+        String path = request.getRequestURI();
+        Matcher matcher = Pattern.compile("/api/([^/]+)/.*").matcher(path);
+        if (matcher.matches()) {
+            return matcher.group(1);
+        }
+
+        return null;
+    }
+}
+
+@Configuration
+public class WebConfiguration implements WebMvcConfigurer {
+
+    @Autowired
+    private TenantInterceptor tenantInterceptor;
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(tenantInterceptor);
+    }
+}
+----
+
+== Data Access Patterns
+
+=== Repository Usage with Multi-Tenancy
+
+Standard repository operations automatically use the current tenant context:
+
+[source,java]
+----
+@Service
+public class ProductService {
+
+    @Autowired
+    private ProductRepository productRepository;
+
+    public Product createProduct(Product product) {
+        // Current tenant context is automatically used
+        return productRepository.save(product);
+    }
+
+    public List<Product> findProductsByCategory(String category) {
+        // Searches only within current tenant's index
+        return productRepository.findByCategory(category);
+    }
+
+    public Page<Product> findProducts(Pageable pageable) {
+        // Pagination within tenant's data
+        return productRepository.findAll(pageable);
+    }
+}
+----
+
+=== Entity Streams with Multi-Tenancy
+
+Entity streams respect tenant boundaries:
+
+[source,java]
+----
+@Service
+public class AnalyticsService {
+
+    @Autowired
+    private EntityStream entityStream;
+
+    public List<Product> getPopularProducts(String tenantId) {
+        // Set tenant context
+        RedisIndexContext context = RedisIndexContext.builder()
+            .tenantId(tenantId)
+            .build();
+        RedisIndexContext.setContext(context);
+
+        try {
+            return entityStream
+                .of(Product.class)
+                .filter(Product$.SALES_COUNT.gte(100))
+                .sorted(Product$.SALES_COUNT, SortOrder.DESC)
+                .limit(10)
+                .collect(Collectors.toList());
+        } finally {
+            RedisIndexContext.clearContext();
+        }
+    }
+}
+----
+
+== Monitoring and Observability
+
+=== Tenant Metrics
+
+Track tenant-specific metrics:
+
+[source,java]
+----
+@Component
+public class TenantMetrics {
+
+    private final MeterRegistry meterRegistry;
+
+    public TenantMetrics(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+    }
+
+    public void recordTenantOperation(String tenantId, String operation) {
+        Counter.builder("tenant.operations")
+            .tag("tenant", tenantId)
+            .tag("operation", operation)
+            .register(meterRegistry)
+            .increment();
+    }
+
+    public void recordIndexSize(String tenantId, String indexName, long size) {
+        Gauge.builder("tenant.index.size")
+            .tag("tenant", tenantId)
+            .tag("index", indexName)
+            .register(meterRegistry, size, Number::longValue);
+    }
+}
+----
+
+=== Health Checks
+
+Monitor tenant health:
+
+[source,java]
+----
+@Component
+public class TenantHealthIndicator implements HealthIndicator {
+
+    @Autowired
+    private TenantManagementService tenantService;
+
+    @Override
+    public Health health() {
+        try {
+            List<String> activeTenants = getActiveTenants();
+            Map<String, Object> details = new HashMap<>();
+            details.put("activeTenants", activeTenants.size());
+            details.put("tenants", activeTenants);
+
+            return Health.up().withDetails(details).build();
+        } catch (Exception e) {
+            return Health.down()
+                .withDetail("error", e.getMessage())
+                .build();
+        }
+    }
+
+    private List<String> getActiveTenants() {
+        // Implementation to get active tenants
+        return Arrays.asList("tenant1", "tenant2", "tenant3");
+    }
+}
+----
+
+== Best Practices
+
+=== Performance Optimization
+
+* **Index Naming**: Keep index names short but descriptive
+* **Context Management**: Always clear context in finally blocks
+* **Connection Pooling**: Use appropriate Redis connection pool settings
+* **Caching**: Cache tenant configuration and metadata
+
+=== Security Considerations
+
+* **Tenant Isolation**: Ensure complete data isolation between tenants
+* **Access Control**: Implement proper authentication and authorization
+* **Data Encryption**: Use Redis AUTH and TLS for sensitive data
+* **Audit Logging**: Log all tenant operations for compliance
+
+=== Scalability
+
+* **Horizontal Partitioning**: Consider Redis cluster for large tenant counts
+* **Index Distribution**: Balance index sizes across Redis nodes
+* **Memory Management**: Monitor memory usage per tenant
+* **Background Processing**: Use async processing for bulk operations
+
+=== Development and Testing
+
+* **Test Isolation**: Use separate test tenants for each test suite
+* **Mock Contexts**: Create mock tenant contexts for unit tests
+* **Integration Testing**: Test cross-tenant isolation thoroughly
+* **Performance Testing**: Load test with realistic tenant scenarios
+
+== Troubleshooting
+
+=== Common Issues
+
+* **Context Not Set**: Verify tenant context is set before operations
+* **Index Name Conflicts**: Check for duplicate or conflicting index names
+* **Memory Leaks**: Ensure contexts are properly cleared
+* **Performance Degradation**: Monitor index sizes and query patterns
+
+=== Debugging
+
+[source,java]
+----
+@Component
+public class TenantDebugService {
+
+    public void debugTenantContext() {
+        RedisIndexContext context = RedisIndexContext.getContext();
+        if (context != null) {
+            log.debug("Current tenant: {}", context.getTenantId());
+            log.debug("Environment: {}", context.getEnvironment());
+            log.debug("Attributes: {}", context.getAttributes());
+        } else {
+            log.debug("No tenant context set");
+        }
+    }
+
+    public void debugIndexNames(Class<?> entityClass) {
+        String indexName = indexer.getIndexName(entityClass);
+        log.debug("Index name for {}: {}", entityClass.getSimpleName(), indexName);
+    }
+}
+----
+
+== Next Steps
+
+* xref:index-creation.adoc[Advanced Index Configuration]
+* xref:index-migration.adoc[Index Migration]
+* xref:ephemeral-indexes.adoc[Ephemeral Indexes]
+* xref:search.adoc[Tenant-Aware Searching]
+* xref:entity-streams.adoc[Multi-Tenant Entity Streams]
