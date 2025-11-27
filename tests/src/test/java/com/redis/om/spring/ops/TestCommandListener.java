@@ -1,6 +1,5 @@
 package com.redis.om.spring.ops;
 
-import org.springframework.boot.test.context.TestComponent;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import redis.clients.jedis.search.FTCreateParams;
