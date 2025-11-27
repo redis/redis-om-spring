@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: roms-multitenant-demo
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+# Application-specific configuration for dynamic indexing
+app:
+  environment: ${APP_ENV:development}
+  version: 1.0.0
+
+# Redis OM configuration
+redis:
+  om:
+    spring:
+      repository:
+        query:
+          limit: 1000
+
+# Server configuration
+server:
+  port: 8080
+
+# Logging
+logging:
+  level:
+    com.redis.om: DEBUG
+    com.redis.om.multitenant: DEBUG
