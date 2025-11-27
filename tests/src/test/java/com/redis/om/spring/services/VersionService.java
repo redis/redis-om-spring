@@ -71,9 +71,27 @@ public class VersionService {
      * @return the next version string
      */
     public String getNextVersion(String incrementType) {
-        int major = Integer.parseInt(getMajorVersion());
-        int minor = Integer.parseInt(getMinorVersion());
-        int patch = Integer.parseInt(getPatchVersion());
+        int major;
+        int minor;
+        int patch;
+
+        try {
+            major = Integer.parseInt(getMajorVersion());
+        } catch (NumberFormatException e) {
+            major = 1;
+        }
+
+        try {
+            minor = Integer.parseInt(getMinorVersion());
+        } catch (NumberFormatException e) {
+            minor = 0;
+        }
+
+        try {
+            patch = Integer.parseInt(getPatchVersion());
+        } catch (NumberFormatException e) {
+            patch = 0;
+        }
 
         switch (incrementType.toLowerCase()) {
             case "major":
