@@ -67,31 +67,104 @@ public class TenantController {
 
 === SpEL-Based Index Names
 
-Use Spring Expression Language for dynamic index naming:
+Use Spring Expression Language for dynamic index naming. Here's a working example from the `roms-multitenant` demo:
 
 [source,java]
 ----
+// From demos/roms-multitenant/src/main/java/com/redis/om/multitenant/domain/Product.java
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Document
-@IndexingOptions(indexName = "#{@tenantResolver.getCurrentTenant()}_products_idx")
+@IndexingOptions(
+    indexName = "products_#{@tenantService.getCurrentTenant()}_idx",
+    creationMode = IndexCreationMode.SKIP_IF_EXIST
+)
 public class Product {
+
     @Id
     private String id;
 
     @Searchable
     private String name;
 
-    @Indexed
-    private BigDecimal price;
-}
+    @Searchable
+    private String description;
 
+    @Indexed
+    private String category;
+
+    @Indexed
+    private String sku;
+
+    @Indexed
+    private Double price;
+
+    @Indexed
+    private Integer stockQuantity;
+
+    @Indexed
+    private Boolean active;
+}
+----
+
+The `TenantService` provides the current tenant via ThreadLocal:
+
+[source,java]
+----
+// From demos/roms-multitenant/src/main/java/com/redis/om/multitenant/services/TenantService.java
 @Service
-public class TenantResolver {
+public class TenantService {
+
+    private static final String DEFAULT_TENANT = "default";
+    private final ThreadLocal<String> currentTenant = ThreadLocal.withInitial(() -> DEFAULT_TENANT);
+
     public String getCurrentTenant() {
-        RedisIndexContext context = RedisIndexContext.getContext();
-        return context != null ? context.getTenantId() : "default";
+        return currentTenant.get();
+    }
+
+    public void setCurrentTenant(String tenantId) {
+        currentTenant.set(tenantId);
+    }
+
+    public void clearTenant() {
+        currentTenant.remove();
+    }
+
+    public void executeAsTenant(String tenantId, Runnable runnable) {
+        String previousTenant = currentTenant.get();
+        try {
+            setCurrentTenant(tenantId);
+            runnable.run();
+        } finally {
+            if (previousTenant != null) {
+                setCurrentTenant(previousTenant);
+            } else {
+                clearTenant();
+            }
+        }
     }
 }
 ----
+
+This pattern creates tenant-specific indexes dynamically:
+
+* For tenant "acme": Index `products_acme_idx`
+* For tenant "globex": Index `products_globex_idx`
+
+[IMPORTANT]
+====
+The `indexName` attribute supports SpEL expressions that are evaluated dynamically at runtime. However, the `keyPrefix` attribute affects only the index configuration (what key prefix the index searches), not the actual key storage by Spring Data Redis.
+
+All documents are stored using Spring Data Redis's static keyspace (typically the fully qualified class name). For true data isolation where each tenant's data is stored with different keys, you would need to implement a custom `KeyspaceResolver` or use a tenant-aware ID strategy.
+
+The dynamic index naming feature is primarily useful for:
+
+* Creating separate search indexes per tenant (all searching the same keyspace)
+* Environment-specific indexes (dev, staging, production)
+* Region-specific or data-center-specific indexes
+====
 
 === Environment-Based Tenant Configuration
 
@@ -607,5 +680,7 @@ public class TenantDebugService {
 == Next Steps
 
 * xref:index-creation.adoc[Advanced Index Configuration]
+* xref:index-migration.adoc[Index Migration]
+* xref:ephemeral-indexes.adoc[Ephemeral Indexes]
 * xref:search.adoc[Tenant-Aware Searching]
 * xref:entity-streams.adoc[Multi-Tenant Entity Streams]

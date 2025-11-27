@@ -36,6 +36,9 @@ This outline maps the documentation structure and provides a description of what
 - **search.adoc**: Redis Query Engine integration for full-text search capabilities
 - **index-annotations.adoc**: Annotations for defining searchable fields (@Indexed, @TextIndexed, etc.)
 - **index-creation.adoc**: Index creation processes, modes, and configuration
+- **multi-tenant-support.adoc**: Multi-tenant support with dynamic index naming via SpEL expressions, RedisIndexContext, and IndexResolver
+- **index-migration.adoc**: Index migration strategies (Blue-Green, Dual-Write, In-Place) for zero-downtime schema changes
+- **ephemeral-indexes.adoc**: Ephemeral indexes with TTL for temporary, auto-expiring indexes
 - **multilanguage.adoc**: Multilanguage support for search and indexing
 
 ## Query Capabilities

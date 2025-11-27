@@ -1,0 +1,507 @@
+= Index Migration
+:page-toclevels: 3
+:experimental:
+:source-highlighter: highlight.js
+
+== Introduction to Index Migration
+
+Index migration is the process of updating Redis search index schemas while minimizing or eliminating downtime. Redis OM Spring provides the `IndexMigrationService` to support various migration strategies:
+
+* **Blue-Green Deployment**: Zero-downtime migrations with atomic switchover
+* **Dual-Write Pattern**: Gradual migration with eventual consistency
+* **In-Place Updates**: Direct schema changes (may cause brief unavailability)
+
+== Migration Strategies
+
+Redis OM Spring supports three migration strategies, defined in the `MigrationStrategy` enum:
+
+[source,java]
+----
+public enum MigrationStrategy {
+    /**
+     * Blue-Green deployment strategy.
+     * Creates a new index, reindexes all data, then atomically switches aliases.
+     * Provides zero-downtime migration with atomic switchover.
+     */
+    BLUE_GREEN,
+
+    /**
+     * Dual-write strategy.
+     * Writes to both old and new indexes simultaneously during migration.
+     * Allows gradual migration with eventual consistency.
+     */
+    DUAL_WRITE,
+
+    /**
+     * In-place update strategy.
+     * Updates the existing index structure without creating a new one.
+     * May cause brief unavailability during schema changes.
+     */
+    IN_PLACE
+}
+----
+
+=== Blue-Green Deployment
+
+The Blue-Green strategy provides zero-downtime migrations:
+
+1. Create a new versioned index with the updated schema
+2. Reindex all existing data to the new index
+3. Verify data integrity in the new index
+4. Atomically switch the alias to point to the new index
+5. Schedule cleanup of the old index
+
+[source,java]
+----
+@Service
+public class SchemaMigrationService {
+
+    @Autowired
+    private IndexMigrationService migrationService;
+
+    public void migrateProductSchema() {
+        MigrationResult result = migrationService.migrateIndex(
+            Product.class,
+            MigrationStrategy.BLUE_GREEN
+        );
+
+        if (result.isSuccessful()) {
+            log.info("Migration completed: {} -> {}",
+                result.getOldIndexName(),
+                result.getNewIndexName());
+        } else {
+            log.error("Migration failed: {}", result.getErrorMessage());
+        }
+    }
+}
+----
+
+=== Dual-Write Pattern
+
+The Dual-Write strategy enables gradual migrations:
+
+1. Enable dual-write mode (writes go to both indexes)
+2. Start background reindexing of existing data
+3. Wait for reindexing to complete
+4. Switch the alias to the new index
+5. Disable dual-write mode
+
+[source,java]
+----
+@Service
+public class GradualMigrationService {
+
+    @Autowired
+    private IndexMigrationService migrationService;
+
+    public void migrateGradually() {
+        MigrationResult result = migrationService.migrateIndex(
+            Product.class,
+            MigrationStrategy.DUAL_WRITE
+        );
+
+        if (result.isSuccessful()) {
+            log.info("Migrated {} documents", result.getDocumentsProcessed());
+        }
+    }
+}
+----
+
+=== In-Place Updates
+
+For simple changes where brief unavailability is acceptable:
+
+[source,java]
+----
+@Service
+public class QuickMigrationService {
+
+    @Autowired
+    private IndexMigrationService migrationService;
+
+    public void updateInPlace() {
+        MigrationResult result = migrationService.migrateIndex(
+            Product.class,
+            MigrationStrategy.IN_PLACE
+        );
+
+        // The index is briefly unavailable during this operation
+    }
+}
+----
+
+== IndexMigrationService
+
+The `IndexMigrationService` is the main entry point for index migrations.
+
+=== Injecting the Service
+
+[source,java]
+----
+@Service
+public class MyMigrationHandler {
+
+    @Autowired
+    private IndexMigrationService migrationService;
+
+    // Use the service...
+}
+----
+
+=== Creating Versioned Indexes
+
+Create a new versioned index manually:
+
+[source,java]
+----
+// Creates an index like "product_v2_idx"
+String newIndexName = migrationService.createVersionedIndex(Product.class);
+log.info("Created versioned index: {}", newIndexName);
+----
+
+=== Checking Index Versions
+
+Query the current and next version numbers:
+
+[source,java]
+----
+int currentVersion = migrationService.getCurrentIndexVersion(Product.class);
+int nextVersion = migrationService.getNextIndexVersion(Product.class);
+
+log.info("Current version: {}, Next: {}", currentVersion, nextVersion);
+----
+
+=== Managing Aliases
+
+Aliases provide a level of indirection for zero-downtime switches:
+
+[source,java]
+----
+// Switch alias to point to new index
+boolean switched = migrationService.switchAlias(
+    Product.class,
+    "products_v2_idx"
+);
+
+if (switched) {
+    log.info("Alias now points to products_v2_idx");
+}
+----
+
+=== Background Reindexing
+
+Perform reindexing in the background for large datasets:
+
+[source,java]
+----
+CompletableFuture<ReindexResult> future = migrationService.reindexInBackground(
+    Product.class,
+    "products_v2_idx"
+);
+
+// Continue other work while reindexing happens...
+
+ReindexResult result = future.get();
+if (result.isSuccessful()) {
+    log.info("Reindexed {} documents in {}ms",
+        result.getDocumentsProcessed(),
+        result.getTimeElapsedMillis());
+}
+----
+
+== MigrationResult
+
+The `MigrationResult` class provides details about migration operations:
+
+[source,java]
+----
+MigrationResult result = migrationService.migrateIndex(
+    Product.class,
+    MigrationStrategy.BLUE_GREEN
+);
+
+// Check success
+if (result.isSuccessful()) {
+    // Get migration details
+    String oldIndex = result.getOldIndexName();
+    String newIndex = result.getNewIndexName();
+    MigrationStrategy strategy = result.getStrategy();
+    Instant startTime = result.getStartTime();
+    Instant endTime = result.getEndTime();
+    long documentsProcessed = result.getDocumentsProcessed();
+
+    log.info("Migration of {} documents from {} to {} completed in {}ms",
+        documentsProcessed,
+        oldIndex,
+        newIndex,
+        Duration.between(startTime, endTime).toMillis());
+} else {
+    // Handle failure
+    String error = result.getErrorMessage();
+    log.error("Migration failed: {}", error);
+}
+----
+
+== Complete Example
+
+Here's a comprehensive example from the multi-tenant demo:
+
+[source,java]
+----
+@Component
+public class DemoRunner implements CommandLineRunner {
+
+    @Autowired(required = false)
+    private IndexMigrationService indexMigrationService;
+
+    @Override
+    public void run(String... args) throws Exception {
+        if (indexMigrationService != null) {
+            demoIndexMigration();
+        }
+    }
+
+    private void demoIndexMigration() {
+        log.info("=== Index Migration with Aliasing ===");
+
+        log.info("Support for zero-downtime index migrations using Redis aliases.");
+        log.info("Enable Blue-Green deployments for schema changes.");
+
+        log.info("Migration Strategies:");
+        log.info("- BLUE_GREEN: Create new index, switch alias atomically");
+        log.info("- DUAL_WRITE: Write to both old and new indexes during migration");
+        log.info("- IN_PLACE: Modify existing index (requires downtime)");
+
+        log.info("Example workflow:");
+        log.info("1. Create versioned index: products_v2_idx");
+        log.info("2. Reindex data to new index");
+        log.info("3. Switch alias: products -> products_v2_idx");
+        log.info("4. Drop old index: products_v1_idx");
+
+        log.info("Available alias operations:");
+        log.info("- indexer.createAlias(indexName, aliasName)");
+        log.info("- indexer.updateAlias(oldIndex, newIndex, aliasName)");
+        log.info("- indexer.removeAlias(indexName, aliasName)");
+    }
+}
+----
+
+== Multi-Tenant Migration
+
+Migrate indexes for specific tenants:
+
+[source,java]
+----
+@Service
+public class TenantMigrationService {
+
+    @Autowired
+    private IndexMigrationService migrationService;
+
+    @Autowired
+    private TenantService tenantService;
+
+    public void migrateTenantIndex(String tenantId) {
+        // Set tenant context before migration
+        tenantService.setCurrentTenant(tenantId);
+
+        try {
+            MigrationResult result = migrationService.migrateIndex(
+                Product.class,
+                MigrationStrategy.BLUE_GREEN
+            );
+
+            if (result.isSuccessful()) {
+                log.info("Successfully migrated index for tenant: {}", tenantId);
+                log.info("Old: {} -> New: {}",
+                    result.getOldIndexName(),
+                    result.getNewIndexName());
+            } else {
+                log.error("Failed to migrate index for tenant {}: {}",
+                    tenantId, result.getErrorMessage());
+            }
+        } finally {
+            tenantService.clearTenant();
+        }
+    }
+
+    public void migrateAllTenants(List<String> tenantIds) {
+        for (String tenantId : tenantIds) {
+            migrateTenantIndex(tenantId);
+        }
+    }
+}
+----
+
+== Using RedisIndexContext for Migration
+
+Combine with `RedisIndexContext` for more control:
+
+[source,java]
+----
+@Service
+public class AdvancedMigrationService {
+
+    @Autowired
+    private IndexMigrationService migrationService;
+
+    public void migrateWithContext(String tenantId, String environment) {
+        RedisIndexContext context = RedisIndexContext.builder()
+            .tenantId(tenantId)
+            .environment(environment)
+            .setAttribute("migrationId", UUID.randomUUID().toString())
+            .build();
+
+        context.runWithContext(() -> {
+            MigrationResult result = migrationService.migrateIndex(
+                Product.class,
+                MigrationStrategy.BLUE_GREEN
+            );
+
+            logMigrationResult(result, context);
+        });
+    }
+
+    private void logMigrationResult(MigrationResult result, RedisIndexContext context) {
+        String migrationId = (String) context.getAttribute("migrationId");
+        log.info("Migration {} for tenant {} completed: {}",
+            migrationId,
+            context.getTenantId(),
+            result.isSuccessful() ? "SUCCESS" : "FAILED");
+    }
+}
+----
+
+== Best Practices
+
+=== Strategy Selection
+
+* **Blue-Green**: Production environments requiring zero downtime
+* **Dual-Write**: Large datasets requiring gradual migration with consistency verification
+* **In-Place**: Development/testing or minor changes where brief downtime is acceptable
+
+=== Pre-Migration Checklist
+
+1. **Backup data**: Ensure you have a recovery path
+2. **Test in staging**: Validate the migration works correctly
+3. **Monitor resources**: Check Redis memory and CPU during migration
+4. **Plan rollback**: Know how to revert if issues occur
+5. **Schedule wisely**: Choose low-traffic periods for migrations
+
+=== Handling Failures
+
+[source,java]
+----
+@Service
+public class SafeMigrationService {
+
+    @Autowired
+    private IndexMigrationService migrationService;
+
+    @Autowired
+    private RediSearchIndexer indexer;
+
+    public void migrateWithRollback() {
+        String currentIndexName = indexer.getIndexName(Product.class);
+
+        MigrationResult result = migrationService.migrateIndex(
+            Product.class,
+            MigrationStrategy.BLUE_GREEN
+        );
+
+        if (!result.isSuccessful()) {
+            log.error("Migration failed, keeping original index: {}",
+                currentIndexName);
+            // Original index is still active, no action needed
+        }
+    }
+}
+----
+
+=== Concurrent Migration Protection
+
+The `IndexMigrationService` prevents concurrent migrations for the same entity:
+
+[source,java]
+----
+// First migration starts
+MigrationResult result1 = migrationService.migrateIndex(
+    Product.class, MigrationStrategy.BLUE_GREEN
+);
+
+// Concurrent attempt fails gracefully
+MigrationResult result2 = migrationService.migrateIndex(
+    Product.class, MigrationStrategy.BLUE_GREEN
+);
+
+// result2.isSuccessful() == false
+// result2.getErrorMessage() contains "Migration already in progress"
+----
+
+== Alias Management with RediSearchIndexer
+
+For direct alias control, use the `RediSearchIndexer`:
+
+[source,java]
+----
+@Autowired
+private RediSearchIndexer indexer;
+
+// Create an alias
+indexer.createAlias("products_v2_idx", "products_alias");
+
+// Update alias to point to a different index
+indexer.updateAlias("products_v2_idx", "products_v3_idx", "products_alias");
+
+// Remove an alias
+indexer.removeAlias("products_v3_idx", "products_alias");
+----
+
+== Monitoring Migrations
+
+=== Logging
+
+The `IndexMigrationService` uses SLF4J for logging migration progress:
+
+[source,java]
+----
+// Enable DEBUG level for detailed migration logs
+logging.level.com.redis.om.spring.indexing=DEBUG
+----
+
+=== Programmatic Monitoring
+
+Track migration progress programmatically:
+
+[source,java]
+----
+@Service
+public class MigrationMonitor {
+
+    @Autowired
+    private IndexMigrationService migrationService;
+
+    public void monitorMigration(Class<?> entityClass) {
+        CompletableFuture<ReindexResult> future = migrationService.reindexInBackground(
+            entityClass,
+            "new_index_name"
+        );
+
+        // Poll for completion
+        while (!future.isDone()) {
+            log.info("Migration in progress...");
+            Thread.sleep(1000);
+        }
+
+        ReindexResult result = future.get();
+        log.info("Migration complete: {} documents processed",
+            result.getDocumentsProcessed());
+    }
+}
+----
+
+== Next Steps
+
+* xref:ephemeral-indexes.adoc[Ephemeral Indexes]
+* xref:multi-tenant-support.adoc[Multi-Tenant Support]
+* xref:index-creation.adoc[Index Creation and Management]

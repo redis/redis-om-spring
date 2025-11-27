@@ -1,0 +1,310 @@
+= Ephemeral Indexes
+:page-toclevels: 3
+:experimental:
+:source-highlighter: highlight.js
+
+== Introduction to Ephemeral Indexes
+
+Ephemeral indexes are temporary search indexes that automatically expire after a specified time-to-live (TTL). They are ideal for:
+
+* **Batch processing**: Create temporary indexes for one-time data imports or exports
+* **Analytics workloads**: Build indexes for temporary analytical queries that don't need to persist
+* **Testing and development**: Create indexes for testing without leaving behind artifacts
+* **Temporary features**: Support time-limited features or campaigns
+
+Redis OM Spring provides the `EphemeralIndexService` component to manage ephemeral indexes with automatic TTL-based cleanup.
+
+== EphemeralIndexService
+
+The `EphemeralIndexService` is a Spring-managed component that handles the creation, tracking, and automatic deletion of ephemeral indexes.
+
+=== Basic Usage
+
+Inject the service and create an ephemeral index:
+
+[source,java]
+----
+@Service
+public class AnalyticsService {
+
+    @Autowired
+    private EphemeralIndexService ephemeralIndexService;
+
+    public void runBatchAnalytics() {
+        // Create an ephemeral index that expires in 30 minutes
+        boolean created = ephemeralIndexService.createEphemeralIndex(
+            Product.class,
+            "temp_analytics_idx",
+            Duration.ofMinutes(30)
+        );
+
+        if (created) {
+            // Use the temporary index for analytics queries
+            performAnalyticsQueries();
+        }
+    }
+}
+----
+
+=== Creating Ephemeral Indexes
+
+The `createEphemeralIndex` method creates a temporary index with automatic cleanup:
+
+[source,java]
+----
+@Autowired
+private EphemeralIndexService ephemeralIndexService;
+
+public void createTemporaryIndex() {
+    // Parameters:
+    // 1. Entity class - defines the index schema
+    // 2. Index name - unique name for this ephemeral index
+    // 3. TTL - how long the index should exist
+
+    boolean success = ephemeralIndexService.createEphemeralIndex(
+        Product.class,
+        "temp_demo_idx",
+        Duration.ofSeconds(60)  // Auto-delete after 60 seconds
+    );
+
+    if (success) {
+        log.info("Ephemeral index created successfully");
+    }
+}
+----
+
+The service:
+
+1. Creates the index using the entity class schema
+2. Schedules automatic deletion after the TTL expires
+3. Tracks the index in an internal registry
+4. Generates a key prefix in the format `{entityname}:ephemeral:`
+
+=== Extending TTL
+
+If you need more time, extend the TTL of an existing ephemeral index:
+
+[source,java]
+----
+// Extend the TTL by another hour
+boolean extended = ephemeralIndexService.extendTTL(
+    "temp_analytics_idx",
+    Duration.ofHours(1)
+);
+
+if (extended) {
+    log.info("TTL extended successfully");
+} else {
+    log.warn("Index not found or not ephemeral");
+}
+----
+
+This cancels the current deletion schedule and creates a new one with the extended TTL.
+
+=== Checking Ephemeral Status
+
+Verify if an index is tracked as ephemeral:
+
+[source,java]
+----
+boolean isEphemeral = ephemeralIndexService.isEphemeralIndex("temp_analytics_idx");
+
+if (isEphemeral) {
+    log.info("This is a temporary index");
+} else {
+    log.info("This is a permanent index");
+}
+----
+
+== Complete Example
+
+Here's a complete example from the multi-tenant demo application showing ephemeral indexes in action:
+
+[source,java]
+----
+@Component
+public class DemoRunner implements CommandLineRunner {
+
+    @Autowired(required = false)
+    private EphemeralIndexService ephemeralIndexService;
+
+    @Override
+    public void run(String... args) throws Exception {
+        if (ephemeralIndexService != null) {
+            demoEphemeralIndexes();
+        }
+    }
+
+    private void demoEphemeralIndexes() {
+        log.info("Creating temporary indexes for batch processing...");
+
+        // Create an ephemeral index for demo
+        String ephemeralIndexName = "temp_demo_idx";
+        boolean created = ephemeralIndexService.createEphemeralIndex(
+            Product.class,
+            ephemeralIndexName,
+            Duration.ofSeconds(60)
+        );
+
+        if (created) {
+            log.info("Created ephemeral index: {}", ephemeralIndexName);
+            log.info("TTL: 60 seconds (will auto-delete)");
+            log.info("Is ephemeral: {}",
+                ephemeralIndexService.isEphemeralIndex(ephemeralIndexName));
+        }
+    }
+}
+----
+
+== Use Cases
+
+=== Batch Import Processing
+
+Create temporary indexes for large data imports:
+
+[source,java]
+----
+@Service
+public class DataImportService {
+
+    @Autowired
+    private EphemeralIndexService ephemeralIndexService;
+
+    @Autowired
+    private RediSearchIndexer indexer;
+
+    public void importProducts(List<Product> products, String batchId) {
+        String tempIndexName = "import_" + batchId + "_idx";
+
+        // Create ephemeral index for this batch
+        ephemeralIndexService.createEphemeralIndex(
+            Product.class,
+            tempIndexName,
+            Duration.ofHours(2)  // Keep for validation
+        );
+
+        try {
+            // Import products to the temporary index
+            for (Product product : products) {
+                // Process and validate...
+            }
+
+            // If validation passes, migrate to permanent index
+            migrateToProduction(tempIndexName);
+        } catch (Exception e) {
+            log.error("Import failed, ephemeral index will auto-cleanup");
+        }
+    }
+}
+----
+
+=== Time-Limited Search Features
+
+Support temporary promotional searches:
+
+[source,java]
+----
+@Service
+public class PromotionService {
+
+    @Autowired
+    private EphemeralIndexService ephemeralIndexService;
+
+    public void createBlackFridayIndex(Duration promotionDuration) {
+        // Create a special promotional index
+        boolean created = ephemeralIndexService.createEphemeralIndex(
+            Product.class,
+            "black_friday_deals_idx",
+            promotionDuration
+        );
+
+        if (created) {
+            log.info("Black Friday index created, expires in: {}", promotionDuration);
+        }
+    }
+}
+----
+
+=== Analytics with Automatic Cleanup
+
+Run analytics queries without permanent storage:
+
+[source,java]
+----
+@Service
+public class ReportingService {
+
+    @Autowired
+    private EphemeralIndexService ephemeralIndexService;
+
+    public Report generateDailyReport() {
+        String reportIndexName = "daily_report_" + LocalDate.now() + "_idx";
+
+        // Create index just for this report
+        ephemeralIndexService.createEphemeralIndex(
+            Transaction.class,
+            reportIndexName,
+            Duration.ofMinutes(30)  // Cleanup after report generation
+        );
+
+        try {
+            return runReportQueries(reportIndexName);
+        } finally {
+            // Index will auto-cleanup, but we could also cleanup early if needed
+            log.info("Report complete, index will auto-expire");
+        }
+    }
+}
+----
+
+== Best Practices
+
+=== TTL Selection
+
+* **Short TTL (seconds to minutes)**: Testing, quick batch jobs
+* **Medium TTL (minutes to hours)**: Analytics, report generation
+* **Longer TTL (hours to days)**: Data validation, migration staging
+
+=== Naming Conventions
+
+Use descriptive names that indicate the temporary nature:
+
+[source,java]
+----
+// Good naming patterns
+"temp_analytics_" + batchId + "_idx"
+"import_" + timestamp + "_idx"
+"staging_" + version + "_idx"
+"test_" + testName + "_idx"
+----
+
+=== Error Handling
+
+Always check the return value of `createEphemeralIndex`:
+
+[source,java]
+----
+boolean created = ephemeralIndexService.createEphemeralIndex(
+    entityClass, indexName, ttl
+);
+
+if (!created) {
+    log.error("Failed to create ephemeral index: {}", indexName);
+    // Handle failure appropriately
+    throw new IndexCreationException("Could not create temporary index");
+}
+----
+
+=== Resource Management
+
+The `EphemeralIndexService` implements `DisposableBean` and automatically:
+
+* Cancels all scheduled deletion tasks on shutdown
+* Clears the ephemeral index tracking registry
+* Gracefully shuts down the scheduler
+
+== Next Steps
+
+* xref:index-migration.adoc[Index Migration]
+* xref:multi-tenant-support.adoc[Multi-Tenant Support]
+* xref:index-creation.adoc[Index Creation and Management]
