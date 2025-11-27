@@ -24,7 +24,7 @@ public interface CommandListener {
     default void createIndexFinished(String indexName, FTCreateParams params, List<SchemaField> fields, Schema schema, IndexOptions options, String result){}
 
     default void aggregateStarted(String indexName, AggregationBuilder q){}
-    default void aggregateFinished(String indexName, AggregationBuilder q){}
+    default void aggregateFinished(String indexName, AggregationBuilder q, AggregationResult result){}
 
     default void cursorDeleteStarted(String string, long cursorId){}
     default void cursorDeleteFinished(String string, long cursorId, String result){}

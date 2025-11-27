@@ -61,89 +61,149 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
     @Override
     public String createIndex(Schema schema, IndexOptions options) {
       commandListener.createIndexStarted(index.toString(), null, null, schema, options);
-      final String s = search.ftCreate(index.toString(), options, schema);
-      commandListener.createIndexFinished(index.toString(), null, null, schema, options, s);
-      return s;
+      String result = null;
+      try {
+          result = search.ftCreate(index.toString(), options, schema);
+      } catch (Exception e) {
+          throw e;
+      }finally {
+          commandListener.createIndexFinished(index.toString(), null, null, schema, options, result);
+      }
+      return result;
     }
 
     @Override
     public String createIndex(FTCreateParams params, List<SchemaField> fields) {
       commandListener.createIndexStarted(index.toString(), params, fields, null, null);
-      final String s = search.ftCreate(index.toString(), params, fields);
-      commandListener.createIndexFinished(index.toString(), params, fields, null, null, s);
-      return s;
+      String result = null;
+      try {
+          result = search.ftCreate(index.toString(), params, fields);
+      } catch (Exception e) {
+          throw e;
+      } finally {
+          commandListener.createIndexFinished(index.toString(), params, fields, null, null, result);
+      }
+      return result;
     }
 
     @Override
     @Deprecated
     public SearchResult search(Query q) {
       commandListener.searchStarted(index.toString(), q, null);
-      final SearchResult searchResult = search.ftSearch(SafeEncoder.encode(index.toString()), q);
-      commandListener.searchFinished(index.toString(), q, null, searchResult);
-      return searchResult;
+      SearchResult result = null;
+      try {
+          result = search.ftSearch(SafeEncoder.encode(index.toString()), q);
+      } catch (Exception e) {
+          throw e;
+      } finally {
+          commandListener.searchFinished(index.toString(), q, null, result);
+      }
+      return result;
     }
 
     @Override
     public SearchResult search(Query q, FTSearchParams params) {
       commandListener.searchStarted(index.toString(), q, null);
-      final SearchResult searchResult = search.ftSearch(index.toString(), q.toString(), params);
-      commandListener.searchFinished(index.toString(), q, null, searchResult);
-      return searchResult;
+      final SearchResult result = search.ftSearch(index.toString(), q.toString(), params);
+      commandListener.searchFinished(index.toString(), q, null, result);
+      return result;
     }
 
     @Override
     public AggregationResult aggregate(AggregationBuilder q) {
       commandListener.aggregateStarted(index.toString(), q);
-      final AggregationResult aggregationResult = search.ftAggregate(index.toString(), q);
-      commandListener.aggregateFinished(index.toString(), q);
-      return aggregationResult;
+      AggregationResult result = null;
+      try {
+          result = search.ftAggregate(index.toString(), q);
+      } catch (Exception e) {
+          throw e;
+      } finally {
+          commandListener.aggregateFinished(index.toString(), q, result);
+      }
+      return result;
     }
 
     @Override
     public String cursorDelete(long cursorId) {
       commandListener.cursorDeleteStarted(index.toString(), cursorId);
-      final String result = search.ftCursorDel(index.toString(), cursorId);
-      commandListener.cursorDeleteFinished(index.toString(), cursorId, result);
+      String result = null;
+      try {
+          result = search.ftCursorDel(index.toString(), cursorId);
+      } catch (Exception e) {
+          throw e;
+      } finally {
+          commandListener.cursorDeleteFinished(index.toString(), cursorId, result);
+      }
       return result;
     }
 
   @Override
   public AggregationResult cursorRead(long cursorId, int count) {
     commandListener.cursorReadStarted(index.toString(), cursorId, count);
-    final AggregationResult aggregationResult = search.ftCursorRead(index.toString(), cursorId, count);
-    commandListener.cursorReadFinished(index.toString(), cursorId, count, aggregationResult);
-    return aggregationResult;
+    AggregationResult result = null;
+    try {
+        result = search.ftCursorRead(index.toString(), cursorId, count);
+    } catch (Exception e) {
+        throw e;
+    } finally {
+        commandListener.cursorReadFinished(index.toString(), cursorId, count, result);
+    }
+    return result;
   }
 
   @Override
   public String explain(Query q) {
     commandListener.explainStarted(index.toString(), q);
-    final String s = search.ftExplain(index.toString(), q);
-    commandListener.explainFinished(index.toString(), q, s);
-    return s;
+    String result = null;
+    try {
+        result = search.ftExplain(index.toString(), q);
+    } catch (Exception e) {
+        throw e;
+    } finally {
+        commandListener.explainFinished(index.toString(), q, result);
+    }
+    return result;
   }
 
   @Override
   public Map<String, Object> getInfo() {
     commandListener.infoStarted(index.toString());
-    final Map<String, Object> result = search.ftInfo(index.toString());
-    commandListener.infoFinished(index.toString(), result);
+    Map<String, Object> result = Map.of();
+    try {
+        result = search.ftInfo(index.toString());
+    } catch (Exception e) {
+        throw e;
+    } finally {
+        commandListener.infoFinished(index.toString(), result);
+    }
     return result;
   }
 
   @Override
   public String dropIndex() {
     commandListener.dropIndexStarted(index.toString());
-    final String result = search.ftDropIndex(index.toString());
-    commandListener.dropIndexFinished(index.toString(), result);
+    String result = null;
+    try {
+        result = search.ftDropIndex(index.toString());
+    } catch (Exception e) {
+        throw e;
+    } finally {
+        commandListener.dropIndexFinished(index.toString(), result);
+    }
     return result;
   }
 
   @Override
   public String dropIndexAndDocuments() {
     commandListener.dropIndexAndDocumentsStarted(index.toString());
-    final String result = search.ftDropIndexDD(index.toString());
-    commandListener.dropIndexAndDocumentsFinished(index.toString(), result);
+    String result = null;
+    try {
+        result = search.ftDropIndexDD(index.toString());
+    } catch (Exception e) {
+        throw e;
+    } finally {
+        commandListener.dropIndexAndDocumentsFinished(index.toString(), result);
+    }
     return result;
   }
 
@@ -155,8 +215,14 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
   @Override
   public Long addSuggestion(String key, String suggestion, double score) {
     commandListener.addSuggestionStarted(index.toString(), key, suggestion, score);
-    final long result = search.ftSugAdd(key, suggestion, score);
-    commandListener.addSuggestionFinished(index.toString(), key, suggestion, score, result);
+    long result = 0;
+    try {
+        result = search.ftSugAdd(key, suggestion, score);
+    } catch (Exception e) {
+        throw e;
+    } finally {
+        commandListener.addSuggestionFinished(index.toString(), key, suggestion, score, result);
+    }
     return result;
   }
 
@@ -172,136 +238,220 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
 
     if (options.isWithScore()) {
       List<Tuple> suggestions = search.ftSugGetWithScores(key, prefix, options.isFuzzy(), options.getLimit());
-      List<Suggestion> list = suggestions.stream().map(suggestion -> {
-          if (options.isWithPayload()) {
-              String[] keyParts = key.split(":");
-              String payLoadKey = String.format("sugg:payload:%s:%s", keyParts[keyParts.length - 2],
-                      keyParts[keyParts.length - 1]);
-              Object payload = template.opsForHash().get(payLoadKey, suggestion.getElement());
-              String json = payload != null ? payload.toString() : "{}";
-              Map<String, Object> payloadMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
-              }.getType());
-              return new Suggestion(suggestion.getElement(), suggestion.getScore(), payloadMap);
-          } else {
-              return new Suggestion(suggestion.getElement(), suggestion.getScore());
-          }
-      }).toList();
-        commandListener.getSuggestionFinished(index.toString(), key, prefix, options, list);
+      List<Suggestion> list = List.of();
+      try {
+          list = suggestions.stream().map(suggestion -> {
+              if (options.isWithPayload()) {
+                  String[] keyParts = key.split(":");
+                  String payLoadKey = String.format("sugg:payload:%s:%s", keyParts[keyParts.length - 2],
+                          keyParts[keyParts.length - 1]);
+                  Object payload = template.opsForHash().get(payLoadKey, suggestion.getElement());
+                  String json = payload != null ? payload.toString() : "{}";
+                  Map<String, Object> payloadMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
+                  }.getType());
+                  return new Suggestion(suggestion.getElement(), suggestion.getScore(), payloadMap);
+              } else {
+                  return new Suggestion(suggestion.getElement(), suggestion.getScore());
+              }
+          }).toList();
+      } catch (Exception e) {
+          throw e;
+      } finally {
+          commandListener.getSuggestionFinished(index.toString(), key, prefix, options, list);
+      }
       return list;
     } else {
       List<String> suggestions = search.ftSugGet(key, prefix, options.isFuzzy(), options.getLimit());
-        List<Suggestion> list = suggestions.stream().map(suggestion -> {
-            if (options.isWithPayload()) {
-                String[] keyParts = key.split(":");
-                String payLoadKey = String.format("sugg:payload:%s:%s", keyParts[keyParts.length - 2],
-                        keyParts[keyParts.length - 1]);
-                Object payload = template.opsForHash().get(payLoadKey, suggestion);
-                String json = payload != null ? payload.toString() : "{}";
-                Map<String, Object> payloadMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
-                }.getType());
-                return new Suggestion(suggestion, payloadMap);
-            } else {
-                return new Suggestion(suggestion);
-            }
-        }).toList();
-        commandListener.getSuggestionFinished(index.toString(), key, prefix, options, list);
-        return list;
+      List<Suggestion> list = List.of();
+      try {
+          list = suggestions.stream().map(suggestion -> {
+              if (options.isWithPayload()) {
+                  String[] keyParts = key.split(":");
+                  String payLoadKey = String.format("sugg:payload:%s:%s", keyParts[keyParts.length - 2],
+                          keyParts[keyParts.length - 1]);
+                  Object payload = template.opsForHash().get(payLoadKey, suggestion);
+                  String json = payload != null ? payload.toString() : "{}";
+                  Map<String, Object> payloadMap = gson.fromJson(json, new TypeToken<Map<String, Object>>() {
+                  }.getType());
+                  return new Suggestion(suggestion, payloadMap);
+              } else {
+                  return new Suggestion(suggestion);
+              }
+          }).toList();
+      } catch (Exception e) {
+          throw e;
+      }finally {
+          commandListener.getSuggestionFinished(index.toString(), key, prefix, options, list);
+      }
+      return list;
     }
   }
 
   @Override
   public Boolean deleteSuggestion(String key, String entry) {
     commandListener.deleteSuggestionStarted(index.toString(), key, entry);
-    final boolean result = search.ftSugDel(key, entry);
-    commandListener.deleteSuggestionFinished(index.toString(), key, entry, result);
+    boolean result = false;
+    try {
+        result = search.ftSugDel(key, entry);
+    } catch (Exception e) {
+        throw e;
+    } finally {
+        commandListener.deleteSuggestionFinished(index.toString(), key, entry, result);
+    }
     return result;
   }
 
   @Override
   public Long getSuggestionLength(String key) {
     commandListener.getSuggestionLengthStarted(index.toString(), key);
-    final long result = search.ftSugLen(key);
-    commandListener.getSuggestionLengthFinished(index.toString(), key, result);
+    long result = 0;
+    try {
+        result = search.ftSugLen(key);
+    } catch (Exception e) {
+        throw e;
+    } finally {
+        commandListener.getSuggestionLengthFinished(index.toString(), key, result);
+    }
     return result;
   }
 
   @Override
   public String alterIndex(SchemaField... fields) {
     commandListener.alterIndexStarted(index.toString(), fields);
-    final String result = search.ftAlter(index.toString(), fields);
-    commandListener.alterIndexFinished(index.toString(), fields, result);
+    String result = null;
+    try {
+        result = search.ftAlter(index.toString(), fields);
+    } catch (Exception e) {
+        throw e;
+    } finally {
+        commandListener.alterIndexFinished(index.toString(), fields, result);
+    }
     return result;
   }
 
   @Override
   public String setConfig(String option, String value) {
     commandListener.setConfigStarted(index.toString(), option, value);
-    final String result = search.ftConfigSet(option, value);
-    commandListener.setConfigFinished(index.toString(), option, value, result);
+    String result = null;
+    try {
+        result = search.ftConfigSet(option, value);
+    } catch (Exception e) {
+        throw e;
+    } finally {
+        commandListener.setConfigFinished(index.toString(), option, value, result);
+    }
     return result;
   }
 
   @Override
   public Map<String, Object> getConfig(String option) {
     commandListener.getConfigStarted(index.toString(), option);
-    final Map<String, Object> result = search.ftConfigGet(option);
-    commandListener.getConfigFinished(index.toString(), option, result);
+    Map<String, Object> result = Map.of();
+    try {
+        result = search.ftConfigGet(option);
+    } catch (Exception e) {
+        throw e;
+    } finally {
+        commandListener.getConfigFinished(index.toString(), option, result);
+    }
     return result;
   }
 
   @Override
   public Map<String, Object> getIndexConfig(String option) {
     commandListener.getIndexConfigStarted(index.toString(), option);
-    final Map<String, Object> result = search.ftConfigGet(index.toString(), option);
-    commandListener.getIndexConfigFinished(index.toString(), option, result);
+    Map<String, Object> result = Map.of();
+    try {
+        result = search.ftConfigGet(index.toString(), option);
+    } catch (Exception e) {
+        throw e;
+    } finally {
+        commandListener.getIndexConfigFinished(index.toString(), option, result);
+    }
     return result;
   }
 
   @Override
   public String addAlias(String name) {
     commandListener.addAliasStarted(index.toString(), name);
-    final String result = search.ftAliasAdd(name, index.toString());
-    commandListener.addAliasFinished(index.toString(), name, result);
+    String result = null;
+    try {
+        result = search.ftAliasAdd(name, index.toString());
+    } catch (Exception e) {
+        throw e;
+    } finally {
+        commandListener.addAliasFinished(index.toString(), name, result);
+    }
     return result;
   }
 
   @Override
   public String updateAlias(String name) {
     commandListener.updateAliasStarted(index.toString(), name);
-    final String result = search.ftAliasUpdate(name, index.toString());
-    commandListener.updateAliasFinished(index.toString(), name, result);
+    String result = null;
+    try {
+        result = search.ftAliasUpdate(name, index.toString());
+    } catch (Exception e) {
+        throw e;
+    }finally {
+        commandListener.updateAliasFinished(index.toString(), name, result);
+    }
     return result;
   }
 
   @Override
   public String deleteAlias(String name) {
     commandListener.deleteAliasStarted(index.toString(), name);
-    final String result = search.ftAliasDel(name);
-    commandListener.deleteAliasFinished(index.toString(), name, result);
+    String result = null;
+    try {
+        result = search.ftAliasDel(name);
+    } catch (Exception e) {
+        throw e;
+    } finally {
+        commandListener.deleteAliasFinished(index.toString(), name, result);
+    }
     return result;
   }
 
   @Override
   public String updateSynonym(String synonymGroupId, String... terms) {
     commandListener.updateSynonymStarted(index.toString(), synonymGroupId, terms);
-    final String result = search.ftSynUpdate(index.toString(), synonymGroupId, terms);
-    commandListener.updateSynonymFinished(index.toString(), synonymGroupId, terms, result);
+    String result = null;
+    try {
+        result = search.ftSynUpdate(index.toString(), synonymGroupId, terms);
+    } catch (Exception e) {
+        throw e;
+    } finally {
+        commandListener.updateSynonymFinished(index.toString(), synonymGroupId, terms, result);
+    }
     return result;
   }
 
   @Override
   public Map<String, List<String>> dumpSynonym() {
     commandListener.dumpSynonymStarted(index.toString());
-    final Map<String, List<String>> result = search.ftSynDump(index.toString());
-    commandListener.dumpSynonymFinished(index.toString(), result);
+    Map<String, List<String>> result = Map.of();
+    try {
+        result = search.ftSynDump(index.toString());
+    } catch (Exception e) {
+        throw e;
+    } finally {
+        commandListener.dumpSynonymFinished(index.toString(), result);
+    }
     return result;
   }
 
   @Override
   public Set<String> tagVals(String field) {
     commandListener.tagValsStarted(index.toString(), field);
-    final Set<String> result = search.ftTagVals(index.toString(), field);
-    commandListener.tagValsFinished(index.toString(), field, result);
+    Set<String> result = Set.of();
+    try {
+        result = search.ftTagVals(index.toString(), field);
+    } catch (Exception e) {
+        throw e;
+    }finally {
+        commandListener.tagValsFinished(index.toString(), field, result);
+    }
     return result;
   }
 
