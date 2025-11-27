@@ -34,6 +34,12 @@ public class ConfigurableIndexDefinitionProvider {
   private final Map<Class<?>, IndexResolver> customResolvers = new ConcurrentHashMap<>();
   private final ObjectMapper objectMapper = new ObjectMapper();
 
+  /**
+   * Constructs a new ConfigurableIndexDefinitionProvider.
+   *
+   * @param indexer            the RediSearchIndexer to use for index operations
+   * @param applicationContext the Spring application context
+   */
   public ConfigurableIndexDefinitionProvider(RediSearchIndexer indexer, ApplicationContext applicationContext) {
     this.indexer = indexer;
     this.applicationContext = applicationContext;
@@ -276,15 +282,31 @@ public class ConfigurableIndexDefinitionProvider {
     private final String indexName;
     private final String keyPrefix;
 
+    /**
+     * Constructs a new IndexDefinitionConfig.
+     *
+     * @param indexName the name of the index
+     * @param keyPrefix the key prefix for the index
+     */
     public IndexDefinitionConfig(String indexName, String keyPrefix) {
       this.indexName = indexName;
       this.keyPrefix = keyPrefix;
     }
 
+    /**
+     * Returns the index name.
+     *
+     * @return the index name
+     */
     public String getIndexName() {
       return indexName;
     }
 
+    /**
+     * Returns the key prefix.
+     *
+     * @return the key prefix
+     */
     public String getKeyPrefix() {
       return keyPrefix;
     }
@@ -298,20 +320,42 @@ public class ConfigurableIndexDefinitionProvider {
     private final String keyPrefix;
     private final Class<?> entityClass;
 
+    /**
+     * Constructs a new IndexDefinition.
+     *
+     * @param indexName   the name of the index
+     * @param keyPrefix   the key prefix for the index
+     * @param entityClass the entity class for the index
+     */
     public IndexDefinition(String indexName, String keyPrefix, Class<?> entityClass) {
       this.indexName = indexName;
       this.keyPrefix = keyPrefix;
       this.entityClass = entityClass;
     }
 
+    /**
+     * Returns the index name.
+     *
+     * @return the index name
+     */
     public String getIndexName() {
       return indexName;
     }
 
+    /**
+     * Returns the key prefix.
+     *
+     * @return the key prefix
+     */
     public String getKeyPrefix() {
       return keyPrefix;
     }
 
+    /**
+     * Returns the entity class.
+     *
+     * @return the entity class
+     */
     public Class<?> getEntityClass() {
       return entityClass;
     }
@@ -325,39 +369,83 @@ public class ConfigurableIndexDefinitionProvider {
     private final long documentCount;
     private final long indexSize;
 
+    /**
+     * Constructs a new IndexStatistics instance.
+     *
+     * @param indexName     the name of the index
+     * @param documentCount the number of documents in the index
+     * @param indexSize     the size of the index in bytes
+     */
     public IndexStatistics(String indexName, long documentCount, long indexSize) {
       this.indexName = indexName;
       this.documentCount = documentCount;
       this.indexSize = indexSize;
     }
 
+    /**
+     * Returns the name of the index.
+     *
+     * @return the index name
+     */
     public String getIndexName() {
       return indexName;
     }
 
+    /**
+     * Returns the number of documents in the index.
+     *
+     * @return the document count
+     */
     public long getDocumentCount() {
       return documentCount;
     }
 
+    /**
+     * Returns the size of the index in bytes.
+     *
+     * @return the index size
+     */
     public long getIndexSize() {
       return indexSize;
     }
   }
 
   /**
-   * Inner class representing validation results.
+   * Inner class representing validation results for index configurations.
    */
   public static class ValidationResult {
     private final List<String> errors = new ArrayList<>();
 
+    /**
+     * Creates a new empty ValidationResult.
+     */
+    public ValidationResult() {
+      // Default constructor
+    }
+
+    /**
+     * Adds an error message to this validation result.
+     *
+     * @param error the error message to add
+     */
     public void addError(String error) {
       errors.add(error);
     }
 
+    /**
+     * Checks if this validation result is valid (has no errors).
+     *
+     * @return true if there are no errors, false otherwise
+     */
     public boolean isValid() {
       return errors.isEmpty();
     }
 
+    /**
+     * Returns the list of error messages.
+     *
+     * @return the list of errors
+     */
     public List<String> getErrors() {
       return errors;
     }

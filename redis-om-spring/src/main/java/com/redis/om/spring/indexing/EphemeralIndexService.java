@@ -26,6 +26,11 @@ public class EphemeralIndexService implements DisposableBean {
   private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
   private final ConcurrentHashMap<String, EphemeralIndexInfo> ephemeralIndexes = new ConcurrentHashMap<>();
 
+  /**
+   * Constructs a new EphemeralIndexService.
+   *
+   * @param indexer the RediSearchIndexer to use for index operations
+   */
   @Autowired
   public EphemeralIndexService(RediSearchIndexer indexer) {
     this.indexer = indexer;
