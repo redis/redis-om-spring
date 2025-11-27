@@ -28,6 +28,8 @@
 * xref:index-annotations.adoc[Index Annotations]
 * xref:index-creation.adoc[Index Creation and Management]
 * xref:multi-tenant-support.adoc[Multi-Tenant Support]
+* xref:index-migration.adoc[Index Migration]
+* xref:ephemeral-indexes.adoc[Ephemeral Indexes]
 * xref:multilanguage.adoc[Multilanguage Support]
 
 .Query Capabilities

@@ -385,6 +385,9 @@ FT.DROPINDEX product-idx
 
 == Next Steps
 
+* xref:multi-tenant-support.adoc[Multi-Tenant Support]
+* xref:index-migration.adoc[Index Migration]
+* xref:ephemeral-indexes.adoc[Ephemeral Indexes]
 * xref:search.adoc[Redis Query Engine Integration]
 * xref:entity-streams.adoc[Entity Streams]
 * xref:vector-search.adoc[Vector Similarity Search]
