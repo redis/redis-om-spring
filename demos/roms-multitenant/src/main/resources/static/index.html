@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redis OM Spring - Dynamic Indexing Demo</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts - Space Grotesk -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --font-family-base: 'Space Grotesk', sans-serif;
+            --redis-red: #DC382D;
+        }
+
+        body {
+            font-family: var(--font-family-base);
+            background-color: #f8f9fa;
+            overflow-x: hidden;
+        }
+
+        button, input, select, textarea {
+            font-family: inherit;
+        }
+
+        /* Header */
+        .app-header {
+            background: linear-gradient(135deg, var(--redis-red) 0%, #a61c1c 100%);
+            padding: 1rem 1.5rem;
+            color: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        }
+
+        .app-header h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-right: 1px solid #dee2e6;
+            min-height: calc(100vh - 60px);
+            width: 220px;
+            flex-shrink: 0;
+        }
+
+        .sidebar .list-group-item {
+            border: none;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar .list-group-item:hover {
+            background-color: #e9ecef;
+        }
+
+        .sidebar .list-group-item.active {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+
+        .section-header {
+            padding: 0 0.75rem;
+        }
+
+        .section-header small {
+            letter-spacing: 0.5px;
+            font-size: 0.7rem;
+            color: #6c757d;
+            font-weight: 700;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex-grow: 1;
+            padding: 24px;
+            overflow-x: auto;
+        }
+
+        /* Cards */
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            margin-bottom: 1.5rem;
+            border-radius: 8px;
+        }
+
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            font-weight: 600;
+            padding: 1rem 1.25rem;
+        }
+
+        .card-header h5 {
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .small-card {
+            min-height: 120px;
+        }
+
+        .small-card .display-6 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        /* Custom Select Buttons */
+        .custom-select-btn {
+            min-width: 160px;
+            font-weight: 500;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .custom-select-btn:hover {
+            border-color: #0d6efd;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            box-shadow: 0 2px 8px rgba(13, 110, 253, 0.15);
+        }
+
+        .custom-select-btn:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        }
+
+        .custom-dropdown {
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 8px 0;
+            min-width: 200px;
+        }
+
+        .custom-dropdown .dropdown-item {
+            padding: 8px 16px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+            margin: 2px 8px;
+        }
+
+        .custom-dropdown .dropdown-item:hover {
+            background: linear-gradient(135deg, #0d6efd 0%, #0056b3 100%);
+            color: white;
+            transform: translateX(2px);
+        }
+
+        /* Code Block */
+        .code-block {
+            background: #1e1e1e;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+            color: #d4d4d4;
+        }
+
+        .code-block pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* Product Card */
+        .product-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .product-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .product-card h6 {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .product-card .meta {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .product-card .price {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #198754;
+            margin-top: 0.5rem;
+        }
+
+        /* Index Tag */
+        .index-tag {
+            padding: 0.3rem 0.8rem;
+            background: rgba(13, 110, 253, 0.1);
+            border: 1px solid rgba(13, 110, 253, 0.2);
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-family: monospace;
+            color: #0d6efd;
+            display: inline-block;
+            margin: 0.25rem;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-success {
+            background: rgba(25, 135, 84, 0.1);
+            color: #198754;
+        }
+
+        .status-warning {
+            background: rgba(255, 193, 7, 0.15);
+            color: #997404;
+        }
+
+        .status-info {
+            background: rgba(13, 110, 253, 0.1);
+            color: #0d6efd;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        /* Migration Step */
+        .migration-step {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        }
+
+        .step-number {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #495057;
+            flex-shrink: 0;
+        }
+
+        .step-number.completed {
+            background: #198754;
+            color: white;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .step-desc {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        /* Log Entry */
+        .log-entry {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 0.85rem;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-time {
+            color: #6c757d;
+            margin-right: 0.5rem;
+        }
+
+        .log-action {
+            color: #0d6efd;
+            font-weight: 500;
+        }
+
+        .log-result {
+            color: #198754;
+        }
+
+        /* Search Form */
+        .search-form {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+
+        /* Modal */
+        .modal-content {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #dee2e6;
+            padding: 1.25rem 1.5rem;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            border-top: 1px solid #dee2e6;
+            padding: 1rem 1.5rem;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1100;
+        }
+
+        .custom-toast {
+            min-width: 280px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+        }
+
+        /* Redis Button */
+        .btn-redis {
+            background: linear-gradient(135deg, var(--redis-red) 0%, #a61c1c 100%);
+            border: none;
+            color: white;
+        }
+
+        .btn-redis:hover {
+            background: linear-gradient(135deg, #c42f25 0%, #8a1919 100%);
+            color: white;
+        }
+
+        /* Form Labels */
+        .form-label {
+            font-weight: 500;
+            color: #495057;
+            font-size: 0.9rem;
+            margin-bottom: 0.4rem;
+        }
+
+        /* Ephemeral Index Card */
+        .ephemeral-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .ephemeral-card .index-name {
+            font-family: monospace;
+            font-weight: 500;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+            font-size: 0.85rem;
+            border-top: 1px solid #dee2e6;
+            background: white;
+            margin-top: 2rem;
+        }
+
+        footer a {
+            color: var(--redis-red);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="app-header d-flex justify-content-between align-items-center">
+        <h1><i class="bi bi-database me-2"></i>Redis OM Spring - Dynamic Indexing Demo</h1>
+        <div class="d-flex gap-2">
+            <button class="btn btn-light btn-sm" onclick="refreshStatus()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+            </button>
+            <button class="btn btn-outline-light btn-sm" onclick="showResetConfirm()">
+                <i class="bi bi-trash me-1"></i>Reset Database
+            </button>
+        </div>
+    </header>
+
+    <div class="d-flex">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="section-header mb-2">
+                <small>DEMO FEATURES</small>
+            </div>
+            <div class="list-group">
+                <a href="#" class="list-group-item list-group-item-action d-flex align-items-center active" onclick="showTab('multitenancy'); return false;">
+                    <i class="bi bi-building me-2"></i>Multi-Tenancy
+                </a>
+                <a href="#" class="list-group-item list-group-item-action d-flex align-items-center" onclick="showTab('spel'); return false;">
+                    <i class="bi bi-code-square me-2"></i>SpEL Expressions
+                </a>
+                <a href="#" class="list-group-item list-group-item-action d-flex align-items-center" onclick="showTab('ephemeral'); return false;">
+                    <i class="bi bi-clock-history me-2"></i>Ephemeral Indexes
+                </a>
+                <a href="#" class="list-group-item list-group-item-action d-flex align-items-center" onclick="showTab('migration'); return false;">
+                    <i class="bi bi-arrow-repeat me-2"></i>Index Migration
+                </a>
+                <a href="#" class="list-group-item list-group-item-action d-flex align-items-center" onclick="showTab('bulk'); return false;">
+                    <i class="bi bi-collection me-2"></i>Bulk Operations
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Multi-Tenancy Demo -->
+            <div id="multitenancy" class="tab-content">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="bi bi-building text-primary me-2"></i>
+                        <h5>Multi-Tenant Index Isolation</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-4">Each tenant gets their own isolated search index and key prefix. Data from one tenant is completely invisible to other tenants.</p>
+
+                        <div class="row align-items-end mb-4">
+                            <div class="col-auto">
+                                <label class="form-label"><i class="bi bi-person-badge me-1"></i>Current Tenant</label>
+                                <select id="currentTenant" class="form-select custom-select-btn" onchange="onTenantChange()">
+                                    <option value="acme_corp">Acme Corp</option>
+                                    <option value="globex_inc">Globex Inc</option>
+                                    <option value="initech">Initech</option>
+                                </select>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-redis" onclick="createTenantIndex()">
+                                    <i class="bi bi-plus-circle me-1"></i>Create Index
+                                </button>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-success" onclick="addSampleProducts()">
+                                    <i class="bi bi-box-seam me-1"></i>Add Sample Products
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-info-circle me-2"></i>Tenant Index Info</span>
+                                        <span id="tenantStatus" class="status-badge status-info">
+                                            <span class="status-dot"></span> Not initialized
+                                        </span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="tenantIndexInfo" class="code-block">
+                                            <pre>Select a tenant and create an index to see details...</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="bi bi-box-seam me-2"></i>Products for <span id="productsForTenant" class="fw-bold">acme_corp</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="search-form">
+                                            <input type="text" id="productSearchQuery" class="form-control" placeholder="Search products by name...">
+                                            <button class="btn btn-primary" onclick="searchProducts()"><i class="bi bi-search"></i></button>
+                                            <button class="btn btn-outline-secondary" onclick="loadTenantProducts()">Clear</button>
+                                        </div>
+                                        <div id="productsList">
+                                            <div class="empty-state">
+                                                <i class="bi bi-inbox display-4 d-block mb-2"></i>
+                                                No products yet. Add some sample products!
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SpEL Expressions Demo -->
+            <div id="spel" class="tab-content" style="display: none;">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="bi bi-code-square text-primary me-2"></i>
+                        <h5>SpEL Expression Support</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-4">Redis OM Spring supports Spring Expression Language (SpEL) in @IndexingOptions annotations. This enables dynamic index names and key prefixes resolved at runtime.</p>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="bi bi-file-earmark-code me-2"></i>Annotation Example
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="code-block">
+<pre>@Document
+@IndexingOptions(
+    indexName = "products_#{@tenantService.getCurrentTenant()}_idx",
+    keyPrefix = "#{@tenantService.getCurrentTenant()}:products:"
+)
+public class Product {
+    @Id private String id;
+    @Searchable private String name;
+    @Indexed private String category;
+    @Indexed private Double price;
+}</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="bi bi-play-circle me-2"></i>Live Resolution
+                                    </div>
+                                    <div class="card-body">
+                                        <label class="form-label">Enter tenant name to resolve SpEL expressions:</label>
+                                        <div class="input-group mb-3">
+                                            <input type="text" id="spelTenant" class="form-control" placeholder="Enter tenant name" value="demo_tenant">
+                                            <button class="btn btn-primary" onclick="resolveSpel()">Resolve</button>
+                                        </div>
+                                        <div id="spelResult" class="code-block">
+                                            <pre>Click "Resolve" to see the resolved values...</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="mt-4 mb-3"><i class="bi bi-lightbulb me-2"></i>Supported SpEL Features</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="bi bi-gear me-2"></i>Environment Properties
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="code-block">
+<pre>// Access Spring Environment
+indexName = "orders_#{@environment.getProperty('app.env')}_idx"
+
+// With default value
+keyPrefix = "#{@environment.getProperty('app.prefix', 'default')}:"</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="bi bi-cup-hot me-2"></i>Bean References
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="code-block">
+<pre>// Reference Spring beans
+indexName = "products_#{@tenantService.getCurrentTenant()}_idx"
+
+// Call bean methods
+keyPrefix = "#{@configService.getKeyPrefix()}:"</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ephemeral Indexes Demo -->
+            <div id="ephemeral" class="tab-content" style="display: none;">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="bi bi-clock-history text-primary me-2"></i>
+                        <h5>Ephemeral Indexes with TTL</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-4">Create temporary indexes that automatically delete after a specified time. Perfect for batch processing, analytics, or temporary data analysis.</p>
+
+                        <div class="row align-items-end mb-4">
+                            <div class="col-auto">
+                                <label class="form-label">Index Name</label>
+                                <input type="text" id="ephemeralIndexName" class="form-control" placeholder="Index name" value="temp_analytics_idx">
+                            </div>
+                            <div class="col-auto">
+                                <label class="form-label">TTL (seconds)</label>
+                                <input type="number" id="ephemeralTtl" class="form-control" style="width: 120px;" value="30" min="5" max="300">
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-redis" onclick="createEphemeralIndex()">
+                                    <i class="bi bi-plus-circle me-1"></i>Create Ephemeral Index
+                                </button>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-outline-primary" onclick="extendEphemeralTtl()">
+                                    <i class="bi bi-clock me-1"></i>Extend TTL (+30s)
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="bi bi-hourglass-split me-2"></i>Active Ephemeral Indexes
+                                    </div>
+                                    <div class="card-body" id="ephemeralIndexes">
+                                        <div class="empty-state">
+                                            <i class="bi bi-hourglass display-4 d-block mb-2"></i>
+                                            No ephemeral indexes active
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="bi bi-journal-text me-2"></i>Activity Log
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="ephemeralLog" class="code-block" style="max-height: 250px;">
+                                            <pre>Ephemeral index activity will appear here...</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Index Migration Demo -->
+            <div id="migration" class="tab-content" style="display: none;">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="bi bi-arrow-repeat text-primary me-2"></i>
+                        <h5>Index Migration with Aliasing</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-4">Perform zero-downtime index migrations using Redis aliases. Support for Blue-Green deployments when schema changes are needed.</p>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="bi bi-list-ol me-2"></i>Blue-Green Migration Steps
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="migration-step">
+                                            <div class="step-number" id="step1">1</div>
+                                            <div class="step-content">
+                                                <div class="step-title">Create New Index Version</div>
+                                                <div class="step-desc">Create products_v2_idx with new schema</div>
+                                            </div>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="migrationStep1()">Execute</button>
+                                        </div>
+                                        <div class="migration-step">
+                                            <div class="step-number" id="step2">2</div>
+                                            <div class="step-content">
+                                                <div class="step-title">Reindex Data</div>
+                                                <div class="step-desc">Copy data to new index structure</div>
+                                            </div>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="migrationStep2()">Execute</button>
+                                        </div>
+                                        <div class="migration-step">
+                                            <div class="step-number" id="step3">3</div>
+                                            <div class="step-content">
+                                                <div class="step-title">Switch Alias</div>
+                                                <div class="step-desc">Atomically switch "products" alias to v2</div>
+                                            </div>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="migrationStep3()">Execute</button>
+                                        </div>
+                                        <div class="migration-step">
+                                            <div class="step-number" id="step4">4</div>
+                                            <div class="step-content">
+                                                <div class="step-title">Cleanup Old Index</div>
+                                                <div class="step-desc">Drop products_v1_idx</div>
+                                            </div>
+                                            <button class="btn btn-sm btn-outline-primary" onclick="migrationStep4()">Execute</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="bi bi-journal-text me-2"></i>Migration Log
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="migrationLog" class="code-block">
+                                            <pre>Migration activity will appear here...</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="mt-4 mb-3"><i class="bi bi-link-45deg me-2"></i>Alias Operations</h6>
+                        <div class="row align-items-end">
+                            <div class="col-auto">
+                                <label class="form-label">Index Name</label>
+                                <input type="text" id="aliasIndexName" class="form-control" placeholder="Index name" value="products_v1_idx">
+                            </div>
+                            <div class="col-auto">
+                                <label class="form-label">Alias Name</label>
+                                <input type="text" id="aliasName" class="form-control" placeholder="Alias name" value="products">
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-primary" onclick="createAlias()">Create Alias</button>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-outline-primary" onclick="updateAlias()">Update Alias</button>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-outline-danger" onclick="showRemoveAliasConfirm()">Remove Alias</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bulk Operations Demo -->
+            <div id="bulk" class="tab-content" style="display: none;">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="bi bi-collection text-primary me-2"></i>
+                        <h5>Bulk Index Operations</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-4">Manage all indexes at once with bulk operations. Useful for deployment scripts, maintenance tasks, and administrative operations.</p>
+
+                        <div class="mb-4">
+                            <button class="btn btn-success me-2" onclick="createAllIndexes()">
+                                <i class="bi bi-plus-circle me-1"></i>Create All Indexes
+                            </button>
+                            <button class="btn btn-danger me-2" onclick="showDropAllConfirm()">
+                                <i class="bi bi-trash me-1"></i>Drop All Indexes
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="listAllIndexes()">
+                                <i class="bi bi-list-ul me-1"></i>List All Indexes
+                            </button>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <span><i class="bi bi-list-check me-2"></i>Current Indexes</span>
+                                        <span id="indexCount" class="badge bg-primary">0 indexes</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="indexList">
+                                            <div class="empty-state">
+                                                <i class="bi bi-search display-4 d-block mb-2"></i>
+                                                Click "List All Indexes" to see current indexes
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <i class="bi bi-journal-text me-2"></i>Operations Log
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="bulkLog" class="code-block">
+                                            <pre>Bulk operation results will appear here...</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="mt-4 mb-3"><i class="bi bi-code-slash me-2"></i>Code Examples</h6>
+                        <div class="code-block">
+<pre>// Create all registered indexes
+indexer.createIndexes();
+
+// Drop all managed indexes (keeps documents)
+indexer.dropIndexes();
+
+// Get set of all index names
+Set&lt;String&gt; indexes = indexer.listIndexes();
+System.out.println("Managing " + indexes.size() + " indexes");</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Redis OM Spring Dynamic Indexing Demo | <a href="https://github.com/redis/redis-om-spring" target="_blank">GitHub</a> | <a href="https://github.com/redis/redis-om-spring/wiki/Dynamic-Indexing-Feature-Design" target="_blank">Documentation</a></p>
+    </footer>
+
+    <!-- Reset Modal -->
+    <div class="modal fade" id="resetModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Confirm Database Reset</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>This will delete <strong>ALL data and indexes</strong> from the database. This action cannot be undone.</p>
+                    <p class="mb-0">Are you sure you want to proceed?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="resetDatabase()">Reset Database</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Drop All Modal -->
+    <div class="modal fade" id="dropAllModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Confirm Drop All Indexes</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>This will drop <strong>ALL managed indexes</strong>. The documents will remain in Redis, but the indexes will be removed.</p>
+                    <p class="mb-0">Are you sure you want to proceed?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="dropAllIndexes()">Drop All Indexes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Remove Alias Modal -->
+    <div class="modal fade" id="removeAliasModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Confirm Remove Alias</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to remove the alias "<strong id="removeAliasName"></strong>" from index "<strong id="removeAliasIndexName"></strong>"?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="removeAlias()">Remove Alias</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const API_BASE = '/api/demo';
+        let resetModal, dropAllModal, removeAliasModal;
+
+        // Initialize Bootstrap modals
+        document.addEventListener('DOMContentLoaded', () => {
+            resetModal = new bootstrap.Modal(document.getElementById('resetModal'));
+            dropAllModal = new bootstrap.Modal(document.getElementById('dropAllModal'));
+            removeAliasModal = new bootstrap.Modal(document.getElementById('removeAliasModal'));
+
+            // Add Enter key handlers
+            document.getElementById('productSearchQuery').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') searchProducts();
+            });
+            document.getElementById('spelTenant').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') resolveSpel();
+            });
+
+            onTenantChange();
+            listAllIndexes();
+        });
+
+        // Tab navigation
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            document.querySelectorAll('.sidebar .list-group-item').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabId).style.display = 'block';
+            event.target.closest('.list-group-item').classList.add('active');
+        }
+
+        // Modal functions
+        function showResetConfirm() { resetModal.show(); }
+        function showDropAllConfirm() { dropAllModal.show(); }
+        function showRemoveAliasConfirm() {
+            document.getElementById('removeAliasName').textContent = document.getElementById('aliasName').value;
+            document.getElementById('removeAliasIndexName').textContent = document.getElementById('aliasIndexName').value;
+            removeAliasModal.show();
+        }
+
+        // Toast notifications
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toastId = 'toast-' + Date.now();
+            const bgClass = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-danger' : 'bg-primary';
+            const icon = type === 'success' ? 'bi-check-circle' : type === 'error' ? 'bi-x-circle' : 'bi-info-circle';
+
+            const toastHtml = `
+                <div id="${toastId}" class="toast custom-toast" role="alert">
+                    <div class="toast-header ${bgClass} text-white">
+                        <i class="bi ${icon} me-2"></i>
+                        <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">${message}</div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', toastHtml);
+            const toast = new bootstrap.Toast(document.getElementById(toastId), { delay: 3000 });
+            toast.show();
+            document.getElementById(toastId).addEventListener('hidden.bs.toast', () => {
+                document.getElementById(toastId).remove();
+            });
+        }
+
+        // Utility functions
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            const options = { method, headers: { 'Content-Type': 'application/json' } };
+            if (body) options.body = JSON.stringify(body);
+            const response = await fetch(API_BASE + endpoint, options);
+            return response.json();
+        }
+
+        function formatJson(obj) { return JSON.stringify(obj, null, 2); }
+        function getTime() { return new Date().toLocaleTimeString(); }
+
+        function addLog(elementId, message, type = 'info') {
+            const log = document.getElementById(elementId);
+            const entry = `<div class="log-entry"><span class="log-time">[${getTime()}]</span> <span class="log-${type}">${message}</span></div>`;
+            if (log.querySelector('pre')) {
+                log.innerHTML = entry;
+            } else {
+                log.innerHTML = entry + log.innerHTML;
+            }
+        }
+
+        // Reset database
+        async function resetDatabase() {
+            resetModal.hide();
+            try {
+                await apiCall('/reset', 'POST');
+                showToast('Database reset complete!', 'success');
+                refreshStatus();
+            } catch (e) {
+                showToast('Error resetting database: ' + e.message, 'error');
+            }
+        }
+
+        // Refresh status
+        async function refreshStatus() {
+            try {
+                await listAllIndexes();
+                onTenantChange();
+                showToast('Status refreshed', 'info');
+            } catch (e) {
+                console.error('Error refreshing status:', e);
+            }
+        }
+
+        // Multi-tenancy functions
+        function onTenantChange() {
+            const tenant = document.getElementById('currentTenant').value;
+            document.getElementById('productsForTenant').textContent = tenant;
+            checkTenantIndex();
+            loadTenantProducts();
+        }
+
+        async function checkTenantIndex() {
+            const tenant = document.getElementById('currentTenant').value;
+            try {
+                const result = await apiCall(`/tenants/${tenant}/index-info`);
+                document.getElementById('tenantIndexInfo').innerHTML = `<pre>${formatJson(result)}</pre>`;
+                const statusEl = document.getElementById('tenantStatus');
+                if (result.exists) {
+                    statusEl.className = 'status-badge status-success';
+                    statusEl.innerHTML = '<span class="status-dot"></span> Index Active';
+                } else {
+                    statusEl.className = 'status-badge status-warning';
+                    statusEl.innerHTML = '<span class="status-dot"></span> No Index';
+                }
+            } catch (e) {
+                document.getElementById('tenantIndexInfo').innerHTML = `<pre>Error: ${e.message}</pre>`;
+            }
+        }
+
+        async function createTenantIndex() {
+            const tenant = document.getElementById('currentTenant').value;
+            try {
+                const result = await apiCall(`/tenants/${tenant}/index`, 'POST');
+                document.getElementById('tenantIndexInfo').innerHTML = `<pre>${formatJson(result)}</pre>`;
+                checkTenantIndex();
+                showToast(`Index created for ${tenant}`, 'success');
+            } catch (e) {
+                showToast('Error creating index: ' + e.message, 'error');
+            }
+        }
+
+        async function addSampleProducts() {
+            const tenant = document.getElementById('currentTenant').value;
+            try {
+                const result = await apiCall(`/tenants/${tenant}/sample-products`, 'POST');
+                loadTenantProducts();
+                showToast(`Added ${result.count} sample products for ${tenant}`, 'success');
+            } catch (e) {
+                showToast('Error adding products: ' + e.message, 'error');
+            }
+        }
+
+        async function loadTenantProducts() {
+            const tenant = document.getElementById('currentTenant').value;
+            try {
+                const result = await apiCall(`/tenants/${tenant}/products`);
+                const container = document.getElementById('productsList');
+                if (result.products && result.products.length > 0) {
+                    container.innerHTML = result.products.map(p => `
+                        <div class="product-card">
+                            <h6>${p.name || 'Unnamed Product'}</h6>
+                            <div class="meta">${p.category || 'No category'} | SKU: ${p.sku || 'N/A'}</div>
+                            <div class="price">$${(p.price || 0).toFixed(2)}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div class="empty-state"><i class="bi bi-inbox display-4 d-block mb-2"></i>No products for this tenant</div>';
+                }
+            } catch (e) {
+                document.getElementById('productsList').innerHTML = '<div class="empty-state">Error loading products</div>';
+            }
+        }
+
+        async function searchProducts() {
+            const tenant = document.getElementById('currentTenant').value;
+            const query = document.getElementById('productSearchQuery').value.trim();
+            if (!query) { showToast('Please enter a search query', 'info'); return; }
+            try {
+                const result = await apiCall(`/tenants/${tenant}/products/search?q=${encodeURIComponent(query)}`);
+                const container = document.getElementById('productsList');
+                if (result.products && result.products.length > 0) {
+                    container.innerHTML = `<div class="alert alert-info mb-3"><i class="bi bi-search me-2"></i>Search results for "${query}":</div>` +
+                        result.products.map(p => `
+                            <div class="product-card">
+                                <h6>${p.name || 'Unnamed Product'}</h6>
+                                <div class="meta">${p.category || 'No category'} | SKU: ${p.sku || 'N/A'}</div>
+                                <div class="price">$${(p.price || 0).toFixed(2)}</div>
+                            </div>
+                        `).join('');
+                } else {
+                    container.innerHTML = `<div class="empty-state"><i class="bi bi-search display-4 d-block mb-2"></i>No products found for "${query}"</div>`;
+                }
+            } catch (e) {
+                showToast('Error searching: ' + e.message, 'error');
+            }
+        }
+
+        // SpEL functions
+        async function resolveSpel() {
+            const tenant = document.getElementById('spelTenant').value.trim();
+            if (!tenant) { showToast('Please enter a tenant name', 'info'); return; }
+            try {
+                const result = await apiCall(`/spel/resolve?tenant=${encodeURIComponent(tenant)}`);
+                document.getElementById('spelResult').innerHTML = `<pre>${formatJson(result)}</pre>`;
+            } catch (e) {
+                document.getElementById('spelResult').innerHTML = `<pre>Error: ${e.message}</pre>`;
+            }
+        }
+
+        // Ephemeral index functions
+        async function createEphemeralIndex() {
+            const name = document.getElementById('ephemeralIndexName').value.trim();
+            const ttl = document.getElementById('ephemeralTtl').value;
+            if (!name) { showToast('Please enter an index name', 'info'); return; }
+            try {
+                await apiCall('/ephemeral', 'POST', { indexName: name, ttlSeconds: parseInt(ttl) });
+                addLog('ephemeralLog', `Created ephemeral index: ${name} (TTL: ${ttl}s)`, 'action');
+                showToast(`Ephemeral index "${name}" created`, 'success');
+                refreshEphemeralIndexes();
+            } catch (e) {
+                addLog('ephemeralLog', `Error: ${e.message}`, 'result');
+                showToast('Error creating ephemeral index', 'error');
+            }
+        }
+
+        async function extendEphemeralTtl() {
+            const name = document.getElementById('ephemeralIndexName').value.trim();
+            if (!name) { showToast('Please enter an index name', 'info'); return; }
+            try {
+                await apiCall(`/ephemeral/${name}/extend?seconds=30`, 'POST');
+                addLog('ephemeralLog', `Extended TTL for ${name} by 30 seconds`, 'action');
+                showToast(`TTL extended for "${name}"`, 'success');
+                refreshEphemeralIndexes();
+            } catch (e) {
+                addLog('ephemeralLog', `Error: ${e.message}`, 'result');
+                showToast('Error extending TTL', 'error');
+            }
+        }
+
+        async function refreshEphemeralIndexes() {
+            try {
+                const result = await apiCall('/ephemeral');
+                const container = document.getElementById('ephemeralIndexes');
+                if (result.indexes && result.indexes.length > 0) {
+                    container.innerHTML = result.indexes.map(idx => `
+                        <div class="ephemeral-card">
+                            <span class="index-name">${idx.name}</span>
+                            <span class="badge bg-warning text-dark">TTL: ${idx.remainingTtl}s</span>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div class="empty-state"><i class="bi bi-hourglass display-4 d-block mb-2"></i>No ephemeral indexes active</div>';
+                }
+            } catch (e) {
+                console.error('Error refreshing ephemeral indexes:', e);
+            }
+        }
+
+        // Migration functions
+        async function migrationStep1() {
+            try {
+                await apiCall('/migration/create-v2', 'POST');
+                document.getElementById('step1').classList.add('completed');
+                addLog('migrationLog', 'Created products_v2_idx with new schema', 'action');
+                showToast('Step 1 complete: v2 index created', 'success');
+            } catch (e) {
+                addLog('migrationLog', `Error: ${e.message}`, 'result');
+                showToast('Error in migration step 1', 'error');
+            }
+        }
+
+        async function migrationStep2() {
+            try {
+                const result = await apiCall('/migration/reindex', 'POST');
+                document.getElementById('step2').classList.add('completed');
+                addLog('migrationLog', `Reindexed ${result.count || 0} documents to v2`, 'action');
+                showToast(`Step 2 complete: ${result.count || 0} documents reindexed`, 'success');
+            } catch (e) {
+                addLog('migrationLog', `Error: ${e.message}`, 'result');
+                showToast('Error in migration step 2', 'error');
+            }
+        }
+
+        async function migrationStep3() {
+            try {
+                await apiCall('/migration/switch-alias', 'POST');
+                document.getElementById('step3').classList.add('completed');
+                addLog('migrationLog', 'Switched "products" alias to products_v2_idx', 'action');
+                showToast('Step 3 complete: alias switched', 'success');
+            } catch (e) {
+                addLog('migrationLog', `Error: ${e.message}`, 'result');
+                showToast('Error in migration step 3', 'error');
+            }
+        }
+
+        async function migrationStep4() {
+            try {
+                await apiCall('/migration/cleanup', 'POST');
+                document.getElementById('step4').classList.add('completed');
+                addLog('migrationLog', 'Dropped products_v1_idx', 'action');
+                showToast('Step 4 complete: old index dropped', 'success');
+            } catch (e) {
+                addLog('migrationLog', `Error: ${e.message}`, 'result');
+                showToast('Error in migration step 4', 'error');
+            }
+        }
+
+        async function createAlias() {
+            const indexName = document.getElementById('aliasIndexName').value.trim();
+            const aliasName = document.getElementById('aliasName').value.trim();
+            if (!indexName || !aliasName) { showToast('Please enter both index name and alias name', 'info'); return; }
+            try {
+                await apiCall(`/alias?indexName=${indexName}&aliasName=${aliasName}`, 'POST');
+                addLog('migrationLog', `Created alias "${aliasName}" -> "${indexName}"`, 'action');
+                showToast(`Alias "${aliasName}" created`, 'success');
+            } catch (e) {
+                addLog('migrationLog', `Error: ${e.message}`, 'result');
+                showToast('Error creating alias', 'error');
+            }
+        }
+
+        async function updateAlias() {
+            const indexName = document.getElementById('aliasIndexName').value.trim();
+            const aliasName = document.getElementById('aliasName').value.trim();
+            if (!indexName || !aliasName) { showToast('Please enter both index name and alias name', 'info'); return; }
+            try {
+                await apiCall(`/alias/update?indexName=${indexName}&aliasName=${aliasName}`, 'POST');
+                addLog('migrationLog', `Updated alias "${aliasName}" -> "${indexName}"`, 'action');
+                showToast(`Alias "${aliasName}" updated`, 'success');
+            } catch (e) {
+                addLog('migrationLog', `Error: ${e.message}`, 'result');
+                showToast('Error updating alias', 'error');
+            }
+        }
+
+        async function removeAlias() {
+            removeAliasModal.hide();
+            const indexName = document.getElementById('aliasIndexName').value.trim();
+            const aliasName = document.getElementById('aliasName').value.trim();
+            try {
+                await apiCall(`/alias?indexName=${indexName}&aliasName=${aliasName}`, 'DELETE');
+                addLog('migrationLog', `Removed alias "${aliasName}"`, 'action');
+                showToast(`Alias "${aliasName}" removed`, 'success');
+            } catch (e) {
+                addLog('migrationLog', `Error: ${e.message}`, 'result');
+                showToast('Error removing alias', 'error');
+            }
+        }
+
+        // Bulk operations
+        async function createAllIndexes() {
+            try {
+                const result = await apiCall('/indexes/create-all', 'POST');
+                addLog('bulkLog', `Created ${result.count || 0} indexes`, 'action');
+                showToast(`Created ${result.count || 0} indexes`, 'success');
+                listAllIndexes();
+            } catch (e) {
+                addLog('bulkLog', `Error: ${e.message}`, 'result');
+                showToast('Error creating indexes', 'error');
+            }
+        }
+
+        async function dropAllIndexes() {
+            dropAllModal.hide();
+            try {
+                await apiCall('/indexes', 'DELETE');
+                addLog('bulkLog', 'Dropped all managed indexes', 'action');
+                showToast('All managed indexes dropped', 'success');
+                listAllIndexes();
+            } catch (e) {
+                addLog('bulkLog', `Error: ${e.message}`, 'result');
+                showToast('Error dropping indexes', 'error');
+            }
+        }
+
+        async function listAllIndexes() {
+            try {
+                const result = await apiCall('/indexes');
+                const container = document.getElementById('indexList');
+                document.getElementById('indexCount').textContent = `${result.count || 0} indexes`;
+                if (result.indexes && result.indexes.length > 0) {
+                    container.innerHTML = result.indexes.map(idx => `<span class="index-tag">${idx}</span>`).join('');
+                } else {
+                    container.innerHTML = '<div class="empty-state"><i class="bi bi-search display-4 d-block mb-2"></i>No indexes found</div>';
+                }
+                addLog('bulkLog', `Found ${result.count || 0} managed indexes`, 'result');
+            } catch (e) {
+                addLog('bulkLog', `Error: ${e.message}`, 'result');
+            }
+        }
+    </script>
+</body>
+</html>
