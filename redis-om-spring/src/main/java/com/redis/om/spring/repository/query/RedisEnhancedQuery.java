@@ -14,6 +14,7 @@ import java.util.stream.StreamSupport;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.core.PropertyPath;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -399,6 +400,17 @@ public class RedisEnhancedQuery implements RepositoryQuery {
       NumericIndexed indexAnnotation = field.getAnnotation(NumericIndexed.class);
       String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
       qf.add(Pair.of(actualKey, QueryClause.get(FieldType.NUMERIC, part.getType())));
+    } else if (field.isAnnotationPresent(Id.class)) {
+      // Handle @Id fields that are auto-indexed (without explicit index annotation)
+      // @Id fields are automatically indexed as NUMERIC for Number types, TAG for String/others
+      Class<?> fieldType = ClassUtils.resolvePrimitiveIfNecessary(field.getType());
+
+      if (Number.class.isAssignableFrom(fieldType)) {
+        qf.add(Pair.of(key, QueryClause.get(FieldType.NUMERIC, part.getType())));
+      } else {
+        // Fallback to TAG for String, UUID, Ulid, etc.
+        qf.add(Pair.of(key, QueryClause.get(FieldType.TAG, part.getType())));
+      }
     } else if (field.isAnnotationPresent(Indexed.class)) {
       Indexed indexAnnotation = field.getAnnotation(Indexed.class);
       String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
