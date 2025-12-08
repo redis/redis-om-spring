@@ -873,7 +873,7 @@ public class ObjectUtils {
    */
   public static String staticField(final String externalName) {
     requireNonNull(externalName);
-    return ObjectUtils.toUnderscoreSeparated(javaNameFromExternal(externalName)).toUpperCase();
+    return ObjectUtils.toUnderscoreSeparated(javaNameFromExternal(externalName)).toUpperCase(java.util.Locale.ROOT);
   }
 
   /**
