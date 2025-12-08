@@ -22,7 +22,10 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.env.Environment;
 import org.springframework.data.geo.Point;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.RedisOperations;
@@ -130,6 +133,66 @@ public class RedisModulesConfiguration {
   )
   public RedisEnhancedMappingContext redisMappingContext() {
     return new RedisEnhancedMappingContext();
+  }
+
+  /**
+   * Creates a Jedis connection factory for Redis connectivity.
+   * <p>
+   * This bean is required by Redis OM Spring for Redis Stack modules support.
+   * It will be created if no JedisConnectionFactory bean exists, ensuring
+   * Jedis is used instead of Lettuce (which is Spring Boot 4.0's default).
+   * <p>
+   * Connection settings are read from standard Spring Data Redis properties:
+   * <ul>
+   * <li>{@code spring.data.redis.host} - Redis server host (default: localhost)</li>
+   * <li>{@code spring.data.redis.port} - Redis server port (default: 6379)</li>
+   * <li>{@code spring.data.redis.password} - Redis password (optional)</li>
+   * <li>{@code spring.data.redis.database} - Redis database index (default: 0)</li>
+   * </ul>
+   *
+   * @param environment the Spring environment for reading configuration properties
+   * @return the configured Jedis connection factory
+   */
+  @Bean(
+      name = "jedisConnectionFactory"
+  )
+  @Primary
+  @ConditionalOnMissingBean(
+    JedisConnectionFactory.class
+  )
+  public JedisConnectionFactory jedisConnectionFactory(Environment environment) {
+    String host = environment.getProperty("spring.data.redis.host", "localhost");
+    int port = environment.getProperty("spring.data.redis.port", Integer.class, 6379);
+    String password = environment.getProperty("spring.data.redis.password");
+    int database = environment.getProperty("spring.data.redis.database", Integer.class, 0);
+
+    RedisStandaloneConfiguration redisConfig = new RedisStandaloneConfiguration(host, port);
+    redisConfig.setDatabase(database);
+    if (password != null && !password.isEmpty()) {
+      redisConfig.setPassword(password);
+    }
+
+    JedisClientConfiguration clientConfig = JedisClientConfiguration.builder().build();
+
+    return new JedisConnectionFactory(redisConfig, clientConfig);
+  }
+
+  /**
+   * Creates a StringRedisTemplate for string-based Redis operations.
+   * <p>
+   * This bean is required by Redis OM Spring and will be created if Spring Boot's
+   * Redis autoconfiguration hasn't already created one. It uses the JedisConnectionFactory
+   * for connectivity.
+   *
+   * @param connectionFactory the Jedis connection factory
+   * @return the configured StringRedisTemplate
+   */
+  @Bean
+  @ConditionalOnMissingBean(
+    StringRedisTemplate.class
+  )
+  public StringRedisTemplate stringRedisTemplate(JedisConnectionFactory connectionFactory) {
+    return new StringRedisTemplate(connectionFactory);
   }
 
   /**
