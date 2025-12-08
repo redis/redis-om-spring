@@ -494,7 +494,7 @@ public final class MetamodelGenerator extends AbstractProcessor {
             // Generate the special VALUES field for querying map values
             if (valuesInterceptor != null) {
               String mapFieldName = field.getSimpleName().toString();
-              String mapValuesFieldName = mapFieldName.toUpperCase().replace("_", "") + "_VALUES";
+              String mapValuesFieldName = mapFieldName.toUpperCase(Locale.ROOT).replace("_", "") + "_VALUES";
 
               // Add the VALUES field as a special metamodel field
               Triple<ObjectGraphFieldSpec, FieldSpec, CodeBlock> valuesField = generateMapValuesFieldMetamodel(entity,
@@ -518,8 +518,8 @@ public final class MetamodelGenerator extends AbstractProcessor {
                   if (subfieldElement.getAnnotation(com.redis.om.spring.annotations.Indexed.class) != null) {
                     String subfieldName = subfieldElement.getSimpleName().toString();
                     String jsonFieldName = getJsonFieldName(subfieldElement);
-                    String nestedFieldName = field.getSimpleName().toString().toUpperCase().replace("_",
-                        "") + "_" + subfieldName.toUpperCase().replace("_", "");
+                    String nestedFieldName = field.getSimpleName().toString().toUpperCase(Locale.ROOT).replace("_",
+                        "") + "_" + subfieldName.toUpperCase(Locale.ROOT).replace("_", "");
 
                     TypeMirror subfieldTypeMirror = subfieldElement.asType();
                     String subfieldTypeName = subfieldTypeMirror.toString();
