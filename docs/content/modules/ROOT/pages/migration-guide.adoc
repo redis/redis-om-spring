@@ -227,6 +227,14 @@ Otherwise, metamodel classes will not be generated and compilation errors refere
 </plugin>
 ```
 
+### Gradle example
+
+```
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += "-proc:full"
+}
+```
+
 ==== Jedis 6.0.0 Query Escaping
 
 **Impact:** Users writing custom RediSearch queries using Jedis directly.
