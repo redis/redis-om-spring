@@ -1,8 +1,8 @@
 package com.redis.om.spring.metamodel.indexed;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.ToLongFunction;
@@ -118,6 +118,20 @@ public class TagField<E, T> extends MetamodelField<E, T> {
   }
 
   /**
+   * Creates a not-equal predicate for a collection of string values.
+   * <p>
+   * This predicate matches entities where the tag field does not contain any of the specified values.
+   * This is useful for excluding entities tagged with any of several tags when the values are already
+   * in a Collection (List, Set, etc.).
+   *
+   * @param values the collection of tag values to exclude from results
+   * @return a not-equal predicate for query building
+   */
+  public NotEqualPredicate<E, T> notEq(Collection<String> values) {
+    return new NotEqualPredicate<>(searchFieldAccessor, new ArrayList<>(values));
+  }
+
+  /**
    * Creates an IN predicate for multiple string values.
    * <p>
    * This predicate matches entities where the tag field contains any of the specified values.
@@ -154,7 +168,7 @@ public class TagField<E, T> extends MetamodelField<E, T> {
    * @return an IN predicate for query building
    */
   public InPredicate<E, ?> in(Collection<String> values) {
-    return new InPredicate<>(searchFieldAccessor, List.copyOf(values));
+    return new InPredicate<>(searchFieldAccessor, new ArrayList<>(values));
   }
 
   /**
@@ -181,6 +195,20 @@ public class TagField<E, T> extends MetamodelField<E, T> {
    */
   public ContainsAllPredicate<E, ?> containsAll(Object... values) {
     return new ContainsAllPredicate<>(searchFieldAccessor, Arrays.stream(values).map(Object::toString).toList());
+  }
+
+  /**
+   * Creates a contains-all predicate for a collection of string values.
+   * <p>
+   * This predicate matches entities where the tag field contains all of the specified values.
+   * This is useful for finding entities that have been tagged with a specific combination of tags
+   * when the values are already in a Collection (List, Set, etc.).
+   *
+   * @param values the collection of tag values that must all be present
+   * @return a contains-all predicate for query building
+   */
+  public ContainsAllPredicate<E, ?> containsAll(Collection<String> values) {
+    return new ContainsAllPredicate<>(searchFieldAccessor, new ArrayList<>(values));
   }
 
   /**

@@ -256,6 +256,20 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
   }
 
   @Test
+  void testFindByIntegerNumericPropertyInWithCollection() {
+    // Test passing a Collection directly to the in() method for Integer fields
+    List<Integer> yearsToSearch = List.of(2011, 1975, 2003);
+
+    List<String> names = entityStream //
+        .of(Company.class) //
+        .filter(Company$.YEAR_FOUNDED.in(yearsToSearch)) //
+        .map(Company$.NAME) //
+        .collect(Collectors.toList());
+
+    assertThat(names).contains("RedisInc", "Microsoft", "Tesla");
+  }
+
+  @Test
   void testFindByTwoPropertiesAndedNotEquals() {
     SearchStream<Company> stream = entityStream.of(Company.class);
 
@@ -787,10 +801,62 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
   }
 
   @Test
+  void testFindByRolesInWithSet() {
+    // Test passing a Set directly to the in() method
+    Set<String> rolesToSearch = Set.of("educator", "devrel");
+
+    List<String> names = entityStream //
+        .of(User.class) //
+        .filter(User$.ROLES.in(rolesToSearch)) //
+        .map(User$.NAME) //
+        .collect(Collectors.toList());
+
+    assertEquals(4, names.size());
+
+    assertTrue(names.contains("Steve Lorello"));
+    assertTrue(names.contains("Nava Levy"));
+    assertTrue(names.contains("Savannah Norem"));
+    assertTrue(names.contains("Suze Shardlow"));
+  }
+
+  @Test
+  void testFindByRolesNotEqWithCollection() {
+    // Test passing a Collection to the notEq() method
+    List<String> rolesToExclude = List.of("guru");
+
+    List<String> names = entityStream //
+        .of(User.class) //
+        .filter(User$.ROLES.notEq(rolesToExclude)) //
+        .map(User$.NAME) //
+        .collect(Collectors.toList());
+
+    assertEquals(2, names.size());
+
+    assertTrue(names.contains("Savannah Norem"));
+    assertTrue(names.contains("Suze Shardlow"));
+  }
+
+  @Test
   void testFindByTagsContainingAll() {
     List<String> names = entityStream //
         .of(Company.class) //
         .filter(Company$.TAGS.containsAll("fast", "scalable", "reliable", "database", "nosql")) //
+        .map(Company$.NAME) //
+        .collect(Collectors.toList());
+
+    assertEquals(1, names.size());
+
+    assertTrue(names.contains("RedisInc"));
+  }
+
+  @Test
+  void testFindByTagsContainingAllWithCollection() {
+    // Test passing a Collection to the containsAll() method
+    List<String> requiredTags = List.of("fast", "scalable", "reliable");
+
+    List<String> names = entityStream //
+        .of(Company.class) //
+        .filter(Company$.TAGS.containsAll(requiredTags)) //
         .map(Company$.NAME) //
         .collect(Collectors.toList());
 
@@ -1329,6 +1395,20 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
         .collect(Collectors.toList());
 
     List<String> names = users.stream().map(User::getName).toList();
+    assertThat(names).containsExactly("Nava Levy", "Savannah Norem");
+  }
+
+  @Test
+  void testFindByDoubleNumericPropertyInWithCollection() {
+    // Test passing a Collection directly to the in() method
+    List<Double> winningsToSearch = List.of(1234.5678, 999.99);
+
+    List<String> names = entityStream //
+        .of(User.class) //
+        .filter(User$.LOTTERY_WINNINGS.in(winningsToSearch)) //
+        .map(User$.NAME) //
+        .collect(Collectors.toList());
+
     assertThat(names).containsExactly("Nava Levy", "Savannah Norem");
   }
 
