@@ -1,6 +1,8 @@
 package com.redis.om.spring.metamodel.indexed;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.ToLongFunction;
@@ -139,6 +141,20 @@ public class TagField<E, T> extends MetamodelField<E, T> {
    */
   public InPredicate<E, ?> in(Object... values) {
     return new InPredicate<>(searchFieldAccessor, Arrays.stream(values).map(Object::toString).toList());
+  }
+
+  /**
+   * Creates an IN predicate for a collection of string values.
+   * <p>
+   * This predicate matches entities where the tag field contains any of the specified values.
+   * This is useful for finding entities tagged with at least one of several tags when the
+   * values are already in a Collection (List, Set, etc.).
+   *
+   * @param values the collection of tag values to search for
+   * @return an IN predicate for query building
+   */
+  public InPredicate<E, ?> in(Collection<String> values) {
+    return new InPredicate<>(searchFieldAccessor, List.copyOf(values));
   }
 
   /**
