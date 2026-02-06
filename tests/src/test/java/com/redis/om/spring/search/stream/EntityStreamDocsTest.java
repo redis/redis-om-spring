@@ -98,12 +98,19 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
 
     // users
     if (userRepository.count() == 0) {
-      List<User> users = List.of(User.of("Steve Lorello", .9999), User.of("Nava Levy", 1234.5678), User.of(
-          "Savannah Norem", 999.99), User.of("Suze Shardlow", 899.0));
-      for (User user : users) {
-        user.setRoles(List.of("devrel", "educator", "guru"));
-      }
-      userRepository.saveAll(users);
+      User steve = User.of("Steve Lorello", .9999);
+      steve.setRoles(List.of("devrel", "educator", "guru"));
+
+      User nava = User.of("Nava Levy", 1234.5678);
+      nava.setRoles(List.of("devrel", "educator", "guru"));
+
+      User savannah = User.of("Savannah Norem", 999.99);
+      savannah.setRoles(List.of("devrel", "content-creator"));
+
+      User suze = User.of("Suze Shardlow", 899.0);
+      suze.setRoles(List.of("educator", "content-creator"));
+
+      userRepository.saveAll(List.of(steve, nava, savannah, suze));
     }
 
     // partially non-indexed companies
@@ -731,6 +738,55 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
   }
 
   @Test
+  void testFindByRolesIn() {
+    List<String> names = entityStream //
+        .of(User.class) //
+        .filter(User$.ROLES.in("guru")) //
+        .map(User$.NAME) //
+        .collect(Collectors.toList());
+
+    assertEquals(2, names.size());
+
+    assertTrue(names.contains("Steve Lorello"));
+    assertTrue(names.contains("Nava Levy"));
+  }
+
+  @Test
+  void testFindByRolesIn2() {
+    List<String> names = entityStream //
+        .of(User.class) //
+        .filter(User$.ROLES.in("guru", "content-creator", "test")) //
+        .map(User$.NAME) //
+        .collect(Collectors.toList());
+
+    assertEquals(4, names.size());
+
+    assertTrue(names.contains("Steve Lorello"));
+    assertTrue(names.contains("Nava Levy"));
+    assertTrue(names.contains("Savannah Norem"));
+    assertTrue(names.contains("Suze Shardlow"));
+  }
+
+  @Test
+  void testFindByRolesInWithList() {
+    // Test passing a List directly to the in() method
+    List<String> rolesToSearch = List.of("guru", "content-creator");
+
+    List<String> names = entityStream //
+        .of(User.class) //
+        .filter(User$.ROLES.in(rolesToSearch)) //
+        .map(User$.NAME) //
+        .collect(Collectors.toList());
+
+    assertEquals(4, names.size());
+
+    assertTrue(names.contains("Steve Lorello"));
+    assertTrue(names.contains("Nava Levy"));
+    assertTrue(names.contains("Savannah Norem"));
+    assertTrue(names.contains("Suze Shardlow"));
+  }
+
+  @Test
   void testFindByTagsContainingAll() {
     List<String> names = entityStream //
         .of(Company.class) //
@@ -988,7 +1044,7 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
         .collect(Collectors.toList());
     assertAll( //
         () -> assertThat(rolesLengths).hasSize(4), //
-        () -> assertThat(rolesLengths).containsExactly(3L, 3L, 3L, 3L) //
+        () -> assertThat(rolesLengths).containsExactlyInAnyOrder(3L, 3L, 2L, 2L) //
     );
   }
 
