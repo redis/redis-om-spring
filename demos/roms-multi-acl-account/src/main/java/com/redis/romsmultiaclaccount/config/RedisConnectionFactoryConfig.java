@@ -27,6 +27,7 @@ import com.redis.om.spring.RedisJSONKeyValueAdapter;
 import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.client.RedisModulesClient;
 import com.redis.om.spring.indexing.RediSearchIndexer;
+import com.redis.om.spring.ops.CommandListener;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.vectorize.Embedder;
 
@@ -120,8 +121,8 @@ public class RedisConnectionFactoryConfig {
     "writeJedisConnectionFactory"
   ) JedisConnectionFactory factory, @Qualifier(
     "omGsonBuilder"
-  ) GsonBuilder builder) {
-    return new RedisModulesOperations<>(client, new StringRedisTemplate(factory), builder);
+  ) GsonBuilder builder, final CommandListener commandListener) {
+    return new RedisModulesOperations<>(client, new StringRedisTemplate(factory), builder, commandListener);
   }
 
   @Bean(
@@ -133,8 +134,8 @@ public class RedisConnectionFactoryConfig {
     "readJedisConnectionFactory"
   ) JedisConnectionFactory factory, @Qualifier(
     "omGsonBuilder"
-  ) GsonBuilder builder) {
-    return new RedisModulesOperations<>(client, new StringRedisTemplate(factory), builder);
+  ) GsonBuilder builder, final CommandListener commandListener) {
+    return new RedisModulesOperations<>(client, new StringRedisTemplate(factory), builder, commandListener);
   }
 
   @Bean(
