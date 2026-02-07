@@ -196,6 +196,45 @@ Redis OM Spring 1.1.0 introduces support for Spring Boot 3.5.x and includes impo
 
 === Breaking Changes
 
+==== Annotation Processing with Java 23+ (including Java 25)
+
+When upgrading to **Java 23 or newer (e.g. Java 25)**, note that the Java compiler (`javac`) no longer runs annotation processors found on the classpath **by default**.
+
+This change affects **Redis OM Spring metamodel generation** (the generated classes ending with `$`, used by `EntityStream` APIs).  
+With **Java 21 and earlier**, these classes were generated automatically without any additional build configuration.
+
+Starting with **Java 23+**, annotation processing must be **explicitly enabled** in the build.  
+Otherwise, metamodel classes will not be generated and compilation errors referencing missing `$` classes may occur.
+
+### Maven example
+
+```xml
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-compiler-plugin</artifactId>
+  <configuration>
+    <compilerArgs>
+      <arg>-proc:full</arg>
+    </compilerArgs>
+    <annotationProcessorPaths>
+      <path>
+        <groupId>com.redis.om</groupId>
+        <artifactId>redis-om-spring</artifactId>
+        <version>${redis.om.spring.version}</version>
+      </path>
+    </annotationProcessorPaths>
+  </configuration>
+</plugin>
+```
+
+### Gradle example
+
+```
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += "-proc:full"
+}
+```
+
 ==== Jedis 6.0.0 Query Escaping
 
 **Impact:** Users writing custom RediSearch queries using Jedis directly.
