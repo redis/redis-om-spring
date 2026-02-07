@@ -58,7 +58,8 @@ release:
 
 signing:
   active: ALWAYS
-  armored: true
+  pgp:
+    armored: true
 
 deploy:
   maven:
