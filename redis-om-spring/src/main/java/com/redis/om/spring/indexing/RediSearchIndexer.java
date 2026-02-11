@@ -20,13 +20,13 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Reference;
+import org.springframework.data.core.TypeInformation;
 import org.springframework.data.geo.Point;
 import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.TimeToLive;
 import org.springframework.data.redis.core.convert.KeyspaceConfiguration.KeyspaceSettings;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.redis.core.mapping.RedisPersistentEntity;
-import org.springframework.data.util.TypeInformation;
 import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
@@ -57,12 +57,12 @@ import redis.clients.jedis.search.schemafields.*;
 
 /**
  * Component responsible for creating and managing RediSearch indices for Redis OM Spring entities.
- * 
+ *
  * This class handles the automatic creation of search indices for entities annotated with {@link Document}
  * or {@link RedisHash}. It processes field annotations like {@link Indexed}, {@link Searchable},
  * {@link TextIndexed}, {@link TagIndexed}, {@link NumericIndexed}, {@link GeoIndexed}, and
  * {@link VectorIndexed} to configure appropriate search schema fields.
- * 
+ *
  * <p>The indexer maintains mappings between:
  * <ul>
  * <li>Redis keyspaces and entity classes</li>
@@ -70,7 +70,7 @@ import redis.clients.jedis.search.schemafields.*;
  * <li>Entity fields and their search index aliases</li>
  * <li>Entity classes and their identifier filters</li>
  * </ul>
- * 
+ *
  * <p>Key features include:
  * <ul>
  * <li>Automatic index creation with configurable creation modes</li>
@@ -80,7 +80,7 @@ import redis.clients.jedis.search.schemafields.*;
  * <li>Reference field indexing</li>
  * <li>TTL (Time To Live) configuration</li>
  * </ul>
- * 
+ *
  * @see Document
  * @see RedisHash
  * @see IndexingOptions
@@ -576,7 +576,7 @@ public class RediSearchIndexer {
    * Checks whether an index definition exists for the specified entity class.
    * This method verifies if the entity class has been registered and processed
    * for index creation, regardless of whether the actual Redis index exists.
-   * 
+   *
    * @param entityClass the entity class to check for index definition
    * @return true if an index definition exists for the entity class, false otherwise
    */
@@ -588,7 +588,7 @@ public class RediSearchIndexer {
    * Checks whether a RediSearch index actually exists in Redis for the specified entity class.
    * This method queries Redis directly to verify the existence of the search index,
    * unlike {@link #indexDefinitionExistsFor(Class)} which only checks internal mappings.
-   * 
+   *
    * @param entityClass the entity class to check for index existence in Redis
    * @return true if the search index exists in Redis, false otherwise
    * @throws JedisDataException if a Redis error occurs other than index not found errors
@@ -601,7 +601,7 @@ public class RediSearchIndexer {
       if (errorMessage != null) {
         String lowerCaseMessage = errorMessage.toLowerCase();
         // Handle various error messages for missing index across different Redis versions
-        // - "Unknown index name" or "Unknown Index name" - Redis Stack / Redis 7.x  
+        // - "Unknown index name" or "Unknown Index name" - Redis Stack / Redis 7.x
         // - Potentially other variations in Redis 8.0+
         if (lowerCaseMessage.contains("unknown index") || lowerCaseMessage.contains("no such index") || lowerCaseMessage
             .contains("index does not exist") || lowerCaseMessage.contains("not found")) {
@@ -626,7 +626,7 @@ public class RediSearchIndexer {
    * Retrieves the search schema fields for the specified entity class.
    * The schema contains the complete field definitions used to create the RediSearch index,
    * including field names, types, and indexing options.
-   * 
+   *
    * @param entityClass the entity class to get the search schema for
    * @return a list of SearchField objects representing the index schema,
    *         or null if no schema has been generated for the entity class

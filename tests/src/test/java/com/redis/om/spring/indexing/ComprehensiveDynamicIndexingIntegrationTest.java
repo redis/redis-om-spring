@@ -14,6 +14,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.TestPropertySource;
 
 import com.redis.om.spring.AbstractBaseOMTest;
+import com.redis.om.spring.TestConfig;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
 import com.redis.om.spring.annotations.Indexed;
@@ -33,7 +34,7 @@ import com.redis.om.spring.services.VersionService;
  * - 6d97f78: Dynamic index resolution with multi-tenant support
  */
 @DirtiesContext
-@SpringBootTest(classes = ComprehensiveDynamicIndexingIntegrationTest.TestConfig.class)
+@SpringBootTest(classes = ComprehensiveDynamicIndexingIntegrationTest.Config.class)
 @TestPropertySource(properties = {
     "app.environment=test",
     "app.version=1.2.3",
@@ -47,7 +48,7 @@ public class ComprehensiveDynamicIndexingIntegrationTest extends AbstractBaseOMT
     @EnableRedisDocumentRepositories(basePackages = {
         "com.redis.om.spring.fixtures.document.repository"
     })
-    static class TestConfig {
+    static class Config extends TestConfig {
         @Bean
         public IndexMigrationService indexMigrationService(RediSearchIndexer indexer,
                 ApplicationContext ctx) {

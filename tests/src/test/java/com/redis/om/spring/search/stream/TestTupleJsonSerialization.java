@@ -13,8 +13,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.json.JacksonTester;
-import org.springframework.boot.test.json.JsonContent;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.geo.Point;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,15 +37,10 @@ class TestTupleJsonSerialization extends AbstractBaseDocumentTest {
   @Autowired
   EntityStream entityStream;
 
-  @SuppressWarnings(
-    "unused"
-  )
-  private JacksonTester<List<Map<String, Object>>> json;
+  private ObjectMapper objectMapper = new ObjectMapper();
 
   @BeforeEach
   void setupAndCleanup() {
-    ObjectMapper objectMapper = new ObjectMapper();
-    JacksonTester.initFields(this, objectMapper);
 
     // companies
     repository.deleteAll();
@@ -81,10 +75,12 @@ class TestTupleJsonSerialization extends AbstractBaseDocumentTest {
 
     assertEquals(3, results.size());
 
-    JsonContent<List<Map<String, Object>>> asJson = json.write(results);
+    String actualJson = objectMapper.writeValueAsString(results);
+    String expectedJson = new String(new ClassPathResource("com/redis/om/spring/search/stream/companies.json")
+        .getInputStream().readAllBytes());
 
     // See JSON file under
-    // srr/test/resource/com/redis/om/spring/search/stream/companies.json
-    assertThat(asJson).isEqualToJson("companies.json");
+    // src/test/resources/com/redis/om/spring/search/stream/companies.json
+    assertThat(actualJson).isEqualToIgnoringWhitespace(expectedJson);
   }
 }

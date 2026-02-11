@@ -15,8 +15,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
-import org.springframework.boot.autoconfigure.gson.GsonBuilderCustomizer;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
@@ -24,7 +22,10 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.*;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.env.Environment;
 import org.springframework.data.geo.Point;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.RedisOperations;
@@ -52,6 +53,7 @@ import com.redis.om.spring.ops.pds.CuckooFilterOperations;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.EntityStreamImpl;
 import com.redis.om.spring.serialization.gson.*;
+import com.redis.om.spring.serialization.gson.GsonBuilderCustomizer;
 import com.redis.om.spring.vectorize.Embedder;
 import com.redis.om.spring.vectorize.NoopEmbedder;
 
@@ -80,7 +82,7 @@ import redis.clients.jedis.bloom.CFReserveParams;
     proxyBeanMethods = false
 )
 @EnableConfigurationProperties(
-  { RedisProperties.class, RedisOMProperties.class }
+  { RedisOMProperties.class }
 )
 @EnableAspectJAutoProxy
 @ComponentScan(
@@ -136,6 +138,66 @@ public class RedisModulesConfiguration {
   }
 
   /**
+   * Creates a Jedis connection factory for Redis connectivity.
+   * <p>
+   * This bean is required by Redis OM Spring for Redis Stack modules support.
+   * It will be created if no JedisConnectionFactory bean exists, ensuring
+   * Jedis is used instead of Lettuce (which is Spring Boot 4.0's default).
+   * <p>
+   * Connection settings are read from standard Spring Data Redis properties:
+   * <ul>
+   * <li>{@code spring.data.redis.host} - Redis server host (default: localhost)</li>
+   * <li>{@code spring.data.redis.port} - Redis server port (default: 6379)</li>
+   * <li>{@code spring.data.redis.password} - Redis password (optional)</li>
+   * <li>{@code spring.data.redis.database} - Redis database index (default: 0)</li>
+   * </ul>
+   *
+   * @param environment the Spring environment for reading configuration properties
+   * @return the configured Jedis connection factory
+   */
+  @Bean(
+      name = "jedisConnectionFactory"
+  )
+  @Primary
+  @ConditionalOnMissingBean(
+    JedisConnectionFactory.class
+  )
+  public JedisConnectionFactory jedisConnectionFactory(Environment environment) {
+    String host = environment.getProperty("spring.data.redis.host", "localhost");
+    int port = environment.getProperty("spring.data.redis.port", Integer.class, 6379);
+    String password = environment.getProperty("spring.data.redis.password");
+    int database = environment.getProperty("spring.data.redis.database", Integer.class, 0);
+
+    RedisStandaloneConfiguration redisConfig = new RedisStandaloneConfiguration(host, port);
+    redisConfig.setDatabase(database);
+    if (password != null && !password.isEmpty()) {
+      redisConfig.setPassword(password);
+    }
+
+    JedisClientConfiguration clientConfig = JedisClientConfiguration.builder().build();
+
+    return new JedisConnectionFactory(redisConfig, clientConfig);
+  }
+
+  /**
+   * Creates a StringRedisTemplate for string-based Redis operations.
+   * <p>
+   * This bean is required by Redis OM Spring and will be created if Spring Boot's
+   * Redis autoconfiguration hasn't already created one. It uses the JedisConnectionFactory
+   * for connectivity.
+   *
+   * @param connectionFactory the Jedis connection factory
+   * @return the configured StringRedisTemplate
+   */
+  @Bean
+  @ConditionalOnMissingBean(
+    StringRedisTemplate.class
+  )
+  public StringRedisTemplate stringRedisTemplate(JedisConnectionFactory connectionFactory) {
+    return new StringRedisTemplate(connectionFactory);
+  }
+
+  /**
    * Creates a configured Gson builder for JSON serialization and deserialization.
    * <p>
    * This builder is customized with any available {@link GsonBuilderCustomizer} beans
@@ -169,6 +231,23 @@ public class RedisModulesConfiguration {
     builder.registerTypeAdapterFactory(MapBooleanTypeAdapterFactory.getInstance());
 
     return builder;
+  }
+
+  /**
+   * Creates the Gson instance from the configured GsonBuilder.
+   * <p>
+   * This bean provides the Gson instance used by various components for JSON
+   * serialization and deserialization throughout the application.
+   *
+   * @param gsonBuilder the configured Gson builder
+   * @return the Gson instance
+   */
+  @Bean
+  @ConditionalOnMissingBean
+  public com.google.gson.Gson gson(@Qualifier(
+    "omGsonBuilder"
+  ) GsonBuilder gsonBuilder) {
+    return gsonBuilder.create();
   }
 
   /**

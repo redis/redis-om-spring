@@ -6,9 +6,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnThreading;
-import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
-import org.springframework.boot.autoconfigure.thread.Threading;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.data.redis.autoconfigure.DataRedisProperties;
+import org.springframework.boot.thread.Threading;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -33,15 +33,15 @@ import com.redis.om.spring.vectorize.Embedder;
 
 @Configuration
 @EnableConfigurationProperties(
-  { RedisProperties.class }
+  { DataRedisProperties.class }
 )
 public class RedisConnectionFactoryConfig {
 
   private static final Log logger = LogFactory.getLog(RedisConnectionFactoryConfig.class);
 
-  private final RedisProperties redisProperties;
+  private final DataRedisProperties redisProperties;
 
-  public RedisConnectionFactoryConfig(RedisProperties redisProperties) {
+  public RedisConnectionFactoryConfig(DataRedisProperties redisProperties) {
     this.redisProperties = redisProperties;
   }
 

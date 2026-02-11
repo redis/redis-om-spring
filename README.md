@@ -87,34 +87,18 @@ Redis OM Spring provides all Spring Data Redis capabilities, plus:
 - `@Vectorize` annotation to generate embeddings for text and images for use in Vector Similarity Searches
 - Vector Similarity Search API (See [Redis Stack Vectors](https://redis.io/docs/stack/search/reference/vectors/))
 
-### 📋 Version Requirements
-
-Redis OM Spring has the following version requirements:
-
-| Dependency | Minimum Version | Recommended Version | Notes |
-|------------|----------------|-------------------|--------|
-| **Spring Boot** | 3.3.x | 3.4.x or 3.5.x | Built with Spring Boot 3.4.5 |
-| **Spring Data Redis** | 3.4.1 | 3.4.5 or later | Aligned with Spring Boot version |
-| **Spring Framework** | 6.2.x | Latest 6.x | Transitive via Spring Boot |
-| **Jedis** | 5.2.0 | 5.2.0 or later | Redis Java client |
-| **Java** | 17 | 17 or 21 | Spring Boot 3.x requires Java 17+ |
-| **Redis Stack** | 6.2.x | 7.2.x or later | For JSON and Search modules |
-
-#### Spring Boot Version Compatibility Policy
-
-Redis OM Spring follows an **N-2 support policy** for Spring Boot versions:
-
-- We build with the latest stable Spring Boot version
-- We support the current version and two previous minor versions that are still receiving OSS updates
-- We upgrade Spring Boot with each Redis OM Spring release
-
-For example, as of Redis OM Spring 1.0.0-RC4:
-
-- **Built with**: Spring Boot 3.4.5
-- **Minimum supported**: Spring Boot 3.3.x
-- **Recommended**: Spring Boot 3.4.x or 3.5.x
-
-⚠️ **Note**: Using older Spring Boot versions may work but is not officially tested or supported. For production use, we recommend staying within the supported version range.
+> [!IMPORTANT]
+> ### 📋 Version Compatibility
+>
+> Choose the correct Redis OM Spring version for your Spring Boot version:
+>
+> | Redis OM Spring | Spring Boot | Java | Status |
+> |-----------------|-------------|------|--------|
+> | **1.0.x** | 3.4.x | 17+ | Maintenance |
+> | **1.1.x** | 3.5.x | 17+ | Current Stable |
+> | **2.0.x** | 4.0.x | 17+ | Latest |
+>
+> **Always use the Redis OM Spring version that matches your Spring Boot version.**
 
 ## 🏁 Getting Started
 
@@ -492,7 +476,7 @@ This will unlock powerful AI-driven features for your applications, making data 
 
 For Maven, things normally just work, when you run `./mvnw spring-boot:run`. Some users have experienced this not being
 the case, in which I recommend to explicitly declaring the `maven-compiler-plugin` in the case below it is paired with
-an app created with [`start.spring.io`](https://start.spring.io/) with Spring Boot `v3.3.0` (all other versions can be
+an app created with [`start.spring.io`](https://start.spring.io/) with Spring Boot `v4.0.0` (all other versions can be
 inherited from the parent poms):
 
 ```xml
@@ -505,7 +489,7 @@ inherited from the parent poms):
       <path>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-configuration-processor</artifactId>
-        <version>3.3.0</version>
+        <version>4.0.0</version>
       </path>
       <path>
         <groupId>org.projectlombok</groupId>
@@ -515,7 +499,7 @@ inherited from the parent poms):
       <path>
         <groupId>com.redis.om</groupId>
         <artifactId>redis-om-spring</artifactId>
-        <version>1.0.0-RC.1</version>
+        <version>2.0.0</version>
       </path>
     </annotationProcessorPaths>
   </configuration>

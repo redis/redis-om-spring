@@ -3,6 +3,174 @@
 
 This guide helps you migrate between major versions of Redis OM Spring.
 
+== Upgrading to 2.0.0 (Spring Boot 4.0.0)
+
+Redis OM Spring 2.0.0 is a major version upgrade that brings support for Spring Boot 4.0.0 and its ecosystem.
+
+=== Dependency Changes
+
+[cols="1,1,1"]
+|===
+|Dependency |Previous Version |New Version
+
+|Spring Boot
+|3.5.8
+|4.0.0
+
+|Spring Data Redis
+|3.5.6
+|4.0.0
+
+|Spring Framework
+|6.2.x
+|7.0.x
+
+|Jedis
+|6.0.0
+|7.0.0
+
+|Java
+|17+
+|21+ (required)
+|===
+
+=== Breaking Changes
+
+==== Java 21 Required
+
+**Impact:** All users.
+
+Spring Boot 4.0 requires Java 21 as the minimum version. You must upgrade your JDK to Java 21 or later.
+
+**Migration Steps:**
+
+. Install Java 21 (e.g., from https://adoptium.net/[Eclipse Temurin] or your preferred JDK distribution)
+. Update your build configuration:
++
+.Maven (pom.xml)
+[source,xml]
+----
+<properties>
+    <java.version>21</java.version>
+</properties>
+----
++
+.Gradle (build.gradle)
+[source,groovy]
+----
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+----
+
+==== Spring Boot 4.0 Modularization
+
+**Impact:** Users with test dependencies or custom auto-configuration.
+
+Spring Boot 4.0 has reorganized packages to improve modularity. Several test-related classes have moved to new modules.
+
+**Migration Steps:**
+
+If you use any of the following in your tests, update your imports and add the appropriate test dependencies:
+
+.AutoConfigureMockMvc
+[source,java]
+----
+// Before (3.x)
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+
+// After (4.0)
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+----
+
+Add test dependency:
+[source,xml]
+----
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-webmvc-test</artifactId>
+    <scope>test</scope>
+</dependency>
+----
+
+.TestRestTemplate
+[source,java]
+----
+// Before (3.x)
+import org.springframework.boot.test.web.client.TestRestTemplate;
+
+// After (4.0)
+import org.springframework.boot.resttestclient.TestRestTemplate;
+----
+
+Add test dependency:
+[source,xml]
+----
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-resttestclient</artifactId>
+    <scope>test</scope>
+</dependency>
+----
+
+.DataRedisAutoConfiguration
+[source,java]
+----
+// Before (3.x)
+import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
+
+// After (4.0)
+import org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration;
+----
+
+Add dependency if needed:
+[source,xml]
+----
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-data-redis</artifactId>
+</dependency>
+----
+
+==== Repository Auto-Configuration Changes
+
+**Impact:** Users with multiple Redis repository configurations or custom auto-configuration exclusions.
+
+Spring Boot 4.0's auto-configuration for Redis repositories is more aggressive and may create conflicting beans if you're using custom repository configurations.
+
+**Migration Steps:**
+
+If you encounter bean definition conflicts, exclude the auto-configuration:
+
+[source,java]
+----
+import org.springframework.boot.data.redis.autoconfigure.DataRedisRepositoriesAutoConfiguration;
+
+@SpringBootApplication(
+    exclude = DataRedisRepositoriesAutoConfiguration.class
+)
+public class MyApplication {
+    // ...
+}
+----
+
+=== Testing Your Migration
+
+After upgrading, ensure you test:
+
+. All repository methods and queries
+. Custom auto-configuration classes
+. Integration tests, especially those using TestContainers
+. Any direct usage of Spring Data Redis or Jedis APIs
+
+=== Additional Resources
+
+* https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-4.0-Release-Notes[Spring Boot 4.0 Release Notes]
+* https://github.com/spring-projects/spring-data-redis/wiki/Spring-Data-Redis-4.0-Release-Notes[Spring Data Redis 4.0 Release Notes]
+* https://github.com/redis/jedis/releases/tag/v7.0.0[Jedis 7.0.0 Release Notes]
+
 == Upgrading to 1.1.0 (Spring Boot 3.5.x)
 
 Redis OM Spring 1.1.0 introduces support for Spring Boot 3.5.x and includes important dependency upgrades.
@@ -27,6 +195,45 @@ Redis OM Spring 1.1.0 introduces support for Spring Boot 3.5.x and includes impo
 |===
 
 === Breaking Changes
+
+==== Annotation Processing with Java 23+ (including Java 25)
+
+When upgrading to **Java 23 or newer (e.g. Java 25)**, note that the Java compiler (`javac`) no longer runs annotation processors found on the classpath **by default**.
+
+This change affects **Redis OM Spring metamodel generation** (the generated classes ending with `$`, used by `EntityStream` APIs).  
+With **Java 21 and earlier**, these classes were generated automatically without any additional build configuration.
+
+Starting with **Java 23+**, annotation processing must be **explicitly enabled** in the build.  
+Otherwise, metamodel classes will not be generated and compilation errors referencing missing `$` classes may occur.
+
+### Maven example
+
+```xml
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-compiler-plugin</artifactId>
+  <configuration>
+    <compilerArgs>
+      <arg>-proc:full</arg>
+    </compilerArgs>
+    <annotationProcessorPaths>
+      <path>
+        <groupId>com.redis.om</groupId>
+        <artifactId>redis-om-spring</artifactId>
+        <version>${redis.om.spring.version}</version>
+      </path>
+    </annotationProcessorPaths>
+  </configuration>
+</plugin>
+```
+
+### Gradle example
+
+```
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += "-proc:full"
+}
+```
 
 ==== Jedis 6.0.0 Query Escaping
 

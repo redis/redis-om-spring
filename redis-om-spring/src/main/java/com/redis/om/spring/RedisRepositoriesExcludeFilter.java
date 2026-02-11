@@ -33,7 +33,10 @@ public class RedisRepositoriesExcludeFilter implements AutoConfigurationImportFi
   }
 
   private static final Set<String> SHOULD_SKIP = new HashSet<>(List.of(
-      "org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration"));
+      // Spring Boot 3.x class name
+      "org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration",
+      // Spring Boot 4.0+ class name (modular autoconfigure)
+      "org.springframework.boot.data.redis.autoconfigure.DataRedisRepositoriesAutoConfiguration"));
 
   @Override
   public boolean[] match(String[] autoConfigurationClasses, AutoConfigurationMetadata autoConfigurationMetadata) {

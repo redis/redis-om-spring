@@ -18,6 +18,7 @@ import org.springframework.core.convert.ConverterNotFoundException;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.core.convert.support.GenericConversionService;
 import org.springframework.data.convert.CustomConversions;
+import org.springframework.data.core.TypeInformation;
 import org.springframework.data.mapping.*;
 import org.springframework.data.mapping.model.EntityInstantiator;
 import org.springframework.data.mapping.model.EntityInstantiators;
@@ -33,7 +34,6 @@ import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.redis.core.mapping.RedisPersistentEntity;
 import org.springframework.data.redis.core.mapping.RedisPersistentProperty;
 import org.springframework.data.redis.util.ByteUtils;
-import org.springframework.data.util.TypeInformation;
 import org.springframework.lang.Nullable;
 import org.springframework.util.*;
 
@@ -625,6 +625,36 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       return;
     }
 
+    // Handle arrays by iterating and writing each element directly
+    if (value.getClass().isArray() && !(value instanceof byte[])) {
+      TypeInformation<?> componentType;
+      if (typeHint.getComponentType() != null) {
+        componentType = typeHint.getComponentType();
+      } else {
+        // For arrays, get the component type from the actual array class
+        Class<?> arrayComponentType = value.getClass().getComponentType();
+        componentType = TypeInformation.of(arrayComponentType);
+      }
+
+      int length = java.lang.reflect.Array.getLength(value);
+      for (int i = 0; i < length; i++) {
+        Object element = java.lang.reflect.Array.get(value, i);
+
+        // Break if we encounter a null element (consistent with collection handling)
+        if (element == null) {
+          break;
+        }
+
+        String currentPath = path + (path.isEmpty() ? "" : ".") + "[" + i + "]";
+        if (customConversions.hasCustomWriteTarget(element.getClass())) {
+          writeToBucket(currentPath, element, sink, componentType.getType());
+        } else {
+          writeInternal(keyspace, currentPath, element, componentType, sink);
+        }
+      }
+      return;
+    }
+
     if (value.getClass() != typeHint.getType()) {
       typeMapper.writeType(value.getClass(), sink.getBucket().getPropertyPath(path));
     }
@@ -657,6 +687,14 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
           writeCollection(entity.getType(), keyspace, propertyStringPath, null, persistentProperty.getTypeInformation()
               .getRequiredComponentType(), sink);
         } else {
+
+          // Check if collection contains nulls (either null elements or arrays with nulls)
+          // If so, skip writing the collection entirely
+          boolean hasNulls = collectionContainsNulls(propertyValue);
+          if (hasNulls) {
+            // Don't persist collections with nulls
+            return;
+          }
 
           if (Iterable.class.isAssignableFrom(propertyValue.getClass())) {
 
@@ -1122,6 +1160,41 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       i++;
     }
     return i > 0 ? targetArray : null;
+  }
+
+  /**
+   * Checks if a collection contains any null elements or if any nested arrays contain nulls.
+   * This is used to validate collections before persisting them to Redis.
+   *
+   * @param value the collection to check (can be Iterable or array)
+   * @return true if the collection contains nulls, false otherwise
+   */
+  private boolean collectionContainsNulls(Object value) {
+    Iterable<?> iterable;
+
+    if (value instanceof Iterable) {
+      iterable = (Iterable<?>) value;
+    } else if (value.getClass().isArray()) {
+      iterable = CollectionUtils.arrayToList(value);
+    } else {
+      return false;
+    }
+
+    for (Object element : iterable) {
+      if (element == null) {
+        return true;
+      }
+      // Check if element is an array and if that array contains nulls
+      if (element.getClass().isArray() && !(element instanceof byte[])) {
+        int length = java.lang.reflect.Array.getLength(element);
+        for (int i = 0; i < length; i++) {
+          if (java.lang.reflect.Array.get(element, i) == null) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
   /**

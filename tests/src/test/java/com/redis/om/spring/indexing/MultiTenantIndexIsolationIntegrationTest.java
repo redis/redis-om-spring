@@ -17,6 +17,7 @@ import org.springframework.test.annotation.DirtiesContext;
 
 import com.google.gson.Gson;
 import com.redis.om.spring.AbstractBaseOMTest;
+import com.redis.om.spring.TestConfig;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
 import com.redis.om.spring.annotations.Indexed;
@@ -34,13 +35,13 @@ import redis.clients.jedis.util.SafeEncoder;
  * with separate indices and isolated searches per tenant.
  */
 @DirtiesContext
-@SpringBootTest(classes = MultiTenantIndexIsolationIntegrationTest.TestConfig.class)
+@SpringBootTest(classes = MultiTenantIndexIsolationIntegrationTest.Config.class)
 public class MultiTenantIndexIsolationIntegrationTest extends AbstractBaseOMTest {
 
     @SpringBootApplication
     @Configuration
     @EnableRedisDocumentRepositories(basePackageClasses = MultiTenantIndexIsolationIntegrationTest.class)
-    static class TestConfig {
+    static class Config extends TestConfig {
         @Bean
         public IndexMigrationService indexMigrationService(RediSearchIndexer indexer,
                 ApplicationContext ctx) {

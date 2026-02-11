@@ -16,6 +16,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.test.annotation.DirtiesContext;
 
 import com.redis.om.spring.AbstractBaseOMTest;
+import com.redis.om.spring.TestConfig;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
 import com.redis.om.spring.annotations.Indexed;
@@ -35,13 +36,13 @@ import redis.clients.jedis.search.SearchResult;
  * Tests the complete Spring Data Redis integration bridge functionality.
  */
 @DirtiesContext
-@SpringBootTest(classes = ConfigurableIndexDefinitionProviderIntegrationTest.TestConfig.class)
+@SpringBootTest(classes = ConfigurableIndexDefinitionProviderIntegrationTest.Config.class)
 public class ConfigurableIndexDefinitionProviderIntegrationTest extends AbstractBaseOMTest {
 
     @SpringBootApplication
     @Configuration
     @EnableRedisDocumentRepositories(basePackageClasses = ConfigurableIndexDefinitionProviderIntegrationTest.class)
-    static class TestConfig {
+    static class Config extends TestConfig {
         @Bean
         public ConfigurableIndexDefinitionProvider configurableIndexDefinitionProvider(
                 RediSearchIndexer indexer, ApplicationContext applicationContext) {
