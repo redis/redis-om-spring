@@ -41,6 +41,7 @@ import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.TupleMapper;
 import com.redis.om.spring.util.ObjectUtils;
 import com.redis.om.spring.util.SearchResultRawResponseToObjectConverter;
+import com.redis.vl.query.HybridQuery;
 
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.search.Query;
@@ -107,6 +108,13 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private Runnable closeHandler;
   private Stream<E> resolvedStream;
   private KNNPredicate<E, ?> knnPredicate;
+  private HybridQuery hybridQuery;
+  // Deferred hybrid search parameters (query is built at execution time so limit/skip are captured)
+  private String hybridText;
+  private MetamodelField<? super E, ?> hybridTextField;
+  private float[] hybridVector;
+  private MetamodelField<? super E, ?> hybridVectorField;
+  private float hybridAlpha;
   private int dialect = Dialect.TWO.getValue();
   private SummarizeParams summarizeParams;
   private Pair<String, String> highlightTags;
@@ -226,6 +234,36 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   @Override
+  public SearchStream<E> hybridSearch(String text, MetamodelField<? super E, ?> textField, float[] vector,
+      MetamodelField<? super E, ?> vectorField, float alpha) {
+    // Validate all inputs
+    if (text == null || text.trim().isEmpty()) {
+      throw new IllegalArgumentException("text query string cannot be null or empty");
+    }
+    if (textField == null) {
+      throw new IllegalArgumentException("textField cannot be null");
+    }
+    if (vector == null) {
+      throw new IllegalArgumentException("query vector cannot be null");
+    }
+    if (vectorField == null) {
+      throw new IllegalArgumentException("vectorField cannot be null");
+    }
+    if (alpha < 0.0f || alpha > 1.0f) {
+      throw new IllegalArgumentException("alpha must be between 0.0 and 1.0, got: " + alpha);
+    }
+
+    // Store parameters for deferred query construction (so limit/skip set later are captured)
+    this.hybridText = text;
+    this.hybridTextField = textField;
+    this.hybridVector = vector;
+    this.hybridVectorField = vectorField;
+    this.hybridAlpha = alpha;
+
+    return this;
+  }
+
+  @Override
   public <T> SearchStream<E> filterIfNotNull(T value, Supplier<SearchFieldPredicate<? super E, ?>> predicateSupplier) {
     if (value != null) {
       return filter(predicateSupplier.get());
@@ -306,6 +344,11 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public <T> SearchStream<T> map(Function<? super E, ? extends T> mapper) {
+    if (hybridText != null) {
+      throw new UnsupportedOperationException(
+          "Metamodel-based projections (.map()) are not supported after hybridSearch(). " + "Hybrid search uses FT.AGGREGATE which is incompatible with FT.SEARCH-based projections. " + "Collect full entities instead.");
+    }
+
     List<MetamodelField<E, ?>> returning = new ArrayList<>();
 
     if (MetamodelField.class.isAssignableFrom(mapper.getClass())) {
@@ -683,6 +726,83 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     }
   }
 
+  /**
+   * Executes a hybrid query using RedisVL's HybridQuery implementation.
+   * The HybridQuery is built at execution time so that limit/skip set after
+   * hybridSearch() are properly captured.
+   */
+  @SuppressWarnings(
+    "unchecked"
+  )
+  private List<E> executeHybridQueryToEntityList() {
+    // Build the filter expression from existing rootNode filters
+    String filterExpression = null;
+    if (rootNode != null && !rootNode.toString().isBlank() && !rootNode.toString().equals("*")) {
+      filterExpression = rootNode.toString();
+    }
+
+    // Determine how many results the hybrid query should request.
+    // Use skip + limit if set, otherwise fall back to MAX_LIMIT.
+    int numResults = MAX_LIMIT;
+    if (limit != null) {
+      long requested = limit;
+      if (skip != null) {
+        requested += skip;
+      }
+      numResults = (int) Math.min(Math.max(requested, 1), MAX_LIMIT);
+    }
+
+    // Build RedisVL HybridQuery at execution time
+    HybridQuery.HybridQueryBuilder builder = HybridQuery.builder().text(hybridText).textFieldName(hybridTextField
+        .getSearchAlias()).vector(hybridVector).vectorFieldName(hybridVectorField.getSearchAlias()).alpha(hybridAlpha)
+        .numResults(numResults);
+
+    if (filterExpression != null) {
+      builder.filterExpression(filterExpression);
+    }
+
+    this.hybridQuery = builder.build();
+
+    // Build the aggregation
+    redis.clients.jedis.search.aggr.AggregationBuilder aggregation = hybridQuery.buildRedisAggregation();
+
+    // Add parameters from HybridQuery (includes vector parameter)
+    Map<String, Object> params = hybridQuery.getParams();
+    if (params != null && !params.isEmpty()) {
+      aggregation.params(params);
+    }
+
+    // Load all entity fields using @<searchAlias> convention for FT.AGGREGATE
+    List<String> fieldsToLoad = new ArrayList<>();
+    List<Field> entityFields = ObjectUtils.getDeclaredFieldsTransitively(entityClass);
+    for (Field field : entityFields) {
+      if (!field.getName().equals(idField.getName())) {
+        fieldsToLoad.add("@" + field.getName());
+      }
+    }
+    if (!fieldsToLoad.isEmpty()) {
+      aggregation.load(fieldsToLoad.toArray(String[]::new));
+    }
+
+    // Apply limit/skip if specified
+    if (skip != null || limit != null) {
+      int skipValue = skip != null ? skip.intValue() : 0;
+      int limitValue = limit != null ? limit.intValue() : MAX_LIMIT;
+      aggregation.limit(skipValue, limitValue);
+    }
+
+    // Execute aggregation
+    AggregationResult aggResult = search.aggregate(aggregation);
+
+    // Convert aggregation results to entities using the same approach as AggregationStreamImpl
+    if (isDocument) {
+      return aggResult.getResults().stream().map(d -> getGson().fromJson(d.get("$").toString(), entityClass)).toList();
+    } else {
+      return aggResult.getResults().stream().map(h -> (E) ObjectUtils.mapToObject(h, entityClass, mappingConverter))
+          .toList();
+    }
+  }
+
   @SuppressWarnings(
     "unchecked"
   )
@@ -730,7 +850,12 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   private Stream<E> resolveStream() {
     if (resolvedStream == null) {
-      resolvedStream = toEntityList(executeQuery()).stream();
+      // Check if we're executing a hybrid query
+      if (hybridText != null) {
+        resolvedStream = executeHybridQueryToEntityList().stream();
+      } else {
+        resolvedStream = toEntityList(executeQuery()).stream();
+      }
     }
     return resolvedStream;
   }

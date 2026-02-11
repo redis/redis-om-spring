@@ -149,6 +149,12 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     throw new UnsupportedOperationException("Filter on a field predicate is not supported on mapped stream");
   }
 
+  @Override
+  public SearchStream<T> hybridSearch(String text, MetamodelField<? super T, ?> textField, float[] vector,
+      MetamodelField<? super T, ?> vectorField, float alpha) {
+    throw new UnsupportedOperationException("Hybrid search is not supported on mapped stream");
+  }
+
   @SuppressWarnings(
     "unchecked"
   )

@@ -48,6 +48,7 @@
 .AI and Vector Search
 * xref:ai-overview.adoc[AI Integration Overview]
 * xref:vector-search.adoc[Vector Similarity Search]
+* xref:hybrid-search.adoc[Hybrid Search]
 * xref:embedding-providers.adoc[Embedding Providers]
 * xref:azure-openai.adoc[Azure OpenAI Integration]
 * xref:vector-search-examples.adoc[Vector Search Examples]
