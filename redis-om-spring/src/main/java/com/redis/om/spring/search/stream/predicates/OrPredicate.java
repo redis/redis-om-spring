@@ -90,7 +90,6 @@ public class OrPredicate<E, T> extends BaseAbstractPredicate<E, T> {
    * </pre>
    * produces: {@code (@field1:{A}) ((@field2:{B})|ismissing(@field2))}
    * instead of: {@code (((@field1:{A}) @field2:{B})|ismissing(@field2))}
-   * </p>
    *
    * @param root the root query node to build upon
    * @return a Node representing the union (OR) of all contained predicates,

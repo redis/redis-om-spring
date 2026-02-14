@@ -75,7 +75,6 @@ public class AndPredicate<E, T> extends BaseAbstractPredicate<E, T> {
    * and combines them using an intersect operation, which represents logical AND
    * in RediSearch query syntax. The resulting AND node is then combined with
    * the existing root node using another AND operation (intersect).
-   * </p>
    * <p>
    * This ensures that when multiple filters are chained, the AND operation
    * is properly scoped. For example:
@@ -84,7 +83,6 @@ public class AndPredicate<E, T> extends BaseAbstractPredicate<E, T> {
    * .filter(Field2.eq("B").and(Field3.eq("C")))
    * </pre>
    * produces: {@code (@field1:{A}) (@field2:{B} @field3:{C})}
-   * </p>
    *
    * @param root the root query node to build upon
    * @return a Node representing the intersection (AND) of all contained predicates,
