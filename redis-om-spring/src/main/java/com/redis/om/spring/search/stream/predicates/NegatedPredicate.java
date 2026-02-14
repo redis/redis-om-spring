@@ -4,6 +4,7 @@ import java.lang.reflect.Field;
 
 import redis.clients.jedis.search.Schema.FieldType;
 import redis.clients.jedis.search.querybuilder.Node;
+import redis.clients.jedis.search.querybuilder.QueryBuilders;
 
 /**
  * A predicate that negates another search field predicate.
@@ -51,16 +52,14 @@ public class NegatedPredicate<E, T> implements SearchFieldPredicate<E, T> {
 
   @Override
   public Node apply(Node root) {
-    // Get the node from the wrapped predicate
-    Node predicateNode = predicate.apply(root);
+    // Apply the predicate to an empty root to get just the predicate's condition
+    Node predicateNode = predicate.apply(QueryBuilders.union());
 
-    // If the predicate generates a custom query string, negate it
+    // Negate the predicate's condition
     String query = predicateNode.toString();
-
-    // For special queries like "ismissing", add the negation operator
     String negatedQuery = "-" + query;
 
-    return new Node() {
+    Node negatedNode = new Node() {
       @Override
       public String toString() {
         return negatedQuery;
@@ -71,6 +70,10 @@ public class NegatedPredicate<E, T> implements SearchFieldPredicate<E, T> {
         return negatedQuery;
       }
     };
+
+    // Combine the negated condition with the original root using AND
+    // If root is empty, just return the negated node
+    return root.toString().isBlank() ? negatedNode : QueryBuilders.intersect(root, negatedNode);
   }
 
   @Override

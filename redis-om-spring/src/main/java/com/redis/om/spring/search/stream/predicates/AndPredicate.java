@@ -68,13 +68,42 @@ public class AndPredicate<E, T> extends BaseAbstractPredicate<E, T> {
     return predicates.stream();
   }
 
+  /**
+   * Applies this AND predicate to create a RediSearch query node.
+   * <p>
+   * This method transforms all contained predicates into RediSearch query nodes
+   * and combines them using an intersect operation, which represents logical AND
+   * in RediSearch query syntax. The resulting AND node is then combined with
+   * the existing root node using another AND operation (intersect).
+   * </p>
+   * <p>
+   * This ensures that when multiple filters are chained, the AND operation
+   * is properly scoped. For example:
+   * <pre>
+   * .filter(Field1.eq("A"))
+   * .filter(Field2.eq("B").and(Field3.eq("C")))
+   * </pre>
+   * produces: {@code (@field1:{A}) (@field2:{B} @field3:{C})}
+   * </p>
+   *
+   * @param root the root query node to build upon
+   * @return a Node representing the intersection (AND) of all contained predicates,
+   *         combined with the root using AND
+   */
   @SuppressWarnings(
     "rawtypes"
   )
   @Override
   public Node apply(Node root) {
-    Node[] nodes = stream().map(p -> ((SearchFieldPredicate) p).apply(root)).toArray(Node[]::new);
-    return QueryBuilders.intersect(nodes);
+    // Apply each predicate to an empty root to get standalone conditions
+    Node[] nodes = stream().map(p -> ((SearchFieldPredicate) p).apply(QueryBuilders.union())).toArray(Node[]::new);
+
+    // Create the AND of all predicates
+    Node andNode = QueryBuilders.intersect(nodes);
+
+    // Combine the AND result with the existing root using AND
+    // If root is empty, just return the AND node
+    return root.toString().isBlank() ? andNode : QueryBuilders.intersect(root, andNode);
   }
 
 }
