@@ -1,0 +1,550 @@
+= Hybrid Search
+:page-toclevels: 3
+:page-pagination:
+
+Hybrid Search combines full-text search with vector similarity search to provide powerful semantic search capabilities. This approach leverages the strengths of both traditional keyword-based search and modern AI-powered semantic search.
+
+== Understanding Hybrid Search
+
+=== What is Hybrid Search?
+
+Hybrid search combines two complementary search approaches:
+
+1. **Full-Text Search (BM25)**: Traditional keyword-based search that matches query terms against document text using statistical relevance scoring
+2. **Vector Similarity Search**: Semantic search using embeddings that captures meaning and context beyond exact keyword matches
+
+The results are scored using a weighted combination:
+
+[source,text]
+----
+hybrid_score = (1 - alpha) × text_score + alpha × vector_similarity
+----
+
+Where:
+
+* `alpha = 0.0` → Pure text search (BM25 only)
+* `alpha = 0.5` → Balanced hybrid search
+* `alpha = 0.7` → Default, favoring semantic similarity (recommended)
+* `alpha = 1.0` → Pure vector search (semantic only)
+
+=== Why Use Hybrid Search?
+
+Hybrid search provides the best of both worlds:
+
+**Text Search Strengths:**
+
+* Exact keyword matching
+* Boolean operators (AND, OR, NOT)
+* Phrase matching and proximity
+* Fast for specific term lookups
+
+**Vector Search Strengths:**
+
+* Semantic understanding ("laptop" matches "computer")
+* Cross-language similarity
+* Conceptual relationships
+* Handles synonyms and variations
+
+**Combined Benefits:**
+
+* Better relevance than either approach alone
+* Handles both precise queries and broad conceptual searches
+* More robust to query variations
+* Improved user experience
+
+== Prerequisites
+
+**Redis Version Requirements:**
+
+Hybrid search requires **Redis 7.4.0 or later** due to its use of the `@__score` field exposure in FT.AGGREGATE queries.
+
+To check your Redis version:
+
+[source,bash]
+----
+redis-cli INFO server | grep redis_version
+----
+
+**Dependencies:**
+
+Redis OM Spring integrates with RedisVL (Redis Vector Library) for hybrid search support. This dependency is included automatically in Redis OM Spring 2.x.
+
+== Setting Up Hybrid Search
+
+=== Entity Definition
+
+To enable hybrid search on an entity, you need:
+
+1. A **full-text searchable field** (using `@Searchable`)
+2. A **vector field** (using `@Indexed` with `schemaFieldType = VECTOR`)
+
+[source,java]
+----
+@Data
+@RequiredArgsConstructor(staticName = "of")
+@NoArgsConstructor
+@RedisHash
+public class Product {
+
+  @Id
+  private String id;
+
+  @Indexed
+  @NonNull
+  private String category;
+
+  // Full-text searchable description for BM25 scoring
+  @Searchable
+  @NonNull
+  private String description;
+
+  @Indexed
+  @NonNull
+  private Double price;
+
+  // Vector field for semantic similarity
+  @Indexed(
+      schemaFieldType = SchemaFieldType.VECTOR,
+      algorithm = VectorAlgorithm.FLAT,
+      type = VectorType.FLOAT32,
+      dimension = 384,  // Common for sentence transformers
+      distanceMetric = DistanceMetric.COSINE
+  )
+  @NonNull
+  private byte[] embedding;
+}
+----
+
+=== Repository
+
+Create a repository extending `RedisEnhancedRepository`:
+
+[source,java]
+----
+public interface ProductRepository extends RedisEnhancedRepository<Product, String> {
+}
+----
+
+== Performing Hybrid Searches
+
+=== Basic Hybrid Search
+
+Use the `hybridSearch()` method on `EntityStream`:
+
+[source,java]
+----
+@Autowired
+private EntityStream entityStream;
+
+// Perform hybrid search
+List<Product> results = entityStream.of(Product.class)
+    .hybridSearch(
+        "wireless headphones",           // Text query
+        Product$.DESCRIPTION,             // Text field
+        queryEmbedding,                   // Query vector (float[])
+        Product$.EMBEDDING,               // Vector field
+        0.7f                              // Alpha (0.0-1.0)
+    )
+    .limit(10)
+    .collect(Collectors.toList());
+----
+
+=== Hybrid Search with Filters
+
+Combine hybrid search with filters for refined results:
+
+[source,java]
+----
+List<Product> results = entityStream.of(Product.class)
+    .filter(Product$.CATEGORY.eq("Electronics"))
+    .filter(Product$.PRICE.between(100.0, 500.0))
+    .hybridSearch(
+        "noise cancelling headphones",
+        Product$.DESCRIPTION,
+        queryEmbedding,
+        Product$.EMBEDDING,
+        0.7f
+    )
+    .limit(10)
+    .collect(Collectors.toList());
+----
+
+=== Adjusting Search Behavior with Alpha
+
+The alpha parameter controls the balance between text and vector search:
+
+**Text-Focused (alpha = 0.3):**
+
+Good for precise keyword matching where exact terms matter:
+
+[source,java]
+----
+// Emphasizes keyword matching
+.hybridSearch(text, textField, vector, vectorField, 0.3f)
+----
+
+**Balanced (alpha = 0.5):**
+
+Equal weight to text and semantic similarity:
+
+[source,java]
+----
+// 50/50 blend of text and vector scoring
+.hybridSearch(text, textField, vector, vectorField, 0.5f)
+----
+
+**Semantic-Focused (alpha = 0.7):**
+
+Recommended default - emphasizes semantic similarity:
+
+[source,java]
+----
+// Favors conceptual similarity (recommended)
+.hybridSearch(text, textField, vector, vectorField, 0.7f)
+----
+
+**Pure Vector (alpha = 1.0):**
+
+Only uses vector similarity, ignoring text matching:
+
+[source,java]
+----
+// Semantic search only
+.hybridSearch(text, textField, vector, vectorField, 1.0f)
+----
+
+== REST API Example
+
+Here's a REST controller implementing hybrid search:
+
+[source,java]
+----
+@RestController
+@RequestMapping("/api/products")
+public class ProductController {
+
+  @Autowired
+  private EntityStream entityStream;
+
+  @PostMapping("/hybrid-search")
+  public List<Product> hybridSearch(
+      @RequestParam String text,
+      @RequestBody float[] embedding,
+      @RequestParam(defaultValue = "0.7") float alpha,
+      @RequestParam(required = false) String category,
+      @RequestParam(defaultValue = "10") int limit
+  ) {
+    var stream = entityStream.of(Product.class);
+
+    // Apply optional filters
+    if (category != null) {
+      stream = stream.filter(Product$.CATEGORY.eq(category));
+    }
+
+    // Execute hybrid search
+    return stream
+        .hybridSearch(
+            text,
+            Product$.DESCRIPTION,
+            embedding,
+            Product$.EMBEDDING,
+            alpha
+        )
+        .limit(limit)
+        .collect(Collectors.toList());
+  }
+}
+----
+
+== How It Works
+
+=== Architecture
+
+Hybrid search in Redis OM Spring uses the following architecture:
+
+1. **Redis OM Spring API**: Provides the `hybridSearch()` fluent API
+2. **RedisVL Integration**: Leverages RedisVL's HybridQuery implementation
+3. **FT.AGGREGATE**: Executes Redis aggregation queries with scoring
+4. **Score Combination**: Merges BM25 text scores with vector similarity scores
+
+=== Query Execution
+
+When you call `hybridSearch()`, Redis OM Spring:
+
+1. Builds a RedisVL `HybridQuery` with your parameters
+2. Constructs an FT.AGGREGATE query with:
+   - Text search filter on the specified text field
+   - Vector KNN search on the specified vector field
+   - Score combination using the alpha parameter
+3. Executes the aggregation query against Redis
+4. Loads all entity fields from the results
+5. Converts the results back to typed entities
+6. Returns results sorted by hybrid score (highest first)
+
+=== Scoring Formula
+
+The hybrid score is calculated as:
+
+[source,text]
+----
+hybrid_score = (1 - alpha) × BM25_score + alpha × (1 - cosine_distance)
+----
+
+Where:
+
+* **BM25_score**: Full-text relevance score (0.0 to ~1.0)
+* **cosine_distance**: Vector distance (0.0 = identical, 2.0 = opposite)
+* **alpha**: Weight parameter (0.0 to 1.0)
+
+Results are automatically sorted by hybrid score in descending order (highest scores first).
+
+== Use Cases
+
+=== E-Commerce Product Search
+
+Search for products using both keywords and semantic similarity:
+
+[source,java]
+----
+// User searches for "running shoes for marathon"
+// Finds products matching:
+// - Text: "marathon", "running"
+// - Semantic: athletic footwear, training shoes, race day shoes
+
+List<Product> products = entityStream.of(Product.class)
+    .hybridSearch(
+        "running shoes for marathon",
+        Product$.DESCRIPTION,
+        queryEmbedding,
+        Product$.EMBEDDING,
+        0.7f
+    )
+    .limit(20)
+    .collect(Collectors.toList());
+----
+
+=== Document Search
+
+Find relevant documents combining keyword and conceptual matching:
+
+[source,java]
+----
+// Search for "contract pricing documents"
+// Finds documents about:
+// - Exact: contracts with "pricing" keyword
+// - Semantic: agreements, terms, costs, fees
+
+List<Document> docs = entityStream.of(Document.class)
+    .filter(Document$.CATEGORY.eq("Legal"))
+    .hybridSearch(
+        "contract pricing documents",
+        Document$.CONTENT,
+        queryEmbedding,
+        Document$.CONTENT_EMBEDDING,
+        0.6f
+    )
+    .limit(10)
+    .collect(Collectors.toList());
+----
+
+=== Job and Candidate Matching
+
+Match job postings with candidate profiles:
+
+[source,java]
+----
+// Find candidates for "senior software engineer Java"
+// Matches both:
+// - Keywords: "Java", "senior", "engineer"
+// - Semantics: programming experience, backend development
+
+List<Candidate> candidates = entityStream.of(Candidate.class)
+    .filter(Candidate$.YEARS_EXPERIENCE.ge(5))
+    .hybridSearch(
+        "senior software engineer Java backend",
+        Candidate$.RESUME_TEXT,
+        jobEmbedding,
+        Candidate$.SKILLS_EMBEDDING,
+        0.8f  // Emphasize semantic fit
+    )
+    .limit(50)
+    .collect(Collectors.toList());
+----
+
+=== Customer Support
+
+Find relevant support articles:
+
+[source,java]
+----
+// User asks "how to reset my password"
+// Finds articles about:
+// - Exact: password reset
+// - Semantic: account recovery, login issues, credentials
+
+List<Article> articles = entityStream.of(Article.class)
+    .filter(Article$.STATUS.eq("published"))
+    .hybridSearch(
+        "how to reset my password",
+        Article$.CONTENT,
+        queryEmbedding,
+        Article$.EMBEDDING,
+        0.5f  // Balanced search
+    )
+    .limit(5)
+    .collect(Collectors.toList());
+----
+
+== Best Practices
+
+=== Choosing Alpha Values
+
+**Use lower alpha (0.2-0.4) when:**
+
+* Exact keyword matches are critical
+* Users know specific terminology
+* Domain has precise jargon (legal, medical)
+* Query contains product codes or IDs
+
+**Use balanced alpha (0.4-0.6) when:**
+
+* Mix of precise and conceptual queries expected
+* General-purpose search
+* Users may use synonyms or variations
+* Want robust performance across query types
+
+**Use higher alpha (0.6-0.8) when:**
+
+* Semantic meaning is more important than exact words
+* Cross-language search
+* Handling natural language queries
+* Users describe concepts vs. using keywords
+
+**Recommended default: 0.7** (favors semantic similarity while still considering keywords)
+
+=== Query Vector Generation
+
+Your query embedding should come from the same model used to generate stored embeddings:
+
+[source,java]
+----
+// Example with sentence transformers
+SentenceEncoder encoder = ...;
+String query = "wireless headphones";
+float[] queryEmbedding = encoder.encode(query);
+
+// Use in hybrid search
+List<Product> results = entityStream.of(Product.class)
+    .hybridSearch(
+        query,
+        Product$.DESCRIPTION,
+        queryEmbedding,
+        Product$.EMBEDDING,
+        0.7f
+    )
+    .collect(Collectors.toList());
+----
+
+=== Performance Optimization
+
+**Index Configuration:**
+
+For large datasets, use HNSW algorithm for faster vector search:
+
+[source,java]
+----
+@Indexed(
+    schemaFieldType = SchemaFieldType.VECTOR,
+    algorithm = VectorAlgorithm.HNSW,  // Faster for large datasets
+    m = 16,                             // Higher = more accurate, slower
+    efConstruction = 200,               // Higher = better index quality
+    dimension = 384,
+    distanceMetric = DistanceMetric.COSINE
+)
+private byte[] embedding;
+----
+
+**Result Limiting:**
+
+Always limit results to improve performance:
+
+[source,java]
+----
+.hybridSearch(text, textField, vector, vectorField, alpha)
+.limit(10)  // Limit results
+----
+
+== Demo Application
+
+Redis OM Spring includes a complete hybrid search demo application in `demos/roms-hybrid`.
+
+To run the demo:
+
+[source,bash]
+----
+./mvnw install -Dmaven.test.skip && ./mvnw spring-boot:run -pl demos/roms-hybrid
+----
+
+The demo includes:
+
+* Sample product data with embeddings
+* REST API endpoints for hybrid search
+* Examples with filters and different alpha values
+* Comparison of text-only, vector-only, and hybrid search
+
+See the link:https://github.com/redis/redis-om-spring/tree/main/demos/roms-hybrid[roms-hybrid README] for details.
+
+== Limitations
+
+* **Redis Version**: Requires Redis 7.4.0+ for `@__score` field support
+* **Projection Restrictions**: Cannot use `.map()` field projections after `.hybridSearch()` as it would switch from aggregation (FT.AGGREGATE) to search (FT.SEARCH)
+* **Score Access**: The hybrid score is used for sorting but is not directly accessible on returned entities (future enhancement)
+* **Runtime Parameters**: FT.AGGREGATE does not support HNSW runtime parameters (efRuntime, epsilon)
+
+== Comparison with Standard Vector Search
+
+[cols="1,2,2"]
+|===
+|Feature |Vector Search |Hybrid Search
+
+|**Query Input**
+|Vector only
+|Text + Vector
+
+|**Scoring**
+|Distance/similarity only
+|Combined text + vector score
+
+|**Keyword Matching**
+|No
+|Yes (BM25)
+
+|**Semantic Similarity**
+|Yes
+|Yes
+
+|**Use Case**
+|Pure similarity search
+|General-purpose search
+
+|**Best For**
+|"Find similar items"
+|"Search for items"
+
+|**Redis Command**
+|FT.SEARCH with KNN
+|FT.AGGREGATE with hybrid scoring
+|===
+
+== Related Topics
+
+* xref:vector-search.adoc[Vector Similarity Search]
+* xref:search.adoc[Redis Query Engine Integration]
+* xref:entity-streams.adoc[Entity Stream Basics]
+* xref:metamodel.adoc[Metamodel-Based Queries]
+
+== Additional Resources
+
+* link:https://redis.io/docs/interact/search-and-query/advanced-concepts/hybrid-queries/[Redis Hybrid Queries Documentation]
+* link:https://redis.io/docs/interact/search-and-query/advanced-concepts/vectors/[Redis Vector Search]
+* link:https://github.com/redis/redis-om-spring/tree/main/demos/roms-hybrid[Hybrid Search Demo Application]

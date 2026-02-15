@@ -68,11 +68,40 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
 
   /**
    * Filters the search stream using a Spring Data Example.
-   * 
+   *
    * @param example the example object to match against
    * @return a new SearchStream with the example filter applied
    */
   SearchStream<E> filter(Example<E> example);
+
+  /**
+   * Performs a hybrid search combining text and vector similarity search with weighted scoring.
+   * <p>
+   * Hybrid search uses the formula: {@code hybrid_score = (1-alpha) * text_score + alpha * vector_similarity}
+   * where:
+   * <ul>
+   * <li>text_score is the BM25 score from full-text search</li>
+   * <li>vector_similarity is the normalized cosine similarity from vector search</li>
+   * <li>alpha controls the weight between text and vector (0.0 = pure text, 1.0 = pure vector)</li>
+   * </ul>
+   * <p>
+   * This method leverages RedisVL's HybridQuery implementation which requires Redis 7.4.0 or later.
+   * <p>
+   * <b>Important:</b> Hybrid search uses FT.AGGREGATE internally. Metamodel-based projections via
+   * {@code .map()} are not supported after calling this method and will throw
+   * {@link UnsupportedOperationException}. Collect full entities instead.
+   *
+   * @param text        the text query string to search for
+   * @param textField   the metamodel field for text search (must not be null)
+   * @param vector      the query vector for similarity search (must not be null)
+   * @param vectorField the metamodel field for vector search (must not be null)
+   * @param alpha       weight for combining scores (0.0 to 1.0, typically 0.7)
+   * @return a new SearchStream with the hybrid search applied
+   * @throws IllegalArgumentException if text is null or empty, fields are null, or alpha is out of range
+   * @since 2.1.0
+   */
+  SearchStream<E> hybridSearch(String text, MetamodelField<? super E, ?> textField, float[] vector,
+      MetamodelField<? super E, ?> vectorField, float alpha);
 
   /**
    * Applies a filter predicate only if the value is not null.

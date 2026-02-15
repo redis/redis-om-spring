@@ -97,6 +97,13 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
     return this;
   }
 
+  @Override
+  public SearchStream<E> hybridSearch(String text, MetamodelField<? super E, ?> textField, float[] vector,
+      MetamodelField<? super E, ?> vectorField, float alpha) {
+    // NO-OP - hybrid search cannot be performed on a wrapped stream
+    return this;
+  }
+
   @SuppressWarnings(
     "unchecked"
   )

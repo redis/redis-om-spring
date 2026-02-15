@@ -439,6 +439,7 @@ class MetamodelGeneratorTest {
         package valid;
 
          import com.redis.om.spring.metamodel.MetamodelField;
+         import java.lang.Double;
          import java.lang.String;
 
          public final class IdOnly$ {
@@ -446,9 +447,12 @@ class MetamodelGeneratorTest {
 
            public static MetamodelField<IdOnly, IdOnly> _THIS;
 
+           public static MetamodelField<IdOnly, Double> _HYBRID_SCORE;
+
            static {
              _KEY = new MetamodelField<IdOnly, String>("__key", String.class, true);
              _THIS = new MetamodelField<IdOnly, IdOnly>("__this", IdOnly.class, true);
+             _HYBRID_SCORE = new MetamodelField<IdOnly, Double>("hybrid_score", Double.class, true);
            }
          }
         """;
