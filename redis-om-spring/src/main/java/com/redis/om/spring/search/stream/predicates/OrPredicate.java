@@ -78,19 +78,37 @@ public class OrPredicate<E, T> extends BaseAbstractPredicate<E, T> {
    * <p>
    * This method transforms all contained predicates into RediSearch query nodes
    * and combines them using a union operation, which represents logical OR
-   * in RediSearch query syntax.
+   * in RediSearch query syntax. The resulting OR node is then combined with
+   * the existing root node using an AND operation (intersect).
    * </p>
+   * <p>
+   * This ensures that when multiple filters are chained, the OR operation
+   * is properly scoped. For example:
+   * <pre>
+   * .filter(Field1.eq("A"))
+   * .filter(Field2.eq("B").or(Field2.isMissing()))
+   * </pre>
+   * produces: {@code (@field1:{A}) ((@field2:{B})|ismissing(@field2))}
+   * instead of: {@code (((@field1:{A}) @field2:{B})|ismissing(@field2))}
    *
    * @param root the root query node to build upon
-   * @return a Node representing the union (OR) of all contained predicates
+   * @return a Node representing the union (OR) of all contained predicates,
+   *         combined with the root using AND
    */
   @SuppressWarnings(
     "rawtypes"
   )
   @Override
   public Node apply(Node root) {
-    Node[] nodes = stream().map(p -> ((SearchFieldPredicate) p).apply(root)).toArray(Node[]::new);
-    return QueryBuilders.union(nodes);
+    // Apply each predicate to an empty root to get standalone conditions
+    Node[] nodes = stream().map(p -> ((SearchFieldPredicate) p).apply(QueryBuilders.union())).toArray(Node[]::new);
+
+    // Create the OR of all predicates
+    Node orNode = QueryBuilders.union(nodes);
+
+    // Combine the OR result with the existing root using AND
+    // If root is empty, just return the OR node
+    return root.toString().isBlank() ? orNode : QueryBuilders.intersect(root, orNode);
   }
 
 }

@@ -226,6 +226,11 @@ public final class MetamodelGenerator extends AbstractProcessor {
     interceptors.add(thisAccessor.getFirst());
     initCodeBlocks.add(thisAccessor.getSecond());
 
+    Pair<FieldSpec, CodeBlock> hybridScore = generateUnboundMetamodelField(entity, "_HYBRID_SCORE", "hybrid_score",
+        Double.class);
+    interceptors.add(hybridScore.getFirst());
+    initCodeBlocks.add(hybridScore.getSecond());
+
     CodeBlock.Builder blockBuilder = CodeBlock.builder();
 
     boolean hasFields = !fields.isEmpty();

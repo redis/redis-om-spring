@@ -16,6 +16,7 @@ dependencies {
 	api "com.github.f4b6a3:ulid-creator:${ulidVersion}"
 	api "org.apache.commons:commons-lang3"
 	api "com.squareup:javapoet:${javapoetVersion}"
+	api "com.redis:redisvl:${redisvlVersion}"
 
 	compileOnly "javax.enterprise:cdi-api:${cdi}"
 	compileOnly "com.google.auto.service:auto-service:${autoServiceVersion}"
