@@ -202,29 +202,34 @@ public class EmbeddingModelFactory {
 
   /**
    * Creates or retrieves a cached OpenAI embedding model using an enum value.
-   * 
+   *
    * @param model OpenAI embedding model enum
-   * @return Configured OpenAiEmbeddingModel instance
+   * @return Configured EmbeddingModel instance for OpenAI
    */
-  public OpenAiEmbeddingModel createOpenAiEmbeddingModel(EmbeddingModel model) {
+  public org.springframework.ai.embedding.EmbeddingModel createOpenAiEmbeddingModel(EmbeddingModel model) {
     return createOpenAiEmbeddingModel(model.value);
   }
 
   /**
    * Creates or retrieves a cached OpenAI embedding model.
-   * 
+   *
    * <p>The API key is resolved in the following order:
    * <ol>
    * <li>Redis OM properties</li>
    * <li>Spring AI properties</li>
    * </ol>
-   * 
+   *
+   * <p>On Spring Framework 7+, this method uses a compatibility layer that calls
+   * the OpenAI API directly, bypassing the broken {@code OpenAiApi} class from
+   * Spring AI 1.0.1 which was compiled against Spring Framework 6.
+   *
    * @param model Model identifier (e.g., "text-embedding-ada-002")
-   * @return Configured OpenAiEmbeddingModel instance
+   * @return Configured EmbeddingModel instance for OpenAI
    */
-  public OpenAiEmbeddingModel createOpenAiEmbeddingModel(String model) {
+  public org.springframework.ai.embedding.EmbeddingModel createOpenAiEmbeddingModel(String model) {
     String cacheKey = generateCacheKey("openai", model, properties.getOpenAi().getApiKey());
-    OpenAiEmbeddingModel cachedModel = (OpenAiEmbeddingModel) modelCache.get(cacheKey);
+    org.springframework.ai.embedding.EmbeddingModel cachedModel = (org.springframework.ai.embedding.EmbeddingModel) modelCache
+        .get(cacheKey);
 
     if (cachedModel != null) {
       return cachedModel;
@@ -236,14 +241,23 @@ public class EmbeddingModelFactory {
       properties.getOpenAi().setApiKey(apiKey);
     }
 
-    SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-    factory.setReadTimeout(Duration.ofSeconds(properties.getOpenAi().getResponseTimeOut()));
+    org.springframework.ai.embedding.EmbeddingModel embeddingModel;
 
-    OpenAiApi openAiApi = OpenAiApi.builder().apiKey(properties.getOpenAi().getApiKey()).restClientBuilder(RestClient
-        .builder().requestFactory(factory)).build();
+    if (OpenAiCompat.NEEDED) {
+      // Spring Framework 7+: use direct REST client to bypass broken OpenAiApi
+      embeddingModel = OpenAiCompat.createEmbeddingModel(properties.getOpenAi().getApiKey(), model, properties
+          .getOpenAi().getResponseTimeOut());
+    } else {
+      // Spring Framework 6: use standard Spring AI OpenAiApi path
+      SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+      factory.setReadTimeout(Duration.ofSeconds(properties.getOpenAi().getResponseTimeOut()));
 
-    OpenAiEmbeddingModel embeddingModel = new OpenAiEmbeddingModel(openAiApi, MetadataMode.EMBED, OpenAiEmbeddingOptions
-        .builder().model(model).build(), RetryUtils.DEFAULT_RETRY_TEMPLATE);
+      OpenAiApi openAiApi = OpenAiApi.builder().apiKey(properties.getOpenAi().getApiKey()).restClientBuilder(RestClient
+          .builder().requestFactory(factory)).build();
+
+      embeddingModel = new OpenAiEmbeddingModel(openAiApi, MetadataMode.EMBED, OpenAiEmbeddingOptions.builder().model(
+          model).build(), RetryUtils.DEFAULT_RETRY_TEMPLATE);
+    }
 
     modelCache.put(cacheKey, embeddingModel);
     return embeddingModel;

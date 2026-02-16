@@ -20,7 +20,6 @@ import org.springframework.ai.bedrock.cohere.BedrockCohereEmbeddingModel;
 import org.springframework.ai.bedrock.titan.BedrockTitanEmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.ollama.OllamaEmbeddingModel;
-import org.springframework.ai.openai.OpenAiEmbeddingModel;
 import org.springframework.ai.transformers.TransformersEmbeddingModel;
 import org.springframework.ai.vertexai.embedding.text.VertexAiTextEmbeddingModel;
 import org.springframework.beans.PropertyAccessor;
@@ -634,11 +633,11 @@ public class DefaultEmbedder implements Embedder {
 
   /**
    * Creates or retrieves an OpenAI embedding model.
-   * 
+   *
    * @param vectorize Configuration containing model parameters
-   * @return Configured OpenAiEmbeddingModel instance
+   * @return Configured EmbeddingModel instance for OpenAI
    */
-  private OpenAiEmbeddingModel getOpenAiEmbeddingModel(Vectorize vectorize) {
+  private EmbeddingModel getOpenAiEmbeddingModel(Vectorize vectorize) {
     return embeddingModelFactory.createOpenAiEmbeddingModel(vectorize.openAiEmbeddingModel());
   }
 
@@ -733,7 +732,7 @@ public class DefaultEmbedder implements Embedder {
       }
       case DJL -> Collections.emptyList();
       case OPENAI -> {
-        OpenAiEmbeddingModel model = getOpenAiEmbeddingModel(vectorize);
+        EmbeddingModel model = getOpenAiEmbeddingModel(vectorize);
         yield getEmbeddingsAsByteArrayFor(texts, model);
       }
       case OLLAMA -> {
@@ -761,7 +760,7 @@ public class DefaultEmbedder implements Embedder {
 
   /**
    * Generates sentence embeddings as float arrays using the appropriate provider.
-   * 
+   *
    * @param texts     List of texts to embed
    * @param vectorize Configuration specifying the provider and model
    * @return List of float arrays representing the embeddings
@@ -774,7 +773,7 @@ public class DefaultEmbedder implements Embedder {
       }
       case DJL -> Collections.emptyList(); //TODO what to do here?
       case OPENAI -> {
-        OpenAiEmbeddingModel model = getOpenAiEmbeddingModel(vectorize);
+        EmbeddingModel model = getOpenAiEmbeddingModel(vectorize);
         yield getEmbeddingAsFloatArrayFor(texts, model);
       }
       case OLLAMA -> {
