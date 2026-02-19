@@ -17,6 +17,8 @@ import redis.clients.jedis.resps.Tuple;
 import redis.clients.jedis.search.*;
 import redis.clients.jedis.search.aggr.AggregationBuilder;
 import redis.clients.jedis.search.aggr.AggregationResult;
+import redis.clients.jedis.search.hybrid.FTHybridParams;
+import redis.clients.jedis.search.hybrid.HybridResult;
 import redis.clients.jedis.search.schemafields.SchemaField;
 import redis.clients.jedis.util.SafeEncoder;
 
@@ -452,6 +454,20 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
       throw e;
     } finally {
       commandListener.tagValsFinished(index.toString(), field, result);
+    }
+    return result;
+  }
+
+  @Override
+  public HybridResult ftHybrid(FTHybridParams params) {
+    commandListener.hybridSearchStarted(index.toString());
+    HybridResult result = null;
+    try {
+      result = search.ftHybrid(index.toString(), params);
+    } catch (Exception e) {
+      throw e;
+    } finally {
+      commandListener.hybridSearchFinished(index.toString(), result);
     }
     return result;
   }

@@ -41,6 +41,7 @@ import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.TupleMapper;
 import com.redis.om.spring.util.ObjectUtils;
 import com.redis.om.spring.util.SearchResultRawResponseToObjectConverter;
+import com.redis.vl.query.AggregateHybridQuery;
 import com.redis.vl.query.HybridQuery;
 
 import redis.clients.jedis.exceptions.JedisDataException;
@@ -50,6 +51,8 @@ import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.AggregationResult;
 import redis.clients.jedis.search.aggr.SortedField;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
+import redis.clients.jedis.search.hybrid.FTHybridParams;
+import redis.clients.jedis.search.hybrid.HybridResult;
 import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
 import redis.clients.jedis.util.SafeEncoder;
@@ -108,8 +111,9 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private Runnable closeHandler;
   private Stream<E> resolvedStream;
   private KNNPredicate<E, ?> knnPredicate;
-  private HybridQuery hybridQuery;
+  private AggregateHybridQuery hybridQuery;
   // Deferred hybrid search parameters (query is built at execution time so limit/skip are captured)
+  private CombinationMethod hybridCombinationMethod;
   private String hybridText;
   private MetamodelField<? super E, ?> hybridTextField;
   private float[] hybridVector;
@@ -259,6 +263,41 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     this.hybridVector = vector;
     this.hybridVectorField = vectorField;
     this.hybridAlpha = alpha;
+    this.hybridCombinationMethod = CombinationMethod.LINEAR;
+
+    return this;
+  }
+
+  @Override
+  public SearchStream<E> hybridSearch(String text, MetamodelField<? super E, ?> textField, float[] vector,
+      MetamodelField<? super E, ?> vectorField, CombinationMethod combinationMethod, float alpha) {
+    // Validate all inputs
+    if (text == null || text.trim().isEmpty()) {
+      throw new IllegalArgumentException("text query string cannot be null or empty");
+    }
+    if (textField == null) {
+      throw new IllegalArgumentException("textField cannot be null");
+    }
+    if (vector == null) {
+      throw new IllegalArgumentException("query vector cannot be null");
+    }
+    if (vectorField == null) {
+      throw new IllegalArgumentException("vectorField cannot be null");
+    }
+    if (alpha < 0.0f || alpha > 1.0f) {
+      throw new IllegalArgumentException("alpha must be between 0.0 and 1.0, got: " + alpha);
+    }
+    if (combinationMethod == null) {
+      throw new IllegalArgumentException("combinationMethod cannot be null");
+    }
+
+    // Store parameters for deferred query construction (so limit/skip set later are captured)
+    this.hybridText = text;
+    this.hybridTextField = textField;
+    this.hybridVector = vector;
+    this.hybridVectorField = vectorField;
+    this.hybridAlpha = alpha;
+    this.hybridCombinationMethod = combinationMethod;
 
     return this;
   }
@@ -728,8 +767,12 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   /**
    * Executes a hybrid query using RedisVL's HybridQuery implementation.
+   * <p>
+   * Tries the native FT.HYBRID command first (Redis 8.4+), and falls back
+   * to FT.AGGREGATE if FT.HYBRID is not available on the current Redis version.
    * The HybridQuery is built at execution time so that limit/skip set after
    * hybridSearch() are properly captured.
+   * </p>
    */
   @SuppressWarnings(
     "unchecked"
@@ -752,22 +795,56 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       numResults = (int) Math.min(Math.max(requested, 1), MAX_LIMIT);
     }
 
+    // Convert alpha (vector weight) to linearAlpha (text weight) for HybridQuery
+    float linearAlpha = 1.0f - hybridAlpha;
+
+    // Map CombinationMethod to redisvl4j's HybridQuery.CombinationMethod
+    HybridQuery.CombinationMethod redisvlCombinationMethod = switch (hybridCombinationMethod) {
+      case RRF -> HybridQuery.CombinationMethod.RRF;
+      case LINEAR -> HybridQuery.CombinationMethod.LINEAR;
+    };
+
     // Build RedisVL HybridQuery at execution time
     HybridQuery.HybridQueryBuilder builder = HybridQuery.builder().text(hybridText).textFieldName(hybridTextField
-        .getSearchAlias()).vector(hybridVector).vectorFieldName(hybridVectorField.getSearchAlias()).alpha(hybridAlpha)
-        .numResults(numResults);
+        .getSearchAlias()).vector(hybridVector).vectorFieldName(hybridVectorField.getSearchAlias()).combinationMethod(
+            redisvlCombinationMethod).linearAlpha(linearAlpha).numResults(numResults);
 
     if (filterExpression != null) {
       builder.filterExpression(filterExpression);
     }
 
-    this.hybridQuery = builder.build();
+    HybridQuery hybridQueryObj = builder.build();
+
+    // Try FT.HYBRID first (Redis 8.4+)
+    try {
+      FTHybridParams params = hybridQueryObj.buildFTHybridParams();
+      HybridResult result = search.ftHybrid(params);
+
+      List<E> entities = documentsToEntities(result.getDocuments());
+
+      // Apply skip/limit in-memory since FT.HYBRID post-processing handles limit
+      // but we need skip support for pagination
+      if (skip != null && skip > 0) {
+        entities = entities.stream().skip(skip).toList();
+      }
+      if (limit != null) {
+        entities = entities.stream().limit(limit).toList();
+      }
+
+      return entities;
+    } catch (Exception e) {
+      logger.warn("FT.HYBRID not available, falling back to FT.AGGREGATE: " + e.getMessage());
+    }
+
+    // Fallback to FT.AGGREGATE path
+    AggregateHybridQuery fallback = hybridQueryObj.toAggregateHybridQuery();
+    this.hybridQuery = fallback;
 
     // Build the aggregation
-    redis.clients.jedis.search.aggr.AggregationBuilder aggregation = hybridQuery.buildRedisAggregation();
+    redis.clients.jedis.search.aggr.AggregationBuilder aggregation = fallback.buildRedisAggregation();
 
     // Add parameters from HybridQuery (includes vector parameter)
-    Map<String, Object> params = hybridQuery.getParams();
+    Map<String, Object> params = fallback.getParams();
     if (params != null && !params.isEmpty()) {
       aggregation.params(params);
     }
@@ -794,7 +871,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     // Execute aggregation
     AggregationResult aggResult = search.aggregate(aggregation);
 
-    // Convert aggregation results to entities using the same approach as AggregationStreamImpl
+    // Convert aggregation results to entities
     if (isDocument) {
       return aggResult.getResults().stream().map(d -> getGson().fromJson(d.get("$").toString(), entityClass)).toList();
     } else {
@@ -803,23 +880,36 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     }
   }
 
+  /**
+   * Converts a list of {@link redis.clients.jedis.search.Document} objects
+   * (from SearchResult or HybridResult) to a list of entity instances.
+   */
+  @SuppressWarnings(
+    "unchecked"
+  )
+  private List<E> documentsToEntities(List<redis.clients.jedis.search.Document> documents) {
+    if (isDocument) {
+      Gson g = getGson();
+      return documents.stream().map(d -> {
+        Object rawJson = d.get("$");
+        String json = (rawJson instanceof byte[]) ? SafeEncoder.encode((byte[]) rawJson) : rawJson.toString();
+        E entity = g.fromJson(json, entityClass);
+        return ObjectUtils.populateRedisKey(entity, d.getId());
+      }).toList();
+    } else {
+      return (List<E>) documents.stream().map(d -> {
+        Object entity = ObjectUtils.documentToObject(d, entityClass, mappingConverter);
+        return ObjectUtils.populateRedisKey(entity, d.getId());
+      }).toList();
+    }
+  }
+
   @SuppressWarnings(
     "unchecked"
   )
   private List<E> toEntityList(SearchResult searchResult) {
     if (projections.isEmpty()) {
-      if (isDocument) {
-        Gson g = getGson();
-        return searchResult.getDocuments().stream().map(d -> {
-          E entity = g.fromJson(SafeEncoder.encode((byte[]) d.get("$")), entityClass);
-          return ObjectUtils.populateRedisKey(entity, d.getId());
-        }).toList();
-      } else {
-        return searchResult.getDocuments().stream().map(d -> {
-          E entity = (E) ObjectUtils.documentToObject(d, entityClass, mappingConverter);
-          return ObjectUtils.populateRedisKey(entity, d.getId());
-        }).toList();
-      }
+      return documentsToEntities(searchResult.getDocuments());
     } else {
       List<E> projectedEntities = new ArrayList<>();
       searchResult.getDocuments().forEach(doc -> {

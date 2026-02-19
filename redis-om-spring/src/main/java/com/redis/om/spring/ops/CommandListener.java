@@ -16,6 +16,7 @@ import redis.clients.jedis.search.SearchProtocol;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.AggregationBuilder;
 import redis.clients.jedis.search.aggr.AggregationResult;
+import redis.clients.jedis.search.hybrid.HybridResult;
 import redis.clients.jedis.search.schemafields.SchemaField;
 
 public interface CommandListener {
@@ -158,6 +159,12 @@ public interface CommandListener {
   }
 
   default void tagValsFinished(String string, String field, Set<String> result) {
+  }
+
+  default void hybridSearchStarted(String indexName) {
+  }
+
+  default void hybridSearchFinished(String indexName, HybridResult result) {
   }
 
   default void commandFailed(SearchProtocol.SearchCommand command, String indexName, Throwable t) {
