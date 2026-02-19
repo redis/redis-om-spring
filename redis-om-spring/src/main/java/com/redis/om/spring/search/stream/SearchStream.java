@@ -104,6 +104,35 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
       MetamodelField<? super E, ?> vectorField, float alpha);
 
   /**
+   * Performs a hybrid search combining text and vector similarity search with a specified
+   * combination method and weighted scoring.
+   * <p>
+   * This overload allows choosing between RRF (Reciprocal Rank Fusion) and LINEAR
+   * combination methods. When using RRF on Redis 8.4+, the native FT.HYBRID command
+   * is used; on older Redis versions, the search automatically falls back to
+   * FT.AGGREGATE with LINEAR combination.
+   * <p>
+   * The alpha parameter controls the weight between text and vector scoring:
+   * <ul>
+   * <li>alpha = 0.0: pure text search</li>
+   * <li>alpha = 1.0: pure vector search</li>
+   * <li>alpha = 0.7 (typical): 70% vector, 30% text</li>
+   * </ul>
+   *
+   * @param text              the text query string to search for
+   * @param textField         the metamodel field for text search (must not be null)
+   * @param vector            the query vector for similarity search (must not be null)
+   * @param vectorField       the metamodel field for vector search (must not be null)
+   * @param combinationMethod the score combination method (RRF or LINEAR)
+   * @param alpha             weight for combining scores (0.0 to 1.0, typically 0.7)
+   * @return a new SearchStream with the hybrid search applied
+   * @throws IllegalArgumentException if text is null or empty, fields are null, or alpha is out of range
+   * @since 2.1.0
+   */
+  SearchStream<E> hybridSearch(String text, MetamodelField<? super E, ?> textField, float[] vector,
+      MetamodelField<? super E, ?> vectorField, CombinationMethod combinationMethod, float alpha);
+
+  /**
    * Applies a filter predicate only if the value is not null.
    *
    * @param value             the value to check

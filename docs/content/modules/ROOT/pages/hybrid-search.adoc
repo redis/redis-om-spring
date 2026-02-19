@@ -2,7 +2,7 @@
 :page-toclevels: 3
 :page-pagination:
 
-Hybrid Search combines full-text search with vector similarity search to provide powerful semantic search capabilities. This approach leverages the strengths of both traditional keyword-based search and modern AI-powered semantic search.
+Hybrid Search combines full-text search (BM25) with vector similarity search to deliver results that are both keyword-relevant and semantically meaningful. Redis OM Spring provides two hybrid search implementations that are used automatically depending on your Redis version.
 
 == Understanding Hybrid Search
 
@@ -13,23 +13,9 @@ Hybrid search combines two complementary search approaches:
 1. **Full-Text Search (BM25)**: Traditional keyword-based search that matches query terms against document text using statistical relevance scoring
 2. **Vector Similarity Search**: Semantic search using embeddings that captures meaning and context beyond exact keyword matches
 
-The results are scored using a weighted combination:
-
-[source,text]
-----
-hybrid_score = (1 - alpha) × text_score + alpha × vector_similarity
-----
-
-Where:
-
-* `alpha = 0.0` → Pure text search (BM25 only)
-* `alpha = 0.5` → Balanced hybrid search
-* `alpha = 0.7` → Default, favoring semantic similarity (recommended)
-* `alpha = 1.0` → Pure vector search (semantic only)
+The two scores are fused into a single ranking using either **Reciprocal Rank Fusion (RRF)** or **LINEAR** weighted combination.
 
 === Why Use Hybrid Search?
-
-Hybrid search provides the best of both worlds:
 
 **Text Search Strengths:**
 
@@ -52,11 +38,45 @@ Hybrid search provides the best of both worlds:
 * More robust to query variations
 * Improved user experience
 
+== Two Hybrid Search Implementations
+
+Redis OM Spring supports two hybrid search implementations. The best choice depends on your Redis version:
+
+[cols="1,2,2"]
+|===
+|Feature |HybridQuery |AggregateHybridQuery
+
+|**Redis Command**
+|`FT.HYBRID`
+|`FT.AGGREGATE`
+
+|**Min Redis Version**
+|8.4+
+|7.4+
+
+|**Combination Methods**
+|RRF (default), LINEAR
+|Weighted linear only
+
+|**Alpha Semantics**
+|`linearAlpha` = text weight (default 0.3)
+|`alpha` = vector weight (default 0.7)
+
+|**Score Aliases**
+|Yes (`yieldTextScoreAs`, `yieldVsimScoreAs`, `yieldCombinedScoreAs`)
+|No
+
+|**Automatic Fallback**
+|Falls back to AggregateHybridQuery on older Redis
+|N/A
+|===
+
 == Prerequisites
 
-**Redis Version Requirements:**
+=== Redis Version Requirements
 
-Hybrid search requires **Redis 7.4.0 or later** due to its use of the `@__score` field exposure in FT.AGGREGATE queries.
+* **Redis 8.4+** — Recommended. Enables native `FT.HYBRID` command with RRF/LINEAR fusion.
+* **Redis 7.4+** — Minimum. Uses `FT.AGGREGATE` with manual score combination.
 
 To check your Redis version:
 
@@ -65,7 +85,7 @@ To check your Redis version:
 redis-cli INFO server | grep redis_version
 ----
 
-**Dependencies:**
+=== Dependencies
 
 Redis OM Spring integrates with RedisVL (Redis Vector Library) for hybrid search support. This dependency is included automatically in Redis OM Spring 2.x.
 
@@ -127,16 +147,16 @@ public interface ProductRepository extends RedisEnhancedRepository<Product, Stri
 
 == Performing Hybrid Searches
 
-=== Basic Hybrid Search
+=== Using Entity Streams (High-Level API)
 
-Use the `hybridSearch()` method on `EntityStream`:
+The `hybridSearch()` method on `EntityStream` is the simplest way to perform hybrid search. It automatically tries the native `FT.HYBRID` command first (Redis 8.4+), and falls back to `FT.AGGREGATE` transparently on older Redis versions:
 
 [source,java]
 ----
 @Autowired
 private EntityStream entityStream;
 
-// Perform hybrid search
+// Perform hybrid search (defaults to LINEAR combination)
 List<Product> results = entityStream.of(Product.class)
     .hybridSearch(
         "wireless headphones",           // Text query
@@ -149,7 +169,46 @@ List<Product> results = entityStream.of(Product.class)
     .collect(Collectors.toList());
 ----
 
-=== Hybrid Search with Filters
+==== Choosing a Combination Method
+
+You can explicitly choose between RRF and LINEAR combination methods using the `CombinationMethod` parameter:
+
+[source,java]
+----
+import com.redis.om.spring.search.stream.CombinationMethod;
+
+// RRF combination (Reciprocal Rank Fusion)
+// Best for combining ranked lists without score normalization
+List<Product> rrfResults = entityStream.of(Product.class)
+    .hybridSearch(
+        "wireless headphones",
+        Product$.DESCRIPTION,
+        queryEmbedding,
+        Product$.EMBEDDING,
+        CombinationMethod.RRF,           // RRF combination method
+        0.7f                              // Alpha (vector weight)
+    )
+    .limit(10)
+    .collect(Collectors.toList());
+
+// LINEAR combination (weighted linear)
+// Explicit weighted combination of text and vector scores
+List<Product> linearResults = entityStream.of(Product.class)
+    .hybridSearch(
+        "wireless headphones",
+        Product$.DESCRIPTION,
+        queryEmbedding,
+        Product$.EMBEDDING,
+        CombinationMethod.LINEAR,         // LINEAR combination method
+        0.7f                              // Alpha (vector weight)
+    )
+    .limit(10)
+    .collect(Collectors.toList());
+----
+
+NOTE: When `CombinationMethod.RRF` is requested but the Redis version does not support `FT.HYBRID` (pre-8.4), the query automatically falls back to `FT.AGGREGATE` with LINEAR combination. The fallback is transparent — results are always returned.
+
+==== Hybrid Search with Filters
 
 Combine hybrid search with filters for refined results:
 
@@ -169,48 +228,228 @@ List<Product> results = entityStream.of(Product.class)
     .collect(Collectors.toList());
 ----
 
+=== HybridQuery (FT.HYBRID) — Recommended for Redis 8.4+
+
+`HybridQuery` uses the native `FT.HYBRID` command introduced in Redis 8.4. It supports two score fusion strategies (RRF and LINEAR), score aliases, and automatically falls back to `AggregateHybridQuery` on older Redis versions.
+
+==== Basic Example
+
+[source,java]
+----
+import com.redis.vl.query.HybridQuery;
+
+HybridQuery query = HybridQuery.builder()
+    .text("wireless headphones")
+    .textFieldName("description")
+    .vector(queryEmbedding)
+    .vectorFieldName("embedding")
+    .numResults(10)
+    .returnFields(List.of("description", "category", "price"))
+    .build();
+----
+
+==== RRF Combination (Default)
+
+Reciprocal Rank Fusion merges ranked lists from text and vector search without requiring score normalization:
+
+[source,java]
+----
+HybridQuery rrfQuery = HybridQuery.builder()
+    .text("noise cancelling headphones")
+    .textFieldName("description")
+    .vector(queryEmbedding)
+    .vectorFieldName("embedding")
+    .combinationMethod(HybridQuery.CombinationMethod.RRF)
+    .rrfWindow(20)       // Window size for ranking (default: 20)
+    .rrfConstant(60)     // RRF constant (default: 60)
+    .numResults(10)
+    .build();
+----
+
+==== LINEAR Combination
+
+Linear combination weights text and vector scores directly:
+
+[source,java]
+----
+HybridQuery linearQuery = HybridQuery.builder()
+    .text("noise cancelling headphones")
+    .textFieldName("description")
+    .vector(queryEmbedding)
+    .vectorFieldName("embedding")
+    .combinationMethod(HybridQuery.CombinationMethod.LINEAR)
+    .linearAlpha(0.5f)   // Text weight (0.0-1.0, default: 0.3)
+    .numResults(10)
+    .build();
+----
+
+NOTE: In `HybridQuery`, `linearAlpha` is the **text** weight. An alpha of 0.3 means 30% text / 70% vector.
+
+==== Filter Expressions
+
+Filter results using strongly-typed `Filter` objects or raw RediSearch strings:
+
+[source,java]
+----
+import com.redis.vl.query.Filter;
+
+// Strongly-typed filter
+HybridQuery filteredQuery = HybridQuery.builder()
+    .text("headphones")
+    .textFieldName("description")
+    .vector(queryEmbedding)
+    .vectorFieldName("embedding")
+    .filterExpression(Filter.tag("category", "Electronics"))
+    .numResults(10)
+    .build();
+
+// Raw RediSearch filter string
+HybridQuery rawFilterQuery = HybridQuery.builder()
+    .text("headphones")
+    .textFieldName("description")
+    .vector(queryEmbedding)
+    .vectorFieldName("embedding")
+    .filterExpression("@category:{Electronics} @price:[100 500]")
+    .numResults(10)
+    .build();
+----
+
+==== Score Aliases
+
+Name the individual scores returned by the query for downstream processing:
+
+[source,java]
+----
+HybridQuery scoredQuery = HybridQuery.builder()
+    .text("wireless headphones")
+    .textFieldName("description")
+    .vector(queryEmbedding)
+    .vectorFieldName("embedding")
+    .yieldTextScoreAs("text_score")
+    .yieldVsimScoreAs("vector_score")
+    .yieldCombinedScoreAs("combined_score")
+    .numResults(10)
+    .build();
+----
+
+==== Text Scorer
+
+The default text scorer is `BM25STD`. You can change it if needed:
+
+[source,java]
+----
+HybridQuery query = HybridQuery.builder()
+    .text("wireless headphones")
+    .textFieldName("description")
+    .vector(queryEmbedding)
+    .vectorFieldName("embedding")
+    .textScorer("BM25STD")  // Default; also supports TFIDF, DISMAX, etc.
+    .numResults(10)
+    .build();
+----
+
+==== Automatic Fallback
+
+If your Redis version does not support `FT.HYBRID`, `HybridQuery` can be converted to an `AggregateHybridQuery` automatically:
+
+[source,java]
+----
+// Convert for use with Redis < 8.4
+AggregateHybridQuery fallback = query.toAggregateHybridQuery();
+----
+
+The conversion maps `linearAlpha` (text weight) to `alpha` (vector weight) as `alpha = 1.0 - linearAlpha`.
+
+=== AggregateHybridQuery (FT.AGGREGATE) — For Redis 7.4+
+
+`AggregateHybridQuery` uses the `FT.AGGREGATE` command with a manual scoring pipeline. Use this when running Redis 7.4–8.3, or when you need explicit control over the aggregation pipeline.
+
+==== Basic Example
+
+[source,java]
+----
+import com.redis.vl.query.AggregateHybridQuery;
+
+AggregateHybridQuery query = AggregateHybridQuery.builder()
+    .text("wireless headphones")
+    .textFieldName("description")
+    .vector(queryEmbedding)
+    .vectorFieldName("embedding")
+    .alpha(0.7f)             // Vector weight (0.0-1.0, default: 0.7)
+    .numResults(10)
+    .returnFields(List.of("description", "category", "price"))
+    .build();
+----
+
+==== Scoring Formula
+
+[source,text]
+----
+hybrid_score = (1 - alpha) × BM25_score + alpha × (1 - cosine_distance)
+----
+
+Where:
+
+* `alpha = 0.0` → Pure text search (BM25 only)
+* `alpha = 0.5` → Balanced hybrid search
+* `alpha = 0.7` → Default, favoring semantic similarity (recommended)
+* `alpha = 1.0` → Pure vector search (semantic only)
+
+NOTE: In `AggregateHybridQuery`, `alpha` is the **vector** weight. This is the opposite convention from `HybridQuery.linearAlpha`, which is the **text** weight.
+
+==== Filter Expressions
+
+[source,java]
+----
+AggregateHybridQuery filteredQuery = AggregateHybridQuery.builder()
+    .text("headphones")
+    .textFieldName("description")
+    .vector(queryEmbedding)
+    .vectorFieldName("embedding")
+    .alpha(0.7f)
+    .filterExpression(Filter.tag("category", "Electronics"))
+    .numResults(10)
+    .build();
+----
+
 === Adjusting Search Behavior with Alpha
 
-The alpha parameter controls the balance between text and vector search:
+The alpha parameter controls the balance between text and vector search. Note the different conventions:
 
-**Text-Focused (alpha = 0.3):**
+* **EntityStream / AggregateHybridQuery**: `alpha` is the **vector** weight
+* **HybridQuery LINEAR mode**: `linearAlpha` is the **text** weight
 
-Good for precise keyword matching where exact terms matter:
+**Text-Focused:**
 
 [source,java]
 ----
-// Emphasizes keyword matching
+// EntityStream: low alpha = more text weight
 .hybridSearch(text, textField, vector, vectorField, 0.3f)
+
+// HybridQuery LINEAR: high linearAlpha = more text weight
+.combinationMethod(CombinationMethod.LINEAR).linearAlpha(0.7f)
 ----
 
-**Balanced (alpha = 0.5):**
-
-Equal weight to text and semantic similarity:
+**Balanced (50/50):**
 
 [source,java]
 ----
-// 50/50 blend of text and vector scoring
+// EntityStream
 .hybridSearch(text, textField, vector, vectorField, 0.5f)
+
+// HybridQuery LINEAR
+.combinationMethod(CombinationMethod.LINEAR).linearAlpha(0.5f)
 ----
 
-**Semantic-Focused (alpha = 0.7):**
-
-Recommended default - emphasizes semantic similarity:
+**Semantic-Focused (recommended):**
 
 [source,java]
 ----
-// Favors conceptual similarity (recommended)
+// EntityStream: high alpha = more vector weight
 .hybridSearch(text, textField, vector, vectorField, 0.7f)
-----
 
-**Pure Vector (alpha = 1.0):**
-
-Only uses vector similarity, ignoring text matching:
-
-[source,java]
-----
-// Semantic search only
-.hybridSearch(text, textField, vector, vectorField, 1.0f)
+// HybridQuery LINEAR: low linearAlpha = more vector weight
+.combinationMethod(CombinationMethod.LINEAR).linearAlpha(0.3f)
 ----
 
 == REST API Example
@@ -262,28 +501,38 @@ public class ProductController {
 
 Hybrid search in Redis OM Spring uses the following architecture:
 
-1. **Redis OM Spring API**: Provides the `hybridSearch()` fluent API
-2. **RedisVL Integration**: Leverages RedisVL's HybridQuery implementation
-3. **FT.AGGREGATE**: Executes Redis aggregation queries with scoring
+1. **Redis OM Spring API**: Provides the `hybridSearch()` fluent API via Entity Streams
+2. **RedisVL Integration**: Leverages RedisVL's `HybridQuery` and `AggregateHybridQuery` implementations
+3. **Redis Command Selection**:
+   - **Redis 8.4+**: Uses `FT.HYBRID` with native score fusion (RRF or LINEAR)
+   - **Redis 7.4+**: Uses `FT.AGGREGATE` with manual score combination pipeline
 4. **Score Combination**: Merges BM25 text scores with vector similarity scores
 
 === Query Execution
 
 When you call `hybridSearch()`, Redis OM Spring:
 
-1. Builds a RedisVL `HybridQuery` with your parameters
-2. Constructs an FT.AGGREGATE query with:
-   - Text search filter on the specified text field
-   - Vector KNN search on the specified vector field
-   - Score combination using the alpha parameter
-3. Executes the aggregation query against Redis
-4. Loads all entity fields from the results
-5. Converts the results back to typed entities
-6. Returns results sorted by hybrid score (highest first)
+1. Stores the hybrid search parameters (deferred execution)
+2. On terminal operation (e.g., `collect()`), builds a RedisVL `HybridQuery` with your parameters, combination method, and any filters/limits set on the stream
+3. **Tries FT.HYBRID first** (Redis 8.4+): Executes the native hybrid command with built-in RRF or LINEAR score fusion
+4. **Falls back to FT.AGGREGATE** on failure: Converts to `AggregateHybridQuery` and constructs a pipeline with text search, vector KNN search, and weighted linear score combination
+5. Loads all entity fields from the results
+6. Converts the results back to typed entities
+7. Returns results sorted by hybrid score (highest first)
 
-=== Scoring Formula
+The two `hybridSearch()` overloads:
 
-The hybrid score is calculated as:
+* `hybridSearch(text, textField, vector, vectorField, alpha)` — Uses LINEAR combination (backward-compatible)
+* `hybridSearch(text, textField, vector, vectorField, combinationMethod, alpha)` — Choose RRF or LINEAR explicitly
+
+=== Scoring
+
+**HybridQuery (FT.HYBRID)** supports two combination methods:
+
+* **RRF (Reciprocal Rank Fusion)**: Merges ranked lists without requiring score normalization. Controlled by `rrfWindow` and `rrfConstant`.
+* **LINEAR**: Weighted combination where `linearAlpha` is the text weight and `(1 - linearAlpha)` is the vector weight.
+
+**AggregateHybridQuery (FT.AGGREGATE)** uses a weighted linear formula:
 
 [source,text]
 ----
@@ -294,7 +543,7 @@ Where:
 
 * **BM25_score**: Full-text relevance score (0.0 to ~1.0)
 * **cosine_distance**: Vector distance (0.0 = identical, 2.0 = opposite)
-* **alpha**: Weight parameter (0.0 to 1.0)
+* **alpha**: Vector weight parameter (0.0 to 1.0)
 
 Results are automatically sorted by hybrid score in descending order (highest scores first).
 
@@ -496,10 +745,10 @@ See the link:https://github.com/redis/redis-om-spring/tree/main/demos/roms-hybri
 
 == Limitations
 
-* **Redis Version**: Requires Redis 7.4.0+ for `@__score` field support
+* **Redis Version**: Minimum Redis 7.4.0+ (for `FT.AGGREGATE` with `@__score` support); Redis 8.4+ recommended for native `FT.HYBRID`
 * **Projection Restrictions**: Cannot use `.map()` field projections after `.hybridSearch()` as it would switch from aggregation (FT.AGGREGATE) to search (FT.SEARCH)
-* **Score Access**: The hybrid score is used for sorting but is not directly accessible on returned entities (future enhancement)
-* **Runtime Parameters**: FT.AGGREGATE does not support HNSW runtime parameters (efRuntime, epsilon)
+* **Score Access**: The hybrid score is used for sorting but is not directly accessible on returned entities (future enhancement). Use `HybridQuery` score aliases for explicit access.
+* **Runtime Parameters**: `FT.AGGREGATE` does not support HNSW runtime parameters (efRuntime, epsilon); `FT.HYBRID` does via `knnEfRuntime`
 
 == Comparison with Standard Vector Search
 
@@ -533,7 +782,7 @@ See the link:https://github.com/redis/redis-om-spring/tree/main/demos/roms-hybri
 
 |**Redis Command**
 |FT.SEARCH with KNN
-|FT.AGGREGATE with hybrid scoring
+|FT.HYBRID (8.4+) or FT.AGGREGATE (7.4+)
 |===
 
 == Related Topics

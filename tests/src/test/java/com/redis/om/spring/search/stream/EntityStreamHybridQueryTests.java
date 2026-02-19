@@ -482,4 +482,144 @@ class EntityStreamHybridQueryTests extends AbstractBaseEnhancedRedisTest {
     assertThat(page1).isNotEmpty();
     // Page 2 may be empty if not enough results
   }
+
+  /**
+   * Test hybrid search with RRF combination method.
+   * Uses CombinationMethod.RRF - on Redis 8.4+ this uses native FT.HYBRID,
+   * on older versions it transparently falls back to FT.AGGREGATE with LINEAR.
+   */
+  @Test
+  void testHybridSearchWithRRFCombination() {
+    float[] queryVector = new float[]{0.15f, 0.85f, 0.8f, 0.25f};
+
+    List<HashWithTextAndVector> results = entityStream.of(HashWithTextAndVector.class)
+        .hybridSearch(
+            "machine learning",
+            HashWithTextAndVector$.DESCRIPTION,
+            queryVector,
+            HashWithTextAndVector$.EMBEDDING,
+            CombinationMethod.RRF,
+            0.7f
+        )
+        .limit(5)
+        .collect(Collectors.toList());
+
+    assertAll(
+        () -> assertThat(results).isNotEmpty(),
+        () -> assertThat(results).hasSizeLessThanOrEqualTo(5),
+        () -> assertThat(results).anyMatch(p ->
+            p.getDescription().contains("machine learning"))
+    );
+  }
+
+  /**
+   * Test hybrid search with explicit LINEAR combination method.
+   * Should behave the same as the original hybridSearch() with just alpha.
+   */
+  @Test
+  void testHybridSearchWithLINEARCombination() {
+    float[] queryVector = new float[]{0.15f, 0.85f, 0.8f, 0.25f};
+
+    List<HashWithTextAndVector> results = entityStream.of(HashWithTextAndVector.class)
+        .hybridSearch(
+            "machine learning",
+            HashWithTextAndVector$.DESCRIPTION,
+            queryVector,
+            HashWithTextAndVector$.EMBEDDING,
+            CombinationMethod.LINEAR,
+            0.7f
+        )
+        .limit(5)
+        .collect(Collectors.toList());
+
+    assertAll(
+        () -> assertThat(results).isNotEmpty(),
+        () -> assertThat(results).hasSizeLessThanOrEqualTo(5),
+        () -> assertThat(results).anyMatch(p ->
+            p.getDescription().contains("machine learning"))
+    );
+  }
+
+  /**
+   * Test that the original hybridSearch() method (without CombinationMethod)
+   * still works and defaults to LINEAR behavior.
+   */
+  @Test
+  void testHybridSearchDefaultUsesLinear() {
+    float[] queryVector = new float[]{0.15f, 0.85f, 0.8f, 0.25f};
+
+    // Original method (no CombinationMethod parameter)
+    List<HashWithTextAndVector> defaultResults = entityStream.of(HashWithTextAndVector.class)
+        .hybridSearch(
+            "machine learning",
+            HashWithTextAndVector$.DESCRIPTION,
+            queryVector,
+            HashWithTextAndVector$.EMBEDDING,
+            0.7f
+        )
+        .limit(5)
+        .collect(Collectors.toList());
+
+    // Explicit LINEAR method
+    List<HashWithTextAndVector> linearResults = entityStream.of(HashWithTextAndVector.class)
+        .hybridSearch(
+            "machine learning",
+            HashWithTextAndVector$.DESCRIPTION,
+            queryVector,
+            HashWithTextAndVector$.EMBEDDING,
+            CombinationMethod.LINEAR,
+            0.7f
+        )
+        .limit(5)
+        .collect(Collectors.toList());
+
+    // Both should return results
+    assertAll(
+        () -> assertThat(defaultResults).isNotEmpty(),
+        () -> assertThat(linearResults).isNotEmpty(),
+        // Both should return the same number of results
+        () -> assertThat(defaultResults).hasSameSizeAs(linearResults)
+    );
+  }
+
+  /**
+   * Test that hybrid search succeeds regardless of Redis version.
+   * The FT.HYBRID -> FT.AGGREGATE fallback should be transparent.
+   */
+  @Test
+  void testHybridSearchFallbackOnOlderRedis() {
+    float[] queryVector = new float[]{0.15f, 0.85f, 0.8f, 0.25f};
+
+    // RRF requires FT.HYBRID (Redis 8.4+) but should fall back gracefully
+    List<HashWithTextAndVector> rrfResults = entityStream.of(HashWithTextAndVector.class)
+        .hybridSearch(
+            "learning algorithms",
+            HashWithTextAndVector$.DESCRIPTION,
+            queryVector,
+            HashWithTextAndVector$.EMBEDDING,
+            CombinationMethod.RRF,
+            0.7f
+        )
+        .limit(5)
+        .collect(Collectors.toList());
+
+    // LINEAR can use either FT.HYBRID or FT.AGGREGATE
+    List<HashWithTextAndVector> linearResults = entityStream.of(HashWithTextAndVector.class)
+        .hybridSearch(
+            "learning algorithms",
+            HashWithTextAndVector$.DESCRIPTION,
+            queryVector,
+            HashWithTextAndVector$.EMBEDDING,
+            CombinationMethod.LINEAR,
+            0.7f
+        )
+        .limit(5)
+        .collect(Collectors.toList());
+
+    // Both should succeed (fallback should be transparent)
+    assertAll(
+        () -> assertThat(rrfResults).isNotEmpty(),
+        () -> assertThat(linearResults).isNotEmpty()
+    );
+  }
 }

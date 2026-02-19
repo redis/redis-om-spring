@@ -155,6 +155,12 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     throw new UnsupportedOperationException("Hybrid search is not supported on mapped stream");
   }
 
+  @Override
+  public SearchStream<T> hybridSearch(String text, MetamodelField<? super T, ?> textField, float[] vector,
+      MetamodelField<? super T, ?> vectorField, CombinationMethod combinationMethod, float alpha) {
+    throw new UnsupportedOperationException("Hybrid search is not supported on mapped stream");
+  }
+
   @SuppressWarnings(
     "unchecked"
   )

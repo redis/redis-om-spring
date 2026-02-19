@@ -10,6 +10,8 @@ import com.redis.om.spring.repository.query.autocomplete.AutoCompleteOptions;
 import redis.clients.jedis.search.*;
 import redis.clients.jedis.search.aggr.AggregationBuilder;
 import redis.clients.jedis.search.aggr.AggregationResult;
+import redis.clients.jedis.search.hybrid.FTHybridParams;
+import redis.clients.jedis.search.hybrid.HybridResult;
 import redis.clients.jedis.search.schemafields.SchemaField;
 
 /**
@@ -296,5 +298,20 @@ public interface SearchOperations<K> {
    * @throws RuntimeException if tag values retrieval fails
    */
   Set<String> tagVals(String value);
+
+  /**
+   * Executes a native FT.HYBRID command combining text and vector search.
+   * <p>
+   * This command requires Redis 8.4+ and provides built-in score fusion
+   * via RRF (Reciprocal Rank Fusion) or LINEAR combination methods.
+   * </p>
+   *
+   * @param params the FT.HYBRID parameters including search, vector search,
+   *               combination, and post-processing configuration
+   * @return hybrid search results containing matching documents with combined scores
+   * @throws RuntimeException if the command fails (e.g., Redis version does not support FT.HYBRID)
+   * @since 2.1.0
+   */
+  HybridResult ftHybrid(FTHybridParams params);
 
 }
