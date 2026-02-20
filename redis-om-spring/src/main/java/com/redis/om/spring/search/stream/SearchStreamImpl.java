@@ -818,22 +818,24 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     // Try FT.HYBRID first (Redis 8.4+)
     try {
       FTHybridParams params = hybridQueryObj.buildFTHybridParams();
+
       HybridResult result = search.ftHybrid(params);
+      // FT.HYBRID documents contain String values (via ENCODED_OBJECT_MAP),
+      // not byte[] like FT.SEARCH documents. Use the same conversion as FT.AGGREGATE.
+      List<E> entities = hybridDocumentsToEntities(result.getDocuments());
 
-      List<E> entities = documentsToEntities(result.getDocuments());
-
-      // Apply skip/limit in-memory since FT.HYBRID post-processing handles limit
-      // but we need skip support for pagination
+      // Apply skip/limit in-memory for pagination
       if (skip != null && skip > 0) {
-        entities = entities.stream().skip(skip).toList();
+        entities = entities.stream().skip(skip).collect(Collectors.toList());
       }
       if (limit != null) {
-        entities = entities.stream().limit(limit).toList();
+        entities = entities.stream().limit(limit).collect(Collectors.toList());
       }
 
       return entities;
     } catch (Exception e) {
-      logger.warn("FT.HYBRID not available, falling back to FT.AGGREGATE: " + e.getMessage());
+      logger.warn("FT.HYBRID failed, falling back to FT.AGGREGATE: " + e.getClass().getSimpleName() + ": " + e
+          .getMessage(), e);
     }
 
     // Fallback to FT.AGGREGATE path
@@ -873,16 +875,17 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
     // Convert aggregation results to entities
     if (isDocument) {
-      return aggResult.getResults().stream().map(d -> getGson().fromJson(d.get("$").toString(), entityClass)).toList();
+      return aggResult.getResults().stream().map(d -> getGson().fromJson(d.get("$").toString(), entityClass)).collect(
+          Collectors.toList());
     } else {
       return aggResult.getResults().stream().map(h -> (E) ObjectUtils.mapToObject(h, entityClass, mappingConverter))
-          .toList();
+          .collect(Collectors.toList());
     }
   }
 
   /**
    * Converts a list of {@link redis.clients.jedis.search.Document} objects
-   * (from SearchResult or HybridResult) to a list of entity instances.
+   * (from SearchResult) to a list of entity instances.
    */
   @SuppressWarnings(
     "unchecked"
@@ -901,6 +904,37 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
         Object entity = ObjectUtils.documentToObject(d, entityClass, mappingConverter);
         return ObjectUtils.populateRedisKey(entity, d.getId());
       }).toList();
+    }
+  }
+
+  /**
+   * Converts FT.HYBRID {@link redis.clients.jedis.search.Document} objects to entity instances.
+   * FT.HYBRID documents contain String values (via ENCODED_OBJECT_MAP) rather than byte[]
+   * like FT.SEARCH documents, so we extract properties as a Map and use mapToObject.
+   */
+  @SuppressWarnings(
+    "unchecked"
+  )
+  private List<E> hybridDocumentsToEntities(List<redis.clients.jedis.search.Document> documents) {
+    if (isDocument) {
+      Gson g = getGson();
+      return documents.stream().map(d -> {
+        Object rawJson = d.get("$");
+        String json = (rawJson instanceof byte[]) ? SafeEncoder.encode((byte[]) rawJson) : rawJson.toString();
+        E entity = g.fromJson(json, entityClass);
+        return ObjectUtils.populateRedisKey(entity, d.getId());
+      }).toList();
+    } else {
+      return (List<E>) documents.stream().map(d -> {
+        Map<String, Object> props = new HashMap<>();
+        d.getProperties().forEach(p -> {
+          if (p.getValue() != null) {
+            props.put(p.getKey(), p.getValue());
+          }
+        });
+        Object entity = ObjectUtils.mapToObject(props, entityClass, mappingConverter);
+        return ObjectUtils.populateRedisKey(entity, d.getId());
+      }).collect(Collectors.toList());
     }
   }
 
