@@ -583,6 +583,147 @@ class EntityStreamHybridQueryTests extends AbstractBaseEnhancedRedisTest {
   }
 
   /**
+   * Test that reproduces the exact scenario from Ricardo Ferreira's troubleshooting project.
+   * <p>
+   * Scenario: 3 "Back to the Future" items share the same text pattern in their
+   * searchable description, but their vectors are DISSIMILAR to the query vector.
+   * 7 other items have vectors similar to the query vector but unrelated text.
+   * With alpha=0.0 (pure text, 0% vector weight), all 3 text-matching items must be found.
+   * <p>
+   * This validates that FT.HYBRID runs text and vector searches independently,
+   * unlike the old FT.AGGREGATE approach where KNN limited the candidate set
+   * and excluded text-relevant documents whose vectors weren't among the K nearest.
+   *
+   * @see <a href="https://github.com/redis/troubleshooting-hybrid-search">Ricardo's troubleshooting project</a>
+   */
+  @Test
+  void testHybridSearchBackToTheFutureScenario() {
+    // Clear existing data and set up Ricardo's exact scenario
+    repository.deleteAll();
+
+    // 3 "Back to the Future" items with vectors FAR from the query vector.
+    // These represent the 3 BTTF movies in Ricardo's scenario.
+    List<HashWithTextAndVector> bttfItems = List.of(
+        HashWithTextAndVector.of(
+            "bttf-1",
+            "Back to the Future original time travel adventure",
+            "Movies",
+            100,
+            ObjectUtils.floatArrayToByteArray(new float[]{0.9f, 0.1f, 0.05f, 0.05f})
+        ),
+        HashWithTextAndVector.of(
+            "bttf-2",
+            "Back to the Future Part II hoverboards and dystopia",
+            "Movies",
+            100,
+            ObjectUtils.floatArrayToByteArray(new float[]{0.85f, 0.15f, 0.1f, 0.1f})
+        ),
+        HashWithTextAndVector.of(
+            "bttf-3",
+            "Back to the Future Part III wild west time travel",
+            "Movies",
+            100,
+            ObjectUtils.floatArrayToByteArray(new float[]{0.95f, 0.05f, 0.08f, 0.02f})
+        )
+    );
+
+    // 7 other items with vectors CLOSE to the query vector but unrelated text.
+    // With FT.AGGREGATE, KNN would prefer these over the BTTF items,
+    // preventing the text-relevant BTTF items from being found.
+    List<HashWithTextAndVector> otherItems = List.of(
+        HashWithTextAndVector.of(
+            "other-1",
+            "the matrix cyberpunk action thriller",
+            "Movies",
+            100,
+            ObjectUtils.floatArrayToByteArray(new float[]{0.1f, 0.9f, 0.8f, 0.2f})
+        ),
+        HashWithTextAndVector.of(
+            "other-2",
+            "inception dream within dream thriller",
+            "Movies",
+            100,
+            ObjectUtils.floatArrayToByteArray(new float[]{0.12f, 0.88f, 0.78f, 0.22f})
+        ),
+        HashWithTextAndVector.of(
+            "other-3",
+            "interstellar space exploration adventure",
+            "Movies",
+            100,
+            ObjectUtils.floatArrayToByteArray(new float[]{0.08f, 0.92f, 0.82f, 0.18f})
+        ),
+        HashWithTextAndVector.of(
+            "other-4",
+            "the dark knight rises batman gotham",
+            "Movies",
+            100,
+            ObjectUtils.floatArrayToByteArray(new float[]{0.11f, 0.89f, 0.81f, 0.19f})
+        ),
+        HashWithTextAndVector.of(
+            "other-5",
+            "blade runner android dream electric sheep",
+            "Movies",
+            100,
+            ObjectUtils.floatArrayToByteArray(new float[]{0.09f, 0.91f, 0.79f, 0.21f})
+        ),
+        HashWithTextAndVector.of(
+            "other-6",
+            "terminator judgment day skynet machines",
+            "Movies",
+            100,
+            ObjectUtils.floatArrayToByteArray(new float[]{0.13f, 0.87f, 0.83f, 0.17f})
+        ),
+        HashWithTextAndVector.of(
+            "other-7",
+            "alien space horror ripley xenomorph",
+            "Movies",
+            100,
+            ObjectUtils.floatArrayToByteArray(new float[]{0.07f, 0.93f, 0.77f, 0.23f})
+        )
+    );
+
+    List<HashWithTextAndVector> allData = new ArrayList<>();
+    allData.addAll(bttfItems);
+    allData.addAll(otherItems);
+    repository.saveAll(allData);
+
+    // Query vector is close to the "other" items, far from BTTF items
+    float[] queryVector = new float[]{0.1f, 0.9f, 0.8f, 0.2f};
+
+    // Perform hybrid search with alpha=0.0 (pure text, 0% vector)
+    // This mirrors Ricardo's nativeHybridSearch with alpha=0.0f
+    List<HashWithTextAndVector> results = entityStream.of(HashWithTextAndVector.class)
+        .hybridSearch(
+            "Back to the Future",
+            HashWithTextAndVector$.DESCRIPTION,
+            queryVector,
+            HashWithTextAndVector$.EMBEDDING,
+            0.0f  // Pure text search — the key parameter from Ricardo's scenario
+        )
+        .limit(3)
+        .collect(Collectors.toList());
+
+    // Verify all 3 "Back to the Future" items are found — just like Ricardo's assertion
+    List<String> foundDescriptions = results.stream()
+        .map(HashWithTextAndVector::getDescription)
+        .collect(Collectors.toList());
+
+    assertAll(
+        () -> assertThat(results).as("Should find all 3 Back to the Future items").hasSize(3),
+        () -> assertThat(foundDescriptions).allMatch(d -> d.startsWith("Back to the Future")),
+        () -> assertThat(foundDescriptions)
+            .as("Should find the original")
+            .anyMatch(d -> d.contains("original")),
+        () -> assertThat(foundDescriptions)
+            .as("Should find Part II")
+            .anyMatch(d -> d.contains("Part II")),
+        () -> assertThat(foundDescriptions)
+            .as("Should find Part III")
+            .anyMatch(d -> d.contains("Part III"))
+    );
+  }
+
+  /**
    * Test that hybrid search succeeds regardless of Redis version.
    * The FT.HYBRID -> FT.AGGREGATE fallback should be transparent.
    */
