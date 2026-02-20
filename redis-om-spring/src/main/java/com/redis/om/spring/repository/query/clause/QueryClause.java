@@ -429,7 +429,7 @@ public enum QueryClause {
   private static final String FIELD_NUMERIC_BEFORE = "@$field:[-inf ($param_0]";
   private static final String FIELD_NUMERIC_AFTER = "@$field:[($param_0 inf]";
   private static final String FIELD_GEO_NEAR = "@$field:[$param_0 $param_1 $param_2]";
-  private static final String FIELD_GEO_POINT_EQUAL = "@$field:[$param_0 $param_1 .000001 ft]";
+  private static final String FIELD_GEO_POINT_EQUAL = "@$field:[$param_0 $param_1 1 m]";
   private static final String FIELD_IS_NULL = "!exists(@$field)";
   private static final String FIELD_IS_NOT_NULL = "exists(@$field)";
   private static final String FIELD_LEXICOGRAPHIC = "__LEXICOGRAPHIC__";
@@ -675,13 +675,13 @@ public enum QueryClause {
             } else if (this == QueryClause.GEO_CONTAINING) {
               value = c.stream().map(n -> {
                 Point p = (Point) n;
-                return "@" + field + ":[" + p.getX() + " " + p.getY() + " .000001 ft]";
+                return "@" + field + ":[" + p.getX() + " " + p.getY() + " 1 m]";
               }).collect(Collectors.joining("|"));
               prepared = prepared.replace(PARAM_PREFIX + i++, value);
             } else if (this == QueryClause.GEO_CONTAINING_ALL) {
               value = c.stream().map(n -> {
                 Point p = (Point) n;
-                return "@" + field + ":[" + p.getX() + " " + p.getY() + " .000001 ft]";
+                return "@" + field + ":[" + p.getX() + " " + p.getY() + " 1 m]";
               }).collect(Collectors.joining(" "));
               prepared = prepared.replace(PARAM_PREFIX + i++, value);
             } else {

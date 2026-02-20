@@ -93,9 +93,9 @@ class QueryClauseTest {
     assertEquals("@database:{db1} @database:{db2}", tagContainingAllQuery);
     assertEquals("@number:[1 1]|@number:[2 2]|@number:[3 3]", numericContainingQuery);
     assertEquals("@number:[1 1] @number:[2 2] @number:[3 3]", numericContainingAllQuery);
-    assertEquals("@location:[-122.06654 37.37769 .000001 ft]|@location:[122.06654 -37.37769 .000001 ft]",
+    assertEquals("@location:[-122.06654 37.37769 1 m]|@location:[122.06654 -37.37769 1 m]",
         geoContainingQuery);
-    assertEquals("@location:[-122.06654 37.37769 .000001 ft] @location:[122.06654 -37.37769 .000001 ft]",
+    assertEquals("@location:[-122.06654 37.37769 1 m] @location:[122.06654 -37.37769 1 m]",
         geoContainigAllQuery);
     assertEquals("@number:[(5|10 inf]", numericGreaterThanQuery);
   }
