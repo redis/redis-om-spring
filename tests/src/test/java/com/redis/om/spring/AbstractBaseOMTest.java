@@ -1,7 +1,5 @@
 package com.redis.om.spring;
 
-import static com.redis.testcontainers.RedisStackContainer.DEFAULT_IMAGE_NAME;
-
 import java.util.Comparator;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,14 +9,15 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import com.google.gson.GsonBuilder;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.vectorize.Embedder;
-import com.redis.testcontainers.RedisStackContainer;
 
 @SuppressWarnings(
   { "SpellCheckingInspection", "resource" }
@@ -28,11 +27,15 @@ import com.redis.testcontainers.RedisStackContainer;
 )
 @DirtiesContext
 public abstract class AbstractBaseOMTest {
+  private static final int REDIS_PORT = 6379;
+
   @Container
-  static final RedisStackContainer REDIS;
+  static final GenericContainer<?> REDIS;
 
   static {
-    REDIS = new RedisStackContainer(DEFAULT_IMAGE_NAME.withTag(RedisStackContainer.DEFAULT_TAG)).withReuse(true);
+    REDIS = new GenericContainer<>(DockerImageName.parse("redis:latest"))
+        .withExposedPorts(REDIS_PORT)
+        .withReuse(true);
     REDIS.start();
   }
 
