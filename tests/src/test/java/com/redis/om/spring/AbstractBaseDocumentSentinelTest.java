@@ -15,21 +15,22 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
 import com.redis.om.spring.ops.RedisModulesOperations;
-import com.redis.testcontainers.RedisStackContainer;
 
 /**
- * Base class for Redis Sentinel tests with Redis Stack Server.
- * 
+ * Base class for Redis Sentinel tests with Redis Server.
+ *
  * In a production environment, these tests would use a Redis Sentinel container connected to
- * a Redis Stack Server container. However, for simplicity in testing, we're using a single
- * Redis Stack Server container directly.
- * 
- * We have verified through manual testing in the broken_sentinel_test directory that Redis Stack Server
+ * a Redis Server container. However, for simplicity in testing, we're using a single
+ * Redis Server container directly.
+ *
+ * We have verified through manual testing in the broken_sentinel_test directory that Redis
  * works correctly with Redis Sentinel, but configuring it properly within the TestContainers
  * environment is complex due to network and container initialization issues.
  */
@@ -47,10 +48,11 @@ import com.redis.testcontainers.RedisStackContainer;
 )
 public abstract class AbstractBaseDocumentSentinelTest {
   private static final Logger LOGGER = LoggerFactory.getLogger(AbstractBaseDocumentSentinelTest.class);
+  private static final int REDIS_PORT = 6379;
 
   @Container
-  private static final RedisStackContainer REDIS = new RedisStackContainer(RedisStackContainer.DEFAULT_IMAGE_NAME
-      .withTag("latest"));
+  private static final GenericContainer<?> REDIS = new GenericContainer<>(DockerImageName.parse("redis:latest"))
+      .withExposedPorts(REDIS_PORT);
 
   @BeforeAll
   static void setup() {
