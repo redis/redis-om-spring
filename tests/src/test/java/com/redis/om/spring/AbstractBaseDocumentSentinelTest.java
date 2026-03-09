@@ -64,11 +64,6 @@ public abstract class AbstractBaseDocumentSentinelTest {
 
   @DynamicPropertySource
   static void properties(DynamicPropertyRegistry registry) {
-    // Direct Redis configuration (simulating Sentinel-based configuration for testing)
-    registry.add("spring.redis.host", REDIS::getHost);
-    registry.add("spring.redis.port", REDIS::getFirstMappedPort);
-
-    // Spring Boot 3.x configuration
     registry.add("spring.data.redis.host", REDIS::getHost);
     registry.add("spring.data.redis.port", REDIS::getFirstMappedPort);
   }

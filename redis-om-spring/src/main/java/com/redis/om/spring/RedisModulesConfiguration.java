@@ -148,6 +148,7 @@ public class RedisModulesConfiguration {
    * <ul>
    * <li>{@code spring.data.redis.host} - Redis server host (default: localhost)</li>
    * <li>{@code spring.data.redis.port} - Redis server port (default: 6379)</li>
+   * <li>{@code spring.data.redis.username} - Redis username for ACL authentication (optional)</li>
    * <li>{@code spring.data.redis.password} - Redis password (optional)</li>
    * <li>{@code spring.data.redis.database} - Redis database index (default: 0)</li>
    * </ul>
@@ -165,11 +166,15 @@ public class RedisModulesConfiguration {
   public JedisConnectionFactory jedisConnectionFactory(Environment environment) {
     String host = environment.getProperty("spring.data.redis.host", "localhost");
     int port = environment.getProperty("spring.data.redis.port", Integer.class, 6379);
+    String username = environment.getProperty("spring.data.redis.username");
     String password = environment.getProperty("spring.data.redis.password");
     int database = environment.getProperty("spring.data.redis.database", Integer.class, 0);
 
     RedisStandaloneConfiguration redisConfig = new RedisStandaloneConfiguration(host, port);
     redisConfig.setDatabase(database);
+    if (username != null && !username.isEmpty()) {
+      redisConfig.setUsername(username);
+    }
     if (password != null && !password.isEmpty()) {
       redisConfig.setPassword(password);
     }

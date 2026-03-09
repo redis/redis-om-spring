@@ -46,8 +46,8 @@ public abstract class AbstractTest {
 
   @DynamicPropertySource
   static void properties(DynamicPropertyRegistry registry) {
-    registry.add("spring.redis.host", REDIS::getHost);
-    registry.add("spring.redis.port", REDIS::getFirstMappedPort);
+    registry.add("spring.data.redis.host", REDIS::getHost);
+    registry.add("spring.data.redis.port", REDIS::getFirstMappedPort);
   }
 
   protected void flushSearchIndexFor(Class<?> entityClass) {
