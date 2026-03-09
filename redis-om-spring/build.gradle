@@ -12,6 +12,7 @@ dependencies {
 	api("redis.clients:jedis") {
 		version {
 			strictly "[${jedisVersion},)"
+			prefer "${jedisVersion}"
 		}
 	}
 	compileOnly "com.azure:azure-identity:${azureIdentityVersion}"

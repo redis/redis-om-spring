@@ -28,7 +28,7 @@ import redis.clients.jedis.JedisPoolConfig;
  * The configuration reads sentinel master and nodes from environment properties:
  * </p>
  * <ul>
- * <li>{@code spring.data.redis.sentinel.master} - The sentinel master name</li>
+ * <li>{@code spring.data.redis.sentinel.master} - The sentinel master name (required)</li>
  * <li>{@code spring.data.redis.sentinel.nodes} - Comma-delimited list of sentinel nodes</li>
  * </ul>
  */
@@ -57,7 +57,10 @@ public class SentinelConfig {
    */
   @Bean
   public JedisConnectionFactory jedisConnectionFactory(Environment env) {
-    String master = env.getProperty("spring.data.redis.sentinel.master", "localhost");
+    String master = env.getProperty("spring.data.redis.sentinel.master");
+    if (master == null || master.isBlank()) {
+      throw new IllegalStateException("spring.data.redis.sentinel.master must be configured for Sentinel mode");
+    }
     String nodes = env.getProperty("spring.data.redis.sentinel.nodes");
     Set<String> sentinelNodes = commaDelimitedListToSet(nodes);
     Set<RedisNode> redisNodes = sentinelNodes.stream().map(RedisNode::fromString).collect(Collectors.toSet());

@@ -50,7 +50,6 @@ class SentinelConfigTest {
     MockEnvironment mockEnv = new MockEnvironment();
     mockEnv.setProperty("spring.data.redis.sentinel.master", "mymaster");
     mockEnv.setProperty("spring.data.redis.sentinel.nodes", "sentinel1:26379,sentinel2:26379,sentinel3:26379");
-    mockEnv.setProperty("spring.data.redis.client-type", "jedis");
 
     // Create the factory using our mock environment
     JedisConnectionFactory factory = sentinelConfig.jedisConnectionFactory(mockEnv);
