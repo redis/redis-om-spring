@@ -34,6 +34,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.springframework.lang.Nullable;
+import org.springframework.util.StringUtils;
 
 import com.github.f4b6a3.ulid.Ulid;
 import com.google.gson.GsonBuilder;
@@ -172,10 +173,10 @@ public class RedisModulesConfiguration {
 
     RedisStandaloneConfiguration redisConfig = new RedisStandaloneConfiguration(host, port);
     redisConfig.setDatabase(database);
-    if (username != null && !username.isEmpty()) {
+    if (StringUtils.hasText(username)) {
       redisConfig.setUsername(username);
     }
-    if (password != null && !password.isEmpty()) {
+    if (StringUtils.hasText(password)) {
       redisConfig.setPassword(password);
     }
 
