@@ -9,7 +9,11 @@ dependencies {
 	api "org.hibernate.validator:hibernate-validator"
 	api "jakarta.persistence:jakarta.persistence-api"
 	api "com.fasterxml.jackson.core:jackson-databind"
-	api "redis.clients:jedis"
+	api("redis.clients:jedis") {
+		version {
+			strictly "[${jedisVersion},)"
+		}
+	}
 	compileOnly "com.azure:azure-identity:${azureIdentityVersion}"
 	compileOnly "com.google.code.gson:gson"
 	api "com.google.guava:guava:${guavaVersion}"

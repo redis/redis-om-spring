@@ -19,8 +19,8 @@ public class TestConfig {
 
   @Bean
   public JedisConnectionFactory jedisConnectionFactory() {
-    String host = env.getProperty("spring.redis.host", "localhost");
-    int port = env.getProperty("spring.redis.port", Integer.class, 6379);
+    String host = env.getProperty("spring.data.redis.host", "localhost");
+    int port = env.getProperty("spring.data.redis.port", Integer.class, 6379);
 
     RedisStandaloneConfiguration conf = new RedisStandaloneConfiguration(host, port);
 
