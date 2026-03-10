@@ -3129,4 +3129,16 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
     assertThat(tfIdfResults.get(0).getSecond()).isGreaterThan(0.0);
     assertThat(bm25Results.get(0).getSecond()).isGreaterThan(0.0);
   }
+
+  @Test
+  void testToListWithScoresThrowsAfterProject() {
+    UnsupportedOperationException ex = assertThrows(UnsupportedOperationException.class, () -> {
+      entityStream.of(Company.class) //
+          .filter(Company$.NAME.containing("Red")) //
+          .project(Company$.NAME) //
+          .toListWithScores();
+    });
+    assertThat(ex.getMessage()).contains("toListWithScores()");
+    assertThat(ex.getMessage()).contains("project");
+  }
 }

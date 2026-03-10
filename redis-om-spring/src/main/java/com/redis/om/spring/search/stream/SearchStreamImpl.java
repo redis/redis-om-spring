@@ -900,10 +900,6 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   /**
-   * Converts a list of {@link redis.clients.jedis.search.Document} objects
-   * (from SearchResult) to a list of entity instances.
-   */
-  /**
    * Converts a single {@link redis.clients.jedis.search.Document} to an entity instance,
    * handling both JSON document and Hash structures.
    */
@@ -1294,6 +1290,10 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     if (hybridText != null) {
       throw new UnsupportedOperationException(
           "toListWithScores() is not supported after hybridSearch(). " + "Hybrid search uses FT.AGGREGATE/FT.HYBRID which are incompatible with FT.SEARCH WITHSCORES. " + "Use HybridQuery score aliases for explicit score access.");
+    }
+    if (!projections.isEmpty()) {
+      throw new UnsupportedOperationException(
+          "toListWithScores() is not supported after project(). " + "Projections return partial documents that cannot be deserialized into full entities. " + "Remove the project() call or use collect() instead.");
     }
     withScores = true;
     SearchResult searchResult = executeQuery();
