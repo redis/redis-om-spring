@@ -22,6 +22,9 @@ import org.springframework.beans.factory.BeanFactory;
 
 import com.google.gson.GsonBuilder;
 import com.redis.om.spring.RedisOMProperties;
+import com.redis.om.spring.ops.RedisModulesOperations;
+
+import org.springframework.data.redis.core.mapping.RedisMappingContext;
 
 import java.lang.reflect.Method;
 
@@ -44,12 +47,18 @@ public class RediSearchIndexerSpelEvaluationTest {
     @Mock
     private GsonBuilder gsonBuilder;
 
+    @Mock
+    private RedisModulesOperations<String> redisModulesOperations;
+
+    @Mock
+    private RedisMappingContext mappingContext;
+
     private RediSearchIndexer indexer;
     private Method evaluateExpressionMethod;
 
     @BeforeEach
     void setUp() throws Exception {
-        indexer = new RediSearchIndexer(applicationContext, properties, gsonBuilder);
+        indexer = new RediSearchIndexer(applicationContext, properties, gsonBuilder, redisModulesOperations, mappingContext);
 
         // Access the private evaluateExpression method for testing
         evaluateExpressionMethod = RediSearchIndexer.class.getDeclaredMethod("evaluateExpression", String.class, String.class);
