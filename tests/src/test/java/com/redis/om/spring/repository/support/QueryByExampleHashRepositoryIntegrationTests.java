@@ -302,7 +302,28 @@ class QueryByExampleHashRepositoryIntegrationTests extends AbstractBaseEnhancedR
     assertThat(updated.getId()).isEqualTo(walt.getId());
     assertThat(updated.getFirstname()).isEqualTo(walt.getFirstname());
     assertThat(updated.getLastname()).isEqualTo(walt.getLastname());
-    assertThat(updated.getHometown().getName()).isEqualTo("Albuquerqe");
+    assertThat(updated.getHometown().getName()).isEqualTo("Albuquerque");
+  }
+
+  @Test
+  void shouldUpdateIntegerFieldByExample() {
+    // Set initial age
+    walt.setAge(50);
+    repository.save(walt);
+
+    PersonHash updateProbe = new PersonHash();
+    updateProbe.setId(walt.getId());
+    updateProbe.setAge(52);
+
+    repository.update(Example.of(updateProbe));
+
+    PersonHash updated = repository.findById(walt.getId()).orElseThrow();
+
+    assertThat(updated).isNotNull();
+    assertThat(updated.getId()).isEqualTo(walt.getId());
+    assertThat(updated.getFirstname()).isEqualTo(walt.getFirstname());
+    assertThat(updated.getLastname()).isEqualTo(walt.getLastname());
+    assertThat(updated.getAge()).isEqualTo(52);
   }
 
   @Test

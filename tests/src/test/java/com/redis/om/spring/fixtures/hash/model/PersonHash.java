@@ -15,6 +15,7 @@ public class PersonHash {
   private @Indexed String firstname;
   private String lastname;
   private @Indexed CityHash hometown;
+  private @Indexed Integer age;
 
   public PersonHash() {
   }
@@ -56,6 +57,14 @@ public class PersonHash {
     this.hometown = hometown;
   }
 
+  public Integer getAge() {
+    return this.age;
+  }
+
+  public void setAge(Integer age) {
+    this.age = age;
+  }
+
   @Override
   public boolean equals(Object obj) {
 
@@ -69,11 +78,11 @@ public class PersonHash {
 
     return Objects.equals(this.getId(), that.getId()) && Objects.equals(this.getFirstname(), that
         .getFirstname()) && Objects.equals(this.getLastname(), that.getLastname()) && Objects.equals(this.getHometown(),
-            that.getHometown());
+            that.getHometown()) && Objects.equals(this.getAge(), that.getAge());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getId(), getFirstname(), getLastname(), getHometown());
+    return Objects.hash(getId(), getFirstname(), getLastname(), getHometown(), getAge());
   }
 }
