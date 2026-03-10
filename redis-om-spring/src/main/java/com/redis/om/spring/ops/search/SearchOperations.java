@@ -78,13 +78,33 @@ public interface SearchOperations<K> {
 
   /**
    * Executes a search query with additional search parameters.
-   * 
+   *
    * @param q      the search query containing search terms and parameters
    * @param params additional FT.SEARCH parameters for query customization
    * @return search results containing matching documents and metadata
    * @throws RuntimeException if search execution fails
+   * @deprecated Use {@link #search(String, FTSearchParams)} instead. Jedis {@link Query} has no
+   *             {@code toString()} override, so passing a {@code Query} here produces an object
+   *             reference string (e.g. {@code redis.clients.jedis.search.Query@3dd081cc}) instead
+   *             of the actual query text. Additionally, {@code Query} already encapsulates its own
+   *             parameters, making it incompatible with a separate {@code FTSearchParams} argument.
    */
+  @Deprecated
   SearchResult search(Query q, FTSearchParams params);
+
+  /**
+   * Executes a search using a query string with additional search parameters.
+   * <p>
+   * This method maps directly to the Jedis {@code ftSearch(String, String, FTSearchParams)}
+   * overload and is the correct way to combine a query string with {@link FTSearchParams}.
+   * </p>
+   *
+   * @param query  the search query string (e.g. {@code "@title:hello @tag:{news}"})
+   * @param params FT.SEARCH parameters for query customization (e.g. limit, sort, return fields)
+   * @return search results containing matching documents and metadata
+   * @throws RuntimeException if search execution fails
+   */
+  SearchResult search(String query, FTSearchParams params);
 
   /**
    * Executes an aggregation query for data analysis and grouping.

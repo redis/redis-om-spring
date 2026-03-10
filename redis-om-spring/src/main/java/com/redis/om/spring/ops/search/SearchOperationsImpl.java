@@ -105,10 +105,25 @@ public class SearchOperationsImpl<K> implements SearchOperations<K> {
   }
 
   @Override
+  @Deprecated
   public SearchResult search(Query q, FTSearchParams params) {
-    commandListener.searchStarted(index.toString(), q, null);
+    commandListener.searchStarted(index.toString(), q, params);
     final SearchResult result = search.ftSearch(index.toString(), q.toString(), params);
-    commandListener.searchFinished(index.toString(), q, null, result);
+    commandListener.searchFinished(index.toString(), q, params, result);
+    return result;
+  }
+
+  @Override
+  public SearchResult search(String query, FTSearchParams params) {
+    commandListener.searchStarted(index.toString(), null, params);
+    SearchResult result = null;
+    try {
+      result = search.ftSearch(index.toString(), query, params);
+    } catch (Exception e) {
+      throw e;
+    } finally {
+      commandListener.searchFinished(index.toString(), null, params, result);
+    }
     return result;
   }
 

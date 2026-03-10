@@ -134,6 +134,21 @@ class JSONSearchTest extends AbstractBaseDocumentTest {
     assertEquals("article", row.getString("tag2"));
   }
 
+  /**
+   * Tests the search(String, FTSearchParams) overload that correctly maps to
+   * ftSearch(String, String, FTSearchParams). This verifies the fix for issue #691,
+   * where search(Query, FTSearchParams) would produce an object reference string
+   * instead of the actual query text.
+   */
+  @Test
+  void testSearchWithStringQueryAndFTSearchParams() {
+    SearchOperations<String> ops = modulesOperations.opsForSearch(searchIndex);
+
+    FTSearchParams params = new FTSearchParams().limit(0, 10);
+    SearchResult result = ops.search("@title:hello @tag:{news}", params);
+    assertEquals(1, result.getTotalResults());
+  }
+
   /* A simple class that represents an object in real life */
   /* '{"title":"hello world", "tag": ["news", "article"]}' */
   private static class SomeJSON {
