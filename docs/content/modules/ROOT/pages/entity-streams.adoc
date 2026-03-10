@@ -516,6 +516,119 @@ List<String> namesOnly = entityStream.of(Company.class)
 4. **Index appropriately**: Ensure fields used in filters are properly indexed
 5. **Combine filters**: Use compound filters rather than multiple filter calls when possible
 
+== Relevance Scoring
+
+Entity Streams support retrieving relevance scores from the Redis Query Engine alongside search results, and controlling the scoring algorithm used for ranking.
+
+=== Retrieving Scores
+
+Use `toListWithScores()` to retrieve entities paired with their relevance scores. This terminal operation returns `List<Pair<E, Double>>` where each pair contains the entity and its score:
+
+[source,java]
+----
+import com.redis.om.spring.search.stream.Scorer;
+
+// Get results with relevance scores
+List<Pair<Company, Double>> results = entityStream.of(Company.class)
+    .filter(Company$.NAME.containing("Redis"))
+    .toListWithScores();
+
+results.forEach(pair -> {
+    Company company = pair.getFirst();
+    Double score = pair.getSecond();
+    System.out.println(company.getName() + " (score: " + score + ")");
+});
+----
+
+NOTE: `toListWithScores()` implicitly enables the Redis `WITHSCORES` flag. You do not need to call `withScores()` separately when using this terminal operation.
+
+=== Choosing a Scoring Algorithm
+
+The `scorer()` method lets you select the algorithm Redis uses to compute relevance scores. The default is `TFIDF`.
+
+[source,java]
+----
+// Use BM25 scoring
+List<Pair<Company, Double>> bm25Results = entityStream.of(Company.class)
+    .filter(Company$.NAME.containing("Redis"))
+    .scorer(Scorer.BM25STD)
+    .toListWithScores();
+
+// Use DISMAX scoring
+List<Pair<Company, Double>> dismaxResults = entityStream.of(Company.class)
+    .filter(Company$.NAME.containing("Redis"))
+    .scorer(Scorer.DISMAX)
+    .toListWithScores();
+----
+
+Available scorers:
+
+[cols="1,3"]
+|===
+|Scorer |Description
+
+|`TFIDF`
+|Term Frequency-Inverse Document Frequency (default)
+
+|`TFIDF_DOCNORM`
+|TF-IDF with document-length normalization
+
+|`BM25STD`
+|BM25 standard scoring
+
+|`BM25STD_NORM`
+|BM25 standard with document-length normalization
+
+|`BM25STD_TANH`
+|BM25 standard with hyperbolic tangent normalization
+
+|`DISMAX`
+|Maximum of per-term scores
+
+|`DOCSCORE`
+|Uses the document's static score (set at index time)
+
+|`HAMMING`
+|Hamming distance scorer (for binary data)
+|===
+
+=== Combining with Other Operations
+
+Scoring works with sorting, limiting, skipping, and filtering:
+
+[source,java]
+----
+// Combine with sort and limit
+List<Pair<Company, Double>> topResults = entityStream.of(Company.class)
+    .filter(Company$.NAME.containing("Redis")
+        .or(Company$.NAME.containing("Microsoft")))
+    .scorer(Scorer.BM25STD)
+    .sorted(Company$.NAME, SortOrder.ASC)
+    .limit(5)
+    .toListWithScores();
+
+// Skip and limit with scores
+List<Pair<Company, Double>> page2 = entityStream.of(Company.class)
+    .filter(Company$.NAME.containing("tech"))
+    .skip(10)
+    .limit(10)
+    .toListWithScores();
+----
+
+=== Using withScores() with Regular Terminal Operations
+
+The `withScores()` method enables the Redis `WITHSCORES` flag without changing the terminal operation. This is useful when you want Redis to compute scores (e.g., for logging or debugging) but still collect results as plain entities:
+
+[source,java]
+----
+// withScores() with regular collect — entities are returned normally
+List<Company> companies = entityStream.of(Company.class)
+    .filter(Company$.NAME.containing("Redis"))
+    .scorer(Scorer.BM25STD)
+    .withScores()
+    .collect(Collectors.toList());
+----
+
 == Integration with Query By Example
 
 Entity Streams can work with Spring Data Query By Example:

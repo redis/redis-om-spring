@@ -185,6 +185,43 @@ List<Game> results = entityStream
   .collect(Collectors.toList());
 ----
 
+=== Retrieving Relevance Scores
+
+You can retrieve the relevance score for each result using `toListWithScores()`. This returns `List<Pair<E, Double>>` where each pair contains the entity and its score:
+
+[source,java]
+----
+import com.redis.om.spring.search.stream.Scorer;
+import com.redis.om.spring.tuple.Pair;
+
+List<Pair<Game, Double>> scored = entityStream
+  .of(Game.class)
+  .filter(Game$.TITLE.containing("adventure"))
+  .toListWithScores();
+
+scored.forEach(pair -> {
+    System.out.println(pair.getFirst().getTitle() + " → " + pair.getSecond());
+});
+----
+
+=== Choosing a Scoring Algorithm
+
+Use `scorer()` to select the algorithm Redis uses for ranking. The default is `TFIDF`.
+
+[source,java]
+----
+// BM25 scoring
+List<Pair<Game, Double>> results = entityStream
+  .of(Game.class)
+  .filter(Game$.TITLE.containing("adventure"))
+  .scorer(Scorer.BM25STD)
+  .toListWithScores();
+----
+
+Available scorers: `TFIDF`, `TFIDF_DOCNORM`, `BM25STD`, `BM25STD_NORM`, `BM25STD_TANH`, `DISMAX`, `DOCSCORE`, `HAMMING`.
+
+TIP: See xref:entity-streams.adoc#_relevance_scoring[Entity Streams — Relevance Scoring] for the full scorer reference and more examples.
+
 == Lexicographic String Indexing
 
 Redis OM Spring supports lexicographic (alphabetical) string comparisons through the `lexicographic` parameter on `@Indexed` and `@Searchable` annotations. This feature enables string range queries using Redis sorted sets.

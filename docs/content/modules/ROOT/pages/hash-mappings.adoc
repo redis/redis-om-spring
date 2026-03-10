@@ -491,6 +491,7 @@ The `SearchStream` returned by repository methods supports all Entity Stream ope
 * **Limiting**: `limit()` to restrict results
 * **Aggregation**: `count()`, `findFirst()`, `anyMatch()`, `allMatch()`
 * **Collection**: `collect()` to lists, sets, or custom collectors
+* **Scoring**: `scorer()` to choose the ranking algorithm, `toListWithScores()` to retrieve entity-score pairs
 
 NOTE: Fields used in SearchStream operations must be properly indexed with `@Indexed`, `@Searchable`, or other indexing annotations.
 
