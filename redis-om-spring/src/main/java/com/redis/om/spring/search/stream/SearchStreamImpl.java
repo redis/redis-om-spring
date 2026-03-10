@@ -39,6 +39,7 @@ import com.redis.om.spring.search.stream.predicates.vector.KNNPredicate;
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.TupleMapper;
+import com.redis.om.spring.tuple.Tuples;
 import com.redis.om.spring.util.ObjectUtils;
 import com.redis.om.spring.util.SearchResultRawResponseToObjectConverter;
 import com.redis.vl.query.AggregateHybridQuery;
@@ -123,6 +124,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private SummarizeParams summarizeParams;
   private Pair<String, String> highlightTags;
   private boolean isQBE = false;
+  private boolean withScores = false;
+  private Scorer scorer;
 
   /**
    * Creates a new SearchStreamImpl for the given entity class.
@@ -712,6 +715,13 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       query.setSortBy(sortField.getField(), sortField.getOrder().equals("ASC"));
     }
 
+    if (withScores) {
+      query.setWithScores();
+    }
+    if (scorer != null) {
+      query.setScorer(scorer.getValue());
+    }
+
     if (!summaryFields.isEmpty()) {
       var fields = summaryFields.stream() //
           .map(foi -> ObjectUtils.isCollection(foi.getTargetClass()) ?
@@ -909,6 +919,32 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       return (List<E>) documents.stream().map(d -> {
         Object entity = ObjectUtils.documentToObject(d, entityClass, mappingConverter);
         return ObjectUtils.populateRedisKey(entity, d.getId());
+      }).toList();
+    }
+  }
+
+  /**
+   * Converts a list of {@link redis.clients.jedis.search.Document} objects
+   * to a list of entity-score pairs.
+   */
+  @SuppressWarnings(
+    "unchecked"
+  )
+  private List<Pair<E, Double>> documentsToEntityScorePairs(List<redis.clients.jedis.search.Document> documents) {
+    if (isDocument) {
+      Gson g = getGson();
+      return documents.stream().map(d -> {
+        Object rawJson = d.get("$");
+        String json = (rawJson instanceof byte[]) ? SafeEncoder.encode((byte[]) rawJson) : rawJson.toString();
+        E entity = g.fromJson(json, entityClass);
+        entity = ObjectUtils.populateRedisKey(entity, d.getId());
+        return Tuples.of(entity, d.getScore());
+      }).toList();
+    } else {
+      return (List<Pair<E, Double>>) documents.stream().map(d -> {
+        Object entity = ObjectUtils.documentToObject(d, entityClass, mappingConverter);
+        entity = ObjectUtils.populateRedisKey(entity, d.getId());
+        return Tuples.of((E) entity, d.getScore());
       }).toList();
     }
   }
@@ -1251,6 +1287,25 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   public <R> SearchStream<E> highlight(Function<? super E, ? extends R> field, Pair<String, String> tags) {
     highlightTags = tags;
     return highlight(field);
+  }
+
+  @Override
+  public SearchStream<E> withScores() {
+    this.withScores = true;
+    return this;
+  }
+
+  @Override
+  public SearchStream<E> scorer(Scorer scorer) {
+    this.scorer = scorer;
+    return this;
+  }
+
+  @Override
+  public List<Pair<E, Double>> toListWithScores() {
+    withScores = true;
+    SearchResult searchResult = executeQuery();
+    return documentsToEntityScorePairs(searchResult.getDocuments());
   }
 
   @Override
