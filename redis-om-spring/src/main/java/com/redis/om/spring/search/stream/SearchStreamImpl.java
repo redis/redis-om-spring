@@ -462,6 +462,9 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
         "unchecked"
       ) MetamodelField<E, ?> foi = (MetamodelField<E, ?>) comparator;
       sortBy = SortedField.asc(foi.getSearchAlias());
+    } else {
+      throw new UnsupportedOperationException(
+          "sorted() requires a MetamodelField (e.g. MyEntity$.FIELD), not a wrapped Comparator. " + "Use sorted(MyEntity$.FIELD) instead of sorted(Comparator.comparing(MyEntity$.FIELD)).");
     }
     return this;
   }
@@ -473,6 +476,9 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
         "unchecked"
       ) MetamodelField<E, ?> foi = (MetamodelField<E, ?>) comparator;
       sortBy = new SortedField(foi.getSearchAlias(), order);
+    } else {
+      throw new UnsupportedOperationException(
+          "sorted() requires a MetamodelField (e.g. MyEntity$.FIELD), not a wrapped Comparator. " + "Use sorted(MyEntity$.FIELD, SortOrder) instead of sorted(Comparator.comparing(MyEntity$.FIELD), SortOrder).");
     }
     return this;
   }

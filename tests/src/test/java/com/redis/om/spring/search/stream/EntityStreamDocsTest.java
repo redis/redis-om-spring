@@ -2941,4 +2941,26 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
     List<String> names1 = page1.stream().map(Company::getName).collect(Collectors.toList());
     assertThat(names1).containsExactly("Tesla");
   }
+
+  @Test
+  void testSortedWithComparatorComparingThrowsUnsupportedOperationException() {
+    UnsupportedOperationException ex = assertThrows(UnsupportedOperationException.class, () -> {
+      entityStream.of(Company.class) //
+          .sorted(Comparator.comparing(Company$.NAME)) //
+          .collect(Collectors.toList());
+    });
+    assertThat(ex.getMessage()).contains("MetamodelField");
+    assertThat(ex.getMessage()).contains("sorted(MyEntity$.FIELD)");
+  }
+
+  @Test
+  void testSortedWithComparatorComparingAndSortOrderThrowsUnsupportedOperationException() {
+    UnsupportedOperationException ex = assertThrows(UnsupportedOperationException.class, () -> {
+      entityStream.of(Company.class) //
+          .sorted(Comparator.comparing(Company$.NAME), SortOrder.DESC) //
+          .collect(Collectors.toList());
+    });
+    assertThat(ex.getMessage()).contains("MetamodelField");
+    assertThat(ex.getMessage()).contains("sorted(MyEntity$.FIELD, SortOrder)");
+  }
 }
