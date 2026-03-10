@@ -13,12 +13,24 @@ import java.util.concurrent.Callable;
  * between different threads, making it suitable for multi-tenant applications
  * where different requests may need different index configurations.
  *
+ * <p>Preferred usage with try-with-resources for automatic cleanup:
+ * <pre>{@code
+ * try (RedisIndexContext ctx = RedisIndexContext.builder()
+ *         .tenantId("tenant-A")
+ *         .build()
+ *         .activate()) {
+ *     // context is active here
+ * }
+ * // context is automatically restored/cleared
+ * }</pre>
+ *
  * @since 1.0.0
  */
-public class RedisIndexContext {
+public class RedisIndexContext implements AutoCloseable {
   private final String tenantId;
   private final String environment;
   private final Map<String, Object> attributes;
+  private RedisIndexContext previousContext;
 
   private static final ThreadLocal<RedisIndexContext> CONTEXT_HOLDER = new ThreadLocal<>();
 
@@ -41,7 +53,10 @@ public class RedisIndexContext {
    * Sets the index context for the current thread.
    *
    * @param context the context to set
+   * @deprecated Use {@link #activate()} with try-with-resources, {@link #runWithContext(Runnable)},
+   *             or {@link #callWithContext(Callable)} instead for automatic cleanup.
    */
+  @Deprecated
   public static void setContext(RedisIndexContext context) {
     CONTEXT_HOLDER.set(context);
   }
@@ -51,6 +66,40 @@ public class RedisIndexContext {
    */
   public static void clearContext() {
     CONTEXT_HOLDER.remove();
+  }
+
+  /**
+   * Activates this context on the current thread and returns it for use
+   * with try-with-resources. When closed, the previous context is restored
+   * (or the ThreadLocal is removed if there was no previous context).
+   *
+   * <pre>{@code
+   * try (RedisIndexContext ctx = context.activate()) {
+   *     // context is active here
+   * }
+   * // previous context is restored
+   * }</pre>
+   *
+   * @return this context, for use in a try-with-resources statement
+   */
+  public RedisIndexContext activate() {
+    this.previousContext = CONTEXT_HOLDER.get();
+    CONTEXT_HOLDER.set(this);
+    return this;
+  }
+
+  /**
+   * Restores the previous context (or clears the ThreadLocal if none existed).
+   * Called automatically when used with try-with-resources via {@link #activate()}.
+   */
+  @Override
+  public void close() {
+    if (previousContext != null) {
+      CONTEXT_HOLDER.set(previousContext);
+    } else {
+      CONTEXT_HOLDER.remove();
+    }
+    previousContext = null;
   }
 
   /**
