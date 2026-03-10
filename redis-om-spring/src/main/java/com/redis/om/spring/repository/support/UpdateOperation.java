@@ -10,15 +10,7 @@ import com.redis.om.spring.metamodel.MetamodelField;
  * infrastructure to batch and execute partial updates efficiently without requiring
  * a full entity read-modify-write cycle.
  * </p>
- * <p>
- * Update operations are particularly useful for:
- * <ul>
- * <li>Incrementing numeric fields without race conditions</li>
- * <li>Updating individual fields without affecting others</li>
- * <li>Performing bulk updates across multiple entities</li>
- * <li>Optimizing write performance by reducing network round trips</li>
- * </ul>
- * 
+ *
  * @see com.redis.om.spring.repository.RedisDocumentRepository
  * @see com.redis.om.spring.repository.RedisEnhancedRepository
  * @since 0.1.0
@@ -41,7 +33,7 @@ public class UpdateOperation {
 
   /**
    * Constructs a new update operation.
-   * 
+   *
    * @param key   the Redis key of the entity to update
    * @param field the metamodel field to update
    * @param value the new value for the field

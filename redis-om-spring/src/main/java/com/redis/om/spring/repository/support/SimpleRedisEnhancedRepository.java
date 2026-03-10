@@ -45,7 +45,6 @@ import com.redis.om.spring.indexing.LexicographicIndexer;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.mapping.RedisEnhancedPersistentEntity;
 import com.redis.om.spring.metamodel.MetamodelField;
-import com.redis.om.spring.metamodel.MetamodelUtils;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.repository.RedisEnhancedRepository;
@@ -302,30 +301,32 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
 
     String key = getKey(id);
 
-    Class<?> entityType = metadata.getJavaType();
-    List<UpdateOperation> updateOperations = new ArrayList<>();
+    // Serialize the full probe entity — handles all types correctly
+    RedisData redisData = new RedisData();
+    mappingConverter.write(probe, redisData);
 
-    List<MetamodelField<?, ?>> metamodelFields = MetamodelUtils.getMetamodelFieldsForProperties(entityType,
-        getAllProperties(entityType));
+    // Filter bucket entries based on ExampleMatcher
+    Map<byte[], byte[]> updates = new HashMap<>();
+    for (Map.Entry<String, byte[]> entry : redisData.getBucket().entrySet()) {
+      String bucketKey = entry.getKey();
 
-    for (MetamodelField<?, ?> metamodelField : metamodelFields) {
-      String propertyName = metamodelField.getSearchAlias();
-
-      if (propertyName.equals("id")) {
+      // Skip metadata and ID fields
+      if (bucketKey.equals("_class") || isIdField(bucketKey)) {
         continue;
       }
 
-      if (shouldIncludeProperty(matcher, propertyName)) {
-        Object value = getPropertyValue(probe, propertyName);
+      // Map bucket key to top-level property for matcher filtering
+      String topLevelProperty = bucketKey.contains(".") ? bucketKey.substring(0, bucketKey.indexOf('.')) : bucketKey;
 
-        if (value != null) {
-          updateOperations.add(new UpdateOperation(key, metamodelField, value));
-        }
+      if (shouldIncludeProperty(matcher, topLevelProperty)) {
+        updates.put(SafeEncoder.encode(bucketKey), entry.getValue());
       }
     }
 
-    if (!updateOperations.isEmpty()) {
-      executePipelinedUpdates(updateOperations);
+    if (!updates.isEmpty()) {
+      try (Jedis jedis = modulesOperations.client().getJedis().get()) {
+        jedis.hmset(SafeEncoder.encode(key), updates);
+      }
     }
 
     return (S) findById(id).orElseThrow(() -> new RuntimeException("Failed to fetch updated entity"));
@@ -337,36 +338,47 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
       return; // No examples to process
     }
 
-    List<UpdateOperation> updateOperations = new ArrayList<>();
-    Class<?> entityType = metadata.getJavaType();
-    List<MetamodelField<?, ?>> metamodelFields = MetamodelUtils.getMetamodelFieldsForProperties(entityType,
-        getAllProperties(entityType));
+    try (Jedis jedis = modulesOperations.client().getJedis().get()) {
+      Pipeline pipeline = jedis.pipelined();
 
-    for (Example<S> example : examples) {
-      S probe = example.getProbe();
-      ExampleMatcher matcher = example.getMatcher();
-      ID id = metadata.getId(probe);
+      for (Example<S> example : examples) {
+        S probe = example.getProbe();
+        ExampleMatcher matcher = example.getMatcher();
+        ID id = metadata.getId(probe);
 
-      if (id == null) {
-        throw new IllegalArgumentException("Example object must have an ID");
-      }
+        if (id == null) {
+          throw new IllegalArgumentException("Example object must have an ID");
+        }
 
-      String key = getKey(id);
+        String key = getKey(id);
 
-      for (MetamodelField<?, ?> metamodelField : metamodelFields) {
-        String propertyName = metamodelField.getSearchAlias();
+        RedisData redisData = new RedisData();
+        mappingConverter.write(probe, redisData);
 
-        if (shouldIncludeProperty(matcher, propertyName)) {
-          Object value = getPropertyValue(probe, propertyName);
+        Map<byte[], byte[]> updates = new HashMap<>();
+        for (Map.Entry<String, byte[]> entry : redisData.getBucket().entrySet()) {
+          String bucketKey = entry.getKey();
 
-          if (value != null) {
-            updateOperations.add(new UpdateOperation(key, metamodelField, value));
+          if (bucketKey.equals("_class") || isIdField(bucketKey)) {
+            continue;
+          }
+
+          String topLevelProperty = bucketKey.contains(".") ?
+              bucketKey.substring(0, bucketKey.indexOf('.')) :
+              bucketKey;
+
+          if (shouldIncludeProperty(matcher, topLevelProperty)) {
+            updates.put(SafeEncoder.encode(bucketKey), entry.getValue());
           }
         }
-      }
-    }
 
-    executePipelinedUpdates(updateOperations);
+        if (!updates.isEmpty()) {
+          pipeline.hmset(SafeEncoder.encode(key), updates);
+        }
+      }
+
+      pipeline.sync();
+    }
   }
 
   @Override
@@ -654,41 +666,10 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
         getSearchOps(), mappingConverter.getMappingContext()));
   }
 
-  private void executePipelinedUpdates(List<UpdateOperation> updateOperations) {
-    try (Jedis jedis = modulesOperations.client().getJedis().get()) {
-      Pipeline pipeline = jedis.pipelined();
-
-      Map<String, Map<byte[], byte[]>> updates = new HashMap<>();
-
-      for (UpdateOperation op : updateOperations) {
-        byte[] value = convertToBinary(op.field, op.value);
-        if (value != null && value.length > 0) {
-          updates.computeIfAbsent(op.key, k -> new HashMap<>()).put(SafeEncoder.encode(op.field.getSearchAlias()),
-              value);
-        }
-      }
-
-      for (Map.Entry<String, Map<byte[], byte[]>> entry : updates.entrySet()) {
-        if (!entry.getValue().isEmpty()) {
-          pipeline.hmset(SafeEncoder.encode(entry.getKey()), entry.getValue());
-        }
-      }
-
-      pipeline.sync();
-    }
-  }
-
-  private byte[] convertToBinary(MetamodelField<?, ?> field, Object value) {
-    if (value == null) {
-      return null;
-    }
-    if (value instanceof String) {
-      return SafeEncoder.encode((String) value);
-    }
-    RedisData redisData = new RedisData();
-    mappingConverter.write(value, redisData);
-    byte[] binaryValue = redisData.getBucket().get(field.getSearchAlias());
-    return binaryValue != null && binaryValue.length > 0 ? binaryValue : null;
+  private boolean isIdField(String bucketKey) {
+    var idProperty = mappingConverter.getMappingContext().getRequiredPersistentEntity(metadata.getJavaType())
+        .getRequiredIdProperty();
+    return idProperty.getName().equals(bucketKey);
   }
 
   private SearchOperations<String> getSearchOps() {
