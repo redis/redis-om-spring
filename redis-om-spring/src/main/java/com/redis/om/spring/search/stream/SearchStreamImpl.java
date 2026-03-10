@@ -1303,6 +1303,12 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public List<Pair<E, Double>> toListWithScores() {
+    if (hybridText != null) {
+      throw new UnsupportedOperationException(
+          "toListWithScores() is not supported after hybridSearch(). " +
+          "Hybrid search uses FT.AGGREGATE/FT.HYBRID which are incompatible with FT.SEARCH WITHSCORES. " +
+          "Use HybridQuery score aliases for explicit score access.");
+    }
     withScores = true;
     SearchResult searchResult = executeQuery();
     return documentsToEntityScorePairs(searchResult.getDocuments());
