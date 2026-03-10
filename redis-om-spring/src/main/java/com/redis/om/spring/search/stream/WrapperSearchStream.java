@@ -416,6 +416,21 @@ public class WrapperSearchStream<E> implements SearchStream<E> {
   }
 
   @Override
+  public SearchStream<E> withScores() {
+    throw new UnsupportedOperationException("withScores is not supported on a WrappedSearchStream");
+  }
+
+  @Override
+  public SearchStream<E> scorer(Scorer scorer) {
+    throw new UnsupportedOperationException("scorer is not supported on a WrappedSearchStream");
+  }
+
+  @Override
+  public List<Pair<E, Double>> toListWithScores() {
+    throw new UnsupportedOperationException("toListWithScores is not supported on a WrappedSearchStream");
+  }
+
+  @Override
   public boolean isDocument() {
     return false;
   }

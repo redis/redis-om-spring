@@ -1813,4 +1813,89 @@ class EntityStreamHashTest extends AbstractBaseEnhancedRedisTest {
     List<String> names1 = page1.stream().map(Company::getName).collect(Collectors.toList());
     assertThat(names1).containsExactly("Tesla");
   }
+
+  // ── SCORER / WITHSCORES tests (Hash path) ─────────────────────────────────
+
+  @Test
+  void testWithScoresReturnsScores() {
+    List<Pair<Company, Double>> results = entityStream.of(Company.class) //
+        .filter(Company$.NAME.containing("Red")) //
+        .withScores() //
+        .toListWithScores();
+
+    assertThat(results).isNotEmpty();
+    results.forEach(pair -> {
+      assertThat(pair.getFirst()).isNotNull();
+      assertThat(pair.getFirst().getName()).isNotNull();
+      assertThat(pair.getSecond()).isGreaterThan(0.0);
+    });
+  }
+
+  @Test
+  void testScorerWithEnum() {
+    List<Pair<Company, Double>> results = entityStream.of(Company.class) //
+        .filter(Company$.NAME.containing("Red")) //
+        .scorer(Scorer.BM25STD) //
+        .toListWithScores();
+
+    assertThat(results).isNotEmpty();
+    results.forEach(pair -> {
+      assertThat(pair.getFirst()).isNotNull();
+      assertThat(pair.getSecond()).isGreaterThan(0.0);
+    });
+  }
+
+  @Test
+  void testToListWithScoresImplicitlyEnablesScores() {
+    List<Pair<Company, Double>> results = entityStream.of(Company.class) //
+        .filter(Company$.NAME.containing("Red")) //
+        .toListWithScores();
+
+    assertThat(results).isNotEmpty();
+    results.forEach(pair -> {
+      assertThat(pair.getFirst()).isNotNull();
+      assertThat(pair.getSecond()).isGreaterThan(0.0);
+    });
+  }
+
+  @Test
+  void testWithScoresWorksWithSortAndLimit() {
+    List<Pair<Company, Double>> results = entityStream.of(Company.class) //
+        .filter(Company$.NAME.containing("Red") //
+            .or(Company$.NAME.containing("Micro"))) //
+        .sorted(Company$.NAME, SortOrder.ASC) //
+        .limit(2) //
+        .withScores() //
+        .toListWithScores();
+
+    assertThat(results).hasSizeLessThanOrEqualTo(2);
+    assertThat(results).isNotEmpty();
+    results.forEach(pair -> {
+      assertThat(pair.getFirst()).isNotNull();
+      assertThat(pair.getSecond()).isGreaterThan(0.0);
+    });
+  }
+
+  @Test
+  void testWithScoresDoesNotBreakRegularCollect() {
+    List<Company> results = entityStream.of(Company.class) //
+        .filter(Company$.NAME.containing("Red")) //
+        .withScores() //
+        .collect(Collectors.toList());
+
+    assertThat(results).isNotEmpty();
+    assertThat(results.get(0).getName()).contains("Red");
+  }
+
+  @Test
+  void testToListWithScoresNoFilter() {
+    List<Pair<Company, Double>> results = entityStream.of(Company.class) //
+        .toListWithScores();
+
+    assertThat(results).hasSize(3);
+    results.forEach(pair -> {
+      assertThat(pair.getFirst()).isNotNull();
+      assertThat(pair.getFirst().getName()).isNotNull();
+    });
+  }
 }

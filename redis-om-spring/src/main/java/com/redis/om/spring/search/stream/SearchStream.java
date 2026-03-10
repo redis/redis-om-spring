@@ -2,6 +2,7 @@ package com.redis.om.spring.search.stream;
 
 import java.time.Duration;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.*;
@@ -614,8 +615,53 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
   <R> SearchStream<E> highlight(Function<? super E, ? extends R> field, Pair<String, String> tags);
 
   /**
+   * Enables returning relevance scores alongside search results.
+   * <p>
+   * When enabled, the Redis FT.SEARCH command includes the WITHSCORES flag,
+   * causing each result to carry a relevance score. Use {@link #toListWithScores()}
+   * to retrieve entity-score pairs.
+   * </p>
+   *
+   * @return this SearchStream instance
+   * @since 2.1.0
+   * @see #scorer(Scorer)
+   * @see #toListWithScores()
+   */
+  SearchStream<E> withScores();
+
+  /**
+   * Sets the scoring algorithm for the search query.
+   * <p>
+   * Redis FT.SEARCH supports multiple scoring algorithms (e.g. BM25, TFIDF, DISMAX).
+   * This method allows selecting the algorithm used to compute relevance scores.
+   * </p>
+   *
+   * @param scorer the scoring algorithm to use
+   * @return this SearchStream instance
+   * @since 2.1.0
+   * @see Scorer
+   * @see #withScores()
+   * @see #toListWithScores()
+   */
+  SearchStream<E> scorer(Scorer scorer);
+
+  /**
+   * Terminal operation that returns entities paired with their relevance scores.
+   * <p>
+   * This method implicitly enables WITHSCORES even if {@link #withScores()} was not
+   * called, since returning zero scores would be confusing.
+   * </p>
+   *
+   * @return a list of entity-score pairs ordered by relevance
+   * @since 2.1.0
+   * @see #withScores()
+   * @see #scorer(Scorer)
+   */
+  List<Pair<E, Double>> toListWithScores();
+
+  /**
    * Returns whether this stream operates on JSON documents or hash structures.
-   * 
+   *
    * @return true if operating on JSON documents, false for hash structures
    */
   boolean isDocument();

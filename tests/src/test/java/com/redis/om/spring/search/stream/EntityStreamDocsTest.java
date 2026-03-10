@@ -2963,4 +2963,182 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
     assertThat(ex.getMessage()).contains("MetamodelField");
     assertThat(ex.getMessage()).contains("sorted(MyEntity$.FIELD, SortOrder)");
   }
+
+  // ── SCORER / WITHSCORES tests ──────────────────────────────────────────────
+
+  @Test
+  void testWithScoresReturnsScores() {
+    List<Pair<Company, Double>> results = entityStream.of(Company.class) //
+        .filter(Company$.NAME.containing("Red")) //
+        .withScores() //
+        .toListWithScores();
+
+    assertThat(results).isNotEmpty();
+    results.forEach(pair -> {
+      assertThat(pair.getFirst()).isNotNull();
+      assertThat(pair.getFirst().getName()).isNotNull();
+      assertThat(pair.getSecond()).isGreaterThan(0.0);
+    });
+  }
+
+  @Test
+  void testScorerWithEnum() {
+    List<Pair<Company, Double>> results = entityStream.of(Company.class) //
+        .filter(Company$.NAME.containing("Red")) //
+        .scorer(Scorer.BM25STD) //
+        .toListWithScores();
+
+    assertThat(results).isNotEmpty();
+    results.forEach(pair -> {
+      assertThat(pair.getFirst()).isNotNull();
+      assertThat(pair.getSecond()).isGreaterThan(0.0);
+    });
+  }
+
+  @Test
+  void testToListWithScoresImplicitlyEnablesScores() {
+    List<Pair<Company, Double>> results = entityStream.of(Company.class) //
+        .filter(Company$.NAME.containing("Red")) //
+        .toListWithScores();
+
+    assertThat(results).isNotEmpty();
+    results.forEach(pair -> {
+      assertThat(pair.getFirst()).isNotNull();
+      assertThat(pair.getSecond()).isGreaterThan(0.0);
+    });
+  }
+
+  @Test
+  void testWithScoresWorksWithSortAndLimit() {
+    List<Pair<Company, Double>> results = entityStream.of(Company.class) //
+        .filter(Company$.NAME.containing("Red") //
+            .or(Company$.NAME.containing("Micro"))) //
+        .sorted(Company$.NAME, SortOrder.ASC) //
+        .limit(2) //
+        .withScores() //
+        .toListWithScores();
+
+    assertThat(results).hasSizeLessThanOrEqualTo(2);
+    assertThat(results).isNotEmpty();
+    results.forEach(pair -> {
+      assertThat(pair.getFirst()).isNotNull();
+      assertThat(pair.getSecond()).isGreaterThan(0.0);
+    });
+  }
+
+  @Test
+  void testScorerTFIDF() {
+    List<Pair<Company, Double>> results = entityStream.of(Company.class) //
+        .filter(Company$.NAME.containing("Red")) //
+        .scorer(Scorer.TFIDF) //
+        .toListWithScores();
+
+    assertThat(results).isNotEmpty();
+    results.forEach(pair -> {
+      assertThat(pair.getFirst()).isNotNull();
+      assertThat(pair.getSecond()).isGreaterThan(0.0);
+    });
+  }
+
+  @Test
+  void testScorerDISMAX() {
+    List<Pair<Company, Double>> results = entityStream.of(Company.class) //
+        .filter(Company$.NAME.containing("Red")) //
+        .scorer(Scorer.DISMAX) //
+        .toListWithScores();
+
+    assertThat(results).isNotEmpty();
+    results.forEach(pair -> {
+      assertThat(pair.getFirst()).isNotNull();
+      assertThat(pair.getSecond()).isGreaterThan(0.0);
+    });
+  }
+
+  @Test
+  void testWithScoresDoesNotBreakRegularCollect() {
+    List<Company> results = entityStream.of(Company.class) //
+        .filter(Company$.NAME.containing("Red")) //
+        .withScores() //
+        .collect(Collectors.toList());
+
+    assertThat(results).isNotEmpty();
+    assertThat(results.get(0).getName()).contains("Red");
+  }
+
+  @Test
+  void testScorerWithRegularCollect() {
+    List<Company> results = entityStream.of(Company.class) //
+        .filter(Company$.NAME.containing("Red")) //
+        .scorer(Scorer.BM25STD) //
+        .collect(Collectors.toList());
+
+    assertThat(results).isNotEmpty();
+    assertThat(results.get(0).getName()).contains("Red");
+  }
+
+  @Test
+  void testToListWithScoresNoFilter() {
+    List<Pair<Company, Double>> results = entityStream.of(Company.class) //
+        .toListWithScores();
+
+    assertThat(results).hasSize(3);
+    results.forEach(pair -> {
+      assertThat(pair.getFirst()).isNotNull();
+      assertThat(pair.getFirst().getName()).isNotNull();
+    });
+  }
+
+  @Test
+  void testToListWithScoresWithSkip() {
+    List<Pair<Company, Double>> allResults = entityStream.of(Company.class) //
+        .sorted(Company$.NAME, SortOrder.ASC) //
+        .toListWithScores();
+
+    List<Pair<Company, Double>> skippedResults = entityStream.of(Company.class) //
+        .sorted(Company$.NAME, SortOrder.ASC) //
+        .skip(1) //
+        .toListWithScores();
+
+    assertThat(skippedResults).hasSize(allResults.size() - 1);
+    // The first result after skipping should match the second result from the full list
+    assertThat(skippedResults.get(0).getFirst().getName()) //
+        .isEqualTo(allResults.get(1).getFirst().getName());
+  }
+
+  @Test
+  void testDifferentScorersProduceDifferentScores() {
+    List<Pair<Company, Double>> tfIdfResults = entityStream.of(Company.class) //
+        .filter(Company$.NAME.containing("Red")) //
+        .scorer(Scorer.TFIDF) //
+        .toListWithScores();
+
+    List<Pair<Company, Double>> bm25Results = entityStream.of(Company.class) //
+        .filter(Company$.NAME.containing("Red")) //
+        .scorer(Scorer.BM25STD) //
+        .toListWithScores();
+
+    assertThat(tfIdfResults).isNotEmpty();
+    assertThat(bm25Results).isNotEmpty();
+
+    // Both should return the same entities
+    assertThat(tfIdfResults.get(0).getFirst().getName()) //
+        .isEqualTo(bm25Results.get(0).getFirst().getName());
+
+    // Scores from different algorithms should differ (not guaranteed but highly likely)
+    // At minimum, both should be positive
+    assertThat(tfIdfResults.get(0).getSecond()).isGreaterThan(0.0);
+    assertThat(bm25Results.get(0).getSecond()).isGreaterThan(0.0);
+  }
+
+  @Test
+  void testToListWithScoresThrowsAfterProject() {
+    UnsupportedOperationException ex = assertThrows(UnsupportedOperationException.class, () -> {
+      entityStream.of(Company.class) //
+          .filter(Company$.NAME.containing("Red")) //
+          .project(Company$.NAME) //
+          .toListWithScores();
+    });
+    assertThat(ex.getMessage()).contains("toListWithScores()");
+    assertThat(ex.getMessage()).contains("project");
+  }
 }

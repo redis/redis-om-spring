@@ -763,4 +763,22 @@ class EntityStreamHybridQueryTests extends AbstractBaseEnhancedRedisTest {
         () -> assertThat(linearResults).isNotEmpty()
     );
   }
+
+  @Test
+  void testToListWithScoresThrowsAfterHybridSearch() {
+    float[] queryVector = new float[]{0.15f, 0.85f, 0.8f, 0.25f};
+
+    assertThatThrownBy(() -> entityStream.of(HashWithTextAndVector.class)
+        .hybridSearch(
+            "machine learning",
+            HashWithTextAndVector$.DESCRIPTION,
+            queryVector,
+            HashWithTextAndVector$.EMBEDDING,
+            0.7f
+        )
+        .toListWithScores()
+    ).isInstanceOf(UnsupportedOperationException.class)
+     .hasMessageContaining("toListWithScores()")
+     .hasMessageContaining("hybridSearch");
+  }
 }

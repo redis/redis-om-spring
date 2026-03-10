@@ -39,6 +39,7 @@ import com.redis.om.spring.search.stream.predicates.vector.KNNPredicate;
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.TupleMapper;
+import com.redis.om.spring.tuple.Tuples;
 import com.redis.om.spring.util.ObjectUtils;
 import com.redis.om.spring.util.SearchResultRawResponseToObjectConverter;
 import com.redis.vl.query.AggregateHybridQuery;
@@ -123,6 +124,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private SummarizeParams summarizeParams;
   private Pair<String, String> highlightTags;
   private boolean isQBE = false;
+  private boolean withScores = false;
+  private Scorer scorer;
 
   /**
    * Creates a new SearchStreamImpl for the given entity class.
@@ -712,6 +715,13 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       query.setSortBy(sortField.getField(), sortField.getOrder().equals("ASC"));
     }
 
+    if (withScores) {
+      query.setWithScores();
+    }
+    if (scorer != null) {
+      query.setScorer(scorer.getValue());
+    }
+
     if (!summaryFields.isEmpty()) {
       var fields = summaryFields.stream() //
           .map(foi -> ObjectUtils.isCollection(foi.getTargetClass()) ?
@@ -890,27 +900,37 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   /**
-   * Converts a list of {@link redis.clients.jedis.search.Document} objects
-   * (from SearchResult) to a list of entity instances.
+   * Converts a single {@link redis.clients.jedis.search.Document} to an entity instance,
+   * handling both JSON document and Hash structures.
    */
   @SuppressWarnings(
     "unchecked"
   )
-  private List<E> documentsToEntities(List<redis.clients.jedis.search.Document> documents) {
+  private E documentToEntity(redis.clients.jedis.search.Document d) {
+    E entity;
     if (isDocument) {
-      Gson g = getGson();
-      return documents.stream().map(d -> {
-        Object rawJson = d.get("$");
-        String json = (rawJson instanceof byte[]) ? SafeEncoder.encode((byte[]) rawJson) : rawJson.toString();
-        E entity = g.fromJson(json, entityClass);
-        return ObjectUtils.populateRedisKey(entity, d.getId());
-      }).toList();
+      Object rawJson = d.get("$");
+      String json = (rawJson instanceof byte[]) ? SafeEncoder.encode((byte[]) rawJson) : rawJson.toString();
+      entity = getGson().fromJson(json, entityClass);
     } else {
-      return (List<E>) documents.stream().map(d -> {
-        Object entity = ObjectUtils.documentToObject(d, entityClass, mappingConverter);
-        return ObjectUtils.populateRedisKey(entity, d.getId());
-      }).toList();
+      entity = (E) ObjectUtils.documentToObject(d, entityClass, mappingConverter);
     }
+    return ObjectUtils.populateRedisKey(entity, d.getId());
+  }
+
+  @SuppressWarnings(
+    "unchecked"
+  )
+  private List<E> documentsToEntities(List<redis.clients.jedis.search.Document> documents) {
+    return documents.stream().map(this::documentToEntity).toList();
+  }
+
+  /**
+   * Converts a list of {@link redis.clients.jedis.search.Document} objects
+   * to a list of entity-score pairs.
+   */
+  private List<Pair<E, Double>> documentsToEntityScorePairs(List<redis.clients.jedis.search.Document> documents) {
+    return documents.stream().map(d -> Tuples.of(documentToEntity(d), d.getScore())).toList();
   }
 
   /**
@@ -1251,6 +1271,33 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   public <R> SearchStream<E> highlight(Function<? super E, ? extends R> field, Pair<String, String> tags) {
     highlightTags = tags;
     return highlight(field);
+  }
+
+  @Override
+  public SearchStream<E> withScores() {
+    this.withScores = true;
+    return this;
+  }
+
+  @Override
+  public SearchStream<E> scorer(Scorer scorer) {
+    this.scorer = scorer;
+    return this;
+  }
+
+  @Override
+  public List<Pair<E, Double>> toListWithScores() {
+    if (hybridText != null) {
+      throw new UnsupportedOperationException(
+          "toListWithScores() is not supported after hybridSearch(). " + "Hybrid search uses FT.AGGREGATE/FT.HYBRID which are incompatible with FT.SEARCH WITHSCORES. " + "Use HybridQuery score aliases for explicit score access.");
+    }
+    if (!projections.isEmpty()) {
+      throw new UnsupportedOperationException(
+          "toListWithScores() is not supported after project(). " + "Projections return partial documents that cannot be deserialized into full entities. " + "Remove the project() call or use collect() instead.");
+    }
+    withScores = true;
+    SearchResult searchResult = executeQuery();
+    return documentsToEntityScorePairs(searchResult.getDocuments());
   }
 
   @Override
