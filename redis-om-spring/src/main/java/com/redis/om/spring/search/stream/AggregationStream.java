@@ -293,9 +293,18 @@ public interface AggregationStream<T> {
    * Configures cursor-based iteration for processing large result sets.
    * This enables efficient processing of large aggregation results by fetching
    * results in batches.
-   * 
+   * <p>
+   * Note: Redis reuses the same cursor ID across all {@code FT.CURSOR READ} calls for
+   * a given cursor session. The cursor ID only changes to {@code 0} when the cursor is
+   * exhausted. This is expected Redis behavior, not a bug.
+   * </p>
+   * <p>
+   * For predictable pagination, always use {@code .limit()} in the aggregation pipeline
+   * to bound the total number of results the cursor will iterate over.
+   * </p>
+   *
    * @param count    the number of results to fetch per batch
-   * @param duration the timeout for each cursor operation
+   * @param duration the cursor idle timeout (Redis deletes the cursor after this idle period)
    * @return a new AggregationStream configured for cursor-based processing
    * @throws IllegalArgumentException if count is negative or duration is null
    */

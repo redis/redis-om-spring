@@ -515,9 +515,18 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
 
   /**
    * Creates an aggregation stream with cursor support for large result sets.
-   * 
-   * @param i        the cursor batch size
-   * @param duration the cursor timeout duration
+   * <p>
+   * Note: Redis reuses the same cursor ID across all {@code FT.CURSOR READ} calls for
+   * a given cursor session. The cursor ID only changes to {@code 0} when the cursor is
+   * exhausted. This is expected Redis behavior, not a bug.
+   * </p>
+   * <p>
+   * For predictable pagination, always use {@code .limit()} in the aggregation pipeline
+   * to bound the total number of results the cursor will iterate over.
+   * </p>
+   *
+   * @param i        the cursor batch size (number of results per {@code FT.CURSOR READ})
+   * @param duration the cursor idle timeout (Redis deletes the cursor after this idle period)
    * @param <R>      the type of the aggregation result
    * @return an AggregationStream with cursor support
    */

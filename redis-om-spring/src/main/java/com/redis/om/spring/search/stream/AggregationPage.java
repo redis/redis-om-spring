@@ -226,10 +226,23 @@ public class AggregationPage<E> implements Page<E>, Serializable {
     return content;
   }
 
+  /**
+   * Resolves the current cursor ID from the aggregation result.
+   * <p>
+   * A value of {@code -1} means no cursor was configured (non-cursor aggregation).
+   * A value of {@code 0} means the cursor has been exhausted — no more results remain.
+   * Any other positive value is an active cursor ID. Note that Redis reuses the same
+   * cursor ID for all reads within a cursor session until exhaustion.
+   * </p>
+   *
+   * @return the cursor ID, {@code 0} if exhausted, or {@code -1} if no cursor is configured
+   */
   private long resolveCursorId() {
-    if (cursorId != -1) {
-      cursorId = resolveAggregation().getCursorId();
+    // -1 means cursor was never configured; don't attempt to read it from the result
+    if (cursorId == -1) {
+      return -1;
     }
+    cursorId = resolveAggregation().getCursorId();
     return cursorId;
   }
 

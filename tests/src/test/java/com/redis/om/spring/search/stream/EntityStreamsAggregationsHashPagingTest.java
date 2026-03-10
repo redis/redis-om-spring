@@ -108,6 +108,36 @@ class EntityStreamsAggregationsHashPagingTest extends AbstractBaseEnhancedRedisT
   }
 
   /**
+   * Tests cursor iteration without an explicit .limit() on the aggregation pipeline.
+   * Without .limit(), FT.AGGREGATE defaults to returning up to 10,000 results in the
+   * pipeline, so the cursor iterates over min(totalDocs, 10000) results.
+   * <p>
+   * This verifies that cursor IDs are correctly reused by Redis across reads (issue #708)
+   * and that all results are eventually returned when the cursor ID becomes 0.
+   */
+  @Test
+  void testCursorSessionWithoutExplicitLimit() {
+    int pageSize = 500;
+    SearchStream<Game> searchStream = entityStream.of(Game.class);
+
+    AggregationResult result = searchStream //
+        .cursor(pageSize, Duration.ofSeconds(300)).loadAll().aggregate();
+
+    long cursorId = result.getCursorId();
+    int totalResults = result.getResults().size();
+
+    // Read remaining pages
+    while (cursorId != 0) {
+      AggregationResult ar = searchStream.getSearchOperations().cursorRead(cursorId, pageSize);
+      totalResults += ar.getResults().size();
+      cursorId = ar.getCursorId();
+    }
+
+    // Without .limit(), we should get all 2265 games from the test dataset
+    assertEquals(2265, totalResults);
+  }
+
+  /**
    * <pre>
    * "FT.AGGREGATE" "com.redis.om.spring.annotations.document.fixtures.GameIdx" "*" "WITHCURSOR" "COUNT" "45" "MAXIDLE"
    * "300000" "LOAD" "*" "LIMIT" "0" "300"
