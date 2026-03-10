@@ -3,11 +3,15 @@ package com.redis.om.spring.indexing;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -287,5 +291,117 @@ public class RedisIndexContextTest {
         // Then: All threads should complete successfully
         assertThat(doneLatch.await(10, TimeUnit.SECONDS)).isTrue();
         executor.shutdown();
+    }
+
+    @Test
+    void testAutoCloseableWithTryWithResources() {
+        // Given: A context
+        RedisIndexContext context = RedisIndexContext.builder()
+            .tenantId("auto-close-tenant")
+            .environment("prod")
+            .build();
+
+        // When: Using try-with-resources via activate()
+        try (RedisIndexContext ctx = context.activate()) {
+            // Then: Context should be active inside the block
+            assertThat(RedisIndexContext.getContext()).isNotNull();
+            assertThat(RedisIndexContext.getContext().getTenantId()).isEqualTo("auto-close-tenant");
+            assertThat(ctx).isSameAs(context);
+        }
+
+        // Then: Context should be cleared after the block
+        assertThat(RedisIndexContext.getContext()).isNull();
+    }
+
+    @Test
+    void testAutoCloseableRestoresPreviousContext() {
+        // Given: An outer context that is already active
+        RedisIndexContext outerContext = RedisIndexContext.builder()
+            .tenantId("outer-tenant")
+            .build();
+        RedisIndexContext.setContext(outerContext);
+
+        // When: Using a nested context with try-with-resources
+        RedisIndexContext innerContext = RedisIndexContext.builder()
+            .tenantId("inner-tenant")
+            .build();
+
+        try (RedisIndexContext ctx = innerContext.activate()) {
+            // Then: Inner context should be active
+            assertThat(RedisIndexContext.getContext().getTenantId()).isEqualTo("inner-tenant");
+        }
+
+        // Then: Outer context should be restored after the block
+        assertThat(RedisIndexContext.getContext()).isNotNull();
+        assertThat(RedisIndexContext.getContext().getTenantId()).isEqualTo("outer-tenant");
+    }
+
+    @Test
+    void testAutoCloseableOnException() {
+        // Given: A context
+        RedisIndexContext context = RedisIndexContext.builder()
+            .tenantId("exception-tenant")
+            .build();
+
+        // When: An exception occurs inside try-with-resources
+        assertThrows(RuntimeException.class, () -> {
+            try (RedisIndexContext ctx = context.activate()) {
+                assertThat(RedisIndexContext.getContext().getTenantId()).isEqualTo("exception-tenant");
+                throw new RuntimeException("simulated failure");
+            }
+        });
+
+        // Then: Context should still be cleaned up
+        assertThat(RedisIndexContext.getContext()).isNull();
+    }
+
+    @Test
+    void testThreadPoolContextLeakPrevention() throws Exception {
+        // Given: A single-thread executor (simulates thread reuse in a pool)
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+
+        // When: First task uses activate() with try-with-resources
+        Future<String> firstTask = executor.submit(() -> {
+            RedisIndexContext context = RedisIndexContext.builder()
+                .tenantId("tenant-A")
+                .build();
+            try (RedisIndexContext ctx = context.activate()) {
+                return RedisIndexContext.getContext().getTenantId();
+            }
+        });
+
+        // Wait for first task to complete
+        assertThat(firstTask.get(5, TimeUnit.SECONDS)).isEqualTo("tenant-A");
+
+        // When: Second task runs on the same thread (thread reuse)
+        Future<RedisIndexContext> secondTask = executor.submit(() -> {
+            // Should NOT see tenant-A's context
+            return RedisIndexContext.getContext();
+        });
+
+        // Then: Second task should not see any leaked context
+        assertThat(secondTask.get(5, TimeUnit.SECONDS)).isNull();
+
+        executor.shutdown();
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    void testDeprecatedSetContextStillWorks() {
+        // Given: A context
+        RedisIndexContext context = RedisIndexContext.builder()
+            .tenantId("deprecated-tenant")
+            .build();
+
+        // When: Using the deprecated setContext method
+        RedisIndexContext.setContext(context);
+
+        // Then: It should still function correctly
+        assertThat(RedisIndexContext.getContext()).isNotNull();
+        assertThat(RedisIndexContext.getContext().getTenantId()).isEqualTo("deprecated-tenant");
+
+        // Cleanup
+        RedisIndexContext.clearContext();
+        assertThat(RedisIndexContext.getContext()).isNull();
     }
 }
