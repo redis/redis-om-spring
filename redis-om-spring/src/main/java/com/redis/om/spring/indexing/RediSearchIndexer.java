@@ -31,7 +31,6 @@ import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
-import org.springframework.stereotype.Component;
 import org.springframework.util.ClassUtils;
 
 import com.github.f4b6a3.ulid.Ulid;
@@ -88,7 +87,6 @@ import redis.clients.jedis.search.schemafields.*;
  * @see Searchable
  * @since 1.0.0
  */
-@Component
 public class RediSearchIndexer {
   private static final Log logger = LogFactory.getLog(RediSearchIndexer.class);
   private static final String SKIPPING_INDEX_CREATION = "Skipping index creation for %s because %s";
@@ -109,21 +107,20 @@ public class RediSearchIndexer {
 
   /**
    * Constructs a new RediSearchIndexer with the required dependencies.
-   * Initializes Redis modules operations and mapping context from the application context.
    *
-   * @param ac          the Spring application context for accessing beans
-   * @param properties  the Redis OM configuration properties
-   * @param gsonBuilder the Gson builder for JSON serialization configuration
+   * @param ac             the Spring application context for SpEL expression evaluation
+   * @param properties     the Redis OM configuration properties
+   * @param gsonBuilder    the Gson builder for JSON serialization configuration
+   * @param rmo            the Redis modules operations for search index management
+   * @param mappingContext the Redis mapping context for entity metadata
    */
-  @SuppressWarnings(
-    "unchecked"
-  )
-  public RediSearchIndexer(ApplicationContext ac, RedisOMProperties properties, GsonBuilder gsonBuilder) {
+  public RediSearchIndexer(ApplicationContext ac, RedisOMProperties properties, GsonBuilder gsonBuilder,
+      RedisModulesOperations<String> rmo, RedisMappingContext mappingContext) {
     this.ac = ac;
     this.properties = properties;
-    rmo = (RedisModulesOperations<String>) ac.getBean("redisModulesOperations");
-    mappingContext = (RedisMappingContext) ac.getBean("redisEnhancedMappingContext");
     this.gsonBuilder = gsonBuilder;
+    this.rmo = rmo;
+    this.mappingContext = mappingContext;
   }
 
   /**

@@ -414,11 +414,16 @@ public class RedisModulesConfiguration {
    * It scans entity classes for indexable fields and creates the appropriate
    * search indexes in Redis.
    *
-   * @param ac          the application context for bean discovery
-   * @param properties  the Redis OM configuration properties
-   * @param gsonBuilder the Gson builder for JSON serialization
+   * @param ac                     the application context for SpEL expression evaluation
+   * @param properties             the Redis OM configuration properties
+   * @param gsonBuilder            the Gson builder for JSON serialization
+   * @param redisModulesOperations the Redis modules operations for search index management
+   * @param mappingContext         the Redis mapping context for entity metadata
    * @return the configured RediSearch indexer instance
    */
+  @SuppressWarnings(
+    "unchecked"
+  )
   @Bean(
       name = "rediSearchIndexer"
   )
@@ -426,9 +431,14 @@ public class RedisModulesConfiguration {
       RedisOMProperties properties, //
       @Qualifier(
         "omGsonBuilder"
-      ) GsonBuilder gsonBuilder) {
+      ) GsonBuilder gsonBuilder, //
+      RedisModulesOperations<?> redisModulesOperations, //
+      @Qualifier(
+        "redisEnhancedMappingContext"
+      ) RedisMappingContext mappingContext) {
 
-    return new RediSearchIndexer(ac, properties, gsonBuilder);
+    return new RediSearchIndexer(ac, properties, gsonBuilder, (RedisModulesOperations<String>) redisModulesOperations,
+        mappingContext);
   }
 
   /**
