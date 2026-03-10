@@ -903,50 +903,38 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
    * Converts a list of {@link redis.clients.jedis.search.Document} objects
    * (from SearchResult) to a list of entity instances.
    */
+  /**
+   * Converts a single {@link redis.clients.jedis.search.Document} to an entity instance,
+   * handling both JSON document and Hash structures.
+   */
+  @SuppressWarnings(
+    "unchecked"
+  )
+  private E documentToEntity(redis.clients.jedis.search.Document d) {
+    E entity;
+    if (isDocument) {
+      Object rawJson = d.get("$");
+      String json = (rawJson instanceof byte[]) ? SafeEncoder.encode((byte[]) rawJson) : rawJson.toString();
+      entity = getGson().fromJson(json, entityClass);
+    } else {
+      entity = (E) ObjectUtils.documentToObject(d, entityClass, mappingConverter);
+    }
+    return ObjectUtils.populateRedisKey(entity, d.getId());
+  }
+
   @SuppressWarnings(
     "unchecked"
   )
   private List<E> documentsToEntities(List<redis.clients.jedis.search.Document> documents) {
-    if (isDocument) {
-      Gson g = getGson();
-      return documents.stream().map(d -> {
-        Object rawJson = d.get("$");
-        String json = (rawJson instanceof byte[]) ? SafeEncoder.encode((byte[]) rawJson) : rawJson.toString();
-        E entity = g.fromJson(json, entityClass);
-        return ObjectUtils.populateRedisKey(entity, d.getId());
-      }).toList();
-    } else {
-      return (List<E>) documents.stream().map(d -> {
-        Object entity = ObjectUtils.documentToObject(d, entityClass, mappingConverter);
-        return ObjectUtils.populateRedisKey(entity, d.getId());
-      }).toList();
-    }
+    return documents.stream().map(this::documentToEntity).toList();
   }
 
   /**
    * Converts a list of {@link redis.clients.jedis.search.Document} objects
    * to a list of entity-score pairs.
    */
-  @SuppressWarnings(
-    "unchecked"
-  )
   private List<Pair<E, Double>> documentsToEntityScorePairs(List<redis.clients.jedis.search.Document> documents) {
-    if (isDocument) {
-      Gson g = getGson();
-      return documents.stream().map(d -> {
-        Object rawJson = d.get("$");
-        String json = (rawJson instanceof byte[]) ? SafeEncoder.encode((byte[]) rawJson) : rawJson.toString();
-        E entity = g.fromJson(json, entityClass);
-        entity = ObjectUtils.populateRedisKey(entity, d.getId());
-        return Tuples.of(entity, d.getScore());
-      }).toList();
-    } else {
-      return (List<Pair<E, Double>>) documents.stream().map(d -> {
-        Object entity = ObjectUtils.documentToObject(d, entityClass, mappingConverter);
-        entity = ObjectUtils.populateRedisKey(entity, d.getId());
-        return Tuples.of((E) entity, d.getScore());
-      }).toList();
-    }
+    return documents.stream().map(d -> Tuples.of(documentToEntity(d), d.getScore())).toList();
   }
 
   /**
