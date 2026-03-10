@@ -1,6 +1,8 @@
 package com.redis.om.spring.indexing;
 
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -30,9 +32,10 @@ public class RedisIndexContext implements AutoCloseable {
   private final String tenantId;
   private final String environment;
   private final Map<String, Object> attributes;
-  private RedisIndexContext previousContext;
 
   private static final ThreadLocal<RedisIndexContext> CONTEXT_HOLDER = new ThreadLocal<>();
+  private static final ThreadLocal<Deque<RedisIndexContext>> PREVIOUS_CONTEXT_STACK = ThreadLocal.withInitial(
+      LinkedList::new);
 
   private RedisIndexContext(Builder builder) {
     this.tenantId = builder.tenantId;
@@ -62,10 +65,11 @@ public class RedisIndexContext implements AutoCloseable {
   }
 
   /**
-   * Clears the index context for the current thread.
+   * Clears the index context and any saved activation history for the current thread.
    */
   public static void clearContext() {
     CONTEXT_HOLDER.remove();
+    PREVIOUS_CONTEXT_STACK.remove();
   }
 
   /**
@@ -83,7 +87,7 @@ public class RedisIndexContext implements AutoCloseable {
    * @return this context, for use in a try-with-resources statement
    */
   public RedisIndexContext activate() {
-    this.previousContext = CONTEXT_HOLDER.get();
+    PREVIOUS_CONTEXT_STACK.get().push(CONTEXT_HOLDER.get());
     CONTEXT_HOLDER.set(this);
     return this;
   }
@@ -91,15 +95,26 @@ public class RedisIndexContext implements AutoCloseable {
   /**
    * Restores the previous context (or clears the ThreadLocal if none existed).
    * Called automatically when used with try-with-resources via {@link #activate()}.
+   * This method is idempotent: a second call after the context has already been
+   * deactivated is a no-op.
    */
   @Override
   public void close() {
-    if (previousContext != null) {
-      CONTEXT_HOLDER.set(previousContext);
+    // Guard: only pop if this context is still the active one, making close() idempotent.
+    if (CONTEXT_HOLDER.get() != this) {
+      return;
+    }
+    Deque<RedisIndexContext> stack = PREVIOUS_CONTEXT_STACK.get();
+    if (!stack.isEmpty()) {
+      RedisIndexContext previous = stack.pop();
+      if (previous != null) {
+        CONTEXT_HOLDER.set(previous);
+      } else {
+        CONTEXT_HOLDER.remove();
+      }
     } else {
       CONTEXT_HOLDER.remove();
     }
-    previousContext = null;
   }
 
   /**
