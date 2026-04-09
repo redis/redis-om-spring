@@ -3,7 +3,6 @@ package com.redis.om.spring;
 import static com.redis.om.spring.util.ObjectUtils.isPrimitiveOfType;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -453,35 +452,27 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
 
   private Optional<Long> getTTLForEntity(Object entity) {
     Class<?> entityClass = entity.getClass();
-    Class<?> entityClassKey;
-    try {
-      entityClassKey = ClassLoader.getSystemClassLoader().loadClass(entity.getClass().getTypeName());
-    } catch (ClassNotFoundException e) {
-      entityClassKey = entity.getClass();
-    }
 
     // Use the resolver if available for cross-class-loader compatibility
     KeyspaceConfiguration.KeyspaceSettings settings = null;
     if (mappingContext instanceof com.redis.om.spring.mapping.RedisEnhancedMappingContext) {
       var resolver = ((com.redis.om.spring.mapping.RedisEnhancedMappingContext) mappingContext).getKeyspaceResolver();
-      if (resolver.hasSettingsFor(entityClassKey)) {
-        settings = resolver.getKeyspaceSettings(entityClassKey);
+      if (resolver.hasSettingsFor(entityClass)) {
+        settings = resolver.getKeyspaceSettings(entityClass);
       }
     } else {
       KeyspaceConfiguration keyspaceConfig = mappingContext.getMappingConfiguration().getKeyspaceConfiguration();
-      if (keyspaceConfig.hasSettingsFor(entityClassKey)) {
-        settings = keyspaceConfig.getKeyspaceSettings(entityClassKey);
+      if (keyspaceConfig.hasSettingsFor(entityClass)) {
+        settings = keyspaceConfig.getKeyspaceSettings(entityClass);
       }
     }
 
     if (settings != null) {
       if (StringUtils.hasText(settings.getTimeToLivePropertyName())) {
-        Method ttlGetter;
         try {
           Field fld = ReflectionUtils.findField(entityClass, settings.getTimeToLivePropertyName());
           if (fld != null) {
-            ttlGetter = ObjectUtils.getGetterForField(entityClass, fld);
-            long ttlPropertyValue = ((Number) ReflectionUtils.invokeMethod(ttlGetter, entity)).longValue();
+            long ttlPropertyValue = getTtlFieldValue(entityClass, fld, entity);
 
             TimeToLive ttl = fld.getAnnotation(TimeToLive.class);
             if (!ttl.unit().equals(TimeUnit.SECONDS)) {
@@ -500,6 +491,10 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
       }
     }
     return Optional.empty();
+  }
+
+  private long getTtlFieldValue(Class<?> entityClass, Field fld, Object entity) {
+    return ObjectUtils.getNumericFieldValue(entityClass, fld, entity);
   }
 
   @SuppressWarnings(
