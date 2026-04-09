@@ -80,11 +80,14 @@ class ReferenceTest extends AbstractBaseDocumentTest {
       }
       refRepository.saveAll(refs);
 
-      Set<TooManyReferences> tmrs = new HashSet<>();
       List<Ref> refList = new ArrayList<>(refs);
       Random random = new Random();
 
-      for (int i = 0; i < 10000; i++) {
+      // Save in batches to avoid pipeline socket timeouts on CI
+      int batchSize = 1000;
+      int total = 10000;
+      List<TooManyReferences> batch = new ArrayList<>(batchSize);
+      for (int i = 0; i < total; i++) {
         TooManyReferences tmr = TooManyReferences.of("ref" + i);
 
         tmr.setRef1(refList.get(random.nextInt(refList.size())));
@@ -98,10 +101,15 @@ class ReferenceTest extends AbstractBaseDocumentTest {
         tmr.setRef9(refList.get(random.nextInt(refList.size())));
         tmr.setRef10(refList.get(random.nextInt(refList.size())));
 
-        tmrs.add(tmr);
+        batch.add(tmr);
+        if (batch.size() == batchSize) {
+          tooManyReferencesRepository.saveAll(batch);
+          batch.clear();
+        }
       }
-
-      tooManyReferencesRepository.saveAll(tmrs);
+      if (!batch.isEmpty()) {
+        tooManyReferencesRepository.saveAll(batch);
+      }
     }
   }
 
