@@ -99,6 +99,18 @@ class DocumentTTLClassLoaderTest extends AbstractBaseDocumentTest {
   }
 
   @Test
+  void testSaveEntityWithNullTtlDirectFieldAccessDoesNotThrowNPE() {
+    // A null TTL field value must not cause NPE in either getter or
+    // direct field access paths
+    ExpiringPersonDirectFieldAccess entity = ExpiringPersonDirectFieldAccess.of("Null TTL Direct", null);
+    directFieldAccessRepository.save(entity);
+
+    assertThat(entity.getId()).isNotNull();
+    Long expire = directFieldAccessRepository.getExpiration(entity.getId());
+    assertThat(expire).isEqualTo(-1L);
+  }
+
+  @Test
   void testStandardEntityTTLStillWorks() {
     // Sanity: existing entities with getters still work after the fix
     ExpiringPerson person = ExpiringPerson.of("Mike Woodger", 15L);

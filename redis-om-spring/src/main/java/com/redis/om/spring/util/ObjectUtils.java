@@ -337,14 +337,16 @@ public class ObjectUtils {
    * @return the field value as a {@code long}, or {@code 0L} if the value is null or non-numeric
    */
   public static long getNumericFieldValue(Class<?> entityClass, Field fld, Object entity) {
-    Method ttlGetter = getGetterForField(entityClass, fld);
-    if (ttlGetter != null) {
-      return ((Number) ReflectionUtils.invokeMethod(ttlGetter, entity)).longValue();
+    Object value;
+    Method getter = getGetterForField(entityClass, fld);
+    if (getter != null) {
+      value = ReflectionUtils.invokeMethod(getter, entity);
+    } else {
+      // Fall back to direct field access when no getter exists (e.g. Groovy classes,
+      // records, or non-standard property naming)
+      ReflectionUtils.makeAccessible(fld);
+      value = ReflectionUtils.getField(fld, entity);
     }
-    // Fall back to direct field access when no getter exists (e.g. Groovy classes,
-    // records, or non-standard property naming)
-    ReflectionUtils.makeAccessible(fld);
-    Object value = ReflectionUtils.getField(fld, entity);
     if (value instanceof Number number) {
       return number.longValue();
     }
