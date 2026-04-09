@@ -1029,8 +1029,10 @@ public final class MetamodelGenerator extends AbstractProcessor {
       }
     }
 
-    // default to thrower
-    messager.printMessage(Diagnostic.Kind.ERROR, "Class " + entityName + " is not a proper JavaBean because " + field
+    // default to thrower — downgraded from ERROR to WARNING because the runtime
+    // handles getter-less fields via direct field access (e.g. for @TimeToLive fields
+    // in Groovy classes or non-standard JavaBean entities)
+    messager.printMessage(Diagnostic.Kind.WARNING, "Class " + entityName + " is not a proper JavaBean because " + field
         .getSimpleName().toString() + " has no standard getter.");
     return lambdaName + " -> {throw new " + IllegalJavaBeanException.class
         .getSimpleName() + "(" + entityName + ".class, \"" + fieldName + "\");}";

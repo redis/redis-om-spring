@@ -325,6 +325,35 @@ public class ObjectUtils {
   }
 
   /**
+   * Retrieves a numeric field value via getter if available, falling back to direct field access.
+   * <p>
+   * This handles entities without standard JavaBean getters (e.g. Groovy classes, Kotlin data
+   * classes, records, or non-standard property naming) as well as the case where the system
+   * classloader cannot find Spring-managed classes (e.g. JDK 25+).
+   *
+   * @param entityClass the class of the entity
+   * @param fld         the field to read
+   * @param entity      the entity instance
+   * @return the field value as a {@code long}, or {@code 0L} if the value is null or non-numeric
+   */
+  public static long getNumericFieldValue(Class<?> entityClass, Field fld, Object entity) {
+    Object value;
+    Method getter = getGetterForField(entityClass, fld);
+    if (getter != null) {
+      value = ReflectionUtils.invokeMethod(getter, entity);
+    } else {
+      // Fall back to direct field access when no getter exists (e.g. Groovy classes,
+      // records, or non-standard property naming)
+      ReflectionUtils.makeAccessible(fld);
+      value = ReflectionUtils.getField(fld, entity);
+    }
+    if (value instanceof Number number) {
+      return number.longValue();
+    }
+    return 0L;
+  }
+
+  /**
    * Finds the setter method for a specific field in a class.
    * Constructs the setter name using JavaBeans naming conventions.
    *

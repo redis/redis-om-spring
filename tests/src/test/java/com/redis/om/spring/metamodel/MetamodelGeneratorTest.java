@@ -406,14 +406,16 @@ class MetamodelGeneratorTest {
   void testValidDocumentInBadJavaBean(Results results) {
     assertThat(results.generated).hasSize(1);
 
-    List<String> errors = getErrorStrings(results);
+    // Missing getters produce warnings (not errors) since the runtime handles
+    // getter-less fields via direct field access
+    List<String> warnings = getWarningStrings(results);
     assertAll( //
-        () -> assertThat(errors).hasSize(3), //
-        () -> assertThat(errors).contains(
+        () -> assertThat(warnings).hasSize(3), //
+        () -> assertThat(warnings).contains(
             "Class valid.BadBean is not a proper JavaBean because id has no standard getter."), //
-        () -> assertThat(errors).contains(
+        () -> assertThat(warnings).contains(
             "Class valid.BadBean is not a proper JavaBean because name has no standard getter."), //
-        () -> assertThat(errors).contains(
+        () -> assertThat(warnings).contains(
             "Class valid.BadBean is not a proper JavaBean because age has no standard getter.") //
     );
   }

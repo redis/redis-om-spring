@@ -6,7 +6,6 @@ import static redis.clients.jedis.json.JsonProtocol.JsonCommand;
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -522,37 +521,37 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
    * @return an {@link Optional} containing the TTL in seconds, or empty if no TTL is configured
    */
   private Optional<Long> getTTLForEntity(Object entity) {
+    Class<?> entityClass = entity.getClass();
+
     // Use the resolver if available for cross-class-loader compatibility
     KeyspaceConfiguration.KeyspaceSettings settings = null;
     if (mappingContext instanceof com.redis.om.spring.mapping.RedisEnhancedMappingContext) {
       var resolver = ((com.redis.om.spring.mapping.RedisEnhancedMappingContext) mappingContext).getKeyspaceResolver();
-      if (resolver.hasSettingsFor(entity.getClass())) {
-        settings = resolver.getKeyspaceSettings(entity.getClass());
+      if (resolver.hasSettingsFor(entityClass)) {
+        settings = resolver.getKeyspaceSettings(entityClass);
       }
     } else {
       KeyspaceConfiguration keyspaceConfig = mappingContext.getMappingConfiguration().getKeyspaceConfiguration();
-      if (keyspaceConfig.hasSettingsFor(entity.getClass())) {
-        settings = keyspaceConfig.getKeyspaceSettings(entity.getClass());
+      if (keyspaceConfig.hasSettingsFor(entityClass)) {
+        settings = keyspaceConfig.getKeyspaceSettings(entityClass);
       }
     }
 
     if (settings != null) {
-
       if (org.springframework.util.StringUtils.hasText(settings.getTimeToLivePropertyName())) {
-        Method ttlGetter;
         try {
-          Field fld = ReflectionUtils.findField(entity.getClass(), settings.getTimeToLivePropertyName());
-          ttlGetter = ObjectUtils.getGetterForField(entity.getClass(), Objects.requireNonNull(fld));
-          long ttlPropertyValue = ((Number) Objects.requireNonNull(ReflectionUtils.invokeMethod(ttlGetter, entity)))
-              .longValue();
+          Field fld = ReflectionUtils.findField(entityClass, settings.getTimeToLivePropertyName());
+          if (fld != null) {
+            long ttlPropertyValue = getTtlFieldValue(entityClass, fld, entity);
 
-          ReflectionUtils.invokeMethod(ttlGetter, entity);
-
-          TimeToLive ttl = fld.getAnnotation(TimeToLive.class);
-          if (!ttl.unit().equals(TimeUnit.SECONDS)) {
-            return Optional.of(TimeUnit.SECONDS.convert(ttlPropertyValue, ttl.unit()));
+            TimeToLive ttl = fld.getAnnotation(TimeToLive.class);
+            if (!ttl.unit().equals(TimeUnit.SECONDS)) {
+              return Optional.of(TimeUnit.SECONDS.convert(ttlPropertyValue, ttl.unit()));
+            } else {
+              return Optional.of(ttlPropertyValue);
+            }
           } else {
-            return Optional.of(ttlPropertyValue);
+            return Optional.empty();
           }
         } catch (SecurityException | IllegalArgumentException e) {
           return Optional.empty();
@@ -562,6 +561,10 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       }
     }
     return Optional.empty();
+  }
+
+  private long getTtlFieldValue(Class<?> entityClass, Field fld, Object entity) {
+    return ObjectUtils.getNumericFieldValue(entityClass, fld, entity);
   }
 
   /**
