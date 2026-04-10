@@ -43,6 +43,7 @@ import org.springframework.util.ReflectionUtils;
 
 import com.redis.om.spring.annotations.EnableRedisDocumentRepositories;
 import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
+import com.redis.om.spring.annotations.IndexingOptions;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.tuple.Tuples;
 
@@ -677,6 +678,96 @@ public class ObjectUtils {
     }
 
     return erers;
+  }
+
+  /**
+   * Finds repository interfaces annotated with {@link IndexingOptions} in the configured
+   * base packages. Returns a set of interface classes that can be inspected for their
+   * indexing options and domain type.
+   *
+   * @param ac the ApplicationContext to search
+   * @return a set of repository interface classes with @IndexingOptions
+   */
+  public static Set<Class<?>> getRepositoryInterfacesWithIndexingOptions(ApplicationContext ac) {
+    Set<Class<?>> result = new HashSet<>();
+    Set<String> packages = new HashSet<>();
+
+    // Collect all base packages from both Document and Enhanced repository configurations
+    List<Pair<EnableRedisDocumentRepositories, String>> erdrs = getEnableRedisDocumentRepositories(ac);
+    for (Pair<EnableRedisDocumentRepositories, String> pair : erdrs) {
+      EnableRedisDocumentRepositories edr = pair.getFirst();
+      if (edr.basePackages().length > 0) {
+        packages.addAll(Arrays.asList(edr.basePackages()));
+      } else if (edr.basePackageClasses().length > 0) {
+        for (Class<?> pkg : edr.basePackageClasses()) {
+          packages.add(pkg.getPackageName());
+        }
+      } else {
+        packages.add(pair.getSecond());
+      }
+    }
+
+    List<Pair<EnableRedisEnhancedRepositories, String>> erers = getEnableRedisEnhancedRepositories(ac);
+    for (Pair<EnableRedisEnhancedRepositories, String> pair : erers) {
+      EnableRedisEnhancedRepositories er = pair.getFirst();
+      if (er.basePackages().length > 0) {
+        packages.addAll(Arrays.asList(er.basePackages()));
+      } else if (er.basePackageClasses().length > 0) {
+        for (Class<?> pkg : er.basePackageClasses()) {
+          packages.add(pkg.getPackageName());
+        }
+      } else {
+        packages.add(pair.getSecond());
+      }
+    }
+
+    // Use a scanner that includes interfaces
+    ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(false) {
+      @Override
+      protected boolean isCandidateComponent(
+          org.springframework.beans.factory.annotation.AnnotatedBeanDefinition beanDefinition) {
+        return beanDefinition.getMetadata().isInterface();
+      }
+    };
+    provider.addIncludeFilter(new AnnotationTypeFilter(IndexingOptions.class));
+
+    for (String pkg : packages) {
+      for (BeanDefinition bd : provider.findCandidateComponents(pkg)) {
+        try {
+          Class<?> iface = Class.forName(bd.getBeanClassName());
+          if (iface.isInterface() && iface.isAnnotationPresent(IndexingOptions.class)) {
+            result.add(iface);
+          }
+        } catch (ClassNotFoundException e) {
+          // skip
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Resolves the domain (entity) type from a repository interface by walking
+   * its generic type hierarchy to find the entity class.
+   *
+   * @param repositoryInterface the repository interface class
+   * @param repositoryBaseType  the base repository type (e.g., RedisDocumentRepository.class)
+   * @return the resolved entity class, or null if not found
+   */
+  public static Class<?> resolveEntityTypeFromRepository(Class<?> repositoryInterface, Class<?> repositoryBaseType) {
+    ResolvableType resolvable = ResolvableType.forClass(repositoryInterface);
+    ResolvableType[] supers = resolvable.getInterfaces();
+    for (ResolvableType superType : supers) {
+      if (superType.getRawClass() != null && repositoryBaseType.isAssignableFrom(superType.getRawClass())) {
+        ResolvableType resolved = resolvable.as(repositoryBaseType);
+        ResolvableType generic = resolved.getGeneric(0);
+        if (generic.getRawClass() != null) {
+          return generic.getRawClass();
+        }
+      }
+    }
+    return null;
   }
 
   /**
