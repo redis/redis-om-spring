@@ -2,11 +2,11 @@ package com.redis.om.spring;
 
 import static com.redis.om.spring.util.ObjectUtils.getBeanDefinitionsFor;
 import static com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively;
+import static com.redis.om.spring.util.ObjectUtils.getRepositoryInterfacesWithIndexingOptions;
+import static com.redis.om.spring.util.ObjectUtils.resolveEntityTypeFromRepository;
 
 import java.time.*;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.logging.Log;
@@ -41,6 +41,7 @@ import com.google.gson.GsonBuilder;
 import com.redis.om.spring.annotations.Bloom;
 import com.redis.om.spring.annotations.Cuckoo;
 import com.redis.om.spring.annotations.Document;
+import com.redis.om.spring.annotations.IndexingOptions;
 import com.redis.om.spring.client.RedisModulesClient;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.mapping.RedisEnhancedMappingContext;
@@ -51,6 +52,8 @@ import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.pds.BloomOperations;
 import com.redis.om.spring.ops.pds.CountMinSketchOperations;
 import com.redis.om.spring.ops.pds.CuckooFilterOperations;
+import com.redis.om.spring.repository.RedisDocumentRepository;
+import com.redis.om.spring.repository.RedisEnhancedRepository;
 import com.redis.om.spring.search.stream.EntityStream;
 import com.redis.om.spring.search.stream.EntityStreamImpl;
 import com.redis.om.spring.serialization.gson.*;
@@ -614,6 +617,62 @@ public class RedisModulesConfiguration {
     RediSearchIndexer indexer = (RediSearchIndexer) ac.getBean("rediSearchIndexer");
     indexer.createIndicesFor(Document.class);
     indexer.createIndicesFor(RedisHash.class);
+
+    // Create indexes from repository-level @IndexingOptions annotations
+    createRepoLevelIndexes(ac, indexer);
+  }
+
+  @SuppressWarnings(
+    "rawtypes"
+  )
+  private void createRepoLevelIndexes(ApplicationContext ac, RediSearchIndexer indexer) {
+    Set<Class<?>> repoInterfaces = new HashSet<>();
+
+    // Scan repository beans for @IndexingOptions on their interfaces
+    try {
+      Map<String, RedisDocumentRepository> docRepos = ac.getBeansOfType(RedisDocumentRepository.class);
+      for (RedisDocumentRepository repo : docRepos.values()) {
+        collectIndexingOptionsInterfaces(repo, repoInterfaces);
+      }
+    } catch (Exception e) {
+      logger.debug("Could not scan document repository beans: " + e.getMessage());
+    }
+
+    try {
+      Map<String, RedisEnhancedRepository> enhancedRepos = ac.getBeansOfType(RedisEnhancedRepository.class);
+      for (RedisEnhancedRepository repo : enhancedRepos.values()) {
+        collectIndexingOptionsInterfaces(repo, repoInterfaces);
+      }
+    } catch (Exception e) {
+      logger.debug("Could not scan enhanced repository beans: " + e.getMessage());
+    }
+
+    // Also try classpath scanning as a fallback
+    repoInterfaces.addAll(getRepositoryInterfacesWithIndexingOptions(ac));
+
+    for (Class<?> repoInterface : repoInterfaces) {
+      IndexingOptions options = repoInterface.getAnnotation(IndexingOptions.class);
+      if (options != null && !options.indexName().isBlank()) {
+        Class<?> entityClass = resolveEntityTypeFromRepository(repoInterface, RedisDocumentRepository.class);
+        if (entityClass == null) {
+          entityClass = resolveEntityTypeFromRepository(repoInterface, RedisEnhancedRepository.class);
+        }
+        if (entityClass != null) {
+          logger.info(String.format("Creating repo-level index for %s from repository %s", entityClass.getSimpleName(),
+              repoInterface.getSimpleName()));
+          indexer.createIndexFor(entityClass, options);
+        }
+      }
+    }
+  }
+
+  private void collectIndexingOptionsInterfaces(Object bean, Set<Class<?>> result) {
+    for (Class<?> iface : bean.getClass().getInterfaces()) {
+      IndexingOptions options = iface.getAnnotation(IndexingOptions.class);
+      if (options != null) {
+        result.add(iface);
+      }
+    }
   }
 
   /**

@@ -200,7 +200,7 @@ public class RedisEnhancedRepositoryFactory extends RepositoryFactorySupport {
   protected Object getTargetRepository(RepositoryInformation repositoryInformation) {
     EntityInformation<?, ?> entityInformation = getEntityInformation(repositoryInformation.getDomainType());
     return super.getTargetRepositoryViaReflection(repositoryInformation, entityInformation, keyValueOperations, rmo,
-        indexer, embedder, properties);
+        indexer, embedder, properties, repositoryInformation.getRepositoryInterface());
   }
 
   /* (non-Javadoc)

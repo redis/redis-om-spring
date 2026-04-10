@@ -211,7 +211,8 @@ public class RedisDocumentRepositoryFactory extends KeyValueRepositoryFactory {
         mappingContext, //
         gsonBuilder, //
         embedder, //
-        properties //
+        properties, //
+        repositoryInformation.getRepositoryInterface() //
     );
   }
 

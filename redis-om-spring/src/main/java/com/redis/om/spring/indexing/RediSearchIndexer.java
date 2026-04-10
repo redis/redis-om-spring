@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BooleanSupplier;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.logging.Log;
@@ -136,13 +137,17 @@ public class RediSearchIndexer {
   }
 
   /**
-   * Evaluates a SpEL expression if it's detected, otherwise returns the original value.
+   * Evaluates a string that may contain Spring Expression Language (SpEL) template
+   * expressions of the form {@code #{...}}. If the expression is {@code null}, does
+   * not contain a SpEL marker, or successfully evaluates, the resulting string is
+   * returned. If any SpEL part fails to evaluate or the expression is malformed,
+   * {@code defaultValue} is returned instead.
    *
-   * @param expression   the expression to evaluate (may contain SpEL syntax)
-   * @param defaultValue the default value to use if evaluation fails or expression is empty
-   * @return the evaluated expression result or the original value
+   * @param expression   the raw string, possibly containing SpEL templates
+   * @param defaultValue the value to return if evaluation fails or yields null parts
+   * @return the evaluated string, or {@code defaultValue} on failure
    */
-  private String evaluateExpression(String expression, String defaultValue) {
+  public String evaluateExpression(String expression, String defaultValue) {
     if (expression == null) {
       return defaultValue;
     }
@@ -213,6 +218,108 @@ public class RediSearchIndexer {
   }
 
   /**
+   * Reads a repository interface's {@link IndexingOptions} annotation and resolves the
+   * declared {@code indexName}, evaluating any SpEL template expressions. Returns
+   * {@code null} when the interface is {@code null}, has no annotation, or declares a
+   * blank index name.
+   *
+   * @param repositoryInterface the repository interface class to inspect, may be {@code null}
+   * @return the resolved index name, or {@code null} if none is configured
+   */
+  public String resolveRepositoryIndexName(Class<?> repositoryInterface) {
+    if (repositoryInterface == null) {
+      return null;
+    }
+    IndexingOptions repoOptions = repositoryInterface.getAnnotation(IndexingOptions.class);
+    if (repoOptions == null || repoOptions.indexName().isBlank()) {
+      return null;
+    }
+    String rawIndexName = repoOptions.indexName();
+    String resolved = evaluateExpression(rawIndexName, rawIndexName);
+    return (resolved == null || resolved.isBlank()) ? null : resolved;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Shared helpers for the createIndexFor(...) family of methods.
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Runs the common field processing pipeline for an entity class: executes
+   * {@link #processIndexedFields}, registers per-field aliases via {@link #registerAlias}
+   * and appends ID-field indexed fields via {@link #createIndexedFieldsForIdFields}. The
+   * returned list contains every {@link SearchField} the caller needs to turn into
+   * {@link SchemaField}s.
+   *
+   * @param entityClass    the entity class being indexed
+   * @param isDocument     whether the entity targets a JSON document index
+   * @param allClassFields transitively resolved declared fields for the entity class
+   * @return the full list of search fields, already enriched with ID-field entries
+   */
+  private List<SearchField> prepareSearchFields(Class<?> entityClass, boolean isDocument,
+      List<java.lang.reflect.Field> allClassFields) {
+    List<SearchField> searchFields = processIndexedFields(allClassFields, isDocument);
+    for (SearchField field : searchFields) {
+      registerAlias(entityClass, field.getField().getName(), field.getSchemaField().getFieldName().getAttribute());
+    }
+    createIndexedFieldsForIdFields(entityClass, searchFields.stream().map(SearchField::getSchemaField).toList(),
+        isDocument).forEach(searchFields::add);
+    return searchFields;
+  }
+
+  /**
+   * Evaluates any SpEL templates in each raw prefix and normalizes the result with a
+   * trailing colon via {@link #getKeyspace(String)}. Used when an
+   * {@link IndexingOptions#prefixes()} array is present.
+   */
+  private String[] resolveAndNormalizePrefixArray(String[] rawPrefixes) {
+    String[] resolved = new String[rawPrefixes.length];
+    for (int i = 0; i < rawPrefixes.length; i++) {
+      resolved[i] = getKeyspace(evaluateExpression(rawPrefixes[i], rawPrefixes[i]));
+    }
+    return resolved;
+  }
+
+  /**
+   * Executes the {@link IndexCreationMode} switch shared by every {@code createIndexFor}
+   * variant that honors {@link IndexingOptions#creationMode()}. The variance between
+   * callers — whether to check a specific index name for existence, and what side-effects
+   * to run after a successful create — is supplied via {@code indexExists} and
+   * {@code postCreateHook} respectively.
+   *
+   * @param opsForSearch   the search operations bound to {@code indexName}
+   * @param params         the fully-configured {@link FTCreateParams}
+   * @param fields         the schema fields to declare on the index
+   * @param creationMode   the mode declared by the owning {@link IndexingOptions}
+   * @param indexName      the resolved index name (for logging)
+   * @param entityClass    the entity class (for logging)
+   * @param indexExists    supplier that returns {@code true} iff the index already exists
+   * @param postCreateHook side-effect to run after a successful create (e.g. lex sorted sets)
+   */
+  private void applyCreationMode(SearchOperations<String> opsForSearch, FTCreateParams params, List<SchemaField> fields,
+      IndexCreationMode creationMode, String indexName, Class<?> entityClass, BooleanSupplier indexExists,
+      Runnable postCreateHook) {
+    switch (creationMode) {
+      case SKIP_IF_EXIST:
+        opsForSearch.createIndex(params, fields);
+        logger.info(String.format("Created index %s", indexName));
+        postCreateHook.run();
+        break;
+      case DROP_AND_RECREATE:
+        if (indexExists.getAsBoolean()) {
+          opsForSearch.dropIndex();
+          logger.info(String.format("Dropped index %s", indexName));
+        }
+        opsForSearch.createIndex(params, fields);
+        logger.info(String.format("Created index %s", indexName));
+        postCreateHook.run();
+        break;
+      case SKIP_ALWAYS:
+        logger.info(String.format("Skipped index creation for %s", entityClass.getSimpleName()));
+        break;
+    }
+  }
+
+  /**
    * Creates search indices for all entities annotated with the specified annotation class.
    * Scans for bean definitions and creates indices for each discovered entity class.
    *
@@ -243,12 +350,10 @@ public class RediSearchIndexer {
    */
   public void createIndexFor(Class<?> cl) {
     Optional<IndexDataType> maybeType = determineIndexTarget(cl);
-    IndexDataType idxType;
-    if (maybeType.isPresent()) {
-      idxType = maybeType.get();
-    } else {
+    if (maybeType.isEmpty()) {
       return;
     }
+    IndexDataType idxType = maybeType.get();
     boolean isDocument = idxType == IndexDataType.JSON;
     Optional<Document> document = isDocument ? Optional.of(cl.getAnnotation(Document.class)) : Optional.empty();
     Optional<RedisHash> hash = !isDocument ? Optional.of(cl.getAnnotation(RedisHash.class)) : Optional.empty();
@@ -256,21 +361,18 @@ public class RediSearchIndexer {
 
     String indexName = "";
     String defaultIndexName = cl.getName() + "Idx";
-    Optional<String> maybeScoreField;
     try {
       if (isDocument) {
         // IndexingOptions overrides Document#
         if (maybeIndexingOptions.isPresent()) {
-          String rawIndexName = maybeIndexingOptions.get().indexName();
-          indexName = evaluateExpression(rawIndexName, defaultIndexName);
+          indexName = evaluateExpression(maybeIndexingOptions.get().indexName(), defaultIndexName);
         } else {
           indexName = document.get().indexName();
         }
         indexName = indexName.isBlank() ? defaultIndexName : indexName;
       } else {
         if (maybeIndexingOptions.isPresent()) {
-          String rawIndexName = maybeIndexingOptions.get().indexName();
-          indexName = evaluateExpression(rawIndexName, defaultIndexName);
+          indexName = evaluateExpression(maybeIndexingOptions.get().indexName(), defaultIndexName);
         } else {
           indexName = defaultIndexName;
         }
@@ -279,19 +381,10 @@ public class RediSearchIndexer {
       logger.info(String.format("Found @%s annotated class: %s", idxType, cl.getName()));
 
       final List<java.lang.reflect.Field> allClassFields = getDeclaredFieldsTransitively(cl);
-
-      List<SearchField> searchFields = processIndexedFields(allClassFields, isDocument);
-
-      for (SearchField field : searchFields) {
-        registerAlias(cl, field.getField().getName(), field.getSchemaField().getFieldName().getAttribute());
-      }
-
-      maybeScoreField = getDocumentScoreField(allClassFields, isDocument);
-      createIndexedFieldsForIdFields(cl, searchFields.stream().map(SearchField::getSchemaField).toList(), isDocument)
-          .forEach(searchFields::add);
+      List<SearchField> searchFields = prepareSearchFields(cl, isDocument, allClassFields);
+      Optional<String> maybeScoreField = getDocumentScoreField(allClassFields, isDocument);
 
       SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
-
       FTCreateParams params = createIndexDefinition(cl, idxType);
 
       Optional<String> maybeEntityPrefix;
@@ -302,52 +395,46 @@ public class RediSearchIndexer {
         maybeEntityPrefix = hash.map(RedisHash::value).filter(ObjectUtils::isNotEmpty);
       }
 
-      // Check for dynamic key prefix in IndexingOptions
+      // Resolve prefixes (entity-level @IndexingOptions may override the @Document/@RedisHash default)
       String entityPrefix;
-      if (maybeIndexingOptions.isPresent() && !maybeIndexingOptions.get().keyPrefix().isBlank()) {
-        String rawKeyPrefix = maybeIndexingOptions.get().keyPrefix();
+      if (maybeIndexingOptions.isPresent() && maybeIndexingOptions.get().prefixes().length > 0) {
+        String[] resolvedPrefixes = resolveAndNormalizePrefixArray(maybeIndexingOptions.get().prefixes());
+        params.prefix(resolvedPrefixes);
+        // The first prefix is canonical: it populates both the forward and reverse
+        // mappings (so updateTTLSettings / getKeyspaceForEntityClass stay consistent).
+        // Any additional prefixes only populate the forward map, never overwriting the
+        // canonical reverse entry for this entity class.
+        entityPrefix = resolvedPrefixes[0];
+        addKeySpaceMapping(resolvedPrefixes[0], cl);
+        for (int i = 1; i < resolvedPrefixes.length; i++) {
+          registerSecondaryKeyspace(resolvedPrefixes[i], cl);
+        }
+      } else if (maybeIndexingOptions.isPresent() && !maybeIndexingOptions.get().keyPrefix().isBlank()) {
         String defaultPrefix = maybeEntityPrefix.orElse(getEntityPrefix(cl));
-        entityPrefix = evaluateExpression(rawKeyPrefix, defaultPrefix);
+        entityPrefix = getKeyspace(evaluateExpression(maybeIndexingOptions.get().keyPrefix(), defaultPrefix));
+        params.prefix(entityPrefix);
+        addKeySpaceMapping(entityPrefix, cl);
       } else {
-        entityPrefix = maybeEntityPrefix.orElse(getEntityPrefix(cl));
+        entityPrefix = getKeyspace(maybeEntityPrefix.orElse(getEntityPrefix(cl)));
+        params.prefix(entityPrefix);
+        addKeySpaceMapping(entityPrefix, cl);
       }
-      entityPrefix = entityPrefix.endsWith(":") ? entityPrefix : entityPrefix + ":";
-      params.prefix(entityPrefix);
-      addKeySpaceMapping(entityPrefix, cl);
+
       updateTTLSettings(cl, entityPrefix, isDocument, document, allClassFields);
       List<SchemaField> fields = searchFields.stream().map(SearchField::getSchemaField).toList();
       entityClassToSchema.put(cl, searchFields);
       entityClassToIndexName.put(cl, indexName);
+
+      final String capturedPrefix = entityPrefix;
       if (maybeIndexingOptions.isPresent()) {
-        IndexingOptions options = maybeIndexingOptions.get();
-        switch (options.creationMode()) {
-          case SKIP_IF_EXIST:
-            opsForSearch.createIndex(params, fields);
-            logger.info(String.format("Created index %s...", indexName));
-            // Create sorted sets for lexicographic fields
-            createSortedSetsForLexicographicFields(cl, entityPrefix);
-            break;
-          case DROP_AND_RECREATE:
-            if (indexExistsFor(cl)) {
-              opsForSearch.dropIndex();
-              logger.info(String.format("Dropped index %s", indexName));
-            }
-            opsForSearch.createIndex(params, fields);
-            logger.info(String.format("Created index %s", indexName));
-            // Create sorted sets for lexicographic fields
-            createSortedSetsForLexicographicFields(cl, entityPrefix);
-            break;
-          case SKIP_ALWAYS:
-            // do nothing and like it!
-            logger.info(String.format("Skipped index creation for %s", cl.getSimpleName()));
-            break;
-        }
+        applyCreationMode(opsForSearch, params, fields, maybeIndexingOptions.get().creationMode(), indexName, cl,
+            () -> indexExistsFor(cl), () -> createSortedSetsForLexicographicFields(cl, capturedPrefix));
       } else {
         opsForSearch.createIndex(params, fields);
         logger.info(String.format("Created index %s", indexName));
       }
 
-      // Create sorted sets for lexicographic fields
+      // Always (re)create sorted sets for lexicographic fields at the end
       createSortedSetsForLexicographicFields(cl, entityPrefix);
     } catch (Exception e) {
       logger.warn(String.format(SKIPPING_INDEX_CREATION, indexName, e.getMessage()));
@@ -447,6 +534,27 @@ public class RediSearchIndexer {
     String key = getKeyspace(keyspace);
     keyspaceToEntityClass.put(key, entityClass);
     entityClassToKeySpace.put(entityClass, key);
+    indexedEntityClasses.add(entityClass);
+  }
+
+  /**
+   * Registers a secondary key prefix → entity class mapping without disturbing the
+   * entity's canonical keyspace. Unlike {@link #addKeySpaceMapping(String, Class)},
+   * this method only populates the forward {@code keyspace → entityClass} lookup via
+   * {@code putIfAbsent} and never overwrites {@code entityClassToKeySpace} (the canonical
+   * reverse mapping used by {@link #getKeyspaceForEntityClass(Class)} and friends).
+   * <p>
+   * Used both for repository-level indexes (where the entity already has its own
+   * canonical keyspace declared on {@code @Document}/{@code @RedisHash}) and for
+   * entity-level {@code @IndexingOptions.prefixes()} where the first element is the
+   * canonical prefix and any remaining elements are additional coverage.
+   *
+   * @param keyspace    the additional key prefix covered by an index
+   * @param entityClass the entity class the index is defined for
+   */
+  private void registerSecondaryKeyspace(String keyspace, Class<?> entityClass) {
+    String key = getKeyspace(keyspace);
+    keyspaceToEntityClass.putIfAbsent(key, entityClass);
     indexedEntityClasses.add(entityClass);
   }
 
@@ -1711,6 +1819,11 @@ public class RediSearchIndexer {
   }
 
   private FTCreateParams createIndexDefinition(Class<?> cl, IndexDataType idxType) {
+    return createIndexDefinition(cl, idxType, null);
+  }
+
+  private FTCreateParams createIndexDefinition(Class<?> cl, IndexDataType idxType,
+      IndexingOptions repoIndexingOptions) {
     FTCreateParams params = FTCreateParams.createParams();
     params.on(idxType);
 
@@ -1721,6 +1834,23 @@ public class RediSearchIndexer {
           .getValue()));
       Optional.ofNullable(document.languageField()).filter(ObjectUtils::isNotEmpty).ifPresent(params::languageField);
       params.score(document.score());
+    }
+
+    // Entity-level @IndexingOptions filter overrides @Document filter
+    IndexingOptions entityOptions = cl.getAnnotation(IndexingOptions.class);
+    if (entityOptions != null && !entityOptions.filter().isBlank()) {
+      String filter = evaluateExpression(entityOptions.filter(), "");
+      if (!filter.isBlank()) {
+        params.filter(filter);
+      }
+    }
+
+    // Repository-level @IndexingOptions filter overrides everything
+    if (repoIndexingOptions != null && !repoIndexingOptions.filter().isBlank()) {
+      String filter = evaluateExpression(repoIndexingOptions.filter(), "");
+      if (!filter.isBlank()) {
+        params.filter(filter);
+      }
     }
 
     return params;
@@ -1969,31 +2099,20 @@ public class RediSearchIndexer {
       logger.info(String.format("Found @%s annotated class: %s", idxType, entityClass.getName()));
 
       final List<java.lang.reflect.Field> allClassFields = getDeclaredFieldsTransitively(entityClass);
-
-      List<SearchField> searchFields = processIndexedFields(allClassFields, isDocument);
-
-      for (SearchField field : searchFields) {
-        registerAlias(entityClass, field.getField().getName(), field.getSchemaField().getFieldName().getAttribute());
-      }
-
+      List<SearchField> searchFields = prepareSearchFields(entityClass, isDocument, allClassFields);
       Optional<String> maybeScoreField = getDocumentScoreField(allClassFields, isDocument);
-      createIndexedFieldsForIdFields(entityClass, searchFields.stream().map(SearchField::getSchemaField).toList(),
-          isDocument).forEach(searchFields::add);
 
       SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
-
       FTCreateParams params = createIndexDefinition(entityClass, idxType);
 
       if (isDocument) {
         maybeScoreField.ifPresent(params::scoreField);
       }
 
-      // Ensure keyPrefix ends with colon
-      String entityPrefix = keyPrefix.endsWith(":") ? keyPrefix : keyPrefix + ":";
+      String entityPrefix = getKeyspace(keyPrefix);
       params.prefix(entityPrefix);
       addKeySpaceMapping(entityPrefix, entityClass);
 
-      // Update TTL settings
       Optional<Document> document = isDocument ?
           Optional.of(entityClass.getAnnotation(Document.class)) :
           Optional.empty();
@@ -2006,35 +2125,84 @@ public class RediSearchIndexer {
       // The global mappings should only be updated by the main createIndexFor(Class) method.
 
       if (maybeIndexingOptions.isPresent()) {
-        IndexingOptions options = maybeIndexingOptions.get();
-        switch (options.creationMode()) {
-          case SKIP_IF_EXIST:
-            opsForSearch.createIndex(params, fields);
-            logger.info(String.format("Created index %s...", indexName));
-            // Create sorted sets for lexicographic fields
-            createSortedSetsForLexicographicFields(entityClass, entityPrefix);
-            break;
-          case DROP_AND_RECREATE:
-            if (indexExistsFor(entityClass, indexName)) {
-              opsForSearch.dropIndex();
-              logger.info(String.format("Dropped index %s", indexName));
-            }
-            opsForSearch.createIndex(params, fields);
-            logger.info(String.format("Created index %s", indexName));
-            // Create sorted sets for lexicographic fields
-            createSortedSetsForLexicographicFields(entityClass, entityPrefix);
-            break;
-          case SKIP_ALWAYS:
-            // do nothing and like it!
-            logger.info(String.format("Skipped index creation for %s", entityClass.getSimpleName()));
-            break;
-        }
+        applyCreationMode(opsForSearch, params, fields, maybeIndexingOptions.get().creationMode(), indexName,
+            entityClass, () -> indexExistsFor(entityClass, indexName), () -> createSortedSetsForLexicographicFields(
+                entityClass, entityPrefix));
       } else {
         opsForSearch.createIndex(params, fields);
         logger.info(String.format("Created index %s", indexName));
-        // Create sorted sets for lexicographic fields
         createSortedSetsForLexicographicFields(entityClass, entityPrefix);
       }
+
+      return true;
+    } catch (Exception e) {
+      logger.warn(String.format(SKIPPING_INDEX_CREATION, indexName, e.getMessage()));
+      return false;
+    }
+  }
+
+  /**
+   * Creates an index for the specified entity class using repository-level {@link IndexingOptions}.
+   * This method reads all settings from the annotation, including index name, key prefix,
+   * filter expression, and creation mode.
+   *
+   * @param entityClass         the entity class
+   * @param repoIndexingOptions the {@link IndexingOptions} annotation from the repository interface
+   * @return true if successful, false otherwise
+   */
+  public boolean createIndexFor(Class<?> entityClass, IndexingOptions repoIndexingOptions) {
+    String defaultIndexName = entityClass.getName() + "Idx";
+    String indexName = repoIndexingOptions.indexName().isBlank() ?
+        defaultIndexName :
+        evaluateExpression(repoIndexingOptions.indexName(), defaultIndexName);
+
+    try {
+      Optional<IndexDataType> maybeType = determineIndexTarget(entityClass);
+      if (maybeType.isEmpty()) {
+        return false;
+      }
+      IndexDataType idxType = maybeType.get();
+      boolean isDocument = idxType == IndexDataType.JSON;
+
+      logger.info(String.format("Creating repo-level index %s for class: %s", indexName, entityClass.getName()));
+
+      final List<java.lang.reflect.Field> allClassFields = getDeclaredFieldsTransitively(entityClass);
+      List<SearchField> searchFields = prepareSearchFields(entityClass, isDocument, allClassFields);
+      Optional<String> maybeScoreField = getDocumentScoreField(allClassFields, isDocument);
+
+      SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
+      FTCreateParams params = createIndexDefinition(entityClass, idxType, repoIndexingOptions);
+
+      if (isDocument) {
+        maybeScoreField.ifPresent(params::scoreField);
+      }
+
+      // Resolve prefixes — also register each resolved prefix in the keyspace→entity map
+      // so lookups (e.g. getEntityClassForKeyspace) know about every prefix the repo-level
+      // index covers, not just the entity-level one.
+      if (repoIndexingOptions.prefixes().length > 0) {
+        String[] resolvedPrefixes = resolveAndNormalizePrefixArray(repoIndexingOptions.prefixes());
+        params.prefix(resolvedPrefixes);
+        for (String p : resolvedPrefixes) {
+          registerSecondaryKeyspace(p, entityClass);
+        }
+      } else {
+        String defaultPrefix = getKeyspaceForEntityClass(entityClass);
+        if (defaultPrefix == null || defaultPrefix.isBlank()) {
+          defaultPrefix = getKeyspace(getEntityPrefix(entityClass));
+        }
+        String entityPrefix = repoIndexingOptions.keyPrefix().isBlank() ?
+            defaultPrefix :
+            getKeyspace(evaluateExpression(repoIndexingOptions.keyPrefix(), defaultPrefix));
+        params.prefix(entityPrefix);
+        registerSecondaryKeyspace(entityPrefix, entityClass);
+      }
+
+      List<SchemaField> fields = searchFields.stream().map(SearchField::getSchemaField).toList();
+
+      applyCreationMode(opsForSearch, params, fields, repoIndexingOptions.creationMode(), indexName, entityClass,
+          () -> indexExistsFor(entityClass, indexName), () -> {
+          });
 
       return true;
     } catch (Exception e) {

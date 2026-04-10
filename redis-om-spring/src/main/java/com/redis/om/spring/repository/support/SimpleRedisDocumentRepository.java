@@ -136,12 +136,10 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
   private final RedisMappingContext mappingContext;
   private final EntityStream entityStream;
   private final LexicographicIndexer lexicographicIndexer;
+  private final String repositoryIndexName;
 
   /**
    * Constructs a new {@code SimpleRedisDocumentRepository} with the required dependencies.
-   * <p>
-   * This constructor initializes all necessary components for Redis document operations
-   * including JSON operations, search capabilities, entity mapping, and auditing.
    *
    * @param metadata       entity information containing type and ID metadata
    * @param operations     Spring Data Key-Value operations for basic CRUD
@@ -151,6 +149,34 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
    * @param gsonBuilder    Gson builder for JSON serialization customization
    * @param embedder       embedder for AI-powered vector generation (may be no-op)
    * @param properties     Redis OM configuration properties
+   */
+  public SimpleRedisDocumentRepository( //
+      EntityInformation<T, ID> metadata, //
+      KeyValueOperations operations, //
+      RedisModulesOperations<?> rmo, //
+      RediSearchIndexer indexer, //
+      RedisMappingContext mappingContext, //
+      GsonBuilder gsonBuilder, //
+      Embedder embedder, //
+      RedisOMProperties properties) {
+    this(metadata, operations, rmo, indexer, mappingContext, gsonBuilder, embedder, properties, null);
+  }
+
+  /**
+   * Constructs a new {@code SimpleRedisDocumentRepository} with the required dependencies.
+   * <p>
+   * This constructor initializes all necessary components for Redis document operations
+   * including JSON operations, search capabilities, entity mapping, and auditing.
+   *
+   * @param metadata            entity information containing type and ID metadata
+   * @param operations          Spring Data Key-Value operations for basic CRUD
+   * @param rmo                 Redis modules operations for JSON and search functionality
+   * @param indexer             RediSearch indexer for managing search indexes
+   * @param mappingContext      Redis mapping context for entity metadata
+   * @param gsonBuilder         Gson builder for JSON serialization customization
+   * @param embedder            embedder for AI-powered vector generation (may be no-op)
+   * @param properties          Redis OM configuration properties
+   * @param repositoryInterface the repository interface class (used for repo-level @IndexingOptions)
    */
   @SuppressWarnings(
     "unchecked"
@@ -165,7 +191,8 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
       RedisMappingContext mappingContext, //
       GsonBuilder gsonBuilder, //
       Embedder embedder, //
-      RedisOMProperties properties) {
+      RedisOMProperties properties, //
+      Class<?> repositoryInterface) {
     super(metadata, operations);
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
     this.metadata = metadata;
@@ -180,6 +207,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     this.properties = properties;
     this.entityStream = new EntityStreamImpl(modulesOperations, modulesOperations.gsonBuilder(), indexer);
     this.lexicographicIndexer = new LexicographicIndexer(modulesOperations.template(), indexer);
+    this.repositoryIndexName = indexer.resolveRepositoryIndexName(repositoryInterface);
   }
 
   @Override
@@ -673,9 +701,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     }
 
     if (indexer.indexDefinitionExistsFor(metadata.getJavaType())) {
-      String searchIndex = indexer.getIndexName(metadata.getJavaType());
-
-      SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
+      SearchOperations<String> searchOps = getSearchOps();
       Query query = new Query("*");
       query.limit(Math.toIntExact(pageable.getOffset()), pageable.getPageSize());
 
@@ -714,6 +740,27 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
     Pageable pageRequest = PageRequest.of(0, properties.getRepository().getQuery().getLimit(), sort);
 
     return findAll(pageRequest).toList();
+  }
+
+  @Override
+  public List<T> findAll() {
+    if (repositoryIndexName != null) {
+      // When using a repo-level custom index (e.g., with a filter), route through search
+      return findAll(PageRequest.of(0, properties.getRepository().getQuery().getLimit())).toList();
+    }
+    return super.findAll();
+  }
+
+  @Override
+  public long count() {
+    if (repositoryIndexName != null) {
+      SearchOperations<String> searchOps = getSearchOps();
+      Query query = new Query("*");
+      query.limit(0, 0);
+      SearchResult searchResult = searchOps.search(query);
+      return searchResult.getTotalResults();
+    }
+    return super.count();
   }
 
   @Override
@@ -993,6 +1040,9 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
    * @return configured {@link SearchOperations} for the entity type
    */
   private SearchOperations<String> getSearchOps() {
+    if (repositoryIndexName != null) {
+      return modulesOperations.opsForSearch(repositoryIndexName);
+    }
     String keyspace = indexer.getKeyspaceForEntityClass(metadata.getJavaType());
     String searchIndex = indexer.getIndexName(keyspace);
     return modulesOperations.opsForSearch(searchIndex);

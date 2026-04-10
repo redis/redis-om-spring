@@ -104,6 +104,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   private final RedisOMProperties properties;
 
   private final EntityStream entityStream;
+  private final String repositoryIndexName;
 
   /**
    * Constructs a new {@code SimpleRedisEnhancedRepository} with the specified dependencies.
@@ -114,6 +115,28 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
    * @param indexer    RediSearch indexer for managing search indexes
    * @param embedder   embedder for generating vector embeddings
    * @param properties configuration properties for Redis OM
+   */
+  public SimpleRedisEnhancedRepository( //
+      EntityInformation<T, ID> metadata, //
+      KeyValueOperations operations, //
+      RedisModulesOperations<?> rmo, //
+      RediSearchIndexer indexer, //
+      Embedder embedder, //
+      RedisOMProperties properties //
+  ) {
+    this(metadata, operations, rmo, indexer, embedder, properties, null);
+  }
+
+  /**
+   * Constructs a new {@code SimpleRedisEnhancedRepository} with the specified dependencies.
+   *
+   * @param metadata            metadata about the entity type
+   * @param operations          key-value operations for basic Redis operations
+   * @param rmo                 Redis modules operations for advanced features
+   * @param indexer             RediSearch indexer for managing search indexes
+   * @param embedder            embedder for generating vector embeddings
+   * @param properties          configuration properties for Redis OM
+   * @param repositoryInterface the repository interface class (used for repo-level @IndexingOptions)
    */
   @SuppressWarnings(
     "unchecked"
@@ -126,7 +149,8 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
       ) RedisModulesOperations<?> rmo, //
       RediSearchIndexer indexer, //
       Embedder embedder, //
-      RedisOMProperties properties //
+      RedisOMProperties properties, //
+      Class<?> repositoryInterface //
   ) {
     super(metadata, operations);
     this.modulesOperations = (RedisModulesOperations<String>) rmo;
@@ -141,6 +165,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     this.properties = properties;
     this.lexicographicIndexer = new LexicographicIndexer(modulesOperations.template(), indexer);
     this.entityStream = new EntityStreamImpl(modulesOperations, modulesOperations.gsonBuilder(), indexer);
+    this.repositoryIndexName = indexer.resolveRepositoryIndexName(repositoryInterface);
   }
 
   @SuppressWarnings(
@@ -148,10 +173,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   )
   @Override
   public Iterable<ID> getIds() {
-    String keyspace = indexer.getKeyspaceForEntityClass(metadata.getJavaType());
-    String searchIndex = indexer.getIndexName(keyspace);
-
-    SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
+    SearchOperations<String> searchOps = getSearchOps();
     Optional<Field> maybeIdField = ObjectUtils.getIdFieldForEntityClass(metadata.getJavaType());
     String idField = maybeIdField.map(Field::getName).orElse("id");
     Query query = new Query("*");
@@ -214,7 +236,23 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
    * @see org.springframework.data.repository.CrudRepository#findAll() */
   @Override
   public List<T> findAll() {
+    if (repositoryIndexName != null) {
+      // When using a repo-level custom index (e.g., with a filter), route through search
+      return findAll(PageRequest.of(0, properties.getRepository().getQuery().getLimit())).toList();
+    }
     return IterableConverter.toList(operations.findAll(metadata.getJavaType()));
+  }
+
+  @Override
+  public long count() {
+    if (repositoryIndexName != null) {
+      SearchOperations<String> searchOps = getSearchOps();
+      Query query = new Query("*");
+      query.limit(0, 0);
+      SearchResult searchResult = searchOps.search(query);
+      return searchResult.getTotalResults();
+    }
+    return super.count();
   }
 
   // -------------------------------------------------------------------------
@@ -251,8 +289,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     }
 
     if (indexer.indexDefinitionExistsFor(metadata.getJavaType())) {
-      String searchIndex = indexer.getIndexName(metadata.getJavaType());
-      SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
+      SearchOperations<String> searchOps = getSearchOps();
       Query query = new Query("*");
       query.limit(Math.toIntExact(pageable.getOffset()), pageable.getPageSize());
 
@@ -673,6 +710,9 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
   }
 
   private SearchOperations<String> getSearchOps() {
+    if (repositoryIndexName != null) {
+      return modulesOperations.opsForSearch(repositoryIndexName);
+    }
     String keyspace = indexer.getKeyspaceForEntityClass(metadata.getJavaType());
     String searchIndex = indexer.getIndexName(keyspace);
     return modulesOperations.opsForSearch(searchIndex);
