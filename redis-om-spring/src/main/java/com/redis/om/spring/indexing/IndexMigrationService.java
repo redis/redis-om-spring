@@ -367,11 +367,15 @@ public class IndexMigrationService {
   private String getBaseIndexName(Class<?> entityClass) {
     String currentName = indexer.getIndexName(entityClass);
     if (currentName == null) {
-      // Generate default name from class name
       return entityClass.getSimpleName().toLowerCase() + "_idx";
     }
-    // Remove version suffix if present
-    return currentName.replaceAll("_v\\d+(?:_idx)?$", "");
+
+    Matcher matcher = VERSION_PATTERN.matcher(currentName);
+    if (matcher.find()) {
+      return currentName.substring(0, matcher.start());
+    }
+
+    return currentName;
   }
 
   private String getKeyPrefix(Class<?> entityClass) {
