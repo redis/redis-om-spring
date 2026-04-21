@@ -367,11 +367,14 @@ public class IndexMigrationService {
   private String getBaseIndexName(Class<?> entityClass) {
     String currentName = indexer.getIndexName(entityClass);
     if (currentName == null) {
+      // Generate default name from class simple name when no index exists
       return entityClass.getSimpleName().toLowerCase() + "_idx";
     }
 
+    // Remove version suffix (e.g., "_v1_idx" or "_v1") from the current index name if present
     Matcher matcher = VERSION_PATTERN.matcher(currentName);
     if (matcher.find()) {
+      // The base index name is the part before the version suffix
       return currentName.substring(0, matcher.start());
     }
 
