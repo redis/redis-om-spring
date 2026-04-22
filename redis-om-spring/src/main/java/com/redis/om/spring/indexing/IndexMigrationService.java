@@ -371,7 +371,7 @@ public class IndexMigrationService {
       return entityClass.getSimpleName().toLowerCase() + "_idx";
     }
     // Remove version suffix if present
-    return currentName.replaceAll("_v\\d+(?:_idx)?$", "");
+    return VERSION_PATTERN.matcher(currentName).replaceAll("");
   }
 
   private String getKeyPrefix(Class<?> entityClass) {
