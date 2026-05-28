@@ -96,6 +96,45 @@ compileTestJava {
 	options.generatedSourceOutputDirectory = file("${buildDir}/generated/sources/annotationProcessor/java/test")
 }
 
+// Test-shard definitions — used by CI to run tests in parallel.
+// Each shard runs on its own runner with its own Testcontainers Redis instance,
+// so there are no shared-state conflicts.
+//
+// Usage:  ./gradlew :tests:test -PtestShard=document   (or hash | stream | other)
+// Omit -PtestShard to run the full suite (local dev / single-job CI).
+ext.testShards = [
+    document: [
+        'com.redis.om.spring.annotations.document.**',
+    ],
+    hash: [
+        'com.redis.om.spring.annotations.hash.**',
+    ],
+    stream: [
+        'com.redis.om.spring.search.stream.**',
+    ],
+    other: [
+        'com.redis.om.spring.annotations.autocompletable.**',
+        'com.redis.om.spring.annotations.bloom.**',
+        'com.redis.om.spring.annotations.countmin.**',
+        'com.redis.om.spring.annotations.cuckoo.**',
+        'com.redis.om.spring.client.**',
+        'com.redis.om.spring.fixtures.**',
+        'com.redis.om.spring.id.**',
+        'com.redis.om.spring.indexing.**',
+        'com.redis.om.spring.issues.**',
+        'com.redis.om.spring.mapping.**',
+        'com.redis.om.spring.metamodel.**',
+        'com.redis.om.spring.ops.**',
+        'com.redis.om.spring.repository.**',
+        'com.redis.om.spring.tuple.**',
+        'com.redis.om.spring.util.**',
+        // Root-level test classes not covered by any sub-package above
+        'com.redis.om.spring.LargeNumberOfKeysDocsTest',
+        'com.redis.om.spring.RedisEnhancedKeyValueAdapterTest',
+        'com.redis.om.spring.RedisJSONKeyValueAdapterTest',
+    ],
+]
+
 test {
 	useJUnitPlatform()
 	maxHeapSize = "1g"
@@ -103,5 +142,17 @@ test {
 	testLogging {
 		events "passed", "skipped", "failed"
 		exceptionFormat = 'full'
+	}
+
+	// Apply shard filter when -PtestShard=<name> is supplied.
+	if (project.hasProperty('testShard')) {
+		def shard = project.property('testShard') as String
+		def patterns = testShards[shard]
+		if (patterns == null) {
+			throw new GradleException("Unknown testShard '${shard}'. Valid values: ${testShards.keySet().join(', ')}")
+		}
+		filter {
+			patterns.each { includeTestsMatching it }
+		}
 	}
 }

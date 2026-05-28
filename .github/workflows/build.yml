@@ -4,10 +4,34 @@ on:
   pull_request:
 
 jobs:
-  build:
-    name: Build
-    runs-on: ubuntu-latest
 
+  # ── 1. Format check (fast, ~30s, no Docker needed) ──────────────────────────
+  style:
+    name: Code Style
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'temurin'
+
+      - name: Cache Gradle wrapper
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradlew-${{ hashFiles('**/gradlew') }}
+          restore-keys: ${{ runner.os }}-gradlew-
+
+      - name: Spotless check
+        run: ./gradlew spotlessCheck -S
+
+  # ── 2. Compile (fast, ~1–2 min, no tests, no Docker) ────────────────────────
+  compile:
+    name: Compile
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -32,18 +56,48 @@ jobs:
           key: ${{ runner.os }}-gradlew-${{ hashFiles('**/gradlew') }}
           restore-keys: ${{ runner.os }}-gradlew-
 
-      - name: Code Style Check
-        run: |
-          ./gradlew spotlessCheck -S
+      - name: Compile (no tests)
+        run: ./gradlew assemble -S
 
-      - name: Build
-        run: |
-          ./gradlew build aggregateTestReport -S
+  # ── 3. Integration tests — 4 shards run in parallel on separate runners ───────
+  test:
+    name: Tests (${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    needs: compile          # only run if compile passes
+    strategy:
+      matrix:
+        shard: [document, hash, stream, other]
+      fail-fast: false      # let all shards finish even if one fails
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'temurin'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}-${{ hashFiles('**/gradle.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Cache Gradle wrapper
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradlew-${{ hashFiles('**/gradlew') }}
+          restore-keys: ${{ runner.os }}-gradlew-
+
+      - name: Run tests (${{ matrix.shard }})
+        run: ./gradlew :tests:test aggregateTestReport -PtestShard=${{ matrix.shard }} -S
 
       - name: Upload test reports
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-reports
-          path: |
-            build/reports/tests/aggregate/
+          name: test-reports-${{ matrix.shard }}
+          path: build/reports/tests/aggregate/
