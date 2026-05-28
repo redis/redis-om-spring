@@ -6,6 +6,7 @@ import java.time.Duration;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -56,6 +57,7 @@ public class SentinelConfig {
    * @return a configured Jedis connection factory for sentinel
    */
   @Bean
+  @ConditionalOnMissingBean(JedisConnectionFactory.class)
   public JedisConnectionFactory jedisConnectionFactory(Environment env) {
     String master = env.getProperty("spring.data.redis.sentinel.master");
     if (master == null || master.isBlank()) {

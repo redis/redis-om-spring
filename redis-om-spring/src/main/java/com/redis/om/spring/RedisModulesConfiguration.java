@@ -24,6 +24,8 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
 import org.springframework.data.geo.Point;
+import org.springframework.data.redis.connection.RedisNode;
+import org.springframework.data.redis.connection.RedisSentinelConfiguration;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
@@ -148,13 +150,14 @@ public class RedisModulesConfiguration {
    * It will be created if no JedisConnectionFactory bean exists, ensuring
    * Jedis is used instead of Lettuce (which is Spring Boot 4.0's default).
    * <p>
-   * Connection settings are read from standard Spring Data Redis properties:
+   * The deployment mode is determined automatically from standard Spring Data Redis properties:
    * <ul>
-   * <li>{@code spring.data.redis.host} - Redis server host (default: localhost)</li>
-   * <li>{@code spring.data.redis.port} - Redis server port (default: 6379)</li>
-   * <li>{@code spring.data.redis.username} - Redis username for ACL authentication (optional)</li>
-   * <li>{@code spring.data.redis.password} - Redis password (optional)</li>
-   * <li>{@code spring.data.redis.database} - Redis database index (default: 0)</li>
+   * <li>If {@code spring.data.redis.sentinel.master} is set, a Sentinel-aware factory is
+   *   created using {@code spring.data.redis.sentinel.nodes}, {@code spring.data.redis.sentinel.password},
+   *   and {@code spring.data.redis.sentinel.username}.</li>
+   * <li>Otherwise, a standalone factory is created using {@code spring.data.redis.host} (default: localhost),
+   *   {@code spring.data.redis.port} (default: 6379), {@code spring.data.redis.username},
+   *   {@code spring.data.redis.password}, and {@code spring.data.redis.database} (default: 0).</li>
    * </ul>
    *
    * @param environment the Spring environment for reading configuration properties
@@ -168,6 +171,14 @@ public class RedisModulesConfiguration {
     JedisConnectionFactory.class
   )
   public JedisConnectionFactory jedisConnectionFactory(Environment environment) {
+    String sentinelMaster = environment.getProperty("spring.data.redis.sentinel.master");
+    if (StringUtils.hasText(sentinelMaster)) {
+      return createSentinelConnectionFactory(environment, sentinelMaster);
+    }
+    return createStandaloneConnectionFactory(environment);
+  }
+
+  private JedisConnectionFactory createStandaloneConnectionFactory(Environment environment) {
     String host = environment.getProperty("spring.data.redis.host", "localhost");
     int port = environment.getProperty("spring.data.redis.port", Integer.class, 6379);
     String username = environment.getProperty("spring.data.redis.username");
@@ -184,8 +195,43 @@ public class RedisModulesConfiguration {
     }
 
     JedisClientConfiguration clientConfig = JedisClientConfiguration.builder().build();
-
     return new JedisConnectionFactory(redisConfig, clientConfig);
+  }
+
+  private JedisConnectionFactory createSentinelConnectionFactory(Environment environment, String master) {
+    String nodes = environment.getProperty("spring.data.redis.sentinel.nodes", "");
+    String dataPassword = environment.getProperty("spring.data.redis.password");
+    String dataUsername = environment.getProperty("spring.data.redis.username");
+    String sentinelPassword = environment.getProperty("spring.data.redis.sentinel.password");
+    String sentinelUsername = environment.getProperty("spring.data.redis.sentinel.username");
+    int database = environment.getProperty("spring.data.redis.database", Integer.class, 0);
+
+    RedisSentinelConfiguration sentinelConfig = new RedisSentinelConfiguration().master(master);
+    sentinelConfig.setDatabase(database);
+
+    Set<RedisNode> sentinelNodes = new HashSet<>();
+    for (String node : StringUtils.commaDelimitedListToStringArray(nodes)) {
+      if (StringUtils.hasText(node)) {
+        sentinelNodes.add(RedisNode.fromString(node.trim()));
+      }
+    }
+    sentinelConfig.setSentinels(sentinelNodes);
+
+    if (StringUtils.hasText(dataPassword)) {
+      sentinelConfig.setPassword(dataPassword);
+    }
+    if (StringUtils.hasText(dataUsername)) {
+      sentinelConfig.setUsername(dataUsername);
+    }
+    if (StringUtils.hasText(sentinelPassword)) {
+      sentinelConfig.setSentinelPassword(sentinelPassword);
+    }
+    if (StringUtils.hasText(sentinelUsername)) {
+      sentinelConfig.setSentinelUsername(sentinelUsername);
+    }
+
+    JedisClientConfiguration clientConfig = JedisClientConfiguration.builder().usePooling().build();
+    return new JedisConnectionFactory(sentinelConfig, clientConfig);
   }
 
   /**
