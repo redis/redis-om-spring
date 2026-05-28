@@ -357,18 +357,17 @@ public class RedisModulesConfiguration {
   }
 
   /**
-   * Provides a default implementation of the CommandListener bean.
+   * Provides a default no-operation implementation of the CommandListener bean.
    * <p>
-   * This method creates a no-operation (NoOp) implementation of the CommandListener interface.
-   * It is used as a fallback when no other CommandListener bean is defined in the application context.
-   * <p>
-   * The {@code @Fallback} annotation ensures that this bean is only used when no other
-   * CommandListener bean is available, allowing developers to override it with a custom implementation if needed.
+   * Only created when no other {@link CommandListener} bean is present in the application context,
+   * allowing applications to supply a custom implementation simply by declaring their own bean.
    *
    * @return a NoOpCommandListener instance, which performs no operations.
    */
   @Bean
-  @Fallback
+  @ConditionalOnMissingBean(
+    CommandListener.class
+  )
   public CommandListener commandListener() {
     return new NoOpCommandListener();
   }
