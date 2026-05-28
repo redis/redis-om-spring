@@ -123,19 +123,30 @@ class RedisDocumentSearchTest extends AbstractBaseDocumentTest {
    * @Aggregation(load = {"$.tag[1]", "AS", "tag2"})
    * }</pre>
    * <pre>
-   * > FT.AGGREGATE idx * LOAD 3 $.tag[1] AS tag2 1) (integer) 1
+   * > FT.AGGREGATE idx * LOAD 3 $.tag[1] AS tag2
+   * 1) (integer) 2
    * 2) 1) "tag2"
-   * 2) "article"
+   *    2) "article"
+   * 3) 1) "tag2"
+   *    2) "articulo"
    * </pre>
+   * The wildcard {@code *} matches all documents in the index (both doc1 and
+   * doc2 are loaded), so {@code getTotalResults()} returns 2 — one row per
+   * document. Redis 8 / modern RediSearch correctly reports the number of
+   * result rows here, unlike older Redis Stack releases.
    */
   @Test
   void testAggregationAnnotation01() {
     AggregationResult result = repository.getSecondTagWithAggregation();
-    assertEquals(1, result.getTotalResults());
+    // Both documents match the wildcard, so we get one row per document.
+    assertEquals(2, result.getTotalResults());
     Row row = result.getRow(0);
 
     assertAll( //
-        () -> assertThat(row).isNotNull(), () -> assertThat(row.getString("tag2")).isIn("news", "article"));
+        () -> assertThat(row).isNotNull(),
+        // doc1.tag[1] ∈ {"news","article"}, doc2.tag[1] ∈ {"noticias","articulo"} —
+        // either document may appear first depending on Redis internal ordering.
+        () -> assertThat(row.getString("tag2")).isIn("news", "article", "noticias", "articulo"));
   }
 
   @Test
