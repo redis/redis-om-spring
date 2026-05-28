@@ -153,11 +153,11 @@ public class RedisModulesConfiguration {
    * The deployment mode is determined automatically from standard Spring Data Redis properties:
    * <ul>
    * <li>If {@code spring.data.redis.sentinel.master} is set, a Sentinel-aware factory is
-   *   created using {@code spring.data.redis.sentinel.nodes}, {@code spring.data.redis.sentinel.password},
-   *   and {@code spring.data.redis.sentinel.username}.</li>
+   * created using {@code spring.data.redis.sentinel.nodes}, {@code spring.data.redis.sentinel.password},
+   * and {@code spring.data.redis.sentinel.username}.</li>
    * <li>Otherwise, a standalone factory is created using {@code spring.data.redis.host} (default: localhost),
-   *   {@code spring.data.redis.port} (default: 6379), {@code spring.data.redis.username},
-   *   {@code spring.data.redis.password}, and {@code spring.data.redis.database} (default: 0).</li>
+   * {@code spring.data.redis.port} (default: 6379), {@code spring.data.redis.username},
+   * {@code spring.data.redis.password}, and {@code spring.data.redis.database} (default: 0).</li>
    * </ul>
    *
    * @param environment the Spring environment for reading configuration properties

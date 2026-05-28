@@ -57,7 +57,9 @@ public class SentinelConfig {
    * @return a configured Jedis connection factory for sentinel
    */
   @Bean
-  @ConditionalOnMissingBean(JedisConnectionFactory.class)
+  @ConditionalOnMissingBean(
+    JedisConnectionFactory.class
+  )
   public JedisConnectionFactory jedisConnectionFactory(Environment env) {
     String master = env.getProperty("spring.data.redis.sentinel.master");
     if (master == null || master.isBlank()) {
