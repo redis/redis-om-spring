@@ -128,6 +128,13 @@ ext.testShards = [
 		'com.redis.om.spring.repository.**',
 		'com.redis.om.spring.tuple.**',
 		'com.redis.om.spring.util.**',
+		// Root-level classes in com.redis.om.spring.annotations (not in a sub-package)
+		'com.redis.om.spring.annotations.LexicographicDebugTest',
+		'com.redis.om.spring.annotations.LexicographicIndexTest',
+		'com.redis.om.spring.annotations.LexicographicLessThanDebugTest',
+		'com.redis.om.spring.annotations.LexicographicMinimalTest',
+		'com.redis.om.spring.annotations.LexicographicQueryDebugTest',
+		'com.redis.om.spring.annotations.NestedArrayIndexingTest',
 		// Root-level test classes not covered by any sub-package above
 		'com.redis.om.spring.LargeNumberOfKeysDocsTest',
 		'com.redis.om.spring.RedisEnhancedKeyValueAdapterTest',
