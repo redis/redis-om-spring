@@ -22,7 +22,7 @@ $ARGUMENTS
 
 ### 1. Locate the active spec
 
-Derive the spec folder from the current branch name by stripping the `feat/` or `fix/` prefix:
+Derive the spec folder by stripping everything up to and including the first `/` from the branch name:
 
 ```bash
 git rev-parse --abbrev-ref HEAD   # e.g. feat/730-sentinel-connection → specs/730-sentinel-connection/

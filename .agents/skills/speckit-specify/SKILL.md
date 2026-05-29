@@ -34,19 +34,20 @@ whatever identifier is available:
 ### 2. Choose a branch name
 
 ```
-feat/<slug>   or   fix/<slug>
+<type>/<slug>
 ```
 
+- `<type>` is a short prefix describing the nature of the change: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, or similar
 - **Must be under 40 characters total**
 - Show the proposed branch name alongside the slug for confirmation
 
 ### 3. Create the spec folder and branch
 
-Use the prefix confirmed in step 2 (`feat` or `fix`):
+Use the type and slug confirmed in step 2:
 
 ```bash
 mkdir -p specs/<slug>
-git checkout -b feat/<slug>   # or fix/<slug> for bug fixes
+git checkout -b <type>/<slug>
 ```
 
 ### 4. Write `specs/<slug>/spec.md`
@@ -79,6 +80,6 @@ If `[NEEDS CLARIFICATION]` markers remain, present them as numbered questions wi
 
 Output:
 - Spec path: `specs/<slug>/spec.md`
-- Branch: `feat/<slug>` or `fix/<slug>` (whichever was created)
+- Branch: `<type>/<slug>` (whichever was created)
 - Any open questions remaining
 - Next step: run `/speckit-plan`

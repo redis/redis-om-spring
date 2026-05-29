@@ -97,14 +97,17 @@ Every new feature requires three approved artifacts before any implementation co
 
 **Do not write implementation code until all three are approved.**
 
-Branch names must be **under 40 characters**, prefixed with `feat/` or `fix/`, followed by the slug:
+Branch names must be **under 40 characters**: a short type prefix, a `/`, then the slug.
 
 ```
-feat/730-sentinel-connection        ✓  GH issue
-feat/RED-1234-sentinel-connection   ✓  Jira ticket
-fix/sentinel-connection             ✓  no tracker
+feat/730-sentinel-connection        ✓
+fix/RED-1234-sentinel-connection    ✓
+docs/update-vector-search-guide     ✓
+chore/upgrade-jedis                 ✓
 feat/add-a-very-long-description    ✗  too long
 ```
+
+Common prefixes: `feat/`, `fix/`, `docs/`, `chore/`, `refactor/`, `test/`.
 
 ## Working Rules
 

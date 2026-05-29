@@ -20,8 +20,9 @@ The slug is derived from whatever identifier is available:
 | Jira ticket exists | `RED-1234-short-name` | `specs/RED-1234-sentinel-connection/` |
 | Neither | `short-name` | `specs/sentinel-connection/` |
 
-The branch name is always `feat/<slug>` or `fix/<slug>`, so the spec folder can
-always be found by stripping the `feat/` or `fix/` prefix from the branch name.
+The branch name is `<type>/<slug>` (e.g. `feat/`, `fix/`, `docs/`, `chore/`), so
+the spec folder can always be found by stripping everything up to and including
+the first `/` from the branch name.
 
 ## Starting a New Spec
 
