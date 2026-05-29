@@ -212,7 +212,7 @@ public class RedisModulesConfiguration {
     Set<RedisNode> sentinelNodes = new HashSet<>();
     for (String node : StringUtils.commaDelimitedListToStringArray(nodes)) {
       if (StringUtils.hasText(node)) {
-        sentinelNodes.add(RedisNode.fromString(node.trim()));
+        sentinelNodes.add(RedisNode.fromString(node.trim(), RedisNode.DEFAULT_SENTINEL_PORT));
       }
     }
     sentinelConfig.setSentinels(sentinelNodes);
