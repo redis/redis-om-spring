@@ -97,7 +97,7 @@ Every new feature requires three approved artifacts before any implementation co
 
 **Do not write implementation code until all three are approved.**
 
-Branch names must be **under 40 characters**: a short type prefix, a `/`, then the slug.
+Branch names must be **under 50 characters**: a short type prefix, a `/`, then the slug.
 
 ```
 feat/730-sentinel-connection        ✓

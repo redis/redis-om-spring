@@ -38,7 +38,7 @@ whatever identifier is available:
 ```
 
 - `<type>` is a short prefix describing the nature of the change: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, or similar
-- **Must be under 40 characters total**
+- **Must be under 50 characters total**
 - Show the proposed branch name alongside the slug for confirmation
 
 ### 3. Create the spec folder and branch
