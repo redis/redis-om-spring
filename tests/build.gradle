@@ -102,7 +102,12 @@ compileTestJava {
 //
 // Usage:  ./gradlew :tests:test -PtestShard=document   (or hash | stream | other)
 // Omit -PtestShard to run the full suite (local dev / single-job CI).
-ext.testShards = [
+//
+// The 'other' shard is a catch-all: it includes everything under
+// com.redis.om.spring.** and excludes the patterns claimed by the named shards.
+// This means any new test package is automatically picked up without having to
+// add it here explicitly.
+ext.namedShards = [
 	document: [
 		'com.redis.om.spring.annotations.document.**',
 	],
@@ -111,34 +116,6 @@ ext.testShards = [
 	],
 	stream: [
 		'com.redis.om.spring.search.stream.**',
-	],
-	other: [
-		'com.redis.om.spring.annotations.autocompletable.**',
-		'com.redis.om.spring.annotations.bloom.**',
-		'com.redis.om.spring.annotations.countmin.**',
-		'com.redis.om.spring.annotations.cuckoo.**',
-		'com.redis.om.spring.client.**',
-		'com.redis.om.spring.fixtures.**',
-		'com.redis.om.spring.id.**',
-		'com.redis.om.spring.indexing.**',
-		'com.redis.om.spring.issues.**',
-		'com.redis.om.spring.mapping.**',
-		'com.redis.om.spring.metamodel.**',
-		'com.redis.om.spring.ops.**',
-		'com.redis.om.spring.repository.**',
-		'com.redis.om.spring.tuple.**',
-		'com.redis.om.spring.util.**',
-		// Root-level classes in com.redis.om.spring.annotations (not in a sub-package)
-		'com.redis.om.spring.annotations.LexicographicDebugTest',
-		'com.redis.om.spring.annotations.LexicographicIndexTest',
-		'com.redis.om.spring.annotations.LexicographicLessThanDebugTest',
-		'com.redis.om.spring.annotations.LexicographicMinimalTest',
-		'com.redis.om.spring.annotations.LexicographicQueryDebugTest',
-		'com.redis.om.spring.annotations.NestedArrayIndexingTest',
-		// Root-level test classes not covered by any sub-package above
-		'com.redis.om.spring.LargeNumberOfKeysDocsTest',
-		'com.redis.om.spring.RedisEnhancedKeyValueAdapterTest',
-		'com.redis.om.spring.RedisJSONKeyValueAdapterTest',
 	],
 ]
 
@@ -154,12 +131,19 @@ test {
 	// Apply shard filter when -PtestShard=<name> is supplied.
 	if (project.hasProperty('testShard')) {
 		def shard = project.property('testShard') as String
-		def patterns = testShards[shard]
-		if (patterns == null) {
-			throw new GradleException("Unknown testShard '${shard}'. Valid values: ${testShards.keySet().join(', ')}")
+		def validShards = namedShards.keySet() + ['other']
+		if (!validShards.contains(shard)) {
+			throw new GradleException("Unknown testShard '${shard}'. Valid values: ${validShards.join(', ')}")
 		}
 		filter {
-			patterns.each { includeTestsMatching it }
+			if (shard == 'other') {
+				// Catch-all: everything not claimed by a named shard.
+				// New test packages are automatically included here.
+				includeTestsMatching 'com.redis.om.spring.**'
+				namedShards.values().flatten().each { excludeTestsMatching it }
+			} else {
+				namedShards[shard].each { includeTestsMatching it }
+			}
 		}
 	}
 }
