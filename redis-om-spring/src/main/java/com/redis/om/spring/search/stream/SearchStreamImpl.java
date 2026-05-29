@@ -764,6 +764,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       returnFields.add(idField.getName());
 
       query.returnFields(returnFields.toArray(String[]::new));
+    } else if (isDocument) {
+      query.returnFields("$");
     }
 
     return query;
