@@ -53,7 +53,7 @@ Plain Redis OSS without modules does not support the full feature set.
 
 Read in this order:
 
-1. The active feature spec in `specs/<NNN-feature-name>/`
+1. The active feature spec in `specs/<<slug>>/`
 2. `README.md` — user-facing project overview and public API examples
 3. `docs/content/modules/ROOT/pages/` — Antora documentation site source
 4. This file
@@ -91,18 +91,19 @@ Key config files: `gradle.properties`, `build.gradle`, `gradle/build-conventions
 
 Every new feature requires three approved artifacts before any implementation code is written:
 
-1. `specs/NNN-feature-name/spec.md` — approved requirements and acceptance scenarios
-2. `specs/NNN-feature-name/plan.md` — approved implementation design
-3. `specs/NNN-feature-name/tasks.md` — approved execution checklist
+1. `specs/<slug>/spec.md` — approved requirements and acceptance scenarios
+2. `specs/<slug>/plan.md` — approved implementation design
+3. `specs/<slug>/tasks.md` — approved execution checklist
 
 **Do not write implementation code until all three are approved.**
 
-Branch names must be **under 40 characters**, lowercase kebab-case, prefixed with `feat/` or `fix/`:
+Branch names must be **under 40 characters**, prefixed with `feat/` or `fix/`, followed by the slug:
 
 ```
-feat/730-sentinel-connection     ✓  (31 chars)
-fix/vector-index-migration       ✓  (30 chars)
-feat/add-a-very-long-description-to-the-branch-name  ✗  (too long)
+feat/730-sentinel-connection        ✓  GH issue
+feat/RED-1234-sentinel-connection   ✓  Jira ticket
+fix/sentinel-connection             ✓  no tracker
+feat/add-a-very-long-description    ✗  too long
 ```
 
 ## Working Rules
@@ -212,11 +213,13 @@ Releasing is operator-driven via `workflow_dispatch` — do not bump `gradle.pro
 Use `specs/` for feature work. Each feature gets its own numbered folder:
 
 ```text
-specs/001-feature-name/
-├── spec.md     ← requirements and scenarios (source of truth for behavior)
-├── plan.md     ← implementation design
-└── tasks.md    ← execution checklist
+specs/730-sentinel-connection/       # GH issue slug
+specs/RED-1234-sentinel-connection/  # Jira ticket slug
+specs/sentinel-connection/           # no tracker slug
+└── each folder contains: spec.md, plan.md, tasks.md
 ```
+
+The slug is the branch name minus the `feat/` or `fix/` prefix.
 
 See [specs/README.md](specs/README.md) for the full convention.
 
@@ -231,4 +234,4 @@ See [specs/README.md](specs/README.md) for the full convention.
 ## Recent Changes
 
 <!-- Append a one-liner per merged spec as features land -->
-<!-- Format: - NNN-feature-name: what shipped -->
+<!-- Format: - <slug>: what shipped -->

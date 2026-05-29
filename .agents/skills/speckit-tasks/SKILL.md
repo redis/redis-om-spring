@@ -1,7 +1,7 @@
 ---
 name: speckit-tasks
 description: Break an approved implementation plan into an ordered task checklist.
-  Use after plan.md is approved to create specs/NNN-feature-name/tasks.md.
+  Use after plan.md is approved to create specs/<slug>/tasks.md.
   Each task must be specific enough to implement without additional context.
 ---
 
@@ -26,7 +26,7 @@ Stop and say which artifact is missing or not yet approved if either condition f
 
 Read both `spec.md` and `plan.md` from the active spec folder.
 
-### 2. Write `specs/NNN-feature-name/tasks.md`
+### 2. Write `specs/<slug>/tasks.md`
 
 Use the structure from `specs/SPEC_TEMPLATE/tasks.md`. Organize tasks into phases:
 
@@ -75,6 +75,6 @@ Rules:
 ### 4. Report completion
 
 Output:
-- Tasks path: `specs/NNN-feature-name/tasks.md`
+- Tasks path: `specs/<slug>/tasks.md`
 - Total task count and breakdown by phase
 - Next step: get tasks approved, then run `/speckit-implement`

@@ -1,7 +1,7 @@
 ---
 name: speckit-specify
 description: Create a new feature spec. Use when starting a new feature to generate
-  specs/NNN-feature-name/spec.md with requirements, acceptance scenarios, and scope
+  specs/<slug>/spec.md with requirements, acceptance scenarios, and scope
   boundaries. Follows the spec-driven workflow required by this repo.
 ---
 
@@ -17,26 +17,37 @@ Given the feature description above, do the following:
 
 ## Steps
 
-### 1. Determine the spec folder number
+### 1. Choose a slug
 
-List `specs/` and find the highest `NNN-` prefix. Use the next number (zero-padded to three digits).
+The slug becomes both the branch suffix and the spec folder name. Derive it from
+whatever identifier is available:
+
+| Situation | Slug format | Example |
+|---|---|---|
+| GitHub issue exists | `ISSUE-short-name` | `730-sentinel-connection` |
+| Jira ticket exists | `RED-1234-short-name` | `RED-1234-sentinel-connection` |
+| Neither | `short-name` | `sentinel-connection` |
+
+- Use lowercase kebab-case, 2–4 words for the short-name part
+- Show the proposed slug and ask the user to confirm before creating anything
 
 ### 2. Choose a branch name
 
-- Format: `feat/NNN-short-description` or `fix/NNN-short-description`
+```
+feat/<slug>   or   fix/<slug>
+```
+
 - **Must be under 40 characters total**
-- Use lowercase kebab-case for the description (2–4 words)
-- If a GitHub issue number is given, prefer `feat/ISSUE-short-name`
-- Show the proposed branch name and ask the user to confirm before creating it
+- Show the proposed branch name alongside the slug for confirmation
 
 ### 3. Create the spec folder and branch
 
 ```bash
-mkdir -p specs/NNN-feature-name
-git checkout -b feat/NNN-feature-name
+mkdir -p specs/<slug>
+git checkout -b feat/<slug>
 ```
 
-### 4. Write `specs/NNN-feature-name/spec.md`
+### 4. Write `specs/<slug>/spec.md`
 
 Use the structure from `specs/SPEC_TEMPLATE/spec.md`. Fill in:
 
@@ -65,7 +76,7 @@ If `[NEEDS CLARIFICATION]` markers remain, present them as numbered questions wi
 ### 6. Report completion
 
 Output:
-- Spec path: `specs/NNN-feature-name/spec.md`
-- Branch: `feat/NNN-feature-name`
+- Spec path: `specs/<slug>/spec.md`
+- Branch: `feat/<slug>`
 - Any open questions remaining
 - Next step: run `/speckit-plan`

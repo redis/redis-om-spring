@@ -1,8 +1,8 @@
 ---
 name: speckit-plan
 description: Generate a technical implementation plan from an approved feature spec.
-  Use after spec.md is approved to create specs/NNN-feature-name/plan.md with
-  affected modules, key classes, Redis commands, and ordered implementation steps.
+  Use after spec.md is approved to create specs/<slug>/plan.md with affected modules,
+  key classes, Redis commands, and ordered implementation steps.
 ---
 
 # Speckit Plan
@@ -22,13 +22,13 @@ $ARGUMENTS
 
 ### 1. Locate the active spec
 
-Find the spec folder for the current branch:
+Derive the spec folder from the current branch name by stripping the `feat/` or `fix/` prefix:
 
 ```bash
-git rev-parse --abbrev-ref HEAD   # get branch name → derive NNN
+git rev-parse --abbrev-ref HEAD   # e.g. feat/730-sentinel-connection → specs/730-sentinel-connection/
 ```
 
-Read `specs/NNN-feature-name/spec.md` in full.
+Read `specs/<slug>/spec.md` in full.
 
 ### 2. Research if needed
 
@@ -37,7 +37,7 @@ For any unknown Redis commands, Spring Data patterns, or integration points:
 - Check existing tests in `tests/src/test/java/com/redis/om/spring/` for patterns
 - Note decisions and alternatives in the plan
 
-### 3. Write `specs/NNN-feature-name/plan.md`
+### 3. Write `specs/<slug>/plan.md`
 
 Use the structure from `specs/SPEC_TEMPLATE/plan.md`. Fill in:
 
@@ -72,7 +72,7 @@ Use the structure from `specs/SPEC_TEMPLATE/plan.md`. Fill in:
 ### 5. Report completion
 
 Output:
-- Plan path: `specs/NNN-feature-name/plan.md`
+- Plan path: `specs/<slug>/plan.md`
 - Summary of affected modules
 - Any open questions blocking implementation
 - Next step: run `/speckit-tasks`

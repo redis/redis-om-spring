@@ -17,9 +17,9 @@ $ARGUMENTS
 
 All three must exist and be approved:
 
-- `specs/NNN-feature-name/spec.md` — Status: Approved
-- `specs/NNN-feature-name/plan.md` — Status: Approved
-- `specs/NNN-feature-name/tasks.md` — Status: Approved
+- `specs/<slug>/spec.md` — Status: Approved
+- `specs/<slug>/plan.md` — Status: Approved
+- `specs/<slug>/tasks.md` — Status: Approved
 
 Stop and say which artifact is missing or not yet approved.
 
@@ -72,7 +72,7 @@ Report pass or fail. If failing, fix before marking the feature done.
 
 ### 6. Cleanup
 
-- [ ] Update `AGENTS.md` → **Recent Changes**: append `- NNN-feature-name: one-line summary`
+- [ ] Update `AGENTS.md` → **Recent Changes**: append `- <slug>: one-line summary of what shipped`
 - [ ] Set `spec.md` status to `Implemented`
 
 ### 7. Report completion
