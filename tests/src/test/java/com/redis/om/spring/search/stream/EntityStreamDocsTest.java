@@ -62,7 +62,13 @@ class EntityStreamDocsTest extends AbstractBaseDocumentTest {
 
   @BeforeEach
   void cleanUp() {
-    if (repository.count() == 0) {
+    // Use count != 3 (not count == 0) so that stale Company data left in the
+    // shared Testcontainers Redis instance by a previous test class is purged
+    // before we call findAll().  When count is already 3 the within-class
+    // optimisation still applies and we skip the re-insert.
+    if (repository.count() != 3) {
+      repository.deleteAll();
+
       Company redis = repository.save(Company.of( //
           "RedisInc", 2011, //
           LocalDate.of(2021, 5, 1), //

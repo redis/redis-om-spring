@@ -96,6 +96,29 @@ compileTestJava {
 	options.generatedSourceOutputDirectory = file("${buildDir}/generated/sources/annotationProcessor/java/test")
 }
 
+// Test-shard definitions — used by CI to run tests in parallel.
+// Each shard runs on its own runner with its own Testcontainers Redis instance,
+// so there are no shared-state conflicts.
+//
+// Usage:  ./gradlew :tests:test -PtestShard=document   (or hash | stream | other)
+// Omit -PtestShard to run the full suite (local dev / single-job CI).
+//
+// The 'other' shard is a catch-all: it includes everything under
+// com.redis.om.spring.** and excludes the patterns claimed by the named shards.
+// This means any new test package is automatically picked up without having to
+// add it here explicitly.
+ext.namedShards = [
+	document: [
+		'com.redis.om.spring.annotations.document.**',
+	],
+	hash: [
+		'com.redis.om.spring.annotations.hash.**',
+	],
+	stream: [
+		'com.redis.om.spring.search.stream.**',
+	],
+]
+
 test {
 	useJUnitPlatform()
 	maxHeapSize = "1g"
@@ -103,5 +126,24 @@ test {
 	testLogging {
 		events "passed", "skipped", "failed"
 		exceptionFormat = 'full'
+	}
+
+	// Apply shard filter when -PtestShard=<name> is supplied.
+	if (project.hasProperty('testShard')) {
+		def shard = project.property('testShard') as String
+		def validShards = namedShards.keySet() + ['other']
+		if (!validShards.contains(shard)) {
+			throw new GradleException("Unknown testShard '${shard}'. Valid values: ${validShards.join(', ')}")
+		}
+		filter {
+			if (shard == 'other') {
+				// Catch-all: everything not claimed by a named shard.
+				// New test packages are automatically included here.
+				includeTestsMatching 'com.redis.om.spring.**'
+				namedShards.values().flatten().each { excludeTestsMatching it }
+			} else {
+				namedShards[shard].each { includeTestsMatching it }
+			}
+		}
 	}
 }
