@@ -16,7 +16,6 @@
 
 ## Checklist
 
-- [ ] I have read the [contributing guidelines](../CONTRIBUTING.md) (if present)
 - [ ] My code follows the existing code style (`./gradlew spotlessCheck`)
 - [ ] I have added or updated tests for the changes
 - [ ] All tests pass locally (`./gradlew test`)
