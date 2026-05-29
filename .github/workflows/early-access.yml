@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: write  # needed for jreleaser to create releases/tags
+  actions: write   # needed for styfle/cancel-workflow-action with github.token
 
 jobs:
   earlyaccess:
