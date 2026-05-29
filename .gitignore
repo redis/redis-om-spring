@@ -39,6 +39,10 @@ docs/content/modules/ROOT/attachments/javadoc/
 docs/content/modules/ROOT/assets/javadoc/
 
 **/.claude/settings.local.json
+CLAUDE.md
+.agents/
+.claude/
+specs/
 /out/
 build/
 .gradle/
