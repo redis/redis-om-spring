@@ -101,11 +101,11 @@ jobs:
           restore-keys: ${{ runner.os }}-gradlew-
 
       - name: Run tests (${{ matrix.shard }})
-        run: ./gradlew :tests:test aggregateTestReport -PtestShard=${{ matrix.shard }} -S
+        run: ./gradlew :tests:test -PtestShard=${{ matrix.shard }} -S
 
       - name: Upload test reports
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: test-reports-${{ matrix.shard }}
-          path: build/reports/tests/aggregate/
+          path: tests/build/reports/tests/test/
