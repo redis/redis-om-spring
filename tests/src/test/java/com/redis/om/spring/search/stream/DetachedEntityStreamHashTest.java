@@ -72,13 +72,28 @@ public class DetachedEntityStreamHashTest extends AbstractBaseEnhancedRedisTest 
       //Do Nothing
     }
 
-    // Remove any stale hashbike hash keys before inserting fresh data.
-    // Without this, ftCreate re-indexes leftover keys from the reused
-    // Testcontainers Redis instance, causing null deserialization entries.
+    // Remove any stale hashbike hash keys before creating the index.
+    // ftCreate with addPrefix("hashbike:") triggers an asynchronous background
+    // scan of existing keys — stale keys from a previous test run on the reused
+    // Testcontainers instance could be picked up and cause null deserialization.
+    // Deleting them first means the index starts empty; each subsequent hset
+    // then triggers a synchronous per-key index update, so all 10 entries are
+    // guaranteed to be indexed before the test search runs.
     Set<String> staleKeys = template.keys("hashbike:*");
     if (staleKeys != null && !staleKeys.isEmpty()) {
       template.delete(staleKeys);
     }
+
+    SchemaField[] schema = { redis.clients.jedis.search.schemafields.TextField.of("brand").as("brand"),
+        redis.clients.jedis.search.schemafields.TextField.of("model").as("model"),
+        redis.clients.jedis.search.schemafields.TextField.of("description").as("description"),
+        redis.clients.jedis.search.schemafields.NumericField.of("price").as("price"),
+        redis.clients.jedis.search.schemafields.TagField.of("condition").as("condition") };
+
+    // Create the index before inserting data. Each hset below will trigger a
+    // synchronous per-key index update, so all entries are indexed immediately.
+    jedis.ftCreate("idx:hashbikes", FTCreateParams.createParams().on(IndexDataType.HASH).addPrefix("hashbike:"),
+        schema);
 
     Bicycle[] bicycles = { new Bicycle("hashbike:0", "Velorim", "Jigger", 270.0, "new",
         "Small and powerful, the Jigger is the best ride " + "for the smallest of tikes! This is the tiniest " + "kids’ pedal bike on the market available without" + " a coaster brake, the Jigger is the vehicle of " + "choice for the rare tenacious little rider " + "raring to go."),
@@ -105,17 +120,6 @@ public class DetachedEntityStreamHashTest extends AbstractBaseEnhancedRedisTest 
       var map = convertBicycleToStringMap(bicycle);
       jedis.hset(bicycle.getId(), map);
     }
-
-    // Create the index AFTER data is in place so it indexes exactly these
-    // 10 keys and nothing else.
-    SchemaField[] schema = { redis.clients.jedis.search.schemafields.TextField.of("brand").as("brand"),
-        redis.clients.jedis.search.schemafields.TextField.of("model").as("model"),
-        redis.clients.jedis.search.schemafields.TextField.of("description").as("description"),
-        redis.clients.jedis.search.schemafields.NumericField.of("price").as("price"),
-        redis.clients.jedis.search.schemafields.TagField.of("condition").as("condition") };
-
-    jedis.ftCreate("idx:hashbikes", FTCreateParams.createParams().on(IndexDataType.HASH).addPrefix("hashbike:"),
-        schema);
   }
 
   @Test
