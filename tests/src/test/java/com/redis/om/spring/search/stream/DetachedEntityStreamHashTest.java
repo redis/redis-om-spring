@@ -7,8 +7,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,25 +47,38 @@ public class DetachedEntityStreamHashTest extends AbstractBaseEnhancedRedisTest 
 
   private UnifiedJedis jedis;
 
+  @AfterEach
+  void afterEach() {
+    // Remove all hashbike keys so the next test (or next test class on the
+    // shared Testcontainers instance) starts from a completely clean state.
+    Set<String> staleKeys = template.keys("hashbike:*");
+    if (staleKeys != null && !staleKeys.isEmpty()) {
+      template.delete(staleKeys);
+    }
+    if (jedis != null) {
+      jedis.close();
+    }
+  }
+
   @BeforeEach
   void beforeEach() {
     jedis = new JedisPooled(Objects.requireNonNull(jedisConnectionFactory.getPoolConfig()), jedisConnectionFactory
         .getHostName(), jedisConnectionFactory.getPort());
 
+    // Drop the index if it exists from a previous run.
     try {
       jedis.ftDropIndex("idx:hashbikes");
     } catch (JedisDataException e) {
       //Do Nothing
     }
 
-    SchemaField[] schema = { redis.clients.jedis.search.schemafields.TextField.of("brand").as("brand"),
-        redis.clients.jedis.search.schemafields.TextField.of("model").as("model"),
-        redis.clients.jedis.search.schemafields.TextField.of("description").as("description"),
-        redis.clients.jedis.search.schemafields.NumericField.of("price").as("price"),
-        redis.clients.jedis.search.schemafields.TagField.of("condition").as("condition") };
-
-    jedis.ftCreate("idx:hashbikes", FTCreateParams.createParams().on(IndexDataType.HASH).addPrefix("hashbike:"),
-        schema);
+    // Remove any stale hashbike hash keys before inserting fresh data.
+    // Without this, ftCreate re-indexes leftover keys from the reused
+    // Testcontainers Redis instance, causing null deserialization entries.
+    Set<String> staleKeys = template.keys("hashbike:*");
+    if (staleKeys != null && !staleKeys.isEmpty()) {
+      template.delete(staleKeys);
+    }
 
     Bicycle[] bicycles = { new Bicycle("hashbike:0", "Velorim", "Jigger", 270.0, "new",
         "Small and powerful, the Jigger is the best ride " + "for the smallest of tikes! This is the tiniest " + "kids’ pedal bike on the market available without" + " a coaster brake, the Jigger is the vehicle of " + "choice for the rare tenacious little rider " + "raring to go."),
@@ -90,6 +105,17 @@ public class DetachedEntityStreamHashTest extends AbstractBaseEnhancedRedisTest 
       var map = convertBicycleToStringMap(bicycle);
       jedis.hset(bicycle.getId(), map);
     }
+
+    // Create the index AFTER data is in place so it indexes exactly these
+    // 10 keys and nothing else.
+    SchemaField[] schema = { redis.clients.jedis.search.schemafields.TextField.of("brand").as("brand"),
+        redis.clients.jedis.search.schemafields.TextField.of("model").as("model"),
+        redis.clients.jedis.search.schemafields.TextField.of("description").as("description"),
+        redis.clients.jedis.search.schemafields.NumericField.of("price").as("price"),
+        redis.clients.jedis.search.schemafields.TagField.of("condition").as("condition") };
+
+    jedis.ftCreate("idx:hashbikes", FTCreateParams.createParams().on(IndexDataType.HASH).addPrefix("hashbike:"),
+        schema);
   }
 
   @Test
