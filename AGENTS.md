@@ -233,3 +233,4 @@ See [specs/README.md](specs/README.md) for the full convention.
 
 <!-- Append a one-liner per merged spec as features land -->
 <!-- Format: - <slug>: what shipped -->
+- agentic-dev-setup: AGENTS.md, CLAUDE.md, specs workflow, speckit skills (specify/plan/tasks/implement), .java-version
