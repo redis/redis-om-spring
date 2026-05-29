@@ -140,19 +140,14 @@ Ask for clarification when:
 
 ## Verification
 
-Run before handoff:
+Run before every commit or push that touches source code:
 
 ```bash
-./gradlew spotlessCheck build aggregateTestReport -S
+./gradlew spotlessApply                            # fix formatting
+./gradlew spotlessCheck build aggregateTestReport -S  # must be fully green
 ```
 
-Fix any formatting violations first:
-
-```bash
-./gradlew spotlessApply
-```
-
-If verification cannot run (e.g., no Redis available), say why clearly.
+Do not commit or push if tests are failing or formatting is dirty. If verification cannot run (e.g., no Redis available), say so explicitly — do not skip silently.
 
 ## Build Essentials
 
