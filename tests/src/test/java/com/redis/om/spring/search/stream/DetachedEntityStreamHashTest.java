@@ -7,8 +7,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,15 +47,41 @@ public class DetachedEntityStreamHashTest extends AbstractBaseEnhancedRedisTest 
 
   private UnifiedJedis jedis;
 
+  @AfterEach
+  void afterEach() {
+    // Remove all hashbike keys so the next test (or next test class on the
+    // shared Testcontainers instance) starts from a completely clean state.
+    Set<String> staleKeys = template.keys("hashbike:*");
+    if (staleKeys != null && !staleKeys.isEmpty()) {
+      template.delete(staleKeys);
+    }
+    if (jedis != null) {
+      jedis.close();
+    }
+  }
+
   @BeforeEach
   void beforeEach() {
     jedis = new JedisPooled(Objects.requireNonNull(jedisConnectionFactory.getPoolConfig()), jedisConnectionFactory
         .getHostName(), jedisConnectionFactory.getPort());
 
+    // Drop the index if it exists from a previous run.
     try {
       jedis.ftDropIndex("idx:hashbikes");
     } catch (JedisDataException e) {
       //Do Nothing
+    }
+
+    // Remove any stale hashbike hash keys before creating the index.
+    // ftCreate with addPrefix("hashbike:") triggers an asynchronous background
+    // scan of existing keys — stale keys from a previous test run on the reused
+    // Testcontainers instance could be picked up and cause null deserialization.
+    // Deleting them first means the index starts empty; each subsequent hset
+    // then triggers a synchronous per-key index update, so all 10 entries are
+    // guaranteed to be indexed before the test search runs.
+    Set<String> staleKeys = template.keys("hashbike:*");
+    if (staleKeys != null && !staleKeys.isEmpty()) {
+      template.delete(staleKeys);
     }
 
     SchemaField[] schema = { redis.clients.jedis.search.schemafields.TextField.of("brand").as("brand"),
@@ -62,6 +90,8 @@ public class DetachedEntityStreamHashTest extends AbstractBaseEnhancedRedisTest 
         redis.clients.jedis.search.schemafields.NumericField.of("price").as("price"),
         redis.clients.jedis.search.schemafields.TagField.of("condition").as("condition") };
 
+    // Create the index before inserting data. Each hset below will trigger a
+    // synchronous per-key index update, so all entries are indexed immediately.
     jedis.ftCreate("idx:hashbikes", FTCreateParams.createParams().on(IndexDataType.HASH).addPrefix("hashbike:"),
         schema);
 
