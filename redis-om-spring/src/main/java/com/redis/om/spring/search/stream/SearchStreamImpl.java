@@ -924,7 +924,13 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     "unchecked"
   )
   private List<E> documentsToEntities(List<redis.clients.jedis.search.Document> documents) {
-    return documents.stream().map(this::documentToEntity).toList();
+    return documents.stream().map(this::documentToEntity).filter(e -> {
+      if (e == null) {
+        logger.warn("documentToEntity returned null — skipping document");
+        return false;
+      }
+      return true;
+    }).toList();
   }
 
   /**

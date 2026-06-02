@@ -175,10 +175,8 @@ public class DetachedEntityStreamHashTest extends AbstractBaseEnhancedRedisTest 
         .collect(Collectors.toList());
 
     assertThat(bicycles).hasSize(2);
-    assertThat(bicycles.get(0).getModel()).isEqualTo("Chook air 5");
-    assertThat(bicycles.get(1).getModel()).isEqualTo("BikeShind");
-    assertThat(bicycles.get(0).getPrice()).isEqualTo(815.0);
-    assertThat(bicycles.get(1).getPrice()).isEqualTo(815.0);
+    assertThat(bicycles).extracting("model").containsExactlyInAnyOrder("Chook air 5", "BikeShind");
+    assertThat(bicycles).extracting("price").containsOnly(815.0);
   }
 
   public static Map<String, String> convertBicycleToStringMap(Bicycle bicycle) {
