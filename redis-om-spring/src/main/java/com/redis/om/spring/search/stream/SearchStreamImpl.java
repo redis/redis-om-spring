@@ -765,6 +765,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
       query.returnFields(returnFields.toArray(String[]::new));
     } else if (isDocument) {
+      // JSON indexes on detached indices don't always return $ unless requested explicitly
       query.returnFields("$");
     }
 
@@ -893,8 +894,17 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
     // Convert aggregation results to entities
     if (isDocument) {
-      return aggResult.getResults().stream().map(d -> getGson().fromJson(d.get("$").toString(), entityClass)).collect(
-          Collectors.toList());
+      Gson g = getGson();
+      return aggResult.getResults().stream().map(d -> {
+        Object rawJson = d.get("$");
+        if (rawJson == null) {
+          logger.warn("Aggregation result has no '$' field; skipping entity mapping for " + entityClass
+              .getSimpleName());
+          return null;
+        }
+        String jsonStr = (rawJson instanceof byte[]) ? SafeEncoder.encode((byte[]) rawJson) : rawJson.toString();
+        return g.fromJson(jsonStr, entityClass);
+      }).filter(Objects::nonNull).collect(Collectors.toList());
     } else {
       return aggResult.getResults().stream().map(h -> (E) ObjectUtils.mapToObject(h, entityClass, mappingConverter))
           .collect(Collectors.toList());
@@ -912,8 +922,21 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     E entity;
     if (isDocument) {
       Object rawJson = d.get("$");
-      String json = (rawJson instanceof byte[]) ? SafeEncoder.encode((byte[]) rawJson) : rawJson.toString();
-      entity = getGson().fromJson(json, entityClass);
+      if (rawJson == null) {
+        // "$" is absent from the FT.SEARCH result — this can happen on some Redis
+        // versions / query shapes when the root JSON projection is not returned inline.
+        // Fall back to a direct JSON.GET so the entity is never silently dropped.
+        logger.debug("Document '" + d.getId() + "' has no '$' field in FT.SEARCH result; falling back to JSON.GET.");
+        entity = json.get(d.getId(), entityClass);
+        if (entity == null) {
+          logger.warn("Document '" + d.getId() + "' not found via JSON.GET; skipping entity mapping for " + entityClass
+              .getSimpleName() + ". The key may have been deleted or is not a JSON document.");
+          return null;
+        }
+        return ObjectUtils.populateRedisKey(entity, d.getId());
+      }
+      String jsonStr = (rawJson instanceof byte[]) ? SafeEncoder.encode((byte[]) rawJson) : rawJson.toString();
+      entity = getGson().fromJson(jsonStr, entityClass);
     } else {
       entity = (E) ObjectUtils.documentToObject(d, entityClass, mappingConverter);
     }
@@ -924,7 +947,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     "unchecked"
   )
   private List<E> documentsToEntities(List<redis.clients.jedis.search.Document> documents) {
-    return documents.stream().map(this::documentToEntity).toList();
+    return documents.stream().map(this::documentToEntity).filter(Objects::nonNull).toList();
   }
 
   /**
@@ -932,7 +955,10 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
    * to a list of entity-score pairs.
    */
   private List<Pair<E, Double>> documentsToEntityScorePairs(List<redis.clients.jedis.search.Document> documents) {
-    return documents.stream().map(d -> Tuples.of(documentToEntity(d), d.getScore())).toList();
+    return documents.stream().map(d -> {
+      E entity = documentToEntity(d);
+      return entity != null ? Tuples.of(entity, d.getScore()) : null;
+    }).filter(Objects::nonNull).toList();
   }
 
   /**
@@ -945,13 +971,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   )
   private List<E> hybridDocumentsToEntities(List<redis.clients.jedis.search.Document> documents) {
     if (isDocument) {
-      Gson g = getGson();
-      return documents.stream().map(d -> {
-        Object rawJson = d.get("$");
-        String json = (rawJson instanceof byte[]) ? SafeEncoder.encode((byte[]) rawJson) : rawJson.toString();
-        E entity = g.fromJson(json, entityClass);
-        return ObjectUtils.populateRedisKey(entity, d.getId());
-      }).toList();
+      return documents.stream().map(this::documentToEntity).filter(Objects::nonNull).toList();
     } else {
       return (List<E>) documents.stream().map(d -> {
         Map<String, Object> props = new HashMap<>();
