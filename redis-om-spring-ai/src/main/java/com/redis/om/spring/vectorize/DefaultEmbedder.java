@@ -302,10 +302,6 @@ public class DefaultEmbedder implements Embedder {
    */
   @Override
   public void processEntity(Object item) {
-    if (!isReady()) {
-      return;
-    }
-
     List<Field> fields = ObjectUtils.getFieldsWithAnnotation(item.getClass(), Vectorize.class);
     if (!fields.isEmpty()) {
       PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(item);
@@ -337,10 +333,6 @@ public class DefaultEmbedder implements Embedder {
    */
   @Override
   public <S> void processEntities(Iterable<S> items) {
-    if (!isReady()) {
-      return;
-    }
-
     int batchSize = properties.getEmbeddingBatchSize();
     List<FieldData> batch = new ArrayList<>(batchSize);
 
