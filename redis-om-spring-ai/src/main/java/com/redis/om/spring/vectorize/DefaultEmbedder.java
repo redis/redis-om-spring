@@ -694,23 +694,25 @@ public class DefaultEmbedder implements Embedder {
   /**
    * {@inheritDoc}
    *
-   * Returns true when the DJL image models are loaded. Non-Transformers providers
-   * (OpenAI, Ollama, Azure, Vertex AI, Bedrock) work independently of ONNX Runtime,
-   * so this check does not gate them. Use {@link #isTransformersReady()} when you
-   * specifically need the ONNX/Transformers stack to be available.
+   * Always returns true — the embedder bean is available and all provider-specific
+   * checks are handled lazily inside each embedding call. Use
+   * {@link #isTransformersReady()} when you specifically need the DJL + ONNX/Transformers
+   * stack to be available (e.g. to gate tests via {@code @EnabledIf}).
    */
   @Override
   public boolean isReady() {
-    return imageEmbeddingModel != null && faceEmbeddingModel != null;
+    return true;
   }
 
   /**
-   * Returns true when the ONNX Runtime native library is loadable in this JVM,
-   * meaning the Transformers embedding provider can be used.
-   * The result is cached after the first probe so repeated calls are cheap.
+   * Returns true when both DJL image models loaded and the ONNX Runtime native
+   * library is loadable in this JVM, meaning the Transformers embedding provider
+   * can be used. The ONNX check is cached after the first probe so repeated calls
+   * are cheap.
    */
+  @Override
   public boolean isTransformersReady() {
-    return isReady() && isOnnxRuntimeAvailable();
+    return imageEmbeddingModel != null && faceEmbeddingModel != null && isOnnxRuntimeAvailable();
   }
 
   private static volatile Boolean onnxRuntimeAvailable;
