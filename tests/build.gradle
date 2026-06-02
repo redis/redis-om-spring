@@ -105,13 +105,13 @@ jacoco {
 jacocoTestReport {
 	dependsOn test
 	classDirectories.setFrom(files(
-		project(':redis-om-spring').sourceSets.main.output.classesDirs,
-		project(':redis-om-spring-ai').sourceSets.main.output.classesDirs
-	))
+			project(':redis-om-spring').sourceSets.main.output.classesDirs,
+			project(':redis-om-spring-ai').sourceSets.main.output.classesDirs
+			))
 	sourceDirectories.setFrom(files(
-		project(':redis-om-spring').sourceSets.main.allSource.srcDirs,
-		project(':redis-om-spring-ai').sourceSets.main.allSource.srcDirs
-	))
+			project(':redis-om-spring').sourceSets.main.allSource.srcDirs,
+			project(':redis-om-spring-ai').sourceSets.main.allSource.srcDirs
+			))
 	reports {
 		html.required = true
 		xml.required = true
