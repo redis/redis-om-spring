@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -56,7 +57,7 @@ class SearchStreamImplDocumentToEntityNpeTest {
       JSONOperations<String> jsonOps) throws Exception {
     StringRedisTemplate template = mock(StringRedisTemplate.class);
     RedisModulesOperations<String> modulesOps = mock(RedisModulesOperations.class);
-    RediSearchIndexer indexer = mock(RediSearchIndexer.class);
+    RediSearchIndexer indexer = mock(RediSearchIndexer.class, RETURNS_DEEP_STUBS);
 
     Map<String, Object> indexInfo = new HashMap<>();
     indexInfo.put("index_definition", Arrays.asList("key_type", "JSON", "prefixes", Collections.emptyList()));
