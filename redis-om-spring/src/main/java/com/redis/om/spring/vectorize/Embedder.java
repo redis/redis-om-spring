@@ -34,9 +34,11 @@ public interface Embedder {
 
   /**
    * Check if the Transformers (ONNX) embedding provider is available.
-   * Returns false on environments where the ONNX Runtime native library cannot be loaded.
+   * The default implementation returns false; concrete embedders that support
+   * Transformers (e.g. {@code DefaultEmbedder}) override this to probe DJL model
+   * availability and ONNX Runtime native library loadability.
    *
-   * @return true if Transformers/ONNX is ready
+   * @return true if both DJL models and ONNX Runtime are available; false by default
    */
   default boolean isTransformersReady() {
     return false;
