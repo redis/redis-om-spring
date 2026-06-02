@@ -937,7 +937,10 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
    * to a list of entity-score pairs.
    */
   private List<Pair<E, Double>> documentsToEntityScorePairs(List<redis.clients.jedis.search.Document> documents) {
-    return documents.stream().map(d -> Tuples.of(documentToEntity(d), d.getScore())).toList();
+    return documents.stream().map(d -> {
+      E entity = documentToEntity(d);
+      return entity != null ? Tuples.of(entity, d.getScore()) : null;
+    }).filter(Objects::nonNull).toList();
   }
 
   /**
