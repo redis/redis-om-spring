@@ -3,6 +3,7 @@ package com.redis.om.spring.search.stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -29,35 +30,34 @@ import redis.clients.jedis.search.Document;
 import redis.clients.jedis.search.SearchResult;
 
 /**
- * Unit test for issue #734:
- * SearchStreamImpl.documentToEntity() previously called rawJson.toString() without a null
- * check. When Redis does not include "$" in the FT.SEARCH response (e.g. the
- * index was created externally and the query specifies explicit RETURN fields
- * that omit the root JSON projection), documentToEntity() used to throw a
- * NullPointerException.
+ * Unit tests for the null-rawJson handling in SearchStreamImpl.documentToEntity().
  *
- * <p>This test wires up a minimal SearchStreamImpl backed by mock
- * SearchOperations that return a Document with no "$" field, reproducing the
- * exact scenario described in the issue <em>without</em> requiring a running
- * Redis instance or a specific Redis version.</p>
+ * <p>When Redis does not include "$" in the FT.SEARCH response (e.g. the index
+ * was created externally, or some Redis versions omit the root JSON projection
+ * for certain query shapes), documentToEntity() previously threw NPE at
+ * rawJson.toString().</p>
  *
- * <p>After the fix: documents with a missing "$" field are silently skipped
- * (a warning is logged) and collect() returns an empty list instead of
- * throwing NPE.</p>
+ * <p>After the fix:</p>
+ * <ul>
+ *   <li>A missing "$" triggers a fallback JSON.GET for the document key.</li>
+ *   <li>If JSON.GET succeeds the entity is returned normally.</li>
+ *   <li>If JSON.GET also returns null (key deleted / not a JSON document) the
+ *       document is silently skipped and a warning is logged.</li>
+ * </ul>
  */
 class SearchStreamImplDocumentToEntityNpeTest {
 
-  @Test
+  // -------------------------------------------------------------------------
+  // Shared mock wiring helpers
+  // -------------------------------------------------------------------------
+
   @SuppressWarnings("unchecked")
-  void collectSkipsDocumentWhenRootJsonFieldAbsent() throws Exception {
-    // --- mocks ---
-    SearchOperations<String> searchOps = mock(SearchOperations.class);
-    JSONOperations<String> jsonOps = mock(JSONOperations.class);
+  private SearchStreamImpl<Bicycle> buildStream(SearchOperations<String> searchOps,
+      JSONOperations<String> jsonOps) throws Exception {
     StringRedisTemplate template = mock(StringRedisTemplate.class);
     RedisModulesOperations<String> modulesOps = mock(RedisModulesOperations.class);
     RediSearchIndexer indexer = mock(RediSearchIndexer.class);
 
-    // Simulate FT.INFO: a JSON-type index
     Map<String, Object> indexInfo = new HashMap<>();
     indexInfo.put("index_definition", Arrays.asList("key_type", "JSON", "prefixes", Collections.emptyList()));
     when(modulesOps.opsForSearch(anyString())).thenReturn(searchOps);
@@ -65,31 +65,74 @@ class SearchStreamImplDocumentToEntityNpeTest {
     when(modulesOps.template()).thenReturn(template);
     when(searchOps.getInfo()).thenReturn(indexInfo);
 
-    // A document whose "$" field is absent (simulates Redis returning no root
-    // JSON payload — e.g. because of stale / non-JSON keys that share the index
-    // prefix on a reused Testcontainers instance, or externally-created indexes
-    // that omit the root projection).
-    Document docWithNullJson = new Document("bicycle:0", Collections.emptyMap());
+    Field idField = Bicycle.class.getDeclaredField("id");
+    idField.setAccessible(true);
 
+    return new SearchStreamImpl<>(Bicycle.class, "idx:bicycle", idField, modulesOps, new GsonBuilder(), indexer);
+  }
+
+  // -------------------------------------------------------------------------
+  // Test: fallback to JSON.GET when "$" is absent, and JSON.GET succeeds
+  // -------------------------------------------------------------------------
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void collectFallsBackToJsonGetWhenRootJsonFieldAbsent() throws Exception {
+    SearchOperations<String> searchOps = mock(SearchOperations.class);
+    JSONOperations<String> jsonOps = mock(JSONOperations.class);
+
+    // FT.SEARCH returns a document with no "$" field
+    Document docWithNullJson = new Document("bicycle:0", Collections.emptyMap());
     SearchResult searchResult = mock(SearchResult.class);
     when(searchResult.getDocuments()).thenReturn(List.of(docWithNullJson));
     when(searchOps.search(any())).thenReturn(searchResult);
 
-    // Resolve the id field on the entity class
-    Field idField = Bicycle.class.getDeclaredField("id");
-    idField.setAccessible(true);
+    // JSON.GET fallback returns the actual entity
+    Bicycle expected = new Bicycle();
+    expected.setId("bicycle:0");
+    expected.setBrand("Velorim");
+    expected.setModel("Jigger");
+    expected.setPrice(new BigDecimal("270"));
+    when(jsonOps.get(eq("bicycle:0"), eq(Bicycle.class))).thenReturn(expected);
 
-    SearchStreamImpl<Bicycle> stream = new SearchStreamImpl<>(Bicycle.class, "idx:bicycle", idField, modulesOps,
-        new GsonBuilder(), indexer);
-
-    // After the fix: null rawJson → warning logged → entity skipped → empty result list.
-    // No NullPointerException should be thrown.
+    SearchStreamImpl<Bicycle> stream = buildStream(searchOps, jsonOps);
     List<Bicycle> result = stream.collect(Collectors.toList());
+
+    assertThat(result).hasSize(1);
+    assertThat(result.get(0).getModel()).isEqualTo("Jigger");
+    assertThat(result.get(0).getBrand()).isEqualTo("Velorim");
+  }
+
+  // -------------------------------------------------------------------------
+  // Test: document silently skipped when both "$" and JSON.GET return null
+  // -------------------------------------------------------------------------
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void collectSkipsDocumentWhenRootJsonFieldAbsentAndJsonGetReturnsNull() throws Exception {
+    SearchOperations<String> searchOps = mock(SearchOperations.class);
+    JSONOperations<String> jsonOps = mock(JSONOperations.class);
+
+    // FT.SEARCH returns a document with no "$" field
+    Document docWithNullJson = new Document("bicycle:0", Collections.emptyMap());
+    SearchResult searchResult = mock(SearchResult.class);
+    when(searchResult.getDocuments()).thenReturn(List.of(docWithNullJson));
+    when(searchOps.search(any())).thenReturn(searchResult);
+
+    // JSON.GET also returns null — key deleted or not a JSON document
+    when(jsonOps.get(eq("bicycle:0"), eq(Bicycle.class))).thenReturn(null);
+
+    SearchStreamImpl<Bicycle> stream = buildStream(searchOps, jsonOps);
+    List<Bicycle> result = stream.collect(Collectors.toList());
+
+    // No NPE; document is skipped gracefully
     assertThat(result).isEmpty();
   }
 
-  // Minimal entity — intentionally has no redis-om-spring annotations so the
-  // index is treated as "externally created" (detached mode).
+  // -------------------------------------------------------------------------
+  // Minimal entity (no redis-om-spring annotations → detached / external index)
+  // -------------------------------------------------------------------------
+
   @Data
   static class Bicycle {
     private String id;

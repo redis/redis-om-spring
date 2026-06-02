@@ -914,12 +914,20 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     if (isDocument) {
       Object rawJson = d.get("$");
       if (rawJson == null) {
-        logger.warn("Document '" + d.getId() + "' has no '$' field; skipping entity mapping for " + entityClass
-            .getSimpleName() + ". This can happen with stale or non-JSON keys that match the index prefix.");
-        return null;
+        // "$" is absent from the FT.SEARCH result — this can happen on some Redis
+        // versions / query shapes when the root JSON projection is not returned inline.
+        // Fall back to a direct JSON.GET so the entity is never silently dropped.
+        logger.debug("Document '" + d.getId() + "' has no '$' field in FT.SEARCH result; falling back to JSON.GET.");
+        entity = json.get(d.getId(), entityClass);
+        if (entity == null) {
+          logger.warn("Document '" + d.getId() + "' not found via JSON.GET; skipping entity mapping for " + entityClass
+              .getSimpleName() + ". The key may have been deleted or is not a JSON document.");
+          return null;
+        }
+        return ObjectUtils.populateRedisKey(entity, d.getId());
       }
-      String json = (rawJson instanceof byte[]) ? SafeEncoder.encode((byte[]) rawJson) : rawJson.toString();
-      entity = getGson().fromJson(json, entityClass);
+      String jsonStr = (rawJson instanceof byte[]) ? SafeEncoder.encode((byte[]) rawJson) : rawJson.toString();
+      entity = getGson().fromJson(jsonStr, entityClass);
     } else {
       entity = (E) ObjectUtils.documentToObject(d, entityClass, mappingConverter);
     }
