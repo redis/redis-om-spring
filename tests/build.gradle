@@ -1,5 +1,6 @@
 plugins {
 	id 'java'
+	id 'jacoco'
 }
 
 apply plugin: 'org.springframework.boot'
@@ -95,6 +96,30 @@ compileTestJava {
 	options.annotationProcessorPath = configurations.testAnnotationProcessor
 	options.generatedSourceOutputDirectory = file("${buildDir}/generated/sources/annotationProcessor/java/test")
 }
+
+// JaCoCo configuration
+jacoco {
+	toolVersion = "0.8.12"
+}
+
+jacocoTestReport {
+	dependsOn test
+	classDirectories.setFrom(files(
+			project(':redis-om-spring').sourceSets.main.output.classesDirs,
+			project(':redis-om-spring-ai').sourceSets.main.output.classesDirs
+			))
+	sourceDirectories.setFrom(files(
+			project(':redis-om-spring').sourceSets.main.allSource.srcDirs,
+			project(':redis-om-spring-ai').sourceSets.main.allSource.srcDirs
+			))
+	reports {
+		html.required = true
+		xml.required = true
+		csv.required = false
+	}
+}
+
+test.finalizedBy jacocoTestReport
 
 // Test-shard definitions — used by CI to run tests in parallel.
 // Each shard runs on its own runner with its own Testcontainers Redis instance,
