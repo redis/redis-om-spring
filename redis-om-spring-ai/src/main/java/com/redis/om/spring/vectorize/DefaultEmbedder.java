@@ -693,13 +693,31 @@ public class DefaultEmbedder implements Embedder {
 
   /**
    * {@inheritDoc}
-   * 
-   * @return Always returns true as models are created on demand
+   *
+   * Returns true only when both DJL image models loaded and the ONNX Runtime
+   * native library is available on this JVM. The ONNX check is cached after the
+   * first probe so repeated calls are cheap.
    */
   @Override
   public boolean isReady() {
-    //return this.faceEmbeddingModel != null && this.transformersEmbeddingModel != null;
-    return true;
+    return imageEmbeddingModel != null && faceEmbeddingModel != null && isOnnxRuntimeAvailable();
+  }
+
+  private static volatile Boolean onnxRuntimeAvailable;
+
+  private static boolean isOnnxRuntimeAvailable() {
+    if (onnxRuntimeAvailable != null) {
+      return onnxRuntimeAvailable;
+    }
+    try {
+      // initialize=true forces the static initializer, which triggers the native lib load
+      Class.forName("ai.onnxruntime.OrtEnvironment", true, Thread.currentThread().getContextClassLoader());
+      onnxRuntimeAvailable = true;
+    } catch (ClassNotFoundException | UnsatisfiedLinkError | ExceptionInInitializerError e) {
+      logger.warn("ONNX Runtime not available, Transformers-backed tests will be skipped: " + e.getMessage());
+      onnxRuntimeAvailable = false;
+    }
+    return onnxRuntimeAvailable;
   }
 
   /**
