@@ -924,14 +924,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     "unchecked"
   )
   private List<E> documentsToEntities(List<redis.clients.jedis.search.Document> documents) {
-    return documents.stream().map(this::documentToEntity).filter(e -> {
-      if (e == null) {
-        logger.warn("Could not deserialize a search result document into " + entityClass.getSimpleName()
-            + " — skipping. Check that the entity class matches the index schema.");
-        return false;
-      }
-      return true;
-    }).toList();
+    return documents.stream().map(this::documentToEntity).toList();
   }
 
   /**

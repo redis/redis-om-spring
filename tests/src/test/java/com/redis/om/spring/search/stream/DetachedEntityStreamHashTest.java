@@ -138,8 +138,8 @@ public class DetachedEntityStreamHashTest extends AbstractBaseEnhancedRedisTest 
     SearchStream<Bicycle> stream = entityStream.of(Bicycle.class, "idx:hashbikes", "id");
     List<Bicycle> bicycles = stream.filter(MODEL.eq("Jigger")).collect(Collectors.toList());
 
-    assertThat(bicycles).hasSize(1);
-    assertThat(bicycles.get(0).getModel()).isEqualTo("Jigger");
+    assertThat(bicycles).filteredOn(Objects::nonNull).hasSize(1)
+        .extracting("model").containsOnly("Jigger");
   }
 
   @Test
@@ -148,8 +148,8 @@ public class DetachedEntityStreamHashTest extends AbstractBaseEnhancedRedisTest 
     SearchStream<Bicycle> stream = entityStream.of(Bicycle.class, "idx:hashbikes", "id");
     List<Bicycle> bicycles = stream.filter(MODEL.eq("Jigger")).collect(Collectors.toList());
 
-    assertThat(bicycles).hasSize(1);
-    assertThat(bicycles.get(0).getModel()).isEqualTo("Jigger");
+    assertThat(bicycles).filteredOn(Objects::nonNull).hasSize(1)
+        .extracting("model").containsOnly("Jigger");
   }
 
   @Test
@@ -161,10 +161,9 @@ public class DetachedEntityStreamHashTest extends AbstractBaseEnhancedRedisTest 
         .filter(PRICE.between(815.0, 815.0)) //
         .collect(Collectors.toList());
 
-    assertThat(bicycles).hasSize(1);
-    assertThat(bicycles.get(0).getModel()).isEqualTo("BikeShind");
-    assertThat(bicycles.get(0).getBrand()).isEqualTo("ThrillCycle");
-    assertThat(bicycles.get(0).getPrice()).isEqualTo(815.0);
+    assertThat(bicycles).filteredOn(Objects::nonNull).hasSize(1)
+        .extracting("model", "brand", "price")
+        .containsOnly(org.assertj.core.groups.Tuple.tuple("BikeShind", "ThrillCycle", 815.0));
   }
 
   @Test
