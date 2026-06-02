@@ -694,13 +694,23 @@ public class DefaultEmbedder implements Embedder {
   /**
    * {@inheritDoc}
    *
-   * Returns true only when both DJL image models loaded and the ONNX Runtime
-   * native library is available on this JVM. The ONNX check is cached after the
-   * first probe so repeated calls are cheap.
+   * Returns true when the DJL image models are loaded. Non-Transformers providers
+   * (OpenAI, Ollama, Azure, Vertex AI, Bedrock) work independently of ONNX Runtime,
+   * so this check does not gate them. Use {@link #isTransformersReady()} when you
+   * specifically need the ONNX/Transformers stack to be available.
    */
   @Override
   public boolean isReady() {
-    return imageEmbeddingModel != null && faceEmbeddingModel != null && isOnnxRuntimeAvailable();
+    return imageEmbeddingModel != null && faceEmbeddingModel != null;
+  }
+
+  /**
+   * Returns true when the ONNX Runtime native library is loadable in this JVM,
+   * meaning the Transformers embedding provider can be used.
+   * The result is cached after the first probe so repeated calls are cheap.
+   */
+  public boolean isTransformersReady() {
+    return isReady() && isOnnxRuntimeAvailable();
   }
 
   private static volatile Boolean onnxRuntimeAvailable;
@@ -710,11 +720,12 @@ public class DefaultEmbedder implements Embedder {
       return onnxRuntimeAvailable;
     }
     try {
-      // initialize=true forces the static initializer, which triggers the native lib load
+      // initialize=true forces the static initializer, which triggers the native lib load.
+      // On a second call after a failed init the JVM throws NoClassDefFoundError, so catch that too.
       Class.forName("ai.onnxruntime.OrtEnvironment", true, Thread.currentThread().getContextClassLoader());
       onnxRuntimeAvailable = true;
-    } catch (ClassNotFoundException | UnsatisfiedLinkError | ExceptionInInitializerError e) {
-      logger.warn("ONNX Runtime not available, Transformers-backed tests will be skipped: " + e.getMessage());
+    } catch (ClassNotFoundException | NoClassDefFoundError | UnsatisfiedLinkError | ExceptionInInitializerError e) {
+      logger.warn("ONNX Runtime not available, Transformers-backed embeddings will be skipped: " + e.getMessage());
       onnxRuntimeAvailable = false;
     }
     return onnxRuntimeAvailable;

@@ -27,10 +27,20 @@ public interface Embedder {
 
   /**
    * Check if embedder is ready for use.
-   * 
+   *
    * @return true if ready
    */
   boolean isReady();
+
+  /**
+   * Check if the Transformers (ONNX) embedding provider is available.
+   * Returns false on environments where the ONNX Runtime native library cannot be loaded.
+   *
+   * @return true if Transformers/ONNX is ready
+   */
+  default boolean isTransformersReady() {
+    return false;
+  }
 
   /**
    * Get text embeddings as byte arrays.
