@@ -894,8 +894,17 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
     // Convert aggregation results to entities
     if (isDocument) {
-      return aggResult.getResults().stream().map(d -> getGson().fromJson(d.get("$").toString(), entityClass)).collect(
-          Collectors.toList());
+      Gson g = getGson();
+      return aggResult.getResults().stream().map(d -> {
+        Object rawJson = d.get("$");
+        if (rawJson == null) {
+          logger.warn("Aggregation result has no '$' field; skipping entity mapping for " + entityClass
+              .getSimpleName());
+          return null;
+        }
+        String jsonStr = (rawJson instanceof byte[]) ? SafeEncoder.encode((byte[]) rawJson) : rawJson.toString();
+        return g.fromJson(jsonStr, entityClass);
+      }).filter(Objects::nonNull).collect(Collectors.toList());
     } else {
       return aggResult.getResults().stream().map(h -> (E) ObjectUtils.mapToObject(h, entityClass, mappingConverter))
           .collect(Collectors.toList());
@@ -962,13 +971,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   )
   private List<E> hybridDocumentsToEntities(List<redis.clients.jedis.search.Document> documents) {
     if (isDocument) {
-      Gson g = getGson();
-      return documents.stream().map(d -> {
-        Object rawJson = d.get("$");
-        String json = (rawJson instanceof byte[]) ? SafeEncoder.encode((byte[]) rawJson) : rawJson.toString();
-        E entity = g.fromJson(json, entityClass);
-        return ObjectUtils.populateRedisKey(entity, d.getId());
-      }).toList();
+      return documents.stream().map(this::documentToEntity).filter(Objects::nonNull).toList();
     } else {
       return (List<E>) documents.stream().map(d -> {
         Map<String, Object> props = new HashMap<>();
