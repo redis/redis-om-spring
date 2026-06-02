@@ -765,6 +765,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
       query.returnFields(returnFields.toArray(String[]::new));
     } else if (isDocument) {
+      // JSON indexes on detached indices don't always return $ unless requested explicitly
       query.returnFields("$");
     }
 
