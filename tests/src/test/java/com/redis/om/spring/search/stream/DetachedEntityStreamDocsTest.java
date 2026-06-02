@@ -138,10 +138,8 @@ public class DetachedEntityStreamDocsTest extends AbstractBaseDocumentTest {
         .collect(Collectors.toList());
 
     assertThat(bicycles).hasSize(2);
-    assertThat(bicycles.get(0).getModel()).isEqualTo("Chook air 5");
-    assertThat(bicycles.get(1).getModel()).isEqualTo("BikeShind");
-    assertThat(bicycles.get(0).getPrice()).isEqualTo(BigDecimal.valueOf(815));
-    assertThat(bicycles.get(1).getPrice()).isEqualTo(BigDecimal.valueOf(815));
+    assertThat(bicycles).extracting("model").containsExactlyInAnyOrder("Chook air 5", "BikeShind");
+    assertThat(bicycles).extracting("price").containsOnly(BigDecimal.valueOf(815));
   }
 
   @Data
