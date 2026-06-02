@@ -912,6 +912,11 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     E entity;
     if (isDocument) {
       Object rawJson = d.get("$");
+      if (rawJson == null) {
+        logger.warn("Document '" + d.getId() + "' has no '$' field; skipping entity mapping for " + entityClass
+            .getSimpleName() + ". This can happen with stale or non-JSON keys that match the index prefix.");
+        return null;
+      }
       String json = (rawJson instanceof byte[]) ? SafeEncoder.encode((byte[]) rawJson) : rawJson.toString();
       entity = getGson().fromJson(json, entityClass);
     } else {
@@ -924,7 +929,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     "unchecked"
   )
   private List<E> documentsToEntities(List<redis.clients.jedis.search.Document> documents) {
-    return documents.stream().map(this::documentToEntity).toList();
+    return documents.stream().map(this::documentToEntity).filter(Objects::nonNull).toList();
   }
 
   /**
