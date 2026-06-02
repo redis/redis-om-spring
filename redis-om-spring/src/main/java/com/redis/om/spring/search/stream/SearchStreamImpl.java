@@ -41,25 +41,6 @@ import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
 
-/**
- * Implementation of {@link SearchStream} that provides search capabilities for Redis OM entities.
- * <p>
- * This class implements a fluent API for building and executing Redis Search queries against
- * indexed documents. It supports various search operations including filtering, sorting,
- * pagination, aggregation, and vector similarity search.
- * </p>
- * <p>
- * The stream integrates with Redis Search (RediSearch) module to provide:
- * <ul>
- * <li>Full-text and field-based search</li>
- * <li>Vector similarity search (KNN)</li>
- * <li>Query-by-example (QBE) functionality</li>
- * <li>Result projection and summarization</li>
- * <li>Highlighting and sorting</li>
- * </ul>
- *
- * @param <E> the entity type being searched
- */
 public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @SuppressWarnings(
@@ -114,19 +95,6 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private boolean withScores = false;
   private Scorer scorer;
 
-  /**
-   * Creates a new SearchStreamImpl for the given entity class.
-   * <p>
-   * This constructor automatically determines the search index name and ID field
-   * from the entity class annotations and introspection.
-   * </p>
-   *
-   * @param entityClass       the entity class to create a search stream for
-   * @param modulesOperations the Redis modules operations instance
-   * @param gsonBuilder       the Gson builder for JSON serialization
-   * @param indexer           the Redis search indexer
-   * @throws IllegalArgumentException if the entity class does not have an ID field
-   */
   public SearchStreamImpl(Class<E> entityClass, RedisModulesOperations<String> modulesOperations,
       GsonBuilder gsonBuilder, RediSearchIndexer indexer) {
     this.indexer = indexer;
@@ -151,21 +119,6 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
         indexer, modulesOperations, documentMapper);
   }
 
-  /**
-   * Creates a new SearchStreamImpl with explicit search index and ID field configuration.
-   * <p>
-   * This constructor allows for more explicit control over the search index and ID field,
-   * useful when working with custom search indexes or when the automatic detection
-   * is not sufficient.
-   * </p>
-   *
-   * @param entityClass       the entity class to create a search stream for
-   * @param searchIndex       the explicit search index name to use
-   * @param idField           the ID field of the entity
-   * @param modulesOperations the Redis modules operations instance
-   * @param gsonBuilder       the Gson builder for JSON serialization
-   * @param indexer           the Redis search indexer
-   */
   public SearchStreamImpl(Class<E> entityClass, String searchIndex, Field idField,
       RedisModulesOperations<String> modulesOperations, GsonBuilder gsonBuilder, RediSearchIndexer indexer) {
     this.indexer = indexer;
@@ -238,30 +191,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @Override
   public SearchStream<E> hybridSearch(String text, MetamodelField<? super E, ?> textField, float[] vector,
       MetamodelField<? super E, ?> vectorField, float alpha) {
-    if (text == null || text.trim().isEmpty()) {
-      throw new IllegalArgumentException("text query string cannot be null or empty");
-    }
-    if (textField == null) {
-      throw new IllegalArgumentException("textField cannot be null");
-    }
-    if (vector == null) {
-      throw new IllegalArgumentException("query vector cannot be null");
-    }
-    if (vectorField == null) {
-      throw new IllegalArgumentException("vectorField cannot be null");
-    }
-    if (alpha < 0.0f || alpha > 1.0f) {
-      throw new IllegalArgumentException("alpha must be between 0.0 and 1.0, got: " + alpha);
-    }
-
-    this.hybridText = text;
-    this.hybridTextField = textField;
-    this.hybridVector = vector;
-    this.hybridVectorField = vectorField;
-    this.hybridAlpha = alpha;
-    this.hybridCombinationMethod = CombinationMethod.LINEAR;
-
-    return this;
+    return hybridSearch(text, textField, vector, vectorField, CombinationMethod.LINEAR, alpha);
   }
 
   @Override
@@ -322,18 +252,22 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     return this;
   }
 
-  /**
-   * Processes a search field predicate and applies it to the current query tree.
-   * <p>
-   * This method takes a search field predicate and integrates it with the existing
-   * root query node, allowing predicates to be combined into complex search expressions.
-   * </p>
-   *
-   * @param predicate the search field predicate to process
-   * @return the query node representing the processed predicate
-   */
   public Node processPredicate(SearchFieldPredicate<? super E, ?> predicate) {
     return queryExecutor.processPredicate(predicate, rootNode);
+  }
+
+  @SuppressWarnings(
+    "unchecked"
+  )
+  private List<MetamodelField<E, ?>> collectMetamodelFields(Function<?, ?> fieldOrMapper) {
+    List<MetamodelField<E, ?>> result = new ArrayList<>();
+    if (MetamodelField.class.isAssignableFrom(fieldOrMapper.getClass())) {
+      result.add((MetamodelField<E, ?>) fieldOrMapper);
+    } else if (TupleMapper.class.isAssignableFrom(fieldOrMapper.getClass())) {
+      AbstractTupleMapper tm = (AbstractTupleMapper) fieldOrMapper;
+      IntStream.range(0, tm.degree()).forEach(i -> result.add((MetamodelField<E, ?>) tm.get(i)));
+    }
+    return result;
   }
 
   @Override
@@ -343,26 +277,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
           "Metamodel-based projections (.map()) are not supported after hybridSearch(). " + "Hybrid search uses FT.AGGREGATE which is incompatible with FT.SEARCH-based projections. " + "Collect full entities instead.");
     }
 
-    List<MetamodelField<E, ?>> returning = new ArrayList<>();
-
-    if (MetamodelField.class.isAssignableFrom(mapper.getClass())) {
-      @SuppressWarnings(
-        "unchecked"
-      ) MetamodelField<E, T> foi = (MetamodelField<E, T>) mapper;
-
-      returning.add(foi);
-    } else if (TupleMapper.class.isAssignableFrom(mapper.getClass())) {
-      @SuppressWarnings(
-        "rawtypes"
-      ) AbstractTupleMapper tm = (AbstractTupleMapper) mapper;
-
-      IntStream.range(0, tm.degree()).forEach(i -> {
-        @SuppressWarnings(
-          "unchecked"
-        ) MetamodelField<E, ?> foi = (MetamodelField<E, ?>) tm.get(i);
-        returning.add(foi);
-      });
-    } else {
+    List<MetamodelField<E, ?>> returning = collectMetamodelFields(mapper);
+    if (returning.isEmpty()) {
       if (TakesJSONOperations.class.isAssignableFrom(mapper.getClass())) {
         TakesJSONOperations tjo = (TakesJSONOperations) mapper;
         tjo.setJSONOperations(json);
@@ -717,53 +633,39 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     throw new UnsupportedOperationException("mapToLabelledMaps is not supported on a SearchStream");
   }
 
+  private <R> AggregationStreamImpl<E, R> newAggStream() {
+    resolvedStream = Stream.empty();
+    String query = rootNode.toString().isBlank() ? "*" : rootNode.toString();
+    return new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(), entityClass, query);
+  }
+
   @SafeVarargs
   @Override
   public final <R> AggregationStream<R> groupBy(MetamodelField<E, ?>... fields) {
     resolvedStream = Stream.empty();
-    String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
+    String query = rootNode.toString().isBlank() ? "*" : rootNode.toString();
     return new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(), entityClass, query, fields);
   }
 
   @Override
   public <R> AggregationStream<R> apply(String expression, String alias) {
-    resolvedStream = Stream.empty();
-    String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
-    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(),
-        entityClass, query);
-    aggregationStream.apply(expression, alias);
-    return aggregationStream;
+    return this.<R>newAggStream().apply(expression, alias);
   }
 
   @SafeVarargs
   @Override
   public final <R> AggregationStream<R> load(MetamodelField<E, ?>... fields) {
-    resolvedStream = Stream.empty();
-    String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
-    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(),
-        entityClass, query);
-    aggregationStream.load(fields);
-    return aggregationStream;
+    return this.<R>newAggStream().load(fields);
   }
 
   @Override
   public <R> AggregationStream<R> loadAll() {
-    resolvedStream = Stream.empty();
-    String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
-    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(),
-        entityClass, query);
-    aggregationStream.loadAll();
-    return aggregationStream;
+    return this.<R>newAggStream().loadAll();
   }
 
   @Override
   public <R> AggregationStream<R> cursor(int count, Duration timeout) {
-    resolvedStream = Stream.empty();
-    String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
-    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(),
-        entityClass, query);
-    aggregationStream.cursor(count, timeout);
-    return aggregationStream;
+    return this.<R>newAggStream().cursor(count, timeout);
   }
 
   @Override
@@ -825,25 +727,12 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     }
   }
 
-  @Override
   @SuppressWarnings(
     "unchecked"
   )
+  @Override
   public <R> SearchStream<E> project(Function<? super E, ? extends R> field) {
-    if (MetamodelField.class.isAssignableFrom(field.getClass())) {
-      MetamodelField<E, R> foi = (MetamodelField<E, R>) field;
-
-      projections.add(foi);
-    } else if (TupleMapper.class.isAssignableFrom(field.getClass())) {
-      @SuppressWarnings(
-        "rawtypes"
-      ) AbstractTupleMapper tm = (AbstractTupleMapper) field;
-
-      IntStream.range(0, tm.degree()).forEach(i -> {
-        MetamodelField<E, ?> foi = (MetamodelField<E, ?>) tm.get(i);
-        projections.add(foi);
-      });
-    }
+    projections.addAll(collectMetamodelFields(field));
     projections.add((MetamodelField<E, ?>) getMetamodelForIdField(this.entityClass));
     return this;
   }
@@ -866,24 +755,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public <R> SearchStream<E> summarize(Function<? super E, ? extends R> field) {
-    if (MetamodelField.class.isAssignableFrom(field.getClass())) {
-      @SuppressWarnings(
-        "unchecked"
-      ) MetamodelField<E, R> foi = (MetamodelField<E, R>) field;
-      summaryFields.add(foi);
-
-    } else if (TupleMapper.class.isAssignableFrom(field.getClass())) {
-      @SuppressWarnings(
-        "rawtypes"
-      ) AbstractTupleMapper tm = (AbstractTupleMapper) field;
-
-      IntStream.range(0, tm.degree()).forEach(i -> {
-        @SuppressWarnings(
-          "unchecked"
-        ) MetamodelField<E, ?> foi = (MetamodelField<E, ?>) tm.get(i);
-        summaryFields.add(foi);
-      });
-    }
+    summaryFields.addAll(collectMetamodelFields(field));
     return this;
   }
 
@@ -895,24 +767,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public <R> SearchStream<E> highlight(Function<? super E, ? extends R> field) {
-    if (MetamodelField.class.isAssignableFrom(field.getClass())) {
-      @SuppressWarnings(
-        "unchecked"
-      ) MetamodelField<E, R> foi = (MetamodelField<E, R>) field;
-      highlightFields.add(foi);
-
-    } else if (TupleMapper.class.isAssignableFrom(field.getClass())) {
-      @SuppressWarnings(
-        "rawtypes"
-      ) AbstractTupleMapper tm = (AbstractTupleMapper) field;
-
-      IntStream.range(0, tm.degree()).forEach(i -> {
-        @SuppressWarnings(
-          "unchecked"
-        ) MetamodelField<E, ?> foi = (MetamodelField<E, ?>) tm.get(i);
-        highlightFields.add(foi);
-      });
-    }
+    highlightFields.addAll(collectMetamodelFields(field));
     return this;
   }
 
