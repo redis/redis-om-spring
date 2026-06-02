@@ -1,62 +1,45 @@
 package com.redis.om.spring.search.stream;
 
 import static com.redis.om.spring.metamodel.MetamodelUtils.getMetamodelForIdField;
-import static com.redis.om.spring.util.ObjectUtils.floatArrayToByteArray;
-import static java.util.stream.Collectors.toCollection;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.function.*;
 import java.util.stream.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.*;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.redis.om.spring.annotations.Dialect;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.metamodel.MetamodelField;
-import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.metamodel.indexed.NumericField;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.search.stream.actions.TakesJSONOperations;
-import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
-import com.redis.om.spring.search.stream.predicates.lexicographic.*;
 import com.redis.om.spring.search.stream.predicates.vector.KNNPredicate;
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.TupleMapper;
-import com.redis.om.spring.tuple.Tuples;
 import com.redis.om.spring.util.ObjectUtils;
-import com.redis.om.spring.util.SearchResultRawResponseToObjectConverter;
-import com.redis.vl.query.AggregateHybridQuery;
-import com.redis.vl.query.HybridQuery;
 
-import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.search.Query;
-import redis.clients.jedis.search.Query.HighlightTags;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.AggregationResult;
 import redis.clients.jedis.search.aggr.SortedField;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
-import redis.clients.jedis.search.hybrid.FTHybridParams;
-import redis.clients.jedis.search.hybrid.HybridResult;
 import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
-import redis.clients.jedis.util.SafeEncoder;
 
 /**
  * Implementation of {@link SearchStream} that provides search capabilities for Redis OM entities.
@@ -103,6 +86,11 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private final List<MetamodelField<E, ?>> highlightFields = new ArrayList<>();
   private final ExampleToNodeConverter<E> exampleToNodeConverter;
   private final RediSearchIndexer indexer;
+
+  // Helpers — package-private; stateless relative to query state
+  private final SearchStreamDocumentMapper<E> documentMapper;
+  private final SearchStreamQueryExecutor<E> queryExecutor;
+
   private Node rootNode = QueryBuilders.union();
   private Gson gson;
   private Long limit;
@@ -112,7 +100,6 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private Runnable closeHandler;
   private Stream<E> resolvedStream;
   private KNNPredicate<E, ?> knnPredicate;
-  private AggregateHybridQuery hybridQuery;
   // Deferred hybrid search parameters (query is built at execution time so limit/skip are captured)
   private CombinationMethod hybridCombinationMethod;
   private String hybridText;
@@ -120,7 +107,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private float[] hybridVector;
   private MetamodelField<? super E, ?> hybridVectorField;
   private float hybridAlpha;
-  private int dialect = Dialect.TWO.getValue();
+  private int dialect = com.redis.om.spring.annotations.Dialect.TWO.getValue();
   private SummarizeParams summarizeParams;
   private Pair<String, String> highlightTags;
   private boolean isQBE = false;
@@ -158,6 +145,10 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     this.isDocument = entityClass.isAnnotationPresent(Document.class);
     this.mappingConverter = new MappingRedisOMConverter(null, new ReferenceResolverImpl(modulesOperations.template()));
     this.exampleToNodeConverter = new ExampleToNodeConverter<>(indexer);
+    this.documentMapper = new SearchStreamDocumentMapper<>(isDocument, entityClass, json, gsonBuilder,
+        mappingConverter);
+    this.queryExecutor = new SearchStreamQueryExecutor<>(search, entityClass, isDocument, idField, mappingConverter,
+        indexer, modulesOperations, documentMapper);
   }
 
   /**
@@ -192,6 +183,10 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     this.isDocument = "JSON".equals(keyType);
     this.mappingConverter = new MappingRedisOMConverter(null, new ReferenceResolverImpl(modulesOperations.template()));
     this.exampleToNodeConverter = new ExampleToNodeConverter<>(indexer);
+    this.documentMapper = new SearchStreamDocumentMapper<>(isDocument, entityClass, json, gsonBuilder,
+        mappingConverter);
+    this.queryExecutor = new SearchStreamQueryExecutor<>(search, entityClass, isDocument, idField, mappingConverter,
+        indexer, modulesOperations, documentMapper);
   }
 
   @Override
@@ -209,7 +204,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public SearchStream<E> filter(Predicate<?> predicate) {
-    rootNode = processPredicate(predicate);
+    rootNode = queryExecutor.processPredicateGeneric(predicate, rootNode);
     return this;
   }
 
@@ -243,7 +238,6 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @Override
   public SearchStream<E> hybridSearch(String text, MetamodelField<? super E, ?> textField, float[] vector,
       MetamodelField<? super E, ?> vectorField, float alpha) {
-    // Validate all inputs
     if (text == null || text.trim().isEmpty()) {
       throw new IllegalArgumentException("text query string cannot be null or empty");
     }
@@ -260,7 +254,6 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       throw new IllegalArgumentException("alpha must be between 0.0 and 1.0, got: " + alpha);
     }
 
-    // Store parameters for deferred query construction (so limit/skip set later are captured)
     this.hybridText = text;
     this.hybridTextField = textField;
     this.hybridVector = vector;
@@ -274,7 +267,6 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @Override
   public SearchStream<E> hybridSearch(String text, MetamodelField<? super E, ?> textField, float[] vector,
       MetamodelField<? super E, ?> vectorField, CombinationMethod combinationMethod, float alpha) {
-    // Validate all inputs
     if (text == null || text.trim().isEmpty()) {
       throw new IllegalArgumentException("text query string cannot be null or empty");
     }
@@ -294,7 +286,6 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       throw new IllegalArgumentException("combinationMethod cannot be null");
     }
 
-    // Store parameters for deferred query construction (so limit/skip set later are captured)
     this.hybridText = text;
     this.hybridTextField = textField;
     this.hybridVector = vector;
@@ -342,46 +333,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
    * @return the query node representing the processed predicate
    */
   public Node processPredicate(SearchFieldPredicate<? super E, ?> predicate) {
-    // Handle lexicographic predicates specially
-    if (predicate instanceof LexicographicPredicate) {
-      return processLexicographicPredicate(predicate);
-    }
-    return predicate.apply(rootNode);
-  }
-
-  private Node processPredicate(Predicate<?> predicate) {
-    if (SearchFieldPredicate.class.isAssignableFrom(predicate.getClass())) {
-      @SuppressWarnings(
-        "unchecked"
-      ) SearchFieldPredicate<? super E, ?> p = (SearchFieldPredicate<? super E, ?>) predicate;
-      return processPredicate(p);
-    }
-    return rootNode;
-  }
-
-  private Node processLexicographicPredicate(SearchFieldPredicate<? super E, ?> predicate) {
-    // Cast to BaseAbstractPredicate to access the search field accessor
-    if (!(predicate instanceof BaseAbstractPredicate)) {
-      throw new IllegalArgumentException("Lexicographic predicates must extend BaseAbstractPredicate");
-    }
-    SearchFieldAccessor searchFieldAccessor = ((BaseAbstractPredicate<?, ?>) predicate).getSearchFieldAccessor();
-
-    if (predicate instanceof LexicographicGreaterThanMarker) {
-      LexicographicGreaterThanPredicate<E, ?> actualPredicate = new LexicographicGreaterThanPredicate<>(
-          searchFieldAccessor, ((LexicographicGreaterThanMarker<E, ?>) predicate).getValue(), modulesOperations,
-          indexer);
-      return actualPredicate.apply(rootNode);
-    } else if (predicate instanceof LexicographicLessThanMarker) {
-      LexicographicLessThanPredicate<E, ?> actualPredicate = new LexicographicLessThanPredicate<>(searchFieldAccessor,
-          ((LexicographicLessThanMarker<E, ?>) predicate).getValue(), modulesOperations, indexer);
-      return actualPredicate.apply(rootNode);
-    } else if (predicate instanceof LexicographicBetweenMarker) {
-      LexicographicBetweenMarker<E, ?> marker = (LexicographicBetweenMarker<E, ?>) predicate;
-      LexicographicBetweenPredicate<E, ?> actualPredicate = new LexicographicBetweenPredicate<>(searchFieldAccessor,
-          marker.getMin(), marker.getMax(), modulesOperations, indexer);
-      return actualPredicate.apply(rootNode);
-    }
-    throw new IllegalArgumentException("Unknown lexicographic predicate type: " + predicate.getClass());
+    return queryExecutor.processPredicate(predicate, rootNode);
   }
 
   @Override
@@ -576,11 +528,10 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @Override
   public long count() {
     if (!rootNode.toString().isBlank()) {
-      // Trim any leading/trailing spaces from the query to avoid syntax errors with DIALECT
       String queryString = rootNode.toString().trim();
       Query query = new Query(queryString);
       query.limit(0, 0);
-      query.dialect(dialect); // Use the configured dialect value
+      query.dialect(dialect);
       SearchResult searchResult = search.search(query);
       resolvedStream = Stream.empty();
 
@@ -589,13 +540,11 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       var info = search.getInfo();
       Object numDocsValue = info.get("num_docs");
 
-      // Handle different return types from Redis (fixes issue #639)
       if (numDocsValue instanceof String) {
         return Long.parseLong((String) numDocsValue);
       } else if (numDocsValue instanceof Number) {
         return ((Number) numDocsValue).longValue();
       } else {
-        // Fallback to 0 if the value is null or unexpected type
         return 0L;
       }
     }
@@ -630,7 +579,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @Override
   public SearchStream<E> findFirstOrElse(Supplier<? extends E> supplier) {
     if (resolvedStream == null) {
-      resolvedStream = toEntityList(executeQuery()).stream();
+      resolvedStream = queryExecutor.toEntityList(executeQuery(), projections, getGson()).stream();
     }
 
     if (resolvedStream.findFirst().isEmpty()) {
@@ -693,341 +642,20 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   Query prepareQuery() {
-    Query query;
-
-    if (knnPredicate != null) {
-      query = new Query(knnPredicate.apply(rootNode).toString());
-      query.dialect(Dialect.TWO.getValue());
-      query.addParam(knnPredicate.getBlobAttributeName(), knnPredicate.getBlobAttribute() != null ?
-          knnPredicate.getBlobAttribute() :
-          floatArrayToByteArray(knnPredicate.getDoublesAttribute()));
-      query.addParam("K", knnPredicate.getK());
-    } else {
-      query = (rootNode.toString().isBlank()) ? new Query() : new Query(rootNode.toString());
-      query.dialect(Dialect.TWO.getValue());
-      query.dialect(dialect);
-    }
-
-    query.limit(skip != null ? skip.intValue() : 0, limit != null ? limit.intValue() : MAX_LIMIT);
-
-    if (sortBy != null) {
-      SortedField sortField = sortBy;
-      query.setSortBy(sortField.getField(), sortField.getOrder().equals("ASC"));
-    }
-
-    if (withScores) {
-      query.setWithScores();
-    }
-    if (scorer != null) {
-      query.setScorer(scorer.getValue());
-    }
-
-    if (!summaryFields.isEmpty()) {
-      var fields = summaryFields.stream() //
-          .map(foi -> ObjectUtils.isCollection(foi.getTargetClass()) ?
-              "$." + foi.getSearchAlias() :
-              foi.getSearchAlias()).collect(toCollection(ArrayList::new));
-
-      if (summarizeParams == null) {
-        query.summarizeFields(fields.toArray(String[]::new));
-      } else {
-        query.summarizeFields( //
-            summarizeParams.getFragSize(), //
-            summarizeParams.getFragsNum(), //
-            summarizeParams.getSeparator(), //
-            fields.toArray(String[]::new) //
-        );
-      }
-    }
-
-    if (!highlightFields.isEmpty()) {
-      var fields = highlightFields.stream() //
-          .map(foi -> ObjectUtils.isCollection(foi.getTargetClass()) ?
-              "$." + foi.getSearchAlias() :
-              foi.getSearchAlias()).collect(toCollection(ArrayList::new));
-
-      if (highlightTags == null) {
-        query.highlightFields(fields.toArray(String[]::new));
-      } else {
-        HighlightTags tags = new HighlightTags(highlightTags.getFirst(), highlightTags.getSecond());
-        query.highlightFields(tags, fields.toArray(String[]::new));
-      }
-    }
-
-    if (onlyIds) {
-      query.returnFields(idField.getName());
-    } else if (!projections.isEmpty()) {
-      var returnFields = projections.stream() //
-          .map(foi -> ObjectUtils.isCollection(foi.getTargetClass()) ?
-              "$." + foi.getSearchAlias() :
-              foi.getSearchAlias()).collect(toCollection(ArrayList::new));
-      returnFields.add(idField.getName());
-
-      query.returnFields(returnFields.toArray(String[]::new));
-    } else if (isDocument) {
-      // JSON indexes on detached indices don't always return $ unless requested explicitly
-      query.returnFields("$");
-    }
-
-    return query;
+    return queryExecutor.prepareQuery(rootNode, knnPredicate, skip, limit, sortBy, withScores, scorer, dialect,
+        summaryFields, summarizeParams, highlightFields, highlightTags, onlyIds, projections);
   }
 
   private SearchResult executeQuery() {
-    try {
-      Query query = prepareQuery();
-      return search.search(query);
-    } catch (JedisDataException jde) {
-      if (isQBE && jde.getMessage().contains("not loaded nor in schema")) {
-        throw new UnsupportedOperationException("The example object properties are not part of the search schema", jde);
-      } else
-        throw jde;
-    }
-  }
-
-  /**
-   * Executes a hybrid query using RedisVL's HybridQuery implementation.
-   * <p>
-   * Tries the native FT.HYBRID command first (Redis 8.4+), and falls back
-   * to FT.AGGREGATE if FT.HYBRID is not available on the current Redis version.
-   * The HybridQuery is built at execution time so that limit/skip set after
-   * hybridSearch() are properly captured.
-   * </p>
-   */
-  @SuppressWarnings(
-    "unchecked"
-  )
-  private List<E> executeHybridQueryToEntityList() {
-    // Build the filter expression from existing rootNode filters
-    String filterExpression = null;
-    if (rootNode != null && !rootNode.toString().isBlank() && !rootNode.toString().equals("*")) {
-      filterExpression = rootNode.toString();
-    }
-
-    // Determine how many results the hybrid query should request.
-    // Use skip + limit if set, otherwise fall back to MAX_LIMIT.
-    int numResults = MAX_LIMIT;
-    if (limit != null) {
-      long requested = limit;
-      if (skip != null) {
-        requested += skip;
-      }
-      numResults = (int) Math.min(Math.max(requested, 1), MAX_LIMIT);
-    }
-
-    // Convert alpha (vector weight) to linearAlpha (text weight) for HybridQuery
-    float linearAlpha = 1.0f - hybridAlpha;
-
-    // Map CombinationMethod to redisvl4j's HybridQuery.CombinationMethod
-    HybridQuery.CombinationMethod redisvlCombinationMethod = switch (hybridCombinationMethod) {
-      case RRF -> HybridQuery.CombinationMethod.RRF;
-      case LINEAR -> HybridQuery.CombinationMethod.LINEAR;
-    };
-
-    // Build RedisVL HybridQuery at execution time
-    HybridQuery.HybridQueryBuilder builder = HybridQuery.builder().text(hybridText).textFieldName(hybridTextField
-        .getSearchAlias()).vector(hybridVector).vectorFieldName(hybridVectorField.getSearchAlias()).combinationMethod(
-            redisvlCombinationMethod).linearAlpha(linearAlpha).numResults(numResults);
-
-    if (filterExpression != null) {
-      builder.filterExpression(filterExpression);
-    }
-
-    HybridQuery hybridQueryObj = builder.build();
-
-    // Try FT.HYBRID first (Redis 8.4+)
-    try {
-      FTHybridParams params = hybridQueryObj.buildFTHybridParams();
-
-      HybridResult result = search.ftHybrid(params);
-      // FT.HYBRID documents contain String values (via ENCODED_OBJECT_MAP),
-      // not byte[] like FT.SEARCH documents. Use the same conversion as FT.AGGREGATE.
-      List<E> entities = hybridDocumentsToEntities(result.getDocuments());
-
-      // Apply skip/limit in-memory for pagination
-      if (skip != null && skip > 0) {
-        entities = entities.stream().skip(skip).collect(Collectors.toList());
-      }
-      if (limit != null) {
-        entities = entities.stream().limit(limit).collect(Collectors.toList());
-      }
-
-      return entities;
-    } catch (Exception e) {
-      logger.warn("FT.HYBRID failed, falling back to FT.AGGREGATE: " + e.getClass().getSimpleName() + ": " + e
-          .getMessage(), e);
-    }
-
-    // Fallback to FT.AGGREGATE path
-    AggregateHybridQuery fallback = hybridQueryObj.toAggregateHybridQuery();
-    this.hybridQuery = fallback;
-
-    // Build the aggregation
-    redis.clients.jedis.search.aggr.AggregationBuilder aggregation = fallback.buildRedisAggregation();
-
-    // Add parameters from HybridQuery (includes vector parameter)
-    Map<String, Object> params = fallback.getParams();
-    if (params != null && !params.isEmpty()) {
-      aggregation.params(params);
-    }
-
-    // Load all entity fields using @<searchAlias> convention for FT.AGGREGATE
-    List<String> fieldsToLoad = new ArrayList<>();
-    List<Field> entityFields = ObjectUtils.getDeclaredFieldsTransitively(entityClass);
-    for (Field field : entityFields) {
-      if (!field.getName().equals(idField.getName())) {
-        fieldsToLoad.add("@" + field.getName());
-      }
-    }
-    if (!fieldsToLoad.isEmpty()) {
-      aggregation.load(fieldsToLoad.toArray(String[]::new));
-    }
-
-    // Apply limit/skip if specified
-    if (skip != null || limit != null) {
-      int skipValue = skip != null ? skip.intValue() : 0;
-      int limitValue = limit != null ? limit.intValue() : MAX_LIMIT;
-      aggregation.limit(skipValue, limitValue);
-    }
-
-    // Execute aggregation
-    AggregationResult aggResult = search.aggregate(aggregation);
-
-    // Convert aggregation results to entities
-    if (isDocument) {
-      Gson g = getGson();
-      return aggResult.getResults().stream().map(d -> {
-        Object rawJson = d.get("$");
-        if (rawJson == null) {
-          logger.warn("Aggregation result has no '$' field; skipping entity mapping for " + entityClass
-              .getSimpleName());
-          return null;
-        }
-        String jsonStr = (rawJson instanceof byte[]) ? SafeEncoder.encode((byte[]) rawJson) : rawJson.toString();
-        return g.fromJson(jsonStr, entityClass);
-      }).filter(Objects::nonNull).collect(Collectors.toList());
-    } else {
-      return aggResult.getResults().stream().map(h -> (E) ObjectUtils.mapToObject(h, entityClass, mappingConverter))
-          .collect(Collectors.toList());
-    }
-  }
-
-  /**
-   * Converts a single {@link redis.clients.jedis.search.Document} to an entity instance,
-   * handling both JSON document and Hash structures.
-   */
-  @SuppressWarnings(
-    "unchecked"
-  )
-  private E documentToEntity(redis.clients.jedis.search.Document d) {
-    E entity;
-    if (isDocument) {
-      Object rawJson = d.get("$");
-      if (rawJson == null) {
-        // "$" is absent from the FT.SEARCH result — this can happen on some Redis
-        // versions / query shapes when the root JSON projection is not returned inline.
-        // Fall back to a direct JSON.GET so the entity is never silently dropped.
-        logger.debug("Document '" + d.getId() + "' has no '$' field in FT.SEARCH result; falling back to JSON.GET.");
-        entity = json.get(d.getId(), entityClass);
-        if (entity == null) {
-          logger.warn("Document '" + d.getId() + "' not found via JSON.GET; skipping entity mapping for " + entityClass
-              .getSimpleName() + ". The key may have been deleted or is not a JSON document.");
-          return null;
-        }
-        return ObjectUtils.populateRedisKey(entity, d.getId());
-      }
-      String jsonStr = (rawJson instanceof byte[]) ? SafeEncoder.encode((byte[]) rawJson) : rawJson.toString();
-      entity = getGson().fromJson(jsonStr, entityClass);
-    } else {
-      entity = (E) ObjectUtils.documentToObject(d, entityClass, mappingConverter);
-    }
-    return ObjectUtils.populateRedisKey(entity, d.getId());
-  }
-
-  @SuppressWarnings(
-    "unchecked"
-  )
-  private List<E> documentsToEntities(List<redis.clients.jedis.search.Document> documents) {
-    return documents.stream().map(this::documentToEntity).filter(Objects::nonNull).toList();
-  }
-
-  /**
-   * Converts a list of {@link redis.clients.jedis.search.Document} objects
-   * to a list of entity-score pairs.
-   */
-  private List<Pair<E, Double>> documentsToEntityScorePairs(List<redis.clients.jedis.search.Document> documents) {
-    return documents.stream().map(d -> {
-      E entity = documentToEntity(d);
-      return entity != null ? Tuples.of(entity, d.getScore()) : null;
-    }).filter(Objects::nonNull).toList();
-  }
-
-  /**
-   * Converts FT.HYBRID {@link redis.clients.jedis.search.Document} objects to entity instances.
-   * FT.HYBRID documents contain String values (via ENCODED_OBJECT_MAP) rather than byte[]
-   * like FT.SEARCH documents, so we extract properties as a Map and use mapToObject.
-   */
-  @SuppressWarnings(
-    "unchecked"
-  )
-  private List<E> hybridDocumentsToEntities(List<redis.clients.jedis.search.Document> documents) {
-    if (isDocument) {
-      return documents.stream().map(this::documentToEntity).filter(Objects::nonNull).toList();
-    } else {
-      return (List<E>) documents.stream().map(d -> {
-        Map<String, Object> props = new HashMap<>();
-        d.getProperties().forEach(p -> {
-          if (p.getValue() != null) {
-            props.put(p.getKey(), p.getValue());
-          }
-        });
-        Object entity = ObjectUtils.mapToObject(props, entityClass, mappingConverter);
-        return ObjectUtils.populateRedisKey(entity, d.getId());
-      }).collect(Collectors.toList());
-    }
-  }
-
-  @SuppressWarnings(
-    "unchecked"
-  )
-  private List<E> toEntityList(SearchResult searchResult) {
-    if (projections.isEmpty()) {
-      return documentsToEntities(searchResult.getDocuments());
-    } else {
-      List<E> projectedEntities = new ArrayList<>();
-      searchResult.getDocuments().forEach(doc -> {
-        Map<String, Object> props = StreamSupport.stream(doc.getProperties().spliterator(), false).collect(Collectors
-            .toMap(Entry::getKey, Entry::getValue));
-
-        E entity = BeanUtils.instantiateClass(this.entityClass);
-        projections.forEach(foi -> {
-          String field = foi.getSearchAlias();
-          Class<?> targetClass = foi.getTargetClass();
-
-          var rawValue = props.get(ObjectUtils.isCollection(targetClass) ? "$." + field : field);
-          Object processValue = SearchResultRawResponseToObjectConverter.process(rawValue, targetClass, getGson());
-
-          if (processValue != null) {
-            try {
-              foi.getSearchFieldAccessor().getField().set(entity, processValue);
-            } catch (IllegalAccessException e) {
-              logger.debug("🧨 couldn't set value on " + field, e);
-            }
-          }
-        });
-        projectedEntities.add(entity);
-      });
-      return projectedEntities;
-    }
+    return queryExecutor.executeQuery(rootNode, knnPredicate, skip, limit, sortBy, withScores, scorer, dialect,
+        summaryFields, summarizeParams, highlightFields, highlightTags, onlyIds, projections, isQBE);
   }
 
   private Stream<E> resolveStream() {
     if (resolvedStream == null) {
-      // Check if we're executing a hybrid query
-      if (hybridText != null) {
-        resolvedStream = executeHybridQueryToEntityList().stream();
-      } else {
-        resolvedStream = toEntityList(executeQuery()).stream();
-      }
+      resolvedStream = queryExecutor.resolveStream(rootNode, knnPredicate, skip, limit, sortBy, withScores, scorer,
+          dialect, summaryFields, summarizeParams, highlightFields, highlightTags, onlyIds, projections, isQBE,
+          hybridText, hybridTextField, hybridVector, hybridVectorField, hybridAlpha, hybridCombinationMethod);
     }
     return resolvedStream;
   }
@@ -1185,7 +813,6 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     } else {
       if (!isStreamResolved()) {
         this.sorted(pageable.getSort()).limit(pageable.getPageSize()).skip(Math.toIntExact(pageable.getOffset()));
-        // issue a count query to answer the hasNext? question for the slice/page
         Query countQuery = (rootNode.toString().isBlank()) ? new Query() : new Query(rootNode.toString());
         countQuery.limit(Math.toIntExact(pageable.getOffset() + pageable.getPageSize()), pageable.getPageSize());
         SearchResult searchResult = search.search(countQuery);
@@ -1318,8 +945,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
           "toListWithScores() is not supported after project(). " + "Projections return partial documents that cannot be deserialized into full entities. " + "Remove the project() call or use collect() instead.");
     }
     withScores = true;
-    SearchResult searchResult = executeQuery();
-    return documentsToEntityScorePairs(searchResult.getDocuments());
+    return queryExecutor.toListWithScores(rootNode, knnPredicate, skip, limit, sortBy, scorer, dialect, summaryFields,
+        summarizeParams, highlightFields, highlightTags, projections, isQBE);
   }
 
   @Override
@@ -1327,7 +954,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     return isDocument;
   }
 
-  private Gson getGson() {
+  Gson getGson() {
     if (gson == null) {
       gson = gsonBuilder.create();
     }
