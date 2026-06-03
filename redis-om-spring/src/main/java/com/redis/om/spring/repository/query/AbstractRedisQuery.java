@@ -420,7 +420,7 @@ public abstract class AbstractRedisQuery implements RepositoryQuery {
       qf.add(Pair.of(actualKey, resolveQueryClause(redis.clients.jedis.search.Schema.FieldType.TAG, part.getType(),
           indexAnnotation.lexicographic())));
     } else if (Number.class.isAssignableFrom(
-        fieldType) || (fieldType == java.time.LocalDateTime.class) || (fieldType == java.time.LocalDate.class) || (fieldType == java.util.Date.class)) {
+        fieldType) || (fieldType == java.time.LocalDateTime.class) || (fieldType == java.time.LocalDate.class) || (fieldType == java.util.Date.class) || (fieldType == java.time.Instant.class) || (fieldType == java.time.OffsetDateTime.class)) {
       qf.add(Pair.of(actualKey, QueryClause.get(redis.clients.jedis.search.Schema.FieldType.NUMERIC, part.getType())));
     } else if (Set.class.isAssignableFrom(fieldType) || List.class.isAssignableFrom(fieldType)) {
       Optional<Class<?>> maybeCollectionType = com.redis.om.spring.util.ObjectUtils.getCollectionElementClass(field);
