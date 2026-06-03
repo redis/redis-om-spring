@@ -120,8 +120,7 @@ public abstract class AbstractRedisQuery implements RepositoryQuery {
   @SuppressWarnings(
     { "unchecked", "rawtypes" }
   )
-  protected void initFromMethod(Class<?> repoClass, RepositoryMetadata metadata, Class[] params,
-      String methodName) {
+  protected void initFromMethod(Class<?> repoClass, RepositoryMetadata metadata, Class[] params, String methodName) {
     this.hasLanguageParameter = Arrays.stream(params).anyMatch(c -> c.isAssignableFrom(SearchLanguage.class));
     this.isANDQuery = QueryClause.hasContainingAllClause(queryMethod.getName());
     if (this.isANDQuery) {
@@ -152,10 +151,10 @@ public abstract class AbstractRedisQuery implements RepositoryQuery {
         Aggregation aggregation = method.getAnnotation(Aggregation.class);
         this.type = RediSearchQueryType.AGGREGATION;
         this.value = aggregation.value();
-        Arrays.stream(aggregation.load()).forEach(
-            load -> aggregationLoad.add(new SimpleEntry<>(load.property(), load.alias())));
-        Arrays.stream(aggregation.apply()).forEach(
-            apply -> aggregationApply.add(new SimpleEntry<>(apply.alias(), apply.expression())));
+        Arrays.stream(aggregation.load()).forEach(load -> aggregationLoad.add(new SimpleEntry<>(load.property(), load
+            .alias())));
+        Arrays.stream(aggregation.apply()).forEach(apply -> aggregationApply.add(new SimpleEntry<>(apply.alias(), apply
+            .expression())));
         this.aggregationFilter = aggregation.filter();
         this.aggregationTimeout = aggregation.timeout() > Long.MIN_VALUE ? aggregation.timeout() : null;
         this.aggregationVerbatim = aggregation.verbatim() ? true : null;
@@ -377,9 +376,8 @@ public abstract class AbstractRedisQuery implements RepositoryQuery {
     } else if (field.isAnnotationPresent(Searchable.class)) {
       Searchable indexAnnotation = field.getAnnotation(Searchable.class);
       String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
-      qf.add(Pair.of(actualKey,
-          resolveQueryClause(redis.clients.jedis.search.Schema.FieldType.TEXT, part.getType(),
-              indexAnnotation.lexicographic())));
+      qf.add(Pair.of(actualKey, resolveQueryClause(redis.clients.jedis.search.Schema.FieldType.TEXT, part.getType(),
+          indexAnnotation.lexicographic())));
     } else if (field.isAnnotationPresent(TagIndexed.class)) {
       TagIndexed indexAnnotation = field.getAnnotation(TagIndexed.class);
       String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
@@ -391,13 +389,11 @@ public abstract class AbstractRedisQuery implements RepositoryQuery {
     } else if (field.isAnnotationPresent(NumericIndexed.class)) {
       NumericIndexed indexAnnotation = field.getAnnotation(NumericIndexed.class);
       String actualKey = indexAnnotation.alias().isBlank() ? key : indexAnnotation.alias();
-      qf.add(Pair.of(actualKey,
-          QueryClause.get(redis.clients.jedis.search.Schema.FieldType.NUMERIC, part.getType())));
+      qf.add(Pair.of(actualKey, QueryClause.get(redis.clients.jedis.search.Schema.FieldType.NUMERIC, part.getType())));
     } else if (field.isAnnotationPresent(org.springframework.data.annotation.Id.class)) {
       Class<?> fieldType = org.springframework.util.ClassUtils.resolvePrimitiveIfNecessary(field.getType());
       if (Number.class.isAssignableFrom(fieldType)) {
-        qf.add(Pair.of(key,
-            QueryClause.get(redis.clients.jedis.search.Schema.FieldType.NUMERIC, part.getType())));
+        qf.add(Pair.of(key, QueryClause.get(redis.clients.jedis.search.Schema.FieldType.NUMERIC, part.getType())));
       } else {
         qf.add(Pair.of(key, QueryClause.get(redis.clients.jedis.search.Schema.FieldType.TAG, part.getType())));
       }
@@ -416,18 +412,16 @@ public abstract class AbstractRedisQuery implements RepositoryQuery {
    * (e.g. {@link RediSearchQuery}) override this to add lexicographic, nested,
    * and Map field handling.
    */
-  protected List<Pair<String, QueryClause>> extractIndexedQueryFields(Field field, Class<?> fieldType,
-      String actualKey, String key, Part part, List<PropertyPath> path, int level, Indexed indexAnnotation) {
+  protected List<Pair<String, QueryClause>> extractIndexedQueryFields(Field field, Class<?> fieldType, String actualKey,
+      String key, Part part, List<PropertyPath> path, int level, Indexed indexAnnotation) {
     List<Pair<String, QueryClause>> qf = new ArrayList<>();
-    if (CharSequence.class.isAssignableFrom(fieldType) || (fieldType == Boolean.class) || (fieldType == UUID.class) || (fieldType
-        .isEnum())) {
-      qf.add(Pair.of(actualKey,
-          resolveQueryClause(redis.clients.jedis.search.Schema.FieldType.TAG, part.getType(),
-              indexAnnotation.lexicographic())));
-    } else if (Number.class.isAssignableFrom(fieldType) || (fieldType == java.time.LocalDateTime.class) || (fieldType
-        == java.time.LocalDate.class) || (fieldType == java.util.Date.class)) {
-      qf.add(Pair.of(actualKey,
-          QueryClause.get(redis.clients.jedis.search.Schema.FieldType.NUMERIC, part.getType())));
+    if (CharSequence.class.isAssignableFrom(
+        fieldType) || (fieldType == Boolean.class) || (fieldType == UUID.class) || (fieldType.isEnum())) {
+      qf.add(Pair.of(actualKey, resolveQueryClause(redis.clients.jedis.search.Schema.FieldType.TAG, part.getType(),
+          indexAnnotation.lexicographic())));
+    } else if (Number.class.isAssignableFrom(
+        fieldType) || (fieldType == java.time.LocalDateTime.class) || (fieldType == java.time.LocalDate.class) || (fieldType == java.util.Date.class)) {
+      qf.add(Pair.of(actualKey, QueryClause.get(redis.clients.jedis.search.Schema.FieldType.NUMERIC, part.getType())));
     } else if (Set.class.isAssignableFrom(fieldType) || List.class.isAssignableFrom(fieldType)) {
       Optional<Class<?>> maybeCollectionType = com.redis.om.spring.util.ObjectUtils.getCollectionElementClass(field);
       if (maybeCollectionType.isPresent()) {
@@ -447,8 +441,7 @@ public abstract class AbstractRedisQuery implements RepositoryQuery {
         }
       }
     } else if (fieldType == org.springframework.data.geo.Point.class) {
-      qf.add(Pair.of(actualKey,
-          QueryClause.get(redis.clients.jedis.search.Schema.FieldType.GEO, part.getType())));
+      qf.add(Pair.of(actualKey, QueryClause.get(redis.clients.jedis.search.Schema.FieldType.GEO, part.getType())));
     } else {
       qf.addAll(extractQueryFields(fieldType, part, path, level + 1));
     }
@@ -460,8 +453,8 @@ public abstract class AbstractRedisQuery implements RepositoryQuery {
    * implementation delegates to {@link QueryClause#get}. {@link RediSearchQuery}
    * overrides this to return lexicographic clauses when applicable.
    */
-  protected QueryClause resolveQueryClause(redis.clients.jedis.search.Schema.FieldType fieldType,
-      Part.Type partType, boolean lexicographic) {
+  protected QueryClause resolveQueryClause(redis.clients.jedis.search.Schema.FieldType fieldType, Part.Type partType,
+      boolean lexicographic) {
     return QueryClause.get(fieldType, partType);
   }
 
@@ -554,9 +547,9 @@ public abstract class AbstractRedisQuery implements RepositoryQuery {
     if (queryMethod.getReturnedObjectType() == AggregationResult.class) {
       result = aggregationResult;
     } else if (queryMethod.getReturnedObjectType() == Map.class) {
-      List<?> content = aggregationResult.getResults().stream().map(m -> m.entrySet().stream()
-          .map(e -> new AbstractMap.SimpleEntry<>(e.getKey(), e.getValue() != null ? e.getValue().toString() : ""))
-          .collect(Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue))).collect(Collectors.toList());
+      List<?> content = aggregationResult.getResults().stream().map(m -> m.entrySet().stream().map(
+          e -> new AbstractMap.SimpleEntry<>(e.getKey(), e.getValue() != null ? e.getValue().toString() : "")).collect(
+              Collectors.toMap(SimpleEntry::getKey, SimpleEntry::getValue))).collect(Collectors.toList());
       if (queryMethod.isPageQuery() && maybePageable.isPresent()) {
         result = new PageImpl<>(content, maybePageable.get(), aggregationResult.getTotalResults());
       }

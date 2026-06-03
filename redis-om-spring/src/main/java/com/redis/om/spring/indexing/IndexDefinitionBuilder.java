@@ -165,9 +165,8 @@ class IndexDefinitionBuilder {
               }
             }
           } else {
-            logger.debug(String.format(
-                "Could not determine the type of elements in the collection %s in entity %s", field.getName(),
-                field.getDeclaringClass().getSimpleName()));
+            logger.debug(String.format("Could not determine the type of elements in the collection %s in entity %s",
+                field.getName(), field.getDeclaringClass().getSimpleName()));
           }
         } else if (Map.class.isAssignableFrom(fieldType) && isDocument) {
           logger.info(String.format("Processing Map field: %s of type %s", field.getName(), fieldType));
@@ -287,8 +286,8 @@ class IndexDefinitionBuilder {
                   .indexEmpty())));
           case NUMERIC -> fields.add(SearchField.of(field, factory.indexAsNumericFieldFor(field, isDocument, prefix,
               indexed.sortable(), indexed.noindex(), indexed.alias(), indexed.indexMissing(), indexed.indexEmpty())));
-          case GEO -> fields.add(SearchField.of(field, factory.indexAsGeoFieldFor(field, true, prefix,
-              indexed.alias())));
+          case GEO -> fields.add(SearchField.of(field, factory.indexAsGeoFieldFor(field, true, prefix, indexed
+              .alias())));
           case VECTOR -> fields.add(SearchField.of(field, factory.indexAsVectorFieldFor(field, isDocument, prefix,
               indexed)));
           case NESTED -> {
@@ -306,8 +305,8 @@ class IndexDefinitionBuilder {
               }
             }
 
-            for (java.lang.reflect.Field subfield : com.redis.om.spring.util.ObjectUtils
-                .getDeclaredFieldsTransitively(nestedType)) {
+            for (java.lang.reflect.Field subfield : com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively(
+                nestedType)) {
               String subfieldPrefix = (prefix == null || prefix.isBlank()) ?
                   field.getName() :
                   String.join(".", prefix, field.getName());
@@ -352,8 +351,7 @@ class IndexDefinitionBuilder {
   // ID field indexing
   // ---------------------------------------------------------------------------
 
-  private List<SearchField> createIndexedFieldsForIdFields(Class<?> cl, List<SchemaField> fields,
-      boolean isDocument) {
+  private List<SearchField> createIndexedFieldsForIdFields(Class<?> cl, List<SchemaField> fields, boolean isDocument) {
     List<SearchField> results = new ArrayList<>();
     List<java.lang.reflect.Field> idFields = getIdFieldsForEntityClass(cl);
     for (java.lang.reflect.Field idField : idFields) {
@@ -428,8 +426,9 @@ class IndexDefinitionBuilder {
     Class<?> referencedType = referenceField.getType();
     String referenceFieldName = referenceField.getName();
 
-    logger.debug("Processing indexed subfields for @Reference field " + referenceFieldName + " of type " +
-        referencedType.getSimpleName());
+    logger.debug(
+        "Processing indexed subfields for @Reference field " + referenceFieldName + " of type " + referencedType
+            .getSimpleName());
 
     List<java.lang.reflect.Field> referencedFields = new ArrayList<>();
     referencedFields.addAll(com.redis.om.spring.util.ObjectUtils.getFieldsWithAnnotation(referencedType,
@@ -466,8 +465,8 @@ class IndexDefinitionBuilder {
       String alias = referenceFieldName + "_" + subFieldName;
       FieldName fieldName = FieldName.of(fieldPath).as(alias);
 
-      logger.debug("Creating index field for " + referenceFieldName + "." + subFieldName + " with path " + fieldPath +
-          " and alias " + alias);
+      logger.debug(
+          "Creating index field for " + referenceFieldName + "." + subFieldName + " with path " + fieldPath + " and alias " + alias);
 
       Searchable searchable = subField.getAnnotation(Searchable.class);
       if (searchable != null) {
@@ -758,8 +757,8 @@ class IndexDefinitionBuilder {
         }
         fields.add(SearchField.of(arrayField, GeoField.of(fieldName)));
       }
-      case UNSUPPORTED -> logger.debug(String.format("Skipping nested field %s of unsupported type %s",
-          nestedField.getName(), nestedFieldType.getSimpleName()));
+      case UNSUPPORTED -> logger.debug(String.format("Skipping nested field %s of unsupported type %s", nestedField
+          .getName(), nestedFieldType.getSimpleName()));
     }
 
     return fields;

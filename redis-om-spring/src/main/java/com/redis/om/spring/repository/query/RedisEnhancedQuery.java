@@ -1,7 +1,5 @@
 package com.redis.om.spring.repository.query;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -10,6 +8,9 @@ import java.util.stream.Stream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.keyvalue.core.KeyValueOperations;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisOperations;
@@ -18,13 +19,8 @@ import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.query.*;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
-import org.springframework.data.repository.query.parser.Part;
 import org.springframework.data.util.Pair;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort.Order;
 
-import com.github.f4b6a3.ulid.Ulid;
 import com.google.gson.GsonBuilder;
 import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.annotations.*;
@@ -39,7 +35,6 @@ import com.redis.om.spring.util.ObjectUtils;
 
 import redis.clients.jedis.search.FieldName;
 import redis.clients.jedis.search.Query;
-import redis.clients.jedis.search.Schema.FieldType;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.*;
 
@@ -73,7 +68,9 @@ public class RedisEnhancedQuery extends AbstractRedisQuery {
    * @param queryCreator            the query creator class (currently unused)
    * @param redisOMProperties       configuration properties for Redis OM
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings(
+    "unchecked"
+  )
   public RedisEnhancedQuery(QueryMethod queryMethod, //
       RepositoryMetadata metadata, //
       RediSearchIndexer indexer, //
@@ -83,9 +80,8 @@ public class RedisEnhancedQuery extends AbstractRedisQuery {
       RedisModulesOperations<?> rmo, //
       Class<? extends AbstractQueryCreator<?, ?>> queryCreator, //
       RedisOMProperties redisOMProperties) {
-    super(queryMethod, (RedisModulesOperations<String>) rmo, indexer,
-        new EntityStreamImpl((RedisModulesOperations<String>) rmo, new GsonBuilder(), indexer),
-        redisOMProperties, Dialect.ONE);
+    super(queryMethod, (RedisModulesOperations<String>) rmo, indexer, new EntityStreamImpl(
+        (RedisModulesOperations<String>) rmo, new GsonBuilder(), indexer), redisOMProperties, Dialect.ONE);
 
     logger.info(String.format("Creating query %s", queryMethod.getName()));
 
@@ -93,8 +89,9 @@ public class RedisEnhancedQuery extends AbstractRedisQuery {
     this.redisOperations = redisOperations;
     this.mappingConverter = new MappingRedisOMConverter(null, new ReferenceResolverImpl(redisOperations));
 
-    @SuppressWarnings("rawtypes")
-    Class[] params = queryMethod.getParameters().stream().map(Parameter::getType).toArray(Class[]::new);
+    @SuppressWarnings(
+      "rawtypes"
+    ) Class[] params = queryMethod.getParameters().stream().map(Parameter::getType).toArray(Class[]::new);
 
     super.initFromMethod(metadata.getRepositoryInterface(), metadata, params, queryMethod.getName());
   }
@@ -192,8 +189,9 @@ public class RedisEnhancedQuery extends AbstractRedisQuery {
 
     // Check if this is a SearchStream query
     if (SearchStream.class.isAssignableFrom(queryMethod.getReturnedObjectType())) {
-      @SuppressWarnings("unchecked")
-      SearchStream<?> stream = entityStream.of((Class<Object>) domainType);
+      @SuppressWarnings(
+        "unchecked"
+      ) SearchStream<?> stream = entityStream.of((Class<Object>) domainType);
 
       String queryString = prepareQuery(parameters, true);
 
@@ -310,8 +308,9 @@ public class RedisEnhancedQuery extends AbstractRedisQuery {
           List<Object> results = connection.closePipeline();
 
           for (Object result : results) {
-            @SuppressWarnings("unchecked")
-            Map<byte[], byte[]> hashMap = (Map<byte[], byte[]>) result;
+            @SuppressWarnings(
+              "unchecked"
+            ) Map<byte[], byte[]> hashMap = (Map<byte[], byte[]>) result;
             Object entity = mappingConverter.read(returnType, new RedisData(hashMap));
             entities.add(entity);
           }
@@ -452,8 +451,9 @@ public class RedisEnhancedQuery extends AbstractRedisQuery {
         return orPart;
       }).collect(Collectors.joining(" | ")));
     } else {
-      @SuppressWarnings("unchecked")
-      Iterator<Parameter> iterator = (Iterator<Parameter>) queryMethod.getParameters().iterator();
+      @SuppressWarnings(
+        "unchecked"
+      ) Iterator<Parameter> iterator = (Iterator<Parameter>) queryMethod.getParameters().iterator();
       int index = 0;
 
       if (value != null && !value.isBlank()) {

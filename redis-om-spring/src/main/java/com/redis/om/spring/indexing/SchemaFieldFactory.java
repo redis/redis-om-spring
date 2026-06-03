@@ -59,8 +59,8 @@ class SchemaFieldFactory {
       }
     }
 
-    FieldName fieldName = buildFieldName(field, prefix, isDocument, Optional.ofNullable(indexed.alias()),
-        Optional.empty());
+    FieldName fieldName = buildFieldName(field, prefix, isDocument, Optional.ofNullable(indexed.alias()), Optional
+        .empty());
     return new VectorField(fieldName, indexed.algorithm(), attributes);
   }
 
@@ -102,8 +102,8 @@ class SchemaFieldFactory {
 
   SchemaField indexAsTagFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, boolean sortable,
       String separator, int arrayIndex, String annotationAlias, boolean indexMissing, boolean indexEmpty) {
-    FieldName fieldName = buildFieldName(field, prefix, isDocument, Optional.ofNullable(annotationAlias),
-        Optional.of(arrayIndex));
+    FieldName fieldName = buildFieldName(field, prefix, isDocument, Optional.ofNullable(annotationAlias), Optional.of(
+        arrayIndex));
     return getTagField(fieldName, separator, sortable, indexMissing, indexEmpty);
   }
 

@@ -2,14 +2,9 @@ package com.redis.om.spring.indexing;
 
 import static com.redis.om.spring.util.ObjectUtils.*;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.logging.Log;
@@ -17,10 +12,6 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.expression.BeanFactoryResolver;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.Reference;
-import org.springframework.data.core.TypeInformation;
-import org.springframework.data.geo.Point;
 import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.TimeToLive;
 import org.springframework.data.redis.core.convert.KeyspaceConfiguration.KeyspaceSettings;
@@ -30,9 +21,7 @@ import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
-import org.springframework.util.ClassUtils;
 
-import com.github.f4b6a3.ulid.Ulid;
 import com.google.gson.GsonBuilder;
 import com.redis.om.spring.RedisOMProperties;
 import com.redis.om.spring.annotations.*;
@@ -118,9 +107,9 @@ public class RediSearchIndexer {
     this.mappingContext = mappingContext;
     this.schemaFieldFactory = new SchemaFieldFactory();
     this.indexDefinitionBuilder = new IndexDefinitionBuilder(schemaFieldFactory, gsonBuilder,
-        pair -> entityClassToIdentifierFilter.put(pair.getFirst(), pair.getSecond()),
-        (entityClass, fieldName) -> entityClassToLexicographicFields.computeIfAbsent(entityClass,
-            k -> new HashSet<>()).add(fieldName));
+        pair -> entityClassToIdentifierFilter.put(pair.getFirst(), pair.getSecond()), (entityClass,
+            fieldName) -> entityClassToLexicographicFields.computeIfAbsent(entityClass, k -> new HashSet<>()).add(
+                fieldName));
   }
 
   /**

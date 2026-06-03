@@ -23,7 +23,6 @@ import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.query.*;
 import org.springframework.data.repository.query.parser.AbstractQueryCreator;
 import org.springframework.data.repository.query.parser.Part;
-import org.springframework.data.repository.query.parser.PartTree;
 import org.springframework.data.util.Pair;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
@@ -154,9 +153,8 @@ public class RediSearchQuery extends AbstractRedisQuery {
       GsonBuilder gsonBuilder, //
       RedisOMProperties redisOMProperties //
   ) {
-    super(queryMethod, (RedisModulesOperations<String>) rmo, indexer,
-        new EntityStreamImpl((RedisModulesOperations<String>) rmo, gsonBuilder, indexer), redisOMProperties,
-        Dialect.TWO);
+    super(queryMethod, (RedisModulesOperations<String>) rmo, indexer, new EntityStreamImpl(
+        (RedisModulesOperations<String>) rmo, gsonBuilder, indexer), redisOMProperties, Dialect.TWO);
 
     logger.info(String.format("Creating %s query method", queryMethod.getName()));
 
@@ -268,8 +266,8 @@ public class RediSearchQuery extends AbstractRedisQuery {
   }
 
   @Override
-  protected List<Pair<String, QueryClause>> extractIndexedQueryFields(Field field, Class<?> fieldType,
-      String actualKey, String key, Part part, List<PropertyPath> path, int level, Indexed indexAnnotation) {
+  protected List<Pair<String, QueryClause>> extractIndexedQueryFields(Field field, Class<?> fieldType, String actualKey,
+      String key, Part part, List<PropertyPath> path, int level, Indexed indexAnnotation) {
     List<Pair<String, QueryClause>> qf = new ArrayList<>();
     FieldType redisFieldType = getRedisFieldType(fieldType);
 
@@ -368,8 +366,7 @@ public class RediSearchQuery extends AbstractRedisQuery {
     for (List<Pair<String, QueryClause>> orPartParts : queryOrParts) {
       for (Pair<String, QueryClause> pair : orPartParts) {
         QueryClause clause = pair.getSecond();
-        logger.debug(
-            String.format("Checking clause: %s, is lexicographic: %s", clause, isLexicographicClause(clause)));
+        logger.debug(String.format("Checking clause: %s, is lexicographic: %s", clause, isLexicographicClause(clause)));
         if (!isLexicographicClause(clause)) {
           allLexicographic = false;
           break;
@@ -877,8 +874,8 @@ public class RediSearchQuery extends AbstractRedisQuery {
                 if (redisFieldType != null) {
                   QueryClause queryClause = QueryClause.get(redisFieldType, partType);
                   currentOrPart.add(Pair.of(indexFieldName, queryClause));
-                  logger.debug(
-                      String.format("Added MapContains field: %s with clause: %s", indexFieldName, queryClause));
+                  logger.debug(String.format("Added MapContains field: %s with clause: %s", indexFieldName,
+                      queryClause));
                 }
               }
             }
