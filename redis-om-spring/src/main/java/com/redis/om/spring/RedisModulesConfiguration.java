@@ -16,6 +16,8 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.ApplicationContext;
@@ -199,7 +201,6 @@ public class RedisModulesConfiguration {
   }
 
   private JedisConnectionFactory createSentinelConnectionFactory(Environment environment, String master) {
-    String nodes = environment.getProperty("spring.data.redis.sentinel.nodes", "");
     String dataPassword = environment.getProperty("spring.data.redis.password");
     String dataUsername = environment.getProperty("spring.data.redis.username");
     String sentinelPassword = environment.getProperty("spring.data.redis.sentinel.password");
@@ -209,12 +210,13 @@ public class RedisModulesConfiguration {
     RedisSentinelConfiguration sentinelConfig = new RedisSentinelConfiguration().master(master);
     sentinelConfig.setDatabase(database);
 
+    // Use Binder so that both YAML list format and comma-separated string format
+    // are resolved correctly. Environment.getProperty() only handles a single
+    // String value and silently returns empty when nodes are defined as a YAML list.
     Set<RedisNode> sentinelNodes = new HashSet<>();
-    for (String node : StringUtils.commaDelimitedListToStringArray(nodes)) {
-      if (StringUtils.hasText(node)) {
-        sentinelNodes.add(RedisNode.fromString(node.trim(), RedisNode.DEFAULT_SENTINEL_PORT));
-      }
-    }
+    Binder.get(environment).bind("spring.data.redis.sentinel.nodes", Bindable.listOf(String.class)).orElse(List.of())
+        .stream().filter(StringUtils::hasText).map(node -> RedisNode.fromString(node.trim(),
+            RedisNode.DEFAULT_SENTINEL_PORT)).forEach(sentinelNodes::add);
     sentinelConfig.setSentinels(sentinelNodes);
 
     if (StringUtils.hasText(dataPassword)) {
