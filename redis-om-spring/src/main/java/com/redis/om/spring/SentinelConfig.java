@@ -1,11 +1,13 @@
 package com.redis.om.spring;
 
-import static org.springframework.util.StringUtils.commaDelimitedListToSet;
-
 import java.time.Duration;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -14,6 +16,7 @@ import org.springframework.data.redis.connection.RedisSentinelConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.util.StringUtils;
 
 import redis.clients.jedis.JedisPoolConfig;
 
@@ -29,7 +32,8 @@ import redis.clients.jedis.JedisPoolConfig;
  * </p>
  * <ul>
  * <li>{@code spring.data.redis.sentinel.master} - The sentinel master name (required)</li>
- * <li>{@code spring.data.redis.sentinel.nodes} - Comma-delimited list of sentinel nodes</li>
+ * <li>{@code spring.data.redis.sentinel.nodes} - Sentinel nodes as a comma-separated string
+ * or a YAML list. When no port is specified the standard sentinel port (26379) is used.</li>
  * </ul>
  */
 public class SentinelConfig {
@@ -56,14 +60,22 @@ public class SentinelConfig {
    * @return a configured Jedis connection factory for sentinel
    */
   @Bean
+  @ConditionalOnMissingBean(
+    JedisConnectionFactory.class
+  )
   public JedisConnectionFactory jedisConnectionFactory(Environment env) {
     String master = env.getProperty("spring.data.redis.sentinel.master");
     if (master == null || master.isBlank()) {
       throw new IllegalStateException("spring.data.redis.sentinel.master must be configured for Sentinel mode");
     }
-    String nodes = env.getProperty("spring.data.redis.sentinel.nodes");
-    Set<String> sentinelNodes = commaDelimitedListToSet(nodes);
-    Set<RedisNode> redisNodes = sentinelNodes.stream().map(RedisNode::fromString).collect(Collectors.toSet());
+
+    // Use Binder so that both YAML list format and comma-separated string format
+    // are resolved correctly. Environment.getProperty() only handles a single
+    // String value and silently returns empty when nodes are defined as a YAML list.
+    Set<RedisNode> redisNodes = new HashSet<>();
+    Binder.get(env).bind("spring.data.redis.sentinel.nodes", Bindable.listOf(String.class)).orElse(List.of()).stream()
+        .filter(StringUtils::hasText).map(node -> RedisNode.fromString(node.trim(), RedisNode.DEFAULT_SENTINEL_PORT))
+        .forEach(redisNodes::add);
 
     RedisSentinelConfiguration sentinelConfig = new RedisSentinelConfiguration().master(master);
     sentinelConfig.setSentinels(redisNodes);

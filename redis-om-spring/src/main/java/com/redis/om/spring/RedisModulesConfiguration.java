@@ -16,6 +16,8 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.context.ApplicationContext;
@@ -24,6 +26,8 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.Environment;
 import org.springframework.data.geo.Point;
+import org.springframework.data.redis.connection.RedisNode;
+import org.springframework.data.redis.connection.RedisSentinelConfiguration;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
@@ -148,13 +152,14 @@ public class RedisModulesConfiguration {
    * It will be created if no JedisConnectionFactory bean exists, ensuring
    * Jedis is used instead of Lettuce (which is Spring Boot 4.0's default).
    * <p>
-   * Connection settings are read from standard Spring Data Redis properties:
+   * The deployment mode is determined automatically from standard Spring Data Redis properties:
    * <ul>
-   * <li>{@code spring.data.redis.host} - Redis server host (default: localhost)</li>
-   * <li>{@code spring.data.redis.port} - Redis server port (default: 6379)</li>
-   * <li>{@code spring.data.redis.username} - Redis username for ACL authentication (optional)</li>
-   * <li>{@code spring.data.redis.password} - Redis password (optional)</li>
-   * <li>{@code spring.data.redis.database} - Redis database index (default: 0)</li>
+   * <li>If {@code spring.data.redis.sentinel.master} is set, a Sentinel-aware factory is
+   * created using {@code spring.data.redis.sentinel.nodes}, {@code spring.data.redis.sentinel.password},
+   * and {@code spring.data.redis.sentinel.username}.</li>
+   * <li>Otherwise, a standalone factory is created using {@code spring.data.redis.host} (default: localhost),
+   * {@code spring.data.redis.port} (default: 6379), {@code spring.data.redis.username},
+   * {@code spring.data.redis.password}, and {@code spring.data.redis.database} (default: 0).</li>
    * </ul>
    *
    * @param environment the Spring environment for reading configuration properties
@@ -168,6 +173,14 @@ public class RedisModulesConfiguration {
     JedisConnectionFactory.class
   )
   public JedisConnectionFactory jedisConnectionFactory(Environment environment) {
+    String sentinelMaster = environment.getProperty("spring.data.redis.sentinel.master");
+    if (StringUtils.hasText(sentinelMaster)) {
+      return createSentinelConnectionFactory(environment, sentinelMaster);
+    }
+    return createStandaloneConnectionFactory(environment);
+  }
+
+  private JedisConnectionFactory createStandaloneConnectionFactory(Environment environment) {
     String host = environment.getProperty("spring.data.redis.host", "localhost");
     int port = environment.getProperty("spring.data.redis.port", Integer.class, 6379);
     String username = environment.getProperty("spring.data.redis.username");
@@ -184,8 +197,43 @@ public class RedisModulesConfiguration {
     }
 
     JedisClientConfiguration clientConfig = JedisClientConfiguration.builder().build();
-
     return new JedisConnectionFactory(redisConfig, clientConfig);
+  }
+
+  private JedisConnectionFactory createSentinelConnectionFactory(Environment environment, String master) {
+    String dataPassword = environment.getProperty("spring.data.redis.password");
+    String dataUsername = environment.getProperty("spring.data.redis.username");
+    String sentinelPassword = environment.getProperty("spring.data.redis.sentinel.password");
+    String sentinelUsername = environment.getProperty("spring.data.redis.sentinel.username");
+    int database = environment.getProperty("spring.data.redis.database", Integer.class, 0);
+
+    RedisSentinelConfiguration sentinelConfig = new RedisSentinelConfiguration().master(master);
+    sentinelConfig.setDatabase(database);
+
+    // Use Binder so that both YAML list format and comma-separated string format
+    // are resolved correctly. Environment.getProperty() only handles a single
+    // String value and silently returns empty when nodes are defined as a YAML list.
+    Set<RedisNode> sentinelNodes = new HashSet<>();
+    Binder.get(environment).bind("spring.data.redis.sentinel.nodes", Bindable.listOf(String.class)).orElse(List.of())
+        .stream().filter(StringUtils::hasText).map(node -> RedisNode.fromString(node.trim(),
+            RedisNode.DEFAULT_SENTINEL_PORT)).forEach(sentinelNodes::add);
+    sentinelConfig.setSentinels(sentinelNodes);
+
+    if (StringUtils.hasText(dataPassword)) {
+      sentinelConfig.setPassword(dataPassword);
+    }
+    if (StringUtils.hasText(dataUsername)) {
+      sentinelConfig.setUsername(dataUsername);
+    }
+    if (StringUtils.hasText(sentinelPassword)) {
+      sentinelConfig.setSentinelPassword(sentinelPassword);
+    }
+    if (StringUtils.hasText(sentinelUsername)) {
+      sentinelConfig.setSentinelUsername(sentinelUsername);
+    }
+
+    JedisClientConfiguration clientConfig = JedisClientConfiguration.builder().usePooling().build();
+    return new JedisConnectionFactory(sentinelConfig, clientConfig);
   }
 
   /**
@@ -311,18 +359,17 @@ public class RedisModulesConfiguration {
   }
 
   /**
-   * Provides a default implementation of the CommandListener bean.
+   * Provides a default no-operation implementation of the CommandListener bean.
    * <p>
-   * This method creates a no-operation (NoOp) implementation of the CommandListener interface.
-   * It is used as a fallback when no other CommandListener bean is defined in the application context.
-   * <p>
-   * The {@code @Fallback} annotation ensures that this bean is only used when no other
-   * CommandListener bean is available, allowing developers to override it with a custom implementation if needed.
+   * Only created when no other {@link CommandListener} bean is present in the application context,
+   * allowing applications to supply a custom implementation simply by declaring their own bean.
    *
    * @return a NoOpCommandListener instance, which performs no operations.
    */
   @Bean
-  @Fallback
+  @ConditionalOnMissingBean(
+    CommandListener.class
+  )
   public CommandListener commandListener() {
     return new NoOpCommandListener();
   }
