@@ -5,9 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.Set;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.connection.RedisNode;
@@ -15,73 +13,137 @@ import org.springframework.data.redis.connection.RedisSentinelConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.mock.env.MockEnvironment;
 
+import com.redis.om.spring.RedisModulesConfiguration;
 import com.redis.om.spring.SentinelConfig;
 
 /**
- * Tests for the SentinelConfig class, which provides Redis Sentinel connection
- * configuration for Redis OM Spring.
- * 
- * This test focuses on unit testing the SentinelConfig's configuration methods
- * without requiring actual Sentinel instances.
+ * Unit tests for sentinel node parsing in {@link RedisModulesConfiguration} and
+ * {@link SentinelConfig}.
+ *
+ * <p>These tests use {@link MockEnvironment} only — no real Redis or Sentinel instance
+ * is needed, so they run in every CI environment without restriction.
  */
-@DisabledIfEnvironmentVariable(
-    named = "GITHUB_ACTIONS", matches = "true"
-)
 @ExtendWith(
   MockitoExtension.class
 )
 class SentinelConfigTest {
 
-  private SentinelConfig sentinelConfig;
-
-  @BeforeEach
-  void setUp() {
-    sentinelConfig = new SentinelConfig();
-  }
+  // ── RedisModulesConfiguration ──────────────────────────────────────────────
 
   @Test
-  void testSentinelConfig() {
-    assertNotNull(sentinelConfig);
-  }
+  void redisModulesConfig_commaSeparatedNodes_parsedCorrectly() {
+    MockEnvironment env = new MockEnvironment();
+    env.setProperty("spring.data.redis.sentinel.master", "mymaster");
+    env.setProperty("spring.data.redis.sentinel.nodes", "sentinel1:26379,sentinel2:26379,sentinel3:26379");
 
-  @Test
-  void testManualSentinelConfiguration() {
-    // Create a mock environment with Sentinel properties
-    MockEnvironment mockEnv = new MockEnvironment();
-    mockEnv.setProperty("spring.data.redis.sentinel.master", "mymaster");
-    mockEnv.setProperty("spring.data.redis.sentinel.nodes", "sentinel1:26379,sentinel2:26379,sentinel3:26379");
+    JedisConnectionFactory factory = new RedisModulesConfiguration().jedisConnectionFactory(env);
 
-    // Create the factory using our mock environment
-    JedisConnectionFactory factory = sentinelConfig.jedisConnectionFactory(mockEnv);
-
-    // Verify the factory was created correctly
     assertNotNull(factory);
+    RedisSentinelConfiguration sentinelCfg = (RedisSentinelConfiguration) factory.getSentinelConfiguration();
+    assertThat(sentinelCfg).isNotNull();
+    assertThat(sentinelCfg.getMaster().getName()).isEqualTo("mymaster");
+    assertSentinelNodes(sentinelCfg.getSentinels(), "sentinel1", "sentinel2", "sentinel3");
+  }
 
-    // Get the Sentinel configuration from the factory
-    RedisSentinelConfiguration sentinelConfiguration = (RedisSentinelConfiguration) factory.getSentinelConfiguration();
+  @Test
+  void redisModulesConfig_yamlListNodes_parsedCorrectly() {
+    MockEnvironment env = new MockEnvironment();
+    env.setProperty("spring.data.redis.sentinel.master", "mymaster");
+    // YAML list format — each element is registered as an indexed property
+    env.setProperty("spring.data.redis.sentinel.nodes[0]", "sentinel1:26379");
+    env.setProperty("spring.data.redis.sentinel.nodes[1]", "sentinel2:26379");
+    env.setProperty("spring.data.redis.sentinel.nodes[2]", "sentinel3:26379");
 
-    assertThat(sentinelConfiguration).isNotNull();
-    assertThat(sentinelConfiguration.getMaster().getName()).isEqualTo("mymaster");
-    assertThat(sentinelConfiguration.getSentinels()).hasSize(3);
+    JedisConnectionFactory factory = new RedisModulesConfiguration().jedisConnectionFactory(env);
 
-    // Verify the sentinel nodes
-    Set<RedisNode> sentinels = sentinelConfiguration.getSentinels();
-    boolean hasSentinel1 = false;
-    boolean hasSentinel2 = false;
-    boolean hasSentinel3 = false;
+    assertNotNull(factory);
+    RedisSentinelConfiguration sentinelCfg = (RedisSentinelConfiguration) factory.getSentinelConfiguration();
+    assertThat(sentinelCfg).isNotNull();
+    assertThat(sentinelCfg.getMaster().getName()).isEqualTo("mymaster");
+    assertSentinelNodes(sentinelCfg.getSentinels(), "sentinel1", "sentinel2", "sentinel3");
+  }
 
-    for (RedisNode node : sentinels) {
-      if (node.getHost().equals("sentinel1") && node.getPort() == 26379) {
-        hasSentinel1 = true;
-      } else if (node.getHost().equals("sentinel2") && node.getPort() == 26379) {
-        hasSentinel2 = true;
-      } else if (node.getHost().equals("sentinel3") && node.getPort() == 26379) {
-        hasSentinel3 = true;
-      }
+  @Test
+  void redisModulesConfig_nodesWithoutPort_defaultSentinelPortApplied() {
+    MockEnvironment env = new MockEnvironment();
+    env.setProperty("spring.data.redis.sentinel.master", "mymaster");
+    env.setProperty("spring.data.redis.sentinel.nodes", "sentinel1,sentinel2");
+
+    JedisConnectionFactory factory = new RedisModulesConfiguration().jedisConnectionFactory(env);
+
+    RedisSentinelConfiguration sentinelCfg = (RedisSentinelConfiguration) factory.getSentinelConfiguration();
+    assertThat(sentinelCfg.getSentinels()).allSatisfy(
+        node -> assertThat(node.getPort()).isEqualTo(RedisNode.DEFAULT_SENTINEL_PORT));
+  }
+
+  @Test
+  void redisModulesConfig_noSentinelMaster_standaloneFactoryReturned() {
+    MockEnvironment env = new MockEnvironment();
+    env.setProperty("spring.data.redis.host", "redis-host");
+    env.setProperty("spring.data.redis.port", "6380");
+
+    JedisConnectionFactory factory = new RedisModulesConfiguration().jedisConnectionFactory(env);
+
+    assertNotNull(factory);
+    assertThat(factory.getSentinelConfiguration()).isNull();
+    assertThat(factory.getStandaloneConfiguration()).isNotNull();
+    assertThat(factory.getStandaloneConfiguration().getHostName()).isEqualTo("redis-host");
+    assertThat(factory.getStandaloneConfiguration().getPort()).isEqualTo(6380);
+  }
+
+  // ── SentinelConfig ─────────────────────────────────────────────────────────
+
+  @Test
+  void sentinelConfig_commaSeparatedNodes_parsedCorrectly() {
+    MockEnvironment env = new MockEnvironment();
+    env.setProperty("spring.data.redis.sentinel.master", "mymaster");
+    env.setProperty("spring.data.redis.sentinel.nodes", "sentinel1:26379,sentinel2:26379,sentinel3:26379");
+
+    JedisConnectionFactory factory = new SentinelConfig().jedisConnectionFactory(env);
+
+    assertNotNull(factory);
+    RedisSentinelConfiguration sentinelCfg = (RedisSentinelConfiguration) factory.getSentinelConfiguration();
+    assertThat(sentinelCfg).isNotNull();
+    assertThat(sentinelCfg.getMaster().getName()).isEqualTo("mymaster");
+    assertSentinelNodes(sentinelCfg.getSentinels(), "sentinel1", "sentinel2", "sentinel3");
+  }
+
+  @Test
+  void sentinelConfig_yamlListNodes_parsedCorrectly() {
+    MockEnvironment env = new MockEnvironment();
+    env.setProperty("spring.data.redis.sentinel.master", "mymaster");
+    env.setProperty("spring.data.redis.sentinel.nodes[0]", "sentinel1:26379");
+    env.setProperty("spring.data.redis.sentinel.nodes[1]", "sentinel2:26379");
+    env.setProperty("spring.data.redis.sentinel.nodes[2]", "sentinel3:26379");
+
+    JedisConnectionFactory factory = new SentinelConfig().jedisConnectionFactory(env);
+
+    assertNotNull(factory);
+    RedisSentinelConfiguration sentinelCfg = (RedisSentinelConfiguration) factory.getSentinelConfiguration();
+    assertThat(sentinelCfg).isNotNull();
+    assertThat(sentinelCfg.getMaster().getName()).isEqualTo("mymaster");
+    assertSentinelNodes(sentinelCfg.getSentinels(), "sentinel1", "sentinel2", "sentinel3");
+  }
+
+  @Test
+  void sentinelConfig_nodesWithoutPort_defaultSentinelPortApplied() {
+    MockEnvironment env = new MockEnvironment();
+    env.setProperty("spring.data.redis.sentinel.master", "mymaster");
+    env.setProperty("spring.data.redis.sentinel.nodes", "sentinel1,sentinel2");
+
+    JedisConnectionFactory factory = new SentinelConfig().jedisConnectionFactory(env);
+
+    RedisSentinelConfiguration sentinelCfg = (RedisSentinelConfiguration) factory.getSentinelConfiguration();
+    assertThat(sentinelCfg.getSentinels()).allSatisfy(
+        node -> assertThat(node.getPort()).isEqualTo(RedisNode.DEFAULT_SENTINEL_PORT));
+  }
+
+  // ── helpers ────────────────────────────────────────────────────────────────
+
+  private void assertSentinelNodes(Set<RedisNode> nodes, String... expectedHosts) {
+    assertThat(nodes).hasSize(expectedHosts.length);
+    for (String host : expectedHosts) {
+      assertThat(nodes).anyMatch(n -> n.getHost().equals(host) && n.getPort() == 26379);
     }
-
-    assertThat(hasSentinel1).isTrue();
-    assertThat(hasSentinel2).isTrue();
-    assertThat(hasSentinel3).isTrue();
   }
 }
