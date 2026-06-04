@@ -5,6 +5,11 @@ on:
 
 permissions:
   contents: read
+  actions: write  # required for actions/upload-artifact
+
+concurrency:
+  group: build-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
 
