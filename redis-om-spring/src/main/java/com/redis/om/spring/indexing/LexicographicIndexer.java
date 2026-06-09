@@ -1,12 +1,19 @@
 package com.redis.om.spring.indexing;
 
 import java.lang.reflect.Field;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.util.ReflectionUtils;
+
+import com.redis.om.spring.util.ObjectUtils;
 
 /**
  * Handles maintenance of lexicographic sorted sets for fields marked with lexicographic=true.
@@ -46,6 +53,7 @@ public class LexicographicIndexer {
   public void processEntity(Object entity, String entityId, boolean isNew, String entityPrefix) {
     Class<?> entityClass = entity.getClass();
     Set<String> lexicographicFields = indexer.getLexicographicFields(entityClass);
+    List<Field> idFields = ObjectUtils.getIdFieldsForEntityClass(entityClass);
 
     logger.debug(String.format("Processing entity %s with ID %s, isNew=%s, entityPrefix=%s", entityClass
         .getSimpleName(), entityId, isNew, entityPrefix));
@@ -73,9 +81,9 @@ public class LexicographicIndexer {
         logger.debug(String.format("Processing field %s, value=%s, member=%s, isNew=%s", fieldName, fieldValue, member,
             isNew));
 
-        // If updating, remove the old entry (we don't know the old value, so we need to find and remove it)
+        // If updating, remove the previous member before adding the current one.
         if (!isNew) {
-          removeOldEntry(sortedSetKey, entityId);
+          removeOldEntry(sortedSetKey, entityId, field, fieldValue, idFields);
         }
 
         // Add the new entry with score 0 (all entries have same score for lexicographic ordering)
@@ -95,6 +103,7 @@ public class LexicographicIndexer {
   public void processEntityDeletion(Object entity, String entityId, String entityPrefix) {
     Class<?> entityClass = entity.getClass();
     Set<String> lexicographicFields = indexer.getLexicographicFields(entityClass);
+    List<Field> idFields = ObjectUtils.getIdFieldsForEntityClass(entityClass);
 
     if (lexicographicFields == null || lexicographicFields.isEmpty()) {
       return;
@@ -102,7 +111,20 @@ public class LexicographicIndexer {
 
     for (String fieldName : lexicographicFields) {
       String sortedSetKey = entityPrefix + fieldName + ":lex";
-      removeOldEntry(sortedSetKey, entityId);
+      Field field = ReflectionUtils.findField(entityClass, fieldName);
+      if (field == null) {
+        logger.warn(String.format("Lexicographic field %s not found on class %s", fieldName, entityClass.getName()));
+        removeOldEntryByScan(sortedSetKey, entityId);
+        continue;
+      }
+
+      field.setAccessible(true);
+      Object fieldValue = ReflectionUtils.getField(field, entity);
+      if (isIdField(field, idFields) && fieldValue != null) {
+        removeExactEntry(sortedSetKey, member(fieldValue, entityId));
+      } else {
+        removeOldEntryByScan(sortedSetKey, entityId);
+      }
     }
   }
 
@@ -115,6 +137,7 @@ public class LexicographicIndexer {
    */
   public void processEntityDeletionById(Class<?> entityClass, String entityId, String entityPrefix) {
     Set<String> lexicographicFields = indexer.getLexicographicFields(entityClass);
+    Optional<Field> singleIdField = getSingleIdField(entityClass);
 
     if (lexicographicFields == null || lexicographicFields.isEmpty()) {
       return;
@@ -122,32 +145,87 @@ public class LexicographicIndexer {
 
     for (String fieldName : lexicographicFields) {
       String sortedSetKey = entityPrefix + fieldName + ":lex";
-      removeOldEntry(sortedSetKey, entityId);
+      if (singleIdField.map(idField -> idField.getName().equals(fieldName)).orElse(false)) {
+        removeExactEntry(sortedSetKey, member(entityId, entityId));
+      } else {
+        removeOldEntryByScan(sortedSetKey, entityId);
+      }
     }
   }
 
   /**
-   * Removes entries ending with the given entity ID from the sorted set.
+   * Removes the old lexicographic member for an update.
+   * <p>
+   * For ID fields the old member is deterministic, because the ID value is stable for
+   * the entity being updated. For other mutable lexicographic fields, the previous
+   * value may be unknown, so the fallback uses a cursor scan to avoid materializing the
+   * entire sorted set in JVM heap.
+   *
+   * @param sortedSetKey the sorted set key
+   * @param entityId     the entity ID to remove
+   * @param field        the lexicographic field
+   * @param fieldValue   the current field value
+   * @param idFields     ID fields declared by the entity
+   */
+  private void removeOldEntry(String sortedSetKey, String entityId, Field field, Object fieldValue,
+      List<Field> idFields) {
+    if (isIdField(field, idFields) && fieldValue != null) {
+      removeExactEntry(sortedSetKey, member(fieldValue, entityId));
+    } else {
+      removeOldEntryByScan(sortedSetKey, entityId);
+    }
+  }
+
+  /**
+   * Removes entries ending with the given entity ID from the sorted set using a cursor scan.
    * This is needed because we may not know the old field value during updates.
    *
    * @param sortedSetKey the sorted set key
    * @param entityId     the entity ID to remove
    */
-  private void removeOldEntry(String sortedSetKey, String entityId) {
-    // Get all members and remove those ending with #entityId
-    Set<String> members = redisTemplate.opsForZSet().range(sortedSetKey, 0, -1);
+  private void removeOldEntryByScan(String sortedSetKey, String entityId) {
     logger.debug(String.format("Removing old entries for entityId %s from %s", entityId, sortedSetKey));
-    logger.debug(String.format("Current members: %s", members));
-    if (members != null) {
-      String suffix = "#" + entityId;
-      logger.debug(String.format("Looking for entries ending with: %s", suffix));
-      for (String member : members) {
-        if (member.endsWith(suffix)) {
-          Long removed = redisTemplate.opsForZSet().remove(sortedSetKey, member);
-          logger.debug(String.format("Removed entry %s from sorted set %s (result: %s)", member, sortedSetKey,
-              removed));
+    String suffix = "#" + entityId;
+    logger.debug(String.format("Looking for entries ending with: %s", suffix));
+
+    ScanOptions options = ScanOptions.scanOptions().match("*" + escapeRedisGlob(suffix)).count(1000).build();
+    try (Cursor<ZSetOperations.TypedTuple<String>> cursor = redisTemplate.opsForZSet().scan(sortedSetKey, options)) {
+      while (cursor.hasNext()) {
+        String member = cursor.next().getValue();
+        if (member != null && member.endsWith(suffix)) {
+          removeExactEntry(sortedSetKey, member);
         }
       }
     }
+  }
+
+  private void removeExactEntry(String sortedSetKey, String member) {
+    Long removed = redisTemplate.opsForZSet().remove(sortedSetKey, member);
+    logger.debug(String.format("Removed entry %s from sorted set %s (result: %s)", member, sortedSetKey, removed));
+  }
+
+  private String member(Object fieldValue, String entityId) {
+    return fieldValue + "#" + entityId;
+  }
+
+  private boolean isIdField(Field field, List<Field> idFields) {
+    return idFields.stream().anyMatch(idField -> idField.getName().equals(field.getName()));
+  }
+
+  private Optional<Field> getSingleIdField(Class<?> entityClass) {
+    List<Field> idFields = ObjectUtils.getIdFieldsForEntityClass(entityClass);
+    return idFields.size() == 1 ? Optional.of(idFields.get(0)) : Optional.empty();
+  }
+
+  private String escapeRedisGlob(String value) {
+    StringBuilder escaped = new StringBuilder(value.length());
+    for (int i = 0; i < value.length(); i++) {
+      char c = value.charAt(i);
+      if (c == '*' || c == '?' || c == '[' || c == ']' || c == '\\') {
+        escaped.append('\\');
+      }
+      escaped.append(c);
+    }
+    return escaped.toString();
   }
 }
