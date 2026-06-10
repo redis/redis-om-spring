@@ -35,22 +35,22 @@ public class LexicographicIdReproRunner implements CommandLineRunner {
   private final RedisTemplate<String, String> redisTemplate;
 
   @Value(
-      "${demo.lexicographic-repro.count:50000}"
+    "${demo.lexicographic-repro.count:50000}"
   )
   private int count;
 
   @Value(
-      "${demo.lexicographic-repro.batch-size:1000}"
+    "${demo.lexicographic-repro.batch-size:1000}"
   )
   private int batchSize;
 
   @Value(
-      "${demo.lexicographic-repro.threshold:lex000000000}"
+    "${demo.lexicographic-repro.threshold:lex000000000}"
   )
   private String threshold;
 
   @Value(
-      "${demo.lexicographic-repro.update-count:100}"
+    "${demo.lexicographic-repro.update-count:100}"
   )
   private int updateCount;
 
@@ -88,8 +88,7 @@ public class LexicographicIdReproRunner implements CommandLineRunner {
     log.info("WRITE-SIDE CLEANUP DEMO: updating {} existing records whose lexicographic field is the @Id",
         actualUpdateCount);
     log.info(
-        "WRITE-SIDE CLEANUP DEMO: older cleanup implementations used ZRANGE 0 -1 on {} once per update, "
-            + "materializing about {} sorted-set members",
+        "WRITE-SIDE CLEANUP DEMO: older cleanup implementations used ZRANGE 0 -1 on {} once per update, " + "materializing about {} sorted-set members",
         LEX_SET_KEY, oldBranchMemberReads);
 
     long beforeMiB = usedHeapMiB();
@@ -104,8 +103,8 @@ public class LexicographicIdReproRunner implements CommandLineRunner {
     Long afterSize = redisTemplate.opsForZSet().size(LEX_SET_KEY);
 
     log.info("WRITE-SIDE CLEANUP DEMO: update loop completed in {} ms", elapsedMs);
-    log.info("WRITE-SIDE CLEANUP DEMO: heap before={} MiB after={} MiB delta={} MiB", beforeMiB, afterMiB, afterMiB
-        - beforeMiB);
+    log.info("WRITE-SIDE CLEANUP DEMO: heap before={} MiB after={} MiB delta={} MiB", beforeMiB, afterMiB,
+        afterMiB - beforeMiB);
     log.info("WRITE-SIDE CLEANUP DEMO: sorted set size after updates is {}", afterSize);
   }
 
@@ -114,13 +113,12 @@ public class LexicographicIdReproRunner implements CommandLineRunner {
     log.info("MISSING QUERY FIX DEMO: ID.gt({}) has {} lexicographic matches in a {} member sorted set", threshold,
         lexMatches, lexMemberCount);
     log.info(
-        "MISSING QUERY FIX DEMO: the current stream predicate still calls rangeByLex(..., Limit.unlimited()) "
-            + "before limit(1) is applied");
+        "MISSING QUERY FIX DEMO: the current stream predicate still calls rangeByLex(..., Limit.unlimited()) " + "before limit(1) is applied");
 
     long beforeMiB = usedHeapMiB();
     long startNanos = System.nanoTime();
-    List<LexicographicIdRecord> firstMatch = entityStream.of(LexicographicIdRecord.class)
-        .filter(LexicographicIdRecord$.ID.gt(threshold)) //
+    List<LexicographicIdRecord> firstMatch = entityStream.of(LexicographicIdRecord.class).filter(
+        LexicographicIdRecord$.ID.gt(threshold)) //
         .limit(1) //
         .collect(Collectors.toList());
     long elapsedMs = elapsedMs(startNanos);
@@ -128,8 +126,8 @@ public class LexicographicIdReproRunner implements CommandLineRunner {
 
     log.info("MISSING QUERY FIX DEMO: ID.gt({}) with limit(1) returned {} record(s) in {} ms", threshold, firstMatch
         .size(), elapsedMs);
-    log.info("MISSING QUERY FIX DEMO: heap before={} MiB after={} MiB delta={} MiB", beforeMiB, afterMiB, afterMiB
-        - beforeMiB);
+    log.info("MISSING QUERY FIX DEMO: heap before={} MiB after={} MiB delta={} MiB", beforeMiB, afterMiB,
+        afterMiB - beforeMiB);
   }
 
   private void seedRecords() {

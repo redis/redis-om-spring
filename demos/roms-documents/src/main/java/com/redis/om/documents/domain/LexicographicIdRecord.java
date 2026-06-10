@@ -12,7 +12,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Document("lex-repro")
+@Document(
+  "lex-repro"
+)
 public class LexicographicIdRecord {
   @Id
   @Indexed(
