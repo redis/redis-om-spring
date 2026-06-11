@@ -303,10 +303,6 @@ public class DefaultEmbedder implements Embedder {
    */
   @Override
   public void processEntity(Object item) {
-    if (!isReady()) {
-      return;
-    }
-
     List<Field> fields = ObjectUtils.getFieldsWithAnnotation(item.getClass(), Vectorize.class);
     if (!fields.isEmpty()) {
       PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(item);
@@ -338,10 +334,6 @@ public class DefaultEmbedder implements Embedder {
    */
   @Override
   public <S> void processEntities(Iterable<S> items) {
-    if (!isReady()) {
-      return;
-    }
-
     int batchSize = properties.getEmbeddingBatchSize();
     List<FieldData> batch = new ArrayList<>(batchSize);
 
@@ -694,13 +686,44 @@ public class DefaultEmbedder implements Embedder {
 
   /**
    * {@inheritDoc}
-   * 
-   * @return Always returns true as models are created on demand
+   *
+   * Always returns true — the embedder bean is available and all provider-specific
+   * checks are handled lazily inside each embedding call. Use
+   * {@link #isTransformersReady()} when you specifically need the DJL + ONNX/Transformers
+   * stack to be available (e.g. to gate tests via {@code @EnabledIf}).
    */
   @Override
   public boolean isReady() {
-    //return this.faceEmbeddingModel != null && this.transformersEmbeddingModel != null;
     return true;
+  }
+
+  /**
+   * Returns true when both DJL image models loaded and the ONNX Runtime native
+   * library is loadable in this JVM, meaning the Transformers embedding provider
+   * can be used. The ONNX check is cached after the first probe so repeated calls
+   * are cheap.
+   */
+  @Override
+  public boolean isTransformersReady() {
+    return imageEmbeddingModel != null && faceEmbeddingModel != null && isOnnxRuntimeAvailable();
+  }
+
+  private static volatile Boolean onnxRuntimeAvailable;
+
+  private static boolean isOnnxRuntimeAvailable() {
+    if (onnxRuntimeAvailable != null) {
+      return onnxRuntimeAvailable;
+    }
+    try {
+      // initialize=true forces the static initializer, which triggers the native lib load.
+      // On a second call after a failed init the JVM throws NoClassDefFoundError, so catch that too.
+      Class.forName("ai.onnxruntime.OrtEnvironment", true, Thread.currentThread().getContextClassLoader());
+      onnxRuntimeAvailable = true;
+    } catch (ClassNotFoundException | NoClassDefFoundError | UnsatisfiedLinkError | ExceptionInInitializerError e) {
+      logger.warn("ONNX Runtime not available, Transformers-backed embeddings will be skipped: " + e.getMessage());
+      onnxRuntimeAvailable = false;
+    }
+    return onnxRuntimeAvailable;
   }
 
   /**

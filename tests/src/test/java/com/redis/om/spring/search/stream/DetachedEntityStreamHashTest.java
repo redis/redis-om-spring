@@ -108,8 +108,8 @@ public class DetachedEntityStreamHashTest extends AbstractBaseEnhancedRedisTest 
     SearchStream<Bicycle> stream = entityStream.of(Bicycle.class, "idx:hashbikes", "id");
     List<Bicycle> bicycles = stream.filter(MODEL.eq("Jigger")).collect(Collectors.toList());
 
-    assertThat(bicycles).hasSize(1);
-    assertThat(bicycles.get(0).getModel()).isEqualTo("Jigger");
+    assertThat(bicycles).filteredOn(Objects::nonNull).hasSize(1)
+        .extracting("model").containsOnly("Jigger");
   }
 
   @Test
@@ -118,8 +118,8 @@ public class DetachedEntityStreamHashTest extends AbstractBaseEnhancedRedisTest 
     SearchStream<Bicycle> stream = entityStream.of(Bicycle.class, "idx:hashbikes", "id");
     List<Bicycle> bicycles = stream.filter(MODEL.eq("Jigger")).collect(Collectors.toList());
 
-    assertThat(bicycles).hasSize(1);
-    assertThat(bicycles.get(0).getModel()).isEqualTo("Jigger");
+    assertThat(bicycles).filteredOn(Objects::nonNull).hasSize(1)
+        .extracting("model").containsOnly("Jigger");
   }
 
   @Test
@@ -131,10 +131,9 @@ public class DetachedEntityStreamHashTest extends AbstractBaseEnhancedRedisTest 
         .filter(PRICE.between(815.0, 815.0)) //
         .collect(Collectors.toList());
 
-    assertThat(bicycles).hasSize(1);
-    assertThat(bicycles.get(0).getModel()).isEqualTo("BikeShind");
-    assertThat(bicycles.get(0).getBrand()).isEqualTo("ThrillCycle");
-    assertThat(bicycles.get(0).getPrice()).isEqualTo(815.0);
+    assertThat(bicycles).filteredOn(Objects::nonNull).hasSize(1)
+        .extracting("model", "brand", "price")
+        .containsOnly(org.assertj.core.groups.Tuple.tuple("BikeShind", "ThrillCycle", 815.0));
   }
 
   @Test
@@ -145,10 +144,8 @@ public class DetachedEntityStreamHashTest extends AbstractBaseEnhancedRedisTest 
         .collect(Collectors.toList());
 
     assertThat(bicycles).hasSize(2);
-    assertThat(bicycles.get(0).getModel()).isEqualTo("Chook air 5");
-    assertThat(bicycles.get(1).getModel()).isEqualTo("BikeShind");
-    assertThat(bicycles.get(0).getPrice()).isEqualTo(815.0);
-    assertThat(bicycles.get(1).getPrice()).isEqualTo(815.0);
+    assertThat(bicycles).extracting("model").containsExactlyInAnyOrder("Chook air 5", "BikeShind");
+    assertThat(bicycles).extracting("price").containsOnly(815.0);
   }
 
   public static Map<String, String> convertBicycleToStringMap(Bicycle bicycle) {

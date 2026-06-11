@@ -50,7 +50,7 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   @EnabledIf(
-      expression = "#{@featureExtractor.isReady()}", //
+      expression = "#{@featureExtractor.isTransformersReady()}", //
       loadContext = true //
   )
   void testImageIsVectorized() {
@@ -63,7 +63,7 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   @EnabledIf(
-      expression = "#{@featureExtractor.isReady()}", //
+      expression = "#{@featureExtractor.isTransformersReady()}", //
       loadContext = true //
   )
   void testSentenceIsVectorized() {
@@ -76,7 +76,7 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   @EnabledIf(
-      expression = "#{@featureExtractor.isReady()}", //
+      expression = "#{@featureExtractor.isTransformersReady()}", //
       loadContext = true //
   )
   void testKnnImageSimilaritySearch() {
@@ -98,7 +98,7 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   @EnabledIf(
-      expression = "#{@featureExtractor.isReady()}", //
+      expression = "#{@featureExtractor.isTransformersReady()}", //
       loadContext = true //
   )
   void testKnnSentenceSimilaritySearch() {
@@ -120,7 +120,7 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   @EnabledIf(
-      expression = "#{@featureExtractor.isReady()}", //
+      expression = "#{@featureExtractor.isTransformersReady()}", //
       loadContext = true //
   )
   void testKnnHybridSentenceSimilaritySearch() {
@@ -143,7 +143,7 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   @EnabledIf(
-      expression = "#{@featureExtractor.isReady()}", //
+      expression = "#{@featureExtractor.isTransformersReady()}", //
       loadContext = true //
   )
   void testKnnSentenceSimilaritySearchWithScores() {
@@ -167,7 +167,7 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   @EnabledIf(
-      expression = "#{@featureExtractor.isReady()}", //
+      expression = "#{@featureExtractor.isTransformersReady()}", //
       loadContext = true //
   )
   void testEmbedderCanVectorizeSentence() {
@@ -183,7 +183,7 @@ class VectorizeHashTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   @EnabledIf(
-      expression = "#{@featureExtractor.isReady()}", //
+      expression = "#{@featureExtractor.isTransformersReady()}", //
       loadContext = true //
   )
   void testBulkEmbedMapEmbeddingsCorrectly() {
