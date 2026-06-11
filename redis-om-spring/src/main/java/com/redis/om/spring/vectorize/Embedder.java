@@ -27,10 +27,22 @@ public interface Embedder {
 
   /**
    * Check if embedder is ready for use.
-   * 
+   *
    * @return true if ready
    */
   boolean isReady();
+
+  /**
+   * Check if the Transformers (ONNX) embedding provider is available.
+   * The default implementation returns false; concrete embedders that support
+   * Transformers (e.g. {@code DefaultEmbedder}) override this to probe DJL model
+   * availability and ONNX Runtime native library loadability.
+   *
+   * @return true if both DJL models and ONNX Runtime are available; false by default
+   */
+  default boolean isTransformersReady() {
+    return false;
+  }
 
   /**
    * Get text embeddings as byte arrays.
