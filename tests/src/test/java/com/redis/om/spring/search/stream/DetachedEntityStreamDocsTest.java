@@ -101,8 +101,8 @@ public class DetachedEntityStreamDocsTest extends AbstractBaseDocumentTest {
     SearchStream<Bicycle> stream = entityStream.of(Bicycle.class, "idx:bicycle", "id");
     List<Bicycle> bicycles = stream.filter(MODEL.eq("Jigger")).collect(Collectors.toList());
 
-    assertThat(bicycles).hasSize(1);
-    assertThat(bicycles.get(0).getModel()).isEqualTo("Jigger");
+    assertThat(bicycles).filteredOn(Objects::nonNull).hasSize(1)
+        .extracting("model").containsOnly("Jigger");
   }
 
   @Test
@@ -111,8 +111,8 @@ public class DetachedEntityStreamDocsTest extends AbstractBaseDocumentTest {
     SearchStream<Bicycle> stream = entityStream.of(Bicycle.class, "idx:bicycle", "id");
     List<Bicycle> bicycles = stream.filter(MODEL.eq("Jigger")).collect(Collectors.toList());
 
-    assertThat(bicycles).hasSize(1);
-    assertThat(bicycles.get(0).getModel()).isEqualTo("Jigger");
+    assertThat(bicycles).filteredOn(Objects::nonNull).hasSize(1)
+        .extracting("model").containsOnly("Jigger");
   }
 
   @Test
@@ -124,10 +124,9 @@ public class DetachedEntityStreamDocsTest extends AbstractBaseDocumentTest {
         .filter(PRICE.between(BigDecimal.valueOf(815), BigDecimal.valueOf(815))) //
         .collect(Collectors.toList());
 
-    assertThat(bicycles).hasSize(1);
-    assertThat(bicycles.get(0).getModel()).isEqualTo("BikeShind");
-    assertThat(bicycles.get(0).getBrand()).isEqualTo("ThrillCycle");
-    assertThat(bicycles.get(0).getPrice()).isEqualTo(BigDecimal.valueOf(815));
+    assertThat(bicycles).filteredOn(Objects::nonNull).hasSize(1)
+        .extracting("model", "brand", "price")
+        .containsOnly(org.assertj.core.groups.Tuple.tuple("BikeShind", "ThrillCycle", BigDecimal.valueOf(815)));
   }
 
   @Test
@@ -138,10 +137,8 @@ public class DetachedEntityStreamDocsTest extends AbstractBaseDocumentTest {
         .collect(Collectors.toList());
 
     assertThat(bicycles).hasSize(2);
-    assertThat(bicycles.get(0).getModel()).isEqualTo("Chook air 5");
-    assertThat(bicycles.get(1).getModel()).isEqualTo("BikeShind");
-    assertThat(bicycles.get(0).getPrice()).isEqualTo(BigDecimal.valueOf(815));
-    assertThat(bicycles.get(1).getPrice()).isEqualTo(BigDecimal.valueOf(815));
+    assertThat(bicycles).extracting("model").containsExactlyInAnyOrder("Chook air 5", "BikeShind");
+    assertThat(bicycles).extracting("price").containsOnly(BigDecimal.valueOf(815));
   }
 
   @Data
