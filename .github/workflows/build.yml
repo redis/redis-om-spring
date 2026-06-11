@@ -148,20 +148,7 @@ jobs:
           restore-keys: ${{ runner.os }}-gradlew-
 
       - name: Build and test demos
-        run: |
-          ./gradlew \
-            :demos:roms-documents:build \
-            :demos:roms-hashes:build \
-            :demos:roms-modeling:build \
-            :demos:roms-multi-acl-account:build \
-            :demos:roms-permits:build \
-            :demos:roms-vectorizers:build \
-            :demos:roms-vss-movies:build \
-            :demos:roms-vss:build \
-            :demos:roms-multitenant:build \
-            :demos:roms-hybrid:build \
-            :demos:roms-amr-entraid:build \
-            -S
+        run: ./gradlew :demos:build -S
 
       - name: Upload demo test reports
         if: failure()
