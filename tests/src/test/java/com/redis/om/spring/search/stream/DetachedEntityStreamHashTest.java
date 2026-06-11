@@ -120,6 +120,16 @@ public class DetachedEntityStreamHashTest extends AbstractBaseEnhancedRedisTest 
       var map = convertBicycleToStringMap(bicycle);
       jedis.hset(bicycle.getId(), map);
     }
+
+    // RediSearch indexes HASH keys synchronously per hset, but on busy CI runners
+    // the index can briefly lag. Wait up to 5s for all 10 entries to appear.
+    long deadline = System.currentTimeMillis() + 5000;
+    while (System.currentTimeMillis() < deadline) {
+      Map<String, Object> info = jedis.ftInfo("idx:hashbikes");
+      Object numDocs = info.get("num_docs");
+      if (numDocs != null && Long.parseLong(numDocs.toString()) >= 10) break;
+      try { Thread.sleep(100); } catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
+    }
   }
 
   @Test
