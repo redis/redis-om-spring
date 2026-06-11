@@ -110,3 +110,9 @@ test {
 		exceptionFormat = 'full'
 	}
 }
+
+// Make :demos:build cascade to all demo subprojects so that
+// ./gradlew :demos:build covers all demo tests on CI.
+tasks.named('build') {
+	dependsOn subprojects.collect { "${it.path}:build" }
+}
