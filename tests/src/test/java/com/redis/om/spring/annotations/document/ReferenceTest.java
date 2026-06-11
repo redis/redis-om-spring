@@ -20,6 +20,9 @@ import com.redis.om.spring.search.stream.EntityStream;
     properties = { "spring.config.location=classpath:application.yaml" }
 )
 class ReferenceTest extends AbstractBaseDocumentTest {
+  private static final int EXTREME_REFERENCE_COUNT = 10000;
+  private static final int EXTREME_REFERENCE_BATCH_SIZE = 500;
+
   @Autowired
   CityRepository cityRepository;
 
@@ -72,44 +75,45 @@ class ReferenceTest extends AbstractBaseDocumentTest {
         City.of("Savannah", ga), City.of("Augusta", ga) //
     );
     cityRepository.saveAll(cities);
+  }
 
-    if (refRepository.count() == 0) {
-      Set<Ref> refs = new HashSet<>();
-      for (int i = 0; i < 100; i++) {
-        refs.add(Ref.of("ref" + i));
-      }
-      refRepository.saveAll(refs);
+  private void prepareExtremeReferences() {
+    tooManyReferencesRepository.deleteAll();
+    refRepository.deleteAll();
 
-      List<Ref> refList = new ArrayList<>(refs);
-      Random random = new Random();
+    Set<Ref> refs = new HashSet<>();
+    for (int i = 0; i < 100; i++) {
+      refs.add(Ref.of("ref" + i));
+    }
+    refRepository.saveAll(refs);
 
-      // Save in batches to avoid pipeline socket timeouts on CI
-      int batchSize = 1000;
-      int total = 10000;
-      List<TooManyReferences> batch = new ArrayList<>(batchSize);
-      for (int i = 0; i < total; i++) {
-        TooManyReferences tmr = TooManyReferences.of("ref" + i);
+    List<Ref> refList = new ArrayList<>(refs);
+    Random random = new Random();
+    List<TooManyReferences> batch = new ArrayList<>(EXTREME_REFERENCE_BATCH_SIZE);
 
-        tmr.setRef1(refList.get(random.nextInt(refList.size())));
-        tmr.setRef2(refList.get(random.nextInt(refList.size())));
-        tmr.setRef3(refList.get(random.nextInt(refList.size())));
-        tmr.setRef4(refList.get(random.nextInt(refList.size())));
-        tmr.setRef5(refList.get(random.nextInt(refList.size())));
-        tmr.setRef6(refList.get(random.nextInt(refList.size())));
-        tmr.setRef7(refList.get(random.nextInt(refList.size())));
-        tmr.setRef8(refList.get(random.nextInt(refList.size())));
-        tmr.setRef9(refList.get(random.nextInt(refList.size())));
-        tmr.setRef10(refList.get(random.nextInt(refList.size())));
+    for (int i = 0; i < EXTREME_REFERENCE_COUNT; i++) {
+      TooManyReferences tmr = TooManyReferences.of("ref" + i);
 
-        batch.add(tmr);
-        if (batch.size() == batchSize) {
-          tooManyReferencesRepository.saveAll(batch);
-          batch.clear();
-        }
-      }
-      if (!batch.isEmpty()) {
+      tmr.setRef1(refList.get(random.nextInt(refList.size())));
+      tmr.setRef2(refList.get(random.nextInt(refList.size())));
+      tmr.setRef3(refList.get(random.nextInt(refList.size())));
+      tmr.setRef4(refList.get(random.nextInt(refList.size())));
+      tmr.setRef5(refList.get(random.nextInt(refList.size())));
+      tmr.setRef6(refList.get(random.nextInt(refList.size())));
+      tmr.setRef7(refList.get(random.nextInt(refList.size())));
+      tmr.setRef8(refList.get(random.nextInt(refList.size())));
+      tmr.setRef9(refList.get(random.nextInt(refList.size())));
+      tmr.setRef10(refList.get(random.nextInt(refList.size())));
+
+      batch.add(tmr);
+      if (batch.size() == EXTREME_REFERENCE_BATCH_SIZE) {
         tooManyReferencesRepository.saveAll(batch);
+        batch.clear();
       }
+    }
+
+    if (!batch.isEmpty()) {
+      tooManyReferencesRepository.saveAll(batch);
     }
   }
 
@@ -278,6 +282,8 @@ class ReferenceTest extends AbstractBaseDocumentTest {
 
   @Test
   void testExtremeReferencesWithFindAll() {
+    prepareExtremeReferences();
+
     List<TooManyReferences> allReferences = tooManyReferencesRepository.findAll();
 
     assertThat(allReferences).isNotEmpty();

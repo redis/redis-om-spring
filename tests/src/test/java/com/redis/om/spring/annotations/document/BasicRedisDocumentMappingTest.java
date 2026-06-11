@@ -87,6 +87,7 @@ class BasicRedisDocumentMappingTest extends AbstractBaseDocumentTest {
     uuids = IntStream.range(0, 10).mapToObj(i -> UUID.randomUUID()).toList();
 
     flushSearchIndexFor(Company.class);
+    docWithSetsRepository.deleteAll();
     flushSearchIndexFor(DocWithSets.class);
     flushSearchIndexFor(Hive.class);
     flushSearchIndexFor(TypeKitchenSink.class);
