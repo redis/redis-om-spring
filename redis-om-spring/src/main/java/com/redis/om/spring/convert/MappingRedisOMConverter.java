@@ -664,10 +664,10 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
 
     // Handle Collection values (e.g. nested ArrayList from Jackson) by recursing into writeCollection.
     if (value instanceof Collection<?> nestedCollection) {
-      TypeInformation<?> componentType = typeHint.getComponentType() != null
-          ? typeHint.getComponentType()
-          : TypeInformation.of(Object.class);
-      writeCollection(null, keyspace, path, nestedCollection, componentType, sink);
+      TypeInformation<?> componentType = typeHint.getComponentType() != null ?
+          typeHint.getComponentType() :
+          TypeInformation.of(Object.class);
+      writeCollection(Object.class, keyspace, path, nestedCollection, componentType, sink);
       return;
     }
 
