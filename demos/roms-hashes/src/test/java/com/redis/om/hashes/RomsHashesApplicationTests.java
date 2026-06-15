@@ -1,8 +1,10 @@
 package com.redis.om.hashes;
 
+import static com.redis.testcontainers.RedisStackContainer.DEFAULT_IMAGE_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,38 +12,94 @@ import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import com.redis.om.hashes.domain.Role;
 import com.redis.om.hashes.domain.User;
 import com.redis.om.hashes.repositories.RoleRepository;
 import com.redis.om.hashes.repositories.UserRepository;
+import com.redis.om.spring.annotations.EnableRedisEnhancedRepositories;
 import com.redis.testcontainers.RedisStackContainer;
+
+import redis.clients.jedis.JedisPoolConfig;
 
 /**
  * Regression test for gh-755: saving a @RedisHash entity whose Map<String,Object>
  * field contains nested Map/List values (as produced by Jackson deserialization)
  * must not throw a MappingException.
  */
-@SpringBootTest
-@Testcontainers
+@SpringBootTest(
+    classes = RomsHashesApplicationTests.Config.class,
+    properties = { "spring.main.allow-bean-definition-overriding=true" }
+)
+@Testcontainers(
+    disabledWithoutDocker = true
+)
+@DirtiesContext
 class RomsHashesApplicationTests {
 
   @Container
-  static final RedisStackContainer REDIS = new RedisStackContainer(
-      DockerImageName.parse(
-          RedisStackContainer.DEFAULT_IMAGE_NAME.withTag(RedisStackContainer.DEFAULT_TAG).toString()))
-      .withExposedPorts(6379);
+  static final RedisStackContainer REDIS;
+
+  static {
+    REDIS = new RedisStackContainer(DEFAULT_IMAGE_NAME.withTag("edge")).withReuse(true);
+    REDIS.start();
+  }
 
   @DynamicPropertySource
   static void redisProperties(DynamicPropertyRegistry registry) {
     registry.add("spring.data.redis.host", REDIS::getHost);
-    registry.add("spring.data.redis.port", () -> REDIS.getMappedPort(6379));
+    registry.add("spring.data.redis.port", REDIS::getFirstMappedPort);
+  }
+
+  @SpringBootApplication
+  @Configuration
+  @EnableRedisEnhancedRepositories(
+      basePackages = "com.redis.om.hashes.*"
+  )
+  static class Config {
+    @Autowired
+    Environment env;
+
+    @Bean
+    public JedisConnectionFactory jedisConnectionFactory() {
+      String host = env.getProperty("spring.data.redis.host", "localhost");
+      int port = env.getProperty("spring.data.redis.port", Integer.class, 6379);
+
+      RedisStandaloneConfiguration conf = new RedisStandaloneConfiguration(host, port);
+
+      final JedisPoolConfig poolConfig = new JedisPoolConfig();
+      poolConfig.setTestWhileIdle(false);
+      poolConfig.setMinEvictableIdleDuration(Duration.ofMillis(60000));
+      poolConfig.setTimeBetweenEvictionRuns(Duration.ofMillis(30000));
+      poolConfig.setNumTestsPerEvictionRun(-1);
+
+      final JedisClientConfiguration jedisClientConfiguration = JedisClientConfiguration.builder().connectTimeout(
+          Duration.ofMillis(10000)).readTimeout(Duration.ofMillis(10000)).usePooling().poolConfig(poolConfig).build();
+
+      return new JedisConnectionFactory(conf, jedisClientConfiguration);
+    }
+
+    @Bean
+    public StringRedisTemplate redisTemplate(RedisConnectionFactory connectionFactory) {
+      StringRedisTemplate template = new StringRedisTemplate();
+      template.setConnectionFactory(connectionFactory);
+      return template;
+    }
   }
 
   @Autowired
