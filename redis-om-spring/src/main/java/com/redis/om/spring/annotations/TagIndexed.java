@@ -106,6 +106,16 @@ public @interface TagIndexed {
   String separator() default "|";
 
   /**
+   * Whether to enable suffix trie indexing for this tag field.
+   * <p>
+   * When enabled, Redis can optimize suffix and contains queries on this field.
+   * </p>
+   *
+   * @return true to enable suffix trie indexing, false otherwise
+   */
+  boolean withSuffixTrie() default false;
+
+  /**
    * Whether to index documents where this field is missing (null).
    * <p>
    * When true, documents with null values for this field will be included
