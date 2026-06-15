@@ -747,15 +747,33 @@ class IndexDefinitionBuilder {
 
     logger.info(String.format("Creating automatic nested field index: %s -> %s", arrayField.getName(), fullFieldPath));
 
-    FieldTypeMapper fieldTypeMapper = FieldTypeMapper.getFieldType(nestedFieldType);
+    FieldName fieldName = nestedFieldName(fullFieldPath, nestedField, prefix);
 
+    Searchable searchable = nestedField.getAnnotation(Searchable.class);
+    if (searchable != null) {
+      String phonetic = org.apache.commons.lang3.ObjectUtils.isEmpty(searchable.phonetic()) ?
+          null :
+          searchable.phonetic();
+      fields.add(SearchField.of(arrayField, factory.getTextField(fieldName, searchable.weight(), searchable.sortable(),
+          searchable.nostem(), searchable.noindex(), phonetic, searchable.indexMissing(), searchable.indexEmpty(),
+          searchable.withSuffixTrie())));
+      return fields;
+    }
+
+    TextIndexed textIndexed = nestedField.getAnnotation(TextIndexed.class);
+    if (textIndexed != null) {
+      String phonetic = org.apache.commons.lang3.ObjectUtils.isEmpty(textIndexed.phonetic()) ?
+          null :
+          textIndexed.phonetic();
+      fields.add(SearchField.of(arrayField, factory.getTextField(fieldName, textIndexed.weight(), textIndexed
+          .sortable(), textIndexed.nostem(), textIndexed.noindex(), phonetic, textIndexed.indexMissing(), textIndexed
+              .indexEmpty(), textIndexed.withSuffixTrie())));
+      return fields;
+    }
+
+    FieldTypeMapper fieldTypeMapper = FieldTypeMapper.getFieldType(nestedFieldType);
     switch (fieldTypeMapper) {
       case TAG -> {
-        FieldName fieldName = FieldName.of(fullFieldPath);
-        String alias = QueryUtils.searchIndexFieldAliasFor(nestedField, prefix);
-        if (alias != null && !alias.isEmpty()) {
-          fieldName = fieldName.as(alias);
-        }
         Indexed indexed = nestedField.getAnnotation(Indexed.class);
         TagIndexed tagIndexed = nestedField.getAnnotation(TagIndexed.class);
         boolean withSuffixTrie = (indexed != null && indexed.withSuffixTrie()) || (tagIndexed != null && tagIndexed
@@ -763,27 +781,22 @@ class IndexDefinitionBuilder {
         fields.add(SearchField.of(arrayField, factory.getTagField(fieldName, "|", false, false, false,
             withSuffixTrie)));
       }
-      case NUMERIC -> {
-        FieldName fieldName = FieldName.of(fullFieldPath);
-        String alias = QueryUtils.searchIndexFieldAliasFor(nestedField, prefix);
-        if (alias != null && !alias.isEmpty()) {
-          fieldName = fieldName.as(alias);
-        }
-        fields.add(SearchField.of(arrayField, NumericField.of(fieldName)));
-      }
-      case GEO -> {
-        FieldName fieldName = FieldName.of(fullFieldPath);
-        String alias = QueryUtils.searchIndexFieldAliasFor(nestedField, prefix);
-        if (alias != null && !alias.isEmpty()) {
-          fieldName = fieldName.as(alias);
-        }
-        fields.add(SearchField.of(arrayField, GeoField.of(fieldName)));
-      }
+      case NUMERIC -> fields.add(SearchField.of(arrayField, NumericField.of(fieldName)));
+      case GEO -> fields.add(SearchField.of(arrayField, GeoField.of(fieldName)));
       case UNSUPPORTED -> logger.debug(String.format("Skipping nested field %s of unsupported type %s", nestedField
           .getName(), nestedFieldType.getSimpleName()));
     }
 
     return fields;
+  }
+
+  private FieldName nestedFieldName(String fullFieldPath, java.lang.reflect.Field nestedField, String prefix) {
+    FieldName fieldName = FieldName.of(fullFieldPath);
+    String alias = QueryUtils.searchIndexFieldAliasFor(nestedField, prefix);
+    if (alias != null && !alias.isEmpty()) {
+      fieldName = fieldName.as(alias);
+    }
+    return fieldName;
   }
 
   // ---------------------------------------------------------------------------

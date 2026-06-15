@@ -31,11 +31,13 @@ import lombok.Data;
 class WithSuffixTrieIndexTest extends AbstractBaseOMTest {
   private static final String DOCUMENT_INDEX = "with_suffix_trie_document_idx";
   private static final String HASH_INDEX = "with_suffix_trie_hash_idx";
+  private static final String NESTED_DOCUMENT_INDEX = "with_suffix_trie_nested_document_idx";
 
   @AfterEach
   void tearDown() {
     dropIndex(DOCUMENT_INDEX);
     dropIndex(HASH_INDEX);
+    dropIndex(NESTED_DOCUMENT_INDEX);
   }
 
   @Test
@@ -52,11 +54,28 @@ class WithSuffixTrieIndexTest extends AbstractBaseOMTest {
     assertFieldsHaveSuffixTrie(HASH_INDEX, "searchable", "text", "tag", "indexed", "explicitTag");
   }
 
+  @Test
+  void appliesWithSuffixTrieToNestedDocumentTextFields() {
+    assertThat(indexer.createIndexFor(WithSuffixTrieNestedDocument.class, NESTED_DOCUMENT_INDEX,
+        "with-suffix-trie-nested-doc:")).isTrue();
+
+    assertFieldsHaveSuffixTrie(NESTED_DOCUMENT_INDEX, "items_searchable", "items_text");
+    assertFieldsHaveType(NESTED_DOCUMENT_INDEX, "TEXT", "items_searchable", "items_text");
+  }
+
   private void assertFieldsHaveSuffixTrie(String indexName, String... fieldNames) {
     List<List<String>> attributes = attributesFor(indexName);
 
     for (String fieldName : fieldNames) {
       assertThat(attributeFor(attributes, fieldName)).contains("WITHSUFFIXTRIE");
+    }
+  }
+
+  private void assertFieldsHaveType(String indexName, String type, String... fieldNames) {
+    List<List<String>> attributes = attributesFor(indexName);
+
+    for (String fieldName : fieldNames) {
+      assertThat(valueAfter(attributeFor(attributes, fieldName), "type")).isEqualTo(type);
     }
   }
 
@@ -134,6 +153,31 @@ class WithSuffixTrieIndexTest extends AbstractBaseOMTest {
         withSuffixTrie = true
     )
     private String explicitTag;
+  }
+
+  @Data
+  @Document
+  static class WithSuffixTrieNestedDocument {
+    @Id
+    private String id;
+
+    @Indexed(
+        schemaFieldType = SchemaFieldType.NESTED
+    )
+    private List<WithSuffixTrieNestedItem> items;
+  }
+
+  @Data
+  static class WithSuffixTrieNestedItem {
+    @Searchable(
+        withSuffixTrie = true
+    )
+    private String searchable;
+
+    @TextIndexed(
+        withSuffixTrie = true
+    )
+    private String text;
   }
 
   @Data
