@@ -3,6 +3,7 @@ package com.redis.om.spring.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,9 +19,10 @@ import com.redis.om.spring.fixtures.hash.repository.HashWithNestedMapRepository;
 
 /**
  * Regression tests for gh-755: MappingException when saving a @RedisHash entity
- * with a Map<String, Object> field that contains nested Map values (e.g. LinkedHashMap
- * produced by Jackson deserialization). Spring Data Commons 3.2.4+ no longer creates
- * PersistentEntity for Map/Collection types, so the converter must handle them explicitly.
+ * with Map<String, Object> or List<Object> fields containing nested Map/Collection values
+ * (e.g. LinkedHashMap / ArrayList produced by Jackson deserialization).
+ * Spring Data Commons 3.2.4+ no longer creates PersistentEntity for Map/Collection types,
+ * so the converter must handle them explicitly before reaching getRequiredPersistentEntity().
  */
 class HashWithNestedMapTest extends AbstractBaseEnhancedRedisTest {
 
@@ -68,6 +70,33 @@ class HashWithNestedMapTest extends AbstractBaseEnhancedRedisTest {
 
     assertThatNoException().isThrownBy(() -> repository.saveAll(List.of(e1, e2)));
     assertThat(repository.count()).isEqualTo(2);
+  }
+
+  @Test
+  void saveWithNestedCollectionInListFieldDoesNotThrow() {
+    // Simulates a List<Object> where an element is itself an ArrayList,
+    // as produced by Jackson when deserializing generic Object fields.
+    ArrayList<Object> nestedList = new ArrayList<>();
+    nestedList.add("item1");
+    nestedList.add("item2");
+
+    HashWithNestedMap entity = new HashWithNestedMap();
+    entity.setItems(List.of(nestedList, "plain-string"));
+
+    assertThatNoException().isThrownBy(() -> repository.save(entity));
+  }
+
+  @Test
+  void saveWithNestedCollectionInMapValueDoesNotThrow() {
+    // Map value is an ArrayList — another shape from Jackson deserialization.
+    ArrayList<Object> nestedList = new ArrayList<>();
+    nestedList.add("a");
+    nestedList.add("b");
+
+    HashWithNestedMap entity = new HashWithNestedMap();
+    entity.setAttributes(Map.of("tags", nestedList));
+
+    assertThatNoException().isThrownBy(() -> repository.save(entity));
   }
 
   @Test

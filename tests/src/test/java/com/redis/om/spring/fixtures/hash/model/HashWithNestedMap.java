@@ -1,5 +1,6 @@
 package com.redis.om.spring.fixtures.hash.model;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -17,4 +18,6 @@ public class HashWithNestedMap {
   private String id = UUID.randomUUID().toString();
 
   private Map<String, Object> attributes;
+
+  private List<Object> items;
 }
