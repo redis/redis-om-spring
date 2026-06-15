@@ -28,19 +28,13 @@ import com.redis.om.spring.search.stream.predicates.vector.KNNPredicate;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.util.ObjectUtils;
 import com.redis.om.spring.util.SearchResultRawResponseToObjectConverter;
-import com.redis.vl.query.AggregateHybridQuery;
-import com.redis.vl.query.HybridQuery;
 
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.search.Query;
 import redis.clients.jedis.search.Query.HighlightTags;
 import redis.clients.jedis.search.SearchResult;
-import redis.clients.jedis.search.aggr.AggregationResult;
 import redis.clients.jedis.search.aggr.SortedField;
-import redis.clients.jedis.search.hybrid.FTHybridParams;
-import redis.clients.jedis.search.hybrid.HybridResult;
 import redis.clients.jedis.search.querybuilder.Node;
-import redis.clients.jedis.util.SafeEncoder;
 
 /**
  * Package-private helper that owns all query-building and query-execution logic for
@@ -233,118 +227,16 @@ class SearchStreamQueryExecutor<E> {
   }
 
   /**
-   * Executes a hybrid query using RedisVL's HybridQuery implementation.
-   * <p>
-   * Tries the native FT.HYBRID command first (Redis 8.4+), and falls back
-   * to FT.AGGREGATE if FT.HYBRID is not available on the current Redis version.
-   * The HybridQuery is built at execution time so that limit/skip set after
-   * hybridSearch() are properly captured.
-   * </p>
+   * Hybrid search requires Jedis 7.x and the redisvl library, which are not available
+   * on the 1.1.x line (Jedis 6.x). This method is stubbed and will throw at runtime.
    */
-  @SuppressWarnings(
-    "unchecked"
-  )
   List<E> executeHybridQueryToEntityList(Node rootNode, Long skip, Long limit, String hybridText,
       MetamodelField<? super E, ?> hybridTextField, float[] hybridVector,
       MetamodelField<? super E, ?> hybridVectorField, float hybridAlpha, CombinationMethod hybridCombinationMethod) {
-    // Build the filter expression from existing rootNode filters
-    String filterExpression = null;
-    if (rootNode != null && !rootNode.toString().isBlank() && !rootNode.toString().equals("*")) {
-      filterExpression = rootNode.toString();
-    }
-
-    // Determine how many results the hybrid query should request.
-    int numResults = MAX_LIMIT;
-    if (limit != null) {
-      long requested = limit;
-      if (skip != null) {
-        requested += skip;
-      }
-      numResults = (int) Math.min(Math.max(requested, 1), MAX_LIMIT);
-    }
-
-    // Convert alpha (vector weight) to linearAlpha (text weight) for HybridQuery
-    float linearAlpha = 1.0f - hybridAlpha;
-
-    HybridQuery.CombinationMethod redisvlCombinationMethod = switch (hybridCombinationMethod) {
-      case RRF -> HybridQuery.CombinationMethod.RRF;
-      case LINEAR -> HybridQuery.CombinationMethod.LINEAR;
-    };
-
-    HybridQuery.HybridQueryBuilder builder = HybridQuery.builder().text(hybridText).textFieldName(hybridTextField
-        .getSearchAlias()).vector(hybridVector).vectorFieldName(hybridVectorField.getSearchAlias()).combinationMethod(
-            redisvlCombinationMethod).linearAlpha(linearAlpha).numResults(numResults);
-
-    if (filterExpression != null) {
-      builder.filterExpression(filterExpression);
-    }
-
-    HybridQuery hybridQueryObj = builder.build();
-
-    // Try FT.HYBRID first (Redis 8.4+)
-    try {
-      FTHybridParams params = hybridQueryObj.buildFTHybridParams();
-      HybridResult result = search.ftHybrid(params);
-      List<E> entities = documentMapper.hybridDocumentsToEntities(result.getDocuments());
-
-      // Apply skip/limit in-memory for pagination
-      if (skip != null && skip > 0) {
-        entities = entities.stream().skip(skip).collect(Collectors.toList());
-      }
-      if (limit != null) {
-        entities = entities.stream().limit(limit).collect(Collectors.toList());
-      }
-
-      return entities;
-    } catch (Exception e) {
-      logger.warn("FT.HYBRID failed, falling back to FT.AGGREGATE: " + e.getClass().getSimpleName() + ": " + e
-          .getMessage(), e);
-    }
-
-    // Fallback to FT.AGGREGATE path
-    AggregateHybridQuery fallback = hybridQueryObj.toAggregateHybridQuery();
-    redis.clients.jedis.search.aggr.AggregationBuilder aggregation = fallback.buildRedisAggregation();
-
-    Map<String, Object> params = fallback.getParams();
-    if (params != null && !params.isEmpty()) {
-      aggregation.params(params);
-    }
-
-    List<String> fieldsToLoad = new ArrayList<>();
-    List<Field> entityFields = ObjectUtils.getDeclaredFieldsTransitively(entityClass);
-    for (Field field : entityFields) {
-      if (!field.getName().equals(idField.getName())) {
-        fieldsToLoad.add("@" + field.getName());
-      }
-    }
-    if (!fieldsToLoad.isEmpty()) {
-      aggregation.load(fieldsToLoad.toArray(String[]::new));
-    }
-
-    if (skip != null || limit != null) {
-      int skipValue = skip != null ? skip.intValue() : 0;
-      int limitValue = limit != null ? limit.intValue() : MAX_LIMIT;
-      aggregation.limit(skipValue, limitValue);
-    }
-
-    AggregationResult aggResult = search.aggregate(aggregation);
-
-    if (isDocument) {
-      Gson g = documentMapper.getGson();
-      return aggResult.getResults().stream().map(d -> {
-        Object rawJson = d.get("$");
-        if (rawJson == null) {
-          logger.warn("Aggregation result has no '$' field; skipping entity mapping for " + entityClass
-              .getSimpleName());
-          return null;
-        }
-        String jsonStr = (rawJson instanceof byte[]) ? SafeEncoder.encode((byte[]) rawJson) : rawJson.toString();
-        return g.fromJson(jsonStr, entityClass);
-      }).filter(Objects::nonNull).collect(Collectors.toList());
-    } else {
-      return aggResult.getResults().stream().map(h -> (E) ObjectUtils.mapToObject(h, entityClass, mappingConverter))
-          .collect(Collectors.toList());
-    }
+    // Hybrid search requires Jedis 7.x and the redisvl library (com.redis:redisvl),
+    // neither of which is available in the 1.1.x dependency set (Jedis 6.x).
+    throw new UnsupportedOperationException(
+        "hybridSearch() is not supported on redis-om-spring 1.1.x — it requires Jedis 7.x and the redisvl library." + " Please upgrade to 2.x for hybrid search support.");
   }
 
   /**

@@ -78,6 +78,8 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private Long skip;
   private SortedField sortBy;
   private boolean onlyIds = false;
+  private boolean withScores = false;
+  private Scorer scorer;
   private Runnable closeHandler;
   private Stream<E> resolvedStream;
   private KNNPredicate<E, ?> knnPredicate;

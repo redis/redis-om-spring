@@ -285,9 +285,11 @@ public class RediSearchIndexer {
       Runnable postCreateHook) {
     switch (creationMode) {
       case SKIP_IF_EXIST:
-        opsForSearch.createIndex(params, fields);
-        logger.info(String.format("Created index %s", indexName));
-        postCreateHook.run();
+        if (!indexExists.getAsBoolean()) {
+          opsForSearch.createIndex(params, fields);
+          logger.info(String.format("Created index %s", indexName));
+          postCreateHook.run();
+        }
         break;
       case DROP_AND_RECREATE:
         if (indexExists.getAsBoolean()) {
@@ -703,9 +705,8 @@ public class RediSearchIndexer {
   }
 
   Map<String, Object> getIndexInfo(Class<?> entityClass) {
-    String indexName = entityClassToIndexName.get(entityClass);
+    String indexName = getIndexName(entityClass);
     if (indexName == null) {
-      // No index mapping exists for this entity class
       return null;
     }
     SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
@@ -736,7 +737,7 @@ public class RediSearchIndexer {
   }
 
   private void dropIndex(Class<?> cl, boolean dropDocuments, boolean recreateIndex) {
-    String indexName = entityClassToIndexName.get(cl);
+    String indexName = getIndexName(cl);
     try {
       SearchOperations<String> opsForSearch = rmo.opsForSearch(indexName);
       if (dropDocuments) {

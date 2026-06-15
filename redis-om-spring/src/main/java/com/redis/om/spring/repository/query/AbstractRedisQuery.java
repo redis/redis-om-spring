@@ -9,10 +9,10 @@ import java.util.stream.StreamSupport;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.data.core.PropertyPath;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Order;
+import org.springframework.data.mapping.PropertyPath;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.query.*;
 import org.springframework.data.repository.query.parser.Part;

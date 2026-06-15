@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.lang3.ObjectUtils;
-import org.springframework.data.core.TypeInformation;
+import org.springframework.data.util.TypeInformation;
 
 import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
