@@ -118,8 +118,8 @@ class IndexDefinitionBuilder {
         if (CharSequence.class.isAssignableFrom(fieldType) || //
             (fieldType == Boolean.class) || (fieldType == UUID.class) || (fieldType == Ulid.class)) {
           fields.add(SearchField.of(field, factory.indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(),
-              indexed.separator(), indexed.arrayIndex(), indexed.alias(), indexed.indexMissing(), indexed
-                  .indexEmpty(), indexed.withSuffixTrie())));
+              indexed.separator(), indexed.arrayIndex(), indexed.alias(), indexed.indexMissing(), indexed.indexEmpty(),
+              indexed.withSuffixTrie())));
         } else if (fieldType.isEnum()) {
           if (Objects.requireNonNull(indexed.serializationHint()) == SerializationHint.ORDINAL) {
             fields.add(SearchField.of(field, factory.indexAsNumericFieldFor(field, isDocument, prefix, indexed
@@ -692,8 +692,8 @@ class IndexDefinitionBuilder {
             fieldName = fieldName.as(alias);
 
             logger.info(String.format("Creating nested relationships: %s -> %s", field.getName(), subField.getName()));
-            fieldList.add(SearchField.of(field, factory.getTagField(fieldName, indexed.separator(), false, false,
-                false, indexed.withSuffixTrie())));
+            fieldList.add(SearchField.of(field, factory.getTagField(fieldName, indexed.separator(), false, false, false,
+                indexed.withSuffixTrie())));
             continue;
           } else if (Number.class.isAssignableFrom(subField.getType()) || (subField
               .getType() == LocalDateTime.class) || (subField.getType() == LocalDate.class) || (subField

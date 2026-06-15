@@ -96,8 +96,8 @@ class SchemaFieldFactory {
 
   SchemaField indexAsTagFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, boolean sortable,
       String separator, int arrayIndex, String annotationAlias) {
-    return indexAsTagFieldFor(field, isDocument, prefix, sortable, separator, arrayIndex, annotationAlias, false,
-        false, false);
+    return indexAsTagFieldFor(field, isDocument, prefix, sortable, separator, arrayIndex, annotationAlias, false, false,
+        false);
   }
 
   SchemaField indexAsTagFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, boolean sortable,
