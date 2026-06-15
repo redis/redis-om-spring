@@ -80,6 +80,14 @@ class IndexDefinitionBuilder {
         field -> (isDocument ? "$." : "") + field.getName());
   }
 
+  private boolean hasPhonetic(Searchable searchable) {
+    return searchable.phonetic() != null && !searchable.phonetic().isEmpty();
+  }
+
+  private boolean hasPhonetic(TextIndexed textIndexed) {
+    return textIndexed.phonetic() != null && !textIndexed.phonetic().isEmpty();
+  }
+
   // ---------------------------------------------------------------------------
   // Field processing pipeline
   // ---------------------------------------------------------------------------
@@ -326,10 +334,11 @@ class IndexDefinitionBuilder {
         logger.info(String.format("Tracked lexicographic field %s on class %s", field.getName(), entityClass
             .getName()));
       }
-      fields.add(SearchField.of(field, factory.indexAsTextFieldFor(field, isDocument, prefix, searchable)));
+      fields.add(SearchField.of(field, factory.indexAsTextFieldFor(field, isDocument, prefix, searchable), hasPhonetic(
+          searchable)));
     } else if (field.isAnnotationPresent(TextIndexed.class)) {
       TextIndexed ti = field.getAnnotation(TextIndexed.class);
-      fields.add(SearchField.of(field, factory.indexAsTextFieldFor(field, isDocument, prefix, ti)));
+      fields.add(SearchField.of(field, factory.indexAsTextFieldFor(field, isDocument, prefix, ti), hasPhonetic(ti)));
     } else if (field.isAnnotationPresent(TagIndexed.class)) {
       TagIndexed ti = field.getAnnotation(TagIndexed.class);
       fields.add(SearchField.of(field, factory.indexAsTagFieldFor(field, isDocument, prefix, ti)));
@@ -486,7 +495,7 @@ class IndexDefinitionBuilder {
           textField.indexMissing();
         if (searchable.indexEmpty())
           textField.indexEmpty();
-        fields.add(SearchField.of(subField, textField));
+        fields.add(SearchField.of(subField, textField, hasPhonetic(searchable)));
         continue;
       }
 
@@ -508,7 +517,7 @@ class IndexDefinitionBuilder {
           textField.indexMissing();
         if (textIndexed.indexEmpty())
           textField.indexEmpty();
-        fields.add(SearchField.of(subField, textField));
+        fields.add(SearchField.of(subField, textField, hasPhonetic(textIndexed)));
         continue;
       }
 
@@ -706,7 +715,7 @@ class IndexDefinitionBuilder {
 
           fieldList.add(SearchField.of(field, factory.getTextField(fieldName, searchable.weight(), searchable
               .sortable(), searchable.nostem(), searchable.noindex(), phonetic, searchable.indexMissing(), searchable
-                  .indexEmpty())));
+                  .indexEmpty()), phonetic != null));
 
           continue;
         }

@@ -251,6 +251,23 @@ public class RediSearchIndexer {
     return searchFields;
   }
 
+  private List<SchemaField> schemaFieldsForCreateIndex(List<SearchField> searchFields) {
+    List<SearchField> orderedFields = new ArrayList<>();
+    int firstTagFieldIndex = -1;
+    for (SearchField searchField : searchFields) {
+      if (searchField.isPhoneticTextField() && firstTagFieldIndex != -1) {
+        orderedFields.add(firstTagFieldIndex, searchField);
+        firstTagFieldIndex++;
+      } else {
+        if (firstTagFieldIndex == -1 && searchField.getSchemaField() instanceof TagField) {
+          firstTagFieldIndex = orderedFields.size();
+        }
+        orderedFields.add(searchField);
+      }
+    }
+    return orderedFields.stream().map(SearchField::getSchemaField).toList();
+  }
+
   /**
    * Evaluates any SpEL templates in each raw prefix and normalizes the result with a
    * trailing colon via {@link #getKeyspace(String)}. Used when an
@@ -406,7 +423,7 @@ public class RediSearchIndexer {
       }
 
       updateTTLSettings(cl, entityPrefix, isDocument, document, allClassFields);
-      List<SchemaField> fields = searchFields.stream().map(SearchField::getSchemaField).toList();
+      List<SchemaField> fields = schemaFieldsForCreateIndex(searchFields);
       entityClassToSchema.put(cl, searchFields);
       entityClassToIndexName.put(cl, indexName);
 
@@ -1025,7 +1042,7 @@ public class RediSearchIndexer {
           Optional.empty();
       updateTTLSettings(entityClass, entityPrefix, isDocument, document, allClassFields);
 
-      List<SchemaField> fields = searchFields.stream().map(SearchField::getSchemaField).toList();
+      List<SchemaField> fields = schemaFieldsForCreateIndex(searchFields);
 
       // Note: We don't update entityClassToSchema or entityClassToIndexName here
       // because this method is for creating indexes with custom names/prefixes.
@@ -1105,7 +1122,7 @@ public class RediSearchIndexer {
         registerSecondaryKeyspace(entityPrefix, entityClass);
       }
 
-      List<SchemaField> fields = searchFields.stream().map(SearchField::getSchemaField).toList();
+      List<SchemaField> fields = schemaFieldsForCreateIndex(searchFields);
 
       applyCreationMode(opsForSearch, params, fields, repoIndexingOptions.creationMode(), indexName, entityClass,
           () -> indexExistsFor(entityClass, indexName), () -> {

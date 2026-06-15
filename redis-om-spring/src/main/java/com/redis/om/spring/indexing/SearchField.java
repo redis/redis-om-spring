@@ -19,6 +19,7 @@ import redis.clients.jedis.search.schemafields.SchemaField;
 public class SearchField {
   private final Field field;
   private final SchemaField schemaField;
+  private final boolean phoneticTextField;
 
   /**
    * Creates a new SearchField with the specified Java field and schema field.
@@ -27,8 +28,13 @@ public class SearchField {
    * @param schemaField the corresponding RediSearch schema field
    */
   public SearchField(Field field, SchemaField schemaField) {
+    this(field, schemaField, false);
+  }
+
+  public SearchField(Field field, SchemaField schemaField, boolean phoneticTextField) {
     this.field = field;
     this.schemaField = schemaField;
+    this.phoneticTextField = phoneticTextField;
   }
 
   /**
@@ -40,6 +46,10 @@ public class SearchField {
    */
   public static SearchField of(Field field, SchemaField schemaField) {
     return new SearchField(field, schemaField);
+  }
+
+  public static SearchField of(Field field, SchemaField schemaField, boolean phoneticTextField) {
+    return new SearchField(field, schemaField, phoneticTextField);
   }
 
   /**
@@ -58,5 +68,9 @@ public class SearchField {
    */
   public Field getField() {
     return field;
+  }
+
+  public boolean isPhoneticTextField() {
+    return phoneticTextField;
   }
 }
