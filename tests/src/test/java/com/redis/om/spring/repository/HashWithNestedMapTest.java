@@ -1,0 +1,84 @@
+package com.redis.om.spring.repository;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.redis.om.spring.AbstractBaseEnhancedRedisTest;
+import com.redis.om.spring.fixtures.hash.model.HashWithNestedMap;
+import com.redis.om.spring.fixtures.hash.repository.HashWithNestedMapRepository;
+
+/**
+ * Regression tests for gh-755: MappingException when saving a @RedisHash entity
+ * with a Map<String, Object> field that contains nested Map values (e.g. LinkedHashMap
+ * produced by Jackson deserialization). Spring Data Commons 3.2.4+ no longer creates
+ * PersistentEntity for Map/Collection types, so the converter must handle them explicitly.
+ */
+class HashWithNestedMapTest extends AbstractBaseEnhancedRedisTest {
+
+  @Autowired
+  private HashWithNestedMapRepository repository;
+
+  @AfterEach
+  void tearDown() {
+    repository.deleteAll();
+  }
+
+  @Test
+  void saveWithFlatMapDoesNotThrow() {
+    HashWithNestedMap entity = new HashWithNestedMap();
+    entity.setAttributes(Map.of("key1", "value1", "key2", 42));
+
+    assertThatNoException().isThrownBy(() -> repository.save(entity));
+  }
+
+  @Test
+  void saveWithNestedLinkedHashMapDoesNotThrow() {
+    // Simulates a Map<String, Object> where a value is itself a LinkedHashMap,
+    // as produced by Jackson's ObjectMapper when deserializing generic Object fields.
+    LinkedHashMap<String, Object> nested = new LinkedHashMap<>();
+    nested.put("city", "Tel Aviv");
+    nested.put("zip", "6100000");
+
+    HashWithNestedMap entity = new HashWithNestedMap();
+    entity.setAttributes(Map.of("address", nested, "name", "Acme"));
+
+    assertThatNoException().isThrownBy(() -> repository.save(entity));
+  }
+
+  @Test
+  void saveAllWithNestedMapsDoesNotThrow() {
+    LinkedHashMap<String, Object> nested1 = new LinkedHashMap<>();
+    nested1.put("score", 99);
+    nested1.put("level", "gold");
+
+    HashWithNestedMap e1 = new HashWithNestedMap();
+    e1.setAttributes(Map.of("tier", nested1));
+
+    HashWithNestedMap e2 = new HashWithNestedMap();
+    e2.setAttributes(Map.of("plain", "value"));
+
+    assertThatNoException().isThrownBy(() -> repository.saveAll(List.of(e1, e2)));
+    assertThat(repository.count()).isEqualTo(2);
+  }
+
+  @Test
+  void savedEntityIsRetrievable() {
+    HashWithNestedMap entity = new HashWithNestedMap();
+    entity.setAttributes(Map.of("key", "value"));
+
+    HashWithNestedMap saved = repository.save(entity);
+
+    Optional<HashWithNestedMap> found = repository.findById(saved.getId());
+    assertThat(found).isPresent();
+    assertThat(found.get().getAttributes()).isNotNull();
+  }
+}

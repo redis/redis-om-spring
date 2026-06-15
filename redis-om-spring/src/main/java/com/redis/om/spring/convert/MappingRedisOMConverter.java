@@ -655,6 +655,13 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       return;
     }
 
+    // Spring Data 3.2.4+ does not create PersistentEntity for Map/Collection types.
+    // Handle Map values (e.g. nested LinkedHashMap from Jackson) by recursing into writeMap.
+    if (value instanceof Map<?, ?> nestedMap) {
+      writeMap(null, keyspace, path, Object.class, nestedMap, sink);
+      return;
+    }
+
     if (value.getClass() != typeHint.getType()) {
       typeMapper.writeType(value.getClass(), sink.getBucket().getPropertyPath(path));
     }
