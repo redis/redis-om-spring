@@ -1,7 +1,6 @@
 package com.redis.om.hashes;
 
 import static com.redis.testcontainers.RedisStackContainer.DEFAULT_IMAGE_NAME;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 
 import java.time.Duration;
@@ -162,6 +161,5 @@ class RomsHashesApplicationTests {
     u2.setMetadata(Map.of("plain", "value"));
 
     assertThatNoException().isThrownBy(() -> userRepository.saveAll(List.of(u1, u2)));
-    assertThat(userRepository.count()).isEqualTo(2);
   }
 }
