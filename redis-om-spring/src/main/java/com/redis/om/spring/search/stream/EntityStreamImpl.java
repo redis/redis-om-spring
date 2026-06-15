@@ -1,6 +1,7 @@
 package com.redis.om.spring.search.stream;
 
 import static com.redis.om.spring.util.ObjectUtils.getDeclaredFieldsTransitively;
+import static com.redis.om.spring.util.ObjectUtils.getIdFieldForEntityClass;
 
 import java.lang.reflect.Field;
 import java.util.Optional;
@@ -43,14 +44,30 @@ public class EntityStreamImpl implements EntityStream {
   @Override
   public <E> SearchStream<E> of(Class<E> entityClass, String searchIndex, String idField) {
     Optional<Field> maybeIdField = getDeclaredFieldsTransitively(entityClass).stream().filter(f -> f.getName().equals(
-        "id")).findFirst();
+        idField)).findFirst();
+    if (maybeIdField.isPresent()) {
+      return new SearchStreamImpl<>(entityClass, searchIndex, maybeIdField.get(), modulesOperations, gsonBuilder,
+          indexer);
+    } else {
+      throw new IllegalArgumentException(entityClass
+          .getName() + " does not appear to have a field named '" + idField + "'");
+    }
+  }
+
+  @Override
+  public <E> SearchStream<E> of(Class<E> entityClass, String searchIndex) {
+    // Prefer an explicit @Id-annotated field; fall back to a field literally named "id".
+    Optional<Field> maybeIdField = getIdFieldForEntityClass(entityClass);
+    if (maybeIdField.isEmpty()) {
+      maybeIdField = getDeclaredFieldsTransitively(entityClass).stream().filter(f -> f.getName().equals("id"))
+          .findFirst();
+    }
     if (maybeIdField.isPresent()) {
       return new SearchStreamImpl<>(entityClass, searchIndex, maybeIdField.get(), modulesOperations, gsonBuilder,
           indexer);
     } else {
       throw new IllegalArgumentException(entityClass.getName() + " does not appear to have an ID field");
     }
-
   }
 
 }

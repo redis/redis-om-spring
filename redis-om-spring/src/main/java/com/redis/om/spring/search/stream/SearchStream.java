@@ -2,6 +2,7 @@ package com.redis.om.spring.search.stream;
 
 import java.time.Duration;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.*;
@@ -547,8 +548,65 @@ public interface SearchStream<E> extends BaseStream<E, SearchStream<E>> {
   <R> SearchStream<E> highlight(Function<? super E, ? extends R> field, Pair<String, String> tags);
 
   /**
+   * Performs a hybrid search combining text and vector similarity search with weighted scoring.
+   *
+   * @param text        the text query string to search for
+   * @param textField   the metamodel field for text search (must not be null)
+   * @param vector      the query vector for similarity search (must not be null)
+   * @param vectorField the metamodel field for vector search (must not be null)
+   * @param alpha       weight for combining scores (0.0 to 1.0, typically 0.7)
+   * @return a new SearchStream with the hybrid search applied
+   * @throws IllegalArgumentException if text is null or empty, fields are null, or alpha is out of range
+   * @since 2.1.0
+   */
+  SearchStream<E> hybridSearch(String text, MetamodelField<? super E, ?> textField, float[] vector,
+      MetamodelField<? super E, ?> vectorField, float alpha);
+
+  /**
+   * Performs a hybrid search combining text and vector similarity search with a specified
+   * combination method and weighted scoring.
+   *
+   * @param text              the text query string to search for
+   * @param textField         the metamodel field for text search (must not be null)
+   * @param vector            the query vector for similarity search (must not be null)
+   * @param vectorField       the metamodel field for vector search (must not be null)
+   * @param combinationMethod the score combination method (RRF or LINEAR)
+   * @param alpha             weight for combining scores (0.0 to 1.0, typically 0.7)
+   * @return a new SearchStream with the hybrid search applied
+   * @throws IllegalArgumentException if text is null or empty, fields are null, or alpha is out of range
+   * @since 2.1.0
+   */
+  SearchStream<E> hybridSearch(String text, MetamodelField<? super E, ?> textField, float[] vector,
+      MetamodelField<? super E, ?> vectorField, CombinationMethod combinationMethod, float alpha);
+
+  /**
+   * Enables returning relevance scores alongside search results.
+   *
+   * @return this SearchStream instance
+   * @since 2.1.0
+   */
+  SearchStream<E> withScores();
+
+  /**
+   * Sets the scoring algorithm for the search query.
+   *
+   * @param scorer the scoring algorithm to use
+   * @return this SearchStream instance
+   * @since 2.1.0
+   */
+  SearchStream<E> scorer(Scorer scorer);
+
+  /**
+   * Terminal operation that returns entities paired with their relevance scores.
+   *
+   * @return a list of entity-score pairs ordered by relevance
+   * @since 2.1.0
+   */
+  List<Pair<E, Double>> toListWithScores();
+
+  /**
    * Returns whether this stream operates on JSON documents or hash structures.
-   * 
+   *
    * @return true if operating on JSON documents, false for hash structures
    */
   boolean isDocument();

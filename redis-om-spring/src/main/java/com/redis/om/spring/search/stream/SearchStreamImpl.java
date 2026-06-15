@@ -1,77 +1,46 @@
 package com.redis.om.spring.search.stream;
 
 import static com.redis.om.spring.metamodel.MetamodelUtils.getMetamodelForIdField;
-import static com.redis.om.spring.util.ObjectUtils.floatArrayToByteArray;
-import static java.util.stream.Collectors.toCollection;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.function.*;
 import java.util.stream.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.*;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.redis.core.convert.ReferenceResolverImpl;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.redis.om.spring.annotations.Dialect;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.convert.MappingRedisOMConverter;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.metamodel.MetamodelField;
-import com.redis.om.spring.metamodel.SearchFieldAccessor;
 import com.redis.om.spring.metamodel.indexed.NumericField;
 import com.redis.om.spring.ops.RedisModulesOperations;
 import com.redis.om.spring.ops.json.JSONOperations;
 import com.redis.om.spring.ops.search.SearchOperations;
 import com.redis.om.spring.search.stream.actions.TakesJSONOperations;
-import com.redis.om.spring.search.stream.predicates.BaseAbstractPredicate;
 import com.redis.om.spring.search.stream.predicates.SearchFieldPredicate;
-import com.redis.om.spring.search.stream.predicates.lexicographic.*;
 import com.redis.om.spring.search.stream.predicates.vector.KNNPredicate;
 import com.redis.om.spring.tuple.AbstractTupleMapper;
 import com.redis.om.spring.tuple.Pair;
 import com.redis.om.spring.tuple.TupleMapper;
 import com.redis.om.spring.util.ObjectUtils;
-import com.redis.om.spring.util.SearchResultRawResponseToObjectConverter;
 
-import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.search.Query;
-import redis.clients.jedis.search.Query.HighlightTags;
 import redis.clients.jedis.search.SearchResult;
 import redis.clients.jedis.search.aggr.AggregationResult;
 import redis.clients.jedis.search.aggr.SortedField;
 import redis.clients.jedis.search.aggr.SortedField.SortOrder;
 import redis.clients.jedis.search.querybuilder.Node;
 import redis.clients.jedis.search.querybuilder.QueryBuilders;
-import redis.clients.jedis.util.SafeEncoder;
 
-/**
- * Implementation of {@link SearchStream} that provides search capabilities for Redis OM entities.
- * <p>
- * This class implements a fluent API for building and executing Redis Search queries against
- * indexed documents. It supports various search operations including filtering, sorting,
- * pagination, aggregation, and vector similarity search.
- * </p>
- * <p>
- * The stream integrates with Redis Search (RediSearch) module to provide:
- * <ul>
- * <li>Full-text and field-based search</li>
- * <li>Vector similarity search (KNN)</li>
- * <li>Query-by-example (QBE) functionality</li>
- * <li>Result projection and summarization</li>
- * <li>Highlighting and sorting</li>
- * </ul>
- *
- * @param <E> the entity type being searched
- */
 public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @SuppressWarnings(
@@ -98,6 +67,11 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private final List<MetamodelField<E, ?>> highlightFields = new ArrayList<>();
   private final ExampleToNodeConverter<E> exampleToNodeConverter;
   private final RediSearchIndexer indexer;
+
+  // Helpers — package-private; stateless relative to query state
+  private final SearchStreamDocumentMapper<E> documentMapper;
+  private final SearchStreamQueryExecutor<E> queryExecutor;
+
   private Node rootNode = QueryBuilders.union();
   private Gson gson;
   private Long limit;
@@ -107,24 +81,18 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   private Runnable closeHandler;
   private Stream<E> resolvedStream;
   private KNNPredicate<E, ?> knnPredicate;
-  private int dialect = Dialect.TWO.getValue();
+  // Deferred hybrid search parameters (query is built at execution time so limit/skip are captured)
+  private CombinationMethod hybridCombinationMethod;
+  private String hybridText;
+  private MetamodelField<? super E, ?> hybridTextField;
+  private float[] hybridVector;
+  private MetamodelField<? super E, ?> hybridVectorField;
+  private float hybridAlpha;
+  private int dialect = com.redis.om.spring.annotations.Dialect.TWO.getValue();
   private SummarizeParams summarizeParams;
   private Pair<String, String> highlightTags;
   private boolean isQBE = false;
 
-  /**
-   * Creates a new SearchStreamImpl for the given entity class.
-   * <p>
-   * This constructor automatically determines the search index name and ID field
-   * from the entity class annotations and introspection.
-   * </p>
-   *
-   * @param entityClass       the entity class to create a search stream for
-   * @param modulesOperations the Redis modules operations instance
-   * @param gsonBuilder       the Gson builder for JSON serialization
-   * @param indexer           the Redis search indexer
-   * @throws IllegalArgumentException if the entity class does not have an ID field
-   */
   public SearchStreamImpl(Class<E> entityClass, RedisModulesOperations<String> modulesOperations,
       GsonBuilder gsonBuilder, RediSearchIndexer indexer) {
     this.indexer = indexer;
@@ -143,23 +111,12 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     this.isDocument = entityClass.isAnnotationPresent(Document.class);
     this.mappingConverter = new MappingRedisOMConverter(null, new ReferenceResolverImpl(modulesOperations.template()));
     this.exampleToNodeConverter = new ExampleToNodeConverter<>(indexer);
+    this.documentMapper = new SearchStreamDocumentMapper<>(isDocument, entityClass, json, gsonBuilder,
+        mappingConverter);
+    this.queryExecutor = new SearchStreamQueryExecutor<>(search, entityClass, isDocument, idField, mappingConverter,
+        indexer, modulesOperations, documentMapper);
   }
 
-  /**
-   * Creates a new SearchStreamImpl with explicit search index and ID field configuration.
-   * <p>
-   * This constructor allows for more explicit control over the search index and ID field,
-   * useful when working with custom search indexes or when the automatic detection
-   * is not sufficient.
-   * </p>
-   *
-   * @param entityClass       the entity class to create a search stream for
-   * @param searchIndex       the explicit search index name to use
-   * @param idField           the ID field of the entity
-   * @param modulesOperations the Redis modules operations instance
-   * @param gsonBuilder       the Gson builder for JSON serialization
-   * @param indexer           the Redis search indexer
-   */
   public SearchStreamImpl(Class<E> entityClass, String searchIndex, Field idField,
       RedisModulesOperations<String> modulesOperations, GsonBuilder gsonBuilder, RediSearchIndexer indexer) {
     this.indexer = indexer;
@@ -177,6 +134,10 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     this.isDocument = "JSON".equals(keyType);
     this.mappingConverter = new MappingRedisOMConverter(null, new ReferenceResolverImpl(modulesOperations.template()));
     this.exampleToNodeConverter = new ExampleToNodeConverter<>(indexer);
+    this.documentMapper = new SearchStreamDocumentMapper<>(isDocument, entityClass, json, gsonBuilder,
+        mappingConverter);
+    this.queryExecutor = new SearchStreamQueryExecutor<>(search, entityClass, isDocument, idField, mappingConverter,
+        indexer, modulesOperations, documentMapper);
   }
 
   @Override
@@ -194,7 +155,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public SearchStream<E> filter(Predicate<?> predicate) {
-    rootNode = processPredicate(predicate);
+    rootNode = queryExecutor.processPredicateGeneric(predicate, rootNode);
     return this;
   }
 
@@ -226,6 +187,44 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   @Override
+  public SearchStream<E> hybridSearch(String text, MetamodelField<? super E, ?> textField, float[] vector,
+      MetamodelField<? super E, ?> vectorField, float alpha) {
+    return hybridSearch(text, textField, vector, vectorField, CombinationMethod.LINEAR, alpha);
+  }
+
+  @Override
+  public SearchStream<E> hybridSearch(String text, MetamodelField<? super E, ?> textField, float[] vector,
+      MetamodelField<? super E, ?> vectorField, CombinationMethod combinationMethod, float alpha) {
+    if (text == null || text.trim().isEmpty()) {
+      throw new IllegalArgumentException("text query string cannot be null or empty");
+    }
+    if (textField == null) {
+      throw new IllegalArgumentException("textField cannot be null");
+    }
+    if (vector == null) {
+      throw new IllegalArgumentException("query vector cannot be null");
+    }
+    if (vectorField == null) {
+      throw new IllegalArgumentException("vectorField cannot be null");
+    }
+    if (alpha < 0.0f || alpha > 1.0f) {
+      throw new IllegalArgumentException("alpha must be between 0.0 and 1.0, got: " + alpha);
+    }
+    if (combinationMethod == null) {
+      throw new IllegalArgumentException("combinationMethod cannot be null");
+    }
+
+    this.hybridText = text;
+    this.hybridTextField = textField;
+    this.hybridVector = vector;
+    this.hybridVectorField = vectorField;
+    this.hybridAlpha = alpha;
+    this.hybridCombinationMethod = combinationMethod;
+
+    return this;
+  }
+
+  @Override
   public <T> SearchStream<E> filterIfNotNull(T value, Supplier<SearchFieldPredicate<? super E, ?>> predicateSupplier) {
     if (value != null) {
       return filter(predicateSupplier.get());
@@ -251,81 +250,33 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     return this;
   }
 
-  /**
-   * Processes a search field predicate and applies it to the current query tree.
-   * <p>
-   * This method takes a search field predicate and integrates it with the existing
-   * root query node, allowing predicates to be combined into complex search expressions.
-   * </p>
-   *
-   * @param predicate the search field predicate to process
-   * @return the query node representing the processed predicate
-   */
   public Node processPredicate(SearchFieldPredicate<? super E, ?> predicate) {
-    // Handle lexicographic predicates specially
-    if (predicate instanceof LexicographicPredicate) {
-      return processLexicographicPredicate(predicate);
-    }
-    return predicate.apply(rootNode);
+    return queryExecutor.processPredicate(predicate, rootNode);
   }
 
-  private Node processPredicate(Predicate<?> predicate) {
-    if (SearchFieldPredicate.class.isAssignableFrom(predicate.getClass())) {
-      @SuppressWarnings(
-        "unchecked"
-      ) SearchFieldPredicate<? super E, ?> p = (SearchFieldPredicate<? super E, ?>) predicate;
-      return processPredicate(p);
+  @SuppressWarnings(
+    "unchecked"
+  )
+  private List<MetamodelField<E, ?>> collectMetamodelFields(Function<?, ?> fieldOrMapper) {
+    List<MetamodelField<E, ?>> result = new ArrayList<>();
+    if (MetamodelField.class.isAssignableFrom(fieldOrMapper.getClass())) {
+      result.add((MetamodelField<E, ?>) fieldOrMapper);
+    } else if (TupleMapper.class.isAssignableFrom(fieldOrMapper.getClass())) {
+      AbstractTupleMapper tm = (AbstractTupleMapper) fieldOrMapper;
+      IntStream.range(0, tm.degree()).forEach(i -> result.add((MetamodelField<E, ?>) tm.get(i)));
     }
-    return rootNode;
-  }
-
-  private Node processLexicographicPredicate(SearchFieldPredicate<? super E, ?> predicate) {
-    // Cast to BaseAbstractPredicate to access the search field accessor
-    if (!(predicate instanceof BaseAbstractPredicate)) {
-      throw new IllegalArgumentException("Lexicographic predicates must extend BaseAbstractPredicate");
-    }
-    SearchFieldAccessor searchFieldAccessor = ((BaseAbstractPredicate<?, ?>) predicate).getSearchFieldAccessor();
-
-    if (predicate instanceof LexicographicGreaterThanMarker) {
-      LexicographicGreaterThanPredicate<E, ?> actualPredicate = new LexicographicGreaterThanPredicate<>(
-          searchFieldAccessor, ((LexicographicGreaterThanMarker<E, ?>) predicate).getValue(), modulesOperations,
-          indexer);
-      return actualPredicate.apply(rootNode);
-    } else if (predicate instanceof LexicographicLessThanMarker) {
-      LexicographicLessThanPredicate<E, ?> actualPredicate = new LexicographicLessThanPredicate<>(searchFieldAccessor,
-          ((LexicographicLessThanMarker<E, ?>) predicate).getValue(), modulesOperations, indexer);
-      return actualPredicate.apply(rootNode);
-    } else if (predicate instanceof LexicographicBetweenMarker) {
-      LexicographicBetweenMarker<E, ?> marker = (LexicographicBetweenMarker<E, ?>) predicate;
-      LexicographicBetweenPredicate<E, ?> actualPredicate = new LexicographicBetweenPredicate<>(searchFieldAccessor,
-          marker.getMin(), marker.getMax(), modulesOperations, indexer);
-      return actualPredicate.apply(rootNode);
-    }
-    throw new IllegalArgumentException("Unknown lexicographic predicate type: " + predicate.getClass());
+    return result;
   }
 
   @Override
   public <T> SearchStream<T> map(Function<? super E, ? extends T> mapper) {
-    List<MetamodelField<E, ?>> returning = new ArrayList<>();
+    if (hybridText != null) {
+      throw new UnsupportedOperationException(
+          "Metamodel-based projections (.map()) are not supported after hybridSearch(). " + "Hybrid search uses FT.AGGREGATE which is incompatible with FT.SEARCH-based projections. " + "Collect full entities instead.");
+    }
 
-    if (MetamodelField.class.isAssignableFrom(mapper.getClass())) {
-      @SuppressWarnings(
-        "unchecked"
-      ) MetamodelField<E, T> foi = (MetamodelField<E, T>) mapper;
-
-      returning.add(foi);
-    } else if (TupleMapper.class.isAssignableFrom(mapper.getClass())) {
-      @SuppressWarnings(
-        "rawtypes"
-      ) AbstractTupleMapper tm = (AbstractTupleMapper) mapper;
-
-      IntStream.range(0, tm.degree()).forEach(i -> {
-        @SuppressWarnings(
-          "unchecked"
-        ) MetamodelField<E, ?> foi = (MetamodelField<E, ?>) tm.get(i);
-        returning.add(foi);
-      });
-    } else {
+    List<MetamodelField<E, ?>> returning = collectMetamodelFields(mapper);
+    if (returning.isEmpty()) {
       if (TakesJSONOperations.class.isAssignableFrom(mapper.getClass())) {
         TakesJSONOperations tjo = (TakesJSONOperations) mapper;
         tjo.setJSONOperations(json);
@@ -485,11 +436,10 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @Override
   public long count() {
     if (!rootNode.toString().isBlank()) {
-      // Trim any leading/trailing spaces from the query to avoid syntax errors with DIALECT
       String queryString = rootNode.toString().trim();
       Query query = new Query(queryString);
       query.limit(0, 0);
-      query.dialect(dialect); // Use the configured dialect value
+      query.dialect(dialect);
       SearchResult searchResult = search.search(query);
       resolvedStream = Stream.empty();
 
@@ -498,13 +448,11 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
       var info = search.getInfo();
       Object numDocsValue = info.get("num_docs");
 
-      // Handle different return types from Redis (fixes issue #639)
       if (numDocsValue instanceof String) {
         return Long.parseLong((String) numDocsValue);
       } else if (numDocsValue instanceof Number) {
         return ((Number) numDocsValue).longValue();
       } else {
-        // Fallback to 0 if the value is null or unexpected type
         return 0L;
       }
     }
@@ -539,7 +487,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   @Override
   public SearchStream<E> findFirstOrElse(Supplier<? extends E> supplier) {
     if (resolvedStream == null) {
-      resolvedStream = toEntityList(executeQuery()).stream();
+      resolvedStream = queryExecutor.toEntityList(executeQuery(), projections, getGson()).stream();
     }
 
     if (resolvedStream.findFirst().isEmpty()) {
@@ -602,135 +550,20 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   Query prepareQuery() {
-    Query query;
-
-    if (knnPredicate != null) {
-      query = new Query(knnPredicate.apply(rootNode).toString());
-      query.dialect(Dialect.TWO.getValue());
-      query.addParam(knnPredicate.getBlobAttributeName(), knnPredicate.getBlobAttribute() != null ?
-          knnPredicate.getBlobAttribute() :
-          floatArrayToByteArray(knnPredicate.getDoublesAttribute()));
-      query.addParam("K", knnPredicate.getK());
-    } else {
-      query = (rootNode.toString().isBlank()) ? new Query() : new Query(rootNode.toString());
-      query.dialect(Dialect.TWO.getValue());
-      query.dialect(dialect);
-    }
-
-    query.limit(skip != null ? skip.intValue() : 0, limit != null ? limit.intValue() : MAX_LIMIT);
-
-    if (sortBy != null) {
-      SortedField sortField = sortBy;
-      query.setSortBy(sortField.getField(), sortField.getOrder().equals("ASC"));
-    }
-
-    if (!summaryFields.isEmpty()) {
-      var fields = summaryFields.stream() //
-          .map(foi -> ObjectUtils.isCollection(foi.getTargetClass()) ?
-              "$." + foi.getSearchAlias() :
-              foi.getSearchAlias()).collect(toCollection(ArrayList::new));
-
-      if (summarizeParams == null) {
-        query.summarizeFields(fields.toArray(String[]::new));
-      } else {
-        query.summarizeFields( //
-            summarizeParams.getFragSize(), //
-            summarizeParams.getFragsNum(), //
-            summarizeParams.getSeparator(), //
-            fields.toArray(String[]::new) //
-        );
-      }
-    }
-
-    if (!highlightFields.isEmpty()) {
-      var fields = highlightFields.stream() //
-          .map(foi -> ObjectUtils.isCollection(foi.getTargetClass()) ?
-              "$." + foi.getSearchAlias() :
-              foi.getSearchAlias()).collect(toCollection(ArrayList::new));
-
-      if (highlightTags == null) {
-        query.highlightFields(fields.toArray(String[]::new));
-      } else {
-        HighlightTags tags = new HighlightTags(highlightTags.getFirst(), highlightTags.getSecond());
-        query.highlightFields(tags, fields.toArray(String[]::new));
-      }
-    }
-
-    if (onlyIds) {
-      query.returnFields(idField.getName());
-    } else if (!projections.isEmpty()) {
-      var returnFields = projections.stream() //
-          .map(foi -> ObjectUtils.isCollection(foi.getTargetClass()) ?
-              "$." + foi.getSearchAlias() :
-              foi.getSearchAlias()).collect(toCollection(ArrayList::new));
-      returnFields.add(idField.getName());
-
-      query.returnFields(returnFields.toArray(String[]::new));
-    }
-
-    return query;
+    return queryExecutor.prepareQuery(rootNode, knnPredicate, skip, limit, sortBy, withScores, scorer, dialect,
+        summaryFields, summarizeParams, highlightFields, highlightTags, onlyIds, projections);
   }
 
   private SearchResult executeQuery() {
-    try {
-      Query query = prepareQuery();
-      return search.search(query);
-    } catch (JedisDataException jde) {
-      if (isQBE && jde.getMessage().contains("not loaded nor in schema")) {
-        throw new UnsupportedOperationException("The example object properties are not part of the search schema", jde);
-      } else
-        throw jde;
-    }
-  }
-
-  @SuppressWarnings(
-    "unchecked"
-  )
-  private List<E> toEntityList(SearchResult searchResult) {
-    if (projections.isEmpty()) {
-      if (isDocument) {
-        Gson g = getGson();
-        return searchResult.getDocuments().stream().map(d -> {
-          E entity = g.fromJson(SafeEncoder.encode((byte[]) d.get("$")), entityClass);
-          return ObjectUtils.populateRedisKey(entity, d.getId());
-        }).toList();
-      } else {
-        return searchResult.getDocuments().stream().map(d -> {
-          E entity = (E) ObjectUtils.documentToObject(d, entityClass, mappingConverter);
-          return ObjectUtils.populateRedisKey(entity, d.getId());
-        }).toList();
-      }
-    } else {
-      List<E> projectedEntities = new ArrayList<>();
-      searchResult.getDocuments().forEach(doc -> {
-        Map<String, Object> props = StreamSupport.stream(doc.getProperties().spliterator(), false).collect(Collectors
-            .toMap(Entry::getKey, Entry::getValue));
-
-        E entity = BeanUtils.instantiateClass(this.entityClass);
-        projections.forEach(foi -> {
-          String field = foi.getSearchAlias();
-          Class<?> targetClass = foi.getTargetClass();
-
-          var rawValue = props.get(ObjectUtils.isCollection(targetClass) ? "$." + field : field);
-          Object processValue = SearchResultRawResponseToObjectConverter.process(rawValue, targetClass, getGson());
-
-          if (processValue != null) {
-            try {
-              foi.getSearchFieldAccessor().getField().set(entity, processValue);
-            } catch (IllegalAccessException e) {
-              logger.debug("🧨 couldn't set value on " + field, e);
-            }
-          }
-        });
-        projectedEntities.add(entity);
-      });
-      return projectedEntities;
-    }
+    return queryExecutor.executeQuery(rootNode, knnPredicate, skip, limit, sortBy, withScores, scorer, dialect,
+        summaryFields, summarizeParams, highlightFields, highlightTags, onlyIds, projections, isQBE);
   }
 
   private Stream<E> resolveStream() {
     if (resolvedStream == null) {
-      resolvedStream = toEntityList(executeQuery()).stream();
+      resolvedStream = queryExecutor.resolveStream(rootNode, knnPredicate, skip, limit, sortBy, withScores, scorer,
+          dialect, summaryFields, summarizeParams, highlightFields, highlightTags, onlyIds, projections, isQBE,
+          hybridText, hybridTextField, hybridVector, hybridVectorField, hybridAlpha, hybridCombinationMethod);
     }
     return resolvedStream;
   }
@@ -792,53 +625,39 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     throw new UnsupportedOperationException("mapToLabelledMaps is not supported on a SearchStream");
   }
 
+  private <R> AggregationStreamImpl<E, R> newAggStream() {
+    resolvedStream = Stream.empty();
+    String query = rootNode.toString().isBlank() ? "*" : rootNode.toString();
+    return new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(), entityClass, query);
+  }
+
   @SafeVarargs
   @Override
   public final <R> AggregationStream<R> groupBy(MetamodelField<E, ?>... fields) {
     resolvedStream = Stream.empty();
-    String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
+    String query = rootNode.toString().isBlank() ? "*" : rootNode.toString();
     return new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(), entityClass, query, fields);
   }
 
   @Override
   public <R> AggregationStream<R> apply(String expression, String alias) {
-    resolvedStream = Stream.empty();
-    String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
-    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(),
-        entityClass, query);
-    aggregationStream.apply(expression, alias);
-    return aggregationStream;
+    return this.<R>newAggStream().apply(expression, alias);
   }
 
   @SafeVarargs
   @Override
   public final <R> AggregationStream<R> load(MetamodelField<E, ?>... fields) {
-    resolvedStream = Stream.empty();
-    String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
-    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(),
-        entityClass, query);
-    aggregationStream.load(fields);
-    return aggregationStream;
+    return this.<R>newAggStream().load(fields);
   }
 
   @Override
   public <R> AggregationStream<R> loadAll() {
-    resolvedStream = Stream.empty();
-    String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
-    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(),
-        entityClass, query);
-    aggregationStream.loadAll();
-    return aggregationStream;
+    return this.<R>newAggStream().loadAll();
   }
 
   @Override
   public <R> AggregationStream<R> cursor(int count, Duration timeout) {
-    resolvedStream = Stream.empty();
-    String query = (rootNode.toString().isBlank()) ? "*" : rootNode.toString();
-    AggregationStream<R> aggregationStream = new AggregationStreamImpl<>(searchIndex, modulesOperations, getGson(),
-        entityClass, query);
-    aggregationStream.cursor(count, timeout);
-    return aggregationStream;
+    return this.<R>newAggStream().cursor(count, timeout);
   }
 
   @Override
@@ -888,7 +707,6 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     } else {
       if (!isStreamResolved()) {
         this.sorted(pageable.getSort()).limit(pageable.getPageSize()).skip(Math.toIntExact(pageable.getOffset()));
-        // issue a count query to answer the hasNext? question for the slice/page
         Query countQuery = (rootNode.toString().isBlank()) ? new Query() : new Query(rootNode.toString());
         countQuery.limit(Math.toIntExact(pageable.getOffset() + pageable.getPageSize()), pageable.getPageSize());
         SearchResult searchResult = search.search(countQuery);
@@ -901,25 +719,12 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
     }
   }
 
-  @Override
   @SuppressWarnings(
     "unchecked"
   )
+  @Override
   public <R> SearchStream<E> project(Function<? super E, ? extends R> field) {
-    if (MetamodelField.class.isAssignableFrom(field.getClass())) {
-      MetamodelField<E, R> foi = (MetamodelField<E, R>) field;
-
-      projections.add(foi);
-    } else if (TupleMapper.class.isAssignableFrom(field.getClass())) {
-      @SuppressWarnings(
-        "rawtypes"
-      ) AbstractTupleMapper tm = (AbstractTupleMapper) field;
-
-      IntStream.range(0, tm.degree()).forEach(i -> {
-        MetamodelField<E, ?> foi = (MetamodelField<E, ?>) tm.get(i);
-        projections.add(foi);
-      });
-    }
+    projections.addAll(collectMetamodelFields(field));
     projections.add((MetamodelField<E, ?>) getMetamodelForIdField(this.entityClass));
     return this;
   }
@@ -942,24 +747,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public <R> SearchStream<E> summarize(Function<? super E, ? extends R> field) {
-    if (MetamodelField.class.isAssignableFrom(field.getClass())) {
-      @SuppressWarnings(
-        "unchecked"
-      ) MetamodelField<E, R> foi = (MetamodelField<E, R>) field;
-      summaryFields.add(foi);
-
-    } else if (TupleMapper.class.isAssignableFrom(field.getClass())) {
-      @SuppressWarnings(
-        "rawtypes"
-      ) AbstractTupleMapper tm = (AbstractTupleMapper) field;
-
-      IntStream.range(0, tm.degree()).forEach(i -> {
-        @SuppressWarnings(
-          "unchecked"
-        ) MetamodelField<E, ?> foi = (MetamodelField<E, ?>) tm.get(i);
-        summaryFields.add(foi);
-      });
-    }
+    summaryFields.addAll(collectMetamodelFields(field));
     return this;
   }
 
@@ -971,24 +759,7 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
 
   @Override
   public <R> SearchStream<E> highlight(Function<? super E, ? extends R> field) {
-    if (MetamodelField.class.isAssignableFrom(field.getClass())) {
-      @SuppressWarnings(
-        "unchecked"
-      ) MetamodelField<E, R> foi = (MetamodelField<E, R>) field;
-      highlightFields.add(foi);
-
-    } else if (TupleMapper.class.isAssignableFrom(field.getClass())) {
-      @SuppressWarnings(
-        "rawtypes"
-      ) AbstractTupleMapper tm = (AbstractTupleMapper) field;
-
-      IntStream.range(0, tm.degree()).forEach(i -> {
-        @SuppressWarnings(
-          "unchecked"
-        ) MetamodelField<E, ?> foi = (MetamodelField<E, ?>) tm.get(i);
-        highlightFields.add(foi);
-      });
-    }
+    highlightFields.addAll(collectMetamodelFields(field));
     return this;
   }
 
@@ -999,11 +770,38 @@ public class SearchStreamImpl<E> implements SearchStream<E> {
   }
 
   @Override
+  public SearchStream<E> withScores() {
+    this.withScores = true;
+    return this;
+  }
+
+  @Override
+  public SearchStream<E> scorer(Scorer scorer) {
+    this.scorer = scorer;
+    return this;
+  }
+
+  @Override
+  public List<Pair<E, Double>> toListWithScores() {
+    if (hybridText != null) {
+      throw new UnsupportedOperationException(
+          "toListWithScores() is not supported after hybridSearch(). " + "Hybrid search uses FT.AGGREGATE/FT.HYBRID which are incompatible with FT.SEARCH WITHSCORES. " + "Use HybridQuery score aliases for explicit score access.");
+    }
+    if (!projections.isEmpty()) {
+      throw new UnsupportedOperationException(
+          "toListWithScores() is not supported after project(). " + "Projections return partial documents that cannot be deserialized into full entities. " + "Remove the project() call or use collect() instead.");
+    }
+    withScores = true;
+    return queryExecutor.toListWithScores(rootNode, knnPredicate, skip, limit, sortBy, scorer, dialect, summaryFields,
+        summarizeParams, highlightFields, highlightTags, projections, isQBE);
+  }
+
+  @Override
   public boolean isDocument() {
     return isDocument;
   }
 
-  private Gson getGson() {
+  Gson getGson() {
     if (gson == null) {
       gson = gsonBuilder.create();
     }

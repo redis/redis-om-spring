@@ -318,7 +318,12 @@ public class IndexMigrationService {
     Matcher matcher = VERSION_PATTERN.matcher(currentIndexName);
 
     if (matcher.find()) {
-      return Integer.parseInt(matcher.group(1));
+      try {
+        return Integer.parseInt(matcher.group(1));
+      } catch (NumberFormatException e) {
+        logger.warn("Failed to parse index version from name '{}': {}", currentIndexName, matcher.group(1));
+        return 0;
+      }
     }
 
     return 0; // No version found, assume version 0
@@ -366,7 +371,7 @@ public class IndexMigrationService {
       return entityClass.getSimpleName().toLowerCase() + "_idx";
     }
     // Remove version suffix if present
-    return currentName.replaceAll("_v\\d+(?:_idx)?$", "");
+    return VERSION_PATTERN.matcher(currentName).replaceAll("");
   }
 
   private String getKeyPrefix(Class<?> entityClass) {

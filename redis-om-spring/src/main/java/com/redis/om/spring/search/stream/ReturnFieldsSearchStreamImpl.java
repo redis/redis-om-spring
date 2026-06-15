@@ -578,4 +578,31 @@ public class ReturnFieldsSearchStreamImpl<E, T> implements SearchStream<T> {
     throw new UnsupportedOperationException("findFirstOrElse is not supported on a ReturnFieldSearchStream");
   }
 
+  @Override
+  public SearchStream<T> hybridSearch(String text, MetamodelField<? super T, ?> textField, float[] vector,
+      MetamodelField<? super T, ?> vectorField, float alpha) {
+    throw new UnsupportedOperationException("hybridSearch is not supported on a ReturnFieldSearchStream");
+  }
+
+  @Override
+  public SearchStream<T> hybridSearch(String text, MetamodelField<? super T, ?> textField, float[] vector,
+      MetamodelField<? super T, ?> vectorField, CombinationMethod combinationMethod, float alpha) {
+    throw new UnsupportedOperationException("hybridSearch is not supported on a ReturnFieldSearchStream");
+  }
+
+  @Override
+  public SearchStream<T> withScores() {
+    throw new UnsupportedOperationException("withScores is not supported on a ReturnFieldSearchStream");
+  }
+
+  @Override
+  public SearchStream<T> scorer(Scorer scorer) {
+    throw new UnsupportedOperationException("scorer is not supported on a ReturnFieldSearchStream");
+  }
+
+  @Override
+  public List<Pair<T, Double>> toListWithScores() {
+    throw new UnsupportedOperationException("toListWithScores is not supported on a ReturnFieldSearchStream");
+  }
+
 }
