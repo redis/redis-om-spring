@@ -3,19 +3,16 @@ package com.redis.om.spring.indexing;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.redis.core.RedisHash;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redis.om.spring.annotations.Document;
-import com.redis.om.spring.util.ObjectUtils;
 
 /**
  * Configurable provider for managing index definitions in Redis OM Spring.
@@ -44,25 +41,6 @@ public class ConfigurableIndexDefinitionProvider {
   public ConfigurableIndexDefinitionProvider(RediSearchIndexer indexer, ApplicationContext applicationContext) {
     this.indexer = indexer;
     this.applicationContext = applicationContext;
-    initializeFromAnnotations();
-  }
-
-  /**
-   * Initialize index definitions from entity annotations.
-   * Uses classpath scanning (same technique as RedisModulesConfiguration) so entity classes
-   * that are not Spring beans — the common case for @Document / @RedisHash — are discovered.
-   */
-  private void initializeFromAnnotations() {
-    Set<BeanDefinition> beanDefs = ObjectUtils.getBeanDefinitionsFor(applicationContext, Document.class,
-        RedisHash.class);
-    for (BeanDefinition beanDef : beanDefs) {
-      try {
-        Class<?> entityClass = Class.forName(beanDef.getBeanClassName());
-        processEntityClass(entityClass);
-      } catch (ClassNotFoundException e) {
-        logger.warn("Could not load entity class {}: {}", beanDef.getBeanClassName(), e.getMessage());
-      }
-    }
   }
 
   private void processEntityClass(Class<?> entityClass) {
@@ -177,8 +155,7 @@ public class ConfigurableIndexDefinitionProvider {
    */
   public void refreshIndexDefinitions() {
     indexDefinitions.clear();
-    initializeFromAnnotations();
-    logger.info("Refreshed {} index definitions from annotations", indexDefinitions.size());
+    logger.info("Cleared all index definitions");
   }
 
   /**
