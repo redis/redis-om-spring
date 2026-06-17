@@ -376,6 +376,9 @@ public class IndexMigrationService {
 
   private String getKeyPrefix(Class<?> entityClass) {
     String keyspace = indexer.getKeyspaceForEntityClass(entityClass);
+    if (keyspace == null || keyspace.isBlank()) {
+      return entityClass.getSimpleName().toLowerCase();
+    }
     // Strip trailing colon — caller appends version suffix before adding its own colon
     return keyspace.endsWith(":") ? keyspace.substring(0, keyspace.length() - 1) : keyspace;
   }
