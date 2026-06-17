@@ -569,7 +569,7 @@ public class RedisModulesConfiguration {
 
     for (Class<?> repoInterface : repoInterfaces) {
       IndexingOptions options = repoInterface.getAnnotation(IndexingOptions.class);
-      if (options != null && !options.indexName().isBlank()) {
+      if (options != null) {
         Class<?> entityClass = resolveEntityTypeFromRepository(repoInterface, RedisDocumentRepository.class);
         if (entityClass == null) {
           entityClass = resolveEntityTypeFromRepository(repoInterface, RedisEnhancedRepository.class);

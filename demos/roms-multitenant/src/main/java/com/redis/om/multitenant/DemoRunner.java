@@ -148,28 +148,31 @@ public class DemoRunner implements CommandLineRunner {
 
     for (String tenant : tenants) {
       tenantService.setCurrentTenant(tenant);
+      try {
+        println(ANSI_BLUE + "   Creating index for tenant: " + ANSI_BOLD + tenant + ANSI_RESET);
 
-      println(ANSI_BLUE + "   Creating index for tenant: " + ANSI_BOLD + tenant + ANSI_RESET);
+        // Create index for this tenant
+        indexer.createIndexFor(Product.class);
 
-      // Create index for this tenant
-      indexer.createIndexFor(Product.class);
+        String indexName = indexer.getIndexName(Product.class);
+        String keyPrefix = indexer.getKeyspacePrefix(Product.class);
 
-      String indexName = indexer.getIndexName(Product.class);
-      String keyPrefix = indexer.getKeyspacePrefix(Product.class);
+        println("   - Index: " + indexName);
+        println("   - Key Prefix: " + keyPrefix);
 
-      println("   - Index: " + indexName);
-      println("   - Key Prefix: " + keyPrefix);
+        // Add sample product for this tenant
+        Product product = Product.builder().name("Widget for " + tenant).description("A fantastic widget").category(
+            "Electronics").sku("WDG-" + tenant.substring(0, 4).toUpperCase()).price(99.99).stockQuantity(100).active(
+                true).build();
 
-      // Add sample product for this tenant
-      Product product = Product.builder().name("Widget for " + tenant).description("A fantastic widget").category(
-          "Electronics").sku("WDG-" + tenant.substring(0, 4).toUpperCase()).price(99.99).stockQuantity(100).active(true)
-          .build();
-
-      // Store product in Redis JSON
-      String key = keyPrefix + "demo-product";
-      modulesOperations.opsForJSON().set(key, product);
-      println("   - Stored sample product at: " + ANSI_CYAN + key + ANSI_RESET);
-      println("");
+        // Store product in Redis JSON
+        String key = keyPrefix + "demo-product";
+        modulesOperations.opsForJSON().set(key, product);
+        println("   - Stored sample product at: " + ANSI_CYAN + key + ANSI_RESET);
+        println("");
+      } finally {
+        tenantService.clearTenant();
+      }
     }
 
     Thread.sleep(500); // Allow indexing

@@ -430,10 +430,10 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public boolean contains(Object id, String keyspace) {
-    // Note: contains() doesn't have type parameter, so we can't resolve dynamic keyspace here
-    // The caller should ensure the correct keyspace is passed
+    Class<?> entityClass = indexer.getEntityClassForKeyspace(keyspace);
+    String resolvedKeyspace = entityClass != null ? resolveDynamicKeyspace(entityClass, keyspace) : keyspace;
     Boolean exists = redisOperations.execute((RedisCallback<Boolean>) connection -> connection.keyCommands().exists(
-        toBytes(getKey(keyspace, asStringValue(id)))));
+        toBytes(getKey(resolvedKeyspace, asStringValue(id)))));
 
     return exists != null && exists;
   }

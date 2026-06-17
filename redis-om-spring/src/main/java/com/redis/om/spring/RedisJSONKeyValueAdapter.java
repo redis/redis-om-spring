@@ -379,8 +379,10 @@ public class RedisJSONKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public boolean contains(Object id, String keyspace) {
+    Class<?> entityClass = indexer.getEntityClassForKeyspace(keyspace);
+    String resolvedKeyspace = entityClass != null ? resolveDynamicKeyspace(entityClass, keyspace) : keyspace;
     Boolean exists = redisOperations.execute((RedisCallback<Boolean>) connection -> connection.keyCommands().exists(
-        toBytes(createKeyAsString(keyspace, id))));
+        toBytes(createKeyAsString(resolvedKeyspace, id))));
 
     return exists != null && exists;
   }

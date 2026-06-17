@@ -223,8 +223,25 @@ public class ConfigurableIndexDefinitionProvider {
    */
   public int importDefinitions(String definitionsJson) {
     try {
-      Map<String, Object> imported = objectMapper.readValue(definitionsJson, Map.class);
-      // Process imported definitions
+      Map<String, Map<String, String>> imported = objectMapper.readValue(definitionsJson, objectMapper.getTypeFactory()
+          .constructMapType(Map.class, objectMapper.getTypeFactory().constructType(String.class), objectMapper
+              .getTypeFactory().constructMapType(Map.class, String.class, String.class)));
+      for (Map.Entry<String, Map<String, String>> entry : imported.entrySet()) {
+        Map<String, String> def = entry.getValue();
+        String indexName = def.get("indexName");
+        String keyPrefix = def.get("keyPrefix");
+        String entityClassName = def.get("entityClass");
+        if (indexName == null || keyPrefix == null || entityClassName == null) {
+          logger.warn("Skipping invalid index definition entry: {}", entry.getKey());
+          continue;
+        }
+        try {
+          Class<?> entityClass = Class.forName(entityClassName);
+          registerIndexDefinition(entityClass, indexName, keyPrefix);
+        } catch (ClassNotFoundException e) {
+          logger.warn("Cannot load entity class '{}' for imported index definition", entityClassName);
+        }
+      }
       return imported.size();
     } catch (JsonProcessingException e) {
       logger.error("Failed to import index definitions", e);

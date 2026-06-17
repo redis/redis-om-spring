@@ -83,14 +83,17 @@ public class EphemeralIndexService implements DisposableBean {
 
     try {
       // Cancel the existing deletion task
+      long remainingMs = 0;
       if (info.deletionFuture != null && !info.deletionFuture.isDone()) {
+        remainingMs = Math.max(0, info.deletionFuture.getDelay(TimeUnit.MILLISECONDS));
         info.deletionFuture.cancel(false);
       }
 
-      // Schedule new deletion
+      // Schedule new deletion: remaining time + additional extension
+      long totalMs = remainingMs + newTtl.toMillis();
       ScheduledFuture<?> newDeletionFuture = scheduler.schedule(() -> {
         deleteEphemeralIndex(info.entityClass, indexName);
-      }, newTtl.toMillis(), TimeUnit.MILLISECONDS);
+      }, totalMs, TimeUnit.MILLISECONDS);
 
       // Update the tracking info
       info.ttl = newTtl;
