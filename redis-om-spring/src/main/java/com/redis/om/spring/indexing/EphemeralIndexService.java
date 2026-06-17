@@ -46,9 +46,17 @@ public class EphemeralIndexService implements DisposableBean {
     logger.info(String.format("Creating ephemeral index %s for %s with TTL %s", indexName, entityClass.getName(), ttl));
 
     try {
-      // Create the index
-      String keyPrefix = entityClass.getSimpleName().toLowerCase() + ":ephemeral:";
-      indexer.createIndexFor(entityClass, indexName, keyPrefix);
+      // Create the index using the entity's configured key prefix so that the
+      // ephemeral index covers the same keys as the canonical index.
+      String resolvedPrefix = indexer.getKeyspaceForEntityClass(entityClass);
+      String keyPrefix = (resolvedPrefix != null && !resolvedPrefix.isBlank()) ?
+          resolvedPrefix :
+          entityClass.getSimpleName().toLowerCase() + ":";
+      boolean created = indexer.createIndexFor(entityClass, indexName, keyPrefix);
+      if (!created) {
+        logger.error(String.format("Index creation returned false for ephemeral index %s", indexName));
+        return false;
+      }
 
       // Schedule deletion
       ScheduledFuture<?> deletionFuture = scheduler.schedule(() -> {

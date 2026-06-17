@@ -77,6 +77,7 @@ public class RediSearchIndexer {
   private final Map<Class<?>, String> entityClassToIndexName = new ConcurrentHashMap<>();
   private final Map<Class<?>, IdentifierFilter<?>> entityClassToIdentifierFilter = new ConcurrentHashMap<>();
   private final List<Class<?>> indexedEntityClasses = new ArrayList<>();
+  private final Set<String> allCreatedIndexNames = ConcurrentHashMap.newKeySet();
   private final Map<Class<?>, List<SearchField>> entityClassToSchema = new ConcurrentHashMap<>();
   private final Map<Pair<Class<?>, String>, String> entityClassFieldToAlias = new ConcurrentHashMap<>();
   private final Map<Class<?>, Set<String>> entityClassToLexicographicFields = new ConcurrentHashMap<>();
@@ -411,6 +412,7 @@ public class RediSearchIndexer {
       List<SchemaField> fields = searchFields.stream().map(SearchField::getSchemaField).toList();
       entityClassToSchema.put(cl, searchFields);
       entityClassToIndexName.put(cl, indexName);
+      allCreatedIndexNames.add(indexName);
 
       final String capturedPrefix = entityPrefix;
       if (maybeIndexingOptions.isPresent()) {
@@ -1255,14 +1257,18 @@ public class RediSearchIndexer {
    * only the index definitions are removed.
    */
   public void dropIndexes() {
-    // Create a copy to avoid ConcurrentModificationException since dropIndexFor modifies the list
-    List<Class<?>> entitiesToProcess = new ArrayList<>(indexedEntityClasses);
-    logger.info(String.format("Dropping indexes for %d registered entity classes", entitiesToProcess.size()));
-    for (Class<?> entityClass : entitiesToProcess) {
+    // Snapshot to avoid ConcurrentModificationException; allCreatedIndexNames accumulates every
+    // index name resolved at create time (including per-tenant SpEL variants), so we drop them
+    // all rather than re-evaluating SpEL once in the current thread's context.
+    Set<String> namesToDrop = new HashSet<>(allCreatedIndexNames);
+    logger.info(String.format("Dropping %d tracked indexes", namesToDrop.size()));
+    for (String indexName : namesToDrop) {
       try {
-        dropIndexFor(entityClass);
+        SearchOperations<String> ops = rmo.opsForSearch(indexName);
+        ops.dropIndex();
+        allCreatedIndexNames.remove(indexName);
       } catch (Exception e) {
-        logger.warn(String.format("Failed to drop index for %s: %s", entityClass.getName(), e.getMessage()));
+        logger.warn(String.format("Failed to drop index %s: %s", indexName, e.getMessage()));
       }
     }
     logger.info("Finished dropping indexes");
