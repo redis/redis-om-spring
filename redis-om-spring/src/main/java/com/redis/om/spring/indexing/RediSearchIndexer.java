@@ -622,12 +622,17 @@ public class RediSearchIndexer {
 
     if (maybeIndexingOptions.isPresent()) {
       String rawKeyPrefix = maybeIndexingOptions.get().keyPrefix();
-      // If the key prefix contains SpEL, always re-evaluate it (don't use cache)
-      if (!rawKeyPrefix.isBlank() && containsSpelExpression(rawKeyPrefix)) {
-        String defaultKeyspace = deriveDefaultKeyspace(entityClass);
-        String keyspace = evaluateExpression(rawKeyPrefix, defaultKeyspace);
-        // Ensure keyspace ends with ":"
-        return keyspace.endsWith(":") ? keyspace : keyspace + ":";
+      if (!rawKeyPrefix.isBlank()) {
+        if (containsSpelExpression(rawKeyPrefix)) {
+          // SpEL: always re-evaluate — result varies per tenant / environment
+          String defaultKeyspace = deriveDefaultKeyspace(entityClass);
+          String keyspace = evaluateExpression(rawKeyPrefix, defaultKeyspace);
+          return keyspace.endsWith(":") ? keyspace : keyspace + ":";
+        } else {
+          // Static literal keyPrefix in @IndexingOptions — use it directly without
+          // waiting for the index-creation path to fill the cache.
+          return rawKeyPrefix.endsWith(":") ? rawKeyPrefix : rawKeyPrefix + ":";
+        }
       }
     }
 
@@ -745,7 +750,7 @@ public class RediSearchIndexer {
       } else {
         opsForSearch.dropIndex();
       }
-      String entityPrefix = generateEntityPrefix(cl);
+      String entityPrefix = getKeyspaceForEntityClass(cl);
       removeKeySpaceMapping(entityPrefix, cl);
       if (recreateIndex) {
         createIndexFor(cl);
@@ -1019,7 +1024,9 @@ public class RediSearchIndexer {
 
       String entityPrefix = getKeyspace(keyPrefix);
       params.prefix(entityPrefix);
-      addKeySpaceMapping(entityPrefix, entityClass);
+      // Do NOT call addKeySpaceMapping here — this method creates ephemeral / migration
+      // indexes with ad-hoc prefixes and must not overwrite the entity's canonical keyspace
+      // mapping that was established by the main createIndexFor(Class) path.
 
       Optional<Document> document = isDocument ?
           Optional.of(entityClass.getAnnotation(Document.class)) :

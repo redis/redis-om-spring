@@ -8,11 +8,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
-import org.springframework.data.redis.core.RedisHash;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redis.om.spring.annotations.Document;
 
 /**
  * Configurable provider for managing index definitions in Redis OM Spring.
@@ -41,24 +39,6 @@ public class ConfigurableIndexDefinitionProvider {
   public ConfigurableIndexDefinitionProvider(RediSearchIndexer indexer, ApplicationContext applicationContext) {
     this.indexer = indexer;
     this.applicationContext = applicationContext;
-  }
-
-  private void processEntityClass(Class<?> entityClass) {
-    String indexName = indexer.getIndexName(entityClass);
-    String keyPrefix = getKeyPrefix(entityClass);
-    IndexDefinition definition = new IndexDefinition(indexName, keyPrefix, entityClass);
-    indexDefinitions.put(entityClass, definition);
-  }
-
-  private String getKeyPrefix(Class<?> entityClass) {
-    // Extract key prefix from annotations or use default
-    if (entityClass.isAnnotationPresent(Document.class)) {
-      return entityClass.getSimpleName().toLowerCase() + ":";
-    } else if (entityClass.isAnnotationPresent(RedisHash.class)) {
-      RedisHash hash = entityClass.getAnnotation(RedisHash.class);
-      return hash.value() + ":";
-    }
-    return entityClass.getSimpleName().toLowerCase() + ":";
   }
 
   /**

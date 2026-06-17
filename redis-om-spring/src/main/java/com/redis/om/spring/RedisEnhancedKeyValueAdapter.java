@@ -444,7 +444,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     RedisPersistentEntity<?> entity = this.converter.getMappingContext().getRequiredPersistentEntity(update
         .getTarget());
 
-    String keyspace = sanitizeKeyspace(entity.getKeySpace());
+    String keyspace = sanitizeKeyspace(resolveDynamicKeyspace(update.getTarget(), entity.getKeySpace()));
     Object id = update.getId();
     String stringId = asStringValue(id);
 
