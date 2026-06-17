@@ -1266,9 +1266,21 @@ public class RediSearchIndexer {
       try {
         SearchOperations<String> ops = rmo.opsForSearch(indexName);
         ops.dropIndex();
-        allCreatedIndexNames.remove(indexName);
       } catch (Exception e) {
         logger.warn(String.format("Failed to drop index %s: %s", indexName, e.getMessage()));
+      }
+    }
+    // Clear all tracking state regardless of individual drop success so that
+    // listIndexes() and subsequent re-registration both see a clean slate.
+    allCreatedIndexNames.clear();
+    List<Class<?>> entitiesToClear = new ArrayList<>(indexedEntityClasses);
+    for (Class<?> entityClass : entitiesToClear) {
+      String keyspace = entityClassToKeySpace.get(entityClass);
+      if (keyspace != null) {
+        removeKeySpaceMapping(keyspace, entityClass);
+      } else {
+        entityClassToIndexName.remove(entityClass);
+        indexedEntityClasses.remove(entityClass);
       }
     }
     logger.info("Finished dropping indexes");
