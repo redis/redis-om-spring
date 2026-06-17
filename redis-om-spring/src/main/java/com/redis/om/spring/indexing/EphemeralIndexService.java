@@ -11,14 +11,13 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 /**
  * Service for managing ephemeral (temporary) indexes with TTL support.
  * Ephemeral indexes are automatically deleted after a specified time period.
+ *
+ * <p>Registered as a bean by {@code RedisModulesConfiguration}; inject via {@code @Autowired}.
  */
-@Component
 public class EphemeralIndexService implements DisposableBean {
   private static final Logger logger = LoggerFactory.getLogger(EphemeralIndexService.class);
 
@@ -31,7 +30,6 @@ public class EphemeralIndexService implements DisposableBean {
    *
    * @param indexer the RediSearchIndexer to use for index operations
    */
-  @Autowired
   public EphemeralIndexService(RediSearchIndexer indexer) {
     this.indexer = indexer;
   }

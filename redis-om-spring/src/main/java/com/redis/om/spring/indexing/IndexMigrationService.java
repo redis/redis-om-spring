@@ -11,16 +11,16 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
-import org.springframework.stereotype.Service;
 
 /**
  * Service for managing index migrations in Redis.
  * Supports various migration strategies including blue-green deployments
  * and dual-write patterns for zero-downtime migrations.
  *
+ * <p>Registered as a bean by {@code RedisModulesConfiguration}; inject via {@code @Autowired}.
+ *
  * @since 1.0.0
  */
-@Service
 public class IndexMigrationService {
   private static final Logger logger = LoggerFactory.getLogger(IndexMigrationService.class);
   private static final Pattern VERSION_PATTERN = Pattern.compile("_v(\\d+)(?:_idx)?$");

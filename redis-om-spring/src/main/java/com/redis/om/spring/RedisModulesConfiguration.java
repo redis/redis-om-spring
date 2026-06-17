@@ -41,6 +41,9 @@ import com.redis.om.spring.annotations.Cuckoo;
 import com.redis.om.spring.annotations.Document;
 import com.redis.om.spring.annotations.IndexingOptions;
 import com.redis.om.spring.client.RedisModulesClient;
+import com.redis.om.spring.indexing.ConfigurableIndexDefinitionProvider;
+import com.redis.om.spring.indexing.EphemeralIndexService;
+import com.redis.om.spring.indexing.IndexMigrationService;
 import com.redis.om.spring.indexing.RediSearchIndexer;
 import com.redis.om.spring.mapping.RedisEnhancedMappingContext;
 import com.redis.om.spring.ops.RedisModulesOperations;
@@ -98,9 +101,6 @@ import redis.clients.jedis.bloom.CFReserveParams;
 )
 @ComponentScan(
   "com.redis.om.spring.util"
-)
-@ComponentScan(
-  "com.redis.om.spring.indexing"
 )
 public class RedisModulesConfiguration {
 
@@ -346,6 +346,25 @@ public class RedisModulesConfiguration {
 
     return new RediSearchIndexer(ac, properties, gsonBuilder, (RedisModulesOperations<String>) redisModulesOperations,
         mappingContext);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  public EphemeralIndexService ephemeralIndexService(RediSearchIndexer indexer) {
+    return new EphemeralIndexService(indexer);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  public IndexMigrationService indexMigrationService(RediSearchIndexer indexer, ApplicationContext ac) {
+    return new IndexMigrationService(indexer, ac);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  public ConfigurableIndexDefinitionProvider configurableIndexDefinitionProvider(RediSearchIndexer indexer,
+      ApplicationContext ac) {
+    return new ConfigurableIndexDefinitionProvider(indexer, ac);
   }
 
   /**

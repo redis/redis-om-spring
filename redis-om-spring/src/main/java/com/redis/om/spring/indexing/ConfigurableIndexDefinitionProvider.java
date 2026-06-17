@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.redis.core.RedisHash;
-import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,11 +22,10 @@ import com.redis.om.spring.util.ObjectUtils;
  * This class bridges RediSearch indexes with Spring Data Redis and provides
  * runtime configuration capabilities for dynamic indexing.
  *
- * Phase 4 implementation of the Dynamic Indexing Feature Design.
+ * <p>Registered as a bean by {@code RedisModulesConfiguration}; inject via {@code @Autowired}.
  *
  * @since 1.0.0
  */
-@Component
 public class ConfigurableIndexDefinitionProvider {
   private static final Logger logger = LoggerFactory.getLogger(ConfigurableIndexDefinitionProvider.class);
 
