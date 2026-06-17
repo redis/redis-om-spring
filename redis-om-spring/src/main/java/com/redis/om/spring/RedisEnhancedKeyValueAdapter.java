@@ -266,7 +266,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   @Override
   public void deleteAllOf(String keyspace) {
     Class<?> type = indexer.getEntityClassForKeyspace(keyspace);
-    String searchIndex = indexer.getIndexName(keyspace);
+    String searchIndex = type != null ? indexer.getIndexName(type) : indexer.getIndexName(keyspace);
     SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
     if (redisOMProperties.getRepository().isDropAndRecreateIndexOnDeleteAll()) {
       searchOps.dropIndexAndDocuments();
@@ -307,7 +307,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * @return a list of string representations of all entity IDs in the keyspace
    */
   public <T> List<String> getAllIds(String keyspace, Class<T> type) {
-    String searchIndex = indexer.getIndexName(keyspace);
+    String searchIndex = indexer.getIndexName(type);
     SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
     Optional<Field> maybeIdField = getIdFieldForEntityClass(type);
     String idField = maybeIdField.map(Field::getName).orElse("id");
@@ -337,7 +337,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   )
   @Override
   public <T> List<T> getAllOf(String keyspace, Class<T> type, long offset, int rows) {
-    String searchIndex = indexer.getIndexName(keyspace);
+    String searchIndex = indexer.getIndexName(type);
     SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
     Query query = new Query("*");
     offset = Math.max(0, offset);
@@ -401,7 +401,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public long count(String keyspace) {
-    String indexName = indexer.getIndexName(keyspace);
+    Class<?> type = indexer.getEntityClassForKeyspace(keyspace);
+    String indexName = type != null ? indexer.getIndexName(type) : indexer.getIndexName(keyspace);
     SearchOperations<String> search = modulesOperations.opsForSearch(indexName);
     var info = search.getInfo();
     return extractNumDocs(info);

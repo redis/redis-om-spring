@@ -86,6 +86,7 @@ public abstract class AbstractRedisQuery implements RepositoryQuery {
   protected Boolean aggregationVerbatim;
   protected boolean isNullParamQuery;
   protected Dialect dialect;
+  protected String repositoryIndexName;
 
   /**
    * Base constructor. Sets the fields that are known at construction time.
@@ -121,6 +122,7 @@ public abstract class AbstractRedisQuery implements RepositoryQuery {
     { "unchecked", "rawtypes" }
   )
   protected void initFromMethod(Class<?> repoClass, RepositoryMetadata metadata, Class[] params, String methodName) {
+    this.repositoryIndexName = indexer.resolveRepositoryIndexName(repoClass);
     this.hasLanguageParameter = Arrays.stream(params).anyMatch(c -> c.isAssignableFrom(SearchLanguage.class));
     this.isANDQuery = QueryClause.hasContainingAllClause(queryMethod.getName());
     if (this.isANDQuery) {
@@ -462,9 +464,15 @@ public abstract class AbstractRedisQuery implements RepositoryQuery {
   // Shared execution
   // ---------------------------------------------------------------------------
 
+  protected SearchOperations<String> getSearchOps() {
+    if (repositoryIndexName != null) {
+      return modulesOperations.opsForSearch(repositoryIndexName);
+    }
+    return modulesOperations.opsForSearch(indexer.getIndexName(this.domainType));
+  }
+
   protected Object executeAggregation(Object[] parameters) {
-    String indexName = indexer.getIndexName(this.domainType);
-    SearchOperations<String> ops = modulesOperations.opsForSearch(indexName);
+    SearchOperations<String> ops = getSearchOps();
 
     String preparedQuery = prepareQuery(parameters, true);
     AggregationBuilder aggregation = new AggregationBuilder(preparedQuery);
@@ -559,9 +567,7 @@ public abstract class AbstractRedisQuery implements RepositoryQuery {
   }
 
   protected Object executeFtTagVals() {
-    String indexName = indexer.getIndexName(this.domainType);
-    SearchOperations<String> ops = modulesOperations.opsForSearch(indexName);
-    return ops.tagVals(this.value);
+    return getSearchOps().tagVals(this.value);
   }
 
   protected boolean hasIndexMissing(String fieldName) {

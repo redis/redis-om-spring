@@ -105,8 +105,7 @@ public class RedisEnhancedQuery extends AbstractRedisQuery {
     ParameterAccessor accessor = new ParametersParameterAccessor(queryMethod.getParameters(), parameters);
     ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(accessor);
 
-    String indexName = indexer.getIndexName(this.domainType);
-    SearchOperations<String> ops = modulesOperations.opsForSearch(indexName);
+    SearchOperations<String> ops = getSearchOps();
     boolean excludeNullParams = !isNullParamQuery;
     String preparedQuery = prepareQuery(parameters, excludeNullParams);
     Query query = new Query(preparedQuery);
@@ -243,8 +242,7 @@ public class RedisEnhancedQuery extends AbstractRedisQuery {
 
   @Override
   protected Object executeDeleteQuery(Object[] parameters) {
-    String indexName = indexer.getIndexName(this.domainType);
-    SearchOperations<String> ops = modulesOperations.opsForSearch(indexName);
+    SearchOperations<String> ops = getSearchOps();
     String baseQuery = prepareQuery(parameters, true);
     AggregationBuilder aggregation = new AggregationBuilder(baseQuery);
 
@@ -325,8 +323,7 @@ public class RedisEnhancedQuery extends AbstractRedisQuery {
 
   @Override
   protected Object executeNullQuery(Object[] parameters) {
-    String indexName = indexer.getIndexName(this.domainType);
-    SearchOperations<String> ops = modulesOperations.opsForSearch(indexName);
+    SearchOperations<String> ops = getSearchOps();
     String baseQuery = prepareQuery(parameters, true);
 
     AggregationBuilder aggregation = new AggregationBuilder(baseQuery);

@@ -357,8 +357,7 @@ public class RediSearchQuery extends AbstractRedisQuery {
     ParameterAccessor accessor = new ParametersParameterAccessor(queryMethod.getParameters(), parameters);
     ResultProcessor processor = queryMethod.getResultProcessor().withDynamicProjection(accessor);
 
-    String indexName = indexer.getIndexName(this.domainType);
-    SearchOperations<String> ops = modulesOperations.opsForSearch(indexName);
+    SearchOperations<String> ops = getSearchOps();
     boolean excludeNullParams = !isNullParamQuery;
 
     // Check if all query parts are lexicographic
@@ -499,8 +498,7 @@ public class RediSearchQuery extends AbstractRedisQuery {
 
   @Override
   protected Object executeDeleteQuery(Object[] parameters) {
-    String indexName = indexer.getIndexName(this.domainType);
-    SearchOperations<String> ops = modulesOperations.opsForSearch(indexName);
+    SearchOperations<String> ops = getSearchOps();
     String baseQuery = prepareQuery(parameters, true);
     AggregationBuilder aggregation = new AggregationBuilder(baseQuery);
 
@@ -555,8 +553,7 @@ public class RediSearchQuery extends AbstractRedisQuery {
 
   @Override
   protected Object executeNullQuery(Object[] parameters) {
-    String indexName = indexer.getIndexName(this.domainType);
-    SearchOperations<String> ops = modulesOperations.opsForSearch(indexName);
+    SearchOperations<String> ops = getSearchOps();
     String baseQuery = prepareQuery(parameters, true);
 
     AggregationBuilder aggregation = new AggregationBuilder(baseQuery);
