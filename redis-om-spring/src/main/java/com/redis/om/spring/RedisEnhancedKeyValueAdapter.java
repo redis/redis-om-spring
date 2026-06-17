@@ -180,6 +180,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
 
     if (item instanceof RedisData redisData) {
       rdo = redisData;
+      // Apply dynamic keyspace to pre-built RedisData so tenant-prefixed keys are consistent.
+      rdo.setKeyspace(sanitizeKeyspace(resolvedKeyspace));
     } else {
       String idAsString = validateKeyForWriting(id, item);
       byte[] redisKey = createKey(sanitizeKeyspace(resolvedKeyspace), idAsString);

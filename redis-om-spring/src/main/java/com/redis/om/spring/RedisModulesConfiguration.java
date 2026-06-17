@@ -99,6 +99,9 @@ import redis.clients.jedis.bloom.CFReserveParams;
 @ComponentScan(
   "com.redis.om.spring.util"
 )
+@ComponentScan(
+  "com.redis.om.spring.indexing"
+)
 public class RedisModulesConfiguration {
 
   /**
