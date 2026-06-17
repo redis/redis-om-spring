@@ -168,8 +168,18 @@ public class AdminController {
       return ResponseEntity.badRequest().body(response);
     }
 
-    boolean created = ephemeralIndexService.createEphemeralIndex(Product.class, request.indexName, Duration.ofSeconds(
-        request.ttlSeconds));
+    if (request.tenantId != null && !request.tenantId.isBlank()) {
+      tenantService.setCurrentTenant(request.tenantId);
+    }
+    boolean created;
+    try {
+      created = ephemeralIndexService.createEphemeralIndex(Product.class, request.indexName, Duration.ofSeconds(
+          request.ttlSeconds));
+    } finally {
+      if (request.tenantId != null && !request.tenantId.isBlank()) {
+        tenantService.clearTenant();
+      }
+    }
 
     Map<String, Object> response = new HashMap<>();
     response.put("indexName", request.indexName);
@@ -240,5 +250,6 @@ public class AdminController {
   public static class EphemeralIndexRequest {
     public String indexName;
     public int ttlSeconds;
+    public String tenantId;
   }
 }
