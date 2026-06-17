@@ -1270,19 +1270,11 @@ public class RediSearchIndexer {
         logger.warn(String.format("Failed to drop index %s: %s", indexName, e.getMessage()));
       }
     }
-    // Clear all tracking state regardless of individual drop success so that
-    // listIndexes() and subsequent re-registration both see a clean slate.
+    // Clear only the resolved-name caches so listIndexes() returns empty and
+    // subsequent SpEL re-evaluation picks up fresh names. indexedEntityClasses
+    // is intentionally kept intact so createIndexes() can re-register them all.
     allCreatedIndexNames.clear();
-    List<Class<?>> entitiesToClear = new ArrayList<>(indexedEntityClasses);
-    for (Class<?> entityClass : entitiesToClear) {
-      String keyspace = entityClassToKeySpace.get(entityClass);
-      if (keyspace != null) {
-        removeKeySpaceMapping(keyspace, entityClass);
-      } else {
-        entityClassToIndexName.remove(entityClass);
-        indexedEntityClasses.remove(entityClass);
-      }
-    }
+    entityClassToIndexName.clear();
     logger.info("Finished dropping indexes");
   }
 
