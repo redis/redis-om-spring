@@ -1051,6 +1051,7 @@ public class RediSearchIndexer {
         createSortedSetsForLexicographicFields(entityClass, entityPrefix);
       }
 
+      allCreatedIndexNames.add(indexName);
       return true;
     } catch (Exception e) {
       logger.warn(String.format(SKIPPING_INDEX_CREATION, indexName, e.getMessage()));
@@ -1127,6 +1128,7 @@ public class RediSearchIndexer {
           () -> indexExistsFor(entityClass, indexName), () -> {
           });
 
+      allCreatedIndexNames.add(indexName);
       return true;
     } catch (Exception e) {
       logger.warn(String.format(SKIPPING_INDEX_CREATION, indexName, e.getMessage()));
