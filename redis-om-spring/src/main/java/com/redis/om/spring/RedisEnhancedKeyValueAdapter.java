@@ -175,17 +175,25 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   @Override
   public Object put(Object id, Object item, String keyspace) {
     RedisData rdo;
+    // Resolve dynamic keyspace from @IndexingOptions if present
+    String resolvedKeyspace = resolveDynamicKeyspace(item.getClass(), keyspace);
+
     if (item instanceof RedisData redisData) {
+      // Pre-built RedisData already carries the correct keyspace set by the caller; do not
+      // override it with the dynamically resolved value (which would be derived from
+      // RedisData.class, not the original entity class, and would produce a wrong key).
       rdo = redisData;
     } else {
       String idAsString = validateKeyForWriting(id, item);
-      byte[] redisKey = createKey(sanitizeKeyspace(keyspace), idAsString);
+      byte[] redisKey = createKey(sanitizeKeyspace(resolvedKeyspace), idAsString);
       auditor.processEntity(redisKey, item);
       embedder.processEntity(item);
 
       rdo = new RedisData();
       converter.write(item, rdo);
       rdo.setId(idAsString);
+      // Override the keyspace in RedisData with the resolved dynamic keyspace
+      rdo.setKeyspace(sanitizeKeyspace(resolvedKeyspace));
     }
 
     redisOperations.executePipelined((RedisCallback<Object>) connection -> {
@@ -216,7 +224,9 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   public <T> T get(Object id, String keyspace, Class<T> type) {
 
     String stringId = asStringValue(id);
-    String stringKeyspace = sanitizeKeyspace(keyspace);
+    // Resolve dynamic keyspace from @IndexingOptions if present
+    String resolvedKeyspace = resolveDynamicKeyspace(type, keyspace);
+    String stringKeyspace = sanitizeKeyspace(resolvedKeyspace);
 
     byte[] binId = createKey(stringKeyspace, stringId);
 
@@ -256,7 +266,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   @Override
   public void deleteAllOf(String keyspace) {
     Class<?> type = indexer.getEntityClassForKeyspace(keyspace);
-    String searchIndex = indexer.getIndexName(keyspace);
+    String searchIndex = type != null ? indexer.getIndexName(type) : indexer.getIndexName(keyspace);
     SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
     if (redisOMProperties.getRepository().isDropAndRecreateIndexOnDeleteAll()) {
       searchOps.dropIndexAndDocuments();
@@ -297,7 +307,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    * @return a list of string representations of all entity IDs in the keyspace
    */
   public <T> List<String> getAllIds(String keyspace, Class<T> type) {
-    String searchIndex = indexer.getIndexName(keyspace);
+    String searchIndex = indexer.getIndexName(type);
     SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
     Optional<Field> maybeIdField = getIdFieldForEntityClass(type);
     String idField = maybeIdField.map(Field::getName).orElse("id");
@@ -327,7 +337,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   )
   @Override
   public <T> List<T> getAllOf(String keyspace, Class<T> type, long offset, int rows) {
-    String searchIndex = indexer.getIndexName(keyspace);
+    String searchIndex = indexer.getIndexName(type);
     SearchOperations<String> searchOps = modulesOperations.opsForSearch(searchIndex);
     Query query = new Query("*");
     offset = Math.max(0, offset);
@@ -364,7 +374,9 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
   @Override
   public <T> T delete(Object id, String keyspace, Class<T> type) {
     String stringId = asStringValue(id);
-    String stringKeyspace = sanitizeKeyspace(keyspace);
+    // Resolve dynamic keyspace from @IndexingOptions if present
+    String resolvedKeyspace = resolveDynamicKeyspace(type, keyspace);
+    String stringKeyspace = sanitizeKeyspace(resolvedKeyspace);
 
     T o = get(stringId, stringKeyspace, type);
 
@@ -389,7 +401,8 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public long count(String keyspace) {
-    String indexName = indexer.getIndexName(keyspace);
+    Class<?> type = indexer.getEntityClassForKeyspace(keyspace);
+    String indexName = type != null ? indexer.getIndexName(type) : indexer.getIndexName(keyspace);
     SearchOperations<String> search = modulesOperations.opsForSearch(indexName);
     var info = search.getInfo();
     return extractNumDocs(info);
@@ -418,8 +431,10 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
    */
   @Override
   public boolean contains(Object id, String keyspace) {
+    Class<?> entityClass = indexer.getEntityClassForKeyspace(keyspace);
+    String resolvedKeyspace = entityClass != null ? resolveDynamicKeyspace(entityClass, keyspace) : keyspace;
     Boolean exists = redisOperations.execute((RedisCallback<Boolean>) connection -> connection.keyCommands().exists(
-        toBytes(getKey(keyspace, asStringValue(id)))));
+        toBytes(getKey(resolvedKeyspace, asStringValue(id)))));
 
     return exists != null && exists;
   }
@@ -430,7 +445,7 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     RedisPersistentEntity<?> entity = this.converter.getMappingContext().getRequiredPersistentEntity(update
         .getTarget());
 
-    String keyspace = sanitizeKeyspace(entity.getKeySpace());
+    String keyspace = sanitizeKeyspace(resolveDynamicKeyspace(update.getTarget(), entity.getKeySpace()));
     Object id = update.getId();
     String stringId = asStringValue(id);
 
@@ -650,6 +665,27 @@ public class RedisEnhancedKeyValueAdapter extends RedisKeyValueAdapter {
     }
 
     return toBytes(keyspace.endsWith(":") ? keyspace + id : keyspace + ":" + id);
+  }
+
+  /**
+   * Resolves the dynamic keyspace from @IndexingOptions if present.
+   * If the entity class has @IndexingOptions with a SpEL keyPrefix expression,
+   * the expression is evaluated at runtime to determine the actual keyspace.
+   *
+   * @param entityClass     the entity class to check for @IndexingOptions
+   * @param defaultKeyspace the default keyspace to use if no dynamic keyspace is configured
+   * @return the resolved keyspace (either dynamic or default)
+   */
+  private String resolveDynamicKeyspace(Class<?> entityClass, String defaultKeyspace) {
+    if (entityClass == null) {
+      return defaultKeyspace;
+    }
+    // Use RediSearchIndexer to resolve dynamic keyspace from @IndexingOptions
+    String dynamicKeyspace = indexer.getKeyspaceForEntityClass(entityClass);
+    if (dynamicKeyspace != null && !dynamicKeyspace.isBlank()) {
+      return dynamicKeyspace;
+    }
+    return defaultKeyspace;
   }
 
   /**
