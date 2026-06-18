@@ -1112,6 +1112,12 @@ public class RediSearchIndexer {
             defaultPrefix :
             getKeyspace(evaluateExpression(repoIndexingOptions.keyPrefix(), defaultPrefix));
         params.prefix(entityPrefix);
+        // If the entity class has no @IndexingOptions of its own, promote the repo-level
+        // keyPrefix as the canonical keyspace so that resolveDynamicKeyspace (and therefore
+        // writes/reads) uses the same prefix as the index rather than the Spring default.
+        if (entityClass.getAnnotation(IndexingOptions.class) == null) {
+          entityClassToKeySpace.putIfAbsent(entityClass, entityPrefix);
+        }
         registerSecondaryKeyspace(entityPrefix, entityClass);
       }
 
