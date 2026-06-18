@@ -21,7 +21,7 @@ public class TenantService {
   private static final Logger log = LoggerFactory.getLogger(TenantService.class);
   private static final String DEFAULT_TENANT = "default";
 
-  private final ThreadLocal<String> currentTenant = ThreadLocal.withInitial(() -> DEFAULT_TENANT);
+  private final ThreadLocal<String> currentTenant = new ThreadLocal<>();
 
   /**
    * Gets the current tenant ID for the executing thread.
@@ -29,7 +29,8 @@ public class TenantService {
    * @return the current tenant ID
    */
   public String getCurrentTenant() {
-    return currentTenant.get();
+    String tenant = currentTenant.get();
+    return tenant != null ? tenant : DEFAULT_TENANT;
   }
 
   /**
