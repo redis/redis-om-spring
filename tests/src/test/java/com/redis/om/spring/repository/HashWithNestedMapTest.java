@@ -57,6 +57,23 @@ class HashWithNestedMapTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
+  void saveWithNestedLinkedHashMapRoundTrips() {
+    LinkedHashMap<String, Object> nested = new LinkedHashMap<>();
+    nested.put("city", "Tel Aviv");
+    nested.put("zip", "6100000");
+
+    HashWithNestedMap entity = new HashWithNestedMap();
+    entity.setAttributes(Map.of("address", nested, "name", "Acme"));
+
+    HashWithNestedMap saved = repository.save(entity);
+
+    Optional<HashWithNestedMap> found = repository.findById(saved.getId());
+    assertThat(found).isPresent();
+    assertThat(found.get().getAttributes()).containsEntry("name", "Acme");
+    assertThat(found.get().getAttributes()).containsEntry("address", nested);
+  }
+
+  @Test
   void saveAllWithNestedMapsDoesNotThrow() {
     LinkedHashMap<String, Object> nested1 = new LinkedHashMap<>();
     nested1.put("score", 99);
@@ -87,6 +104,22 @@ class HashWithNestedMapTest extends AbstractBaseEnhancedRedisTest {
   }
 
   @Test
+  void saveWithNestedCollectionInListFieldRoundTrips() {
+    ArrayList<Object> nestedList = new ArrayList<>();
+    nestedList.add("item1");
+    nestedList.add("item2");
+
+    HashWithNestedMap entity = new HashWithNestedMap();
+    entity.setItems(List.of(nestedList, "plain-string"));
+
+    HashWithNestedMap saved = repository.save(entity);
+
+    Optional<HashWithNestedMap> found = repository.findById(saved.getId());
+    assertThat(found).isPresent();
+    assertThat(found.get().getItems()).containsExactly(nestedList, "plain-string");
+  }
+
+  @Test
   void saveWithNestedCollectionInMapValueDoesNotThrow() {
     // Map value is an ArrayList — another shape from Jackson deserialization.
     ArrayList<Object> nestedList = new ArrayList<>();
@@ -97,6 +130,22 @@ class HashWithNestedMapTest extends AbstractBaseEnhancedRedisTest {
     entity.setAttributes(Map.of("tags", nestedList));
 
     assertThatNoException().isThrownBy(() -> repository.save(entity));
+  }
+
+  @Test
+  void saveWithNestedCollectionInMapValueRoundTrips() {
+    ArrayList<Object> nestedList = new ArrayList<>();
+    nestedList.add("a");
+    nestedList.add("b");
+
+    HashWithNestedMap entity = new HashWithNestedMap();
+    entity.setAttributes(Map.of("tags", nestedList));
+
+    HashWithNestedMap saved = repository.save(entity);
+
+    Optional<HashWithNestedMap> found = repository.findById(saved.getId());
+    assertThat(found).isPresent();
+    assertThat(found.get().getAttributes()).containsEntry("tags", nestedList);
   }
 
   @Test

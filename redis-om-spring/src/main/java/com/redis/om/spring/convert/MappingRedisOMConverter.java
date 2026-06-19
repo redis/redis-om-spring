@@ -284,8 +284,8 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
       }
 
       if (conversionService.canConvert(byte[].class, mapValueType)) {
-        return readMapOfSimpleTypes(currentPath, typeInformation.getType(), typeInformation.getRequiredComponentType()
-            .getType(), mapValueType, source);
+        return readMapOfSimpleTypes(entityClass, currentPath, typeInformation.getType(), typeInformation
+            .getRequiredComponentType().getType(), mapValueType, source);
       }
 
       return readMapOfComplexTypes(entityClass, currentPath, typeInformation.getType(), typeInformation
@@ -658,12 +658,14 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     // Spring Data 3.2.4+ does not create PersistentEntity for Map/Collection types.
     // Handle Map values (e.g. nested LinkedHashMap from Jackson) by recursing into writeMap.
     if (value instanceof Map<?, ?> nestedMap) {
+      writeContainerTypeIfNecessary(path, getMapTypeToWrite(typeHint), typeHint, sink);
       writeMap(null, keyspace, path, Object.class, nestedMap, sink);
       return;
     }
 
     // Handle Collection values (e.g. nested ArrayList from Jackson) by recursing into writeCollection.
     if (value instanceof Collection<?> nestedCollection) {
+      writeContainerTypeIfNecessary(path, getCollectionTypeToWrite(nestedCollection, typeHint), typeHint, sink);
       TypeInformation<?> componentType = typeHint.getComponentType() != null ?
           typeHint.getComponentType() :
           TypeInformation.of(Object.class);
@@ -963,15 +965,7 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
 
         Bucket elementData = bucket.extract(key);
 
-        TypeInformation<?> typeInformation = typeMapper.readType(elementData.getPropertyPath(key), TypeInformation.of(
-            valueType));
-
-        Class<?> typeToUse = typeInformation.getType();
-        if (conversionService.canConvert(byte[].class, typeToUse)) {
-          target.add(fromBytes(elementData.get(key), typeToUse));
-        } else {
-          target.add(readInternal(entityClass, key, typeToUse, new RedisData(elementData)));
-        }
+        target.add(readNestedValue(entityClass, key, valueType, bucket, elementData));
       }
     }
 
@@ -1022,6 +1016,26 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
     return conversionService.convert(key, String.class);
   }
 
+  private void writeContainerTypeIfNecessary(String path, Class<?> containerType, TypeInformation<?> typeHint,
+      RedisData sink) {
+    if (StringUtils.hasText(path) && containerType != typeHint.getType()) {
+      typeMapper.writeType(containerType, sink.getBucket().getPropertyPath(path));
+    }
+  }
+
+  private Class<?> getMapTypeToWrite(TypeInformation<?> typeHint) {
+    Class<?> type = typeHint.getType();
+    return type != Object.class && !type.isInterface() && Map.class.isAssignableFrom(type) ? type : LinkedHashMap.class;
+  }
+
+  private Class<?> getCollectionTypeToWrite(Collection<?> collection, TypeInformation<?> typeHint) {
+    Class<?> type = typeHint.getType();
+    if (type != Object.class && !type.isInterface() && Collection.class.isAssignableFrom(type)) {
+      return type;
+    }
+    return collection instanceof Set<?> ? LinkedHashSet.class : ArrayList.class;
+  }
+
   /**
    * @param path
    * @param mapType
@@ -1031,25 +1045,73 @@ public class MappingRedisOMConverter implements RedisConverter, InitializingBean
    * @return
    */
   @Nullable
-  private Map<?, ?> readMapOfSimpleTypes(String path, Class<?> mapType, Class<?> keyType, Class<?> valueType,
-      RedisData source) {
+  private Map<?, ?> readMapOfSimpleTypes(Class<?> entityClass, String path, Class<?> mapType, Class<?> keyType,
+      Class<?> valueType, RedisData source) {
 
-    Bucket partial = source.getBucket().extract(path + ".[");
+    Bucket bucket = source.getBucket();
+    Set<String> keys = bucket.extractAllKeysFor(path);
 
-    Map<Object, Object> target = CollectionFactory.createMap(mapType, partial.size());
+    Map<Object, Object> target = CollectionFactory.createMap(mapType, keys.size());
 
-    for (Entry<String, byte[]> entry : partial.entrySet()) {
+    for (String key : keys) {
 
-      if (typeMapper.isTypeKey(entry.getKey())) {
+      if (typeMapper.isTypeKey(key)) {
         continue;
       }
 
-      Object key = extractMapKeyForPath(path, entry.getKey(), keyType);
-      Class<?> typeToUse = getTypeHint(path + ".[" + key + "]", source.getBucket(), valueType);
-      target.put(key, fromBytes(entry.getValue(), typeToUse));
+      Object mapKey = extractMapKeyForPath(path, key, keyType);
+      target.put(mapKey, readNestedValue(entityClass, key, valueType, bucket, bucket.extract(key)));
     }
 
     return target.isEmpty() ? null : target;
+  }
+
+  private Object readNestedValue(Class<?> entityClass, String path, Class<?> valueType, Bucket bucket, Bucket partial) {
+    TypeInformation<?> typeInformation = typeMapper.readType(bucket.getPropertyPath(path), TypeInformation.of(
+        valueType));
+    Class<?> typeToUse = typeInformation.getType();
+
+    if (Map.class.isAssignableFrom(typeToUse)) {
+      return readMapOfSimpleTypes(entityClass, path, typeToUse, String.class, Object.class, new RedisData(bucket));
+    }
+
+    if (Collection.class.isAssignableFrom(typeToUse)) {
+      return readCollectionOrArray(entityClass, path, typeToUse, Object.class, bucket);
+    }
+
+    if (bucket.hasValue(path) && conversionService.canConvert(byte[].class, typeToUse)) {
+      return fromBytes(bucket.get(path), typeToUse);
+    }
+
+    if (typeToUse == Object.class && !bucket.hasValue(path) && hasNestedValues(bucket, path)) {
+      if (hasOnlyNumericNestedKeys(bucket, path)) {
+        return readCollectionOrArray(entityClass, path, ArrayList.class, Object.class, bucket);
+      }
+      return readMapOfSimpleTypes(entityClass, path, LinkedHashMap.class, String.class, Object.class, new RedisData(
+          bucket));
+    }
+
+    return readInternal(entityClass, path, typeToUse, new RedisData(partial));
+  }
+
+  private boolean hasNestedValues(Bucket bucket, String path) {
+    return !bucket.extractAllKeysFor(path).isEmpty();
+  }
+
+  private boolean hasOnlyNumericNestedKeys(Bucket bucket, String path) {
+    Set<String> nestedKeys = bucket.extractAllKeysFor(path);
+    if (nestedKeys.isEmpty()) {
+      return false;
+    }
+
+    for (String nestedKey : nestedKeys) {
+      Object nestedMapKey = extractMapKeyForPath(path, nestedKey, String.class);
+      if (!(nestedMapKey instanceof String nestedKeyString) || !nestedKeyString.matches("\\d+")) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   /**
