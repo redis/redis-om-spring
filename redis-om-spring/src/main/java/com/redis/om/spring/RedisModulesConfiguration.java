@@ -463,6 +463,25 @@ public class RedisModulesConfiguration {
   }
 
   /**
+   * Exposes Redis OM's primary Redis template under Spring Data Redis's conventional bean name when no application or
+   * auto-configuration has already provided one.
+   *
+   * @param redisOmTemplate the Redis OM template
+   * @return the configured Redis OM template
+   */
+  @Bean(
+      name = "redisTemplate"
+  )
+  @ConditionalOnMissingBean(
+      name = "redisTemplate"
+  )
+  public RedisTemplate<?, ?> redisTemplateBean(@Qualifier(
+    "redisOmTemplate"
+  ) RedisTemplate<?, ?> redisOmTemplate) {
+    return redisOmTemplate;
+  }
+
+  /**
    * Creates the RediSearch indexer for managing search indexes.
    * <p>
    * This indexer is responsible for creating, updating, and managing RediSearch
