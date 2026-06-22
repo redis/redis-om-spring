@@ -59,6 +59,7 @@ jobs:
           sed -i "s/^version\s*=.*/version = ${{ inputs.version }}/" gradle.properties
           git add gradle.properties
           git commit --allow-empty -m "release: Releasing version ${{ inputs.version }}"
+          git pull --rebase origin HEAD
           git push origin HEAD
 
       - name: Build
