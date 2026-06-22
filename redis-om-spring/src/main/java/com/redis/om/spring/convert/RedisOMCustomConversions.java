@@ -78,6 +78,15 @@ public class RedisOMCustomConversions extends RedisCustomConversions {
    * @param converters a list of converted to be added to the base list
    */
   public RedisOMCustomConversions(List<?> converters) {
-    super(omConverters);
+    super(mergeConverters(converters));
+  }
+
+  private static List<Object> mergeConverters(List<?> converters) {
+    if (converters == null || converters.isEmpty()) {
+      return omConverters;
+    }
+    List<Object> merged = new ArrayList<>(omConverters);
+    merged.addAll(converters);
+    return merged;
   }
 }

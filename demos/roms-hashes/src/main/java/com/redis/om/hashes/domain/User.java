@@ -1,6 +1,7 @@
 package com.redis.om.hashes.domain;
 
 import java.util.Date;
+import java.util.Map;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
@@ -42,6 +43,9 @@ public class User {
   @NonNull
   @Reference
   private Role role;
+
+  // arbitrary key/value metadata (may contain nested maps, e.g. from JSON deserialization)
+  private Map<String, Object> metadata;
 
   // audit fields
 
