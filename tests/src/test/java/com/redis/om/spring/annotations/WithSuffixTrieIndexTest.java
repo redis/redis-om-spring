@@ -17,6 +17,7 @@ import org.springframework.test.context.TestPropertySource;
 
 import com.redis.om.spring.AbstractBaseOMTest;
 import com.redis.om.spring.TestConfig;
+import com.redis.om.spring.fixtures.document.model.WithSuffixTrieAutodetectedNestedDocument;
 
 import lombok.Data;
 
@@ -32,12 +33,14 @@ class WithSuffixTrieIndexTest extends AbstractBaseOMTest {
   private static final String DOCUMENT_INDEX = "with_suffix_trie_document_idx";
   private static final String HASH_INDEX = "with_suffix_trie_hash_idx";
   private static final String NESTED_DOCUMENT_INDEX = "with_suffix_trie_nested_document_idx";
+  private static final String AUTODETECTED_NESTED_DOCUMENT_INDEX = "with_suffix_trie_autodetected_nested_document_idx";
 
   @AfterEach
   void tearDown() {
     dropIndex(DOCUMENT_INDEX);
     dropIndex(HASH_INDEX);
     dropIndex(NESTED_DOCUMENT_INDEX);
+    dropIndex(AUTODETECTED_NESTED_DOCUMENT_INDEX);
   }
 
   @Test
@@ -61,6 +64,17 @@ class WithSuffixTrieIndexTest extends AbstractBaseOMTest {
 
     assertFieldsHaveSuffixTrie(NESTED_DOCUMENT_INDEX, "items_searchable", "items_text");
     assertFieldsHaveType(NESTED_DOCUMENT_INDEX, "TEXT", "items_searchable", "items_text");
+  }
+
+  @Test
+  void appliesWithSuffixTrieToAutodetectedNestedDocumentTextFields() {
+    assertThat(indexer.createIndexFor(WithSuffixTrieAutodetectedNestedDocument.class,
+        AUTODETECTED_NESTED_DOCUMENT_INDEX, "with-suffix-trie-autodetected-nested-doc:")).isTrue();
+
+    assertFieldsHaveSuffixTrie(AUTODETECTED_NESTED_DOCUMENT_INDEX, "autodetectedItems_searchable",
+        "autodetectedItems_text");
+    assertFieldsHaveType(AUTODETECTED_NESTED_DOCUMENT_INDEX, "TEXT", "autodetectedItems_searchable",
+        "autodetectedItems_text");
   }
 
   private void assertFieldsHaveSuffixTrie(String indexName, String... fieldNames) {

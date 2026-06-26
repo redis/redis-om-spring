@@ -726,6 +726,26 @@ class IndexDefinitionBuilder {
                   .indexEmpty(), searchable.withSuffixTrie())));
 
           continue;
+        } else if (subField.isAnnotationPresent(TextIndexed.class)) {
+          TextIndexed textIndexed = subField.getAnnotation(TextIndexed.class);
+          tempPrefix = field.getName() + "[0:].";
+
+          FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName() + suffix);
+          String alias = QueryUtils.searchIndexFieldAliasFor(subField, prefix);
+          fieldName = fieldName.as(alias);
+
+          logger.info(String.format("Creating TEXT nested relationships: %s -> %s", field.getName(), subField
+              .getName()));
+
+          String phonetic = org.apache.commons.lang3.ObjectUtils.isEmpty(textIndexed.phonetic()) ?
+              null :
+              textIndexed.phonetic();
+
+          fieldList.add(SearchField.of(field, factory.getTextField(fieldName, textIndexed.weight(), textIndexed
+              .sortable(), textIndexed.nostem(), textIndexed.noindex(), phonetic, textIndexed.indexMissing(),
+              textIndexed.indexEmpty(), textIndexed.withSuffixTrie())));
+
+          continue;
         }
         if (subField.isAnnotationPresent(Indexed.class)) {
           getNestedField(fieldPrefix + tempPrefix, subField, prefix, fieldList);
