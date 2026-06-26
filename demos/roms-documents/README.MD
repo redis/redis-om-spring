@@ -20,6 +20,7 @@ docker compose up -d redis
 - Provides examples of querying documents using method names and explicit `@Query` annotations
 - Includes REST API endpoints for document read and query operations
 - Includes an opt-in lexicographic ID range reproduction for large `@Indexed(sortable = true, lexicographic = true)` fields
+- Shows `withSuffixTrie` and phonetic indexing on a `Company` text field
 
 ## Key Components
 
@@ -53,6 +54,7 @@ GET /api/companies/all
 GET /api/companies/all-ids
 GET /api/companies/{id}
 GET /api/companies/name/{name}
+GET /api/companies/description/{description}
 GET /api/companies/name/starts/{prefix}
 GET /api/companies/employees/count/{count}
 GET /api/companies/employees/range/{low}/{high}
@@ -135,6 +137,56 @@ demo.lexicographic-repro.count=50000
 demo.lexicographic-repro.batch-size=1000
 demo.lexicographic-repro.update-count=100
 demo.lexicographic-repro.threshold=lex000000000
+```
+
+## WITHSUFFIXTRIE and Phonetic Example
+
+The `Company` model includes a searchable description field with suffix trie and phonetic indexing enabled:
+
+```java
+@Searchable(phonetic = "dm:en", withSuffixTrie = true)
+private String description;
+```
+
+Run the demo and inspect the generated company index:
+
+```bash
+./gradlew :demos:roms-documents:bootRun
+docker exec redis-om-spring-redis-1 redis-cli FT.INFO com.redis.om.documents.domain.CompanyIdx
+```
+
+The `description` attribute should include `WITHSUFFIXTRIE`:
+
+```text
+identifier
+$.description
+attribute
+description
+type
+TEXT
+WITHSUFFIXTRIE
+```
+
+Redis Search may not echo `PHONETIC` in `FT.INFO`. Check phonetic expansion with `FT.EXPLAINCLI`:
+
+```bash
+docker exec redis-om-spring-redis-1 redis-cli FT.EXPLAINCLI com.redis.om.documents.domain.CompanyIdx '@description:kash'
+```
+
+Expected plan shape:
+
+```text
+@description:UNION {
+  @description:kash
+  @description:<KX(expanded)
+  @description:+kash(expanded)
+}
+```
+
+You can also query the seeded `Company` data through the existing REST API:
+
+```bash
+curl http://localhost:8080/api/companies/description/kash
 ```
 
 ## Testing

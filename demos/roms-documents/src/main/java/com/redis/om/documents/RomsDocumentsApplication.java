@@ -36,10 +36,12 @@ public class RomsDocumentsApplication {
       companyRepo.deleteAll();
       Company redis = Company.of("Redis", "https://redis.com", new Point(-122.066540, 37.377690), 526, 2011, Set.of(
           CompanyMeta.of("Redis", 100, Set.of("RedisTag"))));
+      redis.setDescription("Fast cache and real-time data platform");
       redis.setTags(Set.of("fast", "scalable", "reliable"));
 
       Company microsoft = Company.of("Microsoft", "https://microsoft.com", new Point(-122.124500, 47.640160), 182268,
           1975, Set.of(CompanyMeta.of("MS", 50, Set.of("MsTag"))));
+      microsoft.setDescription("Cloud software and productivity platform");
       microsoft.setTags(Set.of("innovative", "reliable"));
 
       companyRepo.save(redis);
