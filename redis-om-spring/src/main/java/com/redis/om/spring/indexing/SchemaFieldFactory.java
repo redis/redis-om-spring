@@ -31,7 +31,7 @@ class SchemaFieldFactory {
 
   TagField indexAsTagFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, TagIndexed ti) {
     FieldName fieldName = buildFieldName(field, prefix, isDocument, Optional.ofNullable(ti.alias()), Optional.empty());
-    return getTagField(fieldName, ti.separator(), false);
+    return getTagField(fieldName, ti.separator(), false, false, false, ti.withSuffixTrie());
   }
 
   VectorField indexAsVectorFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, Indexed indexed) {
@@ -96,29 +96,36 @@ class SchemaFieldFactory {
 
   SchemaField indexAsTagFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, boolean sortable,
       String separator, int arrayIndex, String annotationAlias) {
-    return indexAsTagFieldFor(field, isDocument, prefix, sortable, separator, arrayIndex, annotationAlias, false,
+    return indexAsTagFieldFor(field, isDocument, prefix, sortable, separator, arrayIndex, annotationAlias, false, false,
         false);
   }
 
   SchemaField indexAsTagFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, boolean sortable,
       String separator, int arrayIndex, String annotationAlias, boolean indexMissing, boolean indexEmpty) {
+    return indexAsTagFieldFor(field, isDocument, prefix, sortable, separator, arrayIndex, annotationAlias, indexMissing,
+        indexEmpty, false);
+  }
+
+  SchemaField indexAsTagFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, boolean sortable,
+      String separator, int arrayIndex, String annotationAlias, boolean indexMissing, boolean indexEmpty,
+      boolean withSuffixTrie) {
     FieldName fieldName = buildFieldName(field, prefix, isDocument, Optional.ofNullable(annotationAlias), Optional.of(
         arrayIndex));
-    return getTagField(fieldName, separator, sortable, indexMissing, indexEmpty);
+    return getTagField(fieldName, separator, sortable, indexMissing, indexEmpty, withSuffixTrie);
   }
 
   TextField indexAsTextFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, TextIndexed ti) {
     var fieldName = buildFieldName(field, prefix, isDocument, Optional.ofNullable(ti.alias()), Optional.empty());
     String phonetic = ObjectUtils.isEmpty(ti.phonetic()) ? null : ti.phonetic();
     return getTextField(fieldName, ti.weight(), ti.sortable(), ti.nostem(), ti.noindex(), phonetic, ti.indexMissing(),
-        ti.indexEmpty());
+        ti.indexEmpty(), ti.withSuffixTrie());
   }
 
   TextField indexAsTextFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, Searchable ti) {
     var fieldName = buildFieldName(field, prefix, isDocument, Optional.ofNullable(ti.alias()), Optional.empty());
     String phonetic = ObjectUtils.isEmpty(ti.phonetic()) ? null : ti.phonetic();
     return getTextField(fieldName, ti.weight(), ti.sortable(), ti.nostem(), ti.noindex(), phonetic, ti.indexMissing(),
-        ti.indexEmpty());
+        ti.indexEmpty(), ti.withSuffixTrie());
   }
 
   GeoField indexAsGeoFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, GeoIndexed gi) {
@@ -163,6 +170,11 @@ class SchemaFieldFactory {
 
   TagField getTagField(FieldName fieldName, String separator, boolean sortable, boolean indexMissing,
       boolean indexEmpty) {
+    return getTagField(fieldName, separator, sortable, indexMissing, indexEmpty, false);
+  }
+
+  TagField getTagField(FieldName fieldName, String separator, boolean sortable, boolean indexMissing,
+      boolean indexEmpty, boolean withSuffixTrie) {
     TagField tag = TagField.of(fieldName);
     if (separator != null) {
       if (separator.length() != 1) {
@@ -176,11 +188,18 @@ class SchemaFieldFactory {
       tag.indexMissing();
     if (indexEmpty)
       tag.indexEmpty();
+    if (withSuffixTrie)
+      tag.withSuffixTrie();
     return tag;
   }
 
   TextField getTextField(FieldName fieldName, double weight, boolean sortable, boolean noStem, boolean noIndex,
       String phonetic, boolean indexMissing, boolean indexEmpty) {
+    return getTextField(fieldName, weight, sortable, noStem, noIndex, phonetic, indexMissing, indexEmpty, false);
+  }
+
+  TextField getTextField(FieldName fieldName, double weight, boolean sortable, boolean noStem, boolean noIndex,
+      String phonetic, boolean indexMissing, boolean indexEmpty, boolean withSuffixTrie) {
     TextField text = TextField.of(fieldName);
     text.weight(weight);
     if (sortable)
@@ -195,6 +214,8 @@ class SchemaFieldFactory {
       text.indexMissing();
     if (indexEmpty)
       text.indexEmpty();
+    if (withSuffixTrie)
+      text.withSuffixTrie();
     return text;
   }
 

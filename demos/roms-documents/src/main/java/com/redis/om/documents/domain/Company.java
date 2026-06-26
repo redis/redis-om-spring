@@ -32,6 +32,11 @@ public class Company {
   @Searchable
   private String name;
 
+  @Searchable(
+      phonetic = "dm:en", withSuffixTrie = true
+  )
+  private String description;
+
   @Indexed
   private Set<String> tags = new HashSet<>();
 

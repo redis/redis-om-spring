@@ -109,6 +109,15 @@ public @interface TextIndexed {
   String phonetic() default "";
 
   /**
+   * Whether to enable suffix trie indexing for this text field.
+   *
+   * <p>When true, Redis can optimize suffix and contains queries on this field.</p>
+   *
+   * @return true if suffix trie indexing should be enabled, defaults to false
+   */
+  boolean withSuffixTrie() default false;
+
+  /**
    * Whether to index documents where this field is missing.
    * 
    * <p>When true, documents with null values for this field will still be indexed.

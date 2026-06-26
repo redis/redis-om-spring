@@ -118,8 +118,8 @@ class IndexDefinitionBuilder {
         if (CharSequence.class.isAssignableFrom(fieldType) || //
             (fieldType == Boolean.class) || (fieldType == UUID.class) || (fieldType == Ulid.class)) {
           fields.add(SearchField.of(field, factory.indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(),
-              indexed.separator(), indexed.arrayIndex(), indexed.alias(), indexed.indexMissing(), indexed
-                  .indexEmpty())));
+              indexed.separator(), indexed.arrayIndex(), indexed.alias(), indexed.indexMissing(), indexed.indexEmpty(),
+              indexed.withSuffixTrie())));
         } else if (fieldType.isEnum()) {
           if (Objects.requireNonNull(indexed.serializationHint()) == SerializationHint.ORDINAL) {
             fields.add(SearchField.of(field, factory.indexAsNumericFieldFor(field, isDocument, prefix, indexed
@@ -128,7 +128,7 @@ class IndexDefinitionBuilder {
           } else {
             fields.add(SearchField.of(field, factory.indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(),
                 indexed.separator(), indexed.arrayIndex(), indexed.alias(), indexed.indexMissing(), indexed
-                    .indexEmpty())));
+                    .indexEmpty(), indexed.withSuffixTrie())));
           }
         } else if ( //
         Number.class.isAssignableFrom(fieldType) || //
@@ -149,7 +149,7 @@ class IndexDefinitionBuilder {
             if (CharSequence.class.isAssignableFrom(collectionType) || (collectionType == Boolean.class)) {
               fields.add(SearchField.of(field, factory.indexAsTagFieldFor(field, isDocument, prefix, indexed.sortable(),
                   indexed.separator(), indexed.arrayIndex(), indexed.alias(), indexed.indexMissing(), indexed
-                      .indexEmpty())));
+                      .indexEmpty(), indexed.withSuffixTrie())));
             } else if (isDocument) {
               if (Number.class.isAssignableFrom(collectionType)) {
                 fields.add(SearchField.of(field, factory.indexAsNumericFieldFor(field, true, prefix, indexed.sortable(),
@@ -158,7 +158,8 @@ class IndexDefinitionBuilder {
                 fields.add(SearchField.of(field, factory.indexAsGeoFieldFor(field, true, prefix, indexed.alias())));
               } else if (collectionType == UUID.class || collectionType == Ulid.class) {
                 fields.add(SearchField.of(field, factory.indexAsTagFieldFor(field, true, prefix, indexed.sortable(),
-                    indexed.separator(), 0, indexed.alias(), indexed.indexMissing(), indexed.indexEmpty())));
+                    indexed.separator(), 0, indexed.alias(), indexed.indexMissing(), indexed.indexEmpty(), indexed
+                        .withSuffixTrie())));
               } else {
                 logger.debug(String.format("Found nested field on field of type: %s", field.getType()));
                 fields.addAll(indexAsNestedFieldFor(field, prefix));
@@ -193,6 +194,8 @@ class IndexDefinitionBuilder {
                 tagField.indexMissing();
               if (indexed.indexEmpty())
                 tagField.indexEmpty();
+              if (indexed.withSuffixTrie())
+                tagField.withSuffixTrie();
               if (!indexed.separator().isEmpty()) {
                 tagField.separator(indexed.separator().charAt(0));
               }
@@ -244,6 +247,8 @@ class IndexDefinitionBuilder {
                       tagField.indexMissing();
                     if (subfieldIndexed.indexEmpty())
                       tagField.indexEmpty();
+                    if (subfieldIndexed.withSuffixTrie())
+                      tagField.withSuffixTrie();
                     if (!subfieldIndexed.separator().isEmpty()) {
                       tagField.separator(subfieldIndexed.separator().charAt(0));
                     }
@@ -283,7 +288,7 @@ class IndexDefinitionBuilder {
         switch (indexed.schemaFieldType()) {
           case TAG -> fields.add(SearchField.of(field, factory.indexAsTagFieldFor(field, isDocument, prefix, indexed
               .sortable(), indexed.separator(), indexed.arrayIndex(), indexed.alias(), indexed.indexMissing(), indexed
-                  .indexEmpty())));
+                  .indexEmpty(), indexed.withSuffixTrie())));
           case NUMERIC -> fields.add(SearchField.of(field, factory.indexAsNumericFieldFor(field, isDocument, prefix,
               indexed.sortable(), indexed.noindex(), indexed.alias(), indexed.indexMissing(), indexed.indexEmpty())));
           case GEO -> fields.add(SearchField.of(field, factory.indexAsGeoFieldFor(field, true, prefix, indexed
@@ -486,6 +491,8 @@ class IndexDefinitionBuilder {
           textField.indexMissing();
         if (searchable.indexEmpty())
           textField.indexEmpty();
+        if (searchable.withSuffixTrie())
+          textField.withSuffixTrie();
         fields.add(SearchField.of(subField, textField));
         continue;
       }
@@ -508,6 +515,8 @@ class IndexDefinitionBuilder {
           textField.indexMissing();
         if (textIndexed.indexEmpty())
           textField.indexEmpty();
+        if (textIndexed.withSuffixTrie())
+          textField.withSuffixTrie();
         fields.add(SearchField.of(subField, textField));
         continue;
       }
@@ -536,6 +545,8 @@ class IndexDefinitionBuilder {
         } else if (indexed != null && indexed.indexEmpty()) {
           tagField.indexEmpty();
         }
+        if ((tagIndexed != null && tagIndexed.withSuffixTrie()) || (indexed != null && indexed.withSuffixTrie()))
+          tagField.withSuffixTrie();
         fields.add(SearchField.of(subField, tagField));
       } else if (numericIndexed != null || (indexed != null && (Number.class.isAssignableFrom(
           subFieldType) || subFieldType == java.time.LocalDateTime.class || subFieldType == java.time.LocalDate.class || subFieldType == java.util.Date.class || subFieldType == java.time.Instant.class || subFieldType == java.time.OffsetDateTime.class))) {
@@ -559,6 +570,8 @@ class IndexDefinitionBuilder {
           tagField.indexMissing();
         if (indexed.indexEmpty())
           tagField.indexEmpty();
+        if (indexed.withSuffixTrie())
+          tagField.withSuffixTrie();
         fields.add(SearchField.of(subField, tagField));
       } else if (indexed != null && (subFieldType == Boolean.class || subFieldType == boolean.class)) {
         TagField tagField = TagField.of(fieldName);
@@ -568,6 +581,8 @@ class IndexDefinitionBuilder {
           tagField.indexMissing();
         if (indexed.indexEmpty())
           tagField.indexEmpty();
+        if (indexed.withSuffixTrie())
+          tagField.withSuffixTrie();
         fields.add(SearchField.of(subField, tagField));
       }
 
@@ -652,7 +667,8 @@ class IndexDefinitionBuilder {
           fieldName = fieldName.as(QueryUtils.searchIndexFieldAliasFor(subField, prefix));
 
           logger.info(String.format("Creating nested relationships: %s -> %s", field.getName(), subField.getName()));
-          fieldList.add(SearchField.of(field, factory.getTagField(fieldName, ti.separator(), false)));
+          fieldList.add(SearchField.of(field, factory.getTagField(fieldName, ti.separator(), false, false, false, ti
+              .withSuffixTrie())));
           continue;
         } else if (subField.isAnnotationPresent(Indexed.class)) {
           boolean subFieldIsTagField = (subField.isAnnotationPresent(Indexed.class) && ( //
@@ -676,7 +692,8 @@ class IndexDefinitionBuilder {
             fieldName = fieldName.as(alias);
 
             logger.info(String.format("Creating nested relationships: %s -> %s", field.getName(), subField.getName()));
-            fieldList.add(SearchField.of(field, factory.getTagField(fieldName, indexed.separator(), false)));
+            fieldList.add(SearchField.of(field, factory.getTagField(fieldName, indexed.separator(), false, false, false,
+                indexed.withSuffixTrie())));
             continue;
           } else if (Number.class.isAssignableFrom(subField.getType()) || (subField
               .getType() == LocalDateTime.class) || (subField.getType() == LocalDate.class) || (subField
@@ -706,7 +723,27 @@ class IndexDefinitionBuilder {
 
           fieldList.add(SearchField.of(field, factory.getTextField(fieldName, searchable.weight(), searchable
               .sortable(), searchable.nostem(), searchable.noindex(), phonetic, searchable.indexMissing(), searchable
-                  .indexEmpty())));
+                  .indexEmpty(), searchable.withSuffixTrie())));
+
+          continue;
+        } else if (subField.isAnnotationPresent(TextIndexed.class)) {
+          TextIndexed textIndexed = subField.getAnnotation(TextIndexed.class);
+          tempPrefix = field.getName() + "[0:].";
+
+          FieldName fieldName = FieldName.of(fieldPrefix + tempPrefix + subField.getName() + suffix);
+          String alias = QueryUtils.searchIndexFieldAliasFor(subField, prefix);
+          fieldName = fieldName.as(alias);
+
+          logger.info(String.format("Creating TEXT nested relationships: %s -> %s", field.getName(), subField
+              .getName()));
+
+          String phonetic = org.apache.commons.lang3.ObjectUtils.isEmpty(textIndexed.phonetic()) ?
+              null :
+              textIndexed.phonetic();
+
+          fieldList.add(SearchField.of(field, factory.getTextField(fieldName, textIndexed.weight(), textIndexed
+              .sortable(), textIndexed.nostem(), textIndexed.noindex(), phonetic, textIndexed.indexMissing(),
+              textIndexed.indexEmpty(), textIndexed.withSuffixTrie())));
 
           continue;
         }
@@ -730,38 +767,56 @@ class IndexDefinitionBuilder {
 
     logger.info(String.format("Creating automatic nested field index: %s -> %s", arrayField.getName(), fullFieldPath));
 
-    FieldTypeMapper fieldTypeMapper = FieldTypeMapper.getFieldType(nestedFieldType);
+    FieldName fieldName = nestedFieldName(fullFieldPath, nestedField, prefix);
 
+    Searchable searchable = nestedField.getAnnotation(Searchable.class);
+    if (searchable != null) {
+      String phonetic = org.apache.commons.lang3.ObjectUtils.isEmpty(searchable.phonetic()) ?
+          null :
+          searchable.phonetic();
+      fields.add(SearchField.of(arrayField, factory.getTextField(fieldName, searchable.weight(), searchable.sortable(),
+          searchable.nostem(), searchable.noindex(), phonetic, searchable.indexMissing(), searchable.indexEmpty(),
+          searchable.withSuffixTrie())));
+      return fields;
+    }
+
+    TextIndexed textIndexed = nestedField.getAnnotation(TextIndexed.class);
+    if (textIndexed != null) {
+      String phonetic = org.apache.commons.lang3.ObjectUtils.isEmpty(textIndexed.phonetic()) ?
+          null :
+          textIndexed.phonetic();
+      fields.add(SearchField.of(arrayField, factory.getTextField(fieldName, textIndexed.weight(), textIndexed
+          .sortable(), textIndexed.nostem(), textIndexed.noindex(), phonetic, textIndexed.indexMissing(), textIndexed
+              .indexEmpty(), textIndexed.withSuffixTrie())));
+      return fields;
+    }
+
+    FieldTypeMapper fieldTypeMapper = FieldTypeMapper.getFieldType(nestedFieldType);
     switch (fieldTypeMapper) {
       case TAG -> {
-        FieldName fieldName = FieldName.of(fullFieldPath);
-        String alias = QueryUtils.searchIndexFieldAliasFor(nestedField, prefix);
-        if (alias != null && !alias.isEmpty()) {
-          fieldName = fieldName.as(alias);
-        }
-        fields.add(SearchField.of(arrayField, factory.getTagField(fieldName, "|", false)));
+        Indexed indexed = nestedField.getAnnotation(Indexed.class);
+        TagIndexed tagIndexed = nestedField.getAnnotation(TagIndexed.class);
+        boolean withSuffixTrie = (indexed != null && indexed.withSuffixTrie()) || (tagIndexed != null && tagIndexed
+            .withSuffixTrie());
+        fields.add(SearchField.of(arrayField, factory.getTagField(fieldName, "|", false, false, false,
+            withSuffixTrie)));
       }
-      case NUMERIC -> {
-        FieldName fieldName = FieldName.of(fullFieldPath);
-        String alias = QueryUtils.searchIndexFieldAliasFor(nestedField, prefix);
-        if (alias != null && !alias.isEmpty()) {
-          fieldName = fieldName.as(alias);
-        }
-        fields.add(SearchField.of(arrayField, NumericField.of(fieldName)));
-      }
-      case GEO -> {
-        FieldName fieldName = FieldName.of(fullFieldPath);
-        String alias = QueryUtils.searchIndexFieldAliasFor(nestedField, prefix);
-        if (alias != null && !alias.isEmpty()) {
-          fieldName = fieldName.as(alias);
-        }
-        fields.add(SearchField.of(arrayField, GeoField.of(fieldName)));
-      }
+      case NUMERIC -> fields.add(SearchField.of(arrayField, NumericField.of(fieldName)));
+      case GEO -> fields.add(SearchField.of(arrayField, GeoField.of(fieldName)));
       case UNSUPPORTED -> logger.debug(String.format("Skipping nested field %s of unsupported type %s", nestedField
           .getName(), nestedFieldType.getSimpleName()));
     }
 
     return fields;
+  }
+
+  private FieldName nestedFieldName(String fullFieldPath, java.lang.reflect.Field nestedField, String prefix) {
+    FieldName fieldName = FieldName.of(fullFieldPath);
+    String alias = QueryUtils.searchIndexFieldAliasFor(nestedField, prefix);
+    if (alias != null && !alias.isEmpty()) {
+      fieldName = fieldName.as(alias);
+    }
+    return fieldName;
   }
 
   // ---------------------------------------------------------------------------
