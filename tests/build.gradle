@@ -144,9 +144,15 @@ ext.namedShards = [
 	],
 ]
 
+def redisOmSpringModuleMetadataFile = project(':redis-om-spring').layout.buildDirectory.file('publications/mavenJava/module.json')
+
 test {
 	useJUnitPlatform()
 	maxHeapSize = "1g"
+	dependsOn ':redis-om-spring:generateMetadataFileForMavenJavaPublication'
+
+	systemProperty 'redisOmSpring.moduleMetadata', redisOmSpringModuleMetadataFile.get().asFile.absolutePath
+	systemProperty 'redisOmSpring.jedisVersion', jedisVersion
 
 	testLogging {
 		events "passed", "skipped", "failed"
@@ -170,5 +176,29 @@ test {
 				namedShards[shard].each { includeTestsMatching it }
 			}
 		}
+	}
+}
+
+tasks.register('publicationMetadataTest', Test) {
+	description = 'Verifies Redis OM Spring Gradle publication metadata.'
+	group = 'verification'
+
+	dependsOn ':redis-om-spring:generateMetadataFileForMavenJavaPublication'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	useJUnitPlatform()
+	shouldRunAfter test
+
+	systemProperty 'redisOmSpring.moduleMetadata',
+			redisOmSpringModuleMetadataFile.get().asFile.absolutePath
+	systemProperty 'redisOmSpring.jedisVersion', jedisVersion
+
+	filter {
+		includeTestsMatching 'com.redis.om.spring.client.RedisOmSpringPublicationMetadataTest'
+	}
+
+	testLogging {
+		events "passed", "skipped", "failed"
+		exceptionFormat = 'full'
 	}
 }
