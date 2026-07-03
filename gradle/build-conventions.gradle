@@ -97,4 +97,26 @@ if (!project.path.startsWith(':demos:')) {
 			}
 		}
 	}
+
+	// versionMapping publishes resolved dependencies, which collapses the Jedis
+	// lower-bound range into an exact version. Keep the Gradle metadata flexible.
+	tasks.withType(org.gradle.api.publish.tasks.GenerateModuleMetadata).configureEach {
+		doLast {
+			def metadataFile = outputFile.get().asFile
+			def metadata = new groovy.json.JsonSlurper().parse(metadataFile)
+			def jedisStrictRange = "[${jedisVersion},)"
+
+			metadata.variants.each { variant ->
+				variant.dependencies?.each { dependency ->
+					if (dependency.group == 'redis.clients' && dependency.module == 'jedis') {
+						dependency.version.strictly = jedisStrictRange
+						dependency.version.requires = jedisStrictRange
+						dependency.version.prefers = jedisVersion
+					}
+				}
+			}
+
+			metadataFile.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(metadata)) + System.lineSeparator()
+		}
+	}
 }
