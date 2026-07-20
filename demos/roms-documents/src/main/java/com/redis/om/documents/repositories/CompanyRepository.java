@@ -15,6 +15,9 @@ public interface CompanyRepository extends RedisDocumentRepository<Company, Stri
   // find one by property
   Optional<Company> findOneByName(String name);
 
+  // phonetic and suffix trie text field
+  Iterable<Company> findByDescription(String description);
+
   // geospatial query
   Iterable<Company> findByLocationNear(Point point, Distance distance);
 

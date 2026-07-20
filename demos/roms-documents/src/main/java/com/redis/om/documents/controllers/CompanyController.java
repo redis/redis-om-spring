@@ -91,6 +91,15 @@ public class CompanyController {
   }
 
   @GetMapping(
+    "description/{description}"
+  )
+  Iterable<Company> byDescription(@PathVariable(
+    "description"
+  ) String description) {
+    return repository.findByDescription(description);
+  }
+
+  @GetMapping(
     "tags"
   )
   Iterable<Company> byTags(@RequestParam(

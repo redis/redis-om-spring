@@ -95,6 +95,14 @@ public @interface Indexed {
   String phonetic() default "";
 
   /**
+   * Indicates whether suffix trie indexing should be enabled for supported fields.
+   * Redis supports this option on TEXT and TAG schema fields.
+   *
+   * @return {@code true} if suffix trie indexing should be enabled, {@code false} otherwise
+   */
+  boolean withSuffixTrie() default false;
+
+  /**
    * Specifies the separator character for tag fields.
    * 
    * @return the separator character
