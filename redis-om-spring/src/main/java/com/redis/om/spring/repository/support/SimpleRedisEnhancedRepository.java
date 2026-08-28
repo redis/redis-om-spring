@@ -55,7 +55,6 @@ import com.redis.om.spring.search.stream.SearchStream;
 import com.redis.om.spring.util.ObjectUtils;
 import com.redis.om.spring.vectorize.Embedder;
 
-import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.search.Query;
@@ -361,9 +360,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
     }
 
     if (!updates.isEmpty()) {
-      try (Jedis jedis = modulesOperations.client().getJedis().get()) {
-        jedis.hmset(SafeEncoder.encode(key), updates);
-      }
+      modulesOperations.client().unifiedJedis().hmset(SafeEncoder.encode(key), updates);
     }
 
     return (S) findById(id).orElseThrow(() -> new RuntimeException("Failed to fetch updated entity"));
@@ -375,8 +372,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
       return; // No examples to process
     }
 
-    try (Jedis jedis = modulesOperations.client().getJedis().get()) {
-      Pipeline pipeline = jedis.pipelined();
+    try (Pipeline pipeline = modulesOperations.client().pipelined()) {
 
       for (Example<S> example : examples) {
         S probe = example.getProbe();
@@ -469,8 +465,7 @@ public class SimpleRedisEnhancedRepository<T, ID> extends SimpleKeyValueReposito
 
     embedder.processEntities(entities);
 
-    try (Jedis jedis = modulesOperations.client().getJedis().get()) {
-      Pipeline pipeline = jedis.pipelined();
+    try (Pipeline pipeline = modulesOperations.client().pipelined()) {
 
       for (S entity : entities) {
         boolean isNew = metadata.isNew(entity);

@@ -220,6 +220,33 @@ public class RedisModulesClient {
   }
 
   /**
+   * Returns a {@link Pipeline} for batching commands, backed by this client's own
+   * {@link UnifiedJedis} connection rather than the Spring-managed {@code JedisConnectionFactory}.
+   * <p>
+   * Unlike {@link #getJedis()}, this does not depend on unwrapping a raw {@code Jedis} out of
+   * Spring Data Redis's native connection - a mapping that can fail depending on the Spring Data
+   * Redis version in use (e.g. {@code JedisConnectionFactory#useUnifiedJedis}). The client's own
+   * {@link UnifiedJedis} is always either a {@code JedisPooled} or {@code JedisSentineled}
+   * instance, both of which return a {@link Pipeline} from {@code pipelined()}, so this is safe
+   * in both standalone and Sentinel mode.
+   *
+   * @return a {@link Pipeline} for batched command execution
+   */
+  public Pipeline pipelined() {
+    return (Pipeline) unifiedJedis.pipelined();
+  }
+
+  /**
+   * Returns the {@link UnifiedJedis} instance this client owns, for direct command execution
+   * not covered by the {@code clientFor*} accessors.
+   *
+   * @return the underlying {@link UnifiedJedis} instance
+   */
+  public UnifiedJedis unifiedJedis() {
+    return unifiedJedis;
+  }
+
+  /**
    * Attempts to retrieve the underlying JedisCluster connection if available.
    * <p>
    * This method provides access to the cluster connection when Redis is deployed

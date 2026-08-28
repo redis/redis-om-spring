@@ -76,7 +76,6 @@ import com.redis.om.spring.util.ObjectUtils;
 import com.redis.om.spring.vectorize.Embedder;
 
 import jakarta.persistence.IdClass;
-import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.jedis.json.Path2;
@@ -292,8 +291,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
 
     embedder.processEntities(entities);
 
-    try (Jedis jedis = modulesOperations.client().getJedis().get()) {
-      Pipeline pipeline = jedis.pipelined();
+    try (Pipeline pipeline = modulesOperations.client().pipelined()) {
       Gson gson = gsonBuilder.create();
       for (S entity : entities) {
         boolean isNew = metadata.isNew(entity);
@@ -1013,8 +1011,7 @@ public class SimpleRedisDocumentRepository<T, ID> extends SimpleKeyValueReposito
    * @param updateOperations the list of update operations to execute
    */
   private void executePipelinedUpdates(List<UpdateOperation> updateOperations) {
-    try (Jedis jedis = modulesOperations.client().getJedis().get()) {
-      Pipeline pipeline = jedis.pipelined();
+    try (Pipeline pipeline = modulesOperations.client().pipelined()) {
 
       for (UpdateOperation op : updateOperations) {
         List<byte[]> args = new ArrayList<>(4);
