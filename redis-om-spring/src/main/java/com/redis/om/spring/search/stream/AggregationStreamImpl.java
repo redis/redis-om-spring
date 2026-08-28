@@ -309,6 +309,48 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
     return search.aggregate(aggregation);
   }
 
+  /**
+   * Numeric reducers such as MIN, MAX and AVG legitimately return the RESP float
+   * sentinels {@code inf}/{@code +inf}/{@code -inf}/{@code nan} (case-insensitive) when applied
+   * to a group with no matching values for the reduced field, which {@link Double#parseDouble}
+   * does not recognize directly (it expects {@code Infinity}/{@code NaN}).
+   *
+   * @param raw the raw reducer value as returned by Redis
+   * @return the parsed double, including proper infinite/NaN values for the float sentinels
+   */
+  private static double parseRedisDouble(String raw) {
+    return switch (raw.trim().toLowerCase(Locale.ROOT)) {
+      case "inf", "+inf" -> Double.POSITIVE_INFINITY;
+      case "-inf" -> Double.NEGATIVE_INFINITY;
+      case "nan", "-nan" -> Double.NaN;
+      default -> Double.parseDouble(raw);
+    };
+  }
+
+  private static float parseRedisFloat(String raw) {
+    return (float) parseRedisDouble(raw);
+  }
+
+  /**
+   * As with {@link #parseRedisDouble}, but for integral target types, which have no
+   * representation for infinite/NaN values - those sentinels are treated as absent (0),
+   * consistent with how this class already defaults a missing/null reducer value to 0.
+   */
+  private static long parseRedisLong(String raw) {
+    return isRedisFloatSentinel(raw) ? 0L : Long.parseLong(raw);
+  }
+
+  private static int parseRedisInt(String raw) {
+    return isRedisFloatSentinel(raw) ? 0 : Integer.parseInt(raw);
+  }
+
+  private static boolean isRedisFloatSentinel(String raw) {
+    return switch (raw.trim().toLowerCase(Locale.ROOT)) {
+      case "inf", "+inf", "-inf", "nan", "-nan" -> true;
+      default -> false;
+    };
+  }
+
   @SuppressWarnings(
     "unchecked"
   )
@@ -338,11 +380,11 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
         if (contentTypes[i] == String.class) {
           mappedValues.add(raw != null ? raw : "");
         } else if (contentTypes[i] == Long.class) {
-          mappedValues.add(raw != null ? Long.parseLong(raw.toString()) : 0L);
+          mappedValues.add(raw != null ? parseRedisLong(raw.toString()) : 0L);
         } else if (contentTypes[i] == Integer.class) {
-          mappedValues.add(raw != null ? Integer.parseInt(raw.toString()) : 0);
+          mappedValues.add(raw != null ? parseRedisInt(raw.toString()) : 0);
         } else if (contentTypes[i] == Double.class) {
-          mappedValues.add(raw != null ? Double.parseDouble(raw.toString()) : 0);
+          mappedValues.add(raw != null ? parseRedisDouble(raw.toString()) : 0);
         } else if (contentTypes[i] == List.class && List.class.isAssignableFrom(raw.getClass())) {
           Class<?> listContents = returnFieldsTypeHints.get(labels[i]);
           List<?> rawList = (List<?>) raw;
@@ -350,11 +392,11 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
             if (listContents == String.class) {
               mappedValues.add(rawList.stream().map(e -> e != null ? e : "").toList());
             } else if (listContents == Long.class) {
-              mappedValues.add(rawList.stream().map(e -> e != null ? Long.parseLong(e.toString()) : 0L).toList());
+              mappedValues.add(rawList.stream().map(e -> e != null ? parseRedisLong(e.toString()) : 0L).toList());
             } else if (listContents == Integer.class) {
-              mappedValues.add(rawList.stream().map(e -> e != null ? Integer.parseInt(e.toString()) : 0).toList());
+              mappedValues.add(rawList.stream().map(e -> e != null ? parseRedisInt(e.toString()) : 0).toList());
             } else if (listContents == Double.class) {
-              mappedValues.add(rawList.stream().map(e -> e != null ? Double.parseDouble(e.toString()) : 0).toList());
+              mappedValues.add(rawList.stream().map(e -> e != null ? parseRedisDouble(e.toString()) : 0).toList());
             } else {
               mappedValues.add(rawList);
             }
@@ -685,13 +727,13 @@ public class AggregationStreamImpl<E, T> implements AggregationStream<T> {
       if (targetType == String.class) {
         return stringValue;
       } else if (targetType == Long.class || targetType == long.class) {
-        return Long.parseLong(stringValue);
+        return parseRedisLong(stringValue);
       } else if (targetType == Integer.class || targetType == int.class) {
-        return Integer.parseInt(stringValue);
+        return parseRedisInt(stringValue);
       } else if (targetType == Double.class || targetType == double.class) {
-        return Double.parseDouble(stringValue);
+        return parseRedisDouble(stringValue);
       } else if (targetType == Float.class || targetType == float.class) {
-        return Float.parseFloat(stringValue);
+        return parseRedisFloat(stringValue);
       } else if (targetType == Boolean.class || targetType == boolean.class) {
         return Boolean.parseBoolean(stringValue);
       }
