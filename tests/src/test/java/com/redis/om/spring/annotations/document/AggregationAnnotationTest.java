@@ -147,16 +147,16 @@ class AggregationAnnotationTest extends AbstractBaseDocumentTest {
 
   @Test
   void testParseTime() {
-    String[][] expectedData = { //
-        { "brand", "" }, { "count", "20" }, { "dt", "2018-01-31T16:45:44Z" }, { "parsed_dt", "1517417144" } //
-    };
-
+    // "brand"/"count" are not asserted here: GROUPBY without a SORTBY has unspecified row
+    // order, and with LIMIT 1 that means an arbitrary brand/count wins. "dt"/"parsed_dt" are
+    // computed from the literal timestamp 1517417144, so they're deterministic regardless of
+    // which group's row is returned - that's what this test actually exercises.
     var result = repository.parseTime();
     assertThat(result.getTotalResults()).isEqualTo(293);
 
     var row = result.getRow(0);
-    IntStream.range(0, expectedData.length - 1).forEach(i -> assertThat(row.getString(expectedData[i][0])).isEqualTo(
-        expectedData[i][1]));
+    assertThat(row.getString("dt")).isEqualTo("2018-01-31T16:45:44Z");
+    assertThat(row.getString("parsed_dt")).isEqualTo("1517417144");
   }
 
   @Test
@@ -193,51 +193,50 @@ class AggregationAnnotationTest extends AbstractBaseDocumentTest {
 
   @Test
   void testStringFormat() {
+    // Sorted by title (see GameRepository#stringFormat), so this exercises the first 10 titles
+    // in alphabetical order - without a SORTBY, GROUPBY row order is unspecified.
+    // Note: the source dataset stores some titles with un-decoded HTML entities
+    // (e.g. literal "&quot;"/"&amp;" text), which is reproduced verbatim below.
     String[][][] expectedData = { //
-        { { "title", "Standard Single Gang 4 Port Faceplate, ABS 94V-0, Black, 1/pkg" }, { "titleBrand",
-            "Standard Single Gang 4 Port Faceplate, ABS 94V-0, Black, 1/pkg|Hellermann Tyton|Mark|4.95" } },
-        //
-        { { "title",
-            "250G HDD Hard Disk Drive For Microsoft Xbox 360 E Slim with USB 2.0 AGPtek All-in-One Card Reader" }, {
-                "titleBrand",
-                "250G HDD Hard Disk Drive For Microsoft Xbox 360 E Slim with USB 2.0 AGPtek All-in-One Card Reader|(null)|Mark|51.79" } },
-        //
-        { { "title",
-            "Portable Emergency AA Battery Charger Extender suitable for the Sony PSP - with Gomadic Brand TipExchange Technology" },
+        { { "title", "&quot;Blue Thunder&quot; PS3 Custom Modded Controller Exclusive Design - COD Ready Zomb..." },
             { "titleBrand",
-                "Portable Emergency AA Battery Charger Extender suitable for the Sony PSP - with Gomadic Brand TipExchange Technology|(null)|Mark|19.66" } },
-        //
-        { { "title", "Mad Catz S.T.R.I.K.E.5 Gaming Keyboard for PC" }, { "titleBrand",
-            "Mad Catz S.T.R.I.K.E.5 Gaming Keyboard for PC|Mad Catz|Mark|193.26" } }, //
-        { { "title", "iConcepts THE SHOCK MASTER For Use With PC" }, { "titleBrand",
-            "iConcepts THE SHOCK MASTER For Use With PC|(null)|Mark|9.99" } }, //
-        { { "title", "Saitek CES432110002/06/1 Pro Flight Cessna Trim Wheel" }, { "titleBrand",
-            "Saitek CES432110002/06/1 Pro Flight Cessna Trim Wheel|Mad Catz|Mark|47.02" } }, //
+                "&quot;Blue Thunder&quot; PS3 Custom Modded Controller Exclusive Design - COD Ready Zomb...|(null)|Mark|119.95" } }, //
         { { "title",
-            "Noppoo Choc Mini 84 USB NKRO Mechanical Gaming Keyboard Cherry MX Switches (BLUE switch + Black body + POM key cap)" },
+            "&quot;Enigma Silver Gold&quot; Chameleon PS4 Custom Modded Controller Exclusive Design - COD Ready Zombie Auto Aim, Drop Shot, Fast Reload, &amp; Menu for Ghost !" },
             { "titleBrand",
-                "Noppoo Choc Mini 84 USB NKRO Mechanical Gaming Keyboard Cherry MX Switches (BLUE switch + Black body + POM key cap)|(null)|Mark|34.98" } },
-        //
+                "&quot;Enigma Silver Gold&quot; Chameleon PS4 Custom Modded Controller Exclusive Design - COD Ready Zombie Auto Aim, Drop Shot, Fast Reload, &amp; Menu for Ghost !|(null)|Mark|149.95" } }, //
         { { "title",
-            "iiMash&reg; Ipega Universal Wireless Bluetooth 3.0 Game Controller Gamepad Joypad for Apple Ios Iphone 5 4 4s Ipad 4 3 2 New Mini Ipod Android Phone HTC One X Samsung Galaxy S3 2 Note 2 N7100 N8000 Tablet Google Nexus 7&quot; 10&quot; Pc" },
+            "&quot;Green Skulls 3Mod xbox360 &quot; (10 Modes Dual Rapid Fire + S Quick Scope+ Central Button's Illumination) for wireless controller for Xbox 360 from Smarts Gifts Co." },
             { "titleBrand",
-                "iiMash&reg; Ipega Universal Wireless Bluetooth 3.0 Game Controller Gamepad Joypad for Apple Ios Iphone 5 4 4s Ipad 4 3 2 New Mini Ipod Android Phone HTC One X Samsung Galaxy S3 2 Note 2 N7100 N8000 Tablet Google Nexus 7&quot; 10&quot; Pc|iiMash&reg;|Mark|35.98" } },
-        //
-        { { "title", "16 in 1 Plastic Game Card Case Holder Box For Nintendo 3DS DSi DSi XL DS LITE" }, { "titleBrand",
-            "16 in 1 Plastic Game Card Case Holder Box For Nintendo 3DS DSi DSi XL DS LITE|Meco|Mark|3.99" } }, //
+                "&quot;Green Skulls 3Mod xbox360 &quot; (10 Modes Dual Rapid Fire + S Quick Scope+ Central Button's Illumination) for wireless controller for Xbox 360 from Smarts Gifts Co.|(null)|Mark|3.79" } }, //
         { { "title",
-            "Apocalypse Red Design Protective Decal Skin Sticker (High Gloss Coating) for Nintendo DSi XL Game Device" },
+            "&quot;Halo  &quot; skin , Three additional modes  (10 Modes Dual Rapid Fire +   Fast Aim Fire mode + Central Button's Illumination)   Wireless Original Microsoft controller  Xbox 360 (modded) ,the  Best  for MW1.2.3 , COD , BATTLEFIELD , HALO , other Shooter  Games" },
             { "titleBrand",
-                "Apocalypse Red Design Protective Decal Skin Sticker (High Gloss Coating) for Nintendo DSi XL Game Device|(null)|Mark|14.99" } }
-        //
-    };
+                "&quot;Halo  &quot; skin , Three additional modes  (10 Modes Dual Rapid Fire +   Fast Aim Fire mode + Central Button's Illumination)   Wireless Original Microsoft controller  Xbox 360 (modded) ,the  Best  for MW1.2.3 , COD , BATTLEFIELD , HALO , other Shooter  Games|(null)|Mark|16.49" } }, //
+        { { "title",
+            "&quot;Red Skulls&quot; PS4 Custom Modded Controller Exclusive Design - COD Ready Zombie Auto Aim, Drop Shot, Fast Reload, &amp; Menu for Ghost !" },
+            { "titleBrand",
+                "&quot;Red Skulls&quot; PS4 Custom Modded Controller Exclusive Design - COD Ready Zombie Auto Aim, Drop Shot, Fast Reload, &amp; Menu for Ghost !|(null)|Mark|-inf" } }, //
+        { { "title", "&quot;Red Splatter&quot;PS4 Custom Modded Controller Exclusive Design w/Chrome Dpad &amp; R..." },
+            { "titleBrand",
+                "&quot;Red Splatter&quot;PS4 Custom Modded Controller Exclusive Design w/Chrome Dpad &amp; R...|(null)|Mark|179.95" } }, //
+        { { "title",
+            "&quot;W&amp;B 2Mod xbox &quot; (10 Modes Dual Rapid Fire + Fast Quick Scope) wireless controller Xbox360 for MW1.2.3 , COD , BATTLEFIELD , HALO" },
+            { "titleBrand",
+                "&quot;W&amp;B 2Mod xbox &quot; (10 Modes Dual Rapid Fire + Fast Quick Scope) wireless controller Xbox360 for MW1.2.3 , COD , BATTLEFIELD , HALO|(null)|Mark|99.99" } }, //
+        { { "title", ".AUDIO 400 DSP FOLDING USB PC HEADSET S3 - Model#: 76921-11" }, { "titleBrand",
+            ".AUDIO 400 DSP FOLDING USB PC HEADSET S3 - Model#: 76921-11|(null)|Mark|65" } }, //
+        { { "title", "10 Button Light PC Computer USB Game Pad Joy Controller" }, { "titleBrand",
+            "10 Button Light PC Computer USB Game Pad Joy Controller|(null)|Mark|15.99" } }, //
+        { { "title", "10 Pak Clear Cartridge Cases For DS Games" }, { "titleBrand",
+            "10 Pak Clear Cartridge Cases For DS Games|(null)|Mark|5.99" } } };
 
     var result = repository.stringFormat();
     assertThat(result.getTotalResults()).isEqualTo(2219);
 
-    IntStream.range(0, expectedData.length - 1).forEach(i -> {
+    IntStream.range(0, expectedData.length).forEach(i -> {
       var row = result.getRow(i);
-      IntStream.range(0, expectedData[i].length - 1).forEach(j -> {
+      IntStream.range(0, expectedData[i].length).forEach(j -> {
         if (expectedData[i][j][1] != null) {
           assertThat(row.getString(expectedData[i][j][0])).isEqualTo(expectedData[i][j][1]);
         }

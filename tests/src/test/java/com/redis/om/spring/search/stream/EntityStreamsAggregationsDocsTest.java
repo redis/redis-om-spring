@@ -377,8 +377,10 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
    */
   @Test
   void testParseTime() {
-    Quad<String, Long, String, Long> expected = Tuples.of("", 20L, "2018-01-31T16:45:44Z", 1517417144L);
-
+    // "brand"/"count" are not asserted here: GROUPBY without a sort order has unspecified row
+    // order, and with limit(1) that means an arbitrary brand/count wins. "dt"/"parsed_dt" are
+    // computed from the literal timestamp 1517417144, so they're deterministic regardless of
+    // which group's row is returned - that's what this test actually exercises.
     List<Quad<String, Long, String, Long>> parseTime = entityStream.of(Game.class) //
         .groupBy(Game$.BRAND) //
         .reduce(ReducerFunction.COUNT).as("count") //
@@ -388,10 +390,8 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
         .toList(String.class, Long.class, String.class, Long.class);
 
     var actual = parseTime.get(0);
-    assertEquals(expected.getFirst(), actual.getFirst());
-    assertEquals(expected.getSecond(), actual.getSecond());
-    assertEquals(expected.getThird(), actual.getThird());
-    assertEquals(expected.getFourth(), actual.getFourth());
+    assertEquals("2018-01-31T16:45:44Z", actual.getThird());
+    assertEquals(1517417144L, actual.getFourth());
   }
 
   /**
@@ -476,27 +476,32 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
    */
   @Test
   void testStringFormat() {
+    // Sorted by title (see .sorted(Order.asc("@title")) below), so this exercises the first 10
+    // titles in alphabetical order - without a sort order, GROUPBY row order is unspecified.
+    // Note: the source dataset stores some titles with un-decoded HTML entities (e.g. literal
+    // "&quot;"/"&amp;" text), which is reproduced verbatim below.
     List<String> expectedData = List.of( //
-        "Standard Single Gang 4 Port Faceplate, ABS 94V-0, Black, 1/pkg|Hellermann Tyton|Mark|4.95", //
-        "250G HDD Hard Disk Drive For Microsoft Xbox 360 E Slim with USB 2.0 AGPtek All-in-One Card Reader|(null)|Mark|51.79",
-        "Portable Emergency AA Battery Charger Extender suitable for the Sony PSP - with Gomadic Brand TipExchange Technology|(null)|Mark|19.66",
-        "Mad Catz S.T.R.I.K.E.5 Gaming Keyboard for PC|Mad Catz|Mark|193.26", //
-        "iConcepts THE SHOCK MASTER For Use With PC|(null)|Mark|9.99", //
-        "Saitek CES432110002/06/1 Pro Flight Cessna Trim Wheel|Mad Catz|Mark|47.02", //
-        "Noppoo Choc Mini 84 USB NKRO Mechanical Gaming Keyboard Cherry MX Switches (BLUE switch + Black body + POM key cap)|(null)|Mark|34.98",
-        "iiMash&reg; Ipega Universal Wireless Bluetooth 3.0 Game Controller Gamepad Joypad for Apple Ios Iphone 5 4 4s Ipad 4 3 2 New Mini Ipod" + " Android Phone HTC One X Samsung Galaxy S3 2 Note 2 N7100 N8000 Tablet Google Nexus 7&quot; 10&quot; Pc|iiMash&reg;|Mark|35.98",
-        "16 in 1 Plastic Game Card Case Holder Box For Nintendo 3DS DSi DSi XL DS LITE|Meco|Mark|3.99", //
-        "Apocalypse Red Design Protective Decal Skin Sticker (High Gloss Coating) for Nintendo DSi XL Game Device|(null)|Mark|14.99");
+        "&quot;Blue Thunder&quot; PS3 Custom Modded Controller Exclusive Design - COD Ready Zomb...|(null)|Mark|119.95",
+        "&quot;Enigma Silver Gold&quot; Chameleon PS4 Custom Modded Controller Exclusive Design - COD Ready Zombie Auto Aim, Drop Shot, Fast Reload, &amp; Menu for Ghost !|(null)|Mark|149.95",
+        "&quot;Green Skulls 3Mod xbox360 &quot; (10 Modes Dual Rapid Fire + S Quick Scope+ Central Button's Illumination) for wireless controller for Xbox 360 from Smarts Gifts Co.|(null)|Mark|3.79",
+        "&quot;Halo  &quot; skin , Three additional modes  (10 Modes Dual Rapid Fire +   Fast Aim Fire mode + Central Button's Illumination)   Wireless Original Microsoft controller  Xbox 360 (modded) ,the  Best  for MW1.2.3 , COD , BATTLEFIELD , HALO , other Shooter  Games|(null)|Mark|16.49",
+        "&quot;Red Skulls&quot; PS4 Custom Modded Controller Exclusive Design - COD Ready Zombie Auto Aim, Drop Shot, Fast Reload, &amp; Menu for Ghost !|(null)|Mark|-inf", //
+        "&quot;Red Splatter&quot;PS4 Custom Modded Controller Exclusive Design w/Chrome Dpad &amp; R...|(null)|Mark|179.95",
+        "&quot;W&amp;B 2Mod xbox &quot; (10 Modes Dual Rapid Fire + Fast Quick Scope) wireless controller Xbox360 for MW1.2.3 , COD , BATTLEFIELD , HALO|(null)|Mark|99.99",
+        ".AUDIO 400 DSP FOLDING USB PC HEADSET S3 - Model#: 76921-11|(null)|Mark|65", //
+        "10 Button Light PC Computer USB Game Pad Joy Controller|(null)|Mark|15.99", //
+        "10 Pak Clear Cartridge Cases For DS Games|(null)|Mark|5.99");
 
     List<Quintuple<String, String, Long, Double, String>> stringFormat = entityStream.of(Game.class) //
         .groupBy(Game$.TITLE, Game$.BRAND) //
         .reduce(ReducerFunction.COUNT) //
         .reduce(ReducerFunction.MAX, Game$.PRICE).as("price") //
         .apply("format(\"%s|%s|%s|%s\", @title, @brand, \"Mark\", @price)", "titleBrand") //
+        .sorted(Order.asc("@title")) //
         .limit(10) //
         .toList(String.class, String.class, Long.class, Double.class, String.class);
 
-    IntStream.range(0, expectedData.size() - 1).forEach(i -> {
+    IntStream.range(0, expectedData.size()).forEach(i -> {
       var actual = stringFormat.get(i);
       var expected = expectedData.get(i);
 
@@ -863,13 +868,15 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
    */
   @Test
   void testCalculateTotalOrderQuantity() {
+    // Sorted by name so the row order is deterministic - without a sort order, GROUPBY row
+    // order is unspecified.
     var stream = entityStream.of(PizzaOrder.class);
     List<Pair<String, Integer>> totalOrderQuanties = stream //
         .filter(PizzaOrder$.SIZE.eq("medium")).groupBy(PizzaOrder$.NAME).reduce(ReducerFunction.SUM,
-            PizzaOrder$.QUANTITY).as("sum").toList(String.class, Integer.class);
+            PizzaOrder$.QUANTITY).as("sum").sorted(Order.asc("@name")).toList(String.class, Integer.class);
 
-    assertAll(() -> assertThat(totalOrderQuanties).map(Pair::getFirst).containsExactly("Pepperoni", "Cheese", "Vegan"),
-        () -> assertThat(totalOrderQuanties).map(Pair::getSecond).containsExactly(20, 50, 10));
+    assertAll(() -> assertThat(totalOrderQuanties).map(Pair::getFirst).containsExactly("Cheese", "Pepperoni", "Vegan"),
+        () -> assertThat(totalOrderQuanties).map(Pair::getSecond).containsExactly(50, 20, 10));
   }
 
   /**

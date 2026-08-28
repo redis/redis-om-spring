@@ -162,16 +162,16 @@ class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testParseTime() {
-    String[][] expectedData = { //
-        { "brand", "" }, { "count", "20" }, { "dt", "2018-01-31T16:45:44Z" }, { "parsed_dt", "1517417144" } //
-    };
-
+    // "brand"/"count" are not asserted here: GROUPBY without a SORTBY has unspecified row
+    // order, and with LIMIT 1 that means an arbitrary brand/count wins. "dt"/"parsed_dt" are
+    // computed from the literal timestamp 1517417144, so they're deterministic regardless of
+    // which group's row is returned - that's what this test actually exercises.
     var result = repository.parseTime();
     assertThat(result.getTotalResults()).isEqualTo(293);
 
     var row = result.getRow(0);
-    IntStream.range(0, expectedData.length - 1).forEach(i -> assertThat(row.getString(expectedData[i][0])).isEqualTo(
-        expectedData[i][1]));
+    assertThat(row.getString("dt")).isEqualTo("2018-01-31T16:45:44Z");
+    assertThat(row.getString("parsed_dt")).isEqualTo("1517417144");
   }
 
   @Test
@@ -208,37 +208,50 @@ class AggregationAnnotationTest extends AbstractBaseEnhancedRedisTest {
 
   @Test
   void testStringFormat() {
+    // Sorted by title (see GameRepository#stringFormat), so this exercises the first 10 titles
+    // in alphabetical order - without a SORTBY, GROUPBY row order is unspecified.
+    // Note: the source dataset stores some titles with un-decoded HTML entities
+    // (e.g. literal "&quot;"/"&amp;" text), which is reproduced verbatim below.
     String[][][] expectedData = { //
-        { { "title", "mad catz mov088150/04/1 ps3 s-video cable" }, { "titleBrand",
-            "mad catz mov088150/04/1 ps3 s-video cable|(null)|Mark|0" } }, //
-        { { "title", "franklin sdm-500224hsmp 2002 stedman's medical dictionary springboard module" }, { "titleBrand",
-            "franklin sdm-500224hsmp 2002 stedman's medical dictionary springboard module|(null)|Mark|94.99" } }, //
-        { { "title", "razer deathstalker ultimate gaming keyboard" }, { "titleBrand",
-            "razer deathstalker ultimate gaming keyboard|razer|Mark|255.35" } }, //
-        { { "title", "igadgitz blue eva hard case cover for nintendo 2ds" }, { "titleBrand",
-            "igadgitz blue eva hard case cover for nintendo 2ds|(null)|Mark|6.99" } }, //
-        { { "title",
-            "buddies model wl2021 2.4 ghz wireless gamepad controller for pc/ps1/ps2/ps3 with rechargable lithium battery with one year warranty" },
+        { { "title", "&quot;blue thunder&quot; ps3 custom modded controller exclusive design - cod ready zomb..." },
             { "titleBrand",
-                "buddies model wl2021 2.4 ghz wireless gamepad controller for pc/ps1/ps2/ps3 with rechargable lithium battery with one year warranty|(null)|Mark|19.95" } },
-        //
-        { { "title", "saitek x52 pro flight system controller" }, { "titleBrand",
-            "saitek x52 pro flight system controller|(null)|Mark|144.96" } }, //
-        { { "title", "ideazon reaper gaming mouse" }, { "titleBrand", "ideazon reaper gaming mouse|(null)|Mark|0" } },
-        //
-        { { "title", "innovations 7-38012-48713-6 nes game pad" }, { "titleBrand",
-            "innovations 7-38012-48713-6 nes game pad|micro innovations|Mark|5.23" } }, //
-        { { "title", "neuros mpeg-4 recorder 2 plus digital video recorder" }, { "titleBrand",
-            "neuros mpeg-4 recorder 2 plus digital video recorder|(null)|Mark|79.64" } }, //
-        { { "title", "logitech cordless rumblepad 2 with vibration feedback (black)" }, { "titleBrand",
-            "logitech cordless rumblepad 2 with vibration feedback (black)|(null)|Mark|31.79" } } };
+                "&quot;blue thunder&quot; ps3 custom modded controller exclusive design - cod ready zomb...|(null)|Mark|119.95" } }, //
+        { { "title",
+            "&quot;enigma silver gold&quot; chameleon ps4 custom modded controller exclusive design - cod ready zombie auto aim, drop shot, fast reload, &amp; menu for ghost !" },
+            { "titleBrand",
+                "&quot;enigma silver gold&quot; chameleon ps4 custom modded controller exclusive design - cod ready zombie auto aim, drop shot, fast reload, &amp; menu for ghost !|(null)|Mark|149.95" } }, //
+        { { "title",
+            "&quot;green skulls 3mod xbox360 &quot; (10 modes dual rapid fire + s quick scope+ central button's illumination) for wireless controller for xbox 360 from smarts gifts co." },
+            { "titleBrand",
+                "&quot;green skulls 3mod xbox360 &quot; (10 modes dual rapid fire + s quick scope+ central button's illumination) for wireless controller for xbox 360 from smarts gifts co.|(null)|Mark|3.79" } }, //
+        { { "title",
+            "&quot;halo  &quot; skin , three additional modes  (10 modes dual rapid fire +   fast aim fire mode + central button's illumination)   wireless original microsoft controller  xbox 360 (modded) ,the  best  for mw1.2.3 , cod , battlefield , halo , other shooter  games" },
+            { "titleBrand",
+                "&quot;halo  &quot; skin , three additional modes  (10 modes dual rapid fire +   fast aim fire mode + central button's illumination)   wireless original microsoft controller  xbox 360 (modded) ,the  best  for mw1.2.3 , cod , battlefield , halo , other shooter  games|(null)|Mark|16.49" } }, //
+        { { "title",
+            "&quot;red skulls&quot; ps4 custom modded controller exclusive design - cod ready zombie auto aim, drop shot, fast reload, &amp; menu for ghost !" },
+            { "titleBrand",
+                "&quot;red skulls&quot; ps4 custom modded controller exclusive design - cod ready zombie auto aim, drop shot, fast reload, &amp; menu for ghost !|(null)|Mark|-inf" } }, //
+        { { "title", "&quot;red splatter&quot;ps4 custom modded controller exclusive design w/chrome dpad &amp; r..." },
+            { "titleBrand",
+                "&quot;red splatter&quot;ps4 custom modded controller exclusive design w/chrome dpad &amp; r...|(null)|Mark|179.95" } }, //
+        { { "title",
+            "&quot;w&amp;b 2mod xbox &quot; (10 modes dual rapid fire + fast quick scope) wireless controller xbox360 for mw1.2.3 , cod , battlefield , halo" },
+            { "titleBrand",
+                "&quot;w&amp;b 2mod xbox &quot; (10 modes dual rapid fire + fast quick scope) wireless controller xbox360 for mw1.2.3 , cod , battlefield , halo|(null)|Mark|99.99" } }, //
+        { { "title", ".audio 400 dsp folding usb pc headset s3 - model#: 76921-11" }, { "titleBrand",
+            ".audio 400 dsp folding usb pc headset s3 - model#: 76921-11|(null)|Mark|65" } }, //
+        { { "title", "10 button light pc computer usb game pad joy controller" }, { "titleBrand",
+            "10 button light pc computer usb game pad joy controller|(null)|Mark|15.99" } }, //
+        { { "title", "10 pak clear cartridge cases for ds games" }, { "titleBrand",
+            "10 pak clear cartridge cases for ds games|(null)|Mark|5.99" } } };
 
     var result = repository.stringFormat();
     assertThat(result.getTotalResults()).isEqualTo(2218);
 
-    IntStream.range(0, expectedData.length - 1).forEach(i -> {
+    IntStream.range(0, expectedData.length).forEach(i -> {
       var row = result.getRow(i);
-      IntStream.range(0, expectedData[i].length - 1).forEach(j -> {
+      IntStream.range(0, expectedData[i].length).forEach(j -> {
         if (expectedData[i][j][1] != null) {
           assertThat(row.getString(expectedData[i][j][0])).isEqualTo(expectedData[i][j][1]);
         }
