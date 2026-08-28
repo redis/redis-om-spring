@@ -31,11 +31,6 @@ repositories {
 dependencies {
 	implementation project(':redis-om-spring')
 
-	// Reproduces https://github.com/redis/redis-om-spring/issues/769: Spring Data Redis
-	// 4.1+ defaults JedisConnectionFactory.useUnifiedJedis to true, which breaks
-	// RedisModulesClient#getJedis()'s raw Jedis extraction.
-	implementation 'org.springframework.data:spring-data-redis:4.1.0'
-
 	// Important for RedisOM annotation processing!
 	annotationProcessor project(':redis-om-spring')
 	testAnnotationProcessor project(':redis-om-spring')
@@ -55,6 +50,12 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testImplementation "com.redis:testcontainers-redis:${testcontainersRedisVersion}"
 	testImplementation "org.testcontainers:junit-jupiter:1.20.4"
+
+	// Reproduces https://github.com/redis/redis-om-spring/issues/769: Spring Data Redis
+	// 4.1+ defaults JedisConnectionFactory.useUnifiedJedis to true, which breaks
+	// RedisModulesClient#getJedis()'s raw Jedis extraction. Test-only: the demo app
+	// itself should keep running on the project's default managed version.
+	testImplementation 'org.springframework.data:spring-data-redis:4.1.0'
 }
 
 // Use -parameters flag for Spring
