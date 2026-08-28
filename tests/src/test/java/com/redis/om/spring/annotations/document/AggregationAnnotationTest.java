@@ -234,9 +234,9 @@ class AggregationAnnotationTest extends AbstractBaseDocumentTest {
     var result = repository.stringFormat();
     assertThat(result.getTotalResults()).isEqualTo(2219);
 
-    IntStream.range(0, expectedData.length - 1).forEach(i -> {
+    IntStream.range(0, expectedData.length).forEach(i -> {
       var row = result.getRow(i);
-      IntStream.range(0, expectedData[i].length - 1).forEach(j -> {
+      IntStream.range(0, expectedData[i].length).forEach(j -> {
         if (expectedData[i][j][1] != null) {
           assertThat(row.getString(expectedData[i][j][0])).isEqualTo(expectedData[i][j][1]);
         }
