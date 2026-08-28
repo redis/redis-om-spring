@@ -501,7 +501,7 @@ class EntityStreamsAggregationsDocsTest extends AbstractBaseDocumentTest {
         .limit(10) //
         .toList(String.class, String.class, Long.class, Double.class, String.class);
 
-    IntStream.range(0, expectedData.size() - 1).forEach(i -> {
+    IntStream.range(0, expectedData.size()).forEach(i -> {
       var actual = stringFormat.get(i);
       var expected = expectedData.get(i);
 
