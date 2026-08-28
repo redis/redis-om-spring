@@ -9,6 +9,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort.Order;
 
 import com.redis.om.spring.AbstractBaseDocumentTest;
 import com.redis.om.spring.annotations.ReducerFunction;
@@ -49,16 +50,19 @@ class EntityStreamsZipCodeDataAggregationsTest extends AbstractBaseDocumentTest 
    */
   @Test
   void testReturnStatesWithPopulationsAbove10Million() {
+    // Sorted by state so the row order is deterministic - without a sort order, GROUPBY row
+    // order is unspecified.
     var stream = entityStream.of(ZipCode.class);
     List<Pair<String, Long>> statePopulation = stream //
         .apply("@state", "_id") //
         .groupBy(Alias.of("_id")) //
         .reduce(ReducerFunction.SUM, ZipCode$.POP).as("totalPop") //
-        .filter("@totalPop >= 10*1000*1000").toList(String.class, Long.class);
+        .filter("@totalPop >= 10*1000*1000") //
+        .sorted(Order.asc("@_id")).toList(String.class, Long.class);
 
-    assertAll(() -> assertThat(statePopulation).map(Pair::getFirst).containsExactly("NY", "IL", "PA", "CA", "OH", "FL",
-        "TX"), () -> assertThat(statePopulation).map(Pair::getSecond).containsExactly(17990402L, 11427576L, 11881643L,
-            29754890L, 10846517L, 12686644L, 16984601L));
+    assertAll(() -> assertThat(statePopulation).map(Pair::getFirst).containsExactly("CA", "FL", "IL", "NY", "OH", "PA",
+        "TX"), () -> assertThat(statePopulation).map(Pair::getSecond).containsExactly(29754890L, 12686644L, 11427576L,
+            17990402L, 10846517L, 11881643L, 16984601L));
   }
 
   /**
@@ -72,16 +76,19 @@ class EntityStreamsZipCodeDataAggregationsTest extends AbstractBaseDocumentTest 
    */
   @Test
   void testReturnAverageCityPopulationByState() {
+    // Sorted by state so the row order is deterministic - without a sort order, GROUPBY row
+    // order is unspecified.
     var stream = entityStream.of(ZipCode.class);
     List<Pair<String, Long>> statePopulation = stream //
         .apply("@state", "_id") //
         .groupBy(Alias.of("_id")) //
         .reduce(ReducerFunction.SUM, ZipCode$.POP).as("totalPop") //
-        .filter("@totalPop >= 10*1000*1000").toList(String.class, Long.class);
+        .filter("@totalPop >= 10*1000*1000") //
+        .sorted(Order.asc("@_id")).toList(String.class, Long.class);
 
-    assertAll(() -> assertThat(statePopulation).map(Pair::getFirst).containsExactly("NY", "IL", "PA", "CA", "OH", "FL",
-        "TX"), () -> assertThat(statePopulation).map(Pair::getSecond).containsExactly(17990402L, 11427576L, 11881643L,
-            29754890L, 10846517L, 12686644L, 16984601L));
+    assertAll(() -> assertThat(statePopulation).map(Pair::getFirst).containsExactly("CA", "FL", "IL", "NY", "OH", "PA",
+        "TX"), () -> assertThat(statePopulation).map(Pair::getSecond).containsExactly(29754890L, 12686644L, 11427576L,
+            17990402L, 10846517L, 11881643L, 16984601L));
   }
 
   /**
@@ -131,6 +138,10 @@ class EntityStreamsZipCodeDataAggregationsTest extends AbstractBaseDocumentTest 
    */
   @Test
   void testReturnLargestAndSmallestCitiesByState() {
+    // Montana is excluded here and asserted separately below: HOMESTEAD and MOSBY are both
+    // genuinely tied at population 7, its smallest. FIRST_VALUE has no secondary sort key to
+    // break the tie, and which one Redis returns for it is not stable across runs even against
+    // this same static dataset.
     // expected results
     Quintuple<String, String, Long, String, Long>[] expected = List.of( //
         Tuples.of("AK", "ANCHORAGE", 183987L, "CROOKED CREEK", 1L), //
@@ -159,7 +170,6 @@ class EntityStreamsZipCodeDataAggregationsTest extends AbstractBaseDocumentTest 
         Tuples.of("MN", "MINNEAPOLIS", 344719L, "JOHNSON", 12L), //
         Tuples.of("MO", "SAINT LOUIS", 397802L, "BENDAVIS", 44L), //
         Tuples.of("MS", "JACKSON", 204788L, "CHUNKY", 79L), //
-        Tuples.of("MT", "BILLINGS", 78805L, "HOMESTEAD", 7L), //
         Tuples.of("NC", "CHARLOTTE", 465833L, "ROARING GAP", 21L), //
         Tuples.of("ND", "GRAND FORKS", 59527L, "TROTTERS", 12L), //
         Tuples.of("NE", "OMAHA", 358930L, "LAKESIDE", 5L), //
@@ -198,6 +208,15 @@ class EntityStreamsZipCodeDataAggregationsTest extends AbstractBaseDocumentTest 
         .reduce(ReducerFunction.FIRST_VALUE, Alias.of("total_pop"), Alias.of("total_pop").asc()).as("smallestPop") //
         .toList(String.class, String.class, Long.class, String.class, Long.class);
 
-    assertThat(largestAndSmallestCitiesByState).containsExactlyInAnyOrder(expected);
+    var montana = largestAndSmallestCitiesByState.stream().filter(row -> row.getFirst().equals("MT")).findFirst();
+    assertThat(montana).isPresent();
+    assertThat(montana.get().getSecond()).isEqualTo("BILLINGS");
+    assertThat(montana.get().getThird()).isEqualTo(78805L);
+    assertThat(montana.get().getFourth()).isIn("HOMESTEAD", "MOSBY");
+    assertThat(montana.get().getFifth()).isEqualTo(7L);
+
+    List<Quintuple<String, String, Long, String, Long>> withoutMontana = largestAndSmallestCitiesByState.stream()
+        .filter(row -> !row.getFirst().equals("MT")).toList();
+    assertThat(withoutMontana).containsExactlyInAnyOrder(expected);
   }
 }

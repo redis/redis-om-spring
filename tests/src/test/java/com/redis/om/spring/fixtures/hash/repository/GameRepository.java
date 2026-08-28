@@ -427,6 +427,13 @@ public interface GameRepository extends RedisEnhancedRepository<Game, String> {
       apply = { @Apply(
           expression = "format(\"%s|%s|%s|%s\", @title, @brand, \"Mark\", @price)", alias = "titleBrand"
       ), //
+      }, //
+      // sorted by title so the LIMIT 10 window is deterministic - without a SORTBY, GROUPBY
+      // row order is unspecified
+      sortBy = { //
+          @SortBy(
+              field = "@title", direction = Direction.ASC
+          ), //
       }, limit = 10
   )
   //
