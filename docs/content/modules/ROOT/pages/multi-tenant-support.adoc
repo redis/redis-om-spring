@@ -5,7 +5,15 @@
 
 == Introduction to Multi-Tenancy in Redis OM Spring
 
-Redis OM Spring provides comprehensive multi-tenant support through dynamic index naming, thread-local context management, and flexible index resolution strategies. This enables applications to serve multiple tenants with complete data isolation while maintaining high performance.
+Redis OM Spring provides building blocks for multi-tenant applications through dynamic index naming, thread-local context management, and flexible index resolution strategies.
+These APIs help applications create and manage tenant-specific indexes and key prefixes.
+
+[IMPORTANT]
+====
+Automatic per-tenant isolation is not currently applied consistently across all repository and `EntityStream` query paths.
+Do not rely on `RedisIndexContext` alone to make standard repository operations search only the current tenant's index.
+For strict tenant isolation today, scope queries explicitly, for example with an indexed tenant field, a tenant-scoping repository or `EntityStream` facade, and application-level ownership checks.
+====
 
 == Core Multi-Tenant Features
 
@@ -25,13 +33,16 @@ RedisIndexContext context = RedisIndexContext.builder()
 
 RedisIndexContext.setContext(context);
 
-// All operations now use this tenant context
-// Automatically cleared at end of request/thread
+try {
+    // Context-aware index management APIs can use this tenant context.
+} finally {
+    RedisIndexContext.clearContext();
+}
 ----
 
 === Thread-Local Isolation
 
-Each thread maintains its own tenant context, ensuring complete isolation:
+Each thread maintains its own tenant context for APIs that explicitly consult `RedisIndexContext`:
 
 [source,java]
 ----
@@ -67,11 +78,11 @@ public class TenantController {
 
 === SpEL-Based Index Names
 
-Use Spring Expression Language for dynamic index naming and keyspace (key prefix) resolution. Here's a working example from the `roms-multitenant` demo:
+Use Spring Expression Language for dynamic index naming and keyspace (key prefix) resolution.
+The following example also includes a tenant field for explicit query scoping:
 
 [source,java]
 ----
-// From demos/roms-multitenant/src/main/java/com/redis/om/multitenant/domain/Product.java
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -95,6 +106,9 @@ public class Product {
 
     @Indexed
     private String category;
+
+    @Indexed
+    private String tenantId;
 
     @Indexed
     private String sku;
@@ -149,7 +163,7 @@ public class TenantService {
 }
 ----
 
-This pattern provides complete tenant isolation with both separate indexes and separate data storage:
+This pattern configures tenant-specific index names and key prefixes:
 
 * For tenant "acme":
 ** Index: `products_acme_idx`
@@ -160,7 +174,8 @@ This pattern provides complete tenant isolation with both separate indexes and s
 
 [NOTE]
 ====
-Both `indexName` and `keyPrefix` attributes support SpEL expressions that are evaluated dynamically at runtime. The `keyPrefix` attribute controls both the index configuration (what key prefix the index searches) AND the actual key storage location for documents. This provides complete tenant data isolation.
+Both `indexName` and `keyPrefix` attributes support SpEL expressions.
+These expressions are useful for creating tenant-specific indexes and storage prefixes, but automatic tenant routing for all repository and `EntityStream` read paths is not guaranteed.
 ====
 
 === Environment-Based Tenant Configuration
@@ -481,7 +496,8 @@ public class WebConfiguration implements WebMvcConfigurer {
 
 === Repository Usage with Multi-Tenancy
 
-Standard repository operations automatically use the current tenant context:
+Repository operations can be used in multi-tenant applications, but standard repository queries are not automatically scoped by `RedisIndexContext`.
+Until tenant-aware query routing is supported across all repository paths, add tenant criteria explicitly or wrap repository access in a tenant-scoping facade:
 
 [source,java]
 ----
@@ -491,26 +507,42 @@ public class ProductService {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private TenantService tenantService;
+
     public Product createProduct(Product product) {
-        // Current tenant context is automatically used
+        // Set the tenant field before saving.
+        product.setTenantId(tenantService.getCurrentTenant());
         return productRepository.save(product);
     }
 
     public List<Product> findProductsByCategory(String category) {
-        // Searches only within current tenant's index
-        return productRepository.findByCategory(category);
+        // Include tenant criteria in derived queries or custom queries.
+        return productRepository.findByTenantIdAndCategory(tenantService.getCurrentTenant(), category);
     }
 
     public Page<Product> findProducts(Pageable pageable) {
-        // Pagination within tenant's data
-        return productRepository.findAll(pageable);
+        // Avoid unscoped findAll(pageable) for tenant-isolated data.
+        return productRepository.findByTenantId(tenantService.getCurrentTenant(), pageable);
     }
+}
+----
+
+The repository needs matching tenant-scoped query methods:
+
+[source,java]
+----
+public interface ProductRepository extends RedisDocumentRepository<Product, String> {
+
+    List<Product> findByTenantIdAndCategory(String tenantId, String category);
+
+    Page<Product> findByTenantId(String tenantId, Pageable pageable);
 }
 ----
 
 === Entity Streams with Multi-Tenancy
 
-Entity streams respect tenant boundaries:
+Scope `EntityStream` queries explicitly when querying tenant-isolated data:
 
 [source,java]
 ----
@@ -530,6 +562,7 @@ public class AnalyticsService {
         try {
             return entityStream
                 .of(Product.class)
+                .filter(Product$.TENANT_ID.eq(tenantId))
                 .filter(Product$.SALES_COUNT.gte(100))
                 .sorted(Product$.SALES_COUNT, SortOrder.DESC)
                 .limit(10)
@@ -621,7 +654,7 @@ public class TenantHealthIndicator implements HealthIndicator {
 
 === Security Considerations
 
-* **Tenant Isolation**: Ensure complete data isolation between tenants
+* **Tenant Isolation**: Enforce tenant criteria consistently on reads and writes
 * **Access Control**: Implement proper authentication and authorization
 * **Data Encryption**: Use Redis AUTH and TLS for sensitive data
 * **Audit Logging**: Log all tenant operations for compliance
