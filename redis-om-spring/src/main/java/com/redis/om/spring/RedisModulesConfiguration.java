@@ -320,6 +320,11 @@ public class RedisModulesConfiguration {
    * indexes for entities annotated with {@code @Document} and {@code @RedisHash}.
    * It scans entity classes for indexable fields and creates the appropriate
    * search indexes in Redis.
+   * <p>
+   * Applications can provide their own {@link RediSearchIndexer} bean named
+   * {@code rediSearchIndexer} to customize index-name resolution or index
+   * management behavior. The bean name is significant because Redis OM Spring
+   * also looks up the indexer by that name during index creation.
    *
    * @param ac                     the application context for SpEL expression evaluation
    * @param properties             the Redis OM configuration properties
@@ -332,6 +337,9 @@ public class RedisModulesConfiguration {
     "unchecked"
   )
   @Bean(
+      name = "rediSearchIndexer"
+  )
+  @ConditionalOnMissingBean(
       name = "rediSearchIndexer"
   )
   public RediSearchIndexer redisearchIndexer(ApplicationContext ac, //

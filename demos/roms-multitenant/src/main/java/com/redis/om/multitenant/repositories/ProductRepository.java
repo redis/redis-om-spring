@@ -8,8 +8,8 @@ import com.redis.om.spring.repository.RedisDocumentRepository;
 /**
  * Repository for Product entities.
  *
- * <p>All operations are automatically scoped to the current tenant's index
- * based on the SpEL expression in the @IndexingOptions annotation.
+ * <p>The demo configures tenant-specific index names and key prefixes with SpEL.
+ * Add explicit tenant criteria to query methods when strict tenant isolation is required.
  */
 public interface ProductRepository extends RedisDocumentRepository<Product, String> {
 
