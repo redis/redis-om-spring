@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.mapping.RedisMappingContext;
 
 import com.redis.om.spring.RedisModulesConfiguration;
@@ -53,6 +54,11 @@ class Issue770RediSearchIndexerBeanOverrideTest {
     )
     RediSearchIndexer customIndexer() {
       return mock(RediSearchIndexer.class);
+    }
+
+    @Bean
+    JedisConnectionFactory jedisConnectionFactory() {
+      return mock(JedisConnectionFactory.class);
     }
 
     @Bean
