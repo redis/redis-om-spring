@@ -14,11 +14,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Product entity with dynamic tenant-aware indexing and storage isolation.
+ * Product entity with dynamic tenant-aware index and key-prefix configuration.
  *
  * <p>Both the index name and key prefix are resolved at runtime using SpEL expressions
- * that reference the TenantService bean to get the current tenant context.
- * This provides complete tenant isolation for both search indexes and data storage.
+ * that reference the TenantService bean to get the current tenant context. Repository
+ * and EntityStream queries should still include explicit tenant criteria when strict
+ * tenant isolation is required.
  *
  * <p>Example for tenant "acme":
  * <ul>

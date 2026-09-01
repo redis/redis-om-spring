@@ -33,8 +33,11 @@ RedisIndexContext context = RedisIndexContext.builder()
 
 RedisIndexContext.setContext(context);
 
-// Context-aware index management APIs can use this tenant context.
-// Always clear the context at the end of a request/thread.
+try {
+    // Context-aware index management APIs can use this tenant context.
+} finally {
+    RedisIndexContext.clearContext();
+}
 ----
 
 === Thread-Local Isolation
@@ -75,11 +78,11 @@ public class TenantController {
 
 === SpEL-Based Index Names
 
-Use Spring Expression Language for dynamic index naming and keyspace (key prefix) resolution. Here's a working example from the `roms-multitenant` demo:
+Use Spring Expression Language for dynamic index naming and keyspace (key prefix) resolution.
+The following example also includes a tenant field for explicit query scoping:
 
 [source,java]
 ----
-// From demos/roms-multitenant/src/main/java/com/redis/om/multitenant/domain/Product.java
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -522,6 +525,18 @@ public class ProductService {
         // Avoid unscoped findAll(pageable) for tenant-isolated data.
         return productRepository.findByTenantId(tenantService.getCurrentTenant(), pageable);
     }
+}
+----
+
+The repository needs matching tenant-scoped query methods:
+
+[source,java]
+----
+public interface ProductRepository extends RedisDocumentRepository<Product, String> {
+
+    List<Product> findByTenantIdAndCategory(String tenantId, String category);
+
+    Page<Product> findByTenantId(String tenantId, Pageable pageable);
 }
 ----
 
