@@ -31,7 +31,7 @@ class SchemaFieldFactory {
 
   TagField indexAsTagFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, TagIndexed ti) {
     FieldName fieldName = buildFieldName(field, prefix, isDocument, Optional.ofNullable(ti.alias()), Optional.empty());
-    return getTagField(fieldName, ti.separator(), false, false, false, ti.withSuffixTrie());
+    return getTagField(fieldName, ti.separator(), false, ti.noindex(), false, false, ti.withSuffixTrie());
   }
 
   VectorField indexAsVectorFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, Indexed indexed) {
@@ -109,9 +109,16 @@ class SchemaFieldFactory {
   SchemaField indexAsTagFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, boolean sortable,
       String separator, int arrayIndex, String annotationAlias, boolean indexMissing, boolean indexEmpty,
       boolean withSuffixTrie) {
+    return indexAsTagFieldFor(field, isDocument, prefix, sortable, false, separator, arrayIndex, annotationAlias,
+        indexMissing, indexEmpty, withSuffixTrie);
+  }
+
+  SchemaField indexAsTagFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, boolean sortable,
+      boolean noIndex, String separator, int arrayIndex, String annotationAlias, boolean indexMissing,
+      boolean indexEmpty, boolean withSuffixTrie) {
     FieldName fieldName = buildFieldName(field, prefix, isDocument, Optional.ofNullable(annotationAlias), Optional.of(
         arrayIndex));
-    return getTagField(fieldName, separator, sortable, indexMissing, indexEmpty, withSuffixTrie);
+    return getTagField(fieldName, separator, sortable, noIndex, indexMissing, indexEmpty, withSuffixTrie);
   }
 
   TextField indexAsTextFieldFor(java.lang.reflect.Field field, boolean isDocument, String prefix, TextIndexed ti) {
@@ -175,6 +182,11 @@ class SchemaFieldFactory {
 
   TagField getTagField(FieldName fieldName, String separator, boolean sortable, boolean indexMissing,
       boolean indexEmpty, boolean withSuffixTrie) {
+    return getTagField(fieldName, separator, sortable, false, indexMissing, indexEmpty, withSuffixTrie);
+  }
+
+  TagField getTagField(FieldName fieldName, String separator, boolean sortable, boolean noIndex, boolean indexMissing,
+      boolean indexEmpty, boolean withSuffixTrie) {
     TagField tag = TagField.of(fieldName);
     if (separator != null) {
       if (separator.length() != 1) {
@@ -184,6 +196,8 @@ class SchemaFieldFactory {
     }
     if (sortable)
       tag.sortable();
+    if (noIndex)
+      tag.noIndex();
     if (indexMissing)
       tag.indexMissing();
     if (indexEmpty)
